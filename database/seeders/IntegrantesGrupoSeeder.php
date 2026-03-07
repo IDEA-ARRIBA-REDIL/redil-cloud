@@ -27,7 +27,7 @@ class IntegrantesGrupoSeeder extends Seeder
     public function run(): void
     {
         // 1. Verificamos que el archivo JSON exista
-        if (!Storage::exists($this->filePath)) {
+        if (!file_exists(base_path('storage/app/' . $this->filePath))) {
             $this->command->error('¡Archivo JSON de integrantes_grupo no encontrado!');
             return;
         }
@@ -37,7 +37,7 @@ class IntegrantesGrupoSeeder extends Seeder
         // 2. Vaciamos la tabla para una importación limpia
 
         // 3. Leemos y decodificamos el contenido del archivo JSON
-        $jsonContent = Storage::get($this->filePath);
+        $jsonContent = file_get_contents(base_path('storage/app/' . $this->filePath));
         $data = json_decode($jsonContent, true);
 
         // Apuntamos al array de registros dentro de la clave "RECORDS"

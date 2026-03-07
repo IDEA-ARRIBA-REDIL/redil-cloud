@@ -25,8 +25,41 @@ class SedeSeeder extends Seeder
 
 
 
-    if (!Storage::exists($this->filePath)) {
-      $this->command->error('¡Archivo JSON de sedes no encontrado!');
+    Sede::firstOrCreate([
+      'id' => '1',
+      'nombre' => 'Sede principal',
+      'grupo_id' => 1,
+      'tipo_sede_id' => 1,
+      'continente_id' => 2,
+      'foto' => 'default.png',
+      'pais_id' => 45,
+      'default' => TRUE
+    ]);
+
+    Sede::firstOrCreate([
+      'id' => '2',
+      'nombre' => 'Sede Secundaria',
+      'grupo_id' => 1,
+      'tipo_sede_id' => 1,
+      'continente_id' => 2,
+      'foto' => 'default.png',
+      'pais_id' => 45,
+      'default' => FALSE
+    ]);
+
+    Sede::firstOrCreate([
+      'id' => '33',
+      'nombre' => 'Sede Adicional',
+      'grupo_id' => 1,
+      'tipo_sede_id' => 1,
+      'continente_id' => 2,
+      'foto' => 'default.png',
+      'pais_id' => 45,
+      'default' => FALSE
+    ]);
+
+    if (!file_exists(base_path('storage/app/' . $this->filePath))) {
+      $this->command->warn('¡Archivo JSON de sedes no encontrado! Saltando importación de JSON.');
       return;
     }
 
@@ -36,7 +69,7 @@ class SedeSeeder extends Seeder
     // DB::table('sedes')->truncate();
     // Schema::enableForeignKeyConstraints();
 
-    $jsonContent = Storage::get($this->filePath);
+    $jsonContent = file_get_contents(base_path('storage/app/' . $this->filePath));
     $data = json_decode($jsonContent, true);
 
     // --- [LA CORRECCIÓN ESTÁ AQUÍ] ---
@@ -89,17 +122,6 @@ class SedeSeeder extends Seeder
             $sedeData
         );
     }
-
-    Sede::firstOrCreate([
-      'id' => '1',
-      'nombre' => 'Sede principal',
-      'grupo_id' => 1,
-      'tipo_sede_id' => 1,
-      'continente_id' => 2,
-      'foto' => 'default.png',
-      'pais_id' => 45,
-      'default' => TRUE
-    ]);
 
     $this->command->info('✔️  ¡Proceso finalizado! Se han importado ' . count($sedesParaInsertar) . ' sedes.');
   }

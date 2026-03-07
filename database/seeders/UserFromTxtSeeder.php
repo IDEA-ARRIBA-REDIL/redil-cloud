@@ -15,7 +15,7 @@ class UserFromTxtSeeder extends Seeder
 
     public function run(): void
     {
-        if (!Storage::exists($this->filePath)) {
+        if (!file_exists(base_path('storage/app/' . $this->filePath))) {
             $this->command->error('¡Archivo no encontrado!');
             return;
         }
@@ -63,10 +63,11 @@ class UserFromTxtSeeder extends Seeder
         $errorCount = 0;
 
         LazyCollection::make(function () {
-            $file = Storage::readStream($this->filePath);
+            $file = fopen(base_path('storage/app/' . $this->filePath), 'r');
             while (($line = fgets($file)) !== false) {
                 yield $line;
             }
+            fclose($file);
         })
             ->skip(1)
             ->filter(fn($line) => !empty(trim($line)) && !str_starts_with(trim($line), '|--'))

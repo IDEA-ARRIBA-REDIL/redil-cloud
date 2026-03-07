@@ -15,7 +15,7 @@ class MetasRuedaVidaUserSeeder extends Seeder
     public function run(): void
     {
 
-        $path = Storage::path('archivos_desarrollador/metarv.sql');
+        $path = base_path('storage/app/archivos_desarrollador/metarv.sql');
         DB::unprepared(file_get_contents($path));
     }
 }

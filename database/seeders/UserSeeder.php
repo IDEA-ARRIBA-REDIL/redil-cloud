@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
     // 2. Crear usuarios y asignar roles
 
     // 2. Crear usuarios y asignar roles
-    $usuario1 = \App\Models\User::firstOrCreate(
+    $usuario1 = \App\Models\User::withTrashed()->firstOrCreate(
       ['email' => 'idea.arriba@gmail.com'],
       [
         'pais_id' => 45,
@@ -54,7 +54,7 @@ class UserSeeder extends Seeder
         $usuario1->roles()->attach($administrador->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']); // Rol de escuela
     }
 
-    $usuario2 = \App\Models\User::firstOrCreate(
+    $usuario2 = \App\Models\User::withTrashed()->firstOrCreate(
       ['email' => 'pastorprincipal@redil.com'],
       [
         'pais_id' => 45,
@@ -78,7 +78,7 @@ class UserSeeder extends Seeder
         $usuario2->iglesiaEncargada()->attach(1); // Relación de iglesia
     }
 
-    $usuario3 = \App\Models\User::firstOrCreate(
+    $usuario3 = \App\Models\User::withTrashed()->firstOrCreate(
       ['email' => 'lider_d@redil.com'],
       [
         'pais_id' => 45,
@@ -107,7 +107,7 @@ class UserSeeder extends Seeder
         $usuario3->roles()->attach($consolidadorBogota->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
 
-    $usuario4 = \App\Models\User::firstOrCreate(
+    $usuario4 = \App\Models\User::withTrashed()->firstOrCreate(
       ['email' => 'lider_b@redil.com'],
       [
         'pais_id' => 45,
@@ -136,7 +136,7 @@ class UserSeeder extends Seeder
         $usuario4->roles()->attach($consolidadorMedellin->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
 
-    $usuario5 = \App\Models\User::firstOrCreate(
+    $usuario5 = \App\Models\User::withTrashed()->firstOrCreate(
       ['email' => 'lider_c@redil.com'],
       [
         'pais_id' => 45,
@@ -165,7 +165,7 @@ class UserSeeder extends Seeder
         $usuario5->roles()->attach($alumno->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
 
-    $usuario6 = \App\Models\User::firstOrCreate(
+    $usuario6 = \App\Models\User::withTrashed()->firstOrCreate(
       ['email' => 'softjuancarlos@gmail.com'],
       [
         'pais_id' => 45,
@@ -210,7 +210,7 @@ class UserSeeder extends Seeder
         $usuario6->roles()->attach($consejero->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
 
-    $usuario7 = \App\Models\User::firstOrCreate(
+    $usuario7 = \App\Models\User::withTrashed()->firstOrCreate(
       ['email' => 'carlos@redil.com'],
       [
         'pais_id' => 45,

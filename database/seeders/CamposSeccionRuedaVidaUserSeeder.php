@@ -14,8 +14,8 @@ class CamposSeccionRuedaVidaUserSeeder extends Seeder
      */
     public function run(): void
     {
-        // 
-        $path = Storage::path('archivos_desarrollador/camposrv.sql');
+        //
+        $path = base_path('storage/app/archivos_desarrollador/camposrv.sql');
         DB::unprepared(file_get_contents($path));
     }
 }

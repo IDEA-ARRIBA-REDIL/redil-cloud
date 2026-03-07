@@ -23,8 +23,8 @@ class TipoUsuarioManantialSeeder extends Seeder
     public function run(): void
     {
         // 1. Verificamos que el archivo JSON exista
-        if (!Storage::exists($this->filePath)) {
-            $this->command->error('¡Archivo JSON de tipos de asistente no encontrado en ' . storage_path('app/' . $this->filePath) . '!');
+        if (!file_exists(base_path('storage/app/' . $this->filePath))) {
+            $this->command->error('¡Archivo JSON de tipos de asistente no encontrado en ' . base_path('storage/app/' . $this->filePath) . '!');
             return;
         }
 
@@ -34,7 +34,7 @@ class TipoUsuarioManantialSeeder extends Seeder
 
 
         // 3. Leemos y decodificamos el contenido del archivo JSON
-        $jsonContent = Storage::get($this->filePath);
+        $jsonContent = file_get_contents(base_path('storage/app/' . $this->filePath));
         $data = json_decode($jsonContent, true);
 
         // Asumimos que los datos pueden venir dentro de una clave "RECORDS"

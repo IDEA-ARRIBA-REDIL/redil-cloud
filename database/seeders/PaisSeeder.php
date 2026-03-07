@@ -15,7 +15,7 @@ class PaisSeeder extends Seeder
    */
   public function run(): void
   {
-    $path = Storage::path('archivos_desarrollador/paises.sql');
+    $path = base_path('storage/app/archivos_desarrollador/paises.sql');
     DB::unprepared(file_get_contents($path));
 
 

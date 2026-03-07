@@ -14,7 +14,7 @@ class TipoPeticionSeeder extends Seeder
      */
     public function run(): void
     {
-      $path = Storage::path('archivos_desarrollador/tipoPeticiones.sql');
+      $path = base_path('storage/app/archivos_desarrollador/tipoPeticiones.sql');
       DB::unprepared(file_get_contents($path));
     }
 }

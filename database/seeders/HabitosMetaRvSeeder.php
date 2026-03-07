@@ -14,8 +14,8 @@ class HabitosMetaRvSeeder extends Seeder
      */
     public function run(): void
     {
-        //        
-        $path = Storage::path('archivos_desarrollador/habitosrv.sql');
+        //
+        $path = base_path('storage/app/archivos_desarrollador/habitosrv.sql');
         DB::unprepared(file_get_contents($path));
     }
 }

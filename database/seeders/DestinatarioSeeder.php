@@ -15,7 +15,7 @@ class DestinatarioSeeder extends Seeder
     public function run(): void
     {
         //
-        $path = Storage::path('archivos_desarrollador/destinatarios.sql');
+        $path = base_path('storage/app/archivos_desarrollador/destinatarios.sql');
         DB::unprepared(file_get_contents($path));
     }
 }

@@ -21,8 +21,8 @@ class GruposYMiembrosSeeder extends Seeder
      */
     public function run(): void
     {
-        if (!Storage::exists($this->filePath)) {
-            $this->command->error('¡Archivo JSON no encontrado en ' . storage_path('app/' . $this->filePath) . '!');
+        if (!file_exists(base_path('storage/app/' . $this->filePath))) {
+            $this->command->error('¡Archivo JSON no encontrado en ' . base_path('storage/app/' . $this->filePath) . '!');
             return;
         }
 
@@ -30,7 +30,7 @@ class GruposYMiembrosSeeder extends Seeder
 
 
 
-        $jsonContent = Storage::get($this->filePath);
+        $jsonContent = file_get_contents(base_path('storage/app/' . $this->filePath));
         $data = json_decode($jsonContent, true);
 
         // --- [LA CORRECCIÓN QUE FALTABA] ---

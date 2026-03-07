@@ -14,7 +14,7 @@ class DepartamentoSeeder extends Seeder
      */
     public function run(): void
     {
-      $path = Storage::path('archivos_desarrollador/departamentos.sql');
+      $path = base_path('storage/app/archivos_desarrollador/departamentos.sql');
       DB::unprepared(file_get_contents($path));
     }
 }
