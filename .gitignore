@@ -29,3 +29,5 @@ vendor
 
 /bootstrap/cache/*
 !/bootstrap/cache/.gitignore
+deploy_key
+storage/app/google-calendar/oauth-credentials.json

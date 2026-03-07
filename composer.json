@@ -23,6 +23,7 @@
     "spatie/icalendar-generator": "*",
     "spatie/laravel-google-calendar": "*",
     "spatie/laravel-permission": "*",
+    "stancl/tenancy": "^3.9",
     "tinymce/tinymce": "^7.2",
     "vish4395/laravel-file-viewer": "*"
   },
