@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modelo ER: Grupos - Interactivo</title>
+    <!-- Tailwind (Utility) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bootstrap (Requested framework) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Vis.js -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+      #mynetwork {
+        width: 100%;
+        height: 800px; /* Taller for complex graph */
+        background-color: #ffffff;
+        border: 1px solid #dee2e6; /* Bootstrap border color */
+        border-radius: 0.375rem;
+      }
+      .card-header-custom {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+      }
+    </style>
+  </head>
+  <body class="bg-light p-4 font-sans">
+    <div class="container-fluid">
+      <!-- Top Section: Header & Details (Full Width) -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-4">
+                  <h1 class="h3 text-primary fw-bold mb-1">Modelo: Grupos</h1>
+                  <p class="text-secondary small mb-0">Gestión de Células, Ministerios y Reportes</p>
+                </div>
+                <div class="col-md-8">
+                  <div id="detail-panel" class="p-3 bg-white border rounded">
+                    <div id="node-info">
+                      <p class="text-muted fst-italic mb-0">
+                        <i class="bi bi-info-circle"></i> Haz clic en un nodo del diagrama para ver su descripción y
+                        detalles aquí.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Graph Area (Full Width) -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-body p-0">
+              <div id="mynetwork"></div>
+            </div>
+            <!-- Legend Footer -->
+            <div class="card-footer bg-white">
+              <div class="d-flex flex-wrap gap-3 small text-secondary justify-content-center">
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #dbeafe; border: 1px solid #2563eb"></span>
+                  Model
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #f3e8ff; border: 1px solid #9333ea"></span>
+                  Pivot
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #fee2e2; border: 1px solid #dc2626"></span>
+                  Critical
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #fef3c7; border: 1px solid #d97706"></span>
+                  Config
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #d1fae5; border: 1px solid #059669"></span>
+                  Logic
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #f1f5f9; border: 1px solid #475569"></span>
+                  Code
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #f8f9fa; border: 1px solid #dee2e6"></span>
+                  Detail
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      // --- Data Definition: Grupos ---
+      const rootData = [
+        {
+          id: 'grupo',
+          name: 'Grupo',
+          type: 'model',
+          desc: 'Entidad Raíz. Representa una célula, grupo de conexión o ministerio.',
+          children: [
+            // --- RAMA 1: CONFIGURACIÓN ---
+            {
+              id: 'config-group',
+              name: 'Configuración de Grupo',
+              type: 'config',
+              desc: 'Definiciones de tipo y ubicación.',
+              children: [
+                {
+                  id: 'tipo-grupo',
+                  name: 'TipoGrupo',
+                  type: 'config',
+                  desc: 'Catálogo (Ej: Evangelístico, Discipulado). Define reglas de negocio.',
+                  children: [
+                    { id: 'tg-pasos', name: 'PasosCrecimiento (Rel)', type: 'link', desc: 'Pasos asociados a este tipo.' },
+                    { id: 'tg-privilegios', name: 'PrivilegiosRol (Rel)', type: 'link', desc: 'Permisos por rol.' },
+                    { id: 'tg-ofrendas', name: 'TiposOfrenda (Rel)', type: 'link', desc: 'Tipos de ofrenda permitidos.' }
+                  ]
+                },
+                {
+                   id: 'sede',
+                   name: 'Sede',
+                   type: 'model',
+                   desc: 'Ubicación física o campus al que pertenece el grupo.'
+                },
+                {
+                   id: 'grupo-excluido',
+                   name: 'GrupoExcluido',
+                   type: 'logic',
+                   desc: 'Reglas de exclusión para ciertas jerarquías o reportes.'
+                }
+              ]
+            },
+
+            // --- RAMA 2: PERSONAS (MEMBRESÍA) ---
+            {
+              id: 'personas-group',
+              name: 'Membresía y Liderazgo',
+              type: 'critical',
+              desc: 'Relaciones con Usuarios.',
+              children: [
+                {
+                  id: 'encargados',
+                  name: 'Encargados (Líderes)',
+                  type: 'pivot',
+                  desc: 'Tabla EncargadosGrupo. Líderes responsables del grupo.',
+                  children: [
+                    { id: 'user-encargado', name: 'User (Líder)', type: 'model', desc: 'Usuario con rol de liderazgo.' }
+                  ]
+                },
+                {
+                  id: 'asistentes',
+                  name: 'Asistentes (Integrantes)',
+                  type: 'pivot',
+                  desc: 'Tabla IntegrantesGrupo. Miembros regulares del grupo.',
+                  children: [
+                     { id: 'user-asistente', name: 'User (Miembro)', type: 'model', desc: 'Usuario asistente.' }
+                  ]
+                },
+                {
+                  id: 'servidores',
+                  name: 'Servidores',
+                  type: 'pivot',
+                  desc: 'Tabla ServidoresGrupo. Miembros con funciones especiales de servicio.'
+                }
+              ]
+            },
+
+            // --- RAMA 3: REPORTES Y METRÍCAS ---
+            {
+              id: 'reportes-group',
+              name: 'Seguimiento (Reportes)',
+              type: 'critical',
+              desc: 'Actividad semanal o periódica.',
+              children: [
+                {
+                  id: 'reporte-grupo',
+                  name: 'ReporteGrupo',
+                  type: 'model',
+                  desc: 'Registro de una reunión específica. (Fecha, Hora, Tema).',
+                  children: [
+                    { 
+                        id: 'asistencia', 
+                        name: 'Asistencia (Pivot)', 
+                        type: 'pivot', 
+                        desc: 'Tabla AsistenciaGrupos. Relaciona Reporte <-> User. Guarda estado (Asistió/Faltó).' 
+                    },
+                    {
+                        id: 'ofrendas',
+                        name: 'Ofrendas (Pivot)',
+                        type: 'pivot',
+                        desc: 'Tabla OfrendaGrupos. Registro financiero de la reunión.'
+                    },
+                    {
+                        id: 'clasificacion',
+                        name: 'Clasificación (Pivot)',
+                        type: 'pivot',
+                        desc: 'Conteo por tipo de asistente (Ej: Hombres, Mujeres, Niños).'
+                    },
+                    {
+                         id: 'motivos',
+                         name: 'Motivos (No Reporte/Rechazo)',
+                         type: 'logic',
+                         desc: 'Justificaciones si no se reportó o si fue rechazado.'
+                    }
+                  ]
+                }
+              ]
+            },
+
+            // --- RAMA 4: LÓGICA DE MINISTERIO ---
+            {
+              id: 'logica-group',
+              name: 'Lógica de Ministerio',
+              type: 'logic',
+              desc: 'Algoritmos y Jerarquías.',
+              children: [
+                {
+                  id: 'jerarquia',
+                  name: 'Jerarquía Ascendente/Descendente',
+                  type: 'code',
+                  desc: 'Funciones recursivas para detectar red de cobertura (gruposMinisterio).'
+                },
+                {
+                  id: 'estadisticas',
+                  name: 'Estadísticas Crecimiento',
+                  type: 'code',
+                  desc: 'Cálculo de pasos de crecimiento en la red del grupo.'
+                }
+              ]
+            }
+          ]
+        }
+      ];
+
+      // --- Node Styles ---
+      function getNodeOptions(type) {
+        const base = { shape: 'box', margin: 10, font: { multi: 'html', size: 16 } };
+        switch (type) {
+          case 'model':
+            return {
+              ...base,
+              color: { background: '#DBEafe', border: '#2563eb' },
+              font: { color: '#1e3a8a', multi: 'html' }
+            };
+          case 'pivot':
+            return {
+              ...base,
+              color: { background: '#F3E8FF', border: '#9333ea' },
+              font: { color: '#581c87', multi: 'html' }
+            };
+          case 'critical':
+            return {
+              ...base,
+              color: { background: '#FEE2E2', border: '#dc2626' },
+              font: { color: '#7f1d1d', multi: 'html' }
+            };
+          case 'code':
+            return {
+              ...base,
+              color: { background: '#F1F5F9', border: '#475569' },
+              font: { color: '#334155', multi: 'html' }
+            };
+          case 'config':
+            return {
+              ...base,
+              color: { background: '#FEF3C7', border: '#d97706' },
+              font: { color: '#78350f', multi: 'html' }
+            };
+          case 'logic':
+            return {
+              ...base,
+              color: { background: '#D1FAE5', border: '#059669' },
+              font: { color: '#064e3b', multi: 'html' }
+            };
+          case 'link':
+            return {
+              ...base,
+              color: { background: '#ccfbf1', border: '#14b8a6' },
+              font: { color: '#0f766e', multi: 'html' }
+            };
+          default:
+            return { ...base, color: { background: '#ffffff', border: '#cccccc' }, font: { multi: 'html' } };
+        }
+      }
+
+      // --- Process Nodes ---
+      const nodesArray = [];
+      const edgesArray = [];
+      const nodeMap = new Map();
+
+      function processNode(node, parentId = null) {
+        const nodeId = node.id || Math.random().toString(36).substr(2, 9);
+        const options = getNodeOptions(node.type);
+
+        nodesArray.push({
+          id: nodeId,
+          label: `<b>${node.name}</b>\n<i>${node.type}</i>`,
+          ...options,
+          _desc: node.desc,
+          _type: node.type,
+          _name: node.name
+        });
+        nodeMap.set(nodeId, node);
+
+        if (parentId) {
+          edgesArray.push({ from: parentId, to: nodeId, arrows: 'to', color: { color: '#cbd5e1' } });
+        }
+
+        if (node.children && node.children.length > 0) {
+          node.children.forEach(child => processNode(child, nodeId));
+        }
+      }
+
+      rootData.forEach(root => processNode(root));
+
+      // --- Init Network ---
+      const container = document.getElementById('mynetwork');
+      const data = {
+        nodes: new vis.DataSet(nodesArray),
+        edges: new vis.DataSet(edgesArray)
+      };
+
+      const options = {
+        layout: {
+          hierarchical: {
+            direction: 'UD',
+            sortMethod: 'directed',
+            nodeSpacing: 250,
+            levelSeparation: 200,
+            blockShifting: true,
+            edgeMinimization: true,
+            parentCentralization: true
+          }
+        },
+        physics: false,
+        interaction: {
+          hover: true,
+          zoomView: true
+        }
+      };
+
+      const network = new vis.Network(container, data, options);
+
+      // --- Interaction ---
+      const infoContainer = document.getElementById('node-info');
+
+      network.on('click', function (params) {
+        if (params.nodes.length > 0) {
+          const nodeId = params.nodes[0];
+          const clickedNode = nodesArray.find(n => n.id === nodeId);
+
+          if (clickedNode) {
+            renderDetail(clickedNode);
+          }
+        }
+      });
+
+      function renderDetail(nodeData) {
+        const typeBadges = {
+          model: 'bg-primary',
+          pivot: 'bg-info text-dark',
+          critical: 'bg-danger',
+          config: 'bg-warning text-dark',
+          logic: 'bg-success',
+          code: 'bg-secondary',
+          link: 'bg-teal-100 text-teal-800 border-teal-200', // manually styled
+          detail: 'bg-light text-dark border'
+        };
+
+        const badgeClass = typeBadges[nodeData._type] || 'bg-light text-dark border';
+
+        infoContainer.innerHTML = `
+            <div class="fade-in">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge ${badgeClass}">${nodeData._type}</span>
+                    <span class="font-monospace text-muted small ms-auto">${nodeData.id}</span>
+                </div>
+                <h4 class="text-dark fw-bold mb-2">${nodeData._name}</h4>
+                <p class="mb-0 text-secondary border-start border-4 border-primary ps-3 bg-light py-2 rounded-end">
+                    ${nodeData._desc}
+                </p>
+            </div>
+        `;
+      }
+    </script>
+  </body>
+</html>

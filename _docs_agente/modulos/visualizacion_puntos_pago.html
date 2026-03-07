@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modelo ER: Puntos de Pago - Interactivo</title>
+    <!-- Tailwind (Utility) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Bootstrap (Requested framework) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Vis.js -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+      #mynetwork {
+        width: 100%;
+        height: 800px;
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+      }
+    </style>
+  </head>
+  <body class="bg-light p-4 font-sans">
+    <div class="container-fluid">
+      <!-- Top Section: Header & Details -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-4">
+                  <h1 class="h3 text-primary fw-bold mb-1">Modelo: Puntos de Pago</h1>
+                  <p class="text-secondary small mb-0">Gestión de Tesorería, Cajas y Recaudos</p>
+                </div>
+                <div class="col-md-8">
+                  <div id="detail-panel" class="p-3 bg-white border rounded">
+                    <div id="node-info">
+                      <p class="text-muted fst-italic mb-0">
+                        <i class="bi bi-info-circle"></i> Haz clic en un nodo del diagrama para ver su descripción y
+                        detalles aquí.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Graph Area -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-body p-0">
+              <div id="mynetwork"></div>
+            </div>
+            <!-- Legend Footer -->
+            <div class="card-footer bg-white">
+              <div class="d-flex flex-wrap gap-3 small text-secondary justify-content-center">
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #dbeafe; border: 1px solid #2563eb"></span>
+                  Physical
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #bbf7d0; border: 1px solid #16a34a"></span>
+                  Money/Trans
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #f3e8ff; border: 1px solid #9333ea"></span>
+                  Role/Actor
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #ffedd5; border: 1px solid #ea580c"></span>
+                  Audit
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                  <span
+                    class="d-inline-block rounded-circle"
+                    style="width: 12px; height: 12px; background-color: #f1f5f9; border: 1px solid #475569"></span>
+                  Relation
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      // --- Data Definition: Puntos de Pago ---
+      const rootData = [
+        {
+          id: 'puntos-de-pago',
+          name: 'PuntoDePago',
+          type: 'physical',
+          desc: 'Ubicación física o lógica de recaudo (Ej: "Recepción Sede Norte").',
+          children: [
+            { id: 'sede', name: 'Sede', type: 'relation', desc: 'Ubicación Geográfica.' },
+            { id: 'encargado', name: 'User (Encargado)', type: 'role', desc: 'Responsable administrativo del punto.' },
+            {
+              id: 'caja',
+              name: 'Caja',
+              type: 'physical',
+              desc: 'Punto terminal de venta.',
+              children: [
+                { id: 'cajero', name: 'User (Cajero)', type: 'role', desc: 'Usuario operando la caja.' },
+                {
+                  id: 'asesor-pdp',
+                  name: 'AsesorPdp',
+                  type: 'role',
+                  desc: 'Configuración extendida del rol (Permisos, descripción). Vincula User <-> Rol PDP.',
+                  children: [
+                    {
+                      id: 'user-linked',
+                      name: 'User (Identidad)',
+                      type: 'relation',
+                      desc: 'El usuario real del sistema.'
+                    }
+                  ]
+                },
+                {
+                  id: 'pago',
+                  name: 'Pago',
+                  type: 'money',
+                  desc: 'Ingreso real de dinero. Vinculado a una Caja específica (registro_caja_id).',
+                  children: [
+                    { id: 'tipo-pago', name: 'TipoPago', type: 'relation', desc: 'Efectivo, Datáfono, Transferencia.' },
+                    { id: 'moneda', name: 'Moneda', type: 'relation', desc: 'Divisa del pago.' },
+                    {
+                      id: 'historial-mod',
+                      name: 'HistorialModificacionPago',
+                      type: 'audit',
+                      desc: 'Log de auditoría. Registra cambios en valores, motivos y responsable (Asesor).',
+                      children: [
+                        {
+                          id: 'asesor-audit',
+                          name: 'Asesor (Responsable)',
+                          type: 'role',
+                          desc: 'Quién hizo el cambio.'
+                        },
+                        {
+                          id: 'usuario-afectado',
+                          name: 'User (Afectado)',
+                          type: 'relation',
+                          desc: 'Cliente al que se le ajustó el pago.'
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              id: 'compra',
+              name: 'Compra',
+              type: 'money',
+              desc: 'Cabecera de la transacción. Agrupa pagos e inscripciones.',
+              children: [
+                { id: 'actividad', name: 'Actividad', type: 'relation', desc: 'Origen de la compra (Evento/Escuela).' },
+                { id: 'user-cliente', name: 'User (Cliente)', type: 'relation', desc: 'Quien realiza la compra.' },
+                {
+                  id: 'inscripcion',
+                  name: 'Inscripción',
+                  type: 'money',
+                  desc: 'Detalle del servicio adquirido (Ticket).'
+                }
+              ]
+            }
+          ]
+        }
+      ];
+
+      // --- Node Styles ---
+      function getNodeOptions(type) {
+        const base = { shape: 'box', margin: 10, font: { multi: 'html', size: 16 } };
+        switch (type) {
+          case 'physical': // Blue
+            return {
+              ...base,
+              color: { background: '#DBEafe', border: '#2563eb' },
+              font: { color: '#1e3a8a', multi: 'html' }
+            };
+          case 'money': // Green
+            return {
+              ...base,
+              color: { background: '#dcfce7', border: '#16a34a' },
+              font: { color: '#14532d', multi: 'html' }
+            };
+          case 'role': // Purple
+            return {
+              ...base,
+              color: { background: '#F3E8FF', border: '#9333ea' },
+              font: { color: '#581c87', multi: 'html' }
+            };
+          case 'audit': // Orange
+            return {
+              ...base,
+              color: { background: '#ffedd5', border: '#ea580c' },
+              font: { color: '#7c2d12', multi: 'html' }
+            };
+          case 'relation': // Gray
+            return {
+              ...base,
+              color: { background: '#F1F5F9', border: '#475569' },
+              font: { color: '#334155', multi: 'html' }
+            };
+          default:
+            return { ...base, color: { background: '#ffffff', border: '#cccccc' }, font: { multi: 'html' } };
+        }
+      }
+
+      // --- Process Nodes ---
+      const nodesArray = [];
+      const edgesArray = [];
+
+      function processNode(node, parentId = null) {
+        const nodeId = node.id || Math.random().toString(36).substr(2, 9);
+        const options = getNodeOptions(node.type);
+
+        nodesArray.push({
+          id: nodeId,
+          label: `<b>${node.name}</b>\n<i>${node.type}</i>`,
+          ...options,
+          _desc: node.desc,
+          _type: node.type,
+          _name: node.name
+        });
+
+        if (parentId) {
+          edgesArray.push({ from: parentId, to: nodeId, arrows: 'to', color: { color: '#cbd5e1' } });
+        }
+
+        if (node.children && node.children.length > 0) {
+          node.children.forEach(child => processNode(child, nodeId));
+        }
+      }
+
+      rootData.forEach(root => processNode(root));
+
+      // --- Special Connections (Cross-Linking) ---
+      // Conectar Pago -> Compra (Relación inversa visual para claridad)
+      // Note: Data tree structure implies hierarchy, but we can add extra edges.
+      // Since Vis.js is graph-based, we can just push edges by ID if nodes exist.
+      // Here we trust the IDs defined in rootData: 'pago' and 'compra'
+
+      // Delay edge addition slightly to ensure nodes are processed (though synchronous) or just add after processing
+      edgesArray.push({
+        from: 'pago',
+        to: 'compra',
+        arrows: 'to',
+        label: 'belongsTo',
+        color: { color: '#94a3b8', dashes: true }
+      });
+      edgesArray.push({ from: 'compra', to: 'pago', arrows: 'from', color: { color: '#94a3b8', dashes: true } });
+
+      // --- Init Network ---
+      const container = document.getElementById('mynetwork');
+      const data = {
+        nodes: new vis.DataSet(nodesArray),
+        edges: new vis.DataSet(edgesArray)
+      };
+
+      const options = {
+        layout: {
+          hierarchical: {
+            direction: 'UD',
+            sortMethod: 'directed',
+            nodeSpacing: 200,
+            levelSeparation: 150,
+            blockShifting: true,
+            edgeMinimization: true,
+            parentCentralization: true
+          }
+        },
+        physics: false,
+        interaction: { hover: true, zoomView: true }
+      };
+
+      const network = new vis.Network(container, data, options);
+
+      // --- Interaction ---
+      const infoContainer = document.getElementById('node-info');
+
+      network.on('click', function (params) {
+        if (params.nodes.length > 0) {
+          const nodeId = params.nodes[0];
+          const clickedNode = nodesArray.find(n => n.id === nodeId);
+          if (clickedNode) renderDetail(clickedNode);
+        }
+      });
+
+      function renderDetail(nodeData) {
+        const typeBadges = {
+          physical: 'bg-primary',
+          money: 'bg-success',
+          role: 'bg-info text-dark',
+          audit: 'bg-warning text-dark',
+          relation: 'bg-secondary'
+        };
+        const badgeClass = typeBadges[nodeData._type] || 'bg-light text-dark border';
+
+        infoContainer.innerHTML = `
+            <div class="fade-in">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge ${badgeClass}">${nodeData._type}</span>
+                </div>
+                <h4 class="text-dark fw-bold mb-2">${nodeData._name}</h4>
+                <p class="mb-0 text-secondary border-start border-4 border-primary ps-3 bg-light py-2 rounded-end">
+                    ${nodeData._desc}
+                </p>
+            </div>
+        `;
+      }
+    </script>
+  </body>
+</html>

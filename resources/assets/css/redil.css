@@ -1,0 +1,17 @@
+.panel-busqueda {
+  position: absolute;
+  background: #fff;
+  width: 100%;
+  min-height: 50px;
+  max-height: 200px;
+  display: flex;
+  flex-direction: column;
+  list-style-type: none;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  background: #fff;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 4px 6px rgba(32, 33, 36, 0.28);
+  padding-bottom: 4px;
+  z-index: 10000;
+}

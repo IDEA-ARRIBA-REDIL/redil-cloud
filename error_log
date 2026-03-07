@@ -1,0 +1,71 @@
+[01-Oct-2024 22:05:30 UTC] PHP Fatal error: Trait "Laravel\Sanctum\HasApiTokens" not found in /home/redil2024/public_html/app/Models/User.php on line 23
+[12-Dec-2024 14:50:23 UTC] PHP Fatal error: Cannot declare class Database\Seeders\CampoPerfilUsuario because the name is already in use in /home/redil2024/public_html/database/seeders/CampoPerfilUsuarioSeeder.php on line 9
+[03-Jan-2025 14:22:28 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 14:22:28 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 14:22:28 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 14:22:28 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 14:33:21 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 14:33:21 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 14:33:21 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 14:33:21 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 14:37:02 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 14:37:02 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 14:37:02 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 14:37:02 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:12:50 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:12:50 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:12:50 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:12:50 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:13:02 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:13:02 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:13:02 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:13:02 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:13:08 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:13:08 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:13:08 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:13:08 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:17:15 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:17:15 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:17:15 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:17:15 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:17:28 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:17:28 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:17:28 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:17:28 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:32:14 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/app.php on line 21
+[03-Jan-2025 15:32:14 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/app.php on line 21
+[03-Jan-2025 15:32:14 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:32:14 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 15:32:14 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 15:32:14 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 16:08:23 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/app.php on line 21
+[03-Jan-2025 16:08:23 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/app.php on line 21
+[03-Jan-2025 16:08:23 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 16:08:23 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 16:08:23 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 16:08:23 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 16:21:48 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/app.php on line 21
+[03-Jan-2025 16:21:48 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/app.php on line 21
+[03-Jan-2025 16:21:48 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 16:21:48 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 16:21:48 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 16:21:48 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 16:23:32 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/app.php on line 21
+[03-Jan-2025 16:23:32 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/app.php on line 21
+[03-Jan-2025 16:23:32 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 16:23:32 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 16:23:32 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 16:23:32 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 16:25:37 UTC] PHP Warning: Undefined variable $configuracion in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 16:25:37 UTC] PHP Warning: Attempt to read property "nombre_app_personalizado" on null in /home/redil2024/public_html/config/variables.php on line 11
+[03-Jan-2025 16:25:37 UTC] PHP Warning: Undefined variable $settingColor in /home/redil2024/public_html/config/variables.php on line 12
+[03-Jan-2025 16:25:37 UTC] PHP Warning: Attempt to read property "value" on null in /home/redil2024/public_html/config/variables.php on line 12
+[29-Apr-2025 15:10:23 America/Bogota] PHP Fatal error: Cannot use Illuminate\Database\Eloquent\Factories\HasFactory as HasFactory because the name is already in use in /home/redil2024/public_html/app/Models/SistemaCalificacion.php on line 10
+[18-May-2025 20:58:46 America/Bogota] PHP Fatal error: Cannot redeclare App\Models\HorarioMateriaPeriodo::alumnosMatriculados() in /home/redil2024/public_html/app/Models/HorarioMateriaPeriodo.php on line 203
+[18-May-2025 20:59:06 America/Bogota] PHP Fatal error: Cannot redeclare App\Models\HorarioMateriaPeriodo::alumnosMatriculados() in /home/redil2024/public_html/app/Models/HorarioMateriaPeriodo.php on line 203[27-Jun-2025 11:59:49 America/Bogota] PHP Fatal error:  Cannot redeclare App\Models\Actividad::asistencias() in /home/redil2024/public_html/app/Models/Actividad.php on line 333
+[27-Jun-2025 12:03:52 America/Bogota] PHP Fatal error:  Cannot redeclare App\Models\Actividad::asistencias() in /home/redil2024/public_html/app/Models/Actividad.php on line 333
+[08-Jul-2025 20:10:02 UTC] PHP Fatal error:  Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.0". You are running 8.1.32. in /home/redil2024/public_html/vendor/composer/platform_check.php on line 28
+[08-Jul-2025 20:10:19 UTC] PHP Fatal error:  Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.0". You are running 8.1.32. in /home/redil2024/public_html/vendor/composer/platform_check.php on line 28
+[03-Sep-2025 19:39:02 UTC] PHP Parse error:  syntax error, unexpected single-quoted string "role", expecting "]" in /home/redil2024/public_html/bootstrap/app.php on line 22
+[22-Oct-2025 02:20:14 America/Bogota] PHP Warning:  unlink(/home/redil2024/public_html/storage/logs/laravel-2025-09-30.log): No such file or directory in /home/redil2024/public_html/vendor/monolog/monolog/src/Monolog/Handler/RotatingFileHandler.php on line 153
+[28-Nov-2025 01:20:22 America/Bogota] PHP Warning:  unlink(/home/redil2024/public_html/storage/logs/laravel-2025-11-06.log): No such file or directory in /home/redil2024/public_html/vendor/monolog/monolog/src/Monolog/Handler/RotatingFileHandler.php on line 153

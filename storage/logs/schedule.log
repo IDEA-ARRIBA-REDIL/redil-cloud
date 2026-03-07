@@ -1,0 +1,64 @@
+
+  2025-07-08 17:12:02 Running ['artisan' pagos:verificar-zonapagos]  355.15ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:13:01 Running ['artisan' pagos:verificar-zonapagos]  316.00ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:14:02 Running ['artisan' pagos:verificar-zonapagos]  302.60ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:15:02 Running ['artisan' pagos:verificar-zonapagos]  376.84ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:16:01 Running ['artisan' pagos:verificar-zonapagos]  381.46ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:17:01 Running ['artisan' pagos:verificar-zonapagos]  450.96ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:18:01 Running ['artisan' pagos:verificar-zonapagos]  356.02ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:19:02 Running ['artisan' pagos:verificar-zonapagos]  348.54ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:20:01 Running ['artisan' pagos:verificar-zonapagos]  388.24ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:21:01 Running ['artisan' pagos:verificar-zonapagos]  361.78ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:22:01 Running ['artisan' pagos:verificar-zonapagos]  424.10ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:23:01 Running ['artisan' pagos:verificar-zonapagos]  272.16ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:24:02 Running ['artisan' pagos:verificar-zonapagos]  375.71ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:25:01 Running ['artisan' pagos:verificar-zonapagos]  619.94ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:26:01 Running ['artisan' pagos:verificar-zonapagos]  357.40ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
+
+  2025-07-08 17:27:01 Running ['artisan' pagos:verificar-zonapagos]  435.64ms FAIL
+  ⇂ '/opt/cpanel/ea-php82/root/usr/bin/php' 'artisan' pagos:verificar-zonapagos > '/dev/null' 2>&1  
+
