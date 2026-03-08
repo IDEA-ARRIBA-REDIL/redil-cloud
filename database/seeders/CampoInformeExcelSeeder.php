@@ -21,49 +21,47 @@ class CampoInformeExcelSeeder extends Seeder
 
     $x = CampoInformeExcel::select('id')->orderBy('id', 'desc')->first();
 
-
-    CampoInformeExcel::firstOrCreate([
-      'id'=> $x->id+1,
-      'nombre_campo_bd'=> 'fecha_baja',
+    CampoInformeExcel::firstOrCreate(
+      ['nombre_campo_bd'=> 'fecha_baja', 'selector_id' => 5, 'tabla' => 'grupos.'],
+      [
+      'id'=> $x ? $x->id+1 : 1,
       'nombre_campo_informe' => 'fecha_baja',
-      'selector_id' => 5,
-      'tabla' => 'grupos.',
       'raw_sql' => 1,
       'eloquent_sql'=> 0,
       'orden' => 63
     ]);
 
-    CampoInformeExcel::firstOrCreate([
-      'id'=> $x->id+2,
-      'nombre_campo_bd'=> 'motivo_baja',
+    CampoInformeExcel::firstOrCreate(
+      ['nombre_campo_bd'=> 'motivo_baja', 'selector_id' => 5, 'tabla' => 'grupos.'],
+      [
+      'id'=> $x ? $x->id+2 : 2,
       'nombre_campo_informe' => 'motivo_baja',
-      'selector_id' => 5,
-      'tabla' => 'grupos.',
       'raw_sql' => 1,
       'eloquent_sql'=> 0,
       'orden' => 64
     ]);
 
-    CampoInformeExcel::firstOrCreate([
-      'id'=> $x->id+3,
-      'nombre_campo_bd'=> 'fecha_alta',
+    CampoInformeExcel::firstOrCreate(
+      ['nombre_campo_bd'=> 'fecha_alta', 'selector_id' => 5, 'tabla' => 'grupos.'],
+      [
+      'id'=> $x ? $x->id+3 : 3,
       'nombre_campo_informe' => 'fecha_alta',
-      'selector_id' => 5,
-      'tabla' => 'grupos.',
       'raw_sql' => 1,
       'eloquent_sql'=> 0,
       'orden' => 65
     ]);
 
-    CampoInformeExcel::firstOrCreate([
-      'id'=> $x->id+4,
-      'nombre_campo_bd'=> 'motivo_alta',
+    CampoInformeExcel::firstOrCreate(
+      ['nombre_campo_bd'=> 'motivo_alta', 'selector_id' => 5, 'tabla' => 'grupos.'],
+      [
+      'id'=> $x ? $x->id+4 : 4,
       'nombre_campo_informe' => 'motivo_alta',
-      'selector_id' => 5,
-      'tabla' => 'grupos.',
       'raw_sql' => 1,
       'eloquent_sql'=> 0,
       'orden' => 66
     ]);
+
+    // Fix postgres sequence after manual inserts
+    DB::unprepared("SELECT setval('campos_informe_excel_id_seq', (SELECT MAX(id) FROM campos_informe_excel));");
   }
 }

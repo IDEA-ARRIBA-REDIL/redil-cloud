@@ -45,7 +45,7 @@ $configuracion=Configuracion::find(1);
 
   @livewireStyles
   @livewireScripts
-  <link rel="stylesheet" href="{{ Storage::url($configuracion->ruta_almacenamiento.'/theme/_custom-variables.scss') }}" data-navigate-track="reload">
+  <link rel="stylesheet" href="{{ asset('storage/global/theme/_custom-variables.css') }}?v={{ time() }}" data-navigate-track="reload">
 </head>
 
 <body>

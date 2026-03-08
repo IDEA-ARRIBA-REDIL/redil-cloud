@@ -49,8 +49,10 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario1->wasRecentlyCreated) {
+    if($usuario1->wasRecentlyCreated || $usuario1->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario1->roles()->detach($superAdmin->id);
         $usuario1->roles()->attach($superAdmin->id, ['activo' => 1, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
+        $usuario1->roles()->detach($administrador->id);
         $usuario1->roles()->attach($administrador->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']); // Rol de escuela
     }
 
@@ -73,8 +75,10 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario2->wasRecentlyCreated) {
+    if($usuario2->wasRecentlyCreated || $usuario2->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario2->roles()->detach($pastor->id);
         $usuario2->roles()->attach($pastor->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
+        $usuario2->iglesiaEncargada()->detach(1);
         $usuario2->iglesiaEncargada()->attach(1); // Relación de iglesia
     }
 
@@ -102,8 +106,10 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario3->wasRecentlyCreated) {
+    if($usuario3->wasRecentlyCreated || $usuario3->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario3->roles()->detach($lider->id);
         $usuario3->roles()->attach($lider->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
+        $usuario3->roles()->detach($consolidadorBogota->id);
         $usuario3->roles()->attach($consolidadorBogota->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
 
@@ -131,8 +137,10 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario4->wasRecentlyCreated) {
+    if($usuario4->wasRecentlyCreated || $usuario4->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario4->roles()->detach($lider->id);
         $usuario4->roles()->attach($lider->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
+        $usuario4->roles()->detach($consolidadorMedellin->id);
         $usuario4->roles()->attach($consolidadorMedellin->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
 
@@ -160,8 +168,10 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario5->wasRecentlyCreated) {
+    if($usuario5->wasRecentlyCreated || $usuario5->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario5->roles()->detach($lider->id);
         $usuario5->roles()->attach($lider->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
+        $usuario5->roles()->detach($alumno->id);
         $usuario5->roles()->attach($alumno->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
 
@@ -203,11 +213,11 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario6->wasRecentlyCreated) {
-        $usuario6->roles()->attach($lider->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
-        $usuario6->roles()->attach($alumno->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
-        $usuario6->roles()->attach($maestro->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
-        $usuario6->roles()->attach($consejero->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
+    if($usuario6->wasRecentlyCreated || $usuario6->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario6->roles()->detach($lider->id); $usuario6->roles()->attach($lider->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
+        $usuario6->roles()->detach($alumno->id); $usuario6->roles()->attach($alumno->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
+        $usuario6->roles()->detach($maestro->id); $usuario6->roles()->attach($maestro->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
+        $usuario6->roles()->detach($consejero->id); $usuario6->roles()->attach($consejero->id, ['activo' => 0, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
 
     $usuario7 = \App\Models\User::withTrashed()->firstOrCreate(
@@ -233,7 +243,8 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario7->wasRecentlyCreated) {
+    if($usuario7->wasRecentlyCreated || $usuario7->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario7->roles()->detach($oveja->id);
         $usuario7->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
     }
 
@@ -259,7 +270,8 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario8->wasRecentlyCreated) {
+    if($usuario8->wasRecentlyCreated || $usuario8->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario8->roles()->detach($oveja->id);
         $usuario8->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
     }
 
@@ -297,7 +309,8 @@ class UserSeeder extends Seeder
         'email_verified_at' => '2016-01-01 05:00:01'
       ]
     );
-    if($usuario9->wasRecentlyCreated) {
+    if($usuario9->wasRecentlyCreated || $usuario9->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario9->roles()->detach($oveja->id);
         $usuario9->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
     }
 
@@ -326,7 +339,8 @@ class UserSeeder extends Seeder
         'sede_id' => 33,
       ]
     );
-    if($usuario10->wasRecentlyCreated) {
+    if($usuario10->wasRecentlyCreated || $usuario10->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario10->roles()->detach($oveja->id);
         $usuario10->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
     }
 
@@ -366,7 +380,8 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario11->wasRecentlyCreated) {
+    if($usuario11->wasRecentlyCreated || $usuario11->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario11->roles()->detach($oveja->id);
         $usuario11->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
     }
 
@@ -390,7 +405,8 @@ class UserSeeder extends Seeder
         'sede_id' => 2,
       ]
     );
-    if($usuario12->wasRecentlyCreated) {
+    if($usuario12->wasRecentlyCreated || $usuario12->roles()->wherePivot('activo', 1)->count() == 0) {
+        $usuario12->roles()->detach($superAdmin->id);
         $usuario12->roles()->attach($superAdmin->id, ['activo' => 1, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
     }
   }

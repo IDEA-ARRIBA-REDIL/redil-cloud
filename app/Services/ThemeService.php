@@ -660,14 +660,13 @@ class ThemeService
   }
   public function updateScssFile(): bool
   {
-    $configuracion = Configuracion::find(1);
     // Clear the cache to ensure fresh generation
     Cache::forget('theme_scss_variables');
 
     $variables = $this->generateScssVariables();
 
 
-    $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/theme/');
+    $path = public_path('storage/global/theme/');
     !is_dir($path) && mkdir($path, 0777, true);
 
 
@@ -675,7 +674,7 @@ class ThemeService
     File::ensureDirectoryExists(dirname($path));
 
     try {
-      $result = File::put($path . '_custom-variables.scss', $variables);
+      $result = File::put($path . '_custom-variables.css', $variables);
       return $result !== false;
     } catch (\Exception $e) {
       // Log the error if write fails

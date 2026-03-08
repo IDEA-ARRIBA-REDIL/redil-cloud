@@ -23,7 +23,6 @@ Route::middleware([
     InitializeTenancyBySubdomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
-    Route::get('/', function () {
-        return 'Bienvenido a REDIL Cloud. El tenant actual es: ' . tenant('id');
-    });
+    // Cargamos las rutas originales de la aplicación (ahora en app.php)
+    require __DIR__ . '/app.php';
 });
