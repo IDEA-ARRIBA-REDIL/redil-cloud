@@ -45,7 +45,10 @@ $configuracion=Configuracion::find(1);
 
   @livewireStyles
   @livewireScripts
-  <link rel="stylesheet" href="{{ asset('storage/global/theme/_custom-variables.css') }}?v={{ time() }}" data-navigate-track="reload">
+  @php
+      $tenantId = tenant('id') ?? 'global';
+  @endphp
+  <link rel="stylesheet" href="{{ asset('storage/' . $tenantId . '/theme/_custom-variables.css') }}?v={{ time() }}" data-navigate-track="reload">
 </head>
 
 <body>

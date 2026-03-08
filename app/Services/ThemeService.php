@@ -666,9 +666,9 @@ class ThemeService
     $variables = $this->generateScssVariables();
 
 
-    $path = public_path('storage/global/theme/');
+    $tenantId = tenant('id') ?? 'global';
+    $path = public_path('storage/' . $tenantId . '/theme/');
     !is_dir($path) && mkdir($path, 0777, true);
-
 
     // Ensure directory exists
     File::ensureDirectoryExists(dirname($path));

@@ -106,7 +106,8 @@ Por defecto, la función `asset()` de Laravel trata de buscar recursos en el sub
 
 ### Personalización de Estilos por Tenant (ThemeService)
 
-- Si un inquilino edita sus colores (Theme Builder), el código estandarizado CSS debe guardarse en el almacenamiento público usando **`.css`** (ej. `storage/global/theme/_custom-variables.css`).
+- Si un inquilino edita sus colores (Theme Builder), el código estandarizado CSS debe guardarse en el almacenamiento público **aislado por tenant** usando **`.css`** (ej. `storage/iglesia1/theme/_custom-variables.css`). No se debe guardar en una ruta `global` o un tenant sobreescribirá los colores del otro.
+- En la plantilla Layout (`commonMaster.blade.php`), la ruta debe inyectarse dinámicamente usando `asset('storage/' . tenant('id') . '/theme/_custom-variables.css')`.
 - **Navegadores y SCSS**: Al incluir el estilo con un tag `<link>`, es obligatorio que tenga extensión `.css`. Los navegadores ignoran la importación de extensiones `.scss` directas.
 - Considerar agregar un Query String (`?v={{ time() }}`) a la llamada al asset CSS para invalidar la caché intensa del navegador de los usuarios al cambiar de tema.
 
