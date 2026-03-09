@@ -12,7 +12,7 @@ package-lock.json
 .env.production
 .phpunit.result.cache
 .editorconfig
-vendor
+/vendor
 docker-compose.override.yml
 /storage/debugbar
 Homestead.json
@@ -22,7 +22,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-vendor
+/vendor
 !/public/assets
 !/public/assets/*
 /public/css
