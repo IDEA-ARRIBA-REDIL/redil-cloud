@@ -20,6 +20,7 @@ return [
         '127.0.0.1',
         'localhost',
         'redilcloud',
+        env('CENTRAL_DOMAIN', 'redil-cloud-main-2rwsrc.laravel.cloud'),
     ],
 
     /**
