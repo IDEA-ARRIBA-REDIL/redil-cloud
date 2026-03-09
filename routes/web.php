@@ -7,14 +7,23 @@ use Illuminate\Support\Facades\Route;
 | Central Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your central application.
-| These routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group.
+| Rutas centrales para el dominio principal (redilcloud.com).
+| Se registran bajo cada dominio central definido en config/tenancy.php
+| para que el middleware de tenancy las reconozca y no las bloquee.
 |
 */
 
-Route::get('/', function () {
-    return '<h1>Bienvenido a REDIL Cloud</h1><p>Esta es la página central. Accede a tu iglesia vía subdominio (ej: iglesia1.redilcloud:8000)</p>';
-});
+foreach (config('tenancy.central_domains') as $domain) {
+    Route::domain($domain)->group(function () {
 
-// Puedes añadir aquí rutas para que el Super Admin cree nuevos tenants
+        Route::get('/', function () {
+            return view('landing');
+        });
+
+        // Puedes añadir aquí más rutas centrales:
+        // - Landing page pública
+        // - Panel del Super Admin para crear tenants
+        // - etc.
+
+    });
+}

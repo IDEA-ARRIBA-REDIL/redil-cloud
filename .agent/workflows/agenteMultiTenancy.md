@@ -41,8 +41,9 @@ El sistema utiliza un esquema de **Multi-Base de Datos** (Database-per-tenant).
 Para permitir que la aplicación completa funcione dentro de cada tenant, se realizó la siguiente separación:
 
 1.  **`routes/web.php` (Central)**:
-    - Solo accesible desde el dominio principal (`redilcloud`).
-    - Contiene la landing page y administración de tenants.
+    - Solo accesible desde los dominios centrales configurados en `config/tenancy.php`.
+    - Contiene la **landing page pública** y la futura administración de tenants (Super Admin).
+    - Las rutas deben estar envueltas en un `Route::domain()` por cada dominio central (ver Sección 12).
 2.  **`routes/app.php` (Aplicación)**:
     - Contiene **toda** la lógica original del proyecto (Login, Dashboard, LMS, etc.).
     - No se carga directamente en `bootstrap/app.php`.
@@ -134,3 +135,67 @@ Laravel Multi-tenant intenta usar "Cache Tags" aislando la caché de un tenant (
 
 - **El Problema**: El driver de caché configurado por defecto como `database` o `file` en Laravel **no soporta Cache Tags**. Al borrar caché internamente detonará un `BadMethodCallException: This cache store does not support tagging`.
 - **Solución temporal**: Hasta que se implemente Redis o Memcached, se debe desactivar (comentar) el `Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class` en `config/tenancy.php`.
+
+## 12. Landing Page Central (redilcloud.com)
+
+El dominio central (`redilcloud`) sirve la página pública de marketing del producto (Landing Page). La vista se encuentra en `resources/views/landing.blade.php`.
+
+### Tecnologías y Stack Visual
+
+- **Bootstrap 5** (CDN) + **Bootstrap Icons** para layout y componentes.
+- **Google Fonts**: `Plus Jakarta Sans` (títulos, misma fuente que el tema HexTone) + `Inter` (cuerpo de texto).
+- **CSS personalizado** con variables (`--primary`, `--heading`, `--bg-light`, etc.) para mantener coherencia y facilitar cambios de paleta.
+
+### Paleta de Colores (Inspirada en HexTone SaaS Template)
+
+| Variable      | Color     | Uso                                       |
+| ------------- | --------- | ----------------------------------------- |
+| `--primary`   | `#1b86fa` | Botones, íconos activos, acentos          |
+| `--heading`   | `#120036` | Todos los títulos H1–H5                   |
+| `--body-text` | `#6c757d` | Párrafos y texto secundario               |
+| `--bg-light`  | `#f8faff` | Fondo del hero y secciones alternas       |
+| `--success`   | `#12c46e` | Indicadores positivos (badges, flechas ↑) |
+
+### Estructura de Secciones (Orden)
+
+1. **Navbar** fijo con logo, links y botón "Solicitar Demo".
+2. **Hero Section**: Título bold + mockup visual de dashboard (sin imágenes externas, 100% HTML/CSS).
+3. **Trusted By**: Países donde tiene presencia REDIL.
+4. **Feature 1** (texto izquierda / visual derecha): "Información Valiosa" — métricas de asistencia.
+5. **Feature 2** (visual izquierda / texto derecha): "Trabajo en Equipo" — panel de líderes activos.
+6. **Estadísticas**: 16 países, +500 iglesias, 99% satisfacción.
+7. **Grid de Módulos**: 6 tarjetas (Miembros, Asistencia, Finanzas, Grupos, Consolidación, LMS).
+8. **CTA Banner**: Degradado azul con llamado a la acción.
+9. **Sección Contacto**: Info de contacto + formulario con país y tamaño de la congregación.
+10. **Footer**: 4 columnas + redes sociales.
+
+### Corrección Crítica: Error 404 en Dominio Central
+
+Al registrar rutas en `routes/web.php` de forma convencional (`Route::get('/',...)`), el middleware `PreventAccessFromCentralDomains` (registrado con **máxima prioridad** en `TenancyServiceProvider`) bloqueaba con 404 todas las peticiones al dominio central antes de que Laravel pudiera procesarlas.
+
+**Solución**: Todas las rutas centrales en `web.php` deben registrarse dentro de un `Route::domain()` apuntando a los dominios de `config('tenancy.central_domains')`. Esto le indica al paquete de tenancy que son rutas legítimas del dominio central, y las deja pasar:
+
+```php
+// routes/web.php
+foreach (config('tenancy.central_domains') as $domain) {
+    Route::domain($domain)->group(function () {
+
+        Route::get('/', function () {
+            return view('landing');
+        });
+
+        // Más rutas centrales aquí...
+    });
+}
+```
+
+> **Regla General**: Cualquier ruta nueva que se agregue a `routes/web.php` DEBE estar dentro de este bloque `foreach`. Si se registra fuera, recibirá un 404.
+
+## 13. Entorno de Desarrollo Local (.env)
+
+Es importante que el `APP_URL` en el archivo `.env` apunte al dominio local de desarrollo y no al dominio de producción:
+
+- **Producción**: `APP_URL=https://redil.ubicalo.com`
+- **Desarrollo local**: `APP_URL=http://redilcloud:8000`
+
+Cambiar esto incorrectamente puede afectar la generación de URLs internas (redirecciones, assets, emails). Recuerda revertirlo al desplegar a producción.
