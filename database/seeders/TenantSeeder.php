@@ -13,9 +13,10 @@ class TenantSeeder extends Seeder
     public function run(): void
     {
         $tenantId = 'iglesia1';
+        $tenant = Tenant::find($tenantId);
 
-        // Verificamos si ya existe para no duplicar
-        if (!Tenant::find($tenantId)) {
+        // Si no existe el tenant, intentamos registrarlo
+        if (!$tenant) {
             $this->command->info("Registrando tenant: {$tenantId}");
 
             try {
@@ -39,8 +40,14 @@ class TenantSeeder extends Seeder
                     throw $e;
                 }
             }
+        } else {
+            $this->command->info("El tenant {$tenantId} ya existe.");
+        }
 
-            // Asociamos los dominios
+        // ASEGURAMOS LOS DOMINIOS (Esto corre siempre)
+        if ($tenant) {
+            $this->command->info("Asegurando dominios para {$tenantId}...");
+
             // IMPORTANTE: Para InitializeBySubdomain, necesitamos la versión corta (subdominio)
             $tenant->domains()->updateOrCreate(['domain' => 'iglesia1']);
 
@@ -48,9 +55,7 @@ class TenantSeeder extends Seeder
             $tenant->domains()->updateOrCreate(['domain' => 'iglesia1.redil.cloud']);
             $tenant->domains()->updateOrCreate(['domain' => 'iglesia1.redilcloud']);
 
-            $this->command->info("Tenant {$tenantId} vinculado con sus dominios.");
-        } else {
-            $this->command->info("El tenant {$tenantId} ya existe.");
+            $this->command->info("Dominios actualizados.");
         }
     }
 }
