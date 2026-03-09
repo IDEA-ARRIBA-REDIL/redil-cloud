@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
    */
   protected function baseSeeders(): void
   {
-      // TODO: Add global seeders (like TenantSeeder) here if needed.
+      $this->call(TenantSeeder::class);
   }
 
   /**

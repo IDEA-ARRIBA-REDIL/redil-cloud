@@ -17,10 +17,15 @@ return [
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
     'central_domains' => [
+        // Producción
+        'redil.cloud',
+        'www.redil.cloud',
+        env('CENTRAL_DOMAIN', 'redil-cloud-main-2rwsrc.laravel.cloud'),
+
+        // Desarrollo local
         '127.0.0.1',
         'localhost',
         'redilcloud',
-        env('CENTRAL_DOMAIN', 'redil-cloud-main-2rwsrc.laravel.cloud'),
     ],
 
     /**

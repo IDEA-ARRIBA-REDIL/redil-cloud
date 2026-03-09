@@ -1,0 +1,320 @@
+[2026-03-08 00:07:14] local.ERROR: SQLSTATE[23505]: Unique violation: 7 ERROR:  duplicate key value violates unique constraint "campos_informe_excel_pkey"
+DETAIL:  Key (id)=(62) already exists. (Connection: tenant, Host: 127.0.0.1, Port: 5432, Database: tenantiglesia2, SQL: 
+INSERT INTO "campos_informe_excel" ("id", "nombre_campo_bd", "nombre_campo_informe", "selector_id", "tabla", "raw_sql", "eloquent_sql", "orden") VALUES
+(62,	'grupo_id',	'Grupo directo',	5,	'asistentes.',	't',	'f',	62),
+(1,	'tipo_identificacion',	'Tipo de identificación',	1,	'asistentes.',	't',	'f',	1),
+(2,	'identificacion',	'Identificación',	1,	'asistentes.',	't',	'f',	2),
+(6,	'segundo_nombre',	'Segundo nombre',	1,	'asistentes.',	't',	'f',	5),
+(5,	'primer_nombre',	'Primer nombre',	1,	'asistentes.',	't',	'f',	4),
+(8,	'primer_apellido',	'Primer apellido',	1,	'asistentes.',	't',	'f',	6),
+(9,	'segundo_apellido',	'Segundo apellido',	1,	'asistentes.',	't',	'f',	7),
+(10,	'estado_civil',	'Estado civil',	1,	'asistentes.',	't',	'f',	8),
+(11,	'pais_id',	'País de nacimiento',	1,	'asistentes.',	't',	'f',	9),
+(12,	'telefono_fijo',	'Teléfono fijo',	1,	'asistentes.',	't',	'f',	10),
+(45,	'telefono_otro',	'Otro teléfono',	1,	'asistentes.',	't',	'f',	11),
+(13,	'telefono_movil',	'Teléfono móvil',	1,	'asistentes.',	't',	'f',	12),
+(14,	'email',	'E-mail',	1,	'users.',	'f',	't',	13),
+(15,	'direccion',	'Dirección',	1,	'asistentes.',	't',	'f',	14),
+(16,	'tipo_vivienda',	'Vivienda en calidad de',	1,	'asistentes.',	't',	'f',	15),
+(17,	'nivel_academico',	'Nivel académico',	1,	'asistentes.',	't',	'f',	16),
+(18,	'estado_nivel_academico',	'Estado nivel académico',	1,	'asistentes.',	't',	'f',	17),
+(19,	'profesion',	'Profesión',	1,	'asistentes.',	't',	'f',	18),
+(20,	'sector_economico',	'Sector económico',	1,	'asistentes.',	't',	'f',	19),
+(21,	'tipo_sangre',	'Tipo de sangre',	1,	'asistentes.',	't',	'f',	20),
+(22,	'indicaciones_medicas',	'Indicaciones médicas',	1,	'asistentes.',	't',	'f',	21),
+(31,	'nombre',	'Nombre',	5,	'grupos.',	't',	'f',	34),
+(32,	'fecha_apertura',	'Fecha de creación',	5,	'grupos.',	't',	'f',	37),
+(33,	'tipo_vivienda',	'Vivienda en calidad De',	5,	'grupos.',	't',	'f',	38),
+(34,	'direccion',	'Dirección',	5,	'grupos.',	't',	'f',	39),
+(35,	'telefono',	'Teléfono',	5,	'grupos.',	't',	'f',	40),
+(36,	'dia',	'Día',	5,	'grupos.',	't',	'f',	41),
+(37,	'hora',	'Hora',	5,	'grupos.',	't',	'f',	42),
+(38,	'dia_planeacion',	'Dia planeación',	5,	'grupos.',	't',	'f',	43),
+(39,	'hora_planeacion',	'Hora planeación',	5,	'grupos.',	't',	'f',	44),
+(40,	'encargados',	'Encargados',	5,	'encargados_grupo.',	'f',	't',	45),
+(41,	'fecha',	'Fecha ultimo reporte',	5,	'grupos.',	'f',	't',	46),
+(42,	'latitud',	'Georreferencia realizada',	5,	'grupos.',	't',	'f',	47),
+(44,	'sede_id',	'Sede',	5,	'grupos.',	't',	'f',	48),
+(43,	'cantidad_asistentes',	'Cantidad asistentes directos',	5,	'asistentes.',	'f',	't',	49),
+(46,	'dado_alta',	'Motivo dado alta',	1,	'null.',	NULL,	NULL,	23),
+(47,	'dado_baja',	'Motivo dado baja',	1,	'null.',	NULL,	NULL,	24),
+(48,	'fecha_dado_alta',	'Fecha dado alta',	1,	'null.',	NULL,	NULL,	25),
+(49,	'fecha_dado_baja',	'Fecha dado baja',	1,	'null.',	NULL,	NULL,	26),
+(54,	'contacto_adulto_responsable',	'Contacto adulto responsable',	1,	'asistentes.',	'f',	't',	28),
+(55,	'nombre_acudiente',	'Nombre acudiente',	1,	'asistentes.',	't',	'f',	29),
+(56,	'telefono_acudiente',	'Contacto acudiente',	1,	'asistentes.',	't',	'f',	30),
+(52,	'edad',	'Edad',	1,	'asistentes.',	'f',	't',	3),
+(3,	'fecha_nacimiento',	'Fecha nacimiento',	1,	'asistentes.',	't',	'f',	33),
+(50,	'genero',	'Sexo',	1,	'asistentes.',	't',	'f',	34),
+(29,	'fecha',	'Fecha de los procesos',	4,	'crecimiento_asistentes.',	't',	'f',	60),
+(30,	'detalle',	'Detalle de los procesos',	4,	'crecimiento_asistentes.',	'f',	't',	61),
+(28,	'estado',	'Estados de los proceso',	4,	'crecimiento_asistentes.',	'f',	't',	62),
+(58,	'ultimo_reporte_grupo',	'Última asistencia a grupo',	1,	'asistentes.',	't',	'f',	35),
+(59,	'ultimo_reporte_reunion',	'Última asistencia a reunión',	1,	'asistentes.',	't',	'f',	36),
+(24,	'tipo_vinculacion_id',	'Tipo de vinculación',	2,	'asistentes.',	't',	'f',	37),
+(25,	'tipo_asistente_id',	'Tipo de asistente',	2,	'asistentes.',	't',	'f',	38),
+(27,	'sede_id',	'Sede',	2,	'asistentes.',	't',	'f',	40),
+(61,	'tipo_grupo_id',	'Tipo grupo',	5,	'grupos.',	't',	'f',	51),
+(60,	'label_campo_opcional1',	'Subdominio',	5,	'grupos.',	't',	'f',	50),
+(63,	'tipo_asistente_id',	'Tipo asistente',	8,	'asistentes.',	't',	'f',	63),
+(53,	'nombre_adulto_responsable',	'Nombre adulto responsable',	1,	'asistentes.',	'f',	't',	27),
+(65,	'created_at',	'Fecha de creación',	1,	'asistentes.',	't',	'f',	49),
+(23,	'informacion_opcional',	'Información opcional',	1,	'asistentes.',	't',	'f',	22),
+(64,	'grupo_id',	'Grupo directo',	8,	'asistentes.',	't',	'f',	64),
+(26,	'grupo_id',	'Grupo al que pertenece',	2,	'asistentes.',	'f',	'f',	39),
+(66,	'usuario_creacion_id',	'Usuario creación',	1,	'asistentes.',	't',	'f',	49);
+
+-- 2024-02-09 16:05:23.258583-06
+) {"exception":"[object] (Illuminate\\Database\\UniqueConstraintViolationException(code: 23505): SQLSTATE[23505]: Unique violation: 7 ERROR:  duplicate key value violates unique constraint \"campos_informe_excel_pkey\"
+DETAIL:  Key (id)=(62) already exists. (Connection: tenant, Host: 127.0.0.1, Port: 5432, Database: tenantiglesia2, SQL: 
+INSERT INTO \"campos_informe_excel\" (\"id\", \"nombre_campo_bd\", \"nombre_campo_informe\", \"selector_id\", \"tabla\", \"raw_sql\", \"eloquent_sql\", \"orden\") VALUES
+(62,\t'grupo_id',\t'Grupo directo',\t5,\t'asistentes.',\t't',\t'f',\t62),
+(1,\t'tipo_identificacion',\t'Tipo de identificación',\t1,\t'asistentes.',\t't',\t'f',\t1),
+(2,\t'identificacion',\t'Identificación',\t1,\t'asistentes.',\t't',\t'f',\t2),
+(6,\t'segundo_nombre',\t'Segundo nombre',\t1,\t'asistentes.',\t't',\t'f',\t5),
+(5,\t'primer_nombre',\t'Primer nombre',\t1,\t'asistentes.',\t't',\t'f',\t4),
+(8,\t'primer_apellido',\t'Primer apellido',\t1,\t'asistentes.',\t't',\t'f',\t6),
+(9,\t'segundo_apellido',\t'Segundo apellido',\t1,\t'asistentes.',\t't',\t'f',\t7),
+(10,\t'estado_civil',\t'Estado civil',\t1,\t'asistentes.',\t't',\t'f',\t8),
+(11,\t'pais_id',\t'País de nacimiento',\t1,\t'asistentes.',\t't',\t'f',\t9),
+(12,\t'telefono_fijo',\t'Teléfono fijo',\t1,\t'asistentes.',\t't',\t'f',\t10),
+(45,\t'telefono_otro',\t'Otro teléfono',\t1,\t'asistentes.',\t't',\t'f',\t11),
+(13,\t'telefono_movil',\t'Teléfono móvil',\t1,\t'asistentes.',\t't',\t'f',\t12),
+(14,\t'email',\t'E-mail',\t1,\t'users.',\t'f',\t't',\t13),
+(15,\t'direccion',\t'Dirección',\t1,\t'asistentes.',\t't',\t'f',\t14),
+(16,\t'tipo_vivienda',\t'Vivienda en calidad de',\t1,\t'asistentes.',\t't',\t'f',\t15),
+(17,\t'nivel_academico',\t'Nivel académico',\t1,\t'asistentes.',\t't',\t'f',\t16),
+(18,\t'estado_nivel_academico',\t'Estado nivel académico',\t1,\t'asistentes.',\t't',\t'f',\t17),
+(19,\t'profesion',\t'Profesión',\t1,\t'asistentes.',\t't',\t'f',\t18),
+(20,\t'sector_economico',\t'Sector económico',\t1,\t'asistentes.',\t't',\t'f',\t19),
+(21,\t'tipo_sangre',\t'Tipo de sangre',\t1,\t'asistentes.',\t't',\t'f',\t20),
+(22,\t'indicaciones_medicas',\t'Indicaciones médicas',\t1,\t'asistentes.',\t't',\t'f',\t21),
+(31,\t'nombre',\t'Nombre',\t5,\t'grupos.',\t't',\t'f',\t34),
+(32,\t'fecha_apertura',\t'Fecha de creación',\t5,\t'grupos.',\t't',\t'f',\t37),
+(33,\t'tipo_vivienda',\t'Vivienda en calidad De',\t5,\t'grupos.',\t't',\t'f',\t38),
+(34,\t'direccion',\t'Dirección',\t5,\t'grupos.',\t't',\t'f',\t39),
+(35,\t'telefono',\t'Teléfono',\t5,\t'grupos.',\t't',\t'f',\t40),
+(36,\t'dia',\t'Día',\t5,\t'grupos.',\t't',\t'f',\t41),
+(37,\t'hora',\t'Hora',\t5,\t'grupos.',\t't',\t'f',\t42),
+(38,\t'dia_planeacion',\t'Dia planeación',\t5,\t'grupos.',\t't',\t'f',\t43),
+(39,\t'hora_planeacion',\t'Hora planeación',\t5,\t'grupos.',\t't',\t'f',\t44),
+(40,\t'encargados',\t'Encargados',\t5,\t'encargados_grupo.',\t'f',\t't',\t45),
+(41,\t'fecha',\t'Fecha ultimo reporte',\t5,\t'grupos.',\t'f',\t't',\t46),
+(42,\t'latitud',\t'Georreferencia realizada',\t5,\t'grupos.',\t't',\t'f',\t47),
+(44,\t'sede_id',\t'Sede',\t5,\t'grupos.',\t't',\t'f',\t48),
+(43,\t'cantidad_asistentes',\t'Cantidad asistentes directos',\t5,\t'asistentes.',\t'f',\t't',\t49),
+(46,\t'dado_alta',\t'Motivo dado alta',\t1,\t'null.',\tNULL,\tNULL,\t23),
+(47,\t'dado_baja',\t'Motivo dado baja',\t1,\t'null.',\tNULL,\tNULL,\t24),
+(48,\t'fecha_dado_alta',\t'Fecha dado alta',\t1,\t'null.',\tNULL,\tNULL,\t25),
+(49,\t'fecha_dado_baja',\t'Fecha dado baja',\t1,\t'null.',\tNULL,\tNULL,\t26),
+(54,\t'contacto_adulto_responsable',\t'Contacto adulto responsable',\t1,\t'asistentes.',\t'f',\t't',\t28),
+(55,\t'nombre_acudiente',\t'Nombre acudiente',\t1,\t'asistentes.',\t't',\t'f',\t29),
+(56,\t'telefono_acudiente',\t'Contacto acudiente',\t1,\t'asistentes.',\t't',\t'f',\t30),
+(52,\t'edad',\t'Edad',\t1,\t'asistentes.',\t'f',\t't',\t3),
+(3,\t'fecha_nacimiento',\t'Fecha nacimiento',\t1,\t'asistentes.',\t't',\t'f',\t33),
+(50,\t'genero',\t'Sexo',\t1,\t'asistentes.',\t't',\t'f',\t34),
+(29,\t'fecha',\t'Fecha de los procesos',\t4,\t'crecimiento_asistentes.',\t't',\t'f',\t60),
+(30,\t'detalle',\t'Detalle de los procesos',\t4,\t'crecimiento_asistentes.',\t'f',\t't',\t61),
+(28,\t'estado',\t'Estados de los proceso',\t4,\t'crecimiento_asistentes.',\t'f',\t't',\t62),
+(58,\t'ultimo_reporte_grupo',\t'Última asistencia a grupo',\t1,\t'asistentes.',\t't',\t'f',\t35),
+(59,\t'ultimo_reporte_reunion',\t'Última asistencia a reunión',\t1,\t'asistentes.',\t't',\t'f',\t36),
+(24,\t'tipo_vinculacion_id',\t'Tipo de vinculación',\t2,\t'asistentes.',\t't',\t'f',\t37),
+(25,\t'tipo_asistente_id',\t'Tipo de asistente',\t2,\t'asistentes.',\t't',\t'f',\t38),
+(27,\t'sede_id',\t'Sede',\t2,\t'asistentes.',\t't',\t'f',\t40),
+(61,\t'tipo_grupo_id',\t'Tipo grupo',\t5,\t'grupos.',\t't',\t'f',\t51),
+(60,\t'label_campo_opcional1',\t'Subdominio',\t5,\t'grupos.',\t't',\t'f',\t50),
+(63,\t'tipo_asistente_id',\t'Tipo asistente',\t8,\t'asistentes.',\t't',\t'f',\t63),
+(53,\t'nombre_adulto_responsable',\t'Nombre adulto responsable',\t1,\t'asistentes.',\t'f',\t't',\t27),
+(65,\t'created_at',\t'Fecha de creación',\t1,\t'asistentes.',\t't',\t'f',\t49),
+(23,\t'informacion_opcional',\t'Información opcional',\t1,\t'asistentes.',\t't',\t'f',\t22),
+(64,\t'grupo_id',\t'Grupo directo',\t8,\t'asistentes.',\t't',\t'f',\t64),
+(26,\t'grupo_id',\t'Grupo al que pertenece',\t2,\t'asistentes.',\t'f',\t'f',\t39),
+(66,\t'usuario_creacion_id',\t'Usuario creación',\t1,\t'asistentes.',\t't',\t'f',\t49);
+
+-- 2024-02-09 16:05:23.258583-06
+) at /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Connection.php:838)
+[stacktrace]
+#0 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Connection.php(794): Illuminate\\Database\\Connection->runQueryCallback('\\nINSERT INTO \"c...', Array, Object(Closure))
+#1 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Connection.php(627): Illuminate\\Database\\Connection->run('\\nINSERT INTO \"c...', Array, Object(Closure))
+#2 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(491): Illuminate\\Database\\Connection->unprepared('\\nINSERT INTO \"c...')
+#3 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(363): Illuminate\\Database\\DatabaseManager->__call('unprepared', Array)
+#4 /Users/macosxdarwin/Desktop/REDIL-CLOUD/database/seeders/CampoInformeExcelSeeder.php(19): Illuminate\\Support\\Facades\\Facade::__callStatic('unprepared', Array)
+#5 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Database\\Seeders\\CampoInformeExcelSeeder->run()
+#6 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#7 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#8 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#9 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#10 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(184): Illuminate\\Container\\Container->call(Array, Array)
+#11 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(193): Illuminate\\Database\\Seeder->Illuminate\\Database\\{closure}()
+#12 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(59): Illuminate\\Database\\Seeder->__invoke(Array)
+#13 /Users/macosxdarwin/Desktop/REDIL-CLOUD/database/seeders/TenantDatabaseSeeder.php(66): Illuminate\\Database\\Seeder->call('Database\\\\Seeder...')
+#14 /Users/macosxdarwin/Desktop/REDIL-CLOUD/database/seeders/TenantDatabaseSeeder.php(27): Database\\Seeders\\TenantDatabaseSeeder->baseSeeders()
+#15 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Database\\Seeders\\TenantDatabaseSeeder->run()
+#16 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#17 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#18 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#19 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#20 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(184): Illuminate\\Container\\Container->call(Array, Array)
+#21 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(193): Illuminate\\Database\\Seeder->Illuminate\\Database\\{closure}()
+#22 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Console/Seeds/SeedCommand.php(71): Illuminate\\Database\\Seeder->__invoke()
+#23 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Concerns/GuardsAttributes.php(157): Illuminate\\Database\\Console\\Seeds\\SeedCommand->Illuminate\\Database\\Console\\Seeds\\{closure}()
+#24 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Console/Seeds/SeedCommand.php(70): Illuminate\\Database\\Eloquent\\Model::unguarded(Object(Closure))
+#25 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Commands/Seed.php(59): Illuminate\\Database\\Console\\Seeds\\SeedCommand->handle()
+#26 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Tenancy.php(160): Stancl\\Tenancy\\Commands\\Seed->Stancl\\Tenancy\\Commands\\{closure}(Object(App\\Models\\Tenant))
+#27 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Commands/Seed.php(53): Stancl\\Tenancy\\Tenancy->runForMultiple(Array, Object(Closure))
+#28 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Stancl\\Tenancy\\Commands\\Seed->handle()
+#29 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#30 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#31 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#32 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#33 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate\\Container\\Container->call(Array)
+#34 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArrayInput), Object(Illuminate\\Console\\OutputStyle))
+#35 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArrayInput), Object(Illuminate\\Console\\OutputStyle))
+#36 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Concerns/CallsCommands.php(68): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArrayInput), Object(Illuminate\\Console\\OutputStyle))
+#37 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Concerns/CallsCommands.php(29): Illuminate\\Console\\Command->runCommand('tenants:seed', Array, Object(Illuminate\\Console\\OutputStyle))
+#38 /Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Console/Commands/CreateDemoTenants.php(53): Illuminate\\Console\\Command->call('tenants:seed', Array)
+#39 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): App\\Console\\Commands\\CreateDemoTenants->handle()
+#40 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#41 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#42 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#43 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#44 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate\\Container\\Container->call(Array)
+#45 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#46 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#47 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(1117): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#48 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand(Object(App\\Console\\Commands\\CreateDemoTenants), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#49 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#50 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#51 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#52 /Users/macosxdarwin/Desktop/REDIL-CLOUD/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#53 {main}
+
+[previous exception] [object] (PDOException(code: 23505): SQLSTATE[23505]: Unique violation: 7 ERROR:  duplicate key value violates unique constraint \"campos_informe_excel_pkey\"
+DETAIL:  Key (id)=(62) already exists. at /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Connection.php:633)
+[stacktrace]
+#0 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Connection.php(633): PDO->exec('\\nINSERT INTO \"c...')
+#1 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Connection.php(827): Illuminate\\Database\\Connection->Illuminate\\Database\\{closure}('\\nINSERT INTO \"c...', Array)
+#2 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Connection.php(794): Illuminate\\Database\\Connection->runQueryCallback('\\nINSERT INTO \"c...', Array, Object(Closure))
+#3 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Connection.php(627): Illuminate\\Database\\Connection->run('\\nINSERT INTO \"c...', Array, Object(Closure))
+#4 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/DatabaseManager.php(491): Illuminate\\Database\\Connection->unprepared('\\nINSERT INTO \"c...')
+#5 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Support/Facades/Facade.php(363): Illuminate\\Database\\DatabaseManager->__call('unprepared', Array)
+#6 /Users/macosxdarwin/Desktop/REDIL-CLOUD/database/seeders/CampoInformeExcelSeeder.php(19): Illuminate\\Support\\Facades\\Facade::__callStatic('unprepared', Array)
+#7 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Database\\Seeders\\CampoInformeExcelSeeder->run()
+#8 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#9 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#10 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#11 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#12 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(184): Illuminate\\Container\\Container->call(Array, Array)
+#13 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(193): Illuminate\\Database\\Seeder->Illuminate\\Database\\{closure}()
+#14 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(59): Illuminate\\Database\\Seeder->__invoke(Array)
+#15 /Users/macosxdarwin/Desktop/REDIL-CLOUD/database/seeders/TenantDatabaseSeeder.php(66): Illuminate\\Database\\Seeder->call('Database\\\\Seeder...')
+#16 /Users/macosxdarwin/Desktop/REDIL-CLOUD/database/seeders/TenantDatabaseSeeder.php(27): Database\\Seeders\\TenantDatabaseSeeder->baseSeeders()
+#17 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Database\\Seeders\\TenantDatabaseSeeder->run()
+#18 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#19 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#20 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#21 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#22 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(184): Illuminate\\Container\\Container->call(Array, Array)
+#23 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Seeder.php(193): Illuminate\\Database\\Seeder->Illuminate\\Database\\{closure}()
+#24 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Console/Seeds/SeedCommand.php(71): Illuminate\\Database\\Seeder->__invoke()
+#25 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Concerns/GuardsAttributes.php(157): Illuminate\\Database\\Console\\Seeds\\SeedCommand->Illuminate\\Database\\Console\\Seeds\\{closure}()
+#26 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Database/Console/Seeds/SeedCommand.php(70): Illuminate\\Database\\Eloquent\\Model::unguarded(Object(Closure))
+#27 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Commands/Seed.php(59): Illuminate\\Database\\Console\\Seeds\\SeedCommand->handle()
+#28 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Tenancy.php(160): Stancl\\Tenancy\\Commands\\Seed->Stancl\\Tenancy\\Commands\\{closure}(Object(App\\Models\\Tenant))
+#29 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Commands/Seed.php(53): Stancl\\Tenancy\\Tenancy->runForMultiple(Array, Object(Closure))
+#30 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Stancl\\Tenancy\\Commands\\Seed->handle()
+#31 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#32 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#33 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#34 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#35 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate\\Container\\Container->call(Array)
+#36 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArrayInput), Object(Illuminate\\Console\\OutputStyle))
+#37 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArrayInput), Object(Illuminate\\Console\\OutputStyle))
+#38 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Concerns/CallsCommands.php(68): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArrayInput), Object(Illuminate\\Console\\OutputStyle))
+#39 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Concerns/CallsCommands.php(29): Illuminate\\Console\\Command->runCommand('tenants:seed', Array, Object(Illuminate\\Console\\OutputStyle))
+#40 /Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Console/Commands/CreateDemoTenants.php(53): Illuminate\\Console\\Command->call('tenants:seed', Array)
+#41 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): App\\Console\\Commands\\CreateDemoTenants->handle()
+#42 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#43 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#44 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#45 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#46 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate\\Container\\Container->call(Array)
+#47 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#48 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#49 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(1117): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#50 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand(Object(App\\Console\\Commands\\CreateDemoTenants), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#51 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#52 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#53 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#54 /Users/macosxdarwin/Desktop/REDIL-CLOUD/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#55 {main}
+"} 
+[2026-03-08 00:10:29] local.ERROR: Tenant could not be identified on domain iglesia2 {"exception":"[object] (Stancl\\Tenancy\\Exceptions\\TenantCouldNotBeIdentifiedOnDomainException(code: 0): Tenant could not be identified on domain iglesia2 at /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Resolvers/DomainTenantResolver.php:48)
+[stacktrace]
+#0 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Resolvers/Contracts/CachedTenantResolver.php(34): Stancl\\Tenancy\\Resolvers\\DomainTenantResolver->resolveWithoutCache('iglesia2')
+#1 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Middleware/IdentificationMiddleware.php(26): Stancl\\Tenancy\\Resolvers\\Contracts\\CachedTenantResolver->resolve('iglesia2')
+#2 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Middleware/InitializeTenancyBySubdomain.php(51): Stancl\\Tenancy\\Middleware\\IdentificationMiddleware->initializeTenancy(Object(Illuminate\\Http\\Request), Object(Closure), 'iglesia2')
+#3 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Stancl\\Tenancy\\Middleware\\InitializeTenancyBySubdomain->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#4 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/stancl/tenancy/src/Middleware/PreventAccessFromCentralDomains.php(29): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#5 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Stancl\\Tenancy\\Middleware\\PreventAccessFromCentralDomains->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#6 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#7 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Routing/Router.php(821): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#8 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Routing/Router.php(800): Illuminate\\Routing\\Router->runRouteWithinStack(Object(Illuminate\\Routing\\Route), Object(Illuminate\\Http\\Request))
+#9 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Routing/Router.php(764): Illuminate\\Routing\\Router->runRoute(Object(Illuminate\\Http\\Request), Object(Illuminate\\Routing\\Route))
+#10 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Routing/Router.php(753): Illuminate\\Routing\\Router->dispatchToRoute(Object(Illuminate\\Http\\Request))
+#11 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(200): Illuminate\\Routing\\Router->dispatch(Object(Illuminate\\Http\\Request))
+#12 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}(Object(Illuminate\\Http\\Request))
+#13 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/livewire/livewire/src/Features/SupportDisablingBackButtonCache/DisableBackButtonCacheMiddleware.php(19): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#14 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Livewire\\Features\\SupportDisablingBackButtonCache\\DisableBackButtonCacheMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#15 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#16 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#17 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#18 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#19 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#20 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#21 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#22 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\ValidatePostSize->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#23 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(109): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#24 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#25 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(61): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#26 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#27 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#28 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\TrustProxies->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#29 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#30 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#31 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php(26): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#32 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\ValidatePathEncoding->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#33 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#34 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(175): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#35 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(144): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter(Object(Illuminate\\Http\\Request))
+#36 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1220): Illuminate\\Foundation\\Http\\Kernel->handle(Object(Illuminate\\Http\\Request))
+#37 /Users/macosxdarwin/Desktop/REDIL-CLOUD/public/index.php(17): Illuminate\\Foundation\\Application->handleRequest(Object(Illuminate\\Http\\Request))
+#38 /Users/macosxdarwin/Desktop/REDIL-CLOUD/server.php(13): require_once('/Users/macosxda...')
+#39 {main}
+"} 
+[2026-03-08 21:22:24] local.ERROR: Class "Page2" does not exist {"exception":"[object] (ReflectionException(code: -1): Class \"Page2\" does not exist at /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php:235)
+[stacktrace]
+#0 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(235): ReflectionClass->__construct('Page2')
+#1 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(149): Illuminate\\Foundation\\Console\\RouteListCommand->isVendorRoute(Object(Illuminate\\Routing\\Route))
+#2 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(117): Illuminate\\Foundation\\Console\\RouteListCommand->getRouteInformation(Object(Illuminate\\Routing\\Route))
+#3 [internal function]: Illuminate\\Foundation\\Console\\RouteListCommand->Illuminate\\Foundation\\Console\\{closure}(Object(Illuminate\\Routing\\Route), 459)
+#4 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Collections/Arr.php(840): array_map(Object(Closure), Array, Array)
+#5 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Collections/Collection.php(829): Illuminate\\Support\\Arr::map(Array, Object(Closure))
+#6 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(117): Illuminate\\Support\\Collection->map(Object(Closure))
+#7 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/RouteListCommand.php(102): Illuminate\\Foundation\\Console\\RouteListCommand->getRoutes()
+#8 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Illuminate\\Foundation\\Console\\RouteListCommand->handle()
+#9 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#10 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#11 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#12 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#13 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate\\Container\\Container->call(Array)
+#14 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#15 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#16 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(1117): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#17 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand(Object(Illuminate\\Foundation\\Console\\RouteListCommand), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#18 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#19 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#20 /Users/macosxdarwin/Desktop/REDIL-CLOUD/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#21 /Users/macosxdarwin/Desktop/REDIL-CLOUD/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#22 {main}
+"} 
