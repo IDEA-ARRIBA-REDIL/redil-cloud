@@ -21,12 +21,9 @@ class TenantDatabaseSeeder extends Seeder
    */
   public function run(): void
   {
-    // Solo ejecutamos los seeders base si estamos en entorno local.
-    // En el servidor del cliente (producción), solo se ejecutarán los seeders incrementales.
-    if (app()->environment('local')) {
-      $this->baseSeeders();
-    }
-
+    // Ejecutamos los seeders base y los incrementales.
+    // Los seeders dentro de baseSeeders usan firstOrCreate para evitar duplicados.
+    $this->baseSeeders();
     $this->incrementalSeeders();
   }
 
