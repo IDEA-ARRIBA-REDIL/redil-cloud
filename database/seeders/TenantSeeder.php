@@ -41,6 +41,10 @@ class TenantSeeder extends Seeder
             }
 
             // Asociamos los dominios
+            // IMPORTANTE: Para InitializeBySubdomain, necesitamos la versión corta (subdominio)
+            $tenant->domains()->updateOrCreate(['domain' => 'iglesia1']);
+
+            // También guardamos las versiones largas por si acaso
             $tenant->domains()->updateOrCreate(['domain' => 'iglesia1.redil.cloud']);
             $tenant->domains()->updateOrCreate(['domain' => 'iglesia1.redilcloud']);
 
