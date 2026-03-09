@@ -16,17 +16,35 @@ class TenantSeeder extends Seeder
 
         // Verificamos si ya existe para no duplicar
         if (!Tenant::find($tenantId)) {
-            $this->command->info("Creando tenant: {$tenantId}");
+            $this->command->info("Registrando tenant: {$tenantId}");
 
-            $tenant = Tenant::create(['id' => $tenantId]);
+            try {
+                // Intento normal de creación
+                $tenant = Tenant::create(['id' => $tenantId]);
+            } catch (\Exception $e) {
+                // Si falla porque la BD ya existe (común tras un migrate:fresh central),
+                // insertamos el registro directamente en la tabla de la DB central.
+                if (str_contains(strtolower($e->getMessage()), 'already exists')) {
+                    $this->command->warn("La base de datos {$tenantId} ya existe en el servidor. Vinculando registro...");
 
-            // Asociamos los dominios de producción y locales
-            $tenant->domains()->create(['domain' => 'iglesia1.redil.cloud']);
+                    \Illuminate\Support\Facades\DB::table('tenants')->insert([
+                        'id' => $tenantId,
+                        'data' => json_encode([]),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
 
-            // Opcional: mantener el dominio local para pruebas si compartes la DB
-            $tenant->domains()->create(['domain' => 'iglesia1.redilcloud']);
+                    $tenant = Tenant::find($tenantId);
+                } else {
+                    throw $e;
+                }
+            }
 
-            $this->command->info("Tenant {$tenantId} creado con sus dominios.");
+            // Asociamos los dominios
+            $tenant->domains()->updateOrCreate(['domain' => 'iglesia1.redil.cloud']);
+            $tenant->domains()->updateOrCreate(['domain' => 'iglesia1.redilcloud']);
+
+            $this->command->info("Tenant {$tenantId} vinculado con sus dominios.");
         } else {
             $this->command->info("El tenant {$tenantId} ya existe.");
         }
