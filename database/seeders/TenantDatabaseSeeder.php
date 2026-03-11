@@ -57,8 +57,8 @@ class TenantDatabaseSeeder extends Seeder
     $this->call(PasoCrecimientoSeeder::class);
     $this->call(CrecimientoUsuarioSeeder::class);
     $this->call(OcupacionSeeder::class);
-    $this->call(NivelAcademicoSeeder::class);
-    $this->call(EstadoNivelAcademicoSeeder::class);
+   // $this->call(NivelAcademicoSeeder::class);
+    //$this->call(EstadoNivelAcademicoSeeder::class);
     $this->call(ProfesionSeeder::class);
     $this->call(CampoInformeExcelSeeder::class);
     $this->call(CampoExtraSeeder::class);
@@ -141,7 +141,7 @@ class TenantDatabaseSeeder extends Seeder
     $this->call(PagoSeeder::class);
     $this->call(ActividadCarritoCompraSeeder::class);
     $this->call(SedeDestinatarioSeeder::class);
-    $this->call(NivelEscuelaSeeder::class);
+   // $this->call(NivelEscuelaSeeder::class);
 
     ///escuelas
     $this->call([
@@ -155,7 +155,7 @@ class TenantDatabaseSeeder extends Seeder
       HorarioBaseSeeder::class,
       PrerequisitoSeeder::class,
       PrerequisitoPasoSeeder::class,
-      PrerequisitoNivelSeeder::class,
+     // PrerequisitoNivelSeeder::class,
       PrerequisitoMateriasSeeder::class,
       MateriasAprobadasUsuarioSeeder::class,
       MateriasAprobadasUsuarioSeeder::class,
