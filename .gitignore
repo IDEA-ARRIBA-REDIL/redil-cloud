@@ -1,5 +1,6 @@
 /.phpunit.cache
 /node_modules
+.DS_Store
 
 /public/build
 /public/hot
@@ -19,6 +20,7 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+storage/logs/*.log
 /.fleet
 /.idea
 /.vscode

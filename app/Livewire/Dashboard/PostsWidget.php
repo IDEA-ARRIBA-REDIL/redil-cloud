@@ -39,7 +39,7 @@ class PostsWidget extends Component
 
         $this->cargandoMas = true;
         $skip = $this->posts->count();
-        
+
         $nuevosPosts = $this->queryPosts()
             ->skip($skip)
             ->take($this->perPage)
@@ -54,9 +54,9 @@ class PostsWidget extends Component
                 $this->hasMore = false;
             }
         }
-        
+
         $this->cargandoMas = false;
-        
+
         // Despachamos evento al navagedor para actualizar Swiper
         $this->dispatch('posts-loaded');
     }

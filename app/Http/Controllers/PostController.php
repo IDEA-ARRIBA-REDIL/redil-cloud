@@ -26,16 +26,28 @@ class PostController extends Controller
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('posts.subitem_gestionar_publicaciones');
-        
+
         $fechaInicio = $request->get('fecha_inicio', now()->subDays(30)->format('Y-m-d'));
         $fechaFin = $request->get('fecha_fin', now()->addDays(30)->format('Y-m-d'));
 
-        $posts = Post::with('user')
+        $postsQuery = Post::with('user')
             ->where(function($query) use ($fechaInicio, $fechaFin) {
                 $query->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin])
                       ->orWhere('visualizar_siempre', true);
-            })
-            ->orderBy('fecha_inicio', 'desc')
+            });
+
+        // Filtrado por permisos
+        if (!$rolActivo->hasPermissionTo('posts.listar_todas_publicaciones')) {
+            if ($rolActivo->hasPermissionTo('posts.listar_solo_mis_publicaciones')) {
+                $postsQuery->where('user_id', auth()->id());
+            } else {
+                // Si no tiene ninguno de los dos, no debería ver nada o solo los suyos por defecto
+                // Para este caso, forzamos a que no vea nada si no tiene permisos específicos definidos
+                $postsQuery->where('id', 0);
+            }
+        }
+
+        $posts = $postsQuery->orderBy('fecha_inicio', 'desc')
             ->paginate(15);
 
         return view('contenido.paginas.posts.gestionar', compact('posts', 'configuracion', 'fechaInicio', 'fechaFin', 'rolActivo'));
@@ -61,15 +73,15 @@ class PostController extends Controller
         $estadosTareas = EstadoTareaConsolidacion::all();
 
         return view('contenido.paginas.posts.crear', compact(
-            'configuracion', 
-            'rolActivo', 
-            'sedes', 
-            'estadosCiviles', 
-            'rangosEdad', 
-            'tiposUsuario', 
-            'pasosCrecimiento', 
-            'estadosPasos', 
-            'tareasConsolidacion', 
+            'configuracion',
+            'rolActivo',
+            'sedes',
+            'estadosCiviles',
+            'rangosEdad',
+            'tiposUsuario',
+            'pasosCrecimiento',
+            'estadosPasos',
+            'tareasConsolidacion',
             'estadosTareas'
         ));
     }
@@ -108,7 +120,7 @@ class PostController extends Controller
             if ($request->imagen_base64) {
                 $configuracion = Configuracion::find(1);
                 $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/');
-                
+
                 if (!is_dir($path)) {
                     mkdir($path, 0777, true);
                 }
@@ -117,7 +129,7 @@ class PostController extends Controller
                 $imagenBase64 = base64_decode($imagenPartes[1]);
                 $nombreFoto = 'post-' . time() . '.jpg';
                 $imagenPath = $path . $nombreFoto;
-                
+
                 file_put_contents($imagenPath, $imagenBase64);
                 $post->image_path = $nombreFoto;
             }
@@ -195,16 +207,16 @@ class PostController extends Controller
         $tareasPost = $post->tareasRequisito;
 
         return view('contenido.paginas.posts.editar', compact(
-            'post', 
-            'configuracion', 
+            'post',
+            'configuracion',
             'rolActivo',
-            'sedes', 
-            'estadosCiviles', 
-            'rangosEdad', 
-            'tiposUsuario', 
-            'pasosCrecimiento', 
-            'estadosPasos', 
-            'tareasConsolidacion', 
+            'sedes',
+            'estadosCiviles',
+            'rangosEdad',
+            'tiposUsuario',
+            'pasosCrecimiento',
+            'estadosPasos',
+            'tareasConsolidacion',
             'estadosTareas',
             'sedesPost',
             'estadosCivilesPost',
@@ -246,7 +258,7 @@ class PostController extends Controller
             if ($request->imagen_base64) {
                 $configuracion = Configuracion::find(1);
                 $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/');
-                
+
                 if (!is_dir($path)) {
                     mkdir($path, 0777, true);
                 }
@@ -263,7 +275,7 @@ class PostController extends Controller
                 $imagenBase64 = base64_decode($imagenPartes[1]);
                 $nombreFoto = 'post-' . time() . '.jpg';
                 $imagenPath = $path . $nombreFoto;
-                
+
                 file_put_contents($imagenPath, $imagenBase64);
                 $post->image_path = $nombreFoto;
             }
@@ -331,7 +343,7 @@ class PostController extends Controller
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('posts.opcion_eliminar_publicacion');
-        
+
         if ($post->image_path) {
             $configuracion = Configuracion::find(1);
             $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path);

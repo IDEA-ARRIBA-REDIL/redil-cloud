@@ -2648,31 +2648,43 @@ class PermisoSeeder extends Seeder
       'titulo' => 'item_publicaciones',
       'descripcion' => 'Ítem del menú de publicaciones',
       'name' => 'posts.item_publicaciones',
-    ])->syncRoles([$superAdmin]);
+    ])->syncRoles([$superAdmin, $lider]);
 
     Permission::firstOrCreate([
       'titulo' => 'subitem_gestionar_publicaciones',
       'descripcion' => 'Subítem para gestionar publicaciones',
       'name' => 'posts.subitem_gestionar_publicaciones',
+    ])->syncRoles([$superAdmin, $lider]);
+
+    Permission::firstOrCreate([
+      'titulo' => 'listar_todas_publicaciones',
+      'descripcion' => 'Permite listar todas las publicaciones',
+      'name' => 'posts.listar_todas_publicaciones',
     ])->syncRoles([$superAdmin]);
+
+    Permission::firstOrCreate([
+      'titulo' => 'listar_solo_mis_publicaciones',
+      'descripcion' => 'Permite listar únicamente las publicaciones que el usuario ha creado',
+      'name' => 'posts.listar_solo_mis_publicaciones',
+    ])->syncRoles([$lider]);
 
     Permission::firstOrCreate([
       'titulo' => 'subitem_nueva_publicacion',
       'descripcion' => 'Subítem para crear una nueva publicación',
       'name' => 'posts.subitem_nueva_publicacion',
-    ])->syncRoles([$superAdmin]);
+    ])->syncRoles([$superAdmin, $lider]);
 
     Permission::firstOrCreate([
       'titulo' => 'opcion_eliminar_publicacion',
       'descripcion' => 'Opción para eliminar una publicación',
       'name' => 'posts.opcion_eliminar_publicacion',
-    ])->syncRoles([$superAdmin]);
+    ])->syncRoles([$superAdmin, $lider]);
 
     Permission::firstOrCreate([
       'titulo' => 'opcion_modificar_publicacion',
       'descripcion' => 'Opción para modificar una publicación',
       'name' => 'posts.opcion_modificar_publicacion',
-    ])->syncRoles([$superAdmin]);
+    ])->syncRoles([$superAdmin, $lider]);
 
     // Permisos para Versículos del Día
     Permission::firstOrCreate([

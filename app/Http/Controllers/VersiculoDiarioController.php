@@ -18,7 +18,7 @@ class VersiculoDiarioController extends Controller
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('versiculos.subitem_gestionar_versiculos');
-        
+
         $fechaInicio = $request->get('fecha_inicio', now()->format('Y-m-d'));
         $fechaFin = $request->get('fecha_fin', now()->addDays(30)->format('Y-m-d'));
 
@@ -42,7 +42,7 @@ class VersiculoDiarioController extends Controller
         $fechasOcupadas = VersiculoDiario::pluck('fecha_publicacion')->map(function ($date) {
             return $date->format('Y-m-d');
         })->toArray();
-        
+
         return view('contenido.paginas.versiculos.crear', compact('configuracion', 'fechasOcupadas', 'rolActivo'));
     }
 
@@ -65,10 +65,10 @@ class VersiculoDiarioController extends Controller
         $versiculo->version_uri = $request->version_uri;
         $versiculo->libro_nombre = $request->libro_nombre;
         $versiculo->cita_referencia = $request->cita_referencia;
-        
+
         // Decodificamos el JSON que viene del frontend
         $versiculo->texto_versiculo = json_decode($request->texto_versiculo, true);
-        
+
         $versiculo->url_video_reflexion = $request->url_video_reflexion;
         $versiculo->usuario_id = auth()->id();
 
@@ -76,7 +76,7 @@ class VersiculoDiarioController extends Controller
         if ($request->imagen_base64) {
             $configuracion = Configuracion::find(1);
             $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/versiculo-diario/');
-            
+
             if (!is_dir($path)) {
                 mkdir($path, 0777, true);
             }
@@ -85,7 +85,7 @@ class VersiculoDiarioController extends Controller
             $imagenBase64 = base64_decode($imagenPartes[1]);
             $nombreFoto = 'versiculo-' . time() . '.jpg';
             $imagenPath = $path . $nombreFoto;
-            
+
             file_put_contents($imagenPath, $imagenBase64);
             $versiculo->ruta_imagen = $nombreFoto;
         }
@@ -140,18 +140,18 @@ class VersiculoDiarioController extends Controller
         $versiculo->version_uri = $request->version_uri;
         $versiculo->libro_nombre = $request->libro_nombre;
         $versiculo->cita_referencia = $request->cita_referencia;
-        
+
         if ($request->texto_versiculo) {
             $versiculo->texto_versiculo = json_decode($request->texto_versiculo, true);
         }
-        
+
         $versiculo->url_video_reflexion = $request->url_video_reflexion;
 
         // Manejo de la imagen
         if ($request->imagen_base64) {
             $configuracion = Configuracion::find(1);
             $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/versiculo-diario/');
-            
+
             if (!is_dir($path)) {
                 mkdir($path, 0777, true);
             }
@@ -168,7 +168,7 @@ class VersiculoDiarioController extends Controller
             $imagenBase64 = base64_decode($imagenPartes[1]);
             $nombreFoto = 'versiculo-' . time() . '.jpg';
             $imagenPath = $path . $nombreFoto;
-            
+
             file_put_contents($imagenPath, $imagenBase64);
             $versiculo->ruta_imagen = $nombreFoto;
         }
@@ -192,7 +192,7 @@ class VersiculoDiarioController extends Controller
         if ($versiculo->ruta_imagen) {
             $configuracion = Configuracion::find(1);
             $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/versiculo-diario/' . $versiculo->ruta_imagen);
-            
+
             if (file_exists($path)) {
                 unlink($path);
             }

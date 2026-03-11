@@ -6,43 +6,45 @@ use Livewire\Component;
 use App\Models\VersiculoDiario;
 use App\Models\Configuracion;
 use Carbon\Carbon;
+use Livewire\Attributes\Renderless;
 
 class VersiculoDelDia extends Component
 {
-    public $versiculo;
+    public $versiculoId;
     public $configuracion;
     public $claseColumnas;
+
 
     public function mount($claseColumnas = 'col-12 col-md-4')
     {
         $this->claseColumnas = $claseColumnas;
         $this->configuracion = Configuracion::first();
-        
-        // Obtener el versículo de hoy
-        $this->versiculo = VersiculoDiario::whereDate('fecha_publicacion', Carbon::today())->first();
+
+        $versiculo = VersiculoDiario::whereDate('fecha_publicacion', Carbon::today())->first();
+        $this->versiculoId = $versiculo ? $versiculo->id : null;
     }
 
-    public function toggleLike()
+    public function toggleLike($id)
     {
-        if (!auth()->check() || !$this->versiculo) {
+        if (!auth()->check()) {
             return;
         }
 
-        $this->versiculo->usuariosQueDieronLike()->toggle(auth()->id());
-        
-        // Refrescar el modelo para actualizar el contador de likes en la vista
-        $this->versiculo->refresh();
+        $versiculo = VersiculoDiario::find($id);
+        if ($versiculo) {
+            $versiculo->usuariosQueDieronLike()->toggle(auth()->id());
+        }
     }
 
     public function render()
     {
+        $versiculo = $this->versiculoId ? VersiculoDiario::with('usuariosQueDieronLike')->find($this->versiculoId) : null;
         $plainText = "";
         $fullTextModal = "";
-        
-        if ($this->versiculo) {
-            $dataVersiculos = $this->versiculo->texto_versiculo;
-            
-            // Si por alguna razón es un string, lo decodificamos
+
+        if ($versiculo) {
+            $dataVersiculos = $versiculo->texto_versiculo;
+
             if (is_string($dataVersiculos)) {
                 $dataVersiculos = json_decode($dataVersiculos, true);
             }
@@ -58,15 +60,16 @@ class VersiculoDelDia extends Component
                     }
                 }
             }
-            
+
             if (empty($fullTextModal)) {
-                $fullTextModal = $this->versiculo->cita_referencia;
+                $fullTextModal = $versiculo->cita_referencia;
             }
 
             $plainText = trim(strip_tags($plainText));
         }
 
         return view('livewire.dashboard.versiculo-del-dia', [
+            'versiculo' => $versiculo,
             'plainText' => $plainText,
             'fullTextModal' => $fullTextModal
         ]);

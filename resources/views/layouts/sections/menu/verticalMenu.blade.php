@@ -396,35 +396,35 @@
         {{-- Módulo Cursos --}}
 
         @if ($rolActivo && $rolActivo->hasPermissionTo('cursos.item_cursos'))
-        <li class="menu-item {{ request()->routeIs('cursos.*') ? 'active open' : '' }}">
-            <a href="" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ti ti-device-laptop"></i>
-                <div>Cursos (LMS)</div>
-            </a>
-            <ul class="menu-sub">
-                @if ($rolActivo->hasPermissionTo('cursos.subitem_gestionar_cursos'))
-                <li class="menu-item {{ request()->routeIs('cursos.gestionar') ? 'active' : '' }}">
-                    <a href="{{ route('cursos.gestionar') }}" class="menu-link">
-                        <div>Gestionar</div>
-                    </a>
-                </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('cursos.subitem_campus_cursos'))
-                <li class="menu-item {{ request()->routeIs('cursos.campus') ? 'active' : '' }}">
-                    <a href="{{ route('cursos.campus') }}" class="menu-link">
-                        <div>Campus</div>
-                    </a>
-                </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('cursos.subitem_foro_cursos'))
-                <li class="menu-item {{ request()->routeIs('cursos.foro') ? 'active' : '' }}">
-                    <a href="{{ route('cursos.foro') }}" class="menu-link">
-                        <div>Foro (Q&A)</div>
-                    </a>
-                </li>
-                @endif
-            </ul>
-        </li>
+            <li class="menu-item {{ request()->routeIs('cursos.*') ? 'active open' : '' }}">
+                <a href="" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-device-laptop"></i>
+                    <div>Cursos (LMS)</div>
+                </a>
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('cursos.subitem_gestionar_cursos'))
+                        <li class="menu-item {{ request()->routeIs('cursos.gestionar') ? 'active' : '' }}">
+                            <a href="{{ route('cursos.gestionar') }}" class="menu-link">
+                                <div>Gestionar</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('cursos.subitem_campus_cursos'))
+                        <li class="menu-item {{ request()->routeIs('cursos.campus') ? 'active' : '' }}">
+                            <a href="{{ route('cursos.campus') }}" class="menu-link">
+                                <div>Campus</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('cursos.subitem_foro_cursos'))
+                        <li class="menu-item {{ request()->routeIs('cursos.foro') ? 'active' : '' }}">
+                            <a href="{{ route('cursos.foro') }}" class="menu-link">
+                                <div>Foro (Q&A)</div>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+            </li>
         @endif
 
 
@@ -599,6 +599,14 @@
                         </a>
                     </li>
                 @endif
+
+                @if ($rolActivo->hasPermissionTo('temas.item_nuevo_tema'))
+                    <li class="menu-item">
+                        <a href="{{ route('tema.nuevo') }}" class="menu-link">
+                            <div>Nuevo</div>
+                        </a>
+                    </li>
+                @endif
             </ul>
         </li>
     @endif
@@ -622,7 +630,7 @@
         </li>
     @endif
 
-    @if($rolActivo->hasPermissionTo('posts.item_publicaciones'))
+    @if ($rolActivo->hasPermissionTo('posts.item_publicaciones'))
         <li class="menu-item {{ request()->routeIs('posts.*') ? 'active open' : '' }}">
             <a href="" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons ti ti-cards"></i>

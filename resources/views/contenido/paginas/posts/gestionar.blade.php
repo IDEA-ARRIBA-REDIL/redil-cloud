@@ -116,11 +116,32 @@
       <div class="card-body p-3">
         <div class="d-flex align-items-start justify-content-between mb-2">
           <div class="flex-fill d-flex flex-column">
-            <div class="">
-              <p class="card-text mb-1 text-black" style="font-size: 0.9rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                {!! $post->descripcion ?: 'Sin descripción' !!}
-              </p>
+            <div class="description-container mb-2">
+              <div class="card-text mb-1 text-black" style="font-size: 0.9rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em;">
+                {!! strip_tags($post->descripcion) ?: 'Sin descripción' !!}
+              </div>
+              @if(strlen(strip_tags($post->descripcion)) > 60)
+                <a href="javascript:void(0);" class="fw-bold text-primary" data-bs-toggle="modal" data-bs-target="#descModal{{ $post->id }}" style="font-size: 0.85rem;"> Ver más</a>
+              @endif
             </div>
+
+            <!-- Modal para descripción completa -->
+            <div class="modal fade" id="descModal{{ $post->id }}" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Descripción completa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div style="font-size: 1rem; color: #333;">
+                      {!! $post->descripcion !!}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
               <small class="text-black"><i class="ti ti-user me-1"></i> {{ $post->user->nombre(3) }}</small>
               <small class="text-black">
                 <i class="ti ti-calendar me-1"></i> 
@@ -162,7 +183,7 @@
         <div class="d-flex align-items-center justify-content-end gap-3 text-muted">
           <div class="d-flex align-items-center gap-1 text-black">
             <i class="ti ti-heart ti-sm @if($post->likes->count() > 0) text-danger @endif"></i>
-            <span style="font-size: 0.8rem;">{{ $post->likes->count() }}</span>
+            <span style="font-size: 0.8rem;">{{ $post->likes->count() >= 1000 ? round($post->likes->count() / 1000, 1) . 'K' : $post->likes->count() }}</span>
           </div>
         </div>
       </div>

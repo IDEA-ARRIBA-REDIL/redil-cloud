@@ -14,6 +14,8 @@ class CursoEvaluacion extends Model
     protected $fillable = [
         'minimo_aprobacion',
         'limite_tiempo',
+        'cantidad_repeticiones',
+        'tiempo_dilatacion',
     ];
 
     protected $casts = [
