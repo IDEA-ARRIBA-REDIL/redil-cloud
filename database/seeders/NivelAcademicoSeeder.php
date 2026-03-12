@@ -11,7 +11,7 @@ class NivelAcademicoSeeder extends Seeder
   /**
    * Run the database seeds.
    */
-  /*
+  
   public function run(): void
   {
     $niveles_academicos = '[
@@ -37,5 +37,5 @@ class NivelAcademicoSeeder extends Seeder
       NivelAcademico::firstOrCreate(['nombre' => $item->nombre]);
     }
   }
-  */
+  
 }

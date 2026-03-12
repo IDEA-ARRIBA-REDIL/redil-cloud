@@ -57,8 +57,8 @@ class TenantDatabaseSeeder extends Seeder
     $this->call(PasoCrecimientoSeeder::class);
     $this->call(CrecimientoUsuarioSeeder::class);
     $this->call(OcupacionSeeder::class);
-   // $this->call(NivelAcademicoSeeder::class);
-    //$this->call(EstadoNivelAcademicoSeeder::class);
+    $this->call(NivelAcademicoSeeder::class);
+    $this->call(EstadoNivelAcademicoSeeder::class);
     $this->call(ProfesionSeeder::class);
     $this->call(CampoInformeExcelSeeder::class);
     $this->call(CampoExtraSeeder::class);

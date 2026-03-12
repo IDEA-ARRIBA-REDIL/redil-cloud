@@ -95,18 +95,102 @@
             </div>
         </div>
         <div id="container-select-categorias" class="col-12 col-md-10 mt-3 pt-3">
-            <label class="form-label text-black fw-bold ps-1">Selecciona categorías (Multiselección)</label>
-            <select style="width:100%; height: 130px;" multiple wire:model.live="categoriasSeleccionadas"
-                class="form-select border shadow-none mb-2 text-black fs-6">
-                @foreach ($categoriasList as $cat)
-                    <option value="{{ $cat->id }}" class="p-2">{{ ucfirst(strtolower($cat->nombre)) }}
-                    </option>
-                @endforeach
-            </select>
-            <div class="d-flex justify-content-between">
-                <small class="text-muted"><i class="ti ti-info-circle me-1"></i>Mantén presionado para seleccionar
-                    varias.</small>
-                <small class="text-primary cursor-pointer" wire:click="$set('categoriasSeleccionadas', [])">Limpiar
+            <label class="form-label text-black fw-bold ps-1 text-uppercase small"
+                style="letter-spacing: 0.5px;">Selecciona categorías</label>
+
+            <div x-data="{
+                open: false,
+                search: '',
+                selected: @entangle('categoriasSeleccionadas'),
+                options: {{ $categoriasList->map(fn($c) => ['id' => (string) $c->id, 'nombre' => ucfirst(strtolower($c->nombre))])->toJson() }},
+            
+                get filteredOptions() {
+                    return this.options.filter(
+                        i => i.nombre.toLowerCase().includes(this.search.toLowerCase())
+                    );
+                },
+            
+                toggle(id) {
+                    id = id.toString();
+                    if (this.selected.includes(id)) {
+                        this.selected = this.selected.filter(i => i !== id);
+                    } else {
+                        this.selected.push(id);
+                    }
+                },
+            
+                isSelected(id) {
+                    return this.selected.includes(id.toString());
+                },
+            
+                getSelectedNames() {
+                    return this.options
+                        .filter(i => this.selected.includes(i.id.toString()))
+                        .map(i => i.nombre);
+                }
+            }" class="position-relative">
+
+                {{-- Gatillo del Dropdown --}}
+                <div @click="open = !open" @click.away="open = false"
+                    class="form-select border shadow-sm mb-2 text-black fs-6 d-flex flex-wrap align-items-center gap-2 bg-white cursor-pointer min-h-px-50"
+                    style="border-radius: 12px; min-height: 50px; border-color: #e9ecef !important; padding-right: 40px;">
+
+                    <template x-if="selected.length === 0">
+                        <span class="text-muted ps-2">Selecciona categorías...</span>
+                    </template>
+
+                    <template x-for="name in getSelectedNames()" :key="name">
+                        <span
+                            class="badge bg-purple bg-opacity-10 text-purple border border-purple border-opacity-25 px-3 py-2"
+                            style="border-radius: 8px; font-weight: 500;">
+                            <span x-text="name"></span>
+                        </span>
+                    </template>
+
+                    <i class="ti ti-chevron-down position-absolute end-0 me-3 text-muted transition-all"
+                        :style="open ? 'transform: rotate(180deg)' : ''"></i>
+                </div>
+
+                {{-- Contenido del Dropdown --}}
+                <div x-show="open" x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                    class="position-absolute w-100 bg-white border shadow-lg mt-1 p-3"
+                    style="border-radius: 15px; border-color: #e9ecef !important; z-index: 1000; max-height: 400px; overflow-y: auto;">
+
+                    {{-- Buscador Interno --}}
+                    <div class="mb-3">
+                        <div class="input-group border rounded-pill px-3 py-1 bg-light">
+                            <span class="input-group-text border-0 bg-transparent text-muted px-2">
+                                <i class="ti ti-search fs-5"></i>
+                            </span>
+                            <input type="text" x-model="search"
+                                class="form-control border-0 bg-transparent shadow-none py-1 fs-6"
+                                placeholder="Buscar categorías..." @click.stop>
+                        </div>
+                    </div>
+
+                    {{-- Listado de Opciones --}}
+                    <div class="d-flex flex-column gap-1">
+                        <template x-for="option in filteredOptions" :key="option.id">
+                            <div @click.stop="toggle(option.id)"
+                                class="px-3 py-2 rounded-3 d-flex align-items-center justify-content-between cursor-pointer transition-all"
+                                :class="isSelected(option.id) ? 'bg-purple text-white shadow-sm' : 'hover-bg-light text-dark'">
+                                <span x-text="option.nombre" style="font-weight: 500;"></span>
+                                <i class="ti ti-check fs-5" x-show="isSelected(option.id)"></i>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div x-show="filteredOptions.length === 0" class="text-center py-4 text-muted">
+                        No se encontraron categorías.
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-2">
+                <small class="text-muted"><i class="ti ti-info-circle me-1"></i>Puedes seleccionar múltiples categorías
+                    para filtrar los cursos.</small>
+                <small class="text-primary cursor-pointer hover-underline fw-medium" @click="selected = []">Limpiar
                     Filtro</small>
             </div>
         </div>
@@ -114,23 +198,37 @@
     {{-- Barra de Búsqueda y Filtro de Ordenamiento --}}
     <div class="row">
 
-        <div class="col-12 col-md-10 offset-md-1">
-            {{-- Buscador reactivo (búsqueda por nombre) --}}
-            <div class="input-group float-start mb-5" style="max-width: 900px; border-radius: 8px;">
-                <input wire:model.live.debounce.500ms="search" type="text" class="form-control "
-                    placeholder="Buscar cursos..." style="width: 30%;">
-                <button class="btn btn-primary rounded" type="button"><i class="ti ti-search me-1"></i> Buscar</button>
-            </div>
+        <div class="col-12 col-md-10 offset-md-1 mb-5">
+            <div class="row align-items-center">
+                {{-- Buscador reactivo --}}
+                <div class="col-12 col-lg-8 mb-3 mb-lg-0">
+                    <div class="d-flex align-items-center bg-white border p-1 ps-4"
+                        style="border-radius: 15px; border-color: #e9ecef !important;">
+                        <input wire:model.live.debounce.500ms="search" type="text"
+                            class="form-control border-0 shadow-none text-muted py-2" placeholder="Buscar cursos"
+                            style="background: transparent;">
+                        <button class="btn btn-primary px-4 py-2 d-flex align-items-center justify-content-center"
+                            style="background-color: #9d66ff !important; border-radius: 12px; border: none; height: 45px;">
+                            <i class="ti ti-search fs-4 me-2"></i>
+                            <span class="fw-medium">Buscar</span>
+                        </button>
+                    </div>
+                </div>
 
-            {{-- Selector de ordenamiento reactivo --}}
-            <div class="input-group float-end border px-2 rounded " style="max-width:400px;">
-                <span class="text-muted me-2 text-nowrap pt-2">Ordenar por:</span>
-                <select wire:model.live="orden" class="form-select border-0 shadow-none text-black fw-bold"
-                    style="background-color: transparent; width: auto; cursor: pointer;">
-                    <option value="reciente">Últimos</option>
-                    <option value="antiguo">Más antiguos</option>
-                    <option value="az">A - Z</option>
-                </select>
+                {{-- Selector de ordenamiento --}}
+                <div class="col-12 col-lg-4 d-flex justify-content-lg-end">
+                    <div class="d-flex align-items-center bg-white border px-4 py-2"
+                        style="border-radius: 15px; border-color: #e9ecef !important; min-width: 280px; height: 55px;">
+                        <span class="text-muted text-nowrap me-1">Ordenar por:</span>
+                        <select wire:model.live="orden"
+                            class="form-select border-0 shadow-none text-black fw-bold p-0 ps-1"
+                            style="background: transparent; cursor: pointer; font-size: 0.95rem;">
+                            <option value="reciente">Últimos</option>
+                            <option value="antiguo">Más antiguos</option>
+                            <option value="az">A - Z</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

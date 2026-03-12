@@ -4,11 +4,16 @@
             $relativeUrl = $versiculo->ruta_imagen
                 ? Storage::url($configuracion->ruta_almacenamiento . '/img/versiculo-diario/' . $versiculo->ruta_imagen)
                 : '';
-            $imageUrl = $relativeUrl
-                ? (str_starts_with($relativeUrl, 'http')
-                    ? $relativeUrl
-                    : config('app.url') . $relativeUrl)
-                : url()->current();
+            
+            // Si la URL es relativa, le anteponemos el host actual para evitar problemas con config('app.url') en multi-tenancy
+            $imageUrl = '';
+            if ($relativeUrl) {
+                $imageUrl = str_starts_with($relativeUrl, 'http') 
+                    ? $relativeUrl 
+                    : request()->getSchemeAndHttpHost() . $relativeUrl;
+            } else {
+                $imageUrl = url()->current();
+            }
         @endphp
 
         <div class="card h-100 shadow-sm border-0 overflow-hidden position-relative" style="border-radius: 15px;">
@@ -16,9 +21,12 @@
             <div class="card-img-top position-relative overflow-hidden"
                 style="width: 100%; height: 0; padding-bottom: 100%; background-color: #f8f9fa;">
                 @if ($versiculo->ruta_imagen)
-                    <img src="{{ $relativeUrl }}" alt="{{ $versiculo->cita_referencia }}"
-                        class="position-absolute top-0 start-0 w-100 h-100"
-                        style="object-fit: cover; object-position: center;">
+                    <div id="capture-container-{{ $versiculo->id }}" class="position-absolute top-0 start-0 w-100 h-100">
+                        <img src="{{ $relativeUrl }}" alt="{{ $versiculo->cita_referencia }}"
+                            class="w-100 h-100"
+                            style="object-fit: cover; object-position: center;"
+                            crossorigin="anonymous">
+                    </div>
                 @else
                     @php
                         $gradients = [
@@ -101,11 +109,11 @@
                             <div id="containerAccionVersiculo" wire:ignore>
                                 <i class="ti ti-share ti-sm cursor-pointer text-black d-none" id="btnShareMobile"
                                     title="Compartir versículo"
-                                    onclick="handleShareClick(event, '{{ $versiculo->cita_referencia }}', '{{ $versiculo->ruta_imagen ? $imageUrl : '' }}', '{{ addslashes($plainText) }}', 'capture-container-{{ $versiculo->id }}')"></i>
+                                    onclick="handleShareClick(event, {{ Js::from($versiculo->cita_referencia) }}, {{ Js::from($imageUrl) }}, {{ Js::from($plainText) }}, 'capture-container-{{ $versiculo->id }}')"></i>
 
                                 <i class="ti ti-download ti-sm cursor-pointer text-black d-none" id="btnDownloadPC"
                                     title="Descargar imagen"
-                                    onclick="downloadImage('{{ $versiculo->ruta_imagen ? $imageUrl : '' }}', '{{ $versiculo->cita_referencia }}', 'capture-container-{{ $versiculo->id }}')"></i>
+                                    onclick="downloadImage({{ Js::from($imageUrl) }}, {{ Js::from($versiculo->cita_referencia) }}, 'capture-container-{{ $versiculo->id }}')"></i>
                             </div>
                         </div>
                     </div>
@@ -205,29 +213,40 @@
         <script>
             // ... (handleShareClick y downloadImage se mantienen igual)
             async function handleShareClick(e, cita, urlImagen, texto, captureId) {
+                const fullText = '\"' + texto + '\" - ' + cita;
                 const shareData = {
                     title: 'Versículo del Día: ' + cita,
-                    text: '\"' + texto + '\" - ' + cita,
-                    url: '{{ url()->current() }}'
+                    text: fullText
                 };
 
                 if (navigator.share) {
                     try {
                         let file;
-                        if (urlImagen) {
-                            const response = await fetch(urlImagen);
-                            const blob = await response.blob();
-                            file = new File([blob], 'versiculo.jpg', {
-                                type: blob.type
-                            });
-                        } else if (captureId) {
-                            const canvas = await html2canvas(document.getElementById(captureId), {
-                                scale: 2
-                            });
-                            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-                            file = new File([blob], 'versiculo.jpg', {
-                                type: 'image/jpeg'
-                            });
+                        
+                        // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
+                        if (urlImagen && urlImagen !== window.location.href) {
+                            try {
+                                const response = await fetch(urlImagen, { mode: 'cors' });
+                                const blob = await response.blob();
+                                file = new File([blob], 'versiculo.jpg', { type: blob.type });
+                            } catch (error) {
+                                console.error("Error fetching original image for share:", error);
+                            }
+                        }
+
+                        // PRIORIDAD 2: Si no hay imagen original o falló el fetch, usar la captura de pantalla
+                        if (!file && captureId) {
+                            const captureEl = document.getElementById(captureId);
+                            if (captureEl) {
+                                const canvas = await html2canvas(captureEl, {
+                                    scale: 2,
+                                    useCORS: true,
+                                    allowTaint: true,
+                                    backgroundColor: null
+                                });
+                                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                                file = new File([blob], 'versiculo.jpg', { type: 'image/jpeg' });
+                            }
                         }
 
                         if (file && navigator.canShare && navigator.canShare({
@@ -240,44 +259,79 @@
                                 title: shareData.title,
                                 text: shareData.text
                             });
-                            return;
                         } else {
                             await navigator.share(shareData);
                         }
                     } catch (err) {
-                        console.error("Error al compartir:", err);
-                        navigator.share(shareData).catch(console.error);
+                        if (err.name !== 'AbortError') {
+                            console.error("Error al compartir:", err);
+                            navigator.share(shareData).catch(() => {});
+                        }
                     }
                 }
             }
 
             async function downloadImage(url, cita, captureId) {
-                if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('info', 'Preparando descarga...');
+                Swal.fire({
+                    title: 'Preparando descarga...',
+                    text: 'Estamos procesando tu imagen',
+                    icon: 'info',
+                    showConfirmButton: false,
+                    showCancelButton: false,
+                    showDenyButton: false,
+                    timer: 3000
+                });
 
-                if (url) {
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'Versiculo_' + cita.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                } else if (captureId) {
+                const fileName = 'Versiculo_' + cita.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
+
+                // PRIORIDAD 1: Si hay URL, descargar el archivo original vía Blob (preserva proporción y calidad)
+                if (url && url !== window.location.href) {
                     try {
-                        const canvas = await html2canvas(document.getElementById(captureId), {
-                            scale: 3
-                        });
+                        const response = await fetch(url, { mode: 'cors' });
+                        const blob = await response.blob();
+                        const blobUrl = window.URL.createObjectURL(blob);
                         const link = document.createElement('a');
-                        link.href = canvas.toDataURL('image/jpeg', 1.0);
-                        link.download = 'Versiculo_' + cita.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
+                        link.href = blobUrl;
+                        link.download = fileName;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
+                        window.URL.revokeObjectURL(blobUrl);
+                        if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen original descargada!');
+                        return;
                     } catch (err) {
-                        console.error("Error al generar imagen:", err);
+                        console.error("Error al descargar URL original:", err);
+                        // Si falla el fetch (CORS), continuamos a la Prioridad 2 (Captura)
                     }
                 }
 
-                if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen lista!');
+                // PRIORIDAD 2: Si no hay URL o falló el fetch, usar html2canvas (captura lo que se ve en pantalla)
+                const captureEl = document.getElementById(captureId);
+                if (captureId && captureEl) {
+                    try {
+                        const canvas = await html2canvas(captureEl, {
+                            scale: 2,
+                            useCORS: true,
+                            allowTaint: true,
+                            backgroundColor: null
+                        });
+                        const link = document.createElement('a');
+                        link.href = canvas.toDataURL('image/jpeg', 0.9);
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen capturada!');
+                        return;
+                    } catch (err) {
+                        console.error("Error al generar captura:", err);
+                    }
+                }
+
+                // FALLBACK FINAL: Abrir en pestaña nueva si todo lo anterior falla
+                if (url) {
+                    window.open(url, '_blank');
+                }
             }
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -381,4 +435,7 @@
             });
         </script>
     @endonce
+    @assets
+        @vite(['resources/assets/vendor/libs/sweetalert2/sweetalert2.scss', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'])
+    @endassets
 </div>

@@ -43,9 +43,9 @@ El sistema utiliza un diseño polimórfico para permitir diferentes tipos de con
 
 ### C. Interfaz y Experiencia de Usuario (UI/UX)
 
-- **Botones Pill**: Uso de `rounded-pill` y botones de icono para una estética moderna y limpia.
-- **Limpieza de Navegación**: Se eliminaron botones redundantes de "Volver" y "Cancelar" dentro de los formularios de edición, dejando una acción clara de "Guardar".
 - **Modo Visualizar/Editar**: Cada ítem alterna entre vista previa y edición sin recargar la página gracias a Livewire + AlpineJS.
+- **Selectores Premium (Alpine.js)**: Para multiselección (ej: categorías), se prefiere el uso de componentes personalizados en Alpine.js sobre Select2. Esto evita conflictos de carga y permite un control Total sobre la estética "Wow" (bordes de 15px, sombras suaves, buscador interno y etiquetas tipo badge).
+- **Diseño de Búsqueda y Filtros**: Los bloques de filtrado deben usar contenedores redondeados (`border-radius: 15px`) de color blanco con bordes sutiles, integrando los botones de acción dentro del mismo flujo visual para una apariencia de aplicación moderna.
 
 ## 3. Consideraciones Técnicas (Desarrollo)
 

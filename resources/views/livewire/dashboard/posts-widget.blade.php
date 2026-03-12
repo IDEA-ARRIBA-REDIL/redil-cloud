@@ -31,15 +31,14 @@
                                 style="width: 100%; height: 0; padding-bottom: 177.77%;">
                                 @if ($post->image_path)
                                     @php
-                                        $relativeUrl = Storage::url(
-                                            $configuracion->ruta_almacenamiento .
-                                                '/img/publicaciones/' .
-                                                $post->image_path,
-                                        );
+                                        $relativeUrl = Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path);
                                     @endphp
-                                    <img src="{{ $relativeUrl }}" alt="Publicación"
-                                        class="position-absolute top-0 start-0 w-100 h-100"
-                                        style="object-fit: cover; object-position: center;">
+                                    <div id="capture-post-{{ $post->id }}" class="position-absolute top-0 start-0 w-100 h-100">
+                                        <img src="{{ $relativeUrl }}" alt="Publicación"
+                                            class="w-100 h-100"
+                                            style="object-fit: cover; object-position: center;"
+                                            crossorigin="anonymous">
+                                    </div>
                                 @else
                                     @php
                                         $gradients = [
@@ -101,28 +100,28 @@
                                     <!-- Compartir / Descargar -->
                                     @php
                                         $postImageUrl = $post->image_path
-                                            ? Storage::url(
-                                                $configuracion->ruta_almacenamiento .
-                                                    '/img/publicaciones/' .
-                                                    $post->image_path,
-                                            )
+                                            ? Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path)
                                             : '';
-                                        $postImageUrl = $postImageUrl
-                                            ? (str_starts_with($postImageUrl, 'http')
-                                                ? $postImageUrl
-                                                : config('app.url') . $postImageUrl)
-                                            : url()->current();
+                                        
+                                        if ($postImageUrl) {
+                                            $postImageUrl = str_starts_with($postImageUrl, 'http') 
+                                                ? $postImageUrl 
+                                                : request()->getSchemeAndHttpHost() . $postImageUrl;
+                                        } else {
+                                            $postImageUrl = url()->current();
+                                        }
+
                                         $postText = trim(strip_tags($post->descripcion));
                                     @endphp
                                     <i class="ti ti-share text-white cursor-pointer btn-share-post d-none"
                                         style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"
                                         title="Compartir"
-                                        onclick="handleSharePost(event, '{{ addslashes($postText) }}', '{{ $post->image_path ? $postImageUrl : '' }}', 'capture-post-{{ $post->id }}')"></i>
+                                        onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
 
                                     <i class="ti ti-download text-white cursor-pointer btn-download-post d-none"
                                         style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"
                                         title="Descargar imagen"
-                                        onclick="downloadPostImage(event, '{{ $post->image_path ? $postImageUrl : '' }}', 'capture-post-{{ $post->id }}')"></i>
+                                        onclick="downloadPostImage(event, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
                                 </div>
                             </div>
                         </div>
@@ -200,14 +199,13 @@
                                             <!-- Fondo: Imagen o Gradiente -->
                                             @if ($post->image_path)
                                                 @php
-                                                    $relativeUrl = Storage::url(
-                                                        $configuracion->ruta_almacenamiento .
-                                                            '/img/publicaciones/' .
-                                                            $post->image_path,
-                                                    );
+                                                    $relativeUrl = Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path);
                                                 @endphp
-                                                <img src="{{ $relativeUrl }}" alt="Publicación" class="w-100 h-100"
-                                                    style="object-fit: cover; object-position: center;">
+                                                <div id="modal-capture-post-{{ $post->id }}" class="w-100 h-100">
+                                                    <img src="{{ $relativeUrl }}" alt="Publicación" class="w-100 h-100"
+                                                        style="object-fit: cover; object-position: center;"
+                                                        crossorigin="anonymous">
+                                                </div>
                                             @else
                                                 @php
                                                     $gradients = [
@@ -288,24 +286,24 @@
                                                 <!-- Botón Compartir / Descargar -->
                                                 @php
                                                     $postImageUrl = $post->image_path
-                                                        ? Storage::url(
-                                                            $configuracion->ruta_almacenamiento .
-                                                                '/img/publicaciones/' .
-                                                                $post->image_path,
-                                                        )
+                                                        ? Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path)
                                                         : '';
-                                                    $postImageUrl = $postImageUrl
-                                                        ? (str_starts_with($postImageUrl, 'http')
-                                                            ? $postImageUrl
-                                                            : config('app.url') . $postImageUrl)
-                                                        : url()->current();
+                                                    
+                                                    if ($postImageUrl) {
+                                                        $postImageUrl = str_starts_with($postImageUrl, 'http') 
+                                                            ? $postImageUrl 
+                                                            : request()->getSchemeAndHttpHost() . $postImageUrl;
+                                                    } else {
+                                                        $postImageUrl = url()->current();
+                                                    }
+
                                                     $postText = trim(strip_tags($post->descripcion));
                                                 @endphp
                                                 <div class="d-flex flex-column align-items-center">
                                                     <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-share-post d-none mb-1 shadow"
                                                         style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
                                                         title="Compartir"
-                                                        onclick="handleSharePost(event, '{{ addslashes($postText) }}', '{{ $post->image_path ? $postImageUrl : '' }}', 'modal-capture-post-{{ $post->id }}')">
+                                                        onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'modal-capture-post-{{ $post->id }}')">
                                                         <i class="ti ti-share text-white"
                                                             style="font-size: 1.8rem;"></i>
                                                     </div>
@@ -313,7 +311,7 @@
                                                     <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-download-post d-none mb-1 shadow"
                                                         style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
                                                         title="Descargar imagen"
-                                                        onclick="downloadPostImage(event, '{{ $post->image_path ? $postImageUrl : '' }}', 'modal-capture-post-{{ $post->id }}')">
+                                                        onclick="downloadPostImage(event, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'modal-capture-post-{{ $post->id }}')">
                                                         <i class="ti ti-download text-white"
                                                             style="font-size: 1.8rem;"></i>
                                                     </div>
@@ -391,29 +389,40 @@
             <script>
                 // These functions remain global just like in VersiculoDelDia
                 async function handleSharePost(e, texto, urlImagen, captureId) {
+                    const fullText = (texto ? '\"' + texto + '\"' : '');
                     const shareData = {
                         title: 'Publicación',
-                        text: '\"' + texto + '\"',
-                        url: '{{ url()->current() }}'
+                        text: fullText
                     };
 
                     if (navigator.share) {
                         try {
                             let file;
-                            if (urlImagen) {
-                                const response = await fetch(urlImagen);
-                                const blob = await response.blob();
-                                file = new File([blob], 'publicacion.jpg', {
-                                    type: blob.type
-                                });
-                            } else if (captureId) {
-                                const canvas = await html2canvas(document.getElementById(captureId), {
-                                    scale: 2
-                                });
-                                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-                                file = new File([blob], 'publicacion.jpg', {
-                                    type: 'image/jpeg'
-                                });
+
+                            // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
+                            if (urlImagen && urlImagen !== window.location.href) {
+                                try {
+                                    const response = await fetch(urlImagen, { mode: 'cors' });
+                                    const blob = await response.blob();
+                                    file = new File([blob], 'publicacion.jpg', { type: blob.type });
+                                } catch (error) {
+                                    console.error("Error fetching original image for share:", error);
+                                }
+                            }
+
+                            // PRIORIDAD 2: Si no hay imagen original o falló el fetch, usar la captura de pantalla
+                            if (!file && captureId) {
+                                const captureEl = document.getElementById(captureId);
+                                if (captureEl) {
+                                    const canvas = await html2canvas(captureEl, {
+                                        scale: 2,
+                                        useCORS: true,
+                                        allowTaint: true,
+                                        backgroundColor: null
+                                    });
+                                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                                    file = new File([blob], 'publicacion.jpg', { type: 'image/jpeg' });
+                                }
                             }
 
                             if (file && navigator.canShare && navigator.canShare({
@@ -426,44 +435,81 @@
                                     title: shareData.title,
                                     text: shareData.text
                                 });
-                                return;
                             } else {
                                 await navigator.share(shareData);
                             }
                         } catch (err) {
-                            console.error("Error al compartir:", err);
-                            navigator.share(shareData).catch(console.error);
+                            if (err.name !== 'AbortError') {
+                                console.error("Error al compartir:", err);
+                                navigator.share(shareData).catch(() => {});
+                            }
                         }
                     }
                 }
 
-                async function downloadPostImage(url, captureId) {
-                    if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('info', 'Preparando descarga...');
+                async function downloadPostImage(e, url, captureId) {
+                    if (e) e.stopPropagation();
+                    
+                    Swal.fire({
+                        title: 'Preparando descarga...',
+                        text: 'Estamos procesando tu imagen',
+                        icon: 'info',
+                        showConfirmButton: false,
+                        showCancelButton: false,
+                        showDenyButton: false,
+                        timer: 3000
+                    });
 
-                    if (url) {
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = 'Publicacion_' + new Date().getTime() + '.jpg';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    } else if (captureId) {
+                    const fileName = 'Publicacion_' + new Date().getTime() + '.jpg';
+
+                    // PRIORIDAD 1: Si hay URL, descargar el archivo original vía Blob (preserva proporción y calidad)
+                    if (url && url !== window.location.href) {
                         try {
-                            const canvas = await html2canvas(document.getElementById(captureId), {
-                                scale: 3
-                            });
+                            const response = await fetch(url, { mode: 'cors' });
+                            const blob = await response.blob();
+                            const blobUrl = window.URL.createObjectURL(blob);
                             const link = document.createElement('a');
-                            link.href = canvas.toDataURL('image/jpeg', 1.0);
-                            link.download = 'Publicacion_' + new Date().getTime() + '.jpg';
+                            link.href = blobUrl;
+                            link.download = fileName;
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
+                            window.URL.revokeObjectURL(blobUrl);
+                            if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen original descargada!');
+                            return;
                         } catch (err) {
-                            console.error("Error al generar imagen:", err);
+                            console.error("Error al descargar URL original mediante blob:", err);
+                            // Si falla el fetch (CORS), continuamos a la Prioridad 2 (Captura)
                         }
                     }
 
-                    if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen lista!');
+                    // PRIORIDAD 2: Si no hay URL o falló el fetch, usar html2canvas (captura lo que se ve en pantalla)
+                    const captureEl = document.getElementById(captureId);
+                    if (captureId && captureEl) {
+                        try {
+                            const canvas = await html2canvas(captureEl, {
+                                scale: 2,
+                                useCORS: true,
+                                allowTaint: true,
+                                backgroundColor: null
+                            });
+                            const link = document.createElement('a');
+                            link.href = canvas.toDataURL('image/jpeg', 0.9);
+                            link.download = fileName;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen capturada!');
+                            return;
+                        } catch (err) {
+                            console.error("Error al generar captura con html2canvas:", err);
+                        }
+                    }
+
+                    // FALLBACK FINAL: Abrir en pestaña nueva si todo lo anterior falla
+                    if (url) {
+                        window.open(url, '_blank');
+                    }
                 }
             </script>
         @endonce
@@ -653,6 +699,10 @@
                 });
             </script>
         @endscript
+
+    @assets
+        @vite(['resources/assets/vendor/libs/sweetalert2/sweetalert2.scss', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'])
+    @endassets
 
     @endif
 </div>

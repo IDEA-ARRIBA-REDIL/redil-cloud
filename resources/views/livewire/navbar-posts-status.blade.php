@@ -99,11 +99,13 @@
                                                             class="ti ti-x"></i></button>
                                                 </div>
 
-                                                <!-- Fondo -->
                                                 @if ($post->image_path)
-                                                    <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path) }}"
-                                                        alt="Publicación" class="w-100 h-100"
-                                                        style="object-fit: cover; object-position: center;">
+                                                    <div id="nav-modal-capture-{{ $post->id }}" class="w-100 h-100">
+                                                        <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path) }}"
+                                                            alt="Publicación" class="w-100 h-100"
+                                                            style="object-fit: cover; object-position: center;"
+                                                            crossorigin="anonymous">
+                                                    </div>
                                                 @else
                                                     @php
                                                         $selectedGradient = $gradients[$post->id % count($gradients)];
@@ -172,24 +174,24 @@
                                                     <!-- Botón Compartir / Descargar -->
                                                     @php
                                                         $postImageUrl = $post->image_path
-                                                            ? Storage::url(
-                                                                $configuracion->ruta_almacenamiento .
-                                                                    '/img/publicaciones/' .
-                                                                    $post->image_path,
-                                                            )
+                                                            ? Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path)
                                                             : '';
-                                                        $postImageUrl = $postImageUrl
-                                                            ? (str_starts_with($postImageUrl, 'http')
-                                                                ? $postImageUrl
-                                                                : config('app.url') . $postImageUrl)
-                                                            : url()->current();
+                                                        
+                                                        if ($postImageUrl) {
+                                                            $postImageUrl = str_starts_with($postImageUrl, 'http') 
+                                                                ? $postImageUrl 
+                                                                : request()->getSchemeAndHttpHost() . $postImageUrl;
+                                                        } else {
+                                                            $postImageUrl = url()->current();
+                                                        }
+
                                                         $postText = trim(strip_tags($post->descripcion));
                                                     @endphp
                                                     <div class="d-flex flex-column align-items-center">
                                                         <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-share-post d-none mb-1 shadow"
                                                             style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
                                                             title="Compartir"
-                                                            onclick="handleSharePost(event, '{{ addslashes($postText) }}', '{{ $post->image_path ? $postImageUrl : '' }}', 'nav-modal-capture-{{ $post->id }}')">
+                                                            onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'nav-modal-capture-{{ $post->id }}')">
                                                             <i class="ti ti-share text-white"
                                                                 style="font-size: 1.8rem;"></i>
                                                         </div>
@@ -197,7 +199,7 @@
                                                         <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-download-post d-none mb-1 shadow"
                                                             style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
                                                             title="Descargar imagen"
-                                                            onclick="downloadPostImage(event, '{{ $post->image_path ? $postImageUrl : '' }}', 'nav-modal-capture-{{ $post->id }}')">
+                                                            onclick="downloadPostImage(event, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'nav-modal-capture-{{ $post->id }}')">
                                                             <i class="ti ti-download text-white"
                                                                 style="font-size: 1.8rem;"></i>
                                                         </div>
@@ -255,31 +257,41 @@
 
             <script>
                 async function handleSharePost(e, texto, urlImagen, captureId) {
+                    const fullText = (texto ? '\"' + texto + '\"' : '');
                     const shareData = {
                         title: 'Publicación',
-                        text: '\"' + texto + '\"',
-                        url: '{{ url()->current() }}'
+                        text: fullText
                     };
 
                     if (navigator.share) {
                         try {
                             let file;
-                            if (urlImagen) {
-                                const response = await fetch(urlImagen);
-                                const blob = await response.blob();
-                                file = new File([blob], 'publicacion.jpg', {
-                                    type: blob.type
-                                });
-                            } else if (captureId) {
-                                if (typeof html2canvas === 'undefined') return alert(
-                                    'Cargando librería gráfica, intenta de nuevo en un segundo.');
-                                const canvas = await html2canvas(document.getElementById(captureId), {
-                                    scale: 2
-                                });
-                                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-                                file = new File([blob], 'publicacion.jpg', {
-                                    type: 'image/jpeg'
-                                });
+
+                            // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
+                            if (urlImagen && urlImagen !== window.location.href) {
+                                try {
+                                    const response = await fetch(urlImagen, { mode: 'cors' });
+                                    const blob = await response.blob();
+                                    file = new File([blob], 'publicacion.jpg', { type: blob.type });
+                                } catch (error) {
+                                    console.error("Error fetching original image for share:", error);
+                                }
+                            }
+
+                            // PRIORIDAD 2: Si no hay imagen original o falló el fetch, usar la captura de pantalla
+                            if (!file && captureId) {
+                                const captureEl = document.getElementById(captureId);
+                                if (captureEl) {
+                                    if (typeof html2canvas === 'undefined') return alert('Cargando librería gráfica, intenta de nuevo en un segundo.');
+                                    const canvas = await html2canvas(captureEl, {
+                                        scale: 2,
+                                        useCORS: true,
+                                        allowTaint: true,
+                                        backgroundColor: null
+                                    });
+                                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                                    file = new File([blob], 'publicacion.jpg', { type: 'image/jpeg' });
+                                }
                             }
 
                             if (file && navigator.canShare && navigator.canShare({
@@ -292,48 +304,83 @@
                                     title: shareData.title,
                                     text: shareData.text
                                 });
-                                return;
                             } else {
                                 await navigator.share(shareData);
                             }
                         } catch (err) {
-                            console.error("Error al compartir:", err);
-                            navigator.share(shareData).catch(console.error);
+                            if (err.name !== 'AbortError') {
+                                console.error("Error al compartir:", err);
+                                navigator.share(shareData).catch(() => {});
+                            }
                         }
                     } else {
                         alert('Compartir no está soportado en este navegador de escritorio.');
                     }
                 }
 
-                async function downloadPostImage(url, captureId) {
-                    if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('info', 'Preparando descarga...');
+                async function downloadPostImage(e, url, captureId) {
+                    if (e) e.stopPropagation();
+                    
+                    Swal.fire({
+                        title: 'Preparando descarga...',
+                        text: 'Estamos procesando tu imagen',
+                        icon: 'info',
+                        showConfirmButton: false,
+                        showCancelButton: false,
+                        showDenyButton: false,
+                        timer: 3000
+                    });
 
-                    if (url) {
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = 'Publicacion_' + new Date().getTime() + '.jpg';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    } else if (captureId) {
+                    const fileName = 'Publicacion_' + new Date().getTime() + '.jpg';
+
+                    // PRIORIDAD 1: Si hay URL, descargar el archivo original vía Blob (preserva proporción y calidad)
+                    if (url && url !== window.location.href) {
                         try {
-                            if (typeof html2canvas === 'undefined') return alert(
-                                'Cargando librería gráfica, intenta de nuevo en un segundo.');
-                            const canvas = await html2canvas(document.getElementById(captureId), {
-                                scale: 3
-                            });
+                            const response = await fetch(url, { mode: 'cors' });
+                            const blob = await response.blob();
+                            const blobUrl = window.URL.createObjectURL(blob);
                             const link = document.createElement('a');
-                            link.href = canvas.toDataURL('image/jpeg', 1.0);
-                            link.download = 'Publicacion_' + new Date().getTime() + '.jpg';
+                            link.href = blobUrl;
+                            link.download = fileName;
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
+                            window.URL.revokeObjectURL(blobUrl);
+                            if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen original descargada!');
+                            return;
                         } catch (err) {
-                            console.error("Error al generar imagen:", err);
+                            console.error("Error al descargar URL original:", err);
+                            // Si falla el fetch (CORS), continuamos a la Prioridad 2 (Captura)
                         }
                     }
 
-                    if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen lista!');
+                    // PRIORIDAD 2: Si no hay URL o falló el fetch, usar html2canvas (captura lo que se ve en pantalla)
+                    const captureEl = document.getElementById(captureId);
+                    if (captureId && captureEl) {
+                        try {
+                            const canvas = await html2canvas(captureEl, {
+                                scale: 2,
+                                useCORS: true,
+                                allowTaint: true,
+                                backgroundColor: null
+                            });
+                            const link = document.createElement('a');
+                            link.href = canvas.toDataURL('image/jpeg', 0.9);
+                            link.download = fileName;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen capturada!');
+                            return;
+                        } catch (err) {
+                            console.error("Error al generar captura:", err);
+                        }
+                    }
+
+                    // FALLBACK FINAL: Abrir en pestaña nueva si todo lo anterior falla
+                    if (url) {
+                        window.open(url, '_blank');
+                    }
                 }
             </script>
         @endonce
@@ -506,4 +553,7 @@
             </script>
         @endscript
     @endif
+    @assets
+        @vite(['resources/assets/vendor/libs/sweetalert2/sweetalert2.scss', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'])
+    @endassets
 </div>
