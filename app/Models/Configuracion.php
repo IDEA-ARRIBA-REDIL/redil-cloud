@@ -18,4 +18,15 @@ class Configuracion extends Model
   {
     return $this->hasMany(RangoEdad::class);
   }
+
+  /**
+   * Obtiene la ruta de almacenamiento de forma dinámica.
+   * Si el valor es 'iglesia1' o está vacío, devuelve 'global'.
+   */
+  protected function rutaAlmacenamiento(): \Illuminate\Database\Eloquent\Casts\Attribute
+  {
+      return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+          get: fn ($value) => ($value === 'iglesia1' || empty($value)) ? 'global' : $value,
+      );
+  }
 }
