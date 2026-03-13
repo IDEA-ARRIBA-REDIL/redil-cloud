@@ -354,6 +354,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
 
 
+  public function asignacionesConsolidacion(): HasMany
+  {
+    return $this->hasMany(TareaConsolidacionUsuario::class, 'user_id');
+  }
+
   ///relacion de muchos a muchos entre usuarios y usuarios(Parientes)
   // Ejemplo Fabian es padre de Isabella
   public function parientesDelUsuario(): BelongsToMany
@@ -963,7 +968,9 @@ class User extends Authenticatable implements MustVerifyEmail
       }
 
       $discipulos = $discipulosQuery->where(function ($query) use ($sedesIds, $localidadesIds) {
-        $query->whereIn('users.sede_id', $sedesIds);
+        if (!empty($sedesIds)) {
+          $query->whereIn('users.sede_id', $sedesIds);
+        }
 
         if (!empty($localidadesIds)) {
           $query->whereIn('users.localidad_id', $localidadesIds);

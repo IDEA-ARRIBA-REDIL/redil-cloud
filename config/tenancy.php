@@ -17,14 +17,15 @@ return [
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
     'central_domains' => [
-        // ProducciÃ³n (Dominio principal)
-        'redil.cloud',
-        'www.redil.cloud',
+        // Producci¨®n (Dominio principal)
+        'ubicalo.com',
+        'redil.ubicalo.com',
+        'www.ubicalo.com',
 
-        // ProducciÃ³n (Technical/Internal domain)
+        // Producci¨®n (Technical/Internal domain)
         'redil-cloud-main-2rwsrc.laravel.cloud',
 
-        // DinÃ¡mico segÃºn variable de entorno
+        // Din¨¢mico seg¨²n variable de entorno
         env('CENTRAL_DOMAIN'),
 
         // Desarrollo local
@@ -72,19 +73,7 @@ return [
         'managers' => [
             'sqlite' => Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager::class,
             'mysql' => Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager::class,
-            'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager::class,
-
-        /**
-         * Use this database manager for MySQL to have a DB user created for each tenant database.
-         * You can customize the grants given to these users by changing the $grants property.
-         */
-            // 'mysql' => Stancl\Tenancy\TenantDatabaseManagers\PermissionControlledMySQLDatabaseManager::class,
-
-        /**
-         * Disable the pgsql manager above, and enable the one below if you
-         * want to separate tenant DBs by schemas rather than databases.
-         */
-            // 'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class, // Separate by schema instead of database
+            'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLSchemaManager::class,
         ],
     ],
 

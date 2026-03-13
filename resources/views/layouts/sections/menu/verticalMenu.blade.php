@@ -116,6 +116,14 @@
                             </a>
                         </li>
                     @endif
+
+                    @if ($rolActivo->hasPermissionTo('consolidacion.reporte_desempeño'))
+                        <li class="menu-item {{ request()->routeIs('consolidacion.reporteDesempeño') ? 'active' : '' }}">
+                            <a href="{{ route('consolidacion.reporteDesempeño') }}" class="menu-link">
+                                <div>Reporte de desempeño</div>
+                            </a>
+                        </li>
+                    @endif
                 </ul>
             </li>
         @endif

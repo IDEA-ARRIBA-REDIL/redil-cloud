@@ -27,16 +27,16 @@
     <p class="mb-4 text-black">aqui podras crear y gestionar tus escuelas </p>
 
     <!-- botonera -->
-   @if( $rolActivo->hasPermissionTo('escuelas.subitem_nueva_escuela'))
-    <div class="row mb-5 mt-5">
-        <div class="me-auto ">
-            <button type="button" class="btn rounded-pill float-star btn-primary rounded-pill waves-effect waves-light"
-                data-bs-toggle="offcanvas" data-bs-target="#addEventSidebar" aria-controls="addEventSidebar">
-                <i class="ti ti-plus"></i> Nueva escuela
-            </button>
+    @if ($rolActivo->hasPermissionTo('escuelas.subitem_nueva_escuela'))
+        <div class="row mb-5 mt-5">
+            <div class="me-auto ">
+                <button type="button" class="btn rounded-pill float-star btn-primary rounded-pill waves-effect waves-light"
+                    data-bs-toggle="offcanvas" data-bs-target="#addEventSidebar" aria-controls="addEventSidebar">
+                    <i class="ti ti-plus"></i> Nueva escuela
+                </button>
+            </div>
         </div>
-    </div>
-    <!-- /botonera -->
+        <!-- /botonera -->
     @endif
 
 
@@ -64,41 +64,42 @@
 
                             <div class="ms-auto">
                                 <div class="dropdown zindex-2 ">
-                                    <button  style="border-radius: 20px;" type="button" class="btn border dropdown-toggle hide-arrow p-1"
-                                        data-bs-toggle="dropdown" aria-expanded="false"><i
-                                            class="ti ti-dots-vertical text-black"></i></button>
+                                    <button style="border-radius: 20px;" type="button"
+                                        class="btn border dropdown-toggle hide-arrow p-1" data-bs-toggle="dropdown"
+                                        aria-expanded="false"><i class="ti ti-dots-vertical text-black"></i></button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                         @if( $rolActivo->hasPermissionTo('escuelas.opcion_actualizar_escuela'))
-                                        <li><a href="{{ route('escuelas.actualizar', $escuela->id) }}"
-                                                class="dropdown-item">
-                                                Actualizar
-                                            </a></li>
+                                        @if ($rolActivo->hasPermissionTo('escuelas.opcion_actualizar_escuela'))
+                                            <li><a href="{{ route('escuelas.actualizar', $escuela->id) }}"
+                                                    class="dropdown-item">
+                                                    Actualizar
+                                                </a></li>
                                         @endif
 
-                                        @if( $rolActivo->hasPermissionTo('escuelas.opcion_gestionar_pensum'))
+                                        @if ($rolActivo->hasPermissionTo('escuelas.opcion_gestionar_pensum'))
                                             @if ($escuela->tipo_matricula == 'materias_independientes')
                                                 <li><a href="{{ route('escuelas.materias', $escuela->id) }}"
                                                         class="dropdown-item">
                                                         Gestionar materias
                                                     </a></li>
                                             @else
-                                                <li><a href="{{ route('escuelas.niveles.index', $escuela->id) }}" class="dropdown-item">
+                                                <li><a href="" class="dropdown-item">
                                                         Gestionar grados
                                                     </a></li>
                                             @endif
                                         @endif
 
                                         <li>
-                                            <a href="{{ route('escuelas.exportarMatriculasActivas', $escuela->id) }}" class="dropdown-item">
+                                            <a href="{{ route('escuelas.exportarMatriculasActivas', $escuela->id) }}"
+                                                class="dropdown-item">
                                                 Exportar matrículas activas
                                             </a>
                                         </li>
 
 
-                                        @if( $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_escuela'))
-                                        <li><a class="dropdown-item confirmacionEliminar" data-nombre=""
-                                                data-id="">Eliminar
-                                            </a></li>
+                                        @if ($rolActivo->hasPermissionTo('escuelas.opcion_eliminar_escuela'))
+                                            <li><a class="dropdown-item confirmacionEliminar" data-nombre=""
+                                                    data-id="">Eliminar
+                                                </a></li>
                                         @endif
                                     </ul>
                                 </div>
@@ -188,10 +189,13 @@
                 {{-- Campo Habilitar Consolidación --}}
                 <div class="mb-3">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="habilitada_consilidacion" name="habilitada_consilidacion" value="1">
-                        <label class="form-check-label fw-semibold text-black" for="habilitada_consilidacion">Habilitar Consolidación</label>
+                        <input class="form-check-input" type="checkbox" id="habilitada_consilidacion"
+                            name="habilitada_consilidacion" value="1">
+                        <label class="form-check-label fw-semibold text-black" for="habilitada_consilidacion">Habilitar
+                            Consolidación</label>
                     </div>
-                    <small class="form-text text-muted">Indica si esta escuela tendrá habilitada la opción de consolidación para informes.</small>
+                    <small class="form-text text-muted">Indica si esta escuela tendrá habilitada la opción de consolidación
+                        para informes.</small>
                 </div>
             </div>
             <div class="offcanvas-footer p-5 border-top border-2 px-8">

@@ -28,7 +28,8 @@ storage/logs/*.log
 !/public/assets
 !/public/assets/*
 /public/css
-
+/routes/tenant.php
+/app/Providers
 /bootstrap/cache/*
 !/bootstrap/cache/.gitignore
 deploy_key

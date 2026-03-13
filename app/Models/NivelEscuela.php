@@ -12,7 +12,7 @@ class NivelEscuela extends Model
 {
     protected $table = 'niveles_escuelas';
 
-   
+
     /**
      * Relación uno a muchos con Materia.
      * Un nivel puede tener muchas materias.
@@ -39,11 +39,11 @@ class NivelEscuela extends Model
     public function prerrequisitos(): BelongsToMany
     {
         return $this->belongsToMany(
-            NivelEscuela::class,         // Modelo relacionado
-            'prerequisito_niveles',       // Tabla pivote
-            'nivel_id',                  // Llave foránea de este modelo en la tabla pivote
-            'nivel_requerido_id'     // Llave foránea del modelo relacionado en la tabla pivote
-        );
+            NivelEscuela::class,                // Modelo relacionado
+            'nivel_escuela_prerrequisitos',      // Tabla pivote
+            'nivel_escuela_id_inicial',         // Llave foránea de este modelo
+            'nivel_escuela_requerido_id'        // Llave foránea del modelo relacionado
+        )->withPivot('escuela_id')->withTimestamps();
     }
 
      /**
@@ -77,8 +77,8 @@ class NivelEscuela extends Model
             ->withPivot('estado_proceso')           // Incluir el estado requerido del proceso
             ->withTimestamps();                       // Mantener timestamps si existen
     }
- 
 
-    
-     
+
+
+
 }

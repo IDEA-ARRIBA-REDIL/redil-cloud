@@ -27,6 +27,11 @@ class TareaConsolidacionUsuario extends Pivot
     return $this->belongsTo(EstadoTareaConsolidacion::class, 'estado_tarea_consolidacion_id');
   }
 
+   public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
    public function tareaConsolidacion(): BelongsTo
     {
         // Este registro pivote PERTENECE A una TareaConsolidacion.

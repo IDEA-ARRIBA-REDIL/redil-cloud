@@ -1512,7 +1512,7 @@ class ConsolidacionController extends Controller
     // 3. Estadísticas para la pestaña Semanal: Usuarios clasificados por Tipo de Vinculación
     $vinculacionesSemanales = TipoVinculacion::withCount(['usuarios' => function ($query) use ($userIdsSemanales) {
       $query->whereIn('id', $userIdsSemanales);
-    }])->get();
+    }])->get(); 
 
     return view('contenido.paginas.consolidacion.dashboard', compact(
       'anio',
@@ -1524,4 +1524,192 @@ class ConsolidacionController extends Controller
       'fechaFinSemana'
     ));
   }*/
+
+  // Reporte de desempeño de colaboradores con filtrado por zona, sede y estado
+  public function reporteDesempeño(Request $request)
+  {
+    $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+    if ($rolActivo) {
+       $rolActivo->verificacionDelPermiso('consolidacion.reporte_desempeño');
+    }
+
+    $rangoFechas = $request->rango_fechas;
+    if ($rangoFechas) {
+      $fechas = explode(' a ', $rangoFechas);
+      if (count($fechas) >= 2) {
+        $inicio = Carbon::parse(trim($fechas[0]))->startOfDay();
+        $fin = Carbon::parse(trim($fechas[1]))->endOfDay();
+      } else {
+        $inicio = Carbon::parse(trim($fechas[0]))->startOfDay();
+        $fin = Carbon::parse(trim($fechas[0]))->endOfDay();
+      }
+    } else {
+      $inicio = Carbon::now()->startOfMonth();
+      $fin = Carbon::now()->endOfMonth();
+      $rangoFechas = $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d');
+    }
+
+    // Filtros de Zonas
+    $zonasDisponibles = \App\Models\Zona::orderBy('nombre')->get();
+    $zonasSeleccionadas = $request->input('zonas_seleccionadas', $zonasDisponibles->pluck('id')->toArray());
+
+    
+
+    // Obtener los modelos de las zonas seleccionadas para mostrar en las cards
+    $zonasParaReporte = \App\Models\Zona::with('sedes')->whereIn('id', $zonasSeleccionadas)->orderBy('nombre')->get();
+    
+    // Tipos de tareas para las cabeceras de la tabla
+    $tiposTarea = \App\Models\TareaConsolidacion::orderBy('orden')->get();
+
+    foreach ($zonasParaReporte as $zona) {
+        $sedeIds = $zona->sedes->pluck('id');
+
+        // 1. Métricas de Cosecha para la Zona
+        // Usuarios creados en el rango cuya última bitácora de tipo los habilita para consolidación
+        $cosechaZonaQuery = \App\Models\User::withTrashed()
+            ->whereIn('sede_id', $sedeIds)
+            ->whereBetween('created_at', [$inicio, $fin])
+            ->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
+                $subQuery->whereBetween('created_at', [$inicio, $fin])
+                    ->whereHas('tipoUsuarioNuevo', function ($q) { 
+                        $q->where('habilitado_para_consolidacion', true); 
+                    });
+            });
+
+        $zona->totalCosecha = $cosechaZonaQuery->count();
+
+        $zona->cosechaEfectivaQuery = (clone $cosechaZonaQuery)
+            ->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                $sub->whereBetween('created_at', [$inicio, $fin])
+                    ->where('dado_baja', true);
+            });
+
+        $zona->cosechaEfectiva = (clone $zona->cosechaEfectivaQuery)->count();
+
+        // Cantidad de los de la cosecha efectiva que no tiene ninguna tarea gestionada en el periodo
+        $zona->sinGestionPeriodo = (clone $zona->cosechaEfectivaQuery)
+            ->whereDoesntHave('asignacionesConsolidacion.historial', function($q) use ($inicio, $fin) {
+                $q->whereBetween('created_at', [$inicio, $fin]);
+            })
+            ->count();
+
+        // Listado de personas para prueba (Cosecha Efectiva)
+        $zona->listadoPersonasPrueba = (clone $zona->cosechaEfectivaQuery)
+            ->with(['asignacionesConsolidacion.historial' => function($q) use ($inicio, $fin) {
+                $q->whereBetween('created_at', [$inicio, $fin]);
+            }, 'asignacionesConsolidacion.tareaConsolidacion'])
+            ->get()
+            ->map(function($user) {
+                $tareas = $user->asignacionesConsolidacion->flatMap(function($asignacion) {
+                    return $asignacion->historial->map(fn($h) => $asignacion->tareaConsolidacion->nombre);
+                })->unique()->implode(', ');
+
+                return [
+                    'nombre' => $user->nombre(3),
+                    'tareas' => $tareas ?: 'Sin tareas'
+                ];
+            });
+
+        // 2. Tabulación de Colaboradores
+        // Primero: Identificar TODOS los colaboradores potenciales de esta zona (Usuarios con rol activo que tenga el permiso)
+        $colaboradoresZona = \App\Models\User::whereIn('sede_id', $sedeIds)
+            ->whereHas('roles', function($q) {
+                $q->where('model_has_roles.activo', true)
+                  ->whereHas('permissions', function($p) {
+                      $p->where('name', 'consolidacion.dashboard_consolidacion');
+                  });
+            })
+            ->get();
+
+        $tabulacion = [];
+        // Inicializar la tabulación para TODOS los colaboradores de la zona con 0
+        foreach ($colaboradoresZona as $colab) {
+            $tabulacion[$colab->id] = [
+                'nombre' => $colab->primer_nombre . ' ' . $colab->primer_apellido,
+                'tareas' => array_fill_keys($tiposTarea->pluck('id')->toArray(), 0),
+                'total' => 0
+            ];
+        }
+
+        // Segundo: Llenar con las gestiones reales realizadas a personas de esta zona
+        $gestionesZona = \App\Models\HistorialTareaConsolidacionUsuario::whereBetween('created_at', [$inicio, $fin])
+            ->whereHas('tareaDelUsuario.user', function($q) use ($sedeIds) {
+                $q->whereIn('sede_id', $sedeIds);
+            })
+            ->with(['creador', 'tareaDelUsuario.tareaConsolidacion'])
+            ->get();
+
+        foreach ($gestionesZona as $gestion) {
+            $colabId = $gestion->usuario_creacion_id;
+            $tareaId = $gestion->tareaDelUsuario->tarea_consolidacion_id;
+            $creador = $gestion->creador;
+
+            if (!$creador) continue;
+
+            // Si el colaborador que hizo la gestión no estaba en la lista inicial (ej. es de otra sede/zona pero gestionó a alguien aquí)
+            if (!isset($tabulacion[$colabId])) {
+                $tabulacion[$colabId] = [
+                    'nombre' => $creador->primer_nombre . ' ' . $creador->primer_apellido,
+                    'tareas' => array_fill_keys($tiposTarea->pluck('id')->toArray(), 0),
+                    'total' => 0
+                ];
+            }
+
+            if (isset($tabulacion[$colabId]['tareas'][$tareaId])) {
+                $tabulacion[$colabId]['tareas'][$tareaId]++;
+                $tabulacion[$colabId]['total']++;
+            }
+        }
+        
+        // 3. Desglose por Sedes dentro de la Zona
+        $desgloseSedes = [];
+        foreach ($zona->sedes as $sede) {
+            $cosechaSedeQuery = \App\Models\User::withTrashed()
+                ->where('sede_id', $sede->id)
+                ->whereBetween('created_at', [$inicio, $fin])
+                ->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
+                    $subQuery->whereBetween('created_at', [$inicio, $fin])
+                        ->whereHas('tipoUsuarioNuevo', function ($q) { 
+                            $q->where('habilitado_para_consolidacion', true); 
+                        });
+                });
+
+            $totalCosechaSede = (clone $cosechaSedeQuery)->count();
+
+            $cosechaEfectivaSedeQuery = (clone $cosechaSedeQuery)
+                ->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                    $sub->whereBetween('created_at', [$inicio, $fin])
+                        ->where('dado_baja', true);
+                });
+
+            $totalEfectivaSede = (clone $cosechaEfectivaSedeQuery)->count();
+
+            $sinGestionSede = (clone $cosechaEfectivaSedeQuery)
+                ->whereDoesntHave('asignacionesConsolidacion.historial', function($q) use ($inicio, $fin) {
+                    $q->whereBetween('created_at', [$inicio, $fin]);
+                })
+                ->count();
+
+            $desgloseSedes[] = [
+                'nombre' => $sede->nombre,
+                'cosecha' => $totalCosechaSede,
+                'efectiva' => $totalEfectivaSede,
+                'sin_gestion' => $sinGestionSede
+            ];
+        }
+        $zona->desgloseSedes = $desgloseSedes;
+        
+        // Ordenar por total de gestiones descendente
+        uasort($tabulacion, fn($a, $b) => $b['total'] <=> $a['total']);
+        $zona->tabulacionColaboradores = $tabulacion;
+    }
+
+    return view('contenido.paginas.consolidacion.reporte-desempeno', compact(
+      'rangoFechas',
+      'zonasDisponibles',
+      'zonasSeleccionadas',
+      'zonasParaReporte',
+      'tiposTarea'
+    ));
+  }
 }

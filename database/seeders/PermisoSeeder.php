@@ -2563,6 +2563,12 @@ class PermisoSeeder extends Seeder
       'name' => 'consolidacion.dashboard_consolidacion',
     ])->syncRoles([$superAdmin]);
 
+    Permission::firstOrCreate([
+      'titulo' => 'reporte_desempeño',
+      'descripcion' => '',
+      'name' => 'consolidacion.reporte_desempeño',
+    ])->syncRoles([$superAdmin]);
+
 
     // Consejeria
     Permission::firstOrCreate([

@@ -151,32 +151,36 @@
 
 
 
-              <div class="mb-3 col-12" wire:ignore>
+              <div class="mb-3 col-12">
                 <label for="sedes" class="form-label">¿Qué sedes componen la zona?</label>
-                <select id="sedes" name="sedes[]" multiple class="form-select" >
-                  @foreach ($sedes as $sede )
-                  <option value="{{ $sede->id }}" >{{ $sede->nombre }} </option>
-                  @endforeach
-                </select>
-                @if($errors->has('sedesSeleccionadas'))
+                <div wire:ignore>
+                  <select id="sedes" name="sedes[]" multiple class="form-select" >
+                    @foreach ($sedes as $sede )
+                    <option value="{{ $sede->id }}" >{{ $sede->nombre }} </option>
+                    @endforeach
+                  </select>
+                </div>
+                @error('sedesSeleccionadas')
                   <div class="text-danger ti-12px mt-2">
-                    <i class="ti ti-circle-x"></i> {{ $errors->first('sedesSeleccionadas') }}
+                    <i class="ti ti-circle-x"></i> {{ $message }}
                   </div>
-                @endif
+                @enderror
               </div>
 
-              <div class="mb-3 col-12" wire:ignore>
+              <div class="mb-3 col-12">
                 <label for="localidades" class="form-label">¿Qué localidades componen la zona?</label>
-                <select id="localidades" name="localidades[]" multiple class="form-select" >
-                  @foreach ($localidades as $localidad )
-                  <option value="{{ $localidad->id }}" >{{ $localidad->nombre }} ({{ $localidad->municipio->nombre }}) </option>
-                  @endforeach
-                </select>
-                @if($errors->has('localidadesSeleccionadas'))
+                <div wire:ignore>
+                  <select id="localidades" name="localidades[]" multiple class="form-select" >
+                    @foreach ($localidades as $localidad )
+                    <option value="{{ $localidad->id }}" >{{ $localidad->nombre }} ({{ $localidad->municipio->nombre }}) </option>
+                    @endforeach
+                  </select>
+                </div>
+                @error('localidadesSeleccionadas')
                   <div class="text-danger ti-12px mt-2">
-                    <i class="ti ti-circle-x"></i> {{ $errors->first('localidadesSeleccionadas') }}
+                    <i class="ti ti-circle-x"></i> {{ $message }}
                   </div>
-                @endif
+                @enderror
               </div>
 
 
@@ -197,117 +201,96 @@
 
 @script
 <script>
-  $wire.on('msn', data => {
-    Swal.fire({
-      title: event.detail.msnTitulo,
-      html: event.detail.msnTexto,
-      icon: event.detail.msnIcono,
-      customClass: {
-          confirmButton: 'btn btn-primary'
-      },
-        buttonsStyling: false
-    });
-  });
-
-  $wire.on('eliminar', (event) => {
-
-        Swal.fire({
-          title: '¿Deseas eliminar esta zona?',
-          text: "Esta acción no es reversible."+event.id,
-          icon: 'warning',
-          showCancelButton: true, // Es mejor mostrar el botón de cancelar
-          confirmButtonText: 'Sí, eliminar',
-          cancelButtonText: 'Cancelar',
-          customClass: {
-              confirmButton: 'btn btn-primary me-3',
-              cancelButton: 'btn btn-label-secondary'
-          },
-          buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Despachamos el evento para que el componente lo reciba y elimine el rol
-                $wire.dispatch('eliminarZona', { id: event.id });
-            }
-        });
-  });
-
-  $wire.on('cerrarModal', data => {
-    var offcanvasElement = document.getElementById(event.detail.nombreModal);
-    var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
-    offcanvas.hide();
-    destroySelect2();
-  });
-
-  $wire.on('abrirModal', data => {
-
-    // Agregar backdrop
-    const backdrop = document.createElement('div');
-    backdrop.className = 'offcanvas-backdrop fade show';
-    document.body.appendChild(backdrop);
-
-    var offcanvasElement = document.getElementById(event.detail.nombreModal);
-    var offcanvas = new bootstrap.Offcanvas(offcanvasElement, {
-      backdrop: true
-    });
-    offcanvas.show();
-
-    offcanvasElement.addEventListener('shown.bs.offcanvas', () => {
-        initSelect2(); // Inicializamos Select2 AQUI
-    }, { once: true });
-
-    // Remover backdrop al cerrar
-    offcanvasElement.addEventListener('hidden.bs.offcanvas', () => {
-      backdrop.remove();
-      destroySelect2();
-    });
-  });
-
-  // Función para inicializar los selects
-  function initSelect2() {
-      // 1. Inicializar Select2
+  // Definimos las funciones en window para asegurar su visibilidad global
+  window.initSelect2Zonas = function() {
+    if (typeof $.fn.select2 !== 'undefined') {
       $('#sedes').select2({
-          placeholder: 'Seleccione una o más sedes',
-          dropdownParent: $('#modalcrearEditarZona'), // IMPORTANTE: para que el dropdown aparezca sobre el offcanvas
-          allowClear: true
+        placeholder: 'Seleccione una o más sedes',
+        dropdownParent: $('#modalcrearEditarZona'),
+        allowClear: true
       });
       $('#localidades').select2({
-          placeholder: 'Seleccione una o más localidades',
-          dropdownParent: $('#modalcrearEditarZona'), // IMPORTANTE
-          allowClear: true
+        placeholder: 'Seleccione una o más localidades',
+        dropdownParent: $('#modalcrearEditarZona'),
+        allowClear: true
       });
 
-      // 2. Sincronizar Livewire -> Select2 (al abrir)
-      // Usamos $wire.get() para obtener los valores actuales y .trigger('change') para que Select2 refresque la UI
+      // Sincronizar valores iniciales de Livewire a Select2
       $('#sedes').val($wire.get('sedesSeleccionadas')).trigger('change');
       $('#localidades').val($wire.get('localidadesSeleccionadas')).trigger('change');
 
-      // 3. Sincronizar Select2 -> Livewire (al cambiar)
-      // Cuando el usuario cambia el select, actualizamos la propiedad de Livewire
-      $('#sedes').on('change', function (e) {
-          // Usamos @this.set para evitar un request por cada selección en modo 'multiple'
-          // @this.set('sedesSeleccionadas', $(this).val());
-
-          // Mejor usamos $wire.set para que sea compatible con v3
-          $wire.set('sedesSeleccionadas', $(this).val());
+      // Listeners para sincronizar cambios de Select2 a Livewire
+      $('#sedes').on('change', function () {
+        $wire.set('sedesSeleccionadas', $(this).val());
       });
-
-      $('#localidades').on('change', function (e) {
-          $wire.set('localidadesSeleccionadas', $(this).val());
+      $('#localidades').on('change', function () {
+        $wire.set('localidadesSeleccionadas', $(this).val());
       });
+    }
+  };
 
-      // Función para destruir los selects
-      function destroySelect2() {
-          if ($('#sedes').data('select2')) { // Comprobar si Select2 está inicializado
-              $('#sedes').select2('destroy');
-          }
-          if ($('#localidades').data('select2')) {
-              $('#localidades').select2('destroy');
-          }
-          // Limpiamos los listeners para evitar duplicados
-          $('#sedes').off('change');
-          $('#localidades').off('change');
+  window.destroySelect2Zonas = function() {
+    if (typeof $.fn.select2 !== 'undefined') {
+      if ($('#sedes').data('select2')) $('#sedes').select2('destroy');
+      if ($('#localidades').data('select2')) $('#localidades').select2('destroy');
+    }
+    $('#sedes').off('change');
+    $('#localidades').off('change');
+  };
+
+  $wire.on('msn', data => {
+    Swal.fire({
+      title: data.msnTitulo,
+      html: data.msnTexto,
+      icon: data.msnIcono,
+      customClass: { confirmButton: 'btn btn-primary' },
+      buttonsStyling: false
+    });
+  });
+
+  $wire.on('eliminar', data => {
+    Swal.fire({
+      title: '¿Deseas eliminar esta zona?',
+      text: "Esta acción no es reversible.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        confirmButton: 'btn btn-primary me-3',
+        cancelButton: 'btn btn-label-secondary'
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        $wire.dispatch('eliminarZona', { id: data.id });
       }
-  }
+    });
+  });
 
+  $wire.on('cerrarModal', data => {
+    var offcanvasElement = document.getElementById(data.nombreModal);
+    if (offcanvasElement) {
+      var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+      if (offcanvas) offcanvas.hide();
+    }
+    window.destroySelect2Zonas();
+  });
+
+  $wire.on('abrirModal', data => {
+    var offcanvasElement = document.getElementById(data.nombreModal);
+    if (!offcanvasElement) return;
+
+    var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement) || new bootstrap.Offcanvas(offcanvasElement);
+    offcanvas.show();
+
+    offcanvasElement.addEventListener('shown.bs.offcanvas', () => {
+      window.initSelect2Zonas();
+    }, { once: true });
+
+    offcanvasElement.addEventListener('hidden.bs.offcanvas', () => {
+      window.destroySelect2Zonas();
+    }, { once: true });
+  });
 </script>
 @endscript
