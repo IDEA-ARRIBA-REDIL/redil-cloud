@@ -2,15 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Periodo;
 use App\Models\Calificaciones;
 use App\Models\MateriaAprobadaUsuario;
+use App\Models\Periodo;
+use App\Traits\AplicaEfectosAprobacion;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Database\QueryException;
-use Illuminate\Support\Collection;
-use App\Models\Materia;
-use Carbon\Carbon;
 
 /**
  * Servicio encargado de la lógica de negocio para finalizar un periodo académico.
@@ -18,13 +16,15 @@ use Carbon\Carbon;
  */
 class ServicioValidacionPeriodo
 {
+    use AplicaEfectosAprobacion;
+
     /**
      * Orquesta el procesamiento de un único LOTE de alumnos para un periodo.
      * Este es el método principal que será llamado por el FinalizarPeriodoJob.
      *
-     * @param Periodo $periodo El periodo que se está procesando.
-     * @param int $pagina El número del lote actual (ej: 1, 2, 3...).
-     * @param int $porPagina El tamaño de cada lote (ej: 200 alumnos por lote).
+     * @param  Periodo  $periodo  El periodo que se está procesando.
+     * @param  int  $pagina  El número del lote actual (ej: 1, 2, 3...).
+     * @param  int  $porPagina  El tamaño de cada lote (ej: 200 alumnos por lote).
      * @return int El número de alumnos que fueron procesados en este lote.
      */
     public function procesarLoteDeAlumnos(Periodo $periodo, int $pagina, int $porPagina): int
@@ -44,20 +44,20 @@ class ServicioValidacionPeriodo
         // Si la consulta no devuelve IDs, significa que ya no hay más alumnos por procesar.
         if ($idsAlumnosDelLote->isEmpty()) {
             Log::info("Servicio: No se encontraron más alumnos para el lote {$pagina}. Finalizando.");
+
             return 0; // Se devuelve 0 para indicarle al Job que debe detenerse.
         }
-        Log::info("Servicio: Se procesarán " . $idsAlumnosDelLote->count() . " alumnos en este lote.");
-
+        Log::info('Servicio: Se procesarán '.$idsAlumnosDelLote->count().' alumnos en este lote.');
 
         // --- PASO 2: OBTENER LOS DATOS ACADÉMICOS SOLO PARA ESE LOTE DE ALUMNOS ---
         $resultadosAcademicos = $this->obtenerResultadosAcademicos($periodo, $idsAlumnosDelLote);
-        Log::info("Servicio: La consulta SQL para el lote se completó. Se encontraron " . count($resultadosAcademicos) . " registros de alumno/materia.");
+        Log::info('Servicio: La consulta SQL para el lote se completó. Se encontraron '.count($resultadosAcademicos).' registros de alumno/materia.');
 
         if (empty($resultadosAcademicos)) {
-            Log::warning("No se encontraron datos académicos para los alumnos de este lote.");
+            Log::warning('No se encontraron datos académicos para los alumnos de este lote.');
+
             return $idsAlumnosDelLote->count(); // Devolvemos el conteo para que el job sepa que debe continuar con el siguiente lote.
         }
-
 
         // --- PASO 3: APLICAR LAS REGLAS DE NEGOCIO (igual que antes) ---
         $notaMinimaAprobacion = Calificaciones::where('sistema_calificacion_id', $periodo->sistema_calificaciones_id)
@@ -86,7 +86,6 @@ class ServicioValidacionPeriodo
             ];
         }
 
-
         // --- PASO 4: PERSISTIR LOS RESULTADOS DE ESTE LOTE (igual que antes) ---
         $this->persistirResultados($datosParaUpsert);
 
@@ -102,9 +101,7 @@ class ServicioValidacionPeriodo
     /**
      * Ejecuta la consulta SQL optimizada para un lote específico de IDs de alumnos.
      *
-     * @param Periodo $periodo
-     * @param Collection $idsAlumnos Colección de IDs de los alumnos a consultar.
-     * @return array
+     * @param  Collection  $idsAlumnos  Colección de IDs de los alumnos a consultar.
      */
     private function obtenerResultadosAcademicos(Periodo $periodo, Collection $idsAlumnos): array
     {
@@ -161,13 +158,14 @@ class ServicioValidacionPeriodo
             $aproboPorAsistencia = false;
             $motivos[] = 'ASISTENCIA_INSUFICIENTE';
         }
+
         return ['aprobado' => $aproboPorNota && $aproboPorAsistencia, 'motivo' => empty($motivos) ? null : implode(', ', $motivos)];
     }
 
     /**
      * Guarda los resultados finales en la BD con validación manual para evitar operaciones innecesarias.
      *
-     * @param array $datosCalculados El conjunto completo de resultados calculados.
+     * @param  array  $datosCalculados  El conjunto completo de resultados calculados.
      */
     private function persistirResultados(array $datosCalculados): void
     {
@@ -175,7 +173,7 @@ class ServicioValidacionPeriodo
             return;
         }
 
-        Log::info("Servicio: Iniciando persistencia manual para " . count($datosCalculados) . " registros.");
+        Log::info('Servicio: Iniciando persistencia manual para '.count($datosCalculados).' registros.');
 
         // --- PASO 1: Obtener todos los registros que YA existen para este periodo ---
         // Hacemos UNA sola consulta para traer todos los registros existentes a memoria.
@@ -184,17 +182,17 @@ class ServicioValidacionPeriodo
             ->get()
             // Creamos un "mapa" para búsquedas súper rápidas, usando una clave compuesta.
             ->keyBy(function ($item) {
-                return $item->user_id . '-' . $item->materia_periodo_id;
+                return $item->user_id.'-'.$item->materia_periodo_id;
             });
 
-        Log::info("Se encontraron " . $registrosExistentes->count() . " registros existentes en la BD para este periodo.");
+        Log::info('Se encontraron '.$registrosExistentes->count().' registros existentes en la BD para este periodo.');
 
         // --- PASO 2: Separar los datos en "para insertar" y "para actualizar" ---
         $paraInsertar = [];
         $paraActualizar = [];
 
         foreach ($datosCalculados as $dato) {
-            $clave = $dato['user_id'] . '-' . $dato['materia_periodo_id'];
+            $clave = $dato['user_id'].'-'.$dato['materia_periodo_id'];
 
             // Comprobamos si el registro ya existe en nuestro "mapa"
             if (isset($registrosExistentes[$clave])) {
@@ -216,22 +214,22 @@ class ServicioValidacionPeriodo
             }
         }
 
-        Log::info("Análisis completado: " . count($paraInsertar) . " registros para insertar, " . count($paraActualizar) . " para actualizar.");
+        Log::info('Análisis completado: '.count($paraInsertar).' registros para insertar, '.count($paraActualizar).' para actualizar.');
 
         // --- PASO 3: Ejecutar las operaciones en la base de datos ---
 
         // Insertamos todos los registros nuevos en una sola operación masiva.
-        if (!empty($paraInsertar)) {
+        if (! empty($paraInsertar)) {
             // Usamos insert para mayor rendimiento, ya que son datos nuevos.
             foreach (array_chunk($paraInsertar, 500) as $chunk) {
                 MateriaAprobadaUsuario::insert($chunk);
             }
-            Log::info("Se insertaron " . count($paraInsertar) . " nuevos registros.");
+            Log::info('Se insertaron '.count($paraInsertar).' nuevos registros.');
         }
 
         // Actualizamos los registros que cambiaron, uno por uno.
         // Aunque es un bucle, solo se ejecuta para los registros que REALMENTE cambiaron.
-        if (!empty($paraActualizar)) {
+        if (! empty($paraActualizar)) {
             foreach ($paraActualizar as $datoActualizar) {
                 MateriaAprobadaUsuario::where('user_id', $datoActualizar['user_id'])
                     ->where('materia_periodo_id', $datoActualizar['materia_periodo_id'])
@@ -243,7 +241,7 @@ class ServicioValidacionPeriodo
                         'updated_at' => now(),
                     ]);
             }
-            Log::info("Se actualizaron " . count($paraActualizar) . " registros existentes.");
+            Log::info('Se actualizaron '.count($paraActualizar).' registros existentes.');
         }
     }
 
@@ -252,8 +250,7 @@ class ServicioValidacionPeriodo
      * Cierra administrativamente todos los componentes asociados a un periodo.
      * Marca todas las materias como 'finalizadas' y todos los cortes como 'cerrados'.
      *
-     * @param Periodo $periodo El periodo a finalizar.
-     * @return void
+     * @param  Periodo  $periodo  El periodo a finalizar.
      */
     public function finalizarComponentesDelPeriodo(Periodo $periodo): void
     {
@@ -278,166 +275,5 @@ class ServicioValidacionPeriodo
         }
 
         Log::info("Se finalizaron {$materiasAfectadas} materias del periodo.");
-    }
-
-    /**
-     * Aplica los cambios en Tareas de Consolidación y Pasos de Crecimiento
-     * para los alumnos que han aprobado sus materias en este lote.
-     *
-     * @param array $datosCalculados resultados del procesamiento del lote.
-     */
-    private function aplicarEfectosCulminacion(array $datosCalculados): void
-    {
-        // 1. Filtramos solo los registros APROBADOS
-        $aprobados = array_filter($datosCalculados, function ($dato) {
-            return $dato['aprobado'] === true;
-        });
-
-        if (empty($aprobados)) {
-            return;
-        }
-
-        Log::info("Servicio: Aplicando efectos de culminación para " . count($aprobados) . " aprobaciones.");
-
-        // 2. Cargamos la configuración de las materias involucradas
-        //    (Tareas a culminar, Pasos a culminar y ahora también TipoUsuarioObjetivo con Rol Dependiente)
-        $materiaIds = collect($aprobados)->pluck('materia_id')->unique();
-        
-        $materiasConfig = Materia::whereIn('id', $materiaIds)
-            ->with([
-                'tipoUsuarioObjetivo' => function ($query) {
-                    // Seleccionamos los campos necesarios, principalmente el rol dependiente
-                    $query->select('id', 'puntaje', 'id_rol_dependiente'); 
-                },
-                'tareasCulminadas', 
-                'pasosCrecimiento' => function ($query) {
-                    $query->wherePivot('al_iniciar', false);
-                }
-            ])
-            ->get()
-            ->keyBy('id');
-
-        // 3. Iteramos y aplicamos cambios (Upserts para eficiencia)
-        foreach ($aprobados as $dato) {
-            $materiaId = $dato['materia_id'];
-            $userId = $dato['user_id'];
-            
-            $materia = $materiasConfig->get($materiaId);
-            if (!$materia) continue;
-
-            // --- A. Actualizar Tareas de Consolidación ---
-            foreach ($materia->tareasCulminadas as $tareaConfig) {
-                // Usamos updateOrInsert para asegurar idempotencia
-                DB::table('tarea_consolidacion_usuario')->updateOrInsert(
-                    [
-                        'user_id' => $userId,
-                        'tarea_consolidacion_id' => $tareaConfig->tarea_consolidacion_id
-                    ],
-                    [
-                        'estado_tarea_consolidacion_id' => $tareaConfig->estado_tarea_consolidacion_id,
-                        'updated_at' => now(),
-                        // Nota: Si es insert, created_at quedará null o default. 
-                        // Si es crítico, se debería usar raw query o manejarlo diferente.
-                        // Para este caso, updated_at es suficiente señal de cambio.
-                    ]
-                );
-            }
-
-            // --- B. Actualizar Pasos de Crecimiento ---
-            foreach ($materia->pasosCrecimiento as $pasoConfig) {
-                // El estado objetivo está en la tabla pivote de la configuración de la materia
-                $estadoObjetivoId = $pasoConfig->pivot->estado_paso_crecimiento_usuario_id;
-                
-                if ($estadoObjetivoId) {
-                    DB::table('crecimiento_usuario')->updateOrInsert(
-                        [
-                            'user_id' => $userId,
-                            'paso_crecimiento_id' => $pasoConfig->id
-                        ],
-                        [
-                            'estado_id' => $estadoObjetivoId,
-                            'fecha' => now(), // Fecha de cumplimiento: Ahora
-                            'updated_at' => now()
-                        ]
-                    );
-                }
-            }
-
-            // --- C. Actualizar Tipo de Usuario y Roles (NUEVO) ---
-            if ($materia->tipo_usuario_objetivo_id) {
-                // Obtenemos el usuario de la DB para conocer su tipo actual
-                $usuario = \App\Models\User::with('tipoUsuario')->find($userId);
-                $tipoObjetivo = $materia->tipoUsuarioObjetivo;
-                
-                if ($usuario && $tipoObjetivo) {
-                    // 1. Validar Jerarquía por Puntaje
-                    $puntajeActual = $usuario->tipoUsuario ? $usuario->tipoUsuario->puntaje : 0;
-                    $puntajeObjetivo = $tipoObjetivo->puntaje;
-
-                    // Si el usuario tiene mayor o igual rango que el objetivo, NO hacemos nada.
-                    // (Cambio aquí: <= permite ascender si es igual puntaje pero difiere en algo más, o < estricto)
-                    // Siguiendo la lógica de asistencia: solo si actual <= objetivo (lo cual incluye re-setear iguales)
-                    // Pero usualmente se quiere ascender. Aquí usaremos logic estricta: Si puntajeActual <= puntajeObjetivo, aplicamos.
-                    // Si ya tiene un puntaje SUPERIOR, no lo degradamos.
-                    if ($puntajeActual <= $puntajeObjetivo) {
-                        
-                        Log::info("Servicio: Actualizando Tipo de Usuario para User ID {$userId}. Objetivo: {$tipoObjetivo->id}");
-
-                        // 2. Actualizar Tipo de Usuario en tabla users
-                        // Evitamos disparar eventos de Eloquent masivos si podemos, pero User::update dispara observers (Bitacora).
-                        // Es MEJOR usar el modelo para que la bitácora funcione.
-                        $usuario->update(['tipo_usuario_id' => $tipoObjetivo->id]);
-
-                        // 3. Gestión de Roles (Transacción anidada es segura en Laravel o parte de la global)
-                        $nuevoRolId = $tipoObjetivo->id_rol_dependiente;
-
-                        if ($nuevoRolId) {
-                            // A. Desactivar TODOS los roles actuales
-                            DB::table('model_has_roles')
-                                ->where('model_id', $usuario->id)
-                                ->where('model_type', 'App\Models\User')
-                                ->update(['activo' => false]);
-
-                            // B. Obtener IDs de roles dependientes para eliminar
-                            $rolesDependientesIds = \App\Models\Role::where('dependiente', true)->pluck('id');
-
-                            // C. Eliminar conexiones con roles dependientes antiguos
-                            if ($rolesDependientesIds->isNotEmpty()) {
-                                DB::table('model_has_roles')
-                                    ->where('model_id', $usuario->id)
-                                    ->where('model_type', 'App\Models\User')
-                                    ->whereIn('role_id', $rolesDependientesIds)
-                                    ->delete();
-                            }
-
-                            // D. Asignar nuevo rol dependiente activo
-                            // Usamos insert o updateOrInsert directo para evitar problema de caché aqui mismo o duplicados
-                            // Ojo: attach() puede fallar si ya existe. Usamos insertIgnore o check.
-                            $existeRelacion = DB::table('model_has_roles')
-                                ->where('model_id', $usuario->id)
-                                ->where('role_id', $nuevoRolId)
-                                ->exists();
-
-                            if (!$existeRelacion) {
-                                DB::table('model_has_roles')->insert([
-                                    'role_id' => $nuevoRolId,
-                                    'model_type' => 'App\Models\User',
-                                    'model_id' => $usuario->id,
-                                    'activo' => true
-                                ]);
-                            } else {
-                                DB::table('model_has_roles')
-                                    ->where('model_id', $usuario->id)
-                                    ->where('role_id', $nuevoRolId)
-                                    ->update(['activo' => true]);
-                            }
-                            
-                            // Limpieza de caché de permisos necesaria
-                            app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-                        }
-                    }
-                }
-            }
-        }
     }
 }

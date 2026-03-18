@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class NivelTareaRequisito extends Model
 {
@@ -12,23 +13,23 @@ class NivelTareaRequisito extends Model
     protected $table = 'nivel_tarea_requisito';
 
     protected $fillable = [
-        'nivel_agrupacion_id',
+        'nivel_id',
         'tarea_consolidacion_id',
         'estado_tarea_consolidacion_id',
-        'indice'
+        'indice',
     ];
 
-    public function nivel()
+    public function nivel(): BelongsTo
     {
-        return $this->belongsTo(NivelAgrupacion::class, 'nivel_agrupacion_id');
+        return $this->belongsTo(NivelEscuela::class, 'nivel_id');
     }
 
-    public function tareaConsolidacion()
+    public function tareaConsolidacion(): BelongsTo
     {
         return $this->belongsTo(TareaConsolidacion::class, 'tarea_consolidacion_id');
     }
 
-    public function estadoTareaConsolidacion()
+    public function estadoTarea(): BelongsTo
     {
         return $this->belongsTo(EstadoTareaConsolidacion::class, 'estado_tarea_consolidacion_id');
     }

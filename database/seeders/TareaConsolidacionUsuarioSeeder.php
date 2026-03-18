@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\TareaConsolidacionUsuario;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TareaConsolidacionUsuarioSeeder extends Seeder
@@ -13,25 +12,29 @@ class TareaConsolidacionUsuarioSeeder extends Seeder
      */
     public function run(): void
     {
-        TareaConsolidacionUsuario::firstOrCreate([
+
+        // Al usar Eloquent (firstOrCreate), se dispararán automáticamente los hooks
+        // del modelo TareaConsolidacionUsuario para registrar en la nueva BitacoraTareaConsolidacion.
+
+        /*TareaConsolidacionUsuario::firstOrCreate([
           'tarea_consolidacion_id' => 1,
           'user_id' => 11,
           'estado_tarea_consolidacion_id' => 3,
-          'fecha' => '2025-09-01',
+          'fecha' => now()->format('Y-m-d'),
         ]);
 
         TareaConsolidacionUsuario::firstOrCreate([
           'tarea_consolidacion_id' => 2,
           'user_id' => 11,
           'estado_tarea_consolidacion_id' => 2,
-          'fecha' => '2025-09-10',
+          'fecha' => now()->subDays(2)->format('Y-m-d'),
         ]);
 
         TareaConsolidacionUsuario::firstOrCreate([
           'tarea_consolidacion_id' => 3,
           'user_id' => 11,
           'estado_tarea_consolidacion_id' => 1,
-          'fecha' => '2025-09-15',
-        ]);
+          'fecha' => now()->subDays(5)->format('Y-m-d'),
+        ]);*/
     }
 }

@@ -2,40 +2,51 @@
 
 namespace App\Livewire\Matricula;
 
-use Livewire\Component;
-use App\Models\User;
 use App\Models\Configuracion;
-use App\Models\Materia;
-use App\Models\Periodo;
-use App\Models\Sede;
 use App\Models\HorarioMateriaPeriodo;
+use App\Models\Materia;
 use App\Models\Matricula;
 use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
+use App\Models\Periodo;
+use App\Models\Sede;
+use App\Models\User;
 use App\Services\MatriculaService;
 use Livewire\Attributes\On;
+use Livewire\Component;
 
 class MatriculaModal extends Component
 {
     public $showModal = false;
+
     public $usuario;
+
     public $materia;
+
     public $configuracion;
 
     // --- IDs para los selects ---
     public $materiaId;
+
     public $periodoId;
+
     public $sedeId;
+
     public $horarioId;
+
     public $escuelaId; // <-- CAMBIO: Nueva propiedad para guardar el ID de la escuela.
+
     public $usuarioId;
 
     // --- Campos del formulario ---
     public $estadoPago = 'pendiente';
+
     public $observacion = '';
 
     // --- Colecciones para llenar los selects ---
     public $periodos = [];
+
     public $sedes = [];
+
     public $horarios = [];
 
     // CAMBIO: El método ahora acepta el tercer parámetro 'escuelaId'.
@@ -49,7 +60,7 @@ class MatriculaModal extends Component
         $this->materiaId = $materiaId;
         $this->escuelaId = $escuelaId;
         $this->usuarioId = $usuarioId; // <-- CAMBIO 2: Guardamos el ID del usuario en nuestra nueva propiedad.
-        $this->configuracion=Configuracion::find(1);
+        $this->configuracion = Configuracion::find(1);
 
         $this->materia = Materia::find($materiaId);
         $this->usuario = User::find($usuarioId);
@@ -72,8 +83,8 @@ class MatriculaModal extends Component
     {
         $this->reset(['sedeId', 'horarioId', 'sedes', 'horarios']);
         if ($value) {
-            $this->sedes = Sede::whereHas('aulas.horariosBase.horariosMateriaPeriodo', function($query) use ($value) {
-                $query->whereHas('materiaPeriodo', function($q_mp) use ($value) {
+            $this->sedes = Sede::whereHas('aulas.horariosBase.horariosMateriaPeriodo', function ($query) use ($value) {
+                $query->whereHas('materiaPeriodo', function ($q_mp) use ($value) {
                     $q_mp->where('periodo_id', $value)->where('materia_id', $this->materiaId);
                 });
             })->distinct()->get();
@@ -82,20 +93,20 @@ class MatriculaModal extends Component
 
     public function updatedSedeId($value)
     {
-         $this->reset(['horarioId', 'horarios']);
+        $this->reset(['horarioId', 'horarios']);
         if ($value) {
             // Cargamos los horarios disponibles para la materia, periodo y sede seleccionados.
             $this->horarios = HorarioMateriaPeriodo::
                 // CAMBIO: Añadimos 'maestros.user' al 'with' para precargar las relaciones necesarias
                 // y evitar múltiples consultas a la base de datos (problema N+1).
                 with(['horarioBase.aula', 'maestros.user'])
-                ->whereHas('materiaPeriodo', function($query) {
-                    $query->where('materia_id', $this->materiaId)->where('periodo_id', $this->periodoId);
-                })
-                ->whereHas('horarioBase.aula', function($query) use ($value) {
-                    $query->where('sede_id', $value);
-                })
-                ->get();
+                    ->whereHas('materiaPeriodo', function ($query) {
+                        $query->where('materia_id', $this->materiaId)->where('periodo_id', $this->periodoId);
+                    })
+                    ->whereHas('horarioBase.aula', function ($query) use ($value) {
+                        $query->where('sede_id', $value);
+                    })
+                    ->get();
         }
 
     }
@@ -117,9 +128,10 @@ class MatriculaModal extends Component
         if ($reporte && $reporte->estado === 'BLOQUEADA') {
             $this->dispatch('msn', [
                 'msnTitulo' => 'Error de Requisitos',
-                'msnTexto' => 'El estudiante no cumple con los requisitos: ' . implode(', ', $reporte->motivos),
-                'msnIcono' => 'error'
+                'msnTexto' => 'El estudiante no cumple con los requisitos: '.implode(', ', $reporte->motivos),
+                'msnIcono' => 'error',
             ]);
+
             return;
         }
 
@@ -132,6 +144,11 @@ class MatriculaModal extends Component
             'observacion' => $this->observacion,
             'escuela_id' => $this->escuelaId,
         ]);
+
+        // --- ACTUALIZACIÓN DE TIPO DE USUARIO (SOLICITUD: Tipo Usuario Inicial) ---
+        if ($this->materia->tipo_usuario_inicial_id) {
+            $this->usuario->update(['tipo_usuario_id' => $this->materia->tipo_usuario_inicial_id]);
+        }
 
         EstadoAcademico::create([
             'user_id' => $this->usuario->id,
@@ -152,19 +169,21 @@ class MatriculaModal extends Component
 
             if ($pasoId && $estadoId) {
                 // Sincronizamos el paso con el usuario sin borrar los que ya tenga (syncWithoutDetaching)
-                $this->usuario->pasosCrecimiento()->syncWithoutDetaching([
-                    $pasoId => [
+                CrecimientoUsuario::updateOrCreate(
+                    [
+                        'user_id' => $this->usuario->id,
+                        'paso_crecimiento_id' => $pasoIniciar->id,
+                    ],
+                    [
                         'estado_id' => $estadoId,
                         'fecha' => now(),
-                        'detalle' => 'Asignado automáticamente al matricularse en: ' . $this->materia->nombre
+                        'detalle' => 'Asignado automáticamente al iniciar matrícula en: '.$this->materia->nombre,
                     ]
-                ]);
+                );
             }
         }
 
         $this->closeModal();
-
-
 
         $this->dispatch('swal:success', [
             'title' => '¡Matrícula Exitosa!',

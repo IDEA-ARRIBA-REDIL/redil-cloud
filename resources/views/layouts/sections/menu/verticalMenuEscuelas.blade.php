@@ -56,12 +56,7 @@
                             <div>Gestionar</div>
                         </a>
                     </li>
-                    <li class="menu-item">
-                        <a href="{{ isset($escuela) ? route('niveles-escuelas.crear', $escuela) : '#' }}"
-                            class="menu-link">
-                            <div>Grados Escuela</div>
-                        </a>
-                    </li>
+
                 </ul>
 
             </li>

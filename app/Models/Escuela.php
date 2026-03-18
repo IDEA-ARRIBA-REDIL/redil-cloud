@@ -10,15 +10,16 @@ class Escuela extends Model
 {
     use HasFactory;
 
-     protected $table = 'escuelas';
+    protected $table = 'escuelas';
 
     protected $fillable = [
         'nombre',
         'descripcion',
         'tipo_matricula',
         'diploma_id',
-        'habilitada_consilidacion'];
-     /**
+        'habilitada_consolidacion'];
+
+    /**
      * Una escuela tiene muchas plantillas de cortes.
      */
     public function cortesEscuela(): HasMany
@@ -53,7 +54,6 @@ class Escuela extends Model
     {
         return $this->hasMany(Matricula::class, 'escuela_id');
     }
-
 
     /**
      * Una escuela pertenece a un diploma.

@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 // Asegúrate de importar HasMany si no estaba ya
 
 class Materia extends Model
@@ -29,6 +29,7 @@ class Materia extends Model
         'asistencias_minima_alerta', // Añadido si usas $fillable estricto
         'habilitar_inasistencias', // Añadido si usas $fillable estricto
         'tipo_usuario_objetivo_id', // NUEVO
+        'tipo_usuario_inicial_id', // NUEVO INICIAL
     ];
 
     // --- Relaciones existentes ---
@@ -52,6 +53,11 @@ class Materia extends Model
     public function tipoUsuarioObjetivo(): BelongsTo
     {
         return $this->belongsTo(TipoUsuario::class, 'tipo_usuario_objetivo_id');
+    }
+
+    public function tipoUsuarioInicial(): BelongsTo
+    {
+        return $this->belongsTo(TipoUsuario::class, 'tipo_usuario_inicial_id');
     }
 
     public function materiasPeriodo(): HasMany
@@ -83,7 +89,6 @@ class Materia extends Model
     }
     // --- Fin Relaciones existentes ---
 
-
     /**
      * Get the item templates for the materia.
      * Define la relación uno a muchos con ItemPlantilla.
@@ -91,5 +96,58 @@ class Materia extends Model
     public function itemPlantillas(): HasMany
     {
         return $this->hasMany(ItemPlantilla::class);
+    }
+
+    // --- Lógica de herencia de configuración del Nivel ---
+
+    /**
+     * Determina si la materia debe heredar configuración de un nivel.
+     */
+    public function tieneNivelAsociado(): bool
+    {
+        return ! empty($this->nivel_id);
+    }
+
+    /**
+     * Obtiene un valor de configuración, heredando del nivel si aplica.
+     */
+    public function getConfigProp($property, $value)
+    {
+        if ($this->tieneNivelAsociado() && $this->nivel) {
+            return $this->nivel->{$property};
+        }
+
+        return $value;
+    }
+
+    // Accessors útiles para la UI
+    public function getHabilitarAsistenciasAttribute($value)
+    {
+        return $this->getConfigProp('habilitar_asistencias', $value);
+    }
+
+    public function getHabilitarCalificacionesAttribute($value)
+    {
+        return $this->getConfigProp('habilitar_calificaciones', $value);
+    }
+
+    public function getHabilitarInasistenciasAttribute($value)
+    {
+        return $this->getConfigProp('habilitar_inasistencias', $value);
+    }
+
+    public function getHabilitarTrasladoAttribute($value)
+    {
+        return $this->getConfigProp('habilitar_traslado', $value);
+    }
+
+    public function getCaracterObligatorioAttribute($value)
+    {
+        return $this->getConfigProp('caracter_obligatorio', $value);
+    }
+
+    public function getAsistenciasMinimasAttribute($value)
+    {
+        return $this->getConfigProp('asistencias_minimas', $value);
     }
 }

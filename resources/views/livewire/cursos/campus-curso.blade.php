@@ -196,7 +196,7 @@
                                     </div>
                                 @elseif (!empty($preguntasEvaluacion))
                                     @if ($evaluacionConfig && $evaluacionConfig->limite_tiempo > 0)
-                                        <div class="alert alert-warning d-flex align-items-center mb-4 rounded-pill shadow-sm border-0 bg-label-warning"
+                                        <div class="badge rounded d-flex align-items-center mb-4  shadow-sm border-0 bg-label-claro-warning"
                                             role="alert">
                                             <span class="alert-icon text-white me-3 ms-2">
                                                 <i class="ti ti-info-circle fs-4"></i>
@@ -206,6 +206,16 @@
                                                 <strong>{{ $evaluacionConfig->limite_tiempo }} minutos</strong> para
                                                 completar y enviar tus respuestas.
                                             </div>
+
+                                            <div class="px-3 py-1 rounded  d-flex align-items-center gap-2 "
+                                                :class="timeLeft < 60 ?
+                                                    'animate__animated animate__pulse animate__infinite text-danger border-danger' :
+                                                    'text-white'">
+                                                <i class="ti ti-alarm fs-5"></i>
+                                                <span class="fw-bold fs-5" x-text="formatTime(timeLeft)"></span>
+                                            </div>
+
+
                                         </div>
                                     @endif
                                     <!-- NAVEGADOR SUPERIOR: Círculos de Progreso -->
@@ -241,31 +251,22 @@
                                                     {{ $index + 1 }}
                                                 </button>
                                             @endforeach
-                                        </div>
 
-                                        <!-- Botón Enviar -->
-                                        <div class="d-flex align-items-center gap-3">
-                                            @if ($evaluacionConfig && $evaluacionConfig->limite_tiempo > 0)
-                                                <div class="px-3 py-1 bg-label-warning rounded-pill d-flex align-items-center gap-2 border border-warning"
-                                                    :class="timeLeft < 60 ?
-                                                        'animate__animated animate__pulse animate__infinite text-danger border-danger' :
-                                                        'text-white">
-                                                    <i class="ti ti-alarm fs-4"></i>
-                                                    <span class="fw-bold fs-5" x-text="formatTime(timeLeft)"></span>
-                                                </div>
-                                            @endif
 
-                                            <div class="text-end d-none d-md-block">
-                                                <span class="badge bg-label-secondary rounded-pill">
-                                                    Intento: {{ $intentosRealizados + 1 }} /
-                                                    {{ 1 + ($evaluacionConfig->cantidad_repeticiones ?? 0) }}
-                                                </span>
-                                            </div>
-                                            <button wire:click="validarYEnviarEvaluacion" :disabled="isTimeUp"
-                                                class="btn btn-success fw-bold px-4 rounded-pill shadow-sm d-flex align-items-center gap-2">
-                                                Enviar Evaluación <i class="ti ti-brand-telegram"></i>
-                                            </button>
                                         </div>
+                                        <br>
+                                        <button wire:click="validarYEnviarEvaluacion" :disabled="isTimeUp"
+                                            class="btn text-end btn-success fw-bold px-4  shadow-sm d-flex align-items-center gap-2">
+                                            Enviar Evaluación <i class="ti ti-brand-telegram"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="text-start d-none d-md-block">
+
+                                        <span class="rounded px-3 py-1 fs-8 text-black">
+                                            Intento: {{ $intentosRealizados + 1 }} /
+                                            {{ 1 + ($evaluacionConfig->cantidad_repeticiones ?? 0) }}
+                                        </span>
                                     </div>
 
                                     <!-- CUADRO DE LA PREGUNTA ACTUAL -->
@@ -278,12 +279,13 @@
                                         <div class="mb-4">
                                             <div class="d-flex align-items-start gap-3">
                                                 <span
-                                                    class="badge bg-label-primary rounded-pill p-2 d-flex align-items-center justify-content-center"
+                                                    class="badge text-black rounded-pill p-2 d-flex align-items-center justify-content-center"
                                                     style="width: 35px; height: 35px; min-width: 35px;">
-                                                    <span class="fs-5">{{ $preguntaActualIndex + 1 }}</span>
+                                                    <span
+                                                        class="fs-4 fw-semibold  text-black">{{ $preguntaActualIndex + 1 }}</span>
                                                 </span>
                                                 <div>
-                                                    <h4 class="fw-bold mb-1 text-heading">
+                                                    <h4 class="fw-regular mb-1 text-heading">
                                                         {{ $preguntaEnPantalla->pregunta }}
                                                     </h4>
                                                     @if ($preguntaEnPantalla->tipo_respuesta == 'multiple')
@@ -419,61 +421,60 @@
             </div>
 
             <!-- Footer del Contenido -->
-            <div
-                class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pb-4 border-bottom">
+            @php
+                $autor = $curso->equipo->first()->user ?? null;
+                $estadoItem = $itemsProgreso[$itemActivo->id] ?? 'bloqueado';
+            @endphp
 
-                @php
-                    $autor = $curso->equipo->first()->user ?? null;
-                @endphp
-
-                <!-- Autor Info -->
-                <div class="d-flex align-items-center mb-3 mb-sm-0">
-                    @if ($autor && $autor->avatar)
-                        <img src="{{ Storage::url($autor->avatar) }}" alt="Autor" class="rounded-circle"
-                            width="48" height="48" style="object-fit: cover;">
-                    @else
-                        <div class="btn-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-                            style="width: 48px; height: 48px;">
-                            {{ $autor->inicialesNombre() }}
-                        </div>
-                    @endif
-                    <div class="ms-3">
-                        <h6 class="mb-0 fw-bold" style="color: #2b2b4d;">{{ $autor->primer_nombre ?? 'Autor' }}
-                            {{ $autor->apellidos ?? '' }}</h6>
-                        <small class="text-black d-flex align-items-center gap-3 mt-1">
-                            <span><i class="ti ti-category me-1"></i> Crecimiento</span>
-                            <span><i class="ti ti-clock me-1"></i> {{ $curso->duracion_estimada ?? '2 Meses' }}</span>
-                        </small>
+            <div class="row align-items-center mb-4 g-3">
+                <!-- Autor -->
+                <div class="col-12 col-sm-auto mb-2 mb-sm-0">
+                    <div class="d-flex align-items-center gap-3">
+                        @if ($autor && $autor->avatar)
+                            <img src="{{ Storage::url($autor->avatar) }}" alt="Autor"
+                                class="rounded-circle border" width="44" height="44"
+                                style="object-fit: cover;">
+                        @else
+                            <div class="btn-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold border"
+                                style="width: 44px; height: 44px;">
+                                {{ $autor ? $autor->inicialesNombre() : 'AA' }}
+                            </div>
+                        @endif
+                        <h6 class="mb-0 fw-bold" style="color: #2b2b4d;">
+                            {{ $autor->primer_nombre ?? 'Autor' }}
+                            {{ $autor->apellidos ?? '' }}
+                        </h6>
                     </div>
                 </div>
 
-                <!-- Botones de Acción (Restricciones LMS) -->
-                <div class="d-flex gap-2">
-                    @if ($itemActivo && isset($itemsProgreso[$itemActivo->id]))
-                        @if ($itemsProgreso[$itemActivo->id] === 'completado')
-                            <!-- Ya completado, solo mostramos el indicativo y avanzar -->
-                            <button
-                                class="btn btn-outline-success px-4 rounded-pill shadow-sm d-flex align-items-center gap-2"
-                                disabled>
-                                <i class="ti ti-check"></i> Completado
-                            </button>
-                            <button wire:click="avanzarSiguiente" class="btn btn-primary px-4 rounded-pill shadow-sm">
-                                Siguiente lección <i class="ti ti-chevron-right ms-1"></i>
-                            </button>
-                        @elseif(
-                            $itemsProgreso[$itemActivo->id] === 'iniciado' &&
-                                !in_array($itemActivo->tipo->codigo, ['evaluacion', 'quiz', 'final']))
-                            <!-- Está en curso. Mostramos botón de HECHO pero bloqueado hasta que el JS lo habilite -->
-                            <!-- El JS habilitará este botón basado en el tiempo de video o Scroll del texto -->
-                            <button wire:click="marcarCompletado({{ $itemActivo->id }})" id="btn-marcar-hecho"
-                                class="btn btn-success px-4 rounded-pill shadow-sm d-flex align-items-center gap-2"
-                                disabled>
-                                <i class="ti ti-check"></i> Hecho
-                            </button>
-                        @endif
+                <!-- Info adicional + Badge -->
+                <div
+                    class="col-12 col-sm d-flex flex-wrap align-items-center justify-content-between justify-content-sm-end gap-4">
+                    <div class="d-flex align-items-center gap-4 text-muted">
+                        <span class="d-flex align-items-center gap-1 me-5 p-2">
+                            <i class="ti ti-category fs-5"></i>
+                            <span class="small fw-semibold">{{ $curso->carrera->nombre ?? 'Crecimiento' }}</span>
+                        </span>
+                        <span class="d-flex align-items-center gap-1 me-5 p-2">
+                            <i class="ti ti-clock fs-5"></i>
+                            <span class="small fw-semibold">{{ $curso->duracion_estimada ?? '2 Meses' }}</span>
+                        </span>
+                    </div>
+
+                    @if ($estadoItem === 'completado')
+                        <div>
+                            <span
+                                class="badge bg-success d-flex align-items-center gap-1 px-3 py-2 rounded-3 shadow-sm">
+                                <i class="ti ti-check fs-6"></i>
+                                <span class="fw-bold text-white">Completado</span>
+                            </span>
+                        </div>
                     @endif
                 </div>
             </div>
+
+
+
 
             <!-- Mensajes Flash -->
             @if (session()->has('successItems'))
@@ -489,8 +490,8 @@
 
                 <!-- Columna Descripción -->
                 <div class="mb-4">
-                    <h5 class="fw-semibold text-black mb-3">Descripción</h5>
-                    <div class="text-black border p-4 rounded-4 bg-white shadow-sm" style="line-height: 1.7;">
+                    <h3 class="fw-regular text-black mb-3">Descripción</h3>
+                    <div class="text-black py-4" style="line-height: 1.5;">
                         @if ($itemActivo && $itemActivo->itemable && $itemActivo->itemable->contenido_html)
                             {!! $itemActivo->itemable->contenido_html !!}
                         @else
@@ -501,49 +502,50 @@
 
                 <!-- Columna Foro (Opcional según diseño) -->
                 @if ($itemActivo && isset($itemActivo->tipo) && !in_array($itemActivo->tipo->codigo, ['evaluacion', 'quiz', 'final']))
-                    <div class="border-primary border-2  card  mb-5 shadow-sm rounded-4 mt-4">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0 text-primary d-flex align-items-center gap-2">
-                                    <i class="ti ti-messages"></i> Foro de dudas
-                                </h5>
+                    <div class="card border-0 mb-5 shadow-sm rounded-4 mt-4 overflow-hidden"
+                        style="background-color: #e8f5e9;">
+                        <div class="row g-0 align-items-center">
+                            <!-- Banner Image -->
+                            <div class="col-md-2 d-none d-md-block">
+                                <img src="{{ asset('img/forum_banner.png') }}" alt="Foro de dudas"
+                                    class="img-fluid h-100" style="object-fit: cover; max-height: 150px;">
                             </div>
-
-                            <p class="text-black small mb-3">¿Tienes alguna pregunta sobre esta clase? Consulta lo que
-                                otros compañeros han discutido o inicia una nueva conversación.</p>
-
-                            @if ($hilosForo->count() > 0)
-                                <div class="list-group list-group-flush mb-3 rounded">
-                                    @foreach ($hilosForo as $hilo)
-                                        <div
-                                            class="list-group-item bg-white px-3 py-2 border-start border-4 border-primary mb-2 rounded shadow-sm">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="fw-bold text-dark text-truncate d-block"
-                                                    style="max-width: 80%;">{{ $hilo->titulo }}</small>
+                            <!-- Content -->
+                            <div class="col-md-10">
+                                <div class="card-body p-3 p-md-4">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-start gap-3">
+                                        <div class="flex-grow-1">
+                                            <h5 class="fw-bold mb-1 text-dark">Foro de dudas</h5>
+                                            <p class="text-dark small mb-0">¿Tienes dudas sobre algún tema? Consulta lo
+                                                que otros compañeros han discutido.</p>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center justify-content-start gap-3 pt-5">
+                                        <div class="d-flex align-items-center gap-4">
+                                            <!-- Icon & Badge -->
+                                            <div class="position-relative">
+                                                <i class="ti ti-messages fs-2 text-black"></i>
                                                 <span
-                                                    class="badge bg-label-{{ $hilo->estado == 'resuelto' ? 'success' : 'warning' }} rounded-pill"
-                                                    style="font-size: 0.6rem;">
-                                                    {{ ucfirst($hilo->estado) }}
+                                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill"
+                                                    style="font-size: 0.6rem;background-color:#1977E5; color:white !important">
+                                                    {{ $hilosForo->count() }}
                                                 </span>
                                             </div>
-                                            <small class="text-black d-block mt-1"><i
-                                                    class="ti ti-user me-1"></i>{{ $hilo->user->primer_nombre }}</small>
                                         </div>
-                                    @endforeach
+                                    </div>
+                                    <div style="margin-top: -30px;"
+                                        class="d-flex flex-wrap align-items-center justify-content-end gap-3">
+                                        <!-- Action Button -->
+                                        <button type="button"
+                                            class="btn btn-outline-dark rounded-pill px-4 d-flex align-items-center gap-2"
+                                            data-bs-toggle="modal" data-bs-target="#modalForoCompleto">
+                                            <span class="small fw-regular text-black">Ver foro</span>
+                                            <i class="ti ti-chevron-right fs-6 text-black"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            @else
-                                <div class="bg-white p-3 rounded mb-3 text-center border">
-                                    <small class="  text-black">Sé el primero en hacer una pregunta.</small>
-                                </div>
-                            @endif
-
-                            <div class="d-grid mt-2">
-                                <button type="button"
-                                    class="btn btn-outline-primary rounded-pill d-flex justify-content-center align-items-center gap-2"
-                                    data-bs-toggle="modal" data-bs-target="#modalForoCompleto">
-                                    Ver foro completo <i class="ti ti-external-link"></i>
-                                </button>
                             </div>
+
                         </div>
                     </div>
                 @else
@@ -698,7 +700,28 @@
                         @endforelse
 
                     </div>
-
+                    <!-- Botones de Acción (Restricciones LMS) -->
+                    <div class="col-12">
+                        @if ($itemActivo && isset($itemsProgreso[$itemActivo->id]))
+                            @if ($itemsProgreso[$itemActivo->id] === 'completado')
+                                <button style="float: right;" wire:click="avanzarSiguiente"
+                                    class="btn btn-success px-4 rounded-pill shadow-sm">
+                                    Siguiente lección <i class="ti ti-chevron-right ms-1"></i>
+                                </button>
+                            @elseif(
+                                $itemsProgreso[$itemActivo->id] === 'iniciado' &&
+                                    !in_array($itemActivo->tipo->codigo, ['evaluacion', 'quiz', 'final']))
+                                <!-- Está en curso. Mostramos botón de HECHO pero bloqueado hasta que el JS lo habilite -->
+                                <!-- El JS habilitará este botón basado en el tiempo de video o Scroll del texto -->
+                                <button style="float:right;" wire:click="marcarCompletado({{ $itemActivo->id }})"
+                                    id="btn-marcar-hecho"
+                                    class="btn btn-success px-4 rounded-pill shadow-sm d-flex align-items-center gap-2"
+                                    disabled>
+                                    <i class="ti ti-check"></i> Hecho
+                                </button>
+                            @endif
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

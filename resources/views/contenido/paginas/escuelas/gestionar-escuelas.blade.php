@@ -82,7 +82,7 @@
                                                         Gestionar materias
                                                     </a></li>
                                             @else
-                                                <li><a href="" class="dropdown-item">
+                                                <li><a href="{{ route('escuelas.niveles', $escuela->id) }}" class="dropdown-item">
                                                         Gestionar grados
                                                     </a></li>
                                             @endif
@@ -189,9 +189,9 @@
                 {{-- Campo Habilitar Consolidación --}}
                 <div class="mb-3">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="habilitada_consilidacion"
-                            name="habilitada_consilidacion" value="1">
-                        <label class="form-check-label fw-semibold text-black" for="habilitada_consilidacion">Habilitar
+                        <input class="form-check-input" type="checkbox" id="habilitada_consolidacion"
+                            name="habilitada_consolidacion" value="1">
+                        <label class="form-check-label fw-semibold text-black" for="habilitada_consolidacion">Habilitar
                             Consolidación</label>
                     </div>
                     <small class="form-text text-muted">Indica si esta escuela tendrá habilitada la opción de consolidación

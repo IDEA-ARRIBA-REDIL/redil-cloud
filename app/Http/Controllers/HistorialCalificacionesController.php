@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+use App\Models\AlumnoRespuestaItem;
+use App\Models\Configuracion;
 use App\Models\Escuela;
 use App\Models\MateriaAprobadaUsuario;
-use App\Models\User;
 use App\Models\Matricula;
-use App\Models\AlumnoRespuestaItem;
+use App\Models\NivelAprobadoUsuario;
 use App\Models\ReporteAsistenciaAlumnos;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 use PDF; // Asegúrate de tener este import para dompdf
 
 class HistorialCalificacionesController extends Controller
@@ -33,20 +34,42 @@ class HistorialCalificacionesController extends Controller
 
         $selectedUser = null;
         $historial = collect(); // Iniciar como una colección vacía
+        $historialAgrupado = collect();
+        $nivelesAprobados = collect();
+        $alumno = null;
+        $escuela = null;
+        $configuracion = Configuracion::find(1);
 
         // 3. Si se ha seleccionado un usuario, buscar su historial
         if ($selectedUserId) {
             $selectedUser = User::find($selectedUserId);
-            $historialRegistros = MateriaAprobadaUsuario::with(['periodo', 'materia'])
+            $alumno = $selectedUser; // Assign selectedUser to alumno
+
+            // Obtener el historial de materias aprobadas con sus niveles
+            $historial = MateriaAprobadaUsuario::with(['materia.nivel', 'periodo'])
                 ->where('user_id', $selectedUserId)
-                ->orderBy('periodo_id', 'desc')
                 ->get();
 
-            // 4. Enriquecer cada registro con los detalles del horario (Aula, Sede, etc.)
-            $historial = $historialRegistros->map(function ($registro) {
-                $registro->detalles_matricula = $this->getDetallesMatricula($registro);
-                return $registro;
+            // Obtener los niveles aprobados por el usuario
+            $nivelesAprobados = NivelAprobadoUsuario::with('nivel')
+                ->where('user_id', $selectedUserId)
+                ->get()
+                ->keyBy('nivel_id');
+
+            // Agrupar las materias por nivel
+            $historialAgrupado = $historial->groupBy(function ($item) {
+                return $item->materia->nivel_id ?? 'sin_nivel';
             });
+
+            // Enriquecer el historial con detalles de matrícula
+            foreach ($historial as $registro) {
+                $registro->detalles_matricula = $this->getDetallesMatricula($registro);
+            }
+
+            // If an escuela_id is selected, try to find the school
+            if ($selectedEscuelaId) {
+                $escuela = Escuela::find($selectedEscuelaId);
+            }
         }
 
         // 5. Devolver la vista con todos los datos necesarios
@@ -55,6 +78,11 @@ class HistorialCalificacionesController extends Controller
             'selectedEscuelaId' => $selectedEscuelaId,
             'selectedUser' => $selectedUser,
             'historial' => $historial,
+            'historialAgrupado' => $historialAgrupado,
+            'nivelesAprobados' => $nivelesAprobados,
+            'configuracion' => $configuracion,
+            'alumno' => $alumno,
+            'escuela' => $escuela,
         ]);
     }
 
@@ -78,9 +106,9 @@ class HistorialCalificacionesController extends Controller
             $nombreMaestro = $matricula->horarioMateriaPeriodo->maestros->first()?->user?->nombre(3) ?? 'No asignado';
 
             return (object) [
-                'horario' => $horarioBase->dia_semana . ' | ' . $horarioBase->hora_inicio_formato,
-                'aula'    => $horarioBase->aula->nombre ?? 'N/A',
-                'sede'    => $horarioBase->aula->sede->nombre ?? 'N/A',
+                'horario' => $horarioBase->dia_semana.' | '.$horarioBase->hora_inicio_formato,
+                'aula' => $horarioBase->aula->nombre ?? 'N/A',
+                'sede' => $horarioBase->aula->sede->nombre ?? 'N/A',
                 'maestro' => $nombreMaestro, // <-- Nueva propiedad
             ];
         }

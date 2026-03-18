@@ -2,24 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Configuracion;
-use App\Models\Escuela;
-use App\Models\CorteEscuela; // Importar el modelo CorteEscuela
-use App\Models\User;
-use App\Models\Matricula;
 use App\Exports\MatriculasActivasEscuelaExport;
-use Maatwebsite\Excel\Facades\Excel;
-
+use App\Models\Configuracion;
+use App\Models\CorteEscuela; // Importar el modelo CorteEscuela
+use App\Models\Escuela;
+use App\Models\Maestro;
+use App\Models\Matricula;
+use App\Models\User;
 // Quité Usuario si no se usa directamente aquí, User parece ser el modelo correcto
 // use App\Models\Usuario;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // Importar DB para transacciones
-use Illuminate\Support\Facades\Log; // Importar Log para errores
-use Illuminate\Support\Facades\Storage; // Importar Storage si se usa en update
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request; // Importar DB para transacciones
+use Illuminate\Support\Facades\Auth; // Importar Log para errores
+use Illuminate\Support\Facades\DB; // Importar Storage si se usa en update
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
-use App\Models\Maestro; // <-- Asegúrate de importar el modelo Maestro
+use Maatwebsite\Excel\Facades\Excel; // <-- Asegúrate de importar el modelo Maestro
 
 class EscuelaController extends Controller
 {
@@ -41,7 +40,7 @@ class EscuelaController extends Controller
         $rolActivo = $user->roles()->wherePivot('activo', true)->first();
 
         // Si el usuario no tiene un rol activo, no puede continuar.
-        if (!$rolActivo) {
+        if (! $rolActivo) {
             // Puedes mostrar una vista de error o redirigir a otra página.
             abort(403, 'No tienes un rol activo asignado.');
         }
@@ -126,7 +125,7 @@ class EscuelaController extends Controller
             // 'rolActivo' => $rolActivo, // Comentado si no se usa
             'usuario' => $usuario,
             'configuracion' => $configuracion,
-            'rolActivo' => $rolActivo
+            'rolActivo' => $rolActivo,
         ])->with('moduloEscuelas', true);
     }
 
@@ -137,19 +136,16 @@ class EscuelaController extends Controller
     {
         // Validación de los campos
 
-
-
         // 1. Crear la Escuela
-        $escuela = new Escuela();
+        $escuela = new Escuela;
         $escuela->nombre = $request->nombre;
         $escuela->descripcion = $request->descripcion;
         $escuela->tipo_matricula = $request->tipo_matricula;
-        $escuela->habilitada_consilidacion = $request->has('habilitada_consilidacion');
+        $escuela->habilitada_consolidacion = $request->has('habilitada_consolidacion');
         $escuela->save();
 
-
         // 2. Crear los CortesEscuela asociados con porcentaje distribuido
-        $cantidadCortes = (int)$request->cortes; // Asegurar que es entero
+        $cantidadCortes = (int) $request->cortes; // Asegurar que es entero
         $nombreBaseCorte = $request->nombreCortes;
 
         // Calcular porcentajes enteros que sumen 100
@@ -162,24 +158,23 @@ class EscuelaController extends Controller
             $porcentajes[] = $basePorcentaje + ($i < $restoPorcentaje ? 1 : 0);
         }
 
-
         // Crear los cortes
         for ($i = 0; $i < $cantidadCortes; $i++) {
             $orden = $i + 1; // El orden empieza en 1
             CorteEscuela::create([
                 'escuela_id' => $escuela->id,
-                'nombre' => $nombreBaseCorte . ' ' . $orden . '44' . $escuela->id, // Ej: "Corte 1"
+                'nombre' => $nombreBaseCorte.' '.$orden.'44'.$escuela->id, // Ej: "Corte 1"
                 'orden' => $orden,
                 'porcentaje' => 30, // Asignar el porcentaje calculado
             ]);
         }
-
 
         // Redirigir con mensaje de éxito
         return redirect()->route('escuelas.gestionarEscuelas')
             ->with('success', '¡Escuela y sus cortes (con porcentajes) creados exitosamente!')
             ->with('moduloEscuelas', true);
     }
+
     /**
      * Muestra una escuela específica para actualizar (vista detalle/edición)
      */
@@ -205,7 +200,6 @@ class EscuelaController extends Controller
 
     public function gestionarHorarios(User $user) {}
 
-
     /**
      * Muestra el formulario de edición (si es una vista separada)
      * Si 'actualizar' ya muestra el formulario, este método puede no ser necesario.
@@ -224,31 +218,31 @@ class EscuelaController extends Controller
         // ... (Código del método update sin cambios respecto a la versión anterior) ...
         $configuracion = Configuracion::find(1);
         $datosValidados = $request->validate([
-            'nombre' => 'required|string|max:200|unique:escuelas,nombre,' . $escuela->id,
+            'nombre' => 'required|string|max:200|unique:escuelas,nombre,'.$escuela->id,
             'descripcion' => 'nullable|string',
             'tipo_matricula' => 'required|in:materias_independientes,niveles_agrupados',
-            'habilitada_consilidacion' => 'nullable|boolean',
+            'habilitada_consolidacion' => 'nullable|boolean',
         ]);
 
         $escuela->update([
             'nombre' => $request->nombre,
             'descripcion' => $request->descripcion,
             'tipo_matricula' => $request->tipo_matricula,
-            'habilitada_consilidacion' => $request->has('habilitada_consilidacion'),
+            'habilitada_consolidacion' => $request->has('habilitada_consolidacion'),
         ]);
 
         if ($request->filled('foto')) {
 
             if ($configuracion->version == 1) {
-                $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/escuelas/');
-                !is_dir($path) && mkdir($path, 0777, true);
+                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/escuelas/');
+                ! is_dir($path) && mkdir($path, 0777, true);
 
                 $data = explode(';base64,', $request->foto)[1];
                 file_put_contents(
-                    $path . 'escuela' . $escuela->id . '.png',
+                    $path.'escuela'.$escuela->id.'.png',
                     base64_decode($data)
                 );
-                $escuela->portada = 'escuela' . $escuela->id . '.png';
+                $escuela->portada = 'escuela'.$escuela->id.'.png';
                 $escuela->save();
             }
         }
@@ -260,6 +254,9 @@ class EscuelaController extends Controller
     /**
      * Muestra las materias asociadas a una escuela
      */
+    /**
+     * Muestra las materias asociadas a una escuela
+     */
     public function materias(Escuela $escuela)
     {
         $materias = $escuela->materias; // Carga implícita por la relación
@@ -267,10 +264,26 @@ class EscuelaController extends Controller
         $rolActivo = auth()->user()->roles()->where('activo', true)->first();
         $usuario = auth()->user();
 
-
         return view('contenido.paginas.escuelas.materias-asociadas', [
             'escuela' => $escuela,
             'materias' => $materias,
+            'usuario' => $usuario,
+            'configuracion' => $configuracion,
+            'rolActivo' => $rolActivo,
+        ])->with('moduloEscuelas', true);
+    }
+
+    /**
+     * Muestra los grados (niveles) asociados a una escuela.
+     */
+    public function niveles(Escuela $escuela)
+    {
+        $configuracion = Configuracion::find(1);
+        $rolActivo = auth()->user()->roles()->where('activo', true)->first();
+        $usuario = auth()->user();
+
+        return view('contenido.paginas.escuelas.niveles-asociados', [
+            'escuela' => $escuela,
             'usuario' => $usuario,
             'configuracion' => $configuracion,
             'rolActivo' => $rolActivo,
@@ -296,7 +309,8 @@ class EscuelaController extends Controller
                 ->with('success', '¡Escuela eliminada exitosamente!'); // Cambiado 'exito' a 'success' por convención
 
         } catch (\Exception $e) {
-            Log::error('Error al eliminar escuela: ' . $e->getMessage());
+            Log::error('Error al eliminar escuela: '.$e->getMessage());
+
             // Manejar error si hay restricciones que impiden borrar
             return redirect()->route('escuelas.gestionarEscuelas')
                 ->with('error', 'No se pudo eliminar la escuela. Puede tener registros asociados.');
@@ -306,7 +320,7 @@ class EscuelaController extends Controller
     /**
      * Exporta a Excel un listado de todas las matrículas de los periodos activos de una escuela.
      *
-     * @param Escuela $escuela La escuela de la cual exportar las matrículas.
+     * @param  Escuela  $escuela  La escuela de la cual exportar las matrículas.
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function exportarMatriculasActivas(Escuela $escuela)
@@ -316,7 +330,7 @@ class EscuelaController extends Controller
 
         if ($periodosActivosIds->isEmpty()) {
             // Si no hay periodos activos, redirige atrás con un mensaje
-            return back()->with('mensaje_info', 'La escuela "' . $escuela->nombre . '" no tiene periodos activos actualmente.');
+            return back()->with('mensaje_info', 'La escuela "'.$escuela->nombre.'" no tiene periodos activos actualmente.');
         }
 
         // 2. Obtener todas las matrículas de esos periodos activos
@@ -332,18 +346,18 @@ class EscuelaController extends Controller
                 'horarioMateriaPeriodo.horarioBase.aula:id,nombre',
                 // Carga la sede asociada directamente a la matrícula (si existe la relación)
                 // Si la sede viene del aula, ajusta esta línea
-                'sede:id,nombre'
+                'sede:id,nombre',
             ])
             ->orderBy('periodo_id') // Ordena por periodo
             ->orderBy('user_id') // Luego por alumno
             ->get();
 
         if ($matriculas->isEmpty()) {
-            return back()->with('mensaje_info', 'No se encontraron matrículas en los periodos activos de la escuela "' . $escuela->nombre . '".');
+            return back()->with('mensaje_info', 'No se encontraron matrículas en los periodos activos de la escuela "'.$escuela->nombre.'".');
         }
 
         // 3. Prepara el nombre del archivo
-        $nombreArchivo = 'Matriculas_Activas_' . str_replace(' ', '_', $escuela->nombre) . '_' . date('Y-m-d') . '.xlsx';
+        $nombreArchivo = 'Matriculas_Activas_'.str_replace(' ', '_', $escuela->nombre).'_'.date('Y-m-d').'.xlsx';
 
         // 4. Dispara la descarga usando la clase de exportación
         return Excel::download(new MatriculasActivasEscuelaExport($matriculas), $nombreArchivo);

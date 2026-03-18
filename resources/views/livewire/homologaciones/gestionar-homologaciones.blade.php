@@ -17,6 +17,20 @@
 
 
                     <div class="mt-3">
+                        <label class="form-label">Elija qué desea homologar</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" value="materias" wire:model.live="modo" id="modoMaterias">
+                                <label class="form-check-label" for="modoMaterias">Materias</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" value="niveles" wire:model.live="modo" id="modoNiveles">
+                                <label class="form-check-label" for="modoNiveles">Niveles (Grados)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
                     <label for="escuela_id" class="form-label">2. Seleccione una escuela</label>
                     <select id="escuela_id" wire:model="escuelaSeleccionadaId" class="form-select">
                         <option value="">-- Elige una escuela --</option>
@@ -39,13 +53,13 @@
             con id="alumno_id" y lo pasamos como parámetro al método buscarMaterias().
         --}}
         <button
-            wire:click="buscarMaterias(document.getElementById('alumno_id').value)"
+            wire:click="buscar(document.getElementById('alumno_id').value)"
             class="btn btn-primary rounded-pill">
 
-            <span wire:loading.remove wire:target="buscarMaterias">
-                <i class="ti ti-search me-1"></i> Buscar materias
+            <span wire:loading.remove wire:target="buscar">
+                <i class="ti ti-search me-1"></i> Buscar
             </span>
-            <span wire:loading wire:target="buscarMaterias">
+            <span wire:loading wire:target="buscar">
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 Buscando...
             </span>
@@ -59,7 +73,7 @@
     @if(!empty($materias))
     <div class="card">
         <div class="card-header">
-            <h5 class="card-title">Materias homologables</h5>
+            <h5 class="card-title">{{ $modo === 'materias' ? 'Materias' : 'Niveles' }} homologables</h5>
         </div>
         <div class="card-body">
             {{-- Usamos un 'row' con 'g-4' (gap) para dar espacio entre las tarjetas --}}
@@ -72,9 +86,9 @@
                         {{-- Y dentro de cada columna, hay una tarjeta independiente --}}
                         <div class="col-md-3 col-12">
                             <div class="border rounded shadow justify-content-between align-items-center">
-                                {{-- Sección Izquierda: Nombre y estado de la materia --}}
+                                {{-- Sección Izquierda: Nombre y estado --}}
                                 <div class="bg-lighter ">
-                                    <h5 class="p-4  card-title mb-1 fw-semibold">{{ $materia->nombre }}</h5>
+                                    <h5 class="p-4  card-title mb-1 fw-semibold">{{ $materia->nombre ?? $materia->materia_nombre }}</h5>
                                 </div>
                                 <div class="col-12 text-end">
                                      @if(isset($materia->estado) && $materia->estado == "1")
@@ -111,7 +125,7 @@
                 <div class="modal-content">
                     <form wire:submit="guardarHomologacion">
                         <div class="modal-header">
-                            <h5 class="modal-title">Homologar: {{ $materiaParaHomologar?->nombre }}</h5>
+                            <h5 class="modal-title">Homologar {{ $modo === 'materias' ? 'Materia' : 'Nivel' }}: {{ $materiaParaHomologar?->nombre ?? $nivelParaHomologar?->nombre }}</h5>
 
                         </div>
                         <div class="modal-body">

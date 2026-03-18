@@ -194,7 +194,7 @@
             });
 
             // Toggles visibility
-             $('#togglehabilitarAsistencias').on('change', function() {
+            $('#togglehabilitarAsistencias').on('change', function() {
                 if ($(this).is(':checked')) {
                     $('.row-asistencias').removeClass('d-none').show();
                 } else {
@@ -215,7 +215,7 @@
                     $('#containesAsistenciasAlerta').addClass('d-none').hide();
                 }
             });
-             if ($('#togglehabilitarInasistencias').is(':checked')) {
+            if ($('#togglehabilitarInasistencias').is(':checked')) {
                 $('#containesAsistenciasAlerta').removeClass('d-none').show();
             } else {
                 $('#containesAsistenciasAlerta').addClass('d-none').hide();
@@ -253,7 +253,8 @@
 
                     let diasPlazo = inputDiasPlazoReporte.val();
                     if (!diasPlazo || parseInt(diasPlazo) < 0) {
-                        errors.push('Debe ingresar una cantidad válida para días de plazo de reporte (ej. ≥0).');
+                        errors.push(
+                            'Debe ingresar una cantidad válida para días de plazo de reporte (ej. ≥0).');
                     }
                 }
 
@@ -339,15 +340,15 @@
                     <div class="row ">
                         <div class="mb-3 col-12 col-md-6  col-sm-12">
                             <label for="nombre" class="form-label">Nombre de la materia</label>
-                            <input value="{{ old('nombre', '') }}" type="text" class="form-control @error('nombre') is-invalid @enderror" id="nombre"
-                                name="nombre">
+                            <input value="{{ old('nombre', '') }}" type="text"
+                                class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre">
                             @error('nombre')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <div  class="mb-3 col-md-6 col-sm-12 ">
-                          <label class="form-label">¿Habilitar asistencia?</label><br>
+                        <div class="mb-3 col-md-6 col-sm-12 ">
+                            <label class="form-label">¿Habilitar asistencia?</label><br>
                             <label class="switch switch-lg">
                                 <input type="checkbox" class="switch-input" id="togglehabilitarAsistencias"
                                     name="habilitarAsistencias" @checked(old('habilitarAsistencias')) />
@@ -366,7 +367,8 @@
                         <div class="row">
                             <div id="containesAsistenciasMinimas" class="mb-3 col-md-6 col-sm-12">
                                 <label for="asistenciasMinimas" class="form-label">Asistencias mínimas (opcional)</label>
-                                <input value="{{ old('asistenciasMinimas', '') }}" type="number" class="form-control @error('asistenciasMinimas') is-invalid @enderror"
+                                <input value="{{ old('asistenciasMinimas', '') }}" type="number"
+                                    class="form-control @error('asistenciasMinimas') is-invalid @enderror"
                                     id="asistenciasMinimas" name="asistenciasMinimas">
                                 @error('asistenciasMinimas')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -375,8 +377,9 @@
 
                             <div id="" class="mb-3 col-12 col-md-6 col-sm-12 ">
                                 <label for="limiteReportes" class="form-label">Limite reportes asistencia </label>
-                                <input value="{{ old('limiteReportes', '') }}" type="number" class="form-control @error('limiteReportes') is-invalid @enderror"
-                                    id="limiteReportes" name="limiteReportes">
+                                <input value="{{ old('limiteReportes', '') }}" type="number"
+                                    class="form-control @error('limiteReportes') is-invalid @enderror" id="limiteReportes"
+                                    name="limiteReportes">
                                 @error('limiteReportes')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -385,7 +388,7 @@
 
                         <div class="row">
                             <div class=" mb-3  col-md-6 col-sm-12">
-                               <label class="form-label">¿Tiene día limite de reporte?</label><br>
+                                <label class="form-label">¿Tiene día limite de reporte?</label><br>
                                 <label class="switch switch-lg">
                                     <input type="checkbox" class="switch-input" id="diaLimiteHabilitado"
                                         name="diaLimiteHabilitado" @checked(old('diaLimiteHabilitado')) />
@@ -419,7 +422,8 @@
                             {{-- Campos añadidos --}}
                             <div id="containerCantidadReportesSemana" class="mb-5 col-12 col-md-6 col-sm-12">
                                 <label for="cantidadReportesSemana" class="form-label">Cantidad de reportes semana</label>
-                                <input value="{{ old('cantidadReportesSemana', '') }}" type="number" class="form-control @error('cantidadReportesSemana') is-invalid @enderror"
+                                <input value="{{ old('cantidadReportesSemana', '') }}" type="number"
+                                    class="form-control @error('cantidadReportesSemana') is-invalid @enderror"
                                     id="cantidadReportesSemana" name="cantidadReportesSemana">
                                 @error('cantidadReportesSemana')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -427,7 +431,8 @@
                             </div>
                             <div id="containerDiasPlazoReporte" class="mb-5 col-12 col-md-6 col-sm-12">
                                 <label for="diasPlazoReporte" class="form-label">Días de plazo reporte</label>
-                                <input value="{{ old('diasPlazoReporte', '') }}" type="number" class="form-control @error('diasPlazoReporte') is-invalid @enderror"
+                                <input value="{{ old('diasPlazoReporte', '') }}" type="number"
+                                    class="form-control @error('diasPlazoReporte') is-invalid @enderror"
                                     id="diasPlazoReporte" name="diasPlazoReporte">
                                 @error('diasPlazoReporte')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -440,7 +445,7 @@
                     <div style="min-height: 75px;" class="row">
 
                         <div class="col-md-6 col-sm-12">
-                          <label class="form-label">¿Habilitar inasistencia?</label><br>
+                            <label class="form-label">¿Habilitar inasistencia?</label><br>
                             <label class="switch switch-lg">
                                 <input type="checkbox" @checked(old('habilitarInasistencias')) class="switch-input"
                                     id="togglehabilitarInasistencias" name="habilitarInasistencias" />
@@ -457,7 +462,8 @@
                         {{-- Clase d-none condicional --}}
                         <div id="containesAsistenciasAlerta" class="mb-3 col-md-6 col-sm-12">
                             <label for="cantidadInasistencias" class="form-label">Cantidad inasistencia (alerta)</label>
-                            <input value="{{ old('cantidadInasistencias', '') }}" type="number" class="form-control @error('cantidadInasistencias') is-invalid @enderror"
+                            <input value="{{ old('cantidadInasistencias', '') }}" type="number"
+                                class="form-control @error('cantidadInasistencias') is-invalid @enderror"
                                 id="cantidadInasistencias" name="cantidadInasistencias">
                             @error('cantidadInasistencias')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -518,12 +524,13 @@
                 <div class="card h-100 p-6">
                     <h5 class="mb-4 ">Configuración de progreso</h5>
 
-                     <div class=" col equal-height-col mt-3 col-12 col-md-12">
+                    <div class=" col equal-height-col mt-3 col-12 col-md-12">
                         <div class="card h-100">
                             <div class="mb-3 col-12">
                                 <label for="descripcion" class="form-label">Descripción (obligatorio)</label>
                                 <div id="editor" style="height: 300px;"></div>
-                                <input id="descripcion" name="descripción" class='d-none' value="{{ old('descripción', '') }}">
+                                <input id="descripcion" name="descripción" class='d-none'
+                                    value="{{ old('descripción', '') }}">
                             </div>
                             @error('descripción')
                                 <span class="text-danger small">{{ $message }}</span>
@@ -532,13 +539,34 @@
                     </div>
 
                     <div class="col-12 mb-3">
-                        <label for="tipoUsuarioObjetivo" class="form-label">Definir tipo usuario objetivo (Cambio por Asistencia)</label>
-                        <select id="tipoUsuarioObjetivo" name="tipoUsuarioObjetivo" class="select2 form-select @error('tipoUsuarioObjetivo') is-invalid @enderror">
+                        <label for="tipoUsuarioInicial" class="form-label">Definir tipo usuario inicial (Al matricular
+                            persona)</label>
+                        <select id="tipoUsuarioInicial" name="tipoUsuarioInicial"
+                            class="select2 form-select @error('tipoUsuarioInicial') is-invalid @enderror">
                             <option value="">Seleccione...</option>
                             @foreach ($tipoUsuariosObjetivo as $tipo)
-                            <option value="{{ $tipo->id }}" {{ old('tipoUsuarioObjetivo') == $tipo->id ? 'selected' : '' }}>
-                                {{ $tipo->nombre }}
-                            </option>
+                                <option value="{{ $tipo->id }}"
+                                    {{ old('tipoUsuarioInicial') == $tipo->id ? 'selected' : '' }}>
+                                    {{ $tipo->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('tipoUsuarioInicial')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-12 mb-3">
+                        <label for="tipoUsuarioObjetivo" class="form-label">Definir tipo usuario objetivo (Al aprobar la
+                            materia)</label>
+                        <select id="tipoUsuarioObjetivo" name="tipoUsuarioObjetivo"
+                            class="select2 form-select @error('tipoUsuarioObjetivo') is-invalid @enderror">
+                            <option value="">Seleccione...</option>
+                            @foreach ($tipoUsuariosObjetivo as $tipo)
+                                <option value="{{ $tipo->id }}"
+                                    {{ old('tipoUsuarioObjetivo') == $tipo->id ? 'selected' : '' }}>
+                                    {{ $tipo->nombre }}
+                                </option>
                             @endforeach
                         </select>
                         @error('tipoUsuarioObjetivo')
@@ -546,9 +574,10 @@
                         @enderror
                     </div>
 
-                     <div class="col-12 col-md-12 mb-3">
+                    <div class="col-12 col-md-12 mb-3">
                         <label class="form-label">Materias requeridas</label>
-                        <select class="form-select select2 @error('materias_prerrequisito') is-invalid @enderror" name="materias_prerrequisito[]" multiple>
+                        <select class="form-select select2 @error('materias_prerrequisito') is-invalid @enderror"
+                            name="materias_prerrequisito[]" multiple>
                             @foreach ($materiasEscuela as $mate)
                                 <option value="{{ $mate->id }}" @selected(in_array($mate->id, old('materias_prerrequisito', [])))>
                                     {{ $mate->nombre }}
@@ -570,24 +599,24 @@
                         <div class="p-3 border rounded">
 
                             <div class="col-12 col-md-12 mb-4">
-                            @livewire('escuelas.materias.gestionar-pasos-iniciar', ['materia' => new \App\Models\Materia])
+                                @livewire('escuelas.materias.gestionar-pasos-iniciar', ['materia' => new \App\Models\Materia()])
                             </div>
                             <hr class="my-4">
 
                             <!-- Livewire Components with Draft Mode -->
-                            @livewire('escuelas.materias.gestionar-pasos-requisito', ['materia' => new \App\Models\Materia])
+                            @livewire('escuelas.materias.gestionar-pasos-requisito', ['materia' => new \App\Models\Materia()])
 
                             <hr class="my-4">
 
-                            @livewire('escuelas.materias.gestionar-pasos-culminados', ['materia' => new \App\Models\Materia])
+                            @livewire('escuelas.materias.gestionar-pasos-culminados', ['materia' => new \App\Models\Materia()])
 
                             <hr class="my-4">
 
-                            @livewire('escuelas.materias.gestionar-tareas-requisito', ['materia' => new \App\Models\Materia])
+                            @livewire('escuelas.materias.gestionar-tareas-requisito', ['materia' => new \App\Models\Materia()])
 
                             <hr class="my-4">
 
-                            @livewire('escuelas.materias.gestionar-tareas-culminadas', ['materia' => new \App\Models\Materia])
+                            @livewire('escuelas.materias.gestionar-tareas-culminadas', ['materia' => new \App\Models\Materia()])
                         </div>
                     </div>
                 </div>

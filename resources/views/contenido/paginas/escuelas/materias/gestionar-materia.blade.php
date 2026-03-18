@@ -481,247 +481,283 @@
         @include('layouts.status-msn')
 
 
+        @if ($materia->nivel_id)
+            <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                <span class="alert-icon text-info me-2">
+                    <i class="ti ti-info-circle ti-xs"></i>
+                </span>
+                <div>
+                    Esta materia pertenece al grado <strong>{{ $materia->nivel->nombre ?? 'N/A' }}</strong>.
+                    Las configuraciones de asistencias, calificaciones y traslados se heredan automáticamente del grado.
+                    <a href="{{ route('niveles-escuelas.gestionar-materias', [$escuela, $materia->nivel_id]) }}"
+                        class="fw-bold text-info ms-2">Volver al Grado</a>
+                </div>
+            </div>
+        @endif
+
         <div class="row equal-height-row ">
             @csrf
             @method('POST')
 
             <div class="col mb-3 equal-height-col col-12 ">
                 <div class="card h-100 p-6">
-                    <h5 class="mb-1 fw-semibold text-black">Configuración inicial</h5>
+                    <h5 class="mb-1 fw-semibold text-black">Configuración principal</h5>
                     <div class="row ">
-                        <div class="mb-3 col-12 col-md-6 ">
-
+                        <div class="mb-3 col-12 col-md-12 ">
                             <label for="nombre" class="form-label">Nombre de la Materia</label>
-                            <input value="{{ old('nombre', $materia->nombre) }}" type="text" class="form-control @error('nombre') is-invalid @enderror"
-                                id="nombre" name="nombre">
+                            <input value="{{ old('nombre', $materia->nombre) }}" type="text"
+                                class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre">
                             @error('nombre')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div id="" class="mb-3 col-12 col-md-6 ">
-                            <label for="limiteReportes" class="form-label">Limite reportes asistencia </label>
-
-                            <input value="{{ $materia->limite_reporte_asistencias }}" type="number" class="form-control @error('limiteReportes') is-invalid @enderror"
-                                id="limiteReportes" name="limiteReportes">
-                            @error('limiteReportes')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
                     </div>
 
-
-                    <div style="    min-height: 75px;" class="row">
-
-
-                        <div class="col-md-6 col-sm-12">
-                          <label class="form-label">¿Tiene día limite de reporte?</label><br>
-                            <label class="switch switch-lg">
-                                <input {{ $materia->tiene_dia_limite ? 'checked' : '' }} type="checkbox"
-                                    class="switch-input" id="diaLimiteHabilitado" name="diaLimiteHabilitado" />
-                                <span class="switch-toggle-slider">
-                                    <span class="switch-on">Si</span>
-                                    <span class="switch-off">No</span>
-                                </span>
-                            </label>
-                            @error('diaLimiteHabilitado')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
+                    @if (!$materia->nivel_id)
+                        <div class="row">
+                            <div id="" class="mb-3 col-12 col-md-6 ">
+                                <label for="limiteReportes" class="form-label">Limite reportes asistencia </label>
+                                <input value="{{ $materia->limite_reporte_asistencias }}" type="number"
+                                    class="form-control @error('limiteReportes') is-invalid @enderror" id="limiteReportes"
+                                    name="limiteReportes">
+                                @error('limiteReportes')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
 
-                        <div id="containerDiaLimiteReporte" class="mb-3 col-md-6  col-sm-12 ">
-                            <label for="dia" class="form-label">Día limite reporte</label><br>
-                            <select id="dia" name="dia" class="select2 form-select" data-allow-clear="true">
-                                <option value="">Sin definir</option>
-                                <option @if ($materia->dia_limite_reporte == '1') selected @endif value="1"
-                                    {{ old('dia') }}>Lunes</option>
-                                <option @if ($materia->dia_limite_reporte == '2') selected @endif value="2"
-                                    {{ old('dia') }}>Martes</option>
-                                <option @if ($materia->dia_limite_reporte == '3') selected @endif value="3"
-                                    {{ old('dia') }}>Miércoles</option>
-                                <option @if ($materia->dia_limite_reporte == '4') selected @endif value="4"
-                                    {{ old('dia') }}>Jueves</option>
-                                <option @if ($materia->dia_limite_reporte == '5') selected @endif value="5"
-                                    {{ old('dia') }}>Viernes</option>
-                                <option @if ($materia->dia_limite_reporte == '6') selected @endif value="6"
-                                    {{ old('dia') }}>Sábado</option>
-                                <option @if ($materia->dia_limite_reporte == '0') selected @endif value="0"
-                                    {{ old('dia') }}>Domingo</option>
-                            </select>
-                            @if ($errors->has('dia'))
-                                <div class="text-danger form-label">{{ $errors->first('dia') }}</div>
-                            @endif
+                        <div style="    min-height: 75px;" class="row">
+
+
+                            <div class="col-md-6 col-sm-12">
+                                <label class="form-label">¿Tiene día limite de reporte?</label><br>
+                                <label class="switch switch-lg">
+                                    <input {{ $materia->tiene_dia_limite ? 'checked' : '' }} type="checkbox"
+                                        class="switch-input" id="diaLimiteHabilitado" name="diaLimiteHabilitado" />
+                                    <span class="switch-toggle-slider">
+                                        <span class="switch-on">Si</span>
+                                        <span class="switch-off">No</span>
+                                    </span>
+                                </label>
+                                @error('diaLimiteHabilitado')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+
+                            <div id="containerDiaLimiteReporte" class="mb-3 col-md-6  col-sm-12 ">
+                                <label for="dia" class="form-label">Día limite reporte</label><br>
+                                <select id="dia" name="dia" class="select2 form-select" data-allow-clear="true">
+                                    <option value="">Sin definir</option>
+                                    <option @if ($materia->dia_limite_reporte == '1') selected @endif value="1"
+                                        {{ old('dia') }}>Lunes</option>
+                                    <option @if ($materia->dia_limite_reporte == '2') selected @endif value="2"
+                                        {{ old('dia') }}>Martes</option>
+                                    <option @if ($materia->dia_limite_reporte == '3') selected @endif value="3"
+                                        {{ old('dia') }}>Miércoles</option>
+                                    <option @if ($materia->dia_limite_reporte == '4') selected @endif value="4"
+                                        {{ old('dia') }}>Jueves</option>
+                                    <option @if ($materia->dia_limite_reporte == '5') selected @endif value="5"
+                                        {{ old('dia') }}>Viernes</option>
+                                    <option @if ($materia->dia_limite_reporte == '6') selected @endif value="6"
+                                        {{ old('dia') }}>Sábado</option>
+                                    <option @if ($materia->dia_limite_reporte == '0') selected @endif value="0"
+                                        {{ old('dia') }}>Domingo</option>
+                                </select>
+                                @if ($errors->has('dia'))
+                                    <div class="text-danger form-label">{{ $errors->first('dia') }}</div>
+                                @endif
+                            </div>
+
+                            <div id="labelCantidadReportesSemana" class="mb-3  col-md-6  col-sm-12 ">
+                                <label for="cantidadReportesSemana" class="form-label">Cantidad de reportes
+                                    semana</label><br>
+                                <input value="{{ $materia->cantidad_limite_reportes_semana }}" type="number"
+                                    class="form-control @error('cantidadReportesSemana') is-invalid @enderror"
+                                    id="cantidadReportesSemana" name="cantidadReportesSemana">
+                                @error('cantidadReportesSemana')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div id="labeldiasPlazoReporte" class="mb-3  col-md-6  col-sm-12 ">
+                                <label for="diasPlazoReporte" class="form-label">dias de plazo reparto</label><br>
+                                <input value="{{ $materia->dias_plazo_reporte }}" type="number"
+                                    class="form-control @error('diasPlazoReporte') is-invalid @enderror"
+                                    id="diasPlazoReporte" name="diasPlazoReporte">
+                                @error('diasPlazoReporte')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
-                        <div id="labelCantidadReportesSemana" class="mb-3  col-md-6  col-sm-12 ">
-                            <label for="cantidadReportesSemana" class="form-label">Cantidad de reportes semana</label><br>
-                            <input value="{{ $materia->cantidad_limite_reportes_semana }}" type="number"
-                                class="form-control @error('cantidadReportesSemana') is-invalid @enderror" id="cantidadReportesSemana" name="cantidadReportesSemana">
-                            @error('cantidadReportesSemana')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div id="labeldiasPlazoReporte" class="mb-3  col-md-6  col-sm-12 ">
-                            <label for="diasPlazoReporte" class="form-label">dias de plazo reparto</label><br>
-                            <input value="{{ $materia->dias_plazo_reporte }}" type="number" class="form-control @error('diasPlazoReporte') is-invalid @enderror"
-                                id="diasPlazoReporte" name="diasPlazoReporte">
-                            @error('diasPlazoReporte')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
+
+                        <div style="    min-height: 75px;" class="row">
+
+                            <div class="col-md-6  col-sm-12">
+                                <label for="togglehabilitarAsistencias" class="form-label">¿Habilitar
+                                    asistencia?</label><br>
+                                <label class="switch switch-lg">
+                                    <input {{ $materia->habilitar_asistencias ? 'checked' : '' }} type="checkbox"
+                                        class="switch-input" id="togglehabilitarAsistencias"
+                                        name="habilitarAsistencias" />
+                                    <span class="switch-toggle-slider">
+                                        <span class="switch-on">Si</span>
+                                        <span class="switch-off">No</span>
+                                    </span>
+                                </label>
+                                @error('habilitarAsistencias')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
 
 
-                    <div style="    min-height: 75px;" class="row">
-
-                        <div class="col-md-6  col-sm-12">
-                            <label for="togglehabilitarAsistencias" class="form-label">¿Habilitar asistencia?</label><br>
-                            <label class="switch switch-lg">
-                                <input {{ $materia->habilitar_asistencias ? 'checked' : '' }} type="checkbox"
-                                    class="switch-input" id="togglehabilitarAsistencias" name="habilitarAsistencias" />
-                                <span class="switch-toggle-slider">
-                                    <span class="switch-on">Si</span>
-                                    <span class="switch-off">No</span>
-                                </span>
-                            </label>
-                            @error('habilitarAsistencias')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
+                            <div id="containesAsistenciasMinimas"
+                                class="mb-3 {{ $materia->habilitar_asistencias ? '' : 'd-none' }} col-md-6  col-sm-12">
+                                <label for="asistenciasMinimas" class="form-label">Asistencias Mínimas
+                                    (opcional)</label><br>
+                                <input value="{{ $materia->asistencias_minimas }}" type="number"
+                                    class="form-control @error('asistenciasMinimas') is-invalid @enderror"
+                                    id="asistenciasMinimas" name="asistenciasMinimas">
+                                @error('asistenciasMinimas')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
 
-                        <div id="containesAsistenciasMinimas"
-                            class="mb-3 {{ $materia->habilitar_asistencias ? '' : 'd-none' }} col-md-6  col-sm-12">
-                            <label for="asistenciasMinimas" class="form-label">Asistencias Mínimas (opcional)</label><br>
-                            <input value="{{ $materia->asistencias_minimas }}" type="number" class="form-control @error('asistenciasMinimas') is-invalid @enderror"
-                                id="asistenciasMinimas" name="asistenciasMinimas">
-                            @error('asistenciasMinimas')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
+                        <div style="    min-height: 75px;" class="row">
 
-
-                    <div style="    min-height: 75px;" class="row">
-
-                        <div style="margin-top: -12px;" class="col-6">
-                          <label for="habilitarInasistencias" class="form-label">¿Habilitar inasistencia?</label><br>
-                            <label class="switch switch-lg">
-                                <input {{ $materia->habilitar_inasistencias ? 'checked' : '' }} type="checkbox"
-                                    @checked(old('habilitarInasistencias')) class="switch-input" id="togglehabilitarInasistencias"
-                                    name="habilitarInasistencias" />
-                                <span class="switch-toggle-slider">
-                                    <span class="switch-on">Si</span>
-                                    <span class="switch-off">No</span>
-                                </span>
-                            </label>
-                            @error('habilitarInasistencias')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
-                        <div id="containesAsistenciasAlerta"
-                            class="mb-3  {{ $materia->habilitar_inasistencias ? '' : 'd-none' }}  col-md-6  col-sm-12">
-                            <label for="asistenciasAlerta" class="form-label">Cantidad inasistencia (alerta)</label><br>
-                            <input value="{{ $materia->asistencias_minima_alerta }}" type="number" class="form-control @error('cantidadInasistencias') is-invalid @enderror"
-                                id="cantidadInasistencias" name="cantidadInasistencias">
-                            @error('cantidadInasistencias')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="row">
-
-                        <div class="mb-3  col-12 col-md-6 ">
-                            <label for="habilitarCalificaciones" class="form-label">¿Habilitar calificaciones?</label><br>
-                            <label class="switch switch-lg">
-                                <input type="checkbox" {{ $materia->habilitar_calificaciones ? 'checked' : '' }}
-                                    class="switch-input" id="togglehabilitarCalificaciones"
-                                    name="habilitarCalificaciones" />
-                                <span class="switch-toggle-slider">
-                                    <span class="switch-on">Si</span>
-                                    <span class="switch-off">No</span>
-                                </span>
-                            </label>
-
-                            @error('habilitarCalificaciones')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
+                            <div style="margin-top: -12px;" class="col-6">
+                                <label for="habilitarInasistencias" class="form-label">¿Habilitar
+                                    inasistencia?</label><br>
+                                <label class="switch switch-lg">
+                                    <input {{ $materia->habilitar_inasistencias ? 'checked' : '' }} type="checkbox"
+                                        @checked(old('habilitarInasistencias')) class="switch-input"
+                                        id="togglehabilitarInasistencias" name="habilitarInasistencias" />
+                                    <span class="switch-toggle-slider">
+                                        <span class="switch-on">Si</span>
+                                        <span class="switch-off">No</span>
+                                    </span>
+                                </label>
+                                @error('habilitarInasistencias')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div id="containesAsistenciasAlerta"
+                                class="mb-3  {{ $materia->habilitar_inasistencias ? '' : 'd-none' }}  col-md-6  col-sm-12">
+                                <label for="asistenciasAlerta" class="form-label">Cantidad inasistencia
+                                    (alerta)</label><br>
+                                <input value="{{ $materia->asistencias_minima_alerta }}" type="number"
+                                    class="form-control @error('cantidadInasistencias') is-invalid @enderror"
+                                    id="cantidadInasistencias" name="cantidadInasistencias">
+                                @error('cantidadInasistencias')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
-                        <div class="mb-3   col-12 col-md-6">
-                            <label for="habilitarTraslado" class="form-label">¿Habilitar traslado?</label><br>
-                            <label class="switch switch-lg">
-                                <input type="checkbox" {{ $materia->habilitar_traslado ? 'checked' : '' }}
-                                    class="switch-input" id="togglehabilitarTraslado" name="habilitarTraslado" />
-                                <span class="switch-toggle-slider">
-                                    <span class="switch-on">Si</span>
-                                    <span class="switch-off">No</span>
-                                </span>
-                            </label>
-                            @error('habilitarTraslado')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
+                        <div class="row">
 
-                        <div class="mb-3  col-12 col-md-6">
-                            <label for="obligatorio" class="form-label">¿Cáracter obligatorio?</label><br>
-                            <label class="switch switch-lg">
-                                <input type="checkbox" {{ $materia->habilitar_traslado ? 'checked' : '' }}
-                                    class="switch-input" id="toggleobligatorio" name="obligatorio" />
-                                <span class="switch-toggle-slider">
-                                    <span class="switch-on">Si</span>
-                                    <span class="switch-off">No</span>
-                                </span>
-                            </label>
-                            @error('obligatorio')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
+                            <div class="mb-3  col-12 col-md-6 ">
+                                <label for="habilitarCalificaciones" class="form-label">¿Habilitar
+                                    calificaciones?</label><br>
+                                <label class="switch switch-lg">
+                                    <input type="checkbox" {{ $materia->habilitar_calificaciones ? 'checked' : '' }}
+                                        class="switch-input" id="togglehabilitarCalificaciones"
+                                        name="habilitarCalificaciones" />
+                                    <span class="switch-toggle-slider">
+                                        <span class="switch-on">Si</span>
+                                        <span class="switch-off">No</span>
+                                    </span>
+                                </label>
 
-                    </div>
-                </div>
-            </div>
+                                @error('habilitarCalificaciones')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
 
-            <div class=" col equal-height-col  col-12 col-md-12">
-                <div class="card p-6 h-100">
-                    @if ($escuela->tipo_matriculas == 'niveles_agrupados')
-                        <div class="mb-3 col-12 col-md-4">
-                            <label for="nivel_id" class="form-label">Nivel (opcional)</label><br>
-                            <input type="number" class="form-control" id="nivel_id" name="nivel_id">
-                            @error('nivel_id')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
+                            <div class="mb-3   col-12 col-md-6">
+                                <label for="habilitarTraslado" class="form-label">¿Habilitar traslado?</label><br>
+                                <label class="switch switch-lg">
+                                    <input type="checkbox" {{ $materia->habilitar_traslado ? 'checked' : '' }}
+                                        class="switch-input" id="togglehabilitarTraslado" name="habilitarTraslado" />
+                                    <span class="switch-toggle-slider">
+                                        <span class="switch-on">Si</span>
+                                        <span class="switch-off">No</span>
+                                    </span>
+                                </label>
+                                @error('habilitarTraslado')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3  col-12 col-md-6">
+                                <label for="obligatorio" class="form-label">¿Cáracter obligatorio?</label><br>
+                                <label class="switch switch-lg">
+                                    <input type="checkbox" {{ $materia->habilitar_traslado ? 'checked' : '' }}
+                                        class="switch-input" id="toggleobligatorio" name="obligatorio" />
+                                    <span class="switch-toggle-slider">
+                                        <span class="switch-on">Si</span>
+                                        <span class="switch-off">No</span>
+                                    </span>
+                                </label>
+                                @error('obligatorio')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
                         </div>
                     @endif
 
-                    <!-- Pasos de Crecimiento -->
+                </div>
+            </div>
+        </div>
 
+        <div class=" col equal-height-col  col-12 col-md-12">
+            <div class="card p-6 h-100">
+                @if ($escuela->tipo_matriculas == 'niveles_agrupados')
+                    <div class="mb-3 col-12 col-md-4">
+                        <label for="nivel_id" class="form-label">Nivel (opcional)</label><br>
+                        <input type="number" class="form-control" id="nivel_id" name="nivel_id">
+                        @error('nivel_id')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+                @endif
+
+                @if (!$materia->nivel_id)
+                    <!-- Pasos de Crecimiento -->
                     <h5 class="mb-1 fw-semibold text-black">Configuración de progreso</h5>
 
-                    <div class="col-12 col-md-12 mb-4">
-                        <label class="form-label">Paso al iniciar <small class="text-muted">(Se asignará al inscribirse)</small></label><br>
-                        <select class="form-select select2 @error('paso_iniciar_id') is-invalid @enderror" name="paso_iniciar_id">
-                            <option value="">Seleccionar paso inicial</option>
-                            @foreach ($pasosCrecimiento as $paso)
-                                <option value="{{ $paso->id_paso }}|{{ $paso->estado_id }}"
-                                    {{ $pasoInicioSeleccionado == $paso->id_paso . '|' . $paso->estado_id ? 'selected' : '' }}>
-                                    {{ $paso->nombre }}
+                    <div class="col-12 mb-3">
+                        <label for="tipoUsuarioInicial" class="form-label">Tipo usuario inicial (Al
+                            matricular)</label><br>
+                        <select id="tipoUsuarioInicial" name="tipoUsuarioInicial"
+                            class="select2 form-select @error('tipoUsuarioInicial') is-invalid @enderror">
+                            <option value="">Seleccione...</option>
+                            @foreach ($tipoUsuariosObjetivo as $tipo)
+                                <option value="{{ $tipo->id }}"
+                                    {{ old('tipoUsuarioInicial', $materia->tipo_usuario_inicial_id) == $tipo->id ? 'selected' : '' }}>
+                                    {{ $tipo->nombre }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('paso_iniciar_id')
+                        @error('tipoUsuarioInicial')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+
                     <div class="col-12 mb-3">
-                        <label for="tipoUsuarioObjetivo" class="form-label">Definir tipo usuario objetivo (Cambio por Asistencia)</label><br>
-                        <select id="tipoUsuarioObjetivo" name="tipoUsuarioObjetivo" class="select2 form-select @error('tipoUsuarioObjetivo') is-invalid @enderror">
+                        <label for="tipoUsuarioObjetivo" class="form-label">Tipo usuario objetivo (Al
+                            finalizar)</label><br>
+                        <select id="tipoUsuarioObjetivo" name="tipoUsuarioObjetivo"
+                            class="select2 form-select @error('tipoUsuarioObjetivo') is-invalid @enderror">
                             <option value="">Seleccione...</option>
                             @foreach ($tipoUsuariosObjetivo as $tipo)
-                            <option value="{{ $tipo->id }}" {{ old('tipoUsuarioObjetivo', $materia->tipo_usuario_objetivo_id) == $tipo->id ? 'selected' : '' }}>
-                                {{ $tipo->nombre }}
-                            </option>
+                                <option value="{{ $tipo->id }}"
+                                    {{ old('tipoUsuarioObjetivo', $materia->tipo_usuario_objetivo_id) == $tipo->id ? 'selected' : '' }}>
+                                    {{ $tipo->nombre }}
+                                </option>
                             @endforeach
                         </select>
                         @error('tipoUsuarioObjetivo')
@@ -731,19 +767,16 @@
 
                     <!-- Prerrequisitos Materias -->
                     <h5 class="mb-1 fw-semibold text-black">Configuración Módulos</h5>
-
                     <div class="col-12 col-md-12">
                         <label class="form-label">Materias requeridas</label><br>
-
                         @php
                             $materiasPrerequisito = $materia
                                 ->prerrequisitosMaterias()
                                 ->pluck('materia_prerrequisito.materia_prerrequisito_id')
                                 ->toArray();
                         @endphp
-
-                        <select class="form-select select2 @error('materias_prerrequisito') is-invalid @enderror" name="materias_prerrequisito[]" multiple>
-
+                        <select class="form-select select2 @error('materias_prerrequisito') is-invalid @enderror"
+                            name="materias_prerrequisito[]" multiple>
                             @foreach ($materiasEscuela as $mate)
                                 <option value="{{ $mate->id }}" @if (in_array($mate->id, $materiasPrerequisito)) selected @endif>
                                     {{ $mate->nombre }}
@@ -754,29 +787,39 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+                @endif
 
 
-                        <!-- /Editor -->
+                <!-- /Editor -->
+            </div>
+
+        </div>
+        <div class=" col equal-height-col mt-3 col-12 col-md-12">
+            <div class="card p-6">
+                <!-- Campo oculto para escuela_id, se asigna automáticamente -->
+                <div class="mb-3 col-12">
+                    <label for="descripcion" class="form-label">Descripción (opcional)</label>
+
+                    <div id="editor"></div>
+                    <input id="descripcion" name="descripción" class='d-none'>
                 </div>
+                @error('descripción')
+                    <span class="text-danger small">{{ $message }}</span>
+                @enderror
 
             </div>
-               <div class=" col equal-height-col mt-3 col-12 col-md-12">
-                            <div class="card p-6">
-                                <!-- Campo oculto para escuela_id, se asigna automáticamente -->
-                                <div class="mb-3 col-12">
-                                    <label for="descripcion" class="form-label">Descripción (opcional)</label>
 
-                                    <div id="editor"></div>
-                                    <input id="descripcion" name="descripción" class='d-none'>
-                                </div>
-                                @error('descripción')
-                                    <span class="text-danger small">{{ $message }}</span>
-                                @enderror
+            <div class="d-flex mb-1 mt-5">
+                <div @if ($materia->nivel_id) class="ms-5" @endif>
+                    <button onclick="window.history.back()" type="reset"
+                        class="btn rounded-pill btn-outline-secondary">Volver</button>
+                    <button type="submit" class="btn btn-primary rounded-pill me-1 btnGuardar">Guardar</button>
 
-                            </div>
+                </div>
+            </div>
+        </div>
 
-                        </div>
-
+        @if (!$materia->nivel_id)
             {{-- SECCIÓN: PROCESOS Y TAREAS (NUEVO) --}}
             <div class="col-12 mt-4">
                 <div class="card">
@@ -809,20 +852,13 @@
                     </div>
                 </div>
             </div>
+        @endif
 
 
 
 
         </div>
 
-        <div class="d-flex mb-1 mt-5">
-            <div class="me-auto">
-                <button onclick="window.history.back()" type="reset"
-                    class="btn rounded-pill btn-outline-secondary">Volver</button>
-                <button type="submit" class="btn btn-primary rounded-pill me-1 btnGuardar">Guardar</button>
-
-            </div>
-        </div>
 
 
     </form>

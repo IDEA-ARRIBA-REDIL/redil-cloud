@@ -53,14 +53,18 @@
                         <div class="d-flex align-items-center mb-2">
                             {{-- Avatar del usuario --}}
                             <div class="avatar avatar-sm me-3">
-                                @if($h->user->foto && !in_array($h->user->foto, ["default-m.png", "default-f.png"]))
-                                    <img src="{{ Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$h->user->foto) }}" alt="{{ $h->user->nombre(3) }}" class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
+                                @if ($h->user->foto && !in_array($h->user->foto, ['default-m.png', 'default-f.png']))
+                                    <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $h->user->foto) }}"
+                                        alt="{{ $h->user->nombre(3) }}"
+                                        class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
                                 @else
-                                    <span class="avatar-initial rounded-circle bg-primary bg-opacity-10 text-primary fw-bold">{{ $h->user->inicialesNombre() }}</span>
+                                    <span
+                                        class="avatar-initial rounded-circle bg-primary bg-opacity-10 text-primary fw-bold">{{ $h->user->inicialesNombre() }}</span>
                                 @endif
                             </div>
                             <div>
-                                <p class="mb-0 text-dark fw-bold" style="font-size: 0.95rem;">{{ $h->user->nombre(3) }}</p>
+                                <p class="mb-0 text-dark fw-bold" style="font-size: 0.95rem;">{{ $h->user->nombre(3) }}
+                                </p>
                                 <small class="text-muted"
                                     style="font-size: 0.75rem;">{{ $h->created_at->diffForHumans() }}</small>
                             </div>
@@ -69,11 +73,12 @@
                         {{-- Badges de Estado --}}
                         <div>
                             @if ($h->estado === 'pendiente')
-                                <span class="badge bg-label-warning text-lowercase">pendiente</span>
+                                <span class="badge bg-gray text-lowercase text-white rounded-pill">pendiente</span>
                             @elseif($h->estado === 'resuelto')
-                                <span class="badge bg-label-success text-lowercase">resuelto</span>
+                                <span
+                                    class="badge bg-label-primary text-lowercase text-white rounded-pill">resuelto</span>
                             @else
-                                <span class="badge bg-label-secondary text-lowercase">cerrado</span>
+                                <span class="badge bg-gray text-lowercase text-white rounded-pill">cerrado</span>
                             @endif
                         </div>
                     </div>
@@ -143,7 +148,7 @@
                         @foreach ($curso->modulos as $modulo)
                             <optgroup label="Módulo: {{ $modulo->titulo }}">
                                 @foreach ($modulo->items as $item)
-                                    @if($item->tipo && !in_array($item->tipo->codigo, ['evaluacion', 'quiz', 'final']))
+                                    @if ($item->tipo && !in_array($item->tipo->codigo, ['evaluacion', 'quiz', 'final']))
                                         <option value="{{ $item->id }}">{{ $item->titulo }}</option>
                                     @endif
                                 @endforeach
@@ -153,9 +158,10 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
-                    <button type="button" class="btn btn-outline-secondary" wire:click="volverALista">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="ti ti-send me-1"></i> Publicar
-                       </button>
+                    <button type="button" class="btn btn-outline-secondary rounded-pill"
+                        wire:click="volverALista">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill"><i class="ti ti-send me-1"></i> Publicar
+                    </button>
                 </div>
             </form>
         </div>
@@ -211,10 +217,14 @@
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="d-flex align-items-center">
                                     <div class="avatar avatar-xs me-2">
-                                        @if($respuesta->user->foto && !in_array($respuesta->user->foto, ["default-m.png", "default-f.png"]))
-                                            <img src="{{ Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$respuesta->user->foto) }}" alt="{{ $respuesta->user->nombre(3) }}" class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
+                                        @if ($respuesta->user->foto && !in_array($respuesta->user->foto, ['default-m.png', 'default-f.png']))
+                                            <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $respuesta->user->foto) }}"
+                                                alt="{{ $respuesta->user->nombre(3) }}"
+                                                class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
                                         @else
-                                            <span class="avatar-initial rounded-circle {{ $respuesta->es_respuesta_oficial ? 'bg-primary text-white' : 'bg-primary bg-opacity-10 text-primary' }} fw-bold" style="font-size: 0.60rem;">{{ $respuesta->user->inicialesNombre() }}</span>
+                                            <span
+                                                class="avatar-initial rounded-circle {{ $respuesta->es_respuesta_oficial ? 'bg-primary text-white' : 'bg-primary bg-opacity-10 text-primary' }} fw-bold"
+                                                style="font-size: 0.60rem;">{{ $respuesta->user->inicialesNombre() }}</span>
                                         @endif
                                     </div>
                                     <span class="fw-bold text-dark small">{{ $respuesta->user->name }}</span>

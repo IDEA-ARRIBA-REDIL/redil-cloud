@@ -2,23 +2,22 @@
 
 namespace App\Livewire\Carrito;
 
-use Livewire\Component;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\Validate;
-use Carbon\Carbon;
-
-// --- Importar todos los modelos necesarios ---
 use App\Models\Actividad;
+use App\Models\ActividadCarritoCompra;
+use App\Models\ActividadCategoria;
+use App\Models\Compra;
 use App\Models\Configuracion;
 use App\Models\HorarioMateriaPeriodo;
-use App\Models\ActividadCategoria;
-use App\Models\ActividadCarritoCompra;
-use App\Models\Compra;
-use App\Models\Pago;
+// --- Importar todos los modelos necesarios ---
 use App\Models\Matricula;
 use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
+use App\Models\Pago;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Validate;
+use Livewire\Component;
 
 class EscuelasCarrito extends Component
 {
@@ -26,32 +25,45 @@ class EscuelasCarrito extends Component
 
     // Datos pasados desde el controlador
     public Actividad $actividad;
+
     public $compraActual;
+
     public $primeraVez;
+
     public $categoriasHabilitadas;
 
     // Propiedades para la lógica interna y la vista
     public $configuracion;
+
     public $monedasActividad;
+
     public int $monedaSeleccionada;
 
     // Propiedades de selección del usuario (vinculadas con Alpine.js)
     public $selectedMateriaPeriodo = null;
+
     #[Validate('required', message: 'Debes seleccionar una sede.')]
-    public $sedeSeleccionada      = null;
-    public $tipoAulaSeleccionado  = null;
+    public $sedeSeleccionada = null;
+
+    public $tipoAulaSeleccionado = null;
+
     #[Validate('required', message: 'Debes seleccionar un horario.')]
-    public $horarioSeleccionado   = null;
+    public $horarioSeleccionado = null;
 
     // Propiedades para cargar datos dinámicamente en los selects
     public $sedes = [];
+
     public $tiposAula = [];
+
     public $horarios = [];
 
     // Propiedades para Multistep y Formulario
     public $pasoActual = 1;
+
     public $totalPasos = 2; // Selección Académica y Formulario (si existe)
+
     public $elementosFormulario = [];
+
     public $respuestas = [];
 
     /**
@@ -80,19 +92,29 @@ class EscuelasCarrito extends Component
             foreach ($respuestasPrevias as $resp) {
                 $elementoId = $resp->elemento_formulario_actividad_id;
                 $elemento = \App\Models\ElementoFormularioActividad::find($elementoId);
-                if (!$elemento) continue;
+                if (! $elemento) {
+                    continue;
+                }
 
                 $tipo = $elemento->tipoElemento->getRawOriginal('clase') ?? $elemento->tipoElemento->clase;
 
                 switch ($tipo) {
-                    case 'corta': $this->respuestas[$elementoId] = $resp->respuesta_texto_corto; break;
-                    case 'larga': $this->respuestas[$elementoId] = $resp->respuesta_texto_largo; break;
-                    case 'si_no': $this->respuestas[$elementoId] = $resp->respuesta_si_no; break;
-                    case 'unica_respuesta': $this->respuestas[$elementoId] = $resp->respuesta_unica; break;
-                    case 'multiple_respuesta': $this->respuestas[$elementoId] = explode(",", $resp->respuesta_multiple); break;
-                    case 'fecha': $this->respuestas[$elementoId] = $resp->respuesta_fecha; break;
-                    case 'numero': $this->respuestas[$elementoId] = $resp->respuesta_numero; break;
-                    case 'moneda': $this->respuestas[$elementoId] = $resp->respuesta_moneda; break;
+                    case 'corta': $this->respuestas[$elementoId] = $resp->respuesta_texto_corto;
+                        break;
+                    case 'larga': $this->respuestas[$elementoId] = $resp->respuesta_texto_largo;
+                        break;
+                    case 'si_no': $this->respuestas[$elementoId] = $resp->respuesta_si_no;
+                        break;
+                    case 'unica_respuesta': $this->respuestas[$elementoId] = $resp->respuesta_unica;
+                        break;
+                    case 'multiple_respuesta': $this->respuestas[$elementoId] = explode(',', $resp->respuesta_multiple);
+                        break;
+                    case 'fecha': $this->respuestas[$elementoId] = $resp->respuesta_fecha;
+                        break;
+                    case 'numero': $this->respuestas[$elementoId] = $resp->respuesta_numero;
+                        break;
+                    case 'moneda': $this->respuestas[$elementoId] = $resp->respuesta_moneda;
+                        break;
                 }
             }
         }
@@ -107,6 +129,7 @@ class EscuelasCarrito extends Component
             $this->validate(); // Valida sede y horario
             if ($this->totalPasos > 1) {
                 $this->pasoActual = 2;
+
                 return;
             }
         }
@@ -128,7 +151,7 @@ class EscuelasCarrito extends Component
         $this->selectedMateriaPeriodo = $materiaPeriodoId;
         $this->reset(['sedeSeleccionada', 'tipoAulaSeleccionado', 'horarioSeleccionado', 'tiposAula', 'horarios']);
         $this->sedes = HorarioMateriaPeriodo::getSedesForMateriaPeriodo($materiaPeriodoId)
-            ->map(fn($sede) => ['id' => $sede->id, 'nombre' => $sede->nombre])
+            ->map(fn ($sede) => ['id' => $sede->id, 'nombre' => $sede->nombre])
             ->all();
     }
 
@@ -141,18 +164,19 @@ class EscuelasCarrito extends Component
     {
         $this->sedeSeleccionada = $sedeId ?: null;
         $this->reset(['tipoAulaSeleccionado', 'horarioSeleccionado', 'horarios']);
-        if (!$this->sedeSeleccionada) {
+        if (! $this->sedeSeleccionada) {
             $this->tiposAula = [];
+
             return;
         }
         $this->tiposAula = HorarioMateriaPeriodo::query()
             ->where('materia_periodo_id', $this->selectedMateriaPeriodo)
-            ->whereHas('horarioBase.aula', fn($q) => $q->where('sede_id', $this->sedeSeleccionada))
+            ->whereHas('horarioBase.aula', fn ($q) => $q->where('sede_id', $this->sedeSeleccionada))
             ->with('horarioBase.aula.tipo')
             ->get()
             ->pluck('horarioBase.aula.tipo')
             ->unique('id')
-            ->map(fn($tipo) => ['id' => $tipo->id, 'nombre' => $tipo->nombre])
+            ->map(fn ($tipo) => ['id' => $tipo->id, 'nombre' => $tipo->nombre])
             ->values()->all();
     }
 
@@ -169,7 +193,7 @@ class EscuelasCarrito extends Component
             })
             ->with(['horarioBase.aula', 'maestros.user'])
             ->get()
-            ->map(fn($h) => $this->formatHorarioForAlpine($h))
+            ->map(fn ($h) => $this->formatHorarioForAlpine($h))
             ->all();
     }
 
@@ -195,8 +219,9 @@ class EscuelasCarrito extends Component
                         $this->dispatch('mostrarMensaje', [
                             'msnTitulo' => 'Campo Obligatorio',
                             'msnTexto' => "El campo \"{$elemento->titulo}\" es obligatorio.",
-                            'msnIcono' => 'error'
+                            'msnIcono' => 'error',
                         ]);
+
                         return;
                     }
                 }
@@ -217,13 +242,14 @@ class EscuelasCarrito extends Component
 
             // 4. VALIDACIÓN DE CUPOS (Solo si es primera vez o ha cambiado el horario)
             // Aquí se podría añadir una lógica más fina, pero por simplicidad:
-            if (!$this->compraActual && $horario->cupos_disponibles <= 0) {
+            if (! $this->compraActual && $horario->cupos_disponibles <= 0) {
                 $this->dispatch('mostrarMensaje', [
                     'msnTitulo' => 'Sin Cupos',
                     'msnTexto' => 'Lo sentimos, ya no quedan cupos disponibles para el horario seleccionado.',
-                    'msnIcono' => 'error'
+                    'msnIcono' => 'error',
                 ]);
                 DB::rollBack();
+
                 return;
             }
 
@@ -241,7 +267,7 @@ class EscuelasCarrito extends Component
                 'telefono_comprador' => $usuario->telefono_movil ?: '111111111',
                 'email_comprador' => $usuario->email,
                 'metodo_pago_id' => 0,
-                'destinatario_id' => $this->sedeSeleccionada
+                'destinatario_id' => $this->sedeSeleccionada,
             ]);
 
             // 6. CREACIÓN O ACTUALIZACIÓN DEL PAGO
@@ -274,8 +300,12 @@ class EscuelasCarrito extends Component
                 'matricula_id' => $matricula->id,
             ], [
                 'periodo_id' => $periodo->id,
-                'estado_aprobacion' => 'cursando',
             ]);
+
+            // --- NUEVO: Actualizar Tipo de Usuario Inicial ---
+            if ($horario->materiaPeriodo->materia->tipo_usuario_inicial_id) {
+                $usuario->update(['tipo_usuario_id' => $horario->materiaPeriodo->materia->tipo_usuario_inicial_id]);
+            }
 
             // 8. ÍTEM EN EL CARRITO
             ActividadCarritoCompra::updateOrCreate([
@@ -292,30 +322,42 @@ class EscuelasCarrito extends Component
 
             // 9. GUARDAR RESPUESTAS DEL FORMULARIO
             foreach ($this->respuestas as $elementoId => $valor) {
-                if (empty($valor)) continue;
+                if (empty($valor)) {
+                    continue;
+                }
 
                 $elemento = \App\Models\ElementoFormularioActividad::find($elementoId);
-                if (!$elemento) continue;
+                if (! $elemento) {
+                    continue;
+                }
 
                 $respuesta = \App\Models\RespuestaElementoFormulario::updateOrCreate([
                     'compra_id' => $compra->id,
                     'elemento_formulario_actividad_id' => $elementoId,
                 ], [
                     'inscripcion_id' => null, // En escuelas a veces no hay inscripción directa o se liga a la matrícula
-                    'user_id' => $usuario->id
+                    'user_id' => $usuario->id,
                 ]);
 
                 // Switch de guardado (simplificado para que quepa en un chunk, basándonos en el tipo de elemento)
                 $tipo = $elemento->tipoElemento->getRawOriginal('clase') ?? $elemento->tipoElemento->clase;
                 switch ($tipo) {
-                    case 'corta': $respuesta->respuesta_texto_corto = $valor; break;
-                    case 'larga': $respuesta->respuesta_texto_largo = $valor; break;
-                    case 'si_no': $respuesta->respuesta_si_no = $valor; break;
-                    case 'unica_respuesta': $respuesta->respuesta_unica = $valor; break;
-                    case 'multiple_respuesta': $respuesta->respuesta_multiple = is_array($valor) ? implode(",", $valor) : $valor; break;
-                    case 'fecha': $respuesta->respuesta_fecha = $valor; break;
-                    case 'numero': $respuesta->respuesta_numero = $valor; break;
-                    case 'moneda': $respuesta->respuesta_moneda = $valor; break;
+                    case 'corta': $respuesta->respuesta_texto_corto = $valor;
+                        break;
+                    case 'larga': $respuesta->respuesta_texto_largo = $valor;
+                        break;
+                    case 'si_no': $respuesta->respuesta_si_no = $valor;
+                        break;
+                    case 'unica_respuesta': $respuesta->respuesta_unica = $valor;
+                        break;
+                    case 'multiple_respuesta': $respuesta->respuesta_multiple = is_array($valor) ? implode(',', $valor) : $valor;
+                        break;
+                    case 'fecha': $respuesta->respuesta_fecha = $valor;
+                        break;
+                    case 'numero': $respuesta->respuesta_numero = $valor;
+                        break;
+                    case 'moneda': $respuesta->respuesta_moneda = $valor;
+                        break;
                 }
                 $respuesta->save();
             }
@@ -337,11 +379,11 @@ class EscuelasCarrito extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error en EscuelasCarrito: ' . $e->getMessage());
+            Log::error('Error en EscuelasCarrito: '.$e->getMessage());
             $this->dispatch('mostrarMensaje', [
                 'msnTitulo' => 'Error Inesperado',
-                'msnTexto' => 'Error técnico: ' . $e->getMessage(),
-                'msnIcono' => 'error'
+                'msnTexto' => 'Error técnico: '.$e->getMessage(),
+                'msnIcono' => 'error',
             ]);
         }
     }

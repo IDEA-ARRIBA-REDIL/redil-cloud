@@ -33,7 +33,7 @@ return new class extends Migration
                 'dias_plazo_reporte',
                 'tiene_dia_limite',
                 'cantidad_limite_reportes_semana',
-                'tipo_usuario_objetivo_id'
+                'tipo_usuario_objetivo_id',
             ]);
         });
     }

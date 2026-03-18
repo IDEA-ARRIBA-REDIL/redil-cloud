@@ -233,7 +233,7 @@
         <div class="col-md-12">
             <div class="card mb-4 rounded rounded-3">
                 <img id="preview-foto" class="cropped-img card-img-top mb-1"
-                    src="{{ old('foto') ? old('foto') : Storage::url($configuracion->ruta_almacenamiento . '/img/niveles/default.png') }}"
+                    src="{{ old('foto') ? old('foto') : asset('storage/global/img/temas/default.png') }}"
                     alt="Portada {{ $escuela->nombre }}">
                 <button type="button" style="background-color: rgba(255, 255, 255, 0.5);"
                     class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2"
@@ -411,6 +411,7 @@
                             </label>
                         </div>
                     </div>
+
                 </div>
             </div>
 
@@ -428,8 +429,20 @@
                     @enderror
 
                     <div class="col-12 mb-3">
-                        <label for="tipoUsuarioObjetivo" class="form-label">Definir tipo usuario objetivo (Cambio por
-                            Asistencia)</label>
+                        <label for="tipoUsuarioInicial" class="form-label">Definir tipo usuario inicial (Al matricular persona)</label>
+                        <select id="tipoUsuarioInicial" name="tipoUsuarioInicial"
+                            class="select2 form-select @error('tipoUsuarioInicial') is-invalid @enderror">
+                            <option value="">Seleccione...</option>
+                            @foreach ($tipoUsuariosObjetivo as $tipo)
+                                <option value="{{ $tipo->id }}" @selected(old('tipoUsuarioInicial') == $tipo->id)>
+                                    {{ $tipo->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-12 mb-3">
+                        <label for="tipoUsuarioObjetivo" class="form-label">Definir tipo usuario objetivo (Al aprobar el nivel)</label>
                         <select id="tipoUsuarioObjetivo" name="tipoUsuarioObjetivo"
                             class="select2 form-select @error('tipoUsuarioObjetivo') is-invalid @enderror">
                             <option value="">Seleccione...</option>
@@ -452,18 +465,48 @@
                             @endforeach
                         </select>
                     </div>
+
+
+
+                    <div class="d-flex mb-1 mt-5">
+                        <div class="me-auto">
+                            <button onclick="window.history.back()" type="reset"
+                                class="btn rounded-pill btn-outline-secondary">Volver</button>
+                            <button type="submit" class="btn btn-primary rounded-pill me-1">Guardar Grado</button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
 
-        <div class="d-flex mb-1 mt-5">
-            <div class="me-auto">
-                <button onclick="window.history.back()" type="reset"
-                    class="btn rounded-pill btn-outline-secondary">Volver</button>
-                <button type="submit" class="btn btn-primary rounded-pill me-1">Guardar Grado</button>
+        <h5 class="mb-4 mt-4 fw-semibold">Configuración de Pasos y Tareas</h5>
+
+        <div class="col-12 mb-3">
+            <div class="p-3 border rounded">
+                <div class="col-12 col-md-12 mb-4">
+                    @livewire('escuelas.niveles-escuelas.gestionar-pasos-iniciar', ['nivel' => new \App\Models\NivelEscuela()])
+                </div>
+                <hr class="my-4">
+
+                @livewire('escuelas.niveles-escuelas.gestionar-pasos-requisito', ['nivel' => new \App\Models\NivelEscuela()])
+
+                <hr class="my-4">
+
+                @livewire('escuelas.niveles-escuelas.gestionar-pasos-culminados', ['nivel' => new \App\Models\NivelEscuela()])
+
+                <hr class="my-4">
+
+                @livewire('escuelas.niveles-escuelas.gestionar-tareas-requisito', ['nivel' => new \App\Models\NivelEscuela()])
+
+                <hr class="my-4">
+
+                @livewire('escuelas.niveles-escuelas.gestionar-tareas-culminadas', ['nivel' => new \App\Models\NivelEscuela()])
             </div>
         </div>
     </form>
+
+
 
     <!-- Modal para subir y recortar foto -->
     <div class="modal fade modal-img" id="modalFoto" tabindex="-1" aria-hidden="true">

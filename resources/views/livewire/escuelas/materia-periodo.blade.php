@@ -22,11 +22,14 @@
         @endif
 
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex gap-2 align-items-center">
 
                 <button type="button" class="btn btn-primary my-5 float-start rounded-pill"
                     wire:click="abrirModalAnadirMaterias">
-                    <i class="ti ti-plus me-1"></i> Añadir 
+                    <i class="ti ti-plus me-1"></i> Añadir Materia {{ $nivelNombre ? "al Grado $nivelNombre" : '' }}
+                </button>
+                <button type="button" class="btn btn-outline-primary rounded-pill" wire:click="abrirModalDuplicar">
+                    <i class="ti ti-copy me-1"></i> Duplicar configuración
                 </button>
             </div>
 
@@ -47,12 +50,13 @@
                                             <div class="d-flex align-items-center">
 
                                                 <h5 class="mb-0 fw-semibold text-black lh-sm">
-                                                    {{ $materiaPe->materia->nombre }}  </h5>
-                                                    
-                                            </div>  
+                                                    {{ $materiaPe->materia->nombre }} </h5>
+
+                                            </div>
 
                                             <div class="dropdown zindex-2 ">
-                                                <button   style="border-radius: 20px;" class="btn p-1 border " type="button" data-bs-toggle="dropdown">
+                                                <button style="border-radius: 20px;" class="btn p-1 border "
+                                                    type="button" data-bs-toggle="dropdown">
                                                     <i class="ti ti-dots-vertical text-black"></i>
                                                 </button>
                                                 <ul class="dropdown-menu">
@@ -62,35 +66,36 @@
                                                             Gestionar horarios
                                                         </a>
                                                     </li>
-                                                   @if (!$materiaPe->finalizado)
+                                                    @if (!$materiaPe->finalizado)
                                                         <li>
-                                                            <button type="button" 
-                                                                    wire:click="confirmarFinalizacion({{ $materiaPe->id }})"
-                                                                    class="dropdown-item text-dark">
+                                                            <button type="button"
+                                                                wire:click="confirmarFinalizacion({{ $materiaPe->id }})"
+                                                                class="dropdown-item text-dark">
                                                                 Finalizar Materia
                                                             </button>
                                                         </li>
                                                     @else
                                                         {{-- Si la materia SÍ está finalizada, muestra el botón para Reactivar --}}
                                                         <li>
-                                                            <button type="button" 
-                                                                    wire:click="confirmarReactivacion({{ $materiaPe->id }})"
-                                                                    class="dropdown-item text-dark">
+                                                            <button type="button"
+                                                                wire:click="confirmarReactivacion({{ $materiaPe->id }})"
+                                                                class="dropdown-item text-dark">
                                                                 Activar Materia
                                                             </button>
                                                         </li>
                                                         <li>
-                                                            <a href="{{ route('periodo.materia.exportar-informe', $materiaPe) }}" class="dropdown-item">
-                                                                
+                                                            <a href="{{ route('periodo.materia.exportar-informe', $materiaPe) }}"
+                                                                class="dropdown-item">
+
                                                                 Exportar Informe
                                                             </a>
                                                         </li>
                                                     @endif
-                                                     <li>
+                                                    <li>
                                                         {{-- Este botón ahora llama a un método en el componente de Livewire --}}
-                                                        <button type="button" 
-                                                                wire:click="confirmarEliminacion({{ $materiaPe->id }})"
-                                                                class="dropdown-item text-dark">
+                                                        <button type="button"
+                                                            wire:click="confirmarEliminacion({{ $materiaPe->id }})"
+                                                            class="dropdown-item text-dark">
                                                             Eliminar
                                                         </button>
                                                     </li>
@@ -102,10 +107,10 @@
                                     <!-- Sección de caracteristicas-->
                                     <div class="card-body">
                                         @if ($materiaPe->finalizado)
-                                                        <span class="badge bg-label-success rounded-pill  mb-2">Finalizada</span>
-                                                    @else
-                                                        <span class="badge bg-label-info rounded-pill mb-2">En Curso</span>
-                                                    @endif
+                                            <span class="badge bg-label-success rounded-pill  mb-2">Finalizada</span>
+                                        @else
+                                            <span class="badge bg-label-info rounded-pill mb-2">En Curso</span>
+                                        @endif
                                         <div class="d-flex flex-column mb-3">
                                             <div class="d-flex flex-row">
                                                 <i class="ti ti-circle-dashed-percentage text-black"></i>
@@ -185,7 +190,8 @@
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title fw-semibold">Añadir materias al periodo</h5>
+                            <h5 class="modal-title fw-semibold">Añadir materias
+                                {{ $nivelNombre ? "al Grado $nivelNombre" : 'al periodo' }}</h5>
                             <button type="button" class="btn-close" wire:click="cerrarModalAnadirMaterias"
                                 aria-label="Cerrar"></button>
                         </div>
@@ -330,107 +336,161 @@
                 </div>
         @endif
         {{-- FIN: Modal --}}
+
+        {{-- Modal Duplicar Configuración --}}
+        @if ($mostrarModalDuplicar)
+            <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-semibold">Duplicar Configuración de Periodo</h5>
+                            <button type="button" class="btn-close"
+                                wire:click="$set('mostrarModalDuplicar', false)"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label text-black">Seleccionar Periodo Origen</label>
+                                <select class="form-select @error('periodoOrigenId') is-invalid @enderror"
+                                    wire:model="periodoOrigenId">
+                                    <option value="">Seleccione un periodo...</option>
+                                    @foreach ($periodosDisponiblesParaDuplicar as $p)
+                                        <option value="{{ $p->id }}">{{ $p->nombre }}
+                                            ({{ $p->fecha_inicio->format('Y') }})</option>
+                                    @endforeach
+                                </select>
+                                @error('periodoOrigenId')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="alert alert-warning mb-0">
+                                <i class="ti ti-alert-triangle me-1"></i>
+                                <strong>Importante:</strong> Se duplicarán todas las materias
+                                {{ $nivelNombre ? "del grado $nivelNombre" : '' }} de ese periodo, incluyendo sus
+                                horarios e ítems de evaluación. No se crearán duplicados si la materia ya existe en este
+                                periodo.
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 pt-0">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill"
+                                wire:click="$set('mostrarModalDuplicar', false)">Cancelar</button>
+                            <button type="button" class="btn btn-primary rounded-pill"
+                                wire:click="duplicarConfiguracion" wire:loading.attr="disabled">
+                                <span wire:loading wire:target="duplicarConfiguracion"
+                                    class="spinner-border spinner-border-sm me-1"></span>
+                                Confirmar y Duplicar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 
-   @push('scripts')
-    <script>
-        // Asegúrate que este script se ejecute después de que Livewire se inicialice
-        document.addEventListener('livewire:init', () => {
-            
-            // Escucha el evento 'mostrar-confirmacion-finalizar' emitido desde el componente
-            Livewire.on('mostrar-confirmacion-finalizar', (event) => {
-                // Extraemos los datos del evento
-                const data = Array.isArray(event) ? event[0] : event;
-                const materiaId = data.id;
-                const materiaNombre = data.nombre;
+    @push('scripts')
+        <script>
+            // Asegúrate que este script se ejecute después de que Livewire se inicialice
+            document.addEventListener('livewire:init', () => {
 
-                // Mostramos el SweetAlert
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    html: `Se calcularán y guardarán las notas finales para todos los alumnos de la materia <strong>${materiaNombre}</strong>.`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, ¡Finalizar!',
-                    cancelButtonText: 'Cancelar',
-                    customClass: {
-                        confirmButton: 'btn btn-primary me-3',
-                        cancelButton: 'btn btn-outline-secondary'
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    // Si el usuario hace clic en "Sí, ¡Finalizar!"
-                    if (result.isConfirmed) {
-                        // Emitimos un nuevo evento de vuelta al componente para ejecutar la acción final.
-                        Livewire.dispatch('finalizarMateriaConfirmado', { materiaPeriodoId: materiaId });
-                    }
+                // Escucha el evento 'mostrar-confirmacion-finalizar' emitido desde el componente
+                Livewire.on('mostrar-confirmacion-finalizar', (event) => {
+                    // Extraemos los datos del evento
+                    const data = Array.isArray(event) ? event[0] : event;
+                    const materiaId = data.id;
+                    const materiaNombre = data.nombre;
+
+                    // Mostramos el SweetAlert
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        html: `Se calcularán y guardarán las notas finales para todos los alumnos de la materia <strong>${materiaNombre}</strong>.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, ¡Finalizar!',
+                        cancelButtonText: 'Cancelar',
+                        customClass: {
+                            confirmButton: 'btn btn-primary me-3',
+                            cancelButton: 'btn btn-outline-secondary'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        // Si el usuario hace clic en "Sí, ¡Finalizar!"
+                        if (result.isConfirmed) {
+                            // Emitimos un nuevo evento de vuelta al componente para ejecutar la acción final.
+                            Livewire.dispatch('finalizarMateriaConfirmado', {
+                                materiaPeriodoId: materiaId
+                            });
+                        }
+                    });
+                });
+
+                Livewire.on('mostrar-confirmacion-reactivar', (event) => {
+                    const data = Array.isArray(event) ? event[0] : event;
+                    const materiaId = data.id;
+                    const materiaNombre = data.nombre;
+
+                    Swal.fire({
+                        title: '¿Reactivar Materia?',
+                        html: `La materia <strong>${materiaNombre}</strong> volverá al estado "En Curso". Se eliminarán los registros de notas finales para permitir un nuevo cálculo. ¿Deseas continuar?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, Reactivar',
+                        cancelButtonText: 'Cancelar',
+                        customClass: {
+                            confirmButton: 'btn btn-primary me-3',
+                            cancelButton: 'btn btn-outline-secondary'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Si el usuario confirma, emitimos el evento de vuelta al componente
+                            Livewire.dispatch('reactivarMateriaConfirmado', {
+                                materiaPeriodoId: materiaId
+                            });
+                        }
+                    });
+                });
+
+                // ==========================================================
+                // === INICIO: NUEVO SCRIPT PARA ELIMINAR                 ===
+                // ==========================================================
+                Livewire.on('mostrar-confirmacion-eliminar', (event) => {
+                    const data = Array.isArray(event) ? event[0] : event;
+                    const materiaId = data.id;
+                    const materiaNombre = data.nombre;
+
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        html: `Estás a punto de eliminar permanentemente la materia <strong>${materiaNombre}</strong> de este periodo.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, ¡Eliminar!',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#d33', // Botón de confirmación rojo
+                        customClass: {
+                            confirmButton: 'btn btn-danger me-3',
+                            cancelButton: 'btn btn-label-secondary'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Si el usuario confirma, emitimos el evento de vuelta al componente.
+                            Livewire.dispatch('eliminarMateriaConfirmado', {
+                                materiaPeriodoId: materiaId
+                            });
+                        }
+                    });
+                });
+
+                // Listener para los errores (útil para el caso de no poder eliminar)
+                Livewire.on('mostrar-error', event => {
+                    const data = Array.isArray(event) ? event[0] : event;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Acción no permitida',
+                        text: data.texto,
+                    });
                 });
             });
-
-            Livewire.on('mostrar-confirmacion-reactivar', (event) => {
-            const data = Array.isArray(event) ? event[0] : event;
-            const materiaId = data.id;
-            const materiaNombre = data.nombre;
-
-            Swal.fire({
-                title: '¿Reactivar Materia?',
-                html: `La materia <strong>${materiaNombre}</strong> volverá al estado "En Curso". Se eliminarán los registros de notas finales para permitir un nuevo cálculo. ¿Deseas continuar?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, Reactivar',
-                cancelButtonText: 'Cancelar',
-                customClass: {
-                    confirmButton: 'btn btn-primary me-3',
-                    cancelButton: 'btn btn-outline-secondary'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Si el usuario confirma, emitimos el evento de vuelta al componente
-                    Livewire.dispatch('reactivarMateriaConfirmado', { materiaPeriodoId: materiaId });
-                }
-            });
-        });
-
-         // ==========================================================
-        // === INICIO: NUEVO SCRIPT PARA ELIMINAR                 ===
-        // ==========================================================
-        Livewire.on('mostrar-confirmacion-eliminar', (event) => {
-            const data = Array.isArray(event) ? event[0] : event;
-            const materiaId = data.id;
-            const materiaNombre = data.nombre;
-
-            Swal.fire({
-                title: '¿Estás seguro?',
-                html: `Estás a punto de eliminar permanentemente la materia <strong>${materiaNombre}</strong> de este periodo.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, ¡Eliminar!',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#d33', // Botón de confirmación rojo
-                customClass: {
-                    confirmButton: 'btn btn-danger me-3',
-                    cancelButton: 'btn btn-label-secondary'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Si el usuario confirma, emitimos el evento de vuelta al componente.
-                    Livewire.dispatch('eliminarMateriaConfirmado', { materiaPeriodoId: materiaId });
-                }
-            });
-        });
-
-        // Listener para los errores (útil para el caso de no poder eliminar)
-        Livewire.on('mostrar-error', event => {
-            const data = Array.isArray(event) ? event[0] : event;
-            Swal.fire({
-                icon: 'error',
-                title: 'Acción no permitida',
-                text: data.texto,
-            });
-        });
-        });
-    </script>
-@endpush
+        </script>
+    @endpush
 
 </div>

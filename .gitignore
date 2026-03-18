@@ -4,8 +4,7 @@
 
 /public/build
 /public/hot
-/public/storage/*
-!/public/storage/global/
+
 /storage/*.key
 package-lock.json
 
@@ -33,10 +32,4 @@ storage/logs/*.log
 /bootstrap/cache/*
 !/bootstrap/cache/.gitignore
 deploy_key
-storage/app/*
-!storage/app/.gitignore
-!storage/app/public/
-storage/logs/*
-!storage/logs/.gitignore
-.DS_Store
-**/.DS_Store
+storage/app/google-calendar/oauth-credentials.json

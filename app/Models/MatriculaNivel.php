@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MatriculaNivel extends Model
 {
@@ -15,7 +15,7 @@ class MatriculaNivel extends Model
 
     protected $fillable = [
         'usuario_id',
-        'nivel_agrupacion_id',
+        'nivel_escuela_id',
         'periodo_id',
         'estado',
         'fecha_matricula',
@@ -42,7 +42,7 @@ class MatriculaNivel extends Model
      */
     public function nivel(): BelongsTo
     {
-        return $this->belongsTo(NivelAgrupacion::class, 'nivel_agrupacion_id');
+        return $this->belongsTo(NivelEscuela::class, 'nivel_escuela_id');
     }
 
     /**

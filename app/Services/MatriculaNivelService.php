@@ -2,21 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\HorarioMateriaPeriodo;
-use App\Models\Matricula;
 use App\Models\MatriculaNivel;
-use App\Models\NivelAgrupacion;
+use App\Models\NivelEscuela;
 use App\Models\Periodo;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class MatriculaNivelService
 {
     /**
      * Verifica si el estudiante cumple los requisitos para inscribirse al nivel.
      */
-    public function verificarRequisitos(User $alumno, NivelAgrupacion $nivel)
+    public function verificarRequisitos(User $alumno, NivelEscuela $nivel)
     {
         // 1. Verificar si ya está matriculado en este nivel para el periodo activo?
         // Esto se debe validar antes de llamar al servicio.
@@ -29,50 +27,92 @@ class MatriculaNivelService
 
     /**
      * Inscribe al estudiante en el nivel y en los horarios seleccionados.
+     * Crea un registro maestro en 'matriculas_nivel' y registros individuales en 'matriculas' por cada materia.
      *
-     * @param User $alumno
-     * @param NivelAgrupacion $nivel
-     * @param Periodo $periodo
-     * @param array $horariosIds Array de IDs de HorarioMateriaPeriodo
+     * @param  User  $alumno  El estudiante a matricular.
+     * @param  NivelEscuela  $nivel  El nivel seleccionado.
+     * @param  Periodo  $periodo  El periodo académico activo.
+     * @param  array  $seleccionHorarios  Array asociativo [materia_id => horario_id].
      * @return MatriculaNivel
      */
-    public function inscribir(User $alumno, NivelAgrupacion $nivel, Periodo $periodo, array $horariosIds)
+    public function inscribirEstudiante(User $alumno, NivelEscuela $nivel, Periodo $periodo, array $seleccionHorarios)
     {
-        return DB::transaction(function () use ($alumno, $nivel, $periodo, $horariosIds) {
+        return DB::transaction(function () use ($alumno, $nivel, $periodo, $seleccionHorarios) {
 
-            // 1. Crear Matrícula de Nivel
+            // 1. Crear el registro Maestro de la Matrícula por Nivel
             $matriculaNivel = MatriculaNivel::create([
                 'usuario_id' => $alumno->id,
-                'nivel_agrupacion_id' => $nivel->id,
+                'nivel_escuela_id' => $nivel->id,
                 'periodo_id' => $periodo->id,
                 'estado' => 'activa',
                 'fecha_matricula' => now(),
             ]);
 
-            // 2. Procesar Materias Individuales
-            foreach ($horariosIds as $horarioId) {
-                $horario = HorarioMateriaPeriodo::findOrFail($horarioId);
+            // 1.1 ACTUALIZACIÓN DE TIPO DE USUARIO (SOLICITUD: Tipo Usuario Inicial)
+            if ($nivel->tipo_usuario_inicial_id) {
+                $alumno->update(['tipo_usuario_id' => $nivel->tipo_usuario_inicial_id]);
+            }
 
-                // Validar que el horario corresponda a una materia del nivel
-                // $esMateriaDelNivel = $nivel->materias()->where('materias.id', $horario->materia_id)->exists();
-                // if (!$esMateriaDelNivel) { throw new Exception("La materia del horario {$horarioId} no pertenece al nivel."); }
+            // 2. Procesar cada materia del nivel y crear sus matrículas individuales
+            foreach ($seleccionHorarios as $materiaId => $horarioId) {
+                // --- CONCURRENCIA (Regla 3) ---
+                // Usamos lockForUpdate para evitar sobre-venta de cupos en procesos simultáneos.
+                $horario = \App\Models\HorarioMateriaPeriodo::lockForUpdate()->findOrFail($horarioId);
 
-                // Crear Matrícula Estándar (Sistema antiguo compatibilidad)
-                // OJO: Aquí decidimos si usamos la tabla 'matriculas' existente o una nueva.
-                // El plan dice: "Crear los registros de matricula (sistema existente)"
+                // --- VALIDACIÓN DE INTEGRIDAD ---
+                // Corregimos la validación: El horario pertenece a una materia a través de materiaPeriodo.
+                if ($horario->materiaPeriodo->materia_id != $materiaId) {
+                    throw new Exception('El horario seleccionado no corresponde a la materia: '.$materiaId);
+                }
 
-                Matricula::create([
-                    'usuario_id' => $alumno->id,
-                    'escuela_id' => $nivel->escuela_id, // La escuela padre
+                if ($horario->cupos_disponibles < 1) {
+                    throw new Exception('No hay cupos en: '.$horario->materiaPeriodo->materia->nombre);
+                }
+
+                // 3. Crear el registro en la tabla 'matriculas'
+                $matriculaIndividual = \App\Models\Matricula::create([
+                    'user_id' => $alumno->id,
                     'periodo_id' => $periodo->id,
-                    'materia_id' => $horario->materia_id,
                     'horario_materia_periodo_id' => $horario->id,
-                    'estado' => 'activa', // O 'inscrita'
-                    // Campos adicionales si son necesarios
+                    'escuela_id' => $nivel->escuela_id,
+                    'fecha_matricula' => now(),
+                    'estado_pago_matricula' => 'pago_por_nivel',
+                    'valor_a_pagar' => 0,
                 ]);
 
-                // Opcional: Vincular esta matrícula específica con matricula_nivel si creamos una tabla pivote
-                // matriculas_nivel_asignaturas -> id, matricula_nivel_id, matricula_id
+                // 4. Crear el registro de 'Estado Académico'
+                \App\Models\MatriculaHorarioMateriaPeriodo::create([
+                    'user_id' => $alumno->id,
+                    'horario_materia_periodo_id' => $horario->id,
+                    'matricula_id' => $matriculaIndividual->id,
+                    'periodo_id' => $periodo->id,
+                    'estado_aprobacion' => 'cursando',
+                ]);
+
+                // 5. Actualizar cupos
+                $horario->decrement('cupos_disponibles');
+
+                // 6. ASIGNACIÓN DE PASOS DE CRECIMIENTO (Regla 4)
+                $materia = $horario->materiaPeriodo->materia;
+                $pasoIniciar = $materia->pasosCrecimiento()->wherePivot('al_iniciar', true)->first();
+
+                if ($pasoIniciar) {
+                    $estadoId = $pasoIniciar->pivot->estado_paso_crecimiento_usuario_id ?? $pasoIniciar->pivot->estado;
+
+                    if ($estadoId) {
+                        CrecimientoUsuario::updateOrCreate(
+                            [
+                                'user_id' => $alumno->id,
+                                'paso_crecimiento_id' => $pasoIniciar->id,
+                            ],
+                            [
+                                'estado_id' => $estadoId,
+                                'fecha' => now(),
+                                'detalle' => 'Asignado automáticamente (Matrícula por Nivel) en: '.$materia->nombre,
+                            ]
+                        );
+                    }
+                }
             }
 
             return $matriculaNivel;

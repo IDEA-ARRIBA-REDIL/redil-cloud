@@ -24,10 +24,19 @@
     </div>
 
     <div class="info-alumno">
-        <p><strong>Alumno:</strong> {{ $alumno->nombre(3) }}</p>
-        <p><strong>Materia:</strong> {{ $registro->materia->nombre }}</p>
-        <p><strong>Periodo:</strong> {{ $registro->periodo->nombre }}</p>
-         <p><strong>Maestro:</strong> {{ $nombreMaestro }}</p>
+        <table>
+            <tr>
+                <td style="width: 50%;"><strong>Alumno:</strong> {{ $registro->user->nombre(3) }}</td>
+                <td style="width: 50%;"><strong>Materia:</strong> {{ $registro->materia->nombre }}</td>
+            </tr>
+            <tr>
+                <td><strong>Nivel/Grado:</strong> {{ $registro->materia->nivel ? $registro->materia->nivel->nombre : 'N/A' }}</td>
+                <td><strong>Periodo:</strong> {{ $registro->periodo->nombre }}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><strong>Maestro:</strong> {{ $nombreMaestro }}</td>
+            </tr>
+        </table>
     </div>
 
     <h3>Resumen final</h3>

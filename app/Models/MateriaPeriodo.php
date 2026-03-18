@@ -6,12 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+
 // Ya no necesitas BelongsToMany para los cortes aquí
 
 class MateriaPeriodo extends Model
 {
     use HasFactory;
+
     protected $table = 'materia_periodo';
+
     protected $fillable = [
         'materia_id',
         'periodo_id',
@@ -26,15 +29,16 @@ class MateriaPeriodo extends Model
         'cantidad_inasistencias_alerta',
         'habilitar_alerta_inasistencias',
         'habilitar_traslado',
+        'nivel_id',
     ];
 
     protected $casts = [
-         'habilitar_calificaciones' => 'boolean',
-         'habilitar_asistencias' => 'boolean',
-         'auto_matricula' => 'boolean',
-         'finalizado' => 'boolean',
-         'habilitar_alerta_inasistencias' => 'boolean',
-         'habilitar_traslado' => 'boolean',
+        'habilitar_calificaciones' => 'boolean',
+        'habilitar_asistencias' => 'boolean',
+        'auto_matricula' => 'boolean',
+        'finalizado' => 'boolean',
+        'habilitar_alerta_inasistencias' => 'boolean',
+        'habilitar_traslado' => 'boolean',
     ];
 
     // --- Relaciones existentes ---
@@ -50,7 +54,7 @@ class MateriaPeriodo extends Model
 
     public function actividadCategoria(): HasMany // Asumiendo que ActividadCategoria existe
     {
-         // Asegúrate que la tabla actividad_categorias tiene materia_periodo_id
+        // Asegúrate que la tabla actividad_categorias tiene materia_periodo_id
         return $this->hasMany(ActividadCategoria::class, 'materia_periodo_id');
     }
 
@@ -59,8 +63,15 @@ class MateriaPeriodo extends Model
         // return $this->belongsTo(Maestro::class);
         return null;
     }
-    // --- Fin Relaciones existentes ---
 
+    /**
+     * Relación con el Grado (NivelEscuela) al que pertenece esta instancia.
+     */
+    public function nivel(): BelongsTo
+    {
+        return $this->belongsTo(NivelEscuela::class, 'nivel_id');
+    }
+    // --- Fin Relaciones existentes ---
 
     /**
      * Get the item instances for the materia periodo.
@@ -72,16 +83,24 @@ class MateriaPeriodo extends Model
         return $this->hasMany(ItemCorteMateriaPeriodo::class);
     }
 
-     /**
-      * Get the associated HorarioMateriaPeriodo records.
-      * Define la relación uno a muchos con HorarioMateriaPeriodo.
-      */
-     public function horariosMateriaPeriodo(): HasMany
-     {
-         return $this->hasMany(HorarioMateriaPeriodo::class);
-     }
+    /**
+     * Alias de itemInstancias para mayor claridad semántica.
+     */
+    public function itemsCorte(): HasMany
+    {
+        return $this->itemInstancias();
+    }
 
-      /**
+    /**
+     * Get the associated HorarioMateriaPeriodo records.
+     * Define la relación uno a muchos con HorarioMateriaPeriodo.
+     */
+    public function horariosMateriaPeriodo(): HasMany
+    {
+        return $this->hasMany(HorarioMateriaPeriodo::class);
+    }
+
+    /**
      * Obtener todos los reportes de asistencia de todos los horarios
      * asociados a esta MateriaPeriodo.
      */
@@ -102,16 +121,16 @@ class MateriaPeriodo extends Model
     public function contarAsistenciasTotalesAlumno(int $alumnoUserId): int
     {
         return $this->reportesAsistenciaDeMateria()
-                    ->where('alumno_user_id', $alumnoUserId)
-                    ->where('asistio', true)
-                    ->count();
+            ->where('alumno_user_id', $alumnoUserId)
+            ->where('asistio', true)
+            ->count();
     }
 
     public function contarInasistenciasTotalesAlumno(int $alumnoUserId): int
     {
         return $this->reportesAsistenciaDeMateria()
-                    ->where('alumno_user_id', $alumnoUserId)
-                    ->where('asistio', false)
-                    ->count();
+            ->where('alumno_user_id', $alumnoUserId)
+            ->where('asistio', false)
+            ->count();
     }
 }

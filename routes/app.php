@@ -32,8 +32,6 @@ use App\Http\Controllers\ListaReproducionController;
 use App\Http\Controllers\MaestroController;
 use App\Http\Controllers\MateriaController;
 use App\Http\Controllers\MatriculaController;
-use App\Http\Controllers\NivelAgrupacionController;
-use App\Http\Controllers\NivelEscuelaController;
 use App\Http\Controllers\NivelesEscuelasController;
 use App\Http\Controllers\ParienteUsuarioController;
 use App\Http\Controllers\PasosDeCrecimientoController;
@@ -564,6 +562,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/escuelas/gestionar', [EscuelaController::class, 'gestionarEscuelas'])->name('escuelas.gestionarEscuelas');
     Route::get('/escuelas/{escuela}/actualizar', [EscuelaController::class, 'actualizar'])->name('escuelas.actualizar');
     Route::get('/escuelas/{escuela}/materias', [EscuelaController::class, 'materias'])->name('escuelas.materias');
+    Route::get('/escuelas/{escuela}/niveles', [EscuelaController::class, 'niveles'])->name('escuelas.niveles');
     Route::get('/escuela/recursos-generales', [RecursoGeneralEscuelaController::class, 'index'])->name('escuela.recursos-generales');
     Route::get('/escuelas/dashboard-administrativo', AdminDashboard::class)->name('escuelas.adminDashboard');
     Route::get('/escuelas/historial/boletin/{materiaAprobadaUsuario}', [HistorialCalificacionesController::class, 'exportarBoletin'])
@@ -630,11 +629,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/materias/{materia}/actualizar', [MateriaController::class, 'actualizar'])->name('materias.actualizar');
     Route::post('/materias/{materia}', [MateriaController::class, 'eliminar'])->name('materias.eliminar');
 
-
-
     // / NivelesEscuelas (Sistema desde cero)
     Route::get('/niveles-escuelas/{escuela}/crear', [NivelesEscuelasController::class, 'crear'])->name('niveles-escuelas.crear');
     Route::post('/niveles-escuelas/{escuela}/guardar', [NivelesEscuelasController::class, 'guardar'])->name('niveles-escuelas.guardar');
+    Route::get('/niveles-escuelas/{escuela}/{nivel}/editar', [NivelesEscuelasController::class, 'editar'])->name('niveles-escuelas.editar');
+    Route::put('/niveles-escuelas/{escuela}/{nivel}/actualizar', [NivelesEscuelasController::class, 'actualizar'])->name('niveles-escuelas.actualizar');
+
+    // Gestión de materias por nivel
+    Route::get('/niveles-escuelas/{escuela}/{nivel}/materias', [NivelesEscuelasController::class, 'gestionarMaterias'])->name('niveles-escuelas.gestionar-materias');
+    Route::post('/niveles-escuelas/{escuela}/{nivel}/materias/guardar', [NivelesEscuelasController::class, 'guardarMateriaAgrupada'])->name('niveles-escuelas.guardar-materia');
+    Route::delete('/niveles-escuelas/{escuela}/{nivel}/materias/{materia}', [NivelesEscuelasController::class, 'eliminarMateriaAgrupada'])->name('niveles-escuelas.eliminar-materia');
 
     Route::put('/materias-rapido/{materia}', [MateriaController::class, 'actualizarMateriaRapido'])->name('materias.actualizarRapido');
 
@@ -876,6 +880,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/consolidacion/dashboard', [ConsolidacionController::class, 'dashboard'])->name('consolidacion.dashboard');
     Route::get('/consolidacion/reporte-desempeño', [ConsolidacionController::class, 'reporteDesempeño'])->name('consolidacion.reporteDesempeño');
     Route::get('/consolidacion/bloques', [ConsolidacionController::class, 'bloques'])->name('consolidacion.bloques');
+    Route::get('/consolidacion/detalle-kpi', [ConsolidacionController::class, 'detalleKpi'])->name('consolidacion.detalle-kpi');
+    Route::get('/consolidacion/detalle-kpi/exportar', [ConsolidacionController::class, 'exportKpiExcel'])->name('consolidacion.detalle-kpi.exportar');
 
     // Tipo-Usuario
     Route::prefix('tipo-usuario')->group(function () {

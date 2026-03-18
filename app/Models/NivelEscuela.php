@@ -2,16 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class NivelEscuela extends Model
 {
     protected $table = 'niveles_escuelas';
-
 
     /**
      * Relación uno a muchos con Materia.
@@ -46,20 +44,20 @@ class NivelEscuela extends Model
         )->withPivot('escuela_id')->withTimestamps();
     }
 
-     /**
+    /**
      * Relación muchos a muchos con PasoCrecimiento (para etapas del nivel).
      * Un nivel puede tener asociados varios pasos de crecimiento.
      */
     public function pasosCrecimiento(): BelongsToMany
     {
         return $this->belongsToMany(
-                PasoCrecimiento::class,         // Modelo relacionado
-                'nivel_paso_crecimiento',       // Tabla pivote
-                'nivel_id',                     // Llave foránea de este modelo
-                'paso_crecimiento_id'           // Llave foránea del modelo relacionado
-            )
-            ->withPivot(['al_iniciar', 'estado']) // Incluir campos extra de la tabla pivote
-            ->withTimestamps();                   // Mantener timestamps en la tabla pivote si existen
+            PasoCrecimiento::class,
+            'nivel_paso_crecimiento',
+            'nivel_id',
+            'paso_crecimiento_id'
+        )
+            ->withPivot(['id', 'al_iniciar', 'estado', 'indice', 'estado_paso_crecimiento_usuario_id'])
+            ->withTimestamps();
     }
 
     /**
@@ -68,17 +66,57 @@ class NivelEscuela extends Model
      */
     public function procesosPrerrequisito(): BelongsToMany
     {
-         return $this->belongsToMany(
-                PasoCrecimiento::class,             // Modelo relacionado
-                'nivel_proceso_prerrequisito',      // Tabla pivote
-                'nivel_id',                         // Llave foránea de este modelo
-                'paso_crecimiento_id'               // Llave foránea del modelo relacionado
-            )
-            ->withPivot('estado_proceso')           // Incluir el estado requerido del proceso
-            ->withTimestamps();                       // Mantener timestamps si existen
+        return $this->belongsToMany(
+            PasoCrecimiento::class,
+            'nivel_proceso_prerrequisito',
+            'nivel_id',
+            'paso_crecimiento_id'
+        )
+            ->withPivot(['id', 'estado_proceso', 'indice', 'estado_paso_crecimiento_usuario_id'])
+            ->withTimestamps();
     }
 
+    public function tareasRequisito(): HasMany
+    {
+        return $this->hasMany(NivelTareaRequisito::class, 'nivel_id');
+    }
 
+    public function tareasCulminadas(): HasMany
+    {
+        return $this->hasMany(NivelTareaCulminada::class, 'nivel_id');
+    }
 
+    /**
+     * Obtiene las materias asociadas a este nivel (modo unificado).
+     */
+    public function materiasAgrupadas(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Materia::class, 'nivel_id');
+    }
 
+    /**
+     * Obtiene las matriculas realizadas en este nivel.
+     */
+    public function matriculas(): HasMany
+    {
+        return $this->hasMany(MatriculaNivel::class, 'nivel_escuela_id');
+    }
+
+    /**
+     * Obtiene los periodos asociados a la escuela de este nivel.
+     */
+    public function periodos(): HasMany
+    {
+        return $this->hasMany(Periodo::class, 'escuela_id', 'escuela_id');
+    }
+
+    public function tipoUsuarioInicial(): BelongsTo
+    {
+        return $this->belongsTo(TipoUsuario::class, 'tipo_usuario_inicial_id');
+    }
+
+    public function tipoUsuarioObjetivo(): BelongsTo
+    {
+        return $this->belongsTo(TipoUsuario::class, 'tipo_usuario_objetivo_id');
+    }
 }

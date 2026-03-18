@@ -31,15 +31,40 @@
                                 @enderror
                             </div>
 
+                            @if (!empty($nivelesPeriodo))
+                                <div class="mb-3">
+                                    <label for="nivelPeriodoIdSeleccionado" class="form-label">2. Selecciona un nivel del periodo</label>
+                                    <select required wire:model.live="nivelPeriodoIdSeleccionado" id="nivelPeriodoIdSeleccionado"
+                                        class="form-select @error('nivelPeriodoIdSeleccionado') is-invalid @enderror">
+                                        <option value="">Selecciona un nivel</option>
+                                        @foreach ($nivelesPeriodo as $nivel)
+                                            <option value="{{ $nivel['id'] }}">{{ $nivel['nombre'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('nivelPeriodoIdSeleccionado')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
+
                             <div class="mb-3">
-                                <label for="materiaPeriodoIdSeleccionada" class="form-label">2. Selecciona una materia
-                                    del periodo</label>
+                                <label for="materiaPeriodoIdSeleccionada" class="form-label">
+                                    {{ !empty($nivelesPeriodo) ? '3.' : '2.' }} Selecciona una materia del periodo
+                                </label>
                                 <select required wire:model.live="materiaPeriodoIdSeleccionada"
                                     id="materiaPeriodoIdSeleccionada"
                                     class="form-select @error('materiaPeriodoIdSeleccionada') is-invalid @enderror"
-                                    @if (empty($periodoIdSeleccionado) || empty($materiasPeriodo)) disabled @endif>
+                                    @if (empty($periodoIdSeleccionado) || (empty($materiasPeriodo) && empty($nivelesPeriodo)) || (!empty($nivelesPeriodo) && empty($nivelPeriodoIdSeleccionado))) disabled @endif>
                                     <option value="">
-                                        {{ empty($periodoIdSeleccionado) ? 'Selecciona un periodo primero' : (empty($materiasPeriodo) && $periodoIdSeleccionado ? 'No hay materias en este periodo' : 'Selecciona una materia') }}
+                                        @if (empty($periodoIdSeleccionado))
+                                            Selecciona un periodo primero
+                                        @elseif (!empty($nivelesPeriodo) && empty($nivelPeriodoIdSeleccionado))
+                                            Selecciona un nivel primero
+                                        @elseif (empty($materiasPeriodo))
+                                            No hay materias disponibles
+                                        @else
+                                            Selecciona una materia
+                                        @endif
                                     </option>
                                     @foreach ($materiasPeriodo as $materiaP)
                                         <option value="{{ $materiaP['id'] }}">{{ $materiaP['nombre_display'] }}</option>
@@ -51,7 +76,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="sedeIdSeleccionada" class="form-label">3. Selecciona una sede</label>
+                                <label for="sedeIdSeleccionada" class="form-label">{{ !empty($nivelesPeriodo) ? '4.' : '3.' }} Selecciona una sede</label>
                                 <select required wire:model.live="sedeIdSeleccionada" id="sedeIdSeleccionada"
                                     class="form-select @error('sedeIdSeleccionada') is-invalid @enderror"
                                     @if (empty($materiaPeriodoIdSeleccionada) || empty($sedesDisponibles)) disabled @endif>
@@ -68,7 +93,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="horarioMateriaPeriodoIdSeleccionado" class="form-label">4. Selecciona un
+                                <label for="horarioMateriaPeriodoIdSeleccionado" class="form-label">{{ !empty($nivelesPeriodo) ? '5.' : '4.' }} Selecciona un
                                     horario</label>
                                 <select required wire:model="horarioMateriaPeriodoIdSeleccionado"
                                     id="horarioMateriaPeriodoIdSeleccionado"

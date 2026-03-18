@@ -3,16 +3,17 @@
 namespace App\Livewire\Matricula;
 
 use App\Models\Escuela;
-use App\Models\NivelAgrupacion;
-use App\Models\Periodo;
 use App\Models\HorarioMateriaPeriodo;
+use App\Models\NivelEscuela;
+use App\Models\Periodo;
 use App\Services\MatriculaNivelService;
-use Livewire\Component;
 use Illuminate\Support\Facades\DB;
+use Livewire\Component;
 
 class MatriculaNivelProcess extends Component
 {
     public $escuela;
+
     public $periodo;
 
     // Pasos del Wizard
@@ -20,6 +21,7 @@ class MatriculaNivelProcess extends Component
 
     // Datos de selección
     public $nivelSeleccionadoId;
+
     public $seleccionHorarios = []; // [materia_id => horario_id]
 
     public function mount(Escuela $escuela, Periodo $periodo)
@@ -47,12 +49,13 @@ class MatriculaNivelProcess extends Component
     public function confirmarMatricula()
     {
         // Validar que todas las materias obligatorias tengan horario seleccionado
-        $nivel = NivelAgrupacion::find($this->nivelSeleccionadoId);
+        $nivel = NivelEscuela::find($this->nivelSeleccionadoId);
         $materiasObligatorias = $nivel->materias()->wherePivot('es_obligatoria', true)->pluck('materias.id')->toArray();
 
         foreach ($materiasObligatorias as $materiaId) {
-            if (!isset($this->seleccionHorarios[$materiaId]) || empty($this->seleccionHorarios[$materiaId])) {
+            if (! isset($this->seleccionHorarios[$materiaId]) || empty($this->seleccionHorarios[$materiaId])) {
                 $this->dispatch('msn', ['icon' => 'error', 'title' => 'Debes seleccionar un horario para todas las materias obligatorias.']);
+
                 return;
             }
         }
@@ -76,7 +79,7 @@ class MatriculaNivelProcess extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->dispatch('msn', ['icon' => 'error', 'title' => 'Error al procesar matrícula: ' . $e->getMessage()]);
+            $this->dispatch('msn', ['icon' => 'error', 'title' => 'Error al procesar matrícula: '.$e->getMessage()]);
         }
     }
 
@@ -86,28 +89,29 @@ class MatriculaNivelProcess extends Component
         $materias = [];
 
         if ($this->currentStep == 1) {
-            $niveles = NivelAgrupacion::where('escuela_id', $this->escuela->id)
-                ->where('activo', true)
+            $niveles = NivelEscuela::where('escuela_id', $this->escuela->id)
                 ->orderBy('orden')
                 ->get();
         }
 
         if ($this->currentStep == 2 && $this->nivelSeleccionadoId) {
-             $nivel = NivelAgrupacion::find($this->nivelSeleccionadoId);
-             $materias = $nivel->materias()->orderBy('orden')->get();
+            $nivel = NivelEscuela::find($this->nivelSeleccionadoId);
+            $materias = $nivel->materias()->orderBy('orden')->get();
 
-             // Cargar horarios disponibles para estas materias en este periodo
-             foreach($materias as $materia) {
-                 $materia->horariosDisponibles = HorarioMateriaPeriodo::where('materia_id', $materia->id)
-                    ->where('periodo_id', $this->periodo->id)
-                    // ->where('cupos_disponibles', '>', 0) // Validar cupos si fuera necesario
+            // Cargamos los horarios disponibles filtrando a través de 'materiaPeriodo'
+            foreach ($materias as $materia) {
+                $materia->horariosDisponibles = HorarioMateriaPeriodo::whereHas('materiaPeriodo', function ($q) use ($materia) {
+                    $q->where('materia_id', $materia->id)
+                        ->where('periodo_id', $this->periodo->id);
+                })
+                    ->with(['horarioBase.aula.sede', 'maestros.user'])
                     ->get();
-             }
+            }
         }
 
         return view('livewire.matricula.matricula-nivel-process', [
             'niveles' => $niveles,
-            'materias' => $materias
+            'materias' => $materias,
         ]);
     }
 }

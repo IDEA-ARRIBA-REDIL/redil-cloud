@@ -25,6 +25,7 @@ class Periodo extends Model
         'fecha_maxima_entrega_notas',
         'tiene_pagos', // Asegúrate que este campo existe en tu migración o añádelo
     ];
+
     protected $casts = [
         'fecha_inicio' => 'date',
         'fecha_fin' => 'date',
@@ -33,8 +34,6 @@ class Periodo extends Model
         'fecha_maxima_entrega_notas' => 'date',
         'estado' => 'boolean', // Aprovechamos para castear el estado a booleano
     ];
-
-
 
     /**
      * Un periodo pertenece a una escuela.
@@ -57,10 +56,12 @@ class Periodo extends Model
     {
         return $this->hasMany(MateriaPeriodo::class);
     }
+
     public function sedes() // Asumiendo que tienes esta relación
     {
         return $this->belongsToMany(Sede::class, 'sedes_periodo');
     }
+
     public function sistemaCalificaciones(): BelongsTo // Asumiendo que tienes esta relación
     {
         // Asegúrate que el modelo SistemaCalificacion existe
@@ -70,5 +71,13 @@ class Periodo extends Model
     public function matriculas(): HasMany
     {
         return $this->hasMany(Matricula::class, 'periodo_id');
+    }
+
+    /**
+     * Un periodo puede tener varios grados (niveles_periodo) asociados.
+     */
+    public function nivelesPeriodo(): HasMany
+    {
+        return $this->hasMany(NivelPeriodo::class);
     }
 }

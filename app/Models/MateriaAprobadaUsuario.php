@@ -61,6 +61,14 @@ class MateriaAprobadaUsuario extends Model
     }
 
     /**
+     * Relación con el Nivel a través de la materia.
+     */
+    public function nivel(): BelongsTo
+    {
+        return $this->materia->nivel();
+    }
+
+    /**
      * Obtiene la instancia de la materia en el periodo específico.
      */
     public function materiaPeriodo(): BelongsTo

@@ -2,28 +2,24 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Models\AlumnoRespuestaItem;
-use App\Models\ReporteAsistenciaAlumnos;
-
-use App\Models\User;
-use App\Models\Materia;
-use App\Models\Matricula;
 use App\Models\Configuracion;
 use App\Models\Escuela;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Matricula;
+use App\Models\ReporteAsistenciaAlumnos;
+use App\Models\User;
 use App\Services\MatriculaService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MatriculaController extends Controller
 {
     /**
      * Muestra la vista para gestionar matrículas.
      *
-     * @param Request $request
-     * @param User $user El usuario ACTIVO (administrador).
-     * @param MatriculaService $matriculaService El servicio que contiene la lógica de negocio.
+     * @param  User  $user  El usuario ACTIVO (administrador).
+     * @param  MatriculaService  $matriculaService  El servicio que contiene la lógica de negocio.
      * @return \Illuminate\View\View
      */
     public function gestionar(Request $request, User $user, MatriculaService $matriculaService)
@@ -40,12 +36,17 @@ class MatriculaController extends Controller
         $escuelas = Escuela::orderBy('nombre')->get();
         $rolActivo = auth()->user()->roles()->where('activo', true)->first();
 
-        $materiasParaMostrar = collect();
+        // Inicializamos las colecciones para evitar errores en la vista
+        $reporteItems = collect();
         $matriculasDelAlumno = collect();
 
+        // -------------------------------------------------------------------------
+        // LOGICA DE PROCESAMIENTO SI HAY USUARIO Y ESCUELA SELECCIONADOS
+        // -------------------------------------------------------------------------
         if ($usuarioSeleccionado && $escuelaSeleccionada) {
 
-            // 1. Obtenemos las matrículas del alumno SOLO de periodos activos.
+            // 1. OBTENER MATRÍCULAS ACTUALES DEL ALUMNO
+            // Buscamos solo en periodos activos para saber qué está cursando actualmente.
             $matriculasDelAlumno = Matricula::where('user_id', $usuarioSeleccionado->id)
                 ->whereHas('periodo', function ($query) {
                     $query->where('estado', true);
@@ -53,54 +54,47 @@ class MatriculaController extends Controller
                 ->with([
                     'periodo',
                     'horarioMateriaPeriodo.materiaPeriodo.materia',
-                    'horarioMateriaPeriodo.horarioBase.aula.sede'
+                    'horarioMateriaPeriodo.horarioBase.aula.sede',
                 ])
                 ->get();
 
-            // 2. Usamos el servicio para saber qué materias están disponibles para matricular.
-            $materiasDisponibles = $matriculaService->getMateriasDisponibles($usuarioSeleccionado, $escuelaSeleccionada);
+            // 2. BIFURCACIÓN DE LÓGICA: ¿Niveles o Materias?
+            // Dependiendo de la configuración de la escuela, obtenemos un tipo de reporte u otro.
 
-            // --- LÓGICA CLAVE: CONSTRUIR LA LISTA FINAL ---
-            // 3. Extraemos los modelos de Materia desde las matrículas existentes.
-            // $materiasYaMatriculadas = $matriculasDelAlumno->map(function ($matricula) { // No longer needed
-            //     // Navegamos a través de las relaciones para obtener el objeto Materia.
-            //     return $matricula->horarioMateriaPeriodo->materiaPeriodo->materia;
-            // });
+            if ($escuelaSeleccionada->tipo_matricula === 'niveles_agrupados') {
+                // --- LÓGICA DE NIVELES ---
+                // Obtenemos el reporte de disponibilidad de NIVELES (Grados).
+                $reporteItems = $matriculaService->getReporteDisponibilidadNiveles($usuarioSeleccionado, $escuelaSeleccionada);
+            } else {
+                // --- LÓGICA DE MATERIAS INDEPENDIENTES ---
+                // Obtenemos el reporte estándar de disponibilidad de MATERIAS.
+                $reporteItems = $matriculaService->getReporteDisponibilidadMaterias($usuarioSeleccionado, $escuelaSeleccionada);
+            }
 
-            // 4. Unimos las dos colecciones: las ya matriculadas + las disponibles.
-            // El método unique() asegura que no haya materias duplicadas en la lista final.
-            // $materiasParaMostrar = $materiasYaMatriculadas->merge($materiasDisponibles)->unique('id'); // No longer needed
-
-            // Obtener el reporte de disponibilidad y ORDENARLO: Disponibles primero, luego las que no.
-            $reporteMaterias = $matriculaService->getReporteDisponibilidadMaterias($usuarioSeleccionado, $escuelaSeleccionada)
-                ->sortBy(function ($item) {
-                     return match ($item->estado) {
-                        'DISPONIBLE' => 0,
-                        'APROBADA' => 1,
-                        default => 2, // BLOQUEADA
-                    };
-                });
-        } else {
-            $reporteMaterias = collect(); // Initialize if no selection
+            // 3. ORDENAMIENTO DEL REPORTE
+            // Priorizamos los ítems (materias o niveles) que están DISPONIBLES para facilitar la gestión.
+            $reporteItems = $reporteItems->sortBy(function ($item) {
+                return match ($item->estado) {
+                    'DISPONIBLE' => 0,
+                    'APROBADA', 'APROBADO' => 1,
+                    default => 2, // BLOQUEADA
+                };
+            });
         }
 
-
-
-
+        // Retornamos la vista con los datos procesados según el tipo de escuela.
         return view('contenido.paginas.escuelas.matriculas.gestionar-matriculas', [
             'usuarioActivo' => $usuarioActivo,
             'usuarioSeleccionado' => $usuarioSeleccionado,
             'escuelaSeleccionada' => $escuelaSeleccionada,
             'escuelas' => $escuelas,
-            'reporteMaterias' => $reporteMaterias,
-            'matriculasDelAlumno' => $matriculasDelAlumno, // <-- Restored
+            'reporteItems' => $reporteItems, // Contiene Niveles o Materias según el caso
+            'matriculasDelAlumno' => $matriculasDelAlumno,
             'configuracion' => $configuracion,
             'userId' => $usuarioSeleccionado?->id,
-            'rolActivo' => $rolActivo
+            'rolActivo' => $rolActivo,
         ]);
     }
-
-
 
     public function eliminarMatricula(Matricula $matricula, User $user)
     {
@@ -110,7 +104,7 @@ class MatriculaController extends Controller
 
         // Validar si el estado del pago permite la eliminación (no es final)
         if ($matricula->estadoPago && $matricula->estadoPago->estado_final_inscripcion) {
-             return redirect()->back()->with('error', 'No se puede eliminar la matrícula porque el pago ya ha sido completado y finalizado.');
+            return redirect()->back()->with('error', 'No se puede eliminar la matrícula porque el pago ya ha sido completado y finalizado.');
         }
 
         // Verificamos si existen notas para este alumno en este horario/clase.
@@ -151,8 +145,9 @@ class MatriculaController extends Controller
                 $matricula->delete();
             });
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Ocurrió un error al intentar eliminar la matrícula: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Ocurrió un error al intentar eliminar la matrícula: '.$e->getMessage());
         }
+
         // --- 3. RESPUESTA ---
         return redirect()->back()->with('success', 'Matrícula y registros asociados eliminados correctamente.');
     }
@@ -167,8 +162,6 @@ class MatriculaController extends Controller
 
         $usuarioSeleccionado = $estudianteId ? User::find($estudianteId) : null;
         $escuelaSeleccionada = $escuelaId ? Escuela::find($escuelaId) : null;
-
-
 
         $configuracion = Configuracion::find(1);
         $escuelas = Escuela::orderBy('nombre')->get();
@@ -189,7 +182,7 @@ class MatriculaController extends Controller
                     'periodo',
                     'horarioMateriaPeriodo.materiaPeriodo.materia',
                     'horarioMateriaPeriodo.horarioBase.aula.sede',
-                    'trasladosLog.user' // <-- AÑADIR ESTA LÍNEA
+                    'trasladosLog.user', // <-- AÑADIR ESTA LÍNEA
                 ])
                 ->get();
         }
@@ -212,6 +205,7 @@ class MatriculaController extends Controller
     public function solicitarTraslado(User $usuario)
     {
         $usuario = Auth::user();
+
         return view('contenido.paginas.escuelas.matriculas.solicitar-traslado', [
             'usuario' => $usuario,
 

@@ -3,33 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Helpers;
+use App\Mail\DefaultMail;
 use App\Models\CitaConsejeria;
 use App\Models\Configuracion;
 use App\Models\Consejero;
+use App\Models\EstadoPasoCrecimientoUsuario;
+use App\Models\EstadoTareaConsolidacion;
 use App\Models\HorarioAdicionalConsejero;
 use App\Models\HorarioBloqueadoConsejero;
 use App\Models\HorarioHabitual;
 use App\Models\Role;
 use App\Models\Sede;
-use App\Models\TipoConsejeria;
-use App\Models\User;
-use App\Models\EstadoTareaConsolidacion;
 use App\Models\TareaConsolidacionUsuario;
+use App\Models\TipoConsejeria;
 use App\Models\TipoUsuario;
-use App\Models\EstadoPasoCrecimientoUsuario;
-use App\Models\PasoCrecimiento;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Carbon\Carbon;
-
-use Carbon\CarbonPeriod;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
-use stdClass;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\DefaultMail;
-use Illuminate\Support\Facades\Validator; // Importante para la validación
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule; // Importante para la validación
+use stdClass;
 
 class ConsejeriaController extends Controller
 {
@@ -50,7 +47,7 @@ class ConsejeriaController extends Controller
 
         // Indicator: Próximas Citas
         $proximasCount = (clone $baseQuery)->where('fecha_hora_inicio', '>=', $ahora)->count();
-        $item = new stdClass();
+        $item = new stdClass;
         $item->nombre = 'Próximas citas';
         $item->url = 'proximas';
         $item->cantidad = $proximasCount;
@@ -60,7 +57,7 @@ class ConsejeriaController extends Controller
 
         // Indicator: Citas Pasadas
         $pasadasCount = (clone $baseQuery)->where('fecha_hora_inicio', '<', $ahora)->count();
-        $item = new stdClass();
+        $item = new stdClass;
         $item->nombre = 'Citas anteriores';
         $item->url = 'pasadas';
         $item->cantidad = $pasadasCount;
@@ -70,7 +67,7 @@ class ConsejeriaController extends Controller
 
         // Indicator: Citas Canceladas
         $canceladasCount = CitaConsejeria::onlyTrashed()->where('user_id', $usuario->id)->count();
-        $item = new stdClass();
+        $item = new stdClass;
         $item->nombre = 'Citas canceladas';
         $item->url = 'canceladas';
         $item->cantidad = $canceladasCount;
@@ -85,24 +82,24 @@ class ConsejeriaController extends Controller
 
         if ($tipo == 'pasadas') {
             $citasQuery->where('fecha_hora_inicio', '<', $ahora)
-                       ->orderBy('fecha_hora_inicio', 'desc'); // Most recent past first
+                ->orderBy('fecha_hora_inicio', 'desc'); // Most recent past first
         } elseif ($tipo == 'canceladas') {
             $citasQuery = CitaConsejeria::onlyTrashed()->where('user_id', $usuario->id)
-                                        ->orderBy('fecha_hora_inicio', 'desc');
+                ->orderBy('fecha_hora_inicio', 'desc');
         } else {
             // Default to 'proximas'
             $citasQuery->where('fecha_hora_inicio', '>=', $ahora)
-                       ->orderBy('fecha_hora_inicio', 'asc'); // Closest future first
+                ->orderBy('fecha_hora_inicio', 'asc'); // Closest future first
         }
 
         $citas = $citasQuery->with(['consejero.usuario', 'tipoConsejeria'])
-                            ->paginate(12);
+            ->paginate(12);
 
         return view('contenido.paginas.consejerias.mis-citas', [
             'citas' => $citas,
             'indicadoresGenerales' => $indicadoresGenerales,
             'tipo' => $tipo,
-            'rolActivo' => $rolActivo
+            'rolActivo' => $rolActivo,
         ]);
     }
 
@@ -128,23 +125,23 @@ class ConsejeriaController extends Controller
 
             // 1. Correo al Paciente
             if ($paciente && $paciente->email) {
-                $mailDataPaciente = new stdClass();
+                $mailDataPaciente = new stdClass;
                 $mailDataPaciente->subject = 'Cancelación de Cita de Consejería';
                 $mailDataPaciente->nombre = $paciente->nombre(3);
                 $mailDataPaciente->mensaje .= "<p>Te informamos que tu cita de consejería del <b>{$fechaFormateada}</b> con el consejero <b>{$consejeroUser->nombre(3)}</b> ha sido cancelada.</p>";
-                
+
                 if ($request->notas_cancelacion) {
                     $mailDataPaciente->mensaje .= "<p><b>Motivo:</b> {$request->notas_cancelacion}</p>";
                 }
 
-                $mailDataPaciente->mensaje .= "<p><i>Nota: Si has agregado esta cita a tu calendario personal, te recomendamos eliminarla.</i></p>";
+                $mailDataPaciente->mensaje .= '<p><i>Nota: Si has agregado esta cita a tu calendario personal, te recomendamos eliminarla.</i></p>';
 
                 Mail::to($paciente->email)->send(new DefaultMail($mailDataPaciente));
             }
 
             // 2. Correo al Consejero
             if ($consejeroUser && $consejeroUser->email) {
-                $mailDataConsejero = new stdClass();
+                $mailDataConsejero = new stdClass;
                 $mailDataConsejero->subject = 'Cita Cancelada por el Paciente';
                 $mailDataConsejero->nombre = $consejeroUser->nombre(3);
                 $mailDataConsejero->mensaje .= "<p>Te informamos que el paciente <b>{$paciente->nombre(3)}</b> ha cancelado la cita del <b>{$fechaFormateada}</b>.</p>";
@@ -153,13 +150,13 @@ class ConsejeriaController extends Controller
                     $mailDataConsejero->mensaje .= "<p><b>Motivo indicado:</b> {$request->notas_cancelacion}</p>";
                 }
 
-                $mailDataConsejero->mensaje .= "<p><i>Nota: Si has agregado esta cita a tu calendario personal, te recomendamos eliminarla.</i></p>";
+                $mailDataConsejero->mensaje .= '<p><i>Nota: Si has agregado esta cita a tu calendario personal, te recomendamos eliminarla.</i></p>';
 
                 Mail::to($consejeroUser->email)->send(new DefaultMail($mailDataConsejero));
             }
 
         } catch (\Exception $e) {
-            Log::error("Error enviando correos de cancelación de cita ID {$cita->id}: " . $e->getMessage());
+            Log::error("Error enviando correos de cancelación de cita ID {$cita->id}: ".$e->getMessage());
             // No detenemos el flujo, solo logueamos el error
         }
 
@@ -170,20 +167,22 @@ class ConsejeriaController extends Controller
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('consejeria.subitem_nueva_cita');
-      return view('contenido.paginas.consejerias.nueva-cita', [
-       'usuario' => $usuario
-      ]);
+
+        return view('contenido.paginas.consejerias.nueva-cita', [
+            'usuario' => $usuario,
+        ]);
     }
 
     public function reprogramarCita(Request $request, CitaConsejeria $cita)
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-        $rolActivo->verificacionDelPermiso('consejeria.opcion_reprogramar_cita'); 
+        $rolActivo->verificacionDelPermiso('consejeria.opcion_reprogramar_cita');
         $origen = $request->input('origen', url()->previous());
+
         return view('contenido.paginas.consejerias.reprogramar-cita', [
             'cita' => $cita,
             'origen' => $origen,
-            'rolActivo' => $rolActivo
+            'rolActivo' => $rolActivo,
         ]);
     }
 
@@ -191,72 +190,72 @@ class ConsejeriaController extends Controller
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('consejeria.subitem_crear_cita');
-      return view('contenido.paginas.consejerias.mensaje-cita-exitosa', [
-        'rolActivo' => $rolActivo
-      ]);
+
+        return view('contenido.paginas.consejerias.mensaje-cita-exitosa', [
+            'rolActivo' => $rolActivo,
+        ]);
     }
 
     public function gestionarConsejeros(Request $request)
     {
-      $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();     
-      $rolActivo->verificacionDelPermiso('consejeria.subitem_gestionar_consejeros');
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('consejeria.subitem_gestionar_consejeros');
 
-      $consejeros = Consejero::paginate(12);
-      $configuracion = Configuracion::find(1);
-      $tagsBusqueda = [];
-      $bandera = 0;
-      $buscar = $request->input('buscar');
+        $consejeros = Consejero::paginate(12);
+        $configuracion = Configuracion::find(1);
+        $tagsBusqueda = [];
+        $bandera = 0;
+        $buscar = $request->input('buscar');
 
-      $query = Consejero::query();
+        $query = Consejero::query();
 
-      if ($buscar) {
-        $buscarSaneado = htmlspecialchars($buscar);
-        $buscarSaneado = Helpers::sanearStringConEspacios($buscar);
-        $buscar = str_replace(["'"], '', $buscar);
+        if ($buscar) {
+            $buscarSaneado = htmlspecialchars($buscar);
+            $buscarSaneado = Helpers::sanearStringConEspacios($buscar);
+            $buscar = str_replace(["'"], '', $buscar);
 
-        $query->leftJoin('users', 'consejeros.user_id', '=', 'users.id');
+            $query->leftJoin('users', 'consejeros.user_id', '=', 'users.id');
 
-        $query->where(function ($q) use ($buscarSaneado, $buscar) {
-          $q->whereRaw("LOWER( translate( CONCAT_WS(' ', users.primer_nombre, users.segundo_nombre, users.primer_apellido, users.segundo_apellido ) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%' . $buscarSaneado . '%'] )
-          ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', users.primer_nombre, users.primer_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%' . $buscarSaneado . '%'])
-          ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', users.primer_nombre, users.segundo_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%' . $buscarSaneado . '%'])
-          ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', users.segundo_apellido, users.segundo_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%' . $buscarSaneado . '%'])
-          ->orWhereRaw("LOWER(users.email) LIKE LOWER(?)", ['%'. $buscar . '%'])
-          ->orWhereRaw("LOWER(users.identificacion) LIKE LOWER(?)", [ $buscar . '%']);
-        });
+            $query->where(function ($q) use ($buscarSaneado, $buscar) {
+                $q->whereRaw("LOWER( translate( CONCAT_WS(' ', users.primer_nombre, users.segundo_nombre, users.primer_apellido, users.segundo_apellido ) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
+                    ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', users.primer_nombre, users.primer_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
+                    ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', users.primer_nombre, users.segundo_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
+                    ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', users.segundo_apellido, users.segundo_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
+                    ->orWhereRaw('LOWER(users.email) LIKE LOWER(?)', ['%'.$buscar.'%'])
+                    ->orWhereRaw('LOWER(users.identificacion) LIKE LOWER(?)', [$buscar.'%']);
+            });
 
-        // Crear una tag
-        $tag = new stdClass();
-        $tag->label = $buscar;
-        $tag->field = 'buscar';
-        $tag->value = $buscar;
-        $tag->fieldAux = '';
-        $tagsBusqueda[] = $tag;
+            // Crear una tag
+            $tag = new stdClass;
+            $tag->label = $buscar;
+            $tag->field = 'buscar';
+            $tag->value = $buscar;
+            $tag->fieldAux = '';
+            $tagsBusqueda[] = $tag;
 
-        $bandera = 1;
-      }
+            $bandera = 1;
+        }
 
-      $consejeros= $query->orderBy('consejeros.id', 'desc')->paginate(9);
+        $consejeros = $query->orderBy('consejeros.id', 'desc')->paginate(9);
 
-      $tiposConsejeria = TipoConsejeria::orderBy('nombre','asc')->select('id', 'nombre')->get();
-      $sedes = Sede::orderBy('nombre','asc')->select('id', 'nombre')->get();
+        $tiposConsejeria = TipoConsejeria::orderBy('nombre', 'asc')->select('id', 'nombre')->get();
+        $sedes = Sede::orderBy('nombre', 'asc')->select('id', 'nombre')->get();
 
-      return view('contenido.paginas.consejerias.gestionar-consejeros', [
-        'consejeros' => $consejeros,
-        'configuracion' => $configuracion,
-        'tagsBusqueda' => $tagsBusqueda,
-        'consejeros' => $consejeros,
-        'bandera' => $bandera,
-        'buscar' => $buscar,
-        'tiposConsejeria' => $tiposConsejeria,
-        'sedes' => $sedes,
-        'rolActivo' => $rolActivo,
-      ]);
+        return view('contenido.paginas.consejerias.gestionar-consejeros', [
+            'consejeros' => $consejeros,
+            'configuracion' => $configuracion,
+            'tagsBusqueda' => $tagsBusqueda,
+            'consejeros' => $consejeros,
+            'bandera' => $bandera,
+            'buscar' => $buscar,
+            'tiposConsejeria' => $tiposConsejeria,
+            'sedes' => $sedes,
+            'rolActivo' => $rolActivo,
+        ]);
     }
 
     public function crearConsejero(Request $request)
     {
-
 
         // 1. Validación de todos los campos del formulario
         $validatedData = $request->validate([
@@ -265,7 +264,7 @@ class ConsejeriaController extends Controller
                 'integer',
                 'exists:users,id',
                 // Valida que el user_id sea único en la tabla 'consejeros'
-                Rule::unique('consejeros', 'user_id')
+                Rule::unique('consejeros', 'user_id'),
             ],
             'descripción' => 'nullable|string|max:2000',
 
@@ -300,8 +299,6 @@ class ConsejeriaController extends Controller
             'maximo_futuro.required' => 'Los días máximos a futuro son obligatorios.',
         ]);
 
-
-
         // 2. Usar una transacción
         DB::beginTransaction();
 
@@ -319,32 +316,31 @@ class ConsejeriaController extends Controller
                 'dias_maximos_futuro' => $validatedData['maximo_futuro'],
             ]);
 
-
             $consejero->sedes()->sync($validatedData['sedes']);
             $consejero->tipoConsejerias()->sync($validatedData['tiposConsejeria']);
 
-            $rolConsejero =Role::where('es_consejero', true)->first();
+            $rolConsejero = Role::where('es_consejero', true)->first();
             $usuario = User::find($validatedData['user_id']);
 
             if ($usuario && $rolConsejero) {
-              $usuario->roles()->attach($rolConsejero->id, ['activo' => false, 'dependiente' => false, 'model_type' => 'App\Models\User']);
+                $usuario->roles()->attach($rolConsejero->id, ['activo' => false, 'dependiente' => false, 'model_type' => 'App\Models\User']);
             }
 
             DB::commit();
 
-            return back()->with('success', "El consejero fue asignado con éxito.");
+            return back()->with('success', 'El consejero fue asignado con éxito.');
 
         } catch (\Exception $e) {
             // 7. Si algo falla, revierte la transacción
             DB::rollBack();
 
             // Opcional: Registrar el error para depuración
-            Log::error('Error al crear nuevo consejero: ' . $e->getMessage());
+            Log::error('Error al crear nuevo consejero: '.$e->getMessage());
 
             // 8. Redireccionar de vuelta al formulario con un mensaje de error
             return redirect()->back()
-                             ->with('error', 'Hubo un problema al guardar el consejero. Por favor, intente de nuevo.')
-                             ->withInput(); // Devuelve los datos para no perderlos
+                ->with('error', 'Hubo un problema al guardar el consejero. Por favor, intente de nuevo.')
+                ->withInput(); // Devuelve los datos para no perderlos
         }
     }
 
@@ -353,11 +349,11 @@ class ConsejeriaController extends Controller
         $consejero->activo = true;
         $consejero->save();
 
-        $rolConsejero =Role::where('es_consejero', true)->first();
+        $rolConsejero = Role::where('es_consejero', true)->first();
         $usuario = User::find($consejero->user_id);
 
         if ($usuario && $rolConsejero) {
-          $usuario->roles()->attach($rolConsejero->id, ['activo' => false, 'dependiente' => false, 'model_type' => 'App\Models\User']);
+            $usuario->roles()->attach($rolConsejero->id, ['activo' => false, 'dependiente' => false, 'model_type' => 'App\Models\User']);
         }
 
         return redirect()->back()->with('success', 'Consejero activado exitosamente.');
@@ -390,7 +386,6 @@ class ConsejeriaController extends Controller
     {
         try {
 
-
             // 1. Obtener el Usuario asociado al Consejero
             $usuario = $consejero->user; // Accede a la relación con el usuario
 
@@ -415,7 +410,8 @@ class ConsejeriaController extends Controller
 
         } catch (\Exception $e) {
             // Captura cualquier error (ej. restricción de BD)
-            Log::error('Error al eliminar consejero: ' . $e->getMessage());
+            Log::error('Error al eliminar consejero: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'No se pudo eliminar el consejero. Es posible que tenga datos relacionados.');
         }
     }
@@ -469,20 +465,20 @@ class ConsejeriaController extends Controller
             // 5. Si todo salió bien, confirma la transacción
             DB::commit();
 
-            return back()->with('success', "El consejero fue actualizado con éxito.");
+            return back()->with('success', 'El consejero fue actualizado con éxito.');
 
         } catch (\Exception $e) {
             // 6. Si algo falla, revierte la transacción
             DB::rollBack();
 
             // Opcional: Registrar el error
-            Log::error('Error al actualizar consejero: ' . $e->getMessage());
+            Log::error('Error al actualizar consejero: '.$e->getMessage());
 
             // 7. Redireccionar con error y 'origen_error' para reabrir el offcanvas correcto
             return redirect()->back()
-            ->with('error', 'Hubo un problema al actualizar el consejero. Por favor, intente de nuevo.')
-            ->withInput()
-            ->with('origen_error', 'editar'); // Variable clave para el JS
+                ->with('error', 'Hubo un problema al actualizar el consejero. Por favor, intente de nuevo.')
+                ->withInput()
+                ->with('origen_error', 'editar'); // Variable clave para el JS
         }
     }
 
@@ -490,7 +486,7 @@ class ConsejeriaController extends Controller
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('consejeria.opcion_configurar_horarios');
-        
+
         // Formateamos los días de la semana
         $diasSemana = [
             1 => 'Lunes',
@@ -504,14 +500,14 @@ class ConsejeriaController extends Controller
 
         // Obtenemos los horarios existentes y los agrupamos por día
         $horariosExistentes = $consejero->horariosHabituales()
-                                ->orderBy('hora_inicio', 'asc')
-                                ->get()
-                                ->groupBy('dia_semana');
+            ->orderBy('hora_inicio', 'asc')
+            ->get()
+            ->groupBy('dia_semana');
 
         return view('contenido.paginas.consejerias.configurar-horarios-cosejero', [
-          'consejero' => $consejero,
-          'diasSemana' => $diasSemana,
-          'horariosExistentes' => $horariosExistentes
+            'consejero' => $consejero,
+            'diasSemana' => $diasSemana,
+            'horariosExistentes' => $horariosExistentes,
         ]);
     }
 
@@ -522,27 +518,26 @@ class ConsejeriaController extends Controller
 
         // 1. Obtenemos los días que SÍ trabaja (formato Laravel: 1=Lunes..7=Domingo)
         $diasHabituales = $consejero->horariosHabituales()
-                            ->select('dia_semana')
-                            ->distinct()
-                            ->pluck('dia_semana')
-                            ->all(); // Ejem: [1, 2, 3, 4, 5]
+            ->select('dia_semana')
+            ->distinct()
+            ->pluck('dia_semana')
+            ->all(); // Ejem: [1, 2, 3, 4, 5]
 
         // 2. Encontramos los días que NO trabaja
         $todosLosDias = [1, 2, 3, 4, 5, 6, 7]; // Lunes a Domingo
         $diasNoHabituales = array_diff($todosLosDias, $diasHabituales); // Ejem: [6, 7]
 
         // 3. Mapeamos a formato FullCalendar (0=Domingo..6=Sábado)
-        $diasNoHabitualesFC = array_map(function($dia) {
+        $diasNoHabitualesFC = array_map(function ($dia) {
             return $dia == 7 ? 0 : $dia; // Convierte Domingo (7) a (0)
         }, $diasNoHabituales);
 
         // Ya no necesitamos crear el JSON aquí
         return view('contenido.paginas.consejerias.calendario-de-fechas-consejero', [
             'consejero' => $consejero,
-            'diasNoHabitualesFC' => array_values($diasNoHabitualesFC)
+            'diasNoHabitualesFC' => array_values($diasNoHabitualesFC),
         ]);
     }
-
 
     /**
      * Actualiza (sincroniza) el horario habitual de un consejero.
@@ -579,16 +574,16 @@ class ConsejeriaController extends Controller
             }
 
             // Ordenar por hora de inicio
-            usort($slots, fn($a, $b) => $a['inicio'] <=> $b['inicio']);
+            usort($slots, fn ($a, $b) => $a['inicio'] <=> $b['inicio']);
 
             // Comprobar solapamiento
             // Compara el FIN de una franja con el INICIO de la siguiente
             for ($i = 0; $i < count($slots) - 1; $i++) {
-                if ($slots[$i]['fin'] > $slots[$i+1]['inicio']) {
+                if ($slots[$i]['fin'] > $slots[$i + 1]['inicio']) {
                     // ¡HAY UN SOLAPAMIENTO!
                     return response()->json([
                         'message' => 'Error de validación: Tienes franjas horarias que se superponen.',
-                        'errors' => ['horarios' => ['No puedes tener franjas horarias que se superpongan en el mismo día.']]
+                        'errors' => ['horarios' => ['No puedes tener franjas horarias que se superpongan en el mismo día.']],
                     ], 422);
                 }
             }
@@ -613,18 +608,19 @@ class ConsejeriaController extends Controller
                 $consejero->horariosHabituales()->delete();
 
                 // Insertamos los nuevos (si hay alguno)
-                if (!empty($nuevosHorarios)) {
+                if (! empty($nuevosHorarios)) {
                     HorarioHabitual::insert($nuevosHorarios);
                 }
             });
         } catch (\Exception $e) {
-            Log::error("Error al actualizar horario habitual: " . $e->getMessage());
+            Log::error('Error al actualizar horario habitual: '.$e->getMessage());
+
             return response()->json(['message' => 'Error interno del servidor. No se pudo guardar el horario.'], 500);
         }
 
         // 4. DEVOLVER RESPUESTA DE ÉXITO
         return response()->json([
-            'message' => 'Horario habitual actualizado con éxito.'
+            'message' => 'Horario habitual actualizado con éxito.',
         ]);
     }
 
@@ -656,7 +652,7 @@ class ConsejeriaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -671,15 +667,16 @@ class ConsejeriaController extends Controller
             // Respondemos con éxito
             return response()->json([
                 'success' => true,
-                'message' => 'Horario extendido guardado con éxito.'
+                'message' => 'Horario extendido guardado con éxito.',
             ]);
 
         } catch (\Exception $e) {
             // Manejo de cualquier error inesperado
             report($e);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error inesperado al guardar el horario.'
+                'message' => 'Ocurrió un error inesperado al guardar el horario.',
             ], 500); // Código de error 500
         }
     }
@@ -711,7 +708,7 @@ class ConsejeriaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -726,14 +723,15 @@ class ConsejeriaController extends Controller
             // Respondemos con éxito
             return response()->json([
                 'success' => true,
-                'message' => 'Horario bloqueado guardado con éxito.'
+                'message' => 'Horario bloqueado guardado con éxito.',
             ]);
 
         } catch (\Exception $e) {
             report($e);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error inesperado al guardar el bloqueo.'
+                'message' => 'Ocurrió un error inesperado al guardar el bloqueo.',
             ], 500);
         }
     }
@@ -752,6 +750,7 @@ class ConsejeriaController extends Controller
 
         } catch (\Exception $e) {
             report($e);
+
             return response()->json(['success' => false, 'message' => 'No se pudo eliminar el horario.'], 500);
         }
     }
@@ -770,6 +769,7 @@ class ConsejeriaController extends Controller
 
         } catch (\Exception $e) {
             report($e);
+
             return response()->json(['success' => false, 'message' => 'No se pudo eliminar el bloqueo.'], 500);
         }
     }
@@ -792,7 +792,7 @@ class ConsejeriaController extends Controller
                     'color' => '#28a745',
                     'textColor' => '#FFFFFF',
                     'allDay' => false,
-                    'extendedProps' => [ 'tipo_evento' => 'adicional' ]
+                    'extendedProps' => ['tipo_evento' => 'adicional'],
                 ];
             });
 
@@ -808,7 +808,7 @@ class ConsejeriaController extends Controller
                     'color' => '#dc3545',
                     'textColor' => '#FFFFFF',
                     'allDay' => false,
-                    'extendedProps' => [ 'tipo_evento' => 'bloqueado' ]
+                    'extendedProps' => ['tipo_evento' => 'bloqueado'],
                 ];
             });
 
@@ -841,13 +841,15 @@ class ConsejeriaController extends Controller
         try {
             $horario = HorarioAdicionalConsejero::findOrFail($id);
             $horario->update($validator->validated());
+
             return response()->json(['success' => true, 'message' => 'Horario adicional actualizado.']);
         } catch (\Exception $e) {
             // Manejo de cualquier error inesperado
             report($e);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error inesperado al guardar el horario.'
+                'message' => 'Ocurrió un error inesperado al guardar el horario.',
             ], 500); // Código de error 500
         }
     }
@@ -873,13 +875,15 @@ class ConsejeriaController extends Controller
         }try {
             $horario = HorarioBloqueadoConsejero::findOrFail($id);
             $horario->update($validator->validated());
+
             return response()->json(['success' => true, 'message' => 'Horario bloqueado actualizado.']);
         } catch (\Exception $e) {
             // Manejo de cualquier error inesperado
             report($e);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error inesperado al guardar el horario.'
+                'message' => 'Ocurrió un error inesperado al guardar el horario.',
             ], 500); // Código de error 500
         }
     }
@@ -887,13 +891,11 @@ class ConsejeriaController extends Controller
     public function mensajeExitoso(CitaConsejeria $cita)
     {
         return view('contenido.paginas.consejerias.mensaje-cita-exitosa',
-          [
-            'cita' => $cita
-          ]
+            [
+                'cita' => $cita,
+            ]
         );
     }
-
-
 
     /*
     Calendario que usa el consejero para ver sus citas
@@ -902,8 +904,8 @@ class ConsejeriaController extends Controller
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('consejeria.subitem_calendario_citas');
-        
-        $consejero = auth()->user()->consejero;  
+
+        $consejero = auth()->user()->consejero;
         $estados = EstadoTareaConsolidacion::orderBy('puntaje', 'asc')->get();
         $estadosPasos = EstadoPasoCrecimientoUsuario::orderBy('puntaje', 'asc')->get();
         $tiposUsuario = TipoUsuario::orderBy('nombre', 'asc')->get();
@@ -912,7 +914,7 @@ class ConsejeriaController extends Controller
             'consejero' => $consejero,
             'estados' => $estados,
             'estadosPasos' => $estadosPasos,
-            'tiposUsuario' => $tiposUsuario
+            'tiposUsuario' => $tiposUsuario,
         ]);
     }
 
@@ -920,7 +922,7 @@ class ConsejeriaController extends Controller
     {
         $consejero = auth()->user()->consejero;
 
-        if (!$consejero) {
+        if (! $consejero) {
             return response()->json([]);
         }
 
@@ -930,8 +932,8 @@ class ConsejeriaController extends Controller
         $end = $request->input('end');
 
         $query = CitaConsejeria::where('consejero_id', $consejero->id)
-                ->withTrashed() // Include cancelled appointments
-                ->with(['user', 'tipoConsejeria.tareasConsolidacion', 'canceladoPorUser']); // Eager load relationships
+            ->withTrashed() // Include cancelled appointments
+            ->with(['user', 'tipoConsejeria.tareasConsolidacion', 'canceladoPorUser']); // Eager load relationships
 
         if ($start && $end) {
             $query->whereBetween('fecha_hora_inicio', [$start, $end]);
@@ -941,29 +943,29 @@ class ConsejeriaController extends Controller
 
         $eventos = $citas->map(function ($cita) {
             $titulo = $cita->user ? $cita->user->nombre_completo : 'Usuario desconocido';
-            
+
             // You might want to append the type of counseling to the title
             if ($cita->tipoConsejeria) {
-                $titulo .= ' - ' . $cita->tipoConsejeria->nombre;
+                $titulo .= ' - '.$cita->tipoConsejeria->nombre;
             }
 
             $isCancelled = $cita->trashed();
             $isConcluida = $cita->concluida;
-            
+
             $color = '#3380f3ff'; // Azul por defecto (Activa)
 
             if ($isCancelled) {
-                $color = '#EA5455'; 
+                $color = '#EA5455';
                 $titulo .= ' (Cancelada)';
-            } elseif ($isConcluida) { 
-                $color = '#00C851'; 
+            } elseif ($isConcluida) {
+                $color = '#00C851';
                 $titulo .= ' (Concluida)';
             }
-          
+
             $telefonos = collect([
                 $cita->user->telefono_fijo,
                 $cita->user->telefono_movil,
-                $cita->user->telefono_otro
+                $cita->user->telefono_otro,
             ])->filter();
 
             $textoTelefonos = $telefonos->isNotEmpty() ? $telefonos->implode(', ') : 'No indicados';
@@ -980,7 +982,7 @@ class ConsejeriaController extends Controller
                     'tipo_evento' => 'cita',
                     'cita_id' => $cita->id,
                     'paciente' => $cita->user ? $cita->user->nombre(3) : 'N/A',
-                    'paciente_nombre' => $cita->user ? $cita->user->name . ' ' . $cita->user->last_name : 'Sin paciente',
+                    'paciente_nombre' => $cita->user ? $cita->user->name.' '.$cita->user->last_name : 'Sin paciente',
                     'paciente_telefono' => $cita->user ? $cita->user->telefono : '',
                     'telefonos' => $textoTelefonos ?? 'N/A',
                     'tipo_consejeria' => $cita->tipoConsejeria ? $cita->tipoConsejeria->nombre : 'N/A',
@@ -991,73 +993,72 @@ class ConsejeriaController extends Controller
                     'notas' => $cita->notas_paciente ?? 'Sin notas adicionales',
                     'estado' => $isCancelled ? 'Cancelada' : 'Activa',
                     'is_cancelled' => $isCancelled,
-                    'is_concluida' => $isConcluida, 
+                    'is_concluida' => $isConcluida,
                     'notas_cancelacion' => $cita->notas_cancelacion,
                     'cancelado_por' => $cita->canceladoPorUser ? $cita->canceladoPorUser->nombre(3) : 'Desconocido',
-                    'tareas' => $cita->tipoConsejeria ? $cita->tipoConsejeria->tareasConsolidacion->map(function($tarea) use ($cita) {
-                        
+                    'tareas' => $cita->tipoConsejeria ? $cita->tipoConsejeria->tareasConsolidacion->map(function ($tarea) use ($cita) {
+
                         // Buscar si el usuario tiene esta tarea asignada
                         $tareaAsignada = $cita->user ? $cita->user->tareasConsolidacion->find($tarea->id) : null;
-                        
+
                         $estadoData = null;
                         if ($tareaAsignada && $tareaAsignada->pivot && $tareaAsignada->pivot->estado) {
-                             $estadoModel = $tareaAsignada->pivot->estado; 
-                             $estadoData = [
-                                 'id' => $estadoModel->id,
-                                 'nombre' => $estadoModel->nombre,
-                                 'color' => $estadoModel->color,
-                                 'fecha' => $tareaAsignada->pivot->fecha
-                             ];
+                            $estadoModel = $tareaAsignada->pivot->estado;
+                            $estadoData = [
+                                'id' => $estadoModel->id,
+                                'nombre' => $estadoModel->nombre,
+                                'color' => $estadoModel->color,
+                                'fecha' => $tareaAsignada->pivot->fecha,
+                            ];
                         }
 
                         return [
                             'id' => $tarea->id,
                             'nombre' => $tarea->nombre,
                             'descripcion' => $tarea->descripcion,
-                            'estado_actual' => $estadoData
+                            'estado_actual' => $estadoData,
                         ];
                     }) : [],
-                    'pasos_crecimiento' => $cita->tipoConsejeria ? $cita->tipoConsejeria->pasosCrecimiento->map(function($paso) use ($cita) {
-                        
+                    'pasos_crecimiento' => $cita->tipoConsejeria ? $cita->tipoConsejeria->pasosCrecimiento->map(function ($paso) use ($cita) {
+
                         // Buscar si el usuario tiene este paso registrado en crecimiento_usuario
                         // La relación en User es pasosCrecimiento()
                         $pasoUsuario = $cita->user ? $cita->user->pasosCrecimiento()->where('paso_crecimiento_id', $paso->id)->first() : null;
 
                         $estadoData = null;
-                        // En crecimiento_usuario, el estado se guarda en 'estado_id' y hay relación 'estado' en el modelo Pivot si se usara pivot, 
+                        // En crecimiento_usuario, el estado se guarda en 'estado_id' y hay relación 'estado' en el modelo Pivot si se usara pivot,
                         // pero aquí usamos el modelo CrecimientoUsuario o la relación belongsToMany con pivot.
                         // Revisando User.php: public function pasosCrecimiento() ... withPivot('estado_id', ...)
-                        
+
                         if ($pasoUsuario && $pasoUsuario->pivot && $pasoUsuario->pivot->estado_id) {
-                             // Necesitamos obtener el objeto estado. 
-                             // Podemos cargarlo o buscarlo. Como es un ID, lo buscamos.
-                             // Para optimizar, podríamos cargar la relación en la consulta principal, pero aquí lo haremos directo por simplicidad o usar el helper si existe.
-                             $estadoModel = EstadoPasoCrecimientoUsuario::find($pasoUsuario->pivot->estado_id);
-                             
-                             if ($estadoModel) {
+                            // Necesitamos obtener el objeto estado.
+                            // Podemos cargarlo o buscarlo. Como es un ID, lo buscamos.
+                            // Para optimizar, podríamos cargar la relación en la consulta principal, pero aquí lo haremos directo por simplicidad o usar el helper si existe.
+                            $estadoModel = EstadoPasoCrecimientoUsuario::find($pasoUsuario->pivot->estado_id);
+
+                            if ($estadoModel) {
                                 $estadoData = [
                                     'id' => $estadoModel->id,
                                     'nombre' => $estadoModel->nombre,
                                     'color' => $estadoModel->color,
-                                    'fecha' => $pasoUsuario->pivot->fecha
+                                    'fecha' => $pasoUsuario->pivot->fecha,
                                 ];
-                             }
+                            }
                         }
 
                         return [
                             'id' => $paso->id,
                             'nombre' => $paso->nombre,
                             'descripcion' => $paso->descripcion,
-                            'estado_actual' => $estadoData
+                            'estado_actual' => $estadoData,
                         ];
-                    }) : []
-                ]
+                    }) : [],
+                ],
             ];
         });
 
         return response()->json($eventos);
     }
-
 
     public function concluirCita(Request $request, CitaConsejeria $cita)
     {
@@ -1065,12 +1066,12 @@ class ConsejeriaController extends Controller
         if ($cita->trashed()) {
             return redirect()->back()->with('error', 'No se puede concluir una cita que ha sido cancelada.');
         }
-        
+
         // 1. Validación
         $request->validate([
             'conclusiones_consejero' => 'nullable|string|max:2000',
         ]);
-        
+
         // 2. Actualización del estado
         $cita->update([
             'concluida' => true,
@@ -1080,11 +1081,11 @@ class ConsejeriaController extends Controller
         // 3. Guardar Tareas (si existen)
         if ($request->has('tareas')) {
             $tareasData = $request->input('tareas'); // Array [tarea_id => estado_id]
-            
+
             foreach ($tareasData as $tareaId => $estadoId) {
                 // Verificar si ya existe asignación para no duplicar (opcional, o usar updateOrCreate)
                 // Aquí asumimos que se crea una nueva asignación o se actualiza la existente para este usuario
-                
+
                 // Opción A: Crear siempre nuevo registro (Historial)
                 // TareaConsolidacionUsuario::create([
                 //     'user_id' => $cita->user_id,
@@ -1099,14 +1100,14 @@ class ConsejeriaController extends Controller
                 // Basado en "TareaConsolidacionUsuario" que parece ser una tabla pivote con historial aparte,
                 // vamos a usar syncWithoutDetaching o create directo.
                 // Dado el modelo TareaConsolidacionUsuario, parece ser un Pivot model.
-                
+
                 // Vamos a usar la relación del usuario para adjuntar/actualizar
                 $cita->user->tareasConsolidacion()->syncWithoutDetaching([
                     $tareaId => [
                         'estado_tarea_consolidacion_id' => $estadoId,
                         'fecha' => now(),
                         // 'cita_consejeria_id' => $cita->id // Si quisieras vincularlo a la cita específica
-                    ]
+                    ],
                 ]);
             }
         }
@@ -1114,19 +1115,23 @@ class ConsejeriaController extends Controller
         // 4. Guardar Pasos de Crecimiento (si existen)
         if ($request->has('pasos')) {
             $pasosData = $request->input('pasos'); // Array [paso_id => estado_id]
-            
+
             foreach ($pasosData as $pasoId => $estadoId) {
                 // Usamos la relación pasosCrecimiento del usuario
                 // Tabla pivote: crecimiento_usuario
                 // Campos pivot: estado_id, fecha, detalle
-                
-                $cita->user->pasosCrecimiento()->syncWithoutDetaching([
-                    $pasoId => [
+
+                CrecimientoUsuario::updateOrCreate(
+                    [
+                        'user_id' => $cita->user_id,
+                        'paso_crecimiento_id' => $pasoId,
+                    ],
+                    [
                         'estado_id' => $estadoId,
                         'fecha' => now(),
-                        // 'detalle' => 'Actualizado desde cita de consejería' 
+                        'detalle' => 'Actualizado desde cita de consejería concluida',
                     ]
-                ]);
+                );
             }
         }
 
@@ -1137,7 +1142,7 @@ class ConsejeriaController extends Controller
 
             if ($usuario->tipo_usuario_id != $nuevoTipoUsuarioId) {
                 $usuario->tipo_usuario_id = $nuevoTipoUsuarioId;
-                
+
                 // Lógica de roles dependientes
                 $rolDependiente = $usuario
                     ->roles()
@@ -1149,11 +1154,11 @@ class ConsejeriaController extends Controller
                 if ($tipoUsuarioActual && $rolDependiente && $tipoUsuarioActual->id_rol_dependiente != $rolDependiente->id) {
                     // Asignar nuevo rol dependiente
                     if ($tipoUsuarioActual->id_rol_dependiente) {
-                         $usuario->roles()->attach($tipoUsuarioActual->id_rol_dependiente, [
-                             'activo' => $rolDependiente->pivot->activo, 
-                             'dependiente' => true, 
-                             'model_type' => 'App\Models\User'
-                         ]);
+                        $usuario->roles()->attach($tipoUsuarioActual->id_rol_dependiente, [
+                            'activo' => $rolDependiente->pivot->activo,
+                            'dependiente' => true,
+                            'model_type' => 'App\Models\User',
+                        ]);
                     }
                     // Remover rol anterior
                     $usuario->removeRole($rolDependiente);
@@ -1168,5 +1173,4 @@ class ConsejeriaController extends Controller
 
         return redirect()->back()->with('success', 'Cita marcada como concluida exitosamente.');
     }
-
 }

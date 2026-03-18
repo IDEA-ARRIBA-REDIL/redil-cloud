@@ -2,26 +2,23 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use App\Models\Escuela;
-use App\Models\Sede;
-use App\Models\TipoAula;
 use App\Models\Aula;
 use App\Models\CorteEscuela;
-use App\Models\Materia;
-use App\Models\HorarioBase;
-use App\Models\TipoItem;
-use App\Models\ItemPlantilla;
-use App\Models\Periodo;
 use App\Models\CortePeriodo;
-use App\Models\MateriaPeriodo;
+use App\Models\Escuela;
+use App\Models\HorarioBase;
 use App\Models\HorarioMateriaPeriodo;
-use App\Models\ItemCorteMateriaPeriodo;
-use App\Models\User;
+use App\Models\ItemPlantilla;
+use App\Models\Materia;
+use App\Models\MateriaPeriodo;
 use App\Models\Matricula;
-use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico; // Alias común en el proyecto
+use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
+use App\Models\Periodo;
+use App\Models\Sede;
+use App\Models\TipoAula;
+use App\Models\TipoItem;
+use Carbon\Carbon;
+use Illuminate\Database\Seeder; // Alias común en el proyecto
 
 class EscuelaConsolidacionSeeder extends Seeder
 {
@@ -33,7 +30,7 @@ class EscuelaConsolidacionSeeder extends Seeder
         // 1. INFRAESTRUCTURA (Sede y Aulas)
         // ---------------------------------------------------------
         $sede = Sede::find(1);
-        if (!$sede) {
+        if (! $sede) {
             $sede = Sede::firstOrCreate(['id' => 1, 'nombre' => 'Sede Principal (Default)', 'tipo_sede_id' => 1, 'grupo_id' => 1, 'default' => true]);
         }
 
@@ -52,7 +49,7 @@ class EscuelaConsolidacionSeeder extends Seeder
         // Aulas
         $aulaSector = Aula::firstOrCreate(
             ['nombre' => 'Aula CHL Sector', 'sede_id' => $sede->id],
-            ['tipo_aula_id' => $tipoAulaSector->id, 'activo' => true ]
+            ['tipo_aula_id' => $tipoAulaSector->id, 'activo' => true]
         );
 
         $aulaGeneral = Aula::firstOrCreate(
@@ -67,7 +64,7 @@ class EscuelaConsolidacionSeeder extends Seeder
         // ---------------------------------------------------------
         $escuelasData = [
             ['nombre' => 'CHL', 'descripcion' => 'Escuela de Consolidación CHL'],
-            ['nombre' => 'CHL WARRIORS', 'descripcion' => 'Escuela de Consolidación CHL WARRIORS']
+            ['nombre' => 'CHL WARRIORS', 'descripcion' => 'Escuela de Consolidación CHL WARRIORS'],
         ];
 
         // Guardamos referencias para matrículas posteriores
@@ -81,7 +78,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                 'descripcion' => $data['descripcion'],
                 'tipo_matricula' => 'materias_independientes',
                 'diploma_id' => 1,
-                'habilitada_consilidacion' => true,
+                'habilitada_consolidacion' => true,
             ]);
 
             $escuelasMap[$data['nombre']] = $escuela;
@@ -99,7 +96,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                     'escuela_id' => $escuela->id,
                     'nombre' => $cConfig['nombre'],
                     'orden' => $cConfig['orden'],
-                    'porcentaje' => $cConfig['porcentaje']
+                    'porcentaje' => $cConfig['porcentaje'],
                 ]));
             }
 
@@ -110,7 +107,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                 'Evangelismo Práctico',
                 'Mayordomía Bíblica',
                 'Liderazgo Servidor',
-                'Doctrina Básica'
+                'Doctrina Básica',
             ];
 
             $materias = collect();
@@ -120,13 +117,13 @@ class EscuelaConsolidacionSeeder extends Seeder
                     'nombre' => $nom,
                     'asistencias_minimas' => 8,
                     'habilitar_asistencias' => true,
-                    'habilitar_calificaciones' => true
+                    'habilitar_calificaciones' => true,
                 ]));
             }
 
             // Prerrequisitos
             for ($i = 1; $i < $materias->count(); $i++) {
-                 $materias[$i]->prerrequisitosMaterias()->syncWithoutDetaching($materias[$i - 1]->id);
+                $materias[$i]->prerrequisitosMaterias()->syncWithoutDetaching($materias[$i - 1]->id);
             }
 
             // Items Plantilla & Horarios Base
@@ -160,21 +157,21 @@ class EscuelaConsolidacionSeeder extends Seeder
                 CortePeriodo::firstOrCreate([
                     'periodo_id' => $periodo->id,
                     'corte_escuela_id' => $ce->id,
-                    'porcentaje' => $ce->porcentaje
+                    'porcentaje' => $ce->porcentaje,
                 ]);
             }
 
             foreach ($materias as $materia) {
                 $materiaPeriodo = MateriaPeriodo::firstOrCreate([
                     'materia_id' => $materia->id,
-                    'periodo_id' => $periodo->id
+                    'periodo_id' => $periodo->id,
                 ]);
 
                 $horariosBase = HorarioBase::where('materia_id', $materia->id)->get();
                 foreach ($horariosBase as $hb) {
                     HorarioMateriaPeriodo::firstOrCreate([
                         'materia_periodo_id' => $materiaPeriodo->id,
-                        'horario_base_id' => $hb->id
+                        'horario_base_id' => $hb->id,
                     ]);
                 }
             }
@@ -192,7 +189,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                 'sector_required' => true,
                 'fecha_matricula' => '2026-01-11',
                 'bloqueado' => false,
-                'fecha_bloqueo' => null
+                'fecha_bloqueo' => null,
             ],
             [
                 'user_id' => 10,
@@ -200,7 +197,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                 'sector_required' => false,
                 'fecha_matricula' => '2026-01-11',
                 'bloqueado' => false,
-                'fecha_bloqueo' => null
+                'fecha_bloqueo' => null,
             ],
             [
                 'user_id' => 9,
@@ -208,7 +205,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                 'sector_required' => true,
                 'fecha_matricula' => '2025-12-11',
                 'bloqueado' => false,
-                'fecha_bloqueo' => null
+                'fecha_bloqueo' => null,
             ],
             [
                 'user_id' => 8,
@@ -216,7 +213,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                 'sector_required' => true,
                 'fecha_matricula' => '2026-01-11',
                 'bloqueado' => true,
-                'fecha_bloqueo' => '2026-01-13' // Asumiendo formato Y-m-d
+                'fecha_bloqueo' => '2026-01-13', // Asumiendo formato Y-m-d
             ],
             [
                 'user_id' => 7,
@@ -224,8 +221,8 @@ class EscuelaConsolidacionSeeder extends Seeder
                 'sector_required' => true,
                 'fecha_matricula' => '2026-01-11',
                 'bloqueado' => false,
-                'fecha_bloqueo' => null
-            ]
+                'fecha_bloqueo' => null,
+            ],
         ];
 
         foreach ($enrollmentConfigs as $config) {
@@ -236,8 +233,9 @@ class EscuelaConsolidacionSeeder extends Seeder
             $this->command->info("  Procesando ID: {$userId}");
 
             // Obtener Escuela y Periodo
-            if (!isset($escuelasMap[$config['escuela_nombre']])) {
+            if (! isset($escuelasMap[$config['escuela_nombre']])) {
                 $this->command->error("Escuela {$config['escuela_nombre']} no encontrada en mapa.");
+
                 continue;
             }
             $escuela = $escuelasMap[$config['escuela_nombre']];
@@ -248,8 +246,9 @@ class EscuelaConsolidacionSeeder extends Seeder
                 ->where('nombre', 'like', '%2026-1%')
                 ->first();
 
-            if (!$periodo) {
+            if (! $periodo) {
                 $this->command->error("Periodo no encontrado para escuela {$escuela->nombre}");
+
                 continue;
             }
 
@@ -259,14 +258,15 @@ class EscuelaConsolidacionSeeder extends Seeder
             foreach ($materiaPeriodos as $mp) {
                 // Buscar Horario que coincida con sector preference
                 $horarioTarget = HorarioMateriaPeriodo::where('materia_periodo_id', $mp->id)
-                    ->whereHas('horarioBase.aula.tipo', function($q) use ($config) {
+                    ->whereHas('horarioBase.aula.tipo', function ($q) use ($config) {
                         $q->where('sector', $config['sector_required']);
                     })
                     ->first();
 
-                if (!$horarioTarget) {
+                if (! $horarioTarget) {
                     $sectorStr = $config['sector_required'] ? 'Sector' : 'General';
                     $this->command->warn("  No se encontró horario {$sectorStr} para materia {$mp->materia->nombre}. Saltando.");
+
                     continue;
                 }
 
@@ -288,7 +288,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                     'matricula_id' => $matricula->id,
                     'user_id' => $userId,
                     'horario_materia_periodo_id' => $horarioTarget->id,
-                    'periodo_id' => $periodo->id
+                    'periodo_id' => $periodo->id,
                 ]);
 
                 // Solo una matrícula por usuario como solicitado

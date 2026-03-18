@@ -2,19 +2,22 @@
 
 namespace App\Services;
 
-use App\Models\Periodo;
-use App\Models\MateriaPeriodo;
 use App\Models\Calificaciones;
 use App\Models\MateriaAprobadaUsuario;
+use App\Models\MateriaPeriodo;
+use App\Models\Periodo;
+use App\Traits\AplicaEfectosAprobacion;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Collection;
 
 /**
  * Misión Única: Procesa la finalización de una MATERIA INDIVIDUAL dentro de un periodo.
  */
 class ServicioValidacionMateriaPeriodo
 {
+    use AplicaEfectosAprobacion;
+
     public function procesarLoteDeAlumnosPorMateria(MateriaPeriodo $materiaPeriodo, int $pagina, int $porPagina): int
     {
         $idsAlumnosDelLote = DB::table('matriculas as mat')
@@ -31,6 +34,7 @@ class ServicioValidacionMateriaPeriodo
         $resultados = $this->obtenerResultadosAcademicos($materiaPeriodo, $idsAlumnosDelLote);
         $datosParaGuardar = $this->prepararDatosParaGuardar($materiaPeriodo->periodo, $resultados);
         $this->persistirResultados($datosParaGuardar, $materiaPeriodo->id);
+        $this->aplicarEfectosCulminacion($datosParaGuardar);
 
         return $idsAlumnosDelLote->count();
     }
@@ -38,9 +42,13 @@ class ServicioValidacionMateriaPeriodo
     private function prepararDatosParaGuardar(Periodo $periodo, array $resultadosAcademicos): array
     {
         // Este método es idéntico al del otro servicio
-        if (empty($resultadosAcademicos)) return [];
+        if (empty($resultadosAcademicos)) {
+            return [];
+        }
         $notaMinima = Calificaciones::where('sistema_calificacion_id', $periodo->sistema_calificaciones_id)->where('aprobado', true)->min('nota_minima');
-        if (is_null($notaMinima)) throw new \Exception("No se encontró nota mínima de aprobación para el sistema de calificación ID: {$periodo->sistema_calificaciones_id}");
+        if (is_null($notaMinima)) {
+            throw new \Exception("No se encontró nota mínima de aprobación para el sistema de calificación ID: {$periodo->sistema_calificaciones_id}");
+        }
         $datosParaGuardar = [];
         foreach ($resultadosAcademicos as $resultado) {
             $estadoFinal = $this->determinarEstadoFinal($resultado, (float) $notaMinima);
@@ -57,6 +65,7 @@ class ServicioValidacionMateriaPeriodo
                 'updated_at' => now(),
             ];
         }
+
         return $datosParaGuardar;
     }
 
@@ -138,9 +147,9 @@ class ServicioValidacionMateriaPeriodo
         // para esta materia específica y los guardamos en un mapa para una búsqueda rápida.
         $registrosExistentes = MateriaAprobadaUsuario::where('materia_periodo_id', $materiaPeriodoId)
             ->get()
-            ->keyBy(fn($item) => "{$item->user_id}-{$item->materia_periodo_id}");
+            ->keyBy(fn ($item) => "{$item->user_id}-{$item->materia_periodo_id}");
 
-        Log::info("Se encontraron " . $registrosExistentes->count() . " registros existentes para esta materia.");
+        Log::info('Se encontraron '.$registrosExistentes->count().' registros existentes para esta materia.');
 
         // --- PASO 2: CLASIFICAR DATOS ---
         // Preparamos dos "cubetas": una para los registros nuevos y otra para los que necesitan actualizarse.
@@ -149,7 +158,7 @@ class ServicioValidacionMateriaPeriodo
 
         // Recorremos los datos recién calculados.
         foreach ($datosCalculados as $dato) {
-            $clave = $dato['user_id'] . '-' . $dato['materia_periodo_id'];
+            $clave = $dato['user_id'].'-'.$dato['materia_periodo_id'];
 
             // Comprobamos si el registro ya existe en nuestro "mapa".
             if (isset($registrosExistentes[$clave])) {
@@ -171,21 +180,21 @@ class ServicioValidacionMateriaPeriodo
             }
         }
 
-        Log::info("Análisis completado: " . count($paraInsertar) . " para insertar, " . count($paraActualizar) . " para actualizar.");
+        Log::info('Análisis completado: '.count($paraInsertar).' para insertar, '.count($paraActualizar).' para actualizar.');
 
         // --- PASO 3: EJECUTAR OPERACIONES EN LA BASE DE DATOS ---
 
         // Insertamos todos los registros nuevos en una sola operación masiva para máxima eficiencia.
-        if (!empty($paraInsertar)) {
+        if (! empty($paraInsertar)) {
             foreach (array_chunk($paraInsertar, 500) as $chunk) {
                 MateriaAprobadaUsuario::insert($chunk);
             }
-            Log::info("Se insertaron " . count($paraInsertar) . " nuevos registros.");
+            Log::info('Se insertaron '.count($paraInsertar).' nuevos registros.');
         }
 
         // Actualizamos los registros que cambiaron, uno por uno.
         // Aunque es un bucle, solo se ejecuta para la pequeña cantidad de registros que REALMENTE cambiaron.
-        if (!empty($paraActualizar)) {
+        if (! empty($paraActualizar)) {
             foreach ($paraActualizar as $datoActualizar) {
                 MateriaAprobadaUsuario::where('user_id', $datoActualizar['user_id'])
                     ->where('materia_periodo_id', $datoActualizar['materia_periodo_id'])
@@ -197,7 +206,7 @@ class ServicioValidacionMateriaPeriodo
                         'updated_at' => now(),
                     ]);
             }
-            Log::info("Se actualizaron " . count($paraActualizar) . " registros existentes.");
+            Log::info('Se actualizaron '.count($paraActualizar).' registros existentes.');
         }
     }
 }

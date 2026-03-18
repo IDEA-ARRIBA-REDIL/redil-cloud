@@ -2,33 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use stdClass;
-
-use App\Models\Configuracion;
-use App\Models\Escuela;
-use App\Models\CorteEscuela; // Importar el modelo CorteEscuela
-use App\Models\User;
+use App\Models\AlumnoRespuestaItem;
+use App\Models\BannerEscuela; // Importar el modelo CorteEscuela
+use App\Models\Calificaciones;
 // Quité Usuario si no se usa directamente aquí, User parece ser el modelo correcto
 // use App\Models\Usuario;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // Importar DB para transacciones
-use Illuminate\Support\Facades\Log; // Importar Log para errores
-use Illuminate\Support\Facades\Storage; // Importar Storage si se usa en update
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\RedirectResponse;
-
-use Illuminate\View\View;
-use App\Models\Maestro; // <-- Asegúrate de importar el modelo Maestro
-use App\Models\RecursoAlumnoHorario;
-use App\Models\Calificaciones;
+use App\Models\Configuracion; // Importar DB para transacciones
+use App\Models\CorteEscuela; // Importar Log para errores
+use App\Models\CortePeriodo; // Importar Storage si se usa en update
 use App\Models\HorarioMateriaPeriodo;
-use App\Models\CortePeriodo;
-use App\Models\ReporteAsistenciaAlumnos;
-use App\Models\AlumnoRespuestaItem;
 use App\Models\ItemCorteMateriaPeriodo;
+use App\Models\Maestro;
 use App\Models\MateriaAprobadaUsuario;
 use App\Models\Matricula;
-use App\Models\BannerEscuela;
+use App\Models\NivelAprobadoUsuario;
+use App\Models\RecursoAlumnoHorario;
+use App\Models\ReporteAsistenciaAlumnos;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class AlumnoEscuelasController extends Controller
 {
@@ -41,18 +37,18 @@ class AlumnoEscuelasController extends Controller
 
         // --- Verificación de Seguridad ---
         $estaMatriculado = $horario->alumnosMatriculados()->where('user_id', $alumno->id)->exists();
-        if (!$estaMatriculado) {
+        if (! $estaMatriculado) {
             abort(403, 'No tienes permiso para ver esta materia.');
         }
 
         // --- BLOQUE 1: DATOS GENERALES DE LA MATERIA ---
-        $materiaData = new \stdClass();
+        $materiaData = new \stdClass;
         $materiaData->nombre = $horario->materiaPeriodo->materia->nombre;
 
-        $materiaData->maestros = $horario->maestros->map(fn($maestro) => (object)[
+        $materiaData->maestros = $horario->maestros->map(fn ($maestro) => (object) [
             'nombre' => $maestro->user->nombre(3),
             'imagen' => $maestro->user->foto,
-            'iniciales' => $maestro->user->inicialesNombre()
+            'iniciales' => $maestro->user->inicialesNombre(),
         ]);
 
         $materiaData->horario = sprintf(
@@ -64,7 +60,7 @@ class AlumnoEscuelasController extends Controller
         );
 
         // --- BLOQUE 2: DATOS DE ASISTENCIA ---
-        $asistenciaData = new \stdClass();
+        $asistenciaData = new \stdClass;
         $asistenciaData->total_clases = $horario->reportesAsistencia()->count();
         $asistenciaData->asistencias_alumno = ReporteAsistenciaAlumnos::where('user_id', $alumno->id)
             ->whereIn('reporte_asistencia_clase_id', $horario->reportesAsistencia->pluck('id'))
@@ -75,23 +71,20 @@ class AlumnoEscuelasController extends Controller
         $asistenciaData->historial = ReporteAsistenciaAlumnos::where('user_id', $alumno->id)
             ->whereIn('reporte_asistencia_clase_id', $horario->reportesAsistencia->pluck('id'))
             ->with('reporteClase', 'motivoInasistencia')->get()
-            ->map(fn($registro) => (object)[
+            ->map(fn ($registro) => (object) [
                 'fecha' => $registro->reporteClase->fecha_clase_reportada->format('Y-m-d'),
                 'estado' => $registro->asistio ? 'Asistió' : 'Inasistencia',
-                'motivo' => $registro->motivoInasistencia?->nombre ?? null
+                'motivo' => $registro->motivoInasistencia?->nombre ?? null,
             ]);
 
         // --- BLOQUE 3: DATOS DE CALIFICACIONES POR CORTE ---
         $periodo = $horario->materiaPeriodo->periodo;
         $itemsHorario = ItemCorteMateriaPeriodo::where('horario_materia_periodo_id', $horario->id)->get();
 
-
         // --- CORRECCIÓN 1: Usamos 'itemInstancias' en la carga ansiosa (with) ---
         $cortes = CortePeriodo::where('periodo_id', $periodo->id)
-            ->with(['itemInstancias' => fn($query) => $query->where('horario_materia_periodo_id', $horario->id)->orderBy('orden')])
+            ->with(['itemInstancias' => fn ($query) => $query->where('horario_materia_periodo_id', $horario->id)->orderBy('orden')])
             ->get();
-
-
 
         // --- CORRECCIÓN 2: Usamos 'itemInstancias' para obtener los IDs de los ítems ---
         $respuestasAlumno = AlumnoRespuestaItem::where('user_id', $alumno->id)
@@ -112,8 +105,12 @@ class AlumnoEscuelasController extends Controller
                 $item->respuesta_alumno = $respuesta?->respuesta_alumno;
                 $item->feedback_maestro = $respuesta?->observaciones_maestro;
                 $item->estado = 'Pendiente';
-                if (isset($respuesta)) $item->estado = 'Entregado';
-                if (isset($respuesta) && $respuesta->nota_obtenida !== null) $item->estado = 'Calificado';
+                if (isset($respuesta)) {
+                    $item->estado = 'Entregado';
+                }
+                if (isset($respuesta) && $respuesta->nota_obtenida !== null) {
+                    $item->estado = 'Calificado';
+                }
             });
         });
 
@@ -122,10 +119,10 @@ class AlumnoEscuelasController extends Controller
         foreach ($cortes as $corte) {
             // --- CORRECCIÓN 4: Usamos 'itemInstancias' para construir el resumen ---
             foreach ($corte->itemInstancias as $item) {
-                $materiaData->items_tabla_resumen[] = (object)[
+                $materiaData->items_tabla_resumen[] = (object) [
                     'nombre' => $item->nombre,
-                    'corte'  => $corte->nombre_completo,
-                    'nota'   => $item->nota,
+                    'corte' => $corte->nombre_completo,
+                    'nota' => $item->nota,
                 ];
             }
         }
@@ -149,7 +146,6 @@ class AlumnoEscuelasController extends Controller
         // === FIN DE LA SECCIÓN AÑADIDA                           ===
         // ==========================================================
 
-
         // --- BLOQUE 4: DATOS DE RECURSOS (sin cambios, se mantiene de ejemplo) ---
         $recursos = RecursoAlumnoHorario::where('horario_materia_periodo_id', $horario->id)
             ->where('visible', true)
@@ -159,6 +155,7 @@ class AlumnoEscuelasController extends Controller
         // --- ELIMINADO ---
         // Se eliminó el bloque de código duplicado y erróneo que causaba el error "Attempt to assign property on null".
         $configuracion = Configuracion::find(1);
+
         return view('contenido.paginas.escuelas.alumnos.perfil-materia', [
             'materia' => $materiaData,
             'asistencia' => $asistenciaData,
@@ -166,7 +163,7 @@ class AlumnoEscuelasController extends Controller
             'recursos' => $recursos,
             'notaMinimaAprobacion' => $notaMinimaAprobacion,
             'configuracion' => $configuracion,
-            'horario' => $horario
+            'horario' => $horario,
         ]);
     }
 
@@ -226,14 +223,14 @@ class AlumnoEscuelasController extends Controller
                     // Se usa el nombre correcto de la relación: 'horarioMateriaPeriodo'
                     // para cargar toda la cadena de relaciones anidadas.
                     'horarioMateriaPeriodo.materiaPeriodo.materia',
-                    'horarioMateriaPeriodo.horarioBase.aula.sede'
+                    'horarioMateriaPeriodo.horarioBase.aula.sede',
                 ])
                 ->get();
 
             return view('contenido.paginas.escuelas.alumnos.dashboard', [
                 'matriculas' => $matriculasActivas,
                 'alumno' => $user,
-                'banners' => $banners
+                'banners' => $banners,
             ]);
         } else {
             return redirect()->route('escuelas.dashboard');
@@ -246,22 +243,40 @@ class AlumnoEscuelasController extends Controller
     public function historialAcademico(): View
     {
         $alumno = Auth::user();
+        $usuario = Auth::user(); // Renamed $alumno to $usuario for consistency with the new code
 
         // 1. Obtenemos todos los registros de materias finalizadas para este alumno
-        $historialRegistros = MateriaAprobadaUsuario::with(['periodo', 'materia'])
-            ->where('user_id', $alumno->id)
-            ->orderBy('periodo_id', 'desc') // Ordenar por periodo más reciente primero
+        $historial = MateriaAprobadaUsuario::with(['materia.nivel', 'periodo'])
+            ->where('user_id', $usuario->id)
+            ->orderBy('id', 'desc')
             ->get();
 
-        // 2. Enriquecemos cada registro con los detalles del horario (Aula, Sede, etc.)
-        $historial = $historialRegistros->map(function ($registro) {
+        // Obtener los niveles aprobados por el usuario
+        $nivelesAprobados = NivelAprobadoUsuario::with('nivel')
+            ->where('user_id', $usuario->id)
+            ->get()
+            ->keyBy('nivel_id');
+
+        // Agrupar las materias por nivel
+        $historialAgrupado = $historial->groupBy(function ($item) {
+            return $item->materia->nivel_id ?? 'sin_nivel';
+        });
+
+        $historial->map(function ($registro) {
             $registro->detalles_matricula = $this->getDetallesMatricula($registro);
+
             return $registro;
         });
 
+        // Get configuration for the view
+        $configuracion = Configuracion::find(1);
+
         return view('contenido.paginas.escuelas.alumnos.historial-academico', [
+            'configuracion' => $configuracion,
             'historial' => $historial,
-            'alumno' => $alumno,
+            'historialAgrupado' => $historialAgrupado,
+            'nivelesAprobados' => $nivelesAprobados,
+            'usuario' => $usuario,
         ]);
     }
 
@@ -285,9 +300,9 @@ class AlumnoEscuelasController extends Controller
             $nombreMaestro = $matricula->horarioMateriaPeriodo->maestros->first()?->user?->nombre(3) ?? 'No asignado';
 
             return (object) [
-                'horario' => $horarioBase->dia_semana . ' | ' . $horarioBase->hora_inicio_formato,
-                'aula'    => $horarioBase->aula->nombre ?? 'N/A',
-                'sede'    => $horarioBase->aula->sede->nombre ?? 'N/A',
+                'horario' => $horarioBase->dia_semana.' | '.$horarioBase->hora_inicio_formato,
+                'aula' => $horarioBase->aula->nombre ?? 'N/A',
+                'sede' => $horarioBase->aula->sede->nombre ?? 'N/A',
                 'maestro' => $nombreMaestro, // <-- Nueva propiedad
             ];
         }

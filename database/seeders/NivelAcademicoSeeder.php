@@ -2,19 +2,17 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\NivelAcademico;
+use Illuminate\Database\Seeder;
 
 class NivelAcademicoSeeder extends Seeder
 {
-  /**
-   * Run the database seeds.
-   */
-  
-  public function run(): void
-  {
-    $niveles_academicos = '[
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $niveles_academicos = '[
         {"id":"1","nombre":"Pre-escolar"},
         {"id":"2","nombre":"Enseñanza básica - Primaria"},
         {"id":"3","nombre":"Enseñanza media - Secundaria"},
@@ -31,11 +29,10 @@ class NivelAcademicoSeeder extends Seeder
         {"id":"14","nombre":"Auxiliar"}
         ]';
 
-    $items = json_decode($niveles_academicos);
+        $items = json_decode($niveles_academicos);
 
-    foreach ($items as $item) {
-      NivelAcademico::firstOrCreate(['nombre' => $item->nombre]);
+        foreach ($items as $item) {
+            NivelAcademico::firstOrCreate(['nombre' => $item->nombre]);
+        }
     }
-  }
-  
 }

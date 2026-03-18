@@ -2,34 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
-use Illuminate\Validation\Rule;
-use App\Helpers\Helpers;
-use Illuminate\Support\Facades\DB;
-use \stdClass;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Log;
-
-use Illuminate\Http\Request;
-
-use App\Models\User;
-use App\Models\PasoCrecimiento;
 use App\Models\Configuracion;
-use App\Models\Materia;
 use App\Models\Escuela;
-use App\Models\TipoAula;
-use App\Models\Aula;
+use App\Models\EstadoPasoCrecimientoUsuario;
+use App\Models\EstadoTareaConsolidacion;
 use App\Models\HorarioBase;
 use App\Models\HorarioMateriaPeriodo;
-use App\Models\EstadoPasoCrecimientoUsuario;
-use App\Models\Matricula;
-use App\Models\TipoUsuario;
-use App\Models\TareaConsolidacion;
-use App\Models\EstadoTareaConsolidacion;
-use App\Models\MateriaTareaRequisito;
+use App\Models\Materia;
 use App\Models\MateriaTareaCulminada;
+use App\Models\MateriaTareaRequisito;
+use App\Models\Matricula;
+use App\Models\PasoCrecimiento;
+use App\Models\TareaConsolidacion;
+use App\Models\TipoUsuario;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class MateriaController extends Controller
 {
@@ -47,7 +36,7 @@ class MateriaController extends Controller
             'pasosCrecimiento' => $pasosCrecimiento,
             'materiasEscuela' => $materiasEscuela,
             'tareasConsolidacion' => $this->construirTareasConsolidacion(),
-            'tipoUsuariosObjetivo' => TipoUsuario::all()
+            'tipoUsuariosObjetivo' => TipoUsuario::all(),
         ])->with('moduloEscuelas', true);
     }
 
@@ -74,9 +63,8 @@ class MateriaController extends Controller
 
         // Redirigimos hacia atrás con un mensaje de éxito.
         return redirect()->back()
-            ->with('success', 'La materia "' . $materia->nombre . '" ha sido eliminada exitosamente.');
+            ->with('success', 'La materia "'.$materia->nombre.'" ha sido eliminada exitosamente.');
     }
-
 
     private function construirPasosCrecimiento()
     {
@@ -86,10 +74,10 @@ class MateriaController extends Controller
 
         foreach ($pasos_crecimiento as $paso) {
             foreach ($estados as $estado) {
-                $item = new \stdClass();
+                $item = new \stdClass;
                 $item->id_paso = $paso->id;
                 $item->estado_id = $estado->id;
-                $item->nombre = $paso->nombre . ' - ' . $estado->nombre;
+                $item->nombre = $paso->nombre.' - '.$estado->nombre;
                 $resultado[] = $item;
             }
         }
@@ -97,20 +85,22 @@ class MateriaController extends Controller
         return $resultado;
     }
 
-    private function construirTareasConsolidacion() {
+    private function construirTareasConsolidacion()
+    {
         $tareas = TareaConsolidacion::orderBy('orden')->get();
         $estados = EstadoTareaConsolidacion::orderBy('puntaje')->get();
         $resultado = [];
 
         foreach ($tareas as $tarea) {
             foreach ($estados as $estado) {
-                $item = new \stdClass();
+                $item = new \stdClass;
                 $item->id_tarea = $tarea->id;
                 $item->estado_id = $estado->id;
-                $item->nombre = $tarea->nombre . ' - ' . $estado->nombre;
+                $item->nombre = $tarea->nombre.' - '.$estado->nombre;
                 $resultado[] = $item;
             }
         }
+
         return $resultado;
     }
 
@@ -141,26 +131,22 @@ class MateriaController extends Controller
         ]);
 
         // Validación adicional para al menos un sistema habilitado
-        if (!$request->habilitarCalificaciones && !$request->habilitarAsistencias) {
+        if (! $request->habilitarCalificaciones && ! $request->habilitarAsistencias) {
             return redirect()->back()
                 ->withErrors(['general' => 'Debe habilitar al menos Calificaciones o Asistencias'])
                 ->withInput();
         }
 
-
         $configuracion = Configuracion::find(1);
-        $materia = new Materia();
+        $materia = new Materia;
         $materia->nombre = $request->nombre;
         $materia->descripcion = $request->descripción;
-
 
         $materia->limite_reporte_asistencias = $request->limiteReportes;
         $materia->dia_limite_reporte = $request->dia;
         if ($request->diaLimiteHabilitado == 'on') {
-            $materia->tiene_dia_limite  = $request->diaLimiteHabilitado;
+            $materia->tiene_dia_limite = $request->diaLimiteHabilitado;
         }
-
-
 
         if ($request->habilitarAsistencias == 'on') {
             $materia->habilitar_asistencias = $request->habilitarAsistencias;
@@ -182,22 +168,21 @@ class MateriaController extends Controller
         $materia->nivel_id = $request->nivel_id;
         $materia->asistencias_minimas = $request->asistenciasMinimas;
         $materia->asistencias_minima_alerta = $request->cantidadInasistencias;
+        $materia->tipo_usuario_inicial_id = $request->tipoUsuarioInicial;
         $materia->tipo_usuario_objetivo_id = $request->tipoUsuarioObjetivo;
 
         $materia->save();
 
-
-
         // AÑADO LA PORTADA
         if ($request->foto) {
             if ($configuracion->version == 1) {
-                $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/materias/');
-                !is_dir($path) && mkdir($path, 0777, true);
+                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/materias/');
+                ! is_dir($path) && mkdir($path, 0777, true);
 
                 $imagenPartes = explode(';base64,', $request->foto);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'materia' . $materia->id . '.png';
-                $imagenPath = $path . $nombreFoto;
+                $nombreFoto = 'materia'.$materia->id.'.png';
+                $imagenPath = $path.$nombreFoto;
                 file_put_contents($imagenPath, $imagenBase64);
                 $materia->portada = $nombreFoto;
                 $materia->save();
@@ -212,15 +197,10 @@ class MateriaController extends Controller
             }
         }
 
-
-
         // Materias prerrequisito
-
-
 
         $this->guardarRelaciones($materia, $request);
         $this->guardarProcesosPrerrequisito($materia, $request->proceso_prerrequisito);
-
 
         return redirect()->route('materias.gestionar', $materia)->with('success', 'Materia creada exitosamente');
     }
@@ -252,7 +232,6 @@ class MateriaController extends Controller
         $this->guardarPasosCulminadosList($materia, $request->pasos_culminados);
     }
 
-
     private function guardarPasosIniciarList(Materia $materia, $pasos)
     {
         if ($pasos) {
@@ -260,8 +239,8 @@ class MateriaController extends Controller
             $indice++;
 
             foreach ($pasos as $pasoData) {
-                 if (str_contains($pasoData, '|')) {
-                    list($pasoId, $estadoId) = explode('|', $pasoData);
+                if (str_contains($pasoData, '|')) {
+                    [$pasoId, $estadoId] = explode('|', $pasoData);
 
                     // Check if exists
                     $exists = $materia->pasosCrecimiento()
@@ -269,12 +248,12 @@ class MateriaController extends Controller
                         ->wherePivot('al_iniciar', 1)
                         ->exists();
 
-                    if (!$exists) {
-                         $materia->pasosCrecimiento()->attach($pasoId, [
+                    if (! $exists) {
+                        $materia->pasosCrecimiento()->attach($pasoId, [
                             'estado_paso_crecimiento_usuario_id' => $estadoId,
                             'estado' => $estadoId, // Legacy
                             'al_iniciar' => 1,
-                            'indice' => $indice++
+                            'indice' => $indice++,
                         ]);
                     }
                 }
@@ -289,8 +268,8 @@ class MateriaController extends Controller
             $indice++;
 
             foreach ($pasos as $pasoData) {
-                 if (str_contains($pasoData, '|')) {
-                    list($pasoId, $estadoId) = explode('|', $pasoData);
+                if (str_contains($pasoData, '|')) {
+                    [$pasoId, $estadoId] = explode('|', $pasoData);
 
                     // Check if exists
                     $exists = $materia->pasosCrecimiento()
@@ -298,12 +277,12 @@ class MateriaController extends Controller
                         ->wherePivot('al_iniciar', 0)
                         ->exists();
 
-                    if (!$exists) {
-                         $materia->pasosCrecimiento()->attach($pasoId, [
+                    if (! $exists) {
+                        $materia->pasosCrecimiento()->attach($pasoId, [
                             'estado_paso_crecimiento_usuario_id' => $estadoId,
                             'estado' => $estadoId, // Legacy
                             'al_iniciar' => 0,
-                            'indice' => $indice++
+                            'indice' => $indice++,
                         ]);
                     }
                 }
@@ -314,11 +293,11 @@ class MateriaController extends Controller
     private function procesarPaso($materia, $pasoCompleto, $esInicio)
     {
         if (str_contains($pasoCompleto, '|')) {
-            list($pasoId, $estadoId) = explode('|', $pasoCompleto);
+            [$pasoId, $estadoId] = explode('|', $pasoCompleto);
             $materia->pasosCrecimiento()->attach($pasoId, [
                 'estado_paso_crecimiento_usuario_id' => $estadoId,
                 'estado' => $estadoId, // Mantenemos por retrocompatibilidad si es necesario
-                'al_iniciar' => $esInicio
+                'al_iniciar' => $esInicio,
             ]);
         }
     }
@@ -333,12 +312,12 @@ class MateriaController extends Controller
             $indice = 1;
             foreach ($tareas as $tareaCompleta) {
                 if (str_contains($tareaCompleta, '|')) {
-                    list($tareaId, $estadoId) = explode('|', $tareaCompleta);
+                    [$tareaId, $estadoId] = explode('|', $tareaCompleta);
                     MateriaTareaRequisito::create([
                         'materia_id' => $materia->id,
                         'tarea_consolidacion_id' => $tareaId,
                         'estado_tarea_consolidacion_id' => $estadoId,
-                        'indice' => $indice++
+                        'indice' => $indice++,
                     ]);
                 }
             }
@@ -352,19 +331,18 @@ class MateriaController extends Controller
         if ($tareas) {
             $indice = 1;
             foreach ($tareas as $tareaCompleta) {
-               if (str_contains($tareaCompleta, '|')) {
-                    list($tareaId, $estadoId) = explode('|', $tareaCompleta);
+                if (str_contains($tareaCompleta, '|')) {
+                    [$tareaId, $estadoId] = explode('|', $tareaCompleta);
                     MateriaTareaCulminada::create([
                         'materia_id' => $materia->id,
                         'tarea_consolidacion_id' => $tareaId,
                         'estado_tarea_consolidacion_id' => $estadoId,
-                        'indice' => $indice++
+                        'indice' => $indice++,
                     ]);
-               }
+                }
             }
         }
     }
-
 
     public function gestionar(Materia $materia)
     {
@@ -383,14 +361,14 @@ class MateriaController extends Controller
             'configuracion' => $configuracion,
             'escuela' => $materia->escuela,
             'pasosCrecimiento' => $pasosCrecimiento,
-            'pasoInicioSeleccionado' => $pasoInicio ? $pasoInicio->id . '|' . ($pasoInicio->pivot->estado_paso_crecimiento_usuario_id ?? $pasoInicio->pivot->estado) : null,
-            'pasoFinSeleccionado' => $pasoFin ? $pasoFin->id . '|' . ($pasoFin->pivot->estado_paso_crecimiento_usuario_id ?? $pasoFin->pivot->estado) : null,
+            'pasoInicioSeleccionado' => $pasoInicio ? $pasoInicio->id.'|'.($pasoInicio->pivot->estado_paso_crecimiento_usuario_id ?? $pasoInicio->pivot->estado) : null,
+            'pasoFinSeleccionado' => $pasoFin ? $pasoFin->id.'|'.($pasoFin->pivot->estado_paso_crecimiento_usuario_id ?? $pasoFin->pivot->estado) : null,
             'materiasEscuela' => $materiasEscuela,
-            'tipoUsuariosObjetivo' => TipoUsuario::all()
+            'tipoUsuariosObjetivo' => TipoUsuario::all(),
         ])->with('moduloEscuelas', true);
     }
 
-    //bloque nuevo
+    // bloque nuevo
     public function horarios(Materia $materia)
     {
         return view('contenido.paginas.escuelas.materias.gestionar-horarios-materia', [
@@ -398,15 +376,12 @@ class MateriaController extends Controller
         ])->with('moduloEscuelas', true);
     }
 
-
     public function modelo(Materia $materia)
     {
         return view('contenido.paginas.escuelas.materias.gestionar-modelo-materia', [
             'materia' => $materia,
         ])->with('moduloEscuelas', true);
     }
-
-
 
     // Método actualizar modificado
     public function actualizar(Materia $materia, Request $request)
@@ -465,7 +440,7 @@ class MateriaController extends Controller
         $validatedData = $request->validate($rules, $messages);
 
         // Validación adicional para al menos un sistema habilitado (opcional aquí si ya está en el JS y no quieres doble validación server-side para esto)
-        if (!$request->has('habilitarCalificaciones') && !$request->has('habilitarAsistencias')) {
+        if (! $request->has('habilitarCalificaciones') && ! $request->has('habilitarAsistencias')) {
             return redirect()->back()
                 ->withErrors(['general' => 'Debe habilitar al menos Calificaciones o Asistencias.'])
                 ->withInput();
@@ -479,6 +454,7 @@ class MateriaController extends Controller
         $materia->limite_reporte_asistencias = $validatedData['limiteReportes'] ?? null;
         $materia->asistencias_minimas = $validatedData['asistenciasMinimas'] ?? null;
         $materia->asistencias_minima_alerta = $validatedData['cantidadInasistencias'] ?? null;
+        $materia->tipo_usuario_inicial_id = $request->tipoUsuarioInicial;
         $materia->tipo_usuario_objetivo_id = $request->tipoUsuarioObjetivo;
 
         // Toggles
@@ -491,43 +467,40 @@ class MateriaController extends Controller
         $materia->habilitar_traslado = $request->has('habilitarTraslado');
         $materia->caracter_obligatorio = $request->has('obligatorio');
 
-
-        if ($request->input('cantidadReportesSemana') != "") {
+        if ($request->input('cantidadReportesSemana') != '') {
             $materia->cantidad_limite_reportes_semana = $request->input('cantidadReportesSemana');
         } else {
             $materia->cantidad_limite_reportes_semana = 0;
         }
 
-        if ($request->diasPlazoReporte != "") {
+        if ($request->diasPlazoReporte != '') {
             $materia->dias_plazo_reporte = $request->diasPlazoReporte;
         } else {
             $materia->dias_plazo_reporte = 0;
         }
 
-
         $materia->save();
 
         // Limpiar relaciones previas
-        //$materia->pasosCrecimiento()->detach(); // YA NO: handled in guardarRelaciones specifically
-        //$materia->prerrequisitosMaterias()->detach(); // handled in guardarRelaciones sync
+        // $materia->pasosCrecimiento()->detach(); // YA NO: handled in guardarRelaciones specifically
+        // $materia->prerrequisitosMaterias()->detach(); // handled in guardarRelaciones sync
 
         // $this->guardarProcesosPrerrequisito($materia, $request->proceso_prerrequisito); // COMENTADO: Gestionado por Livewire
         // Reguardar relaciones (pasos, prerrequisitos)
         $this->guardarRelaciones($materia, $request);
 
-
         // Actualizar portada (misma lógica que en guardar())
         if ($request->foto) {
             if ($configuracion->version == 1) {
-                $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/materias/');
-                !is_dir($path) && mkdir($path, 0777, true);
+                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/materias/');
+                ! is_dir($path) && mkdir($path, 0777, true);
 
                 $data = explode(';base64,', $request->foto)[1];
                 file_put_contents(
-                    $path . 'materia' . $materia->id . '.png',
+                    $path.'materia'.$materia->id.'.png',
                     base64_decode($data)
                 );
-                $materia->portada = 'materia' . $materia->id . '.png';
+                $materia->portada = 'materia'.$materia->id.'.png';
                 $materia->save();
             }
         }
@@ -544,28 +517,27 @@ class MateriaController extends Controller
         if ($request->paso_iniciar_id) {
             $materia->pasosCrecimiento()->attach($request->paso_iniciar_id, [
                 'al_iniciar' => true,
-                'estado' => 'En curso'
+                'estado' => 'En curso',
             ]);
         }
 
         if ($request->paso_culminar_id) {
             $materia->pasosCrecimiento()->attach($request->paso_culminar_id, [
                 'al_iniciar' => false,
-                'estado' => 'Finalizado'
+                'estado' => 'Finalizado',
             ]);
         }
 
         // Sincronizar prerrequisitos
-
 
         // Procesos prerrequisito
         $materia->prerrequisitosPasos()->detach();
         if ($request->proceso_prerrequisito) {
             foreach ($request->proceso_prerrequisito as $proceso) {
                 if (str_contains($proceso, '|')) {
-                    list($pasoId, $estadoRequerido) = explode('|', $proceso);
+                    [$pasoId, $estadoRequerido] = explode('|', $proceso);
                     $materia->prerrequisitosPasos()->attach($pasoId, [
-                        'estado_requerido' => $estadoRequerido
+                        'estado_requerido' => $estadoRequerido,
                     ]);
                 }
             }
@@ -576,9 +548,9 @@ class MateriaController extends Controller
     {
         $procesosData = [];
 
-        foreach ((array)$procesos as $proceso) {
+        foreach ((array) $procesos as $proceso) {
             if (str_contains($proceso, '|')) {
-                list($pasoId, $estado) = explode('|', $proceso);
+                [$pasoId, $estado] = explode('|', $proceso);
                 $procesosData[$pasoId] = ['estado_proceso' => $estado];
             }
         }
@@ -598,7 +570,7 @@ class MateriaController extends Controller
                 'string',
                 'max:100',
                 // Validar unicidad del nombre dentro de la escuela, ignorando la materia actual
-                Rule::unique('materias')->where(fn($query) => $query->where('escuela_id', $escuelaId))->ignore($materia->id),
+                Rule::unique('materias')->where(fn ($query) => $query->where('escuela_id', $escuelaId))->ignore($materia->id),
             ],
             'descripcion' => 'nullable|string',
         ]);
@@ -618,14 +590,14 @@ class MateriaController extends Controller
             // Si la materia siempre tiene un nivel_id, podemos usarlo.
             if ($materia->nivel_id) {
                 return redirect()->route('niveles.materias', $materia->nivel_id) // Asume ruta niveles.editar
-                    ->with('success', 'Materia "' . $materia->nombre . '" actualizada exitosamente.');
+                    ->with('success', 'Materia "'.$materia->nombre.'" actualizada exitosamente.');
             } else {
                 // Si una materia podría no tener nivel (caso raro aquí), redirigir a otro lugar o atrás.
-                return back()->with('success', 'Materia "' . $materia->nombre . '" actualizada exitosamente.');
+                return back()->with('success', 'Materia "'.$materia->nombre.'" actualizada exitosamente.');
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error actualizando materia rápida {$materia->id}: " . $e->getMessage());
+            Log::error("Error actualizando materia rápida {$materia->id}: ".$e->getMessage());
 
             // Redireccionar atrás con el error
             return back()->withInput()

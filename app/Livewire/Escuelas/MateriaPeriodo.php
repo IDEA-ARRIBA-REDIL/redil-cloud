@@ -2,34 +2,49 @@
 
 namespace App\Livewire\Escuelas;
 
-use App\Models\ItemPlantilla;
-use App\Models\ItemCorteMateriaPeriodo;
-use App\Models\MateriaAprobadaUsuario;
-use App\Models\CortePeriodo; // Necesario para buscar los cortes del periodo
-use App\Models\Materia;
-use App\Jobs\FinalizarMateriaJob; // <-- Importaremos el nuevo Job
-use App\Models\Periodo;
+use App\Jobs\FinalizarMateriaJob;
 use App\Models\Configuracion;
-use App\Models\MateriaPeriodo as ModeloMateriaPeriodo; // Alias para evitar conflicto de nombres
-use App\Models\HorarioBase; // Asegúrate de importar HorarioBase
-use App\Models\HorarioMateriaPeriodo as ModeloHorarioMateriaPeriodo; // Asegúrate de importar HorarioMateriaPeriodo
-use Livewire\Component;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB; // Importar DB para transacciones
-use Livewire\Attributes\On; // <-- ¡Asegúrate de importar On!
+use App\Models\CortePeriodo;
+use App\Models\HorarioBase; // Necesario para buscar los cortes del periodo
+use App\Models\HorarioMateriaPeriodo as ModeloHorarioMateriaPeriodo;
+use App\Models\ItemCorteMateriaPeriodo; // <-- Importaremos el nuevo Job
+use App\Models\ItemPlantilla;
+use App\Models\Materia;
+use App\Models\MateriaAprobadaUsuario; // Alias para evitar conflicto de nombres
+use App\Models\MateriaPeriodo as ModeloMateriaPeriodo; // Asegúrate de importar HorarioBase
+use App\Models\Periodo; // Asegúrate de importar HorarioMateriaPeriodo
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log; // Importar DB para transacciones
+use Livewire\Attributes\On; // <-- ¡Asegúrate de importar On!
+use Livewire\Component;
 
 class MateriaPeriodo extends Component
 {
     public Periodo $periodo;
+
     public $materiasDelPeriodo; // Colección de App\Models\MateriaPeriodo
+
     public $configuracion;
+
+    public $nivel_id; // Filtro por Grado
+
+    public $nivelNombre; // Nombre del Grado actual (opcional)
 
     // Para el modal de añadir materias
     public $mostrarModalAnadirMaterias = false;
+
     public $materiasEscuelaDisponibles = []; // Colección de App\Models\Materia de la escuela
+
     public $materiasSeleccionadasParaAnadir = []; // Array de IDs de Materia seleccionadas
-    public $incluirHorariosBase = "0"; // "0" para No (default), "1" para Sí.
+
+    public $incluirHorariosBase = '0'; // \"0\" para No (default), \"1\" para Sí.
+
+    public $mostrarModalDuplicar = false;
+
+    public $periodoOrigenId = '';
+
+    public $periodosDisponiblesParaDuplicar = [];
 
     protected function rules() // Modificado para incluir la nueva regla
     {
@@ -55,11 +70,17 @@ class MateriaPeriodo extends Component
      * Se ejecuta cuando el componente es inicializado.
      * Recibe el modelo Periodo para el cual se gestionarán las materias.
      */
-    public function mount(Periodo $periodo)
+    public function mount(Periodo $periodo, $nivel_id = null)
     {
         $this->periodo = $periodo;
+        $this->nivel_id = $nivel_id ?? request('nivel_id');
+
+        if ($this->nivel_id) {
+            $nivel = \App\Models\NivelEscuela::find($this->nivel_id);
+            $this->nivelNombre = $nivel ? $nivel->nombre : null;
+        }
+
         // Asumiendo que Configuracion::find(1) es correcto para tu lógica.
-        // Si no existe, podría dar error. Considera un manejo más robusto si es necesario.
         $this->configuracion = Configuracion::find(1);
         $this->cargarMateriasDelPeriodo();
     }
@@ -67,7 +88,6 @@ class MateriaPeriodo extends Component
     #[On('finalizarMateriaConfirmado')]
     public function finalizarMateria(int $materiaPeriodoId)
     {
-
 
         try {
             $materiaPeriodo = ModeloMateriaPeriodo::findOrFail($materiaPeriodoId);
@@ -78,7 +98,7 @@ class MateriaPeriodo extends Component
             $materiaPeriodo->finalizado = true;
             $materiaPeriodo->save();
         } catch (\Exception $e) {
-            Log::error("Error al despachar FinalizarMateriaJob: " . $e->getMessage());
+            Log::error('Error al despachar FinalizarMateriaJob: '.$e->getMessage());
             session()->flash('mensaje_error', 'Ocurrió un error al iniciar el proceso.');
         }
         $this->mount($this->periodo);
@@ -123,21 +143,24 @@ class MateriaPeriodo extends Component
             // Refrescamos la lista de materias para que la vista se actualice
             $this->cargarMateriasDelPeriodo();
         } catch (\Exception $e) {
-            Log::error("Error al reactivar MateriaPeriodo ID {$materiaPeriodoId}: " . $e->getMessage());
+            Log::error("Error al reactivar MateriaPeriodo ID {$materiaPeriodoId}: ".$e->getMessage());
             session()->flash('mensaje_error', 'Ocurrió un error al reactivar la materia.');
         }
     }
-
-
 
     /**
      * Carga las materias que ya están asociadas a este período.
      */
     public function cargarMateriasDelPeriodo()
     {
-        $this->materiasDelPeriodo = ModeloMateriaPeriodo::where('periodo_id', $this->periodo->id)
-            ->with('materia') // Cargar la relación con la materia base para mostrar su nombre
-            ->get();
+        $query = ModeloMateriaPeriodo::where('periodo_id', $this->periodo->id)
+            ->with('materia');
+
+        if ($this->nivel_id) {
+            $query->where('nivel_id', $this->nivel_id);
+        }
+
+        $this->materiasDelPeriodo = $query->get();
     }
 
     /**
@@ -147,18 +170,132 @@ class MateriaPeriodo extends Component
     public function abrirModalAnadirMaterias()
     {
         $materiasYaEnPeriodoIds = ModeloMateriaPeriodo::where('periodo_id', $this->periodo->id)
+            ->when($this->nivel_id, function ($q) {
+                return $q->where('nivel_id', $this->nivel_id);
+            })
             ->pluck('materia_id')
             ->toArray();
 
-        $this->materiasEscuelaDisponibles = Materia::where('escuela_id', $this->periodo->escuela_id)
-            ->whereNotIn('id', $materiasYaEnPeriodoIds) // Excluir las que ya están
-            ->orderBy('nombre')
-            ->get();
+        $query = Materia::whereNotIn('id', $materiasYaEnPeriodoIds);
+
+        if ($this->nivel_id) {
+            $query->where('nivel_id', $this->nivel_id);
+        } else {
+            $query->where('escuela_id', $this->periodo->escuela_id);
+        }
+
+        $this->materiasEscuelaDisponibles = $query->orderBy('nombre')->get();
 
         $this->materiasSeleccionadasParaAnadir = []; // Resetear selección previa
-        $this->incluirHorariosBase = "0"; // Valor por defecto al abrir el modal
+        $this->incluirHorariosBase = '0'; // Valor por defecto al abrir el modal
         $this->resetErrorBag(); // Limpiar errores de validación previos
         $this->mostrarModalAnadirMaterias = true;
+    }
+
+    /**
+     * Prepara y abre el modal para duplicar configuración.
+     */
+    public function abrirModalDuplicar()
+    {
+        $this->periodosDisponiblesParaDuplicar = Periodo::where('escuela_id', $this->periodo->escuela_id)
+            ->where('id', '!=', $this->periodo->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $this->mostrarModalDuplicar = true;
+    }
+
+    public function duplicarConfiguracion()
+    {
+        $this->validate([
+            'periodoOrigenId' => 'required|exists:periodos,id',
+        ]);
+
+        $periodoOrigen = Periodo::find($this->periodoOrigenId);
+
+        // Materias del periodo origen (filtradas por nivel si aplica)
+        $materiasOrigen = ModeloMateriaPeriodo::where('periodo_id', $periodoOrigen->id)
+            ->when($this->nivel_id, function ($q) {
+                return $q->where('nivel_id', $this->nivel_id);
+            })
+            ->with(['horariosMateriaPeriodo', 'itemsCorte.cortePeriodo'])
+            ->get();
+
+        DB::beginTransaction();
+        try {
+            // Cargar los cortes del período actual para optimizar (como en anadirMateriasSeleccionadas)
+            $cortesDelPeriodoActual = CortePeriodo::where('periodo_id', $this->periodo->id)
+                ->get()
+                ->keyBy('corte_escuela_id');
+
+            $materiasAnadidas = 0;
+            $horariosAnadidos = 0;
+            $itemsAnadidos = 0;
+
+            foreach ($materiasOrigen as $mpOrigen) {
+                // Verificar si ya existe en el destino
+                $existeMateria = ModeloMateriaPeriodo::where('periodo_id', $this->periodo->id)
+                    ->where('materia_id', $mpOrigen->materia_id)
+                    ->when($this->nivel_id, function ($q) {
+                        return $q->where('nivel_id', $this->nivel_id);
+                    })
+                    ->exists();
+
+                if ($existeMateria) {
+                    continue;
+                }
+
+                // Clonar MateriaPeriodo
+                $mpDestino = $mpOrigen->replicate();
+                $mpDestino->periodo_id = $this->periodo->id;
+                $mpDestino->nivel_id = $this->nivel_id; // Forzar el nivel actual si estamos filtrando
+                $mpDestino->finalizado = false;
+                $mpDestino->save();
+                $materiasAnadidas++;
+
+                // Clonar Horarios
+                foreach ($mpOrigen->horariosMateriaPeriodo as $hmpOrigen) {
+                    $hmpDestino = $hmpOrigen->replicate();
+                    $hmpDestino->materia_periodo_id = $mpDestino->id;
+                    $hmpDestino->cupos_disponibles = $hmpDestino->capacidad; // Resetear cupos
+                    $hmpDestino->save();
+                    $horariosAnadidos++;
+
+                    // Clonar Items de Evaluación asociados
+                    // Filtrar solo los ítems que pertenecen a este horario
+                    $itemsOrigen = $mpOrigen->itemsCorte->where('horario_materia_periodo_id', $hmpOrigen->id);
+
+                    foreach ($itemsOrigen as $itemOrigen) {
+                        // Buscar el CortePeriodo equivalente
+                        $corteEscuelaId = \App\Models\CortePeriodo::where('id', $itemOrigen->corte_periodo_id)->value('corte_escuela_id');
+                        $corteDestino = $cortesDelPeriodoActual->get($corteEscuelaId);
+
+                        if ($corteDestino) {
+                            $itemDestino = $itemOrigen->replicate();
+                            $itemDestino->materia_periodo_id = $mpDestino->id;
+                            $itemDestino->horario_materia_periodo_id = $hmpDestino->id;
+                            $itemDestino->corte_periodo_id = $corteDestino->id;
+                            $itemDestino->fecha_inicio = $corteDestino->fecha_inicio;
+                            $itemDestino->fecha_fin = $corteDestino->fecha_fin;
+                            $itemDestino->save();
+                            $itemsAnadidos++;
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+            $this->mostrarModalDuplicar = false;
+            $this->periodoOrigenId = '';
+            $this->cargarMateriasDelPeriodo();
+
+            $resumen = "¡Duplicación completada! Se añadieron $materiasAnadidas materias, $horariosAnadidos horarios y $itemsAnadidos ítems.";
+            session()->flash('mensaje_exito', $resumen);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al duplicar en MateriaPeriodo: '.$e->getMessage());
+            session()->flash('mensaje_error', 'Ocurrió un error al duplicar: '.$e->getMessage());
+        }
     }
 
     /**
@@ -168,7 +305,7 @@ class MateriaPeriodo extends Component
     {
         $this->mostrarModalAnadirMaterias = false;
         $this->materiasSeleccionadasParaAnadir = [];
-        $this->incluirHorariosBase = "0";
+        $this->incluirHorariosBase = '0';
         $this->resetErrorBag();
     }
 
@@ -202,12 +339,14 @@ class MateriaPeriodo extends Component
 
                 if ($existente) {
                     $materiasYaExistentes++;
+
                     continue;
                 }
 
-                $materiaPeriodo = new ModeloMateriaPeriodo();
+                $materiaPeriodo = new ModeloMateriaPeriodo;
                 $materiaPeriodo->materia_id = $materiaOriginal->id;
                 $materiaPeriodo->periodo_id = $this->periodo->id;
+                $materiaPeriodo->nivel_id = $this->nivel_id; // Asignar el nivel si existe
                 $materiaPeriodo->descripcion = $materiaOriginal->descripcion;
                 $materiaPeriodo->habilitar_calificaciones = $materiaOriginal->habilitar_calificaciones;
                 $materiaPeriodo->habilitar_asistencias = $materiaOriginal->habilitar_asistencias;
@@ -222,7 +361,7 @@ class MateriaPeriodo extends Component
                 $materiaPeriodo->save();
                 $materiasAnadidasConExito++;
 
-                if ($this->incluirHorariosBase === "1") {
+                if ($this->incluirHorariosBase === '1') {
                     $horariosBaseDeMateria = HorarioBase::where('materia_id', $materiaOriginal->id)
                         ->where('activo', true)
                         ->get();
@@ -238,7 +377,7 @@ class MateriaPeriodo extends Component
                             continue;
                         }
 
-                        $horarioMateriaPeriodo = new ModeloHorarioMateriaPeriodo();
+                        $horarioMateriaPeriodo = new ModeloHorarioMateriaPeriodo;
                         $horarioMateriaPeriodo->materia_periodo_id = $materiaPeriodo->id;
                         $horarioMateriaPeriodo->horario_base_id = $hb->id;
                         $horarioMateriaPeriodo->habilitado = true;
@@ -250,14 +389,14 @@ class MateriaPeriodo extends Component
                         $horariosAnadidosConExito++;
 
                         // --- INICIO: Nueva lógica para crear ItemCorteMateriaPeriodo ---
-                        if (!$itemPlantillasDeMateria->isEmpty()) {
+                        if (! $itemPlantillasDeMateria->isEmpty()) {
                             foreach ($itemPlantillasDeMateria as $itemPlantilla) {
                                 // Encontrar el CortePeriodo destino usando el corte_escuela_id de la plantilla
                                 $cortePeriodoDestino = $cortesDelPeriodoActual->get($itemPlantilla->corte_escuela_id);
 
                                 if ($cortePeriodoDestino) {
                                     // Instanciar el nuevo ItemCorteMateriaPeriodo
-                                    $nuevoItemCorte = new ItemCorteMateriaPeriodo();
+                                    $nuevoItemCorte = new ItemCorteMateriaPeriodo;
 
                                     // Asignar las propiedades
                                     $nuevoItemCorte->materia_periodo_id = $materiaPeriodo->id;
@@ -292,21 +431,21 @@ class MateriaPeriodo extends Component
 
             $mensajeExitoTotal = '';
             if ($materiasAnadidasConExito > 0) {
-                $mensajeExitoTotal .= $materiasAnadidasConExito . ' materia(s) añadida(s) al período. ';
+                $mensajeExitoTotal .= $materiasAnadidasConExito.' materia(s) añadida(s) al período. ';
             }
-            if ($this->incluirHorariosBase === "1" && $horariosAnadidosConExito > 0) {
-                $mensajeExitoTotal .= $horariosAnadidosConExito . ' horario(s) base vinculado(s). ';
+            if ($this->incluirHorariosBase === '1' && $horariosAnadidosConExito > 0) {
+                $mensajeExitoTotal .= $horariosAnadidosConExito.' horario(s) base vinculado(s). ';
             }
-            if ($this->incluirHorariosBase === "1" && $itemsCorteAnadidosConExito > 0) { // Mensaje para los ítems
-                $mensajeExitoTotal .= $itemsCorteAnadidosConExito . ' ítem(s) de evaluación creados para los horarios. ';
+            if ($this->incluirHorariosBase === '1' && $itemsCorteAnadidosConExito > 0) { // Mensaje para los ítems
+                $mensajeExitoTotal .= $itemsCorteAnadidosConExito.' ítem(s) de evaluación creados para los horarios. ';
             }
 
-            if (!empty(trim($mensajeExitoTotal))) {
+            if (! empty(trim($mensajeExitoTotal))) {
                 session()->flash('mensaje_exito', trim($mensajeExitoTotal));
             }
 
             if ($materiasYaExistentes > 0) {
-                session()->flash('mensaje_info', $materiasYaExistentes . ' materia(s) seleccionada(s) ya existía(n) y no se duplicaron.');
+                session()->flash('mensaje_info', $materiasYaExistentes.' materia(s) seleccionada(s) ya existía(n) y no se duplicaron.');
             }
 
             if ($materiasAnadidasConExito == 0 && $horariosAnadidosConExito == 0 && $itemsCorteAnadidosConExito == 0 && $materiasYaExistentes == 0 && count($this->materiasSeleccionadasParaAnadir) > 0) {
@@ -314,8 +453,8 @@ class MateriaPeriodo extends Component
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al añadir materias/horarios/ítems al período {$this->periodo->id}: " . $e->getMessage() . " en la línea " . $e->getLine() . " del archivo " . $e->getFile());
-            session()->flash('mensaje_error', 'Ocurrió un error muy grave al procesar la solicitud. Por favor, contacta al administrador. Detalles técnicos: ' . $e->getMessage());
+            Log::error("Error al añadir materias/horarios/ítems al período {$this->periodo->id}: ".$e->getMessage().' en la línea '.$e->getLine().' del archivo '.$e->getFile());
+            session()->flash('mensaje_error', 'Ocurrió un error muy grave al procesar la solicitud. Por favor, contacta al administrador. Detalles técnicos: '.$e->getMessage());
         }
 
         $this->cerrarModalAnadirMaterias();
@@ -344,7 +483,7 @@ class MateriaPeriodo extends Component
         } else {
             // Si NO se puede eliminar, emitimos un evento de error.
             $this->dispatch('mostrar-error', [
-                'texto' => "La materia '{$materia->materia->nombre}' no se puede eliminar porque tiene alumnos matriculados en al menos uno de sus horarios."
+                'texto' => "La materia '{$materia->materia->nombre}' no se puede eliminar porque tiene alumnos matriculados en al menos uno de sus horarios.",
             ]);
         }
     }
@@ -366,7 +505,7 @@ class MateriaPeriodo extends Component
             // Refrescamos la lista de materias para que desaparezca de la vista.
             $this->cargarMateriasDelPeriodo();
         } catch (\Exception $e) {
-            Log::error("Error al eliminar MateriaPeriodo ID {$materiaPeriodoId}: " . $e->getMessage());
+            Log::error("Error al eliminar MateriaPeriodo ID {$materiaPeriodoId}: ".$e->getMessage());
             session()->flash('mensaje_error', 'Ocurrió un error al eliminar la materia.');
         }
     }

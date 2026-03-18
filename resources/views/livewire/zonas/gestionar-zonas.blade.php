@@ -6,9 +6,18 @@
 
 
   <div class="row g-4 pt-10">
-    <div class="col-12 col-md-6 offset-md-3 mt-3">
+    <div class="col-10 col-md-5 offset-md-2 mt-3">
       <div class="input-group">
         <input wire:model.live.debounce.500ms="busqueda" type="text" class="form-control" id="busqueda" name="busqueda" placeholder="Buscar">
+      </div>
+    </div>
+
+    <div class="col-12 col-md-3">
+      <div class="form-check my-auto">
+        <input class="form-check-input" type="checkbox" wire:model.live="conEliminados">
+        <label class="form-check-label">
+          ¿Mostrar ocultos?
+        </label>
       </div>
     </div>
   </div>
@@ -40,10 +49,16 @@
                         <div class="dropdown zindex-2 p-1 float-end">
                           <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect"  data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i> </button>
                           <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="javascript:void(0);"  wire:click="duplicarZona({{ $zona->id }})"> Duplicar</a></li>
-                            <li><a class="dropdown-item" href="javascript:void(0);" wire:click="editarZona({{ $zona->id }})"> Editar</a></li>
-                            <hr class="dropdown-divider">
-                            <li><a class="dropdown-item text-danger" href="javascript:void(0);"  wire:click="$dispatch('eliminar',  { id: {{ $zona->id }} })" >Eliminar </a></li>
+                            @if(!$conEliminados)
+                                <li><a class="dropdown-item" href="javascript:void(0);"  wire:click="duplicarZona({{ $zona->id }})"> Duplicar</a></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" wire:click="editarZona({{ $zona->id }})"> Editar</a></li>
+                                <hr class="dropdown-divider">
+                                <li><a class="dropdown-item text-danger" href="javascript:void(0);"  wire:click="$dispatch('confirmarBaja',  { id: {{ $zona->id }} })" >Eliminar </a></li>
+                            @else
+                                <li><a class="dropdown-item" href="javascript:void(0);"  wire:click="$dispatch('confirmarRestauracion',  { id: {{ $zona->id }} })"> Restaurar</a></li>
+                                <hr class="dropdown-divider">
+                                <li><a class="dropdown-item text-danger" href="javascript:void(0);"  wire:click="$dispatch('confirmarEliminacionDefinitiva',  { id: {{ $zona->id }} })" >Eliminar Permanente</a></li>
+                            @endif
                           </ul>
                         </div>
                       </div>
@@ -106,7 +121,7 @@
     <div class="py-4">
       <center>
         <i class="ti ti-browser fs-1 pb-1"></i>
-        <h6 class="text-center">¡Ups! no hay zonas creadas. </h6>
+        <h6 class="text-center">@if(!$conEliminados)¡Ups! no hay zonas creadas. @else ¡Ups! no hay zonas eliminadas. @endif </h6>
       </center>
     </div>
     @endif
@@ -248,13 +263,13 @@
     });
   });
 
-  $wire.on('eliminar', data => {
+  $wire.on('confirmarBaja', data => {
     Swal.fire({
-      title: '¿Deseas eliminar esta zona?',
-      text: "Esta acción no es reversible.",
+      title: '¿Deseas dar de baja esta zona?',
+      text: "La zona se moverá a la papelera.",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
+      confirmButtonText: 'Sí, dar de baja',
       cancelButtonText: 'Cancelar',
       customClass: {
         confirmButton: 'btn btn-primary me-3',
@@ -264,6 +279,46 @@
     }).then((result) => {
       if (result.isConfirmed) {
         $wire.dispatch('eliminarZona', { id: data.id });
+      }
+    });
+  });
+
+  $wire.on('confirmarRestauracion', data => {
+    Swal.fire({
+      title: '¿Deseas restaurar esta zona?',
+      text: "La zona volverá a estar activa.",
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, restaurar',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        confirmButton: 'btn btn-primary me-3',
+        cancelButton: 'btn btn-label-secondary'
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        $wire.dispatch('restaurarZona', { id: data.id });
+      }
+    });
+  });
+
+  $wire.on('confirmarEliminacionDefinitiva', data => {
+    Swal.fire({
+      title: '¿ELIMINAR PERMANENTEMENTE?',
+      text: "Esta acción NO se puede deshacer.",
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, ELIMINAR',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        confirmButton: 'btn btn-danger me-3',
+        cancelButton: 'btn btn-label-secondary'
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        $wire.dispatch('eliminarPermanenteZona', { id: data.id });
       }
     });
   });
