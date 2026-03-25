@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('tipos_parentesco', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre',100);
+            $table->string('nombre', 100);
             $table->smallinteger('relacionado_con')->nullable();
-            $table->string('nombre_masculino',100)->nullable();
-            $table->string('nombre_femenino',100)->nullable();
+            $table->string('nombre_masculino', 100)->nullable();
+            $table->string('nombre_femenino', 100)->nullable();
             $table->boolean('para_menores')->default(0); // este nos ayuda a identificar si es para menores de edad, por ejemplo: Hijos, sobrinos, nietos etc..
             $table->boolean('default')->default(0);
             $table->timestamps();

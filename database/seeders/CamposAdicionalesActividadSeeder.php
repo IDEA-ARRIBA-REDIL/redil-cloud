@@ -2,10 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CamposAdicionalesActividadSeeder extends Seeder
 {
@@ -16,16 +13,16 @@ class CamposAdicionalesActividadSeeder extends Seeder
     {
         //
         $campos = [
-          ['nombre'=> 'Talla de camiseta', 'obligatorio'=> FALSE],
-          ['nombre'=> 'Prescripción médica	', 'obligatorio'=> FALSE],
-          ['nombre'=> 'Nombre de tu Pastor', 'obligatorio'=> FALSE],
+            ['nombre' => 'Talla de camiseta', 'obligatorio' => false],
+            ['nombre' => 'Prescripción médica	', 'obligatorio' => false],
+            ['nombre' => 'Nombre de tu Pastor', 'obligatorio' => false],
         ];
 
         foreach ($campos as $campo) {
-          \App\Models\CamposAdicionalesActividad::firstOrCreate(
-            ['nombre' => $campo['nombre']],
-            $campo
-          );
+            \App\Models\CamposAdicionalesActividad::firstOrCreate(
+                ['nombre' => $campo['nombre']],
+                $campo
+            );
         }
     }
 }

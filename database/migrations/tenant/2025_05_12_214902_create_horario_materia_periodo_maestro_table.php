@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('horario_materia_periodo_maestro', function (Blueprint $table) {
             $table->id();
             $table->foreignId('horario_materia_periodo_id')
-                  ->constrained('horarios_materia_periodo') // Nombre de tu tabla de horarios de materia-periodo
-                  ->onDelete('cascade');
+                ->constrained('horarios_materia_periodo') // Nombre de tu tabla de horarios de materia-periodo
+                ->onDelete('cascade');
             $table->foreignId('maestro_id')
-                  ->constrained('maestros') // Nombre de tu tabla de maestros
-                  ->onDelete('cascade');
+                ->constrained('maestros') // Nombre de tu tabla de maestros
+                ->onDelete('cascade');
             // $table->string('rol_maestro')->nullable(); // Ejemplo: 'Principal', 'Asistente' si quieres añadir un rol.
             $table->timestamps();
 

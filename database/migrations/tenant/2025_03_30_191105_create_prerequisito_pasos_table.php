@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('paso_crecimiento_id');
             $table->smallInteger('estado_requerido')->default(1); // 1 = no iniciado
             $table->timestamps();
-          
+
         });
     }
 

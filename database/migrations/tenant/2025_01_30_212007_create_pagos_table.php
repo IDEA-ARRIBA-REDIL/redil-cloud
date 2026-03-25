@@ -37,7 +37,6 @@ return new class extends Migration
 
             // Guarda la respuesta completa de la API para depuración y auditoría.
             $table->json('gateway_response')->nullable()->after('gateway_transaction_id');
-            
 
             $table->timestamps();
         });

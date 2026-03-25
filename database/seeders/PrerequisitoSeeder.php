@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\NivelEscuela; // Namespace correcto
-use App\Models\Materia; // Namespace correcto
+use App\Models\Materia;
+// Namespace correcto
+use Illuminate\Database\Seeder; // Namespace correcto
+
 class PrerequisitoSeeder extends Seeder
 {
     /**
@@ -16,13 +16,12 @@ class PrerequisitoSeeder extends Seeder
         //
         // Prerrequisitos para materias (Escuela Dominical)
         $materiasDominical = Materia::where('escuela_id', 1)->get();
-        
-        foreach($materiasDominical as $index => $materia) {
-            if($index > 0) {
+
+        foreach ($materiasDominical as $index => $materia) {
+            if ($index > 0) {
                 $materia->prerrequisitosMaterias()->attach($materiasDominical[$index - 1]->id);
             }
         }
 
-     
     }
 }

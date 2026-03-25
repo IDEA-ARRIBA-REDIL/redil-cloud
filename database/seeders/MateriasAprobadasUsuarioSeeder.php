@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\MateriaAprobadaUsuario;
 use App\Models\MateriaPeriodo;
-// Es una buena práctica usar firstOrCreate para evitar duplicados si se corre el seeder varias veces.
 use App\Models\User;
+// Es una buena práctica usar firstOrCreate para evitar duplicados si se corre el seeder varias veces.
+use Illuminate\Database\Seeder;
 
 class MateriasAprobadasUsuarioSeeder extends Seeder
 {

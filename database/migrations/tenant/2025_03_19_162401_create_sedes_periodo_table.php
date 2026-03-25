@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('sedes_periodo', function (Blueprint $table) {
+        Schema::create('sedes_periodo', function (Blueprint $table) {
             $table->id(); // ID único de la relación
             $table->foreignId('sede_id')->constrained('sedes')->onDelete('cascade'); // Relación con sedes
             $table->foreignId('periodo_id')->constrained('periodos')->onDelete('cascade'); // Relación con periodos

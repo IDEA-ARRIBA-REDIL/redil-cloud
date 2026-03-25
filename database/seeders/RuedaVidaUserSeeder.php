@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\RuedaDeLaVida;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class RuedaDeLaVidaSeeder extends Seeder
@@ -18,7 +17,7 @@ class RuedaDeLaVidaSeeder extends Seeder
         RuedaDeLaVida::firstOrCreate([
             'user_id' => '1',
             'promedio_general' => '5.4',
-            'fecha' => '2025-02-19'
+            'fecha' => '2025-02-19',
 
         ]);
     }

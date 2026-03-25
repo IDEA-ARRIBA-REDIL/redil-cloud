@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       // antes clasificacion_asistente_tipo_asistente
+        // antes clasificacion_asistente_tipo_asistente
         Schema::create('clasificacion_asistente_tipo_usuario', function (Blueprint $table) {
             $table->id();
             $table->integer('tipo_usuario_id'); // antes tipo_asistente_id

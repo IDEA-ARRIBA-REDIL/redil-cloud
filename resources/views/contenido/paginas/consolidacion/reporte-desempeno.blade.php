@@ -214,11 +214,11 @@ $configData = Helper::appClasses();
                               <div class="card-body py-3 border-bottom d-block">
                                   <div class="d-flex justify-content-between">
                                     <div>
-                                      <h5 class="card-title mb-0 fw-semibold fs-4 text-primary"><u>{{ $zona->totalCosecha }}</u></h5>
+                                      <h5 class="card-title mb-0 fw-semibold fs-4 text-primary">{{ $zona->totalCosecha }}</h5>
                                       <small class="text-black">Total cosecha</small>
                                     </div>
                                     <div class="p-2 d-flex align-items-center justify-content-center">
-                                      <i class="ti ti-chevron-right text-black ti-lg"></i>
+                                      <i class="ti ti-chevron-right text-black ti-sm"></i>
                                     </div>
                                   </div>
                               </div>
@@ -231,11 +231,11 @@ $configData = Helper::appClasses();
                               <div class="card-body py-3 border-bottom d-block">
                                   <div class="d-flex justify-content-between">
                                     <div>
-                                      <h5 class="card-title mb-0 fw-semibold fs-4 text-primary"><u>{{ $zona->cosechaEfectiva }}</u></h5>
+                                      <h5 class="card-title mb-0 fw-semibold fs-4 text-primary">{{ $zona->cosechaEfectiva }}</h5>
                                       <small class="text-black">Cosecha efectiva</small>
                                     </div>
                                     <div class="p-2 d-flex align-items-center justify-content-center">
-                                      <i class="ti ti-chevron-right text-black ti-lg"></i>
+                                      <i class="ti ti-chevron-right text-black ti-sm"></i>
                                     </div>
                                   </div>
                               </div>
@@ -248,11 +248,11 @@ $configData = Helper::appClasses();
                                 <div class="card-body py-3 border-bottom d-block">
                                     <div class="d-flex justify-content-between">
                                       <div>
-                                        <h5 class="card-title mb-0 fw-semibold fs-4 text-primary"><u>{{ $zona->sinGestionPeriodo }}</u></h5>
+                                        <h5 class="card-title mb-0 fw-semibold fs-4 text-primary">{{ $zona->sinGestionPeriodo }}</h5>
                                         <small class="text-black">Sin gestión de tareas</small>
                                       </div>
                                       <div class="p-2 d-flex align-items-center justify-content-center">
-                                        <i class="ti ti-chevron-right text-black ti-lg"></i>
+                                        <i class="ti ti-chevron-right text-black ti-sm"></i>
                                       </div>
                                     </div>
                                 </div>
@@ -265,11 +265,11 @@ $configData = Helper::appClasses();
                                 <div class="card-body py-3 border-bottom d-block">
                                     <div class="d-flex justify-content-between">
                                       <div>
-                                        <h5 class="card-title mb-0 fw-semibold fs-4 text-primary"><u>{{ $zona->totalMatriculas }}</u></h5>
+                                        <h5 class="card-title mb-0 fw-semibold fs-4 text-primary">{{ $zona->totalMatriculas }}</h5>
                                         <small class="text-black">Matrículas</small>
                                       </div>
                                       <div class="p-2 d-flex align-items-center justify-content-center">
-                                        <i class="ti ti-chevron-right text-black ti-lg"></i>
+                                        <i class="ti ti-chevron-right text-black ti-sm"></i>
                                       </div>
                                     </div>
                                 </div>
@@ -283,11 +283,11 @@ $configData = Helper::appClasses();
                                 <div class="card-body py-3 border-bottom d-block">
                                     <div class="d-flex justify-content-between">
                                       <div>
-                                        <h5 class="card-title mb-0 fw-semibold fs-4 text-primary"><u>{{ $metrica['total'] }}</u></h5>
+                                        <h5 class="card-title mb-0 fw-semibold fs-4 text-primary">{{ $metrica['total'] }}</h5>
                                         <small class="text-black">{{ $metrica['nombre'] }}</small>
                                       </div>
                                       <div class="p-2 d-flex align-items-center justify-content-center">
-                                        <i class="ti ti-chevron-right text-black ti-lg"></i>
+                                        <i class="ti ti-chevron-right text-black ti-sm"></i>
                                       </div>
                                     </div>
                                 </div>

@@ -22,15 +22,12 @@ class GestionarPeticiones extends Component
 {
   public $titulo = '';
 
-  //modalRespuesta
-  public $peticionRespuestaId;
-  public $respuesta="";
-
-  //modalSeguimento
-  public $peticionSeguimientoId;
-  public $descripcionSeguimiento="";
+  //modalResponder
+  public $peticionResponderId;
+  public $descripcionRespuesta="";
   public $versiculosRecomendados;
   public $libros;
+  public $estadoSiguiente = 1; // 1 = Pendiente, 3 = En proceso, 2 = Cerrada
 
   //modalBiblia
   public $listadoVersiculos;
@@ -43,51 +40,33 @@ class GestionarPeticiones extends Component
     </center>';
   }
 
-
-  #[On('modalRespuesta')]
-  public function modalRespuesta($peticionId, $personaId)
+  #[On('modalResponder')]
+  public function modalResponder($peticionId, $personaId)
   {
+    $peticion = Peticion::find($peticionId);
     $usuario = User::withTrashed()->select('id','primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')->find($personaId);
-    $this->titulo = "Agregar respuesta de <b>".$usuario->nombre(3)."</b>";
+    $this->titulo = "Responder a <b>".$usuario->nombre(3)."</b>";
+    
+    // Autoseleccionamos el estado actual si lo tiene, para que no lo cambie sin querer
+    $this->estadoSiguiente = $peticion->estado;
 
-    $this->peticionRespuestaId = $peticionId;
-    $this->respuesta = '';
-    $this->dispatch('abrirModal', nombreModal: 'modalRespuesta');
-  }
-
-  public function addRespuesta()
-  {
-    $peticion = Peticion::find($this->peticionRespuestaId);
-
-    $peticion->estado=2;
-		$peticion->respuesta = $this->respuesta;
-		$peticion->save();
-    return redirect(request()->header('Referer'))->with('success', ' ¡Muy bien! la respuesta a la petición se agrego de éxitosa.');
-  }
-
-  #[On('modalSeguimiento')]
-  public function modalSeguimiento($peticionId, $personaId)
-  {
-    $usuario = User::withTrashed()->select('id','primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')->find($personaId);
-    $this->titulo = "Agregar seguimiento a <b>".$usuario->nombre(3)."</b>";
-
-    $this->peticionSeguimientoId = $peticionId;
-    $this->descripcionSeguimiento = "<p>¡Hola! <b>".$usuario->nombre(3)."</b>. </p>";
+    $this->peticionResponderId = $peticionId;
+    $this->descripcionRespuesta = "<p>¡Hola! <b>".$usuario->nombre(3)."</b>. </p>";
 
     $this->versiculosRecomendados = '<p>Cargando versiculos recomendados</p>
     <div class="spinner-border spinner-border-lg text-primary mt-1" role="status">
     <span class="visually-hidden">Loading...</span>
     </div>';
 
-    $this->dispatch('textoInicialSeguimiento', textoInicial:  $this->descripcionSeguimiento );
-    $this->dispatch('abrirModal', nombreModal: 'modalSeguimiento');
+    $this->dispatch('textoInicialRespuesta', textoInicial:  $this->descripcionRespuesta );
+    $this->dispatch('abrirModal', nombreModal: 'modalResponder');
     $this->dispatch('cargarVersiculosRecomendados', peticionId: $peticionId);
   }
 
-  public function addSeguimiento()
+  public function addResponder()
   {
     $configuracion = Configuracion::find(1);
-    $peticion = Peticion::find($this->peticionSeguimientoId);
+    $peticion = Peticion::find($this->peticionResponderId);
     $usuario_logueado=auth()->user();
     $usuario = User::withTrashed()->select('id','primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido','telefono_movil','email','pais_id')->find($peticion->user_id);
 
@@ -103,20 +82,20 @@ class GestionarPeticiones extends Component
 			$prefijo= $iglesia->pais->prefijo;
 		}
 
-    // Crear el nuevo seguimiento
+    // Crear el nuevo seguimiento (hace veces de respuesta)
     $seguimiento = new SeguimientoPeticion;
     $seguimiento->peticion_id = $peticion->id;
     $seguimiento->fecha = Carbon::now()->format('Y-m-d');
-    $seguimiento->descripcion = $this->descripcionSeguimiento;
+    $seguimiento->descripcion = $this->descripcionRespuesta;
     $seguimiento->usuario_id = $usuario_logueado->id;
     $seguimiento->save();
 
     // Enviar el correo
     if ($email!="")
     {
-      $mensaje = $this->descripcionSeguimiento;
+      $mensaje = $this->descripcionRespuesta;
       $mailData = new stdClass();
-      $mailData->subject = 'Seguimiento petición';
+      $mailData->subject = 'Actualización en tu petición';
       $mailData->nombre = $usuario->nombre(3);
       $mailData->mensaje = $mensaje;
 
@@ -131,32 +110,34 @@ class GestionarPeticiones extends Component
           );
       }
 
-      //Mail::to($usuario->email)->send(new DefaultMail($mailData));
-      Mail::to('softjuancarlos@gmail.com')->send(new DefaultMail($mailData));
+      try {
+        Mail::to($usuario->email)->send(new DefaultMail($mailData));
+      } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error("Error enviando correo por interacción de petición ID {$peticion->id}: " . $e->getMessage());
+      }
     }
 
-    // Se actualiza la peticion
-		if($peticion->estado==1)
-		{
-			$peticion->estado=3;
-			$peticion->save();
-		}
+    // Se actualiza la peticion al nuevo estado indicado
+    $peticion->estado = $this->estadoSiguiente;
+    $peticion->save();
 
-    $respuesta="El seguimiento fue realizado con éxito. ";
+    $respuesta = "La interacción y actualización de estado fueron guardados con éxito. ";
 
     if($telefono!="")
 		{
 			$validarTelefono = strpos($telefono, '+');
 
-			if($validarTelefono==FALSE)
+			if($validarTelefono===FALSE)
 			{
 				$pefijoTelefono = $prefijo.$telefono;
-			}
+			} else {
+        $pefijoTelefono = $telefono;
+      }
 
 			$mensajeWhatsapp= 'Hola '.$usuario->nombre(3).' DIOS te bendiga ';
 
-			$respuesta.=' Si deseas puedes continuar con el seguimiento de <b>'.$usuario->nombre(3).'</b>
-			a través de WhatsApp, da clic aquí <a target="_blank" href="https://api.whatsapp.com/send?phone='.$pefijoTelefono.'&text='.$mensajeWhatsapp.'" ><i class="ti ti-brand-whatsapp"></i> '.$telefono.'</a>';
+			$respuesta.=' Si deseas puedes escribirle a <b>'.$usuario->nombre(3).'</b>
+			a través de WhatsApp dando clic aquí <a target="_blank" href="https://api.whatsapp.com/send?phone='.preg_replace('/[^0-9]/', '', $pefijoTelefono).'&text='.$mensajeWhatsapp.'" ><i class="ti ti-brand-whatsapp"></i> '.$telefono.'</a>';
 
 		}
 

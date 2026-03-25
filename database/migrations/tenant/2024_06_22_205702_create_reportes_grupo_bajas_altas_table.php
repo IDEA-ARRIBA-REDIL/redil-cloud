@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('reportes_grupo_bajas_altas', function (Blueprint $table) {
-          $table->id();
-          $table->timestamps();
-          $table->string('motivo',100);
-          $table->text('observaciones')->nullable();
-          $table->date('fecha')->nullable();
-          $table->integer('grupo_id');
-          $table->boolean('dado_baja'); //0: dado de baja  1: dado de alta
+            $table->id();
+            $table->timestamps();
+            $table->string('motivo', 100);
+            $table->text('observaciones')->nullable();
+            $table->date('fecha')->nullable();
+            $table->integer('grupo_id');
+            $table->boolean('dado_baja'); // 0: dado de baja  1: dado de alta
         });
     }
 

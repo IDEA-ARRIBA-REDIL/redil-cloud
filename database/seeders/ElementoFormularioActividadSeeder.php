@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\ElementoFormularioActividad;
-use App\Models\OpcionesElementoFormularioActividad;
+use Illuminate\Database\Seeder;
 
 class ElementoFormularioActividadSeeder extends Seeder
 {
@@ -15,7 +13,7 @@ class ElementoFormularioActividadSeeder extends Seeder
     public function run(): void
     {
         //
-        /// elementos tipo encabezado
+        // / elementos tipo encabezado
         ElementoFormularioActividad::firstOrCreate([
             'titulo' => 'Seccion1',
             'tipo_elemento_id' => '1',
@@ -27,7 +25,7 @@ class ElementoFormularioActividadSeeder extends Seeder
 
         ]);
 
-        // elementos tipo respuesta corta 
+        // elementos tipo respuesta corta
         ElementoFormularioActividad::firstOrCreate([
             'titulo' => 'Nombre Completo',
             'tipo_elemento_id' => '2',
@@ -68,7 +66,7 @@ class ElementoFormularioActividadSeeder extends Seeder
             'orden' => '5',
         ]);
 
-        /// elemento de tipo numerico
+        // / elemento de tipo numerico
         ElementoFormularioActividad::firstOrCreate([
             'titulo' => 'Número de teléfono',
             'tipo_elemento_id' => '8',
@@ -149,8 +147,6 @@ class ElementoFormularioActividadSeeder extends Seeder
             'orden' => '12',
         ]);
 
-
-
         ElementoFormularioActividad::firstOrCreate([
             'titulo' => 'Empresa de transporte',
             'tipo_elemento_id' => '2',
@@ -160,8 +156,6 @@ class ElementoFormularioActividadSeeder extends Seeder
             'descripcion' => 'Según su medio de transporte indique terminal de llegada',
             'orden' => '13',
         ]);
-
-     
 
     }
 }

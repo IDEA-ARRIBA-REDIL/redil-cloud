@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\CampoSeccionRv;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CampoSeccionRvSeeder extends Seeder
@@ -19,7 +18,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 1,
             'orden' => 1,
-            'color' => '#008ffb'
+            'color' => '#008ffb',
 
         ]);
 
@@ -39,7 +38,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 1,
             'orden' => 3,
-            'color' => '#feb019'
+            'color' => '#feb019',
 
         ]);
 
@@ -49,7 +48,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 1,
             'orden' => 4,
-            'color' => '#ff4560'
+            'color' => '#ff4560',
 
         ]);
 
@@ -59,7 +58,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 1,
             'orden' => 5,
-            'color' => '#775dd0'
+            'color' => '#775dd0',
 
         ]);
 
@@ -69,18 +68,18 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => true,
             'seccion_rv_id' => 1,
             'orden' => 6,
-            'color' => '#0a330c'
+            'color' => '#0a330c',
 
         ]);
 
-        /// bloque dos 
+        // / bloque dos
 
         CampoSeccionRv::firstOrCreate([
             'nombre' => 'Alimentación',
             'abierto' => false,
             'seccion_rv_id' => 2,
             'orden' => 1,
-            'color' => '#008ffb'
+            'color' => '#008ffb',
         ]);
 
         //
@@ -98,7 +97,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 2,
             'orden' => 3,
-            'color' => '#feb019'
+            'color' => '#feb019',
         ]);
 
         //
@@ -107,7 +106,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 2,
             'orden' => 4,
-            'color' => '#ff4560'
+            'color' => '#ff4560',
         ]);
 
         //
@@ -116,7 +115,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 2,
             'orden' => 5,
-            'color' => '#775dd0'
+            'color' => '#775dd0',
         ]);
 
         //
@@ -125,7 +124,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => true,
             'seccion_rv_id' => 2,
             'orden' => 6,
-            'color' => '#0a330c'
+            'color' => '#0a330c',
         ]);
 
         //
@@ -134,7 +133,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 3,
             'orden' => 1,
-            'color' => '#008ffb'
+            'color' => '#008ffb',
         ]);
 
         //
@@ -152,7 +151,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 3,
             'orden' => 3,
-            'color' => '#feb019'
+            'color' => '#feb019',
         ]);
 
         //
@@ -161,7 +160,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 3,
             'orden' => 4,
-            'color' => '#ff4560'
+            'color' => '#ff4560',
         ]);
         //
         CampoSeccionRv::firstOrCreate([
@@ -169,7 +168,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 3,
             'orden' => 5,
-            'color' => '#775dd0'
+            'color' => '#775dd0',
         ]);
 
         //
@@ -178,7 +177,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => true,
             'seccion_rv_id' => 3,
             'orden' => 6,
-            'color' => '#0a330c'
+            'color' => '#0a330c',
         ]);
 
         //
@@ -187,7 +186,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 4,
             'orden' => 1,
-            'color' => '#008ffb'
+            'color' => '#008ffb',
         ]);
 
         //
@@ -205,7 +204,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 4,
             'orden' => 3,
-            'color' => '#feb019'
+            'color' => '#feb019',
         ]);
 
         //
@@ -214,7 +213,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 4,
             'orden' => 4,
-            'color' => '#ff4560'
+            'color' => '#ff4560',
         ]);
 
         //
@@ -223,9 +222,8 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 4,
             'orden' => 5,
-            'color' => '#775dd0'
+            'color' => '#775dd0',
         ]);
-
 
         //
         CampoSeccionRv::firstOrCreate([
@@ -233,7 +231,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => true,
             'seccion_rv_id' => 4,
             'orden' => 6,
-            'color' => '#0a330c'
+            'color' => '#0a330c',
         ]);
 
         //
@@ -242,7 +240,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 5,
             'orden' => 1,
-            'color' => '#008ffb'
+            'color' => '#008ffb',
         ]);
 
         //
@@ -260,7 +258,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 5,
             'orden' => 3,
-            'color' => '#feb019'
+            'color' => '#feb019',
         ]);
 
         //
@@ -269,7 +267,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 5,
             'orden' => 4,
-            'color' => '#ff4560'
+            'color' => '#ff4560',
         ]);
 
         //
@@ -278,7 +276,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 5,
             'orden' => 5,
-            'color' => '#775dd0'
+            'color' => '#775dd0',
         ]);
 
         //
@@ -287,7 +285,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => true,
             'seccion_rv_id' => 5,
             'orden' => 6,
-            'color' => '#0a330c'
+            'color' => '#0a330c',
         ]);
 
         //
@@ -296,7 +294,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 6,
             'orden' => 1,
-            'color' => '#008ffb'
+            'color' => '#008ffb',
         ]);
 
         //
@@ -314,7 +312,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 6,
             'orden' => 3,
-            'color' => '#feb019'
+            'color' => '#feb019',
         ]);
 
         //
@@ -323,7 +321,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 6,
             'orden' => 4,
-            'color' => '#ff4560'
+            'color' => '#ff4560',
         ]);
 
         //
@@ -332,7 +330,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => false,
             'seccion_rv_id' => 6,
             'orden' => 5,
-            'color' => '#775dd0'
+            'color' => '#775dd0',
         ]);
         //
         CampoSeccionRv::firstOrCreate([
@@ -340,7 +338,7 @@ class CampoSeccionRvSeeder extends Seeder
             'abierto' => true,
             'seccion_rv_id' => 6,
             'orden' => 6,
-            'color' => '#0a330c'
+            'color' => '#0a330c',
         ]);
     }
 }

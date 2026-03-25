@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('campo_seccion_formulario_usuario', function (Blueprint $table) {
-          $table->id();
-          $table->integer('seccion_id');
-          $table->integer('campo_id');
-          $table->boolean('requerido')->default(0);
-          $table->string('class',200)->default('col-12');
-          $table->string('informacion_de_apoyo')->nullable();
-          $table->smallInteger('orden')->default(0);
-          $table->timestamps();
+            $table->id();
+            $table->integer('seccion_id');
+            $table->integer('campo_id');
+            $table->boolean('requerido')->default(0);
+            $table->string('class', 200)->default('col-12');
+            $table->string('informacion_de_apoyo')->nullable();
+            $table->smallInteger('orden')->default(0);
+            $table->timestamps();
         });
     }
 

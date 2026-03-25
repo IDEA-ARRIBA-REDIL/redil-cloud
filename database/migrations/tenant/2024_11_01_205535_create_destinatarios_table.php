@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('destinatarios', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre',50);
-            $table->string('sucursal_sap',20);
+            $table->string('nombre', 50);
+            $table->string('sucursal_sap', 20);
             $table->integer('encargado_id')->nullable();
             $table->boolean('activo')->default('false')->nullable();
-            $table->string('centro_costo_sap',20);
+            $table->string('centro_costo_sap', 20);
             $table->timestamps();
         });
     }

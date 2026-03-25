@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('banner_escuelas', function (Blueprint $table) {
-        $table->id();
-        $table->string('imagen'); // Para guardar la ruta y nombre del archivo
-        $table->text('descripcion')->nullable(); // La descripción puede ser opcional
-        $table->boolean('activo')->default(true); // Por defecto, estará activo al crearse
-        $table->timestamps(); // Campos created_at y updated_at
-      });
+        Schema::create('banner_escuelas', function (Blueprint $table) {
+            $table->id();
+            $table->string('imagen'); // Para guardar la ruta y nombre del archivo
+            $table->text('descripcion')->nullable(); // La descripción puede ser opcional
+            $table->boolean('activo')->default(true); // Por defecto, estará activo al crearse
+            $table->timestamps(); // Campos created_at y updated_at
+        });
     }
 
     /**

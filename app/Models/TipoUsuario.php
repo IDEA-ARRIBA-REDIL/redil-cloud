@@ -30,7 +30,12 @@ class TipoUsuario extends Model
     'habilitado_para_consolidacion',
     'puntaje',
     'visible',
-    'default'
+    'default',
+    'es_miembro_oficial'
+  ];
+
+  protected $casts = [
+    'es_miembro_oficial' => 'boolean',
   ];
 
   public function actividadTipoUsuario()

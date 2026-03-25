@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\SeccionRv;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class SeccionRvSeeder extends Seeder
@@ -31,7 +30,7 @@ class SeccionRvSeeder extends Seeder
             'label_btn_inferior_adelante' => 'Continuar',
             'label_btn_inferior_atras' => 'Volver',
             'color' => '#008ffb',
-            'promedio_minimo' => '6'
+            'promedio_minimo' => '6',
         ]);
 
         SeccionRv::firstOrCreate([
@@ -50,7 +49,7 @@ class SeccionRvSeeder extends Seeder
             'label_btn_inferior_adelante' => 'Continuar',
             'label_btn_inferior_atras' => 'Volver',
             'color' => '#00e396',
-            'promedio_minimo' => '6'
+            'promedio_minimo' => '6',
         ]);
 
         SeccionRv::firstOrCreate([
@@ -69,7 +68,7 @@ class SeccionRvSeeder extends Seeder
             'label_btn_inferior_adelante' => 'Continuar',
             'label_btn_inferior_atras' => 'Volver',
             'color' => '#feb019',
-            'promedio_minimo' => '6'
+            'promedio_minimo' => '6',
 
         ]);
 
@@ -89,7 +88,7 @@ class SeccionRvSeeder extends Seeder
             'label_btn_inferior_adelante' => 'Continuar',
             'label_btn_inferior_atras' => 'Volver',
             'color' => '#ff4560',
-            'promedio_minimo' => '6'
+            'promedio_minimo' => '6',
         ]);
 
         SeccionRv::firstOrCreate([
@@ -108,7 +107,7 @@ class SeccionRvSeeder extends Seeder
             'label_btn_inferior_adelante' => 'Continuar',
             'label_btn_inferior_atras' => 'Volver',
             'color' => '#775dd0',
-            'promedio_minimo' => '6'
+            'promedio_minimo' => '6',
         ]);
 
         SeccionRv::firstOrCreate([
@@ -127,7 +126,7 @@ class SeccionRvSeeder extends Seeder
             'label_btn_inferior_adelante' => 'Continuar',
             'label_btn_inferior_atras' => 'Volver',
             'color' => '#0a330c',
-            'promedio_minimo' => '6'
+            'promedio_minimo' => '6',
         ]);
 
         SeccionRv::firstOrCreate([
@@ -145,7 +144,7 @@ class SeccionRvSeeder extends Seeder
             'label_superior_adelante' => 'Salir',
             'label_btn_inferior_adelante' => 'Continuar',
             'label_btn_inferior_atras' => 'Volver',
-            'promedio_minimo' => '6'
+            'promedio_minimo' => '6',
         ]);
 
         SeccionRv::firstOrCreate([
@@ -163,7 +162,7 @@ class SeccionRvSeeder extends Seeder
             'label_superior_adelante' => 'Salir',
             'label_btn_inferior_adelante' => 'Continuar',
             'label_btn_inferior_atras' => 'Volver',
-            'promedio_minimo' => '6'
+            'promedio_minimo' => '6',
         ]);
     }
 }

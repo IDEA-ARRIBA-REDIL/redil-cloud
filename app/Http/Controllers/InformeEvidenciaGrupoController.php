@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Configuracion;
 use App\Models\Grupo;
 use App\Models\InformeEvidenciaGrupo;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use App\Models\Configuracion;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 
 class InformeEvidenciaGrupoController extends Controller
 {
@@ -26,9 +25,7 @@ class InformeEvidenciaGrupoController extends Controller
         $informes = $query->paginate(10);
         $meses = \App\Helpers\Helpers::meses('largo');
 
-        
-
-        return view('contenido.paginas.informes-evidencias-grupo.listar', compact('grupo', 'informes', 'filtroFechaIni', 'filtroFechaFin', 'meses','rolActivo'));
+        return view('contenido.paginas.informes-evidencias-grupo.listar', compact('grupo', 'informes', 'filtroFechaIni', 'filtroFechaFin', 'meses', 'rolActivo'));
     }
 
     public function listarAdministrativo(Request $request)
@@ -39,7 +36,7 @@ class InformeEvidenciaGrupoController extends Controller
         $filtroFechaIni = $request->get('filtroFechaIni') ? $request->get('filtroFechaIni') : \Carbon\Carbon::now()->startOfMonth()->format('Y-m-d');
         $filtroFechaFin = $request->get('filtroFechaFin') ? $request->get('filtroFechaFin') : \Carbon\Carbon::now()->endOfMonth()->format('Y-m-d');
 
-        $parametrosBusqueda = new \stdClass();
+        $parametrosBusqueda = new \stdClass;
         $parametrosBusqueda->filtroGrupo = $request->get('filtroGrupo');
 
         // Determinar qué grupos puede ver el usuario
@@ -49,7 +46,7 @@ class InformeEvidenciaGrupoController extends Controller
             $gruposIds = Grupo::pluck('id')->toArray();
         } elseif ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
             $gruposIds = auth()->user()->gruposMinisterio('array');
-        } elseif ($rolActivo->lista_grupos_sede_id != NULL) {
+        } elseif ($rolActivo->lista_grupos_sede_id != null) {
             $gruposIds = Grupo::where('sede_id', $rolActivo->lista_grupos_sede_id)->pluck('id')->toArray();
         }
 
@@ -57,7 +54,7 @@ class InformeEvidenciaGrupoController extends Controller
         if ($parametrosBusqueda->filtroGrupo) {
             $grupoRaiz = Grupo::find($parametrosBusqueda->filtroGrupo);
             if ($grupoRaiz) {
-                $gruposIds = array($grupoRaiz->id);
+                $gruposIds = [$grupoRaiz->id];
             }
         }
 
@@ -67,7 +64,7 @@ class InformeEvidenciaGrupoController extends Controller
             ->orderBy('fecha', 'desc')
             ->paginate(12);
 
-        $meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        $meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
         return view('contenido.paginas.informes-evidencias-grupo.listar-administrativo', compact('informes', 'filtroFechaIni', 'filtroFechaFin', 'meses', 'rolActivo', 'parametrosBusqueda'));
     }
@@ -75,6 +72,7 @@ class InformeEvidenciaGrupoController extends Controller
     public function crear(Grupo $grupo)
     {
         $configuracion = Configuracion::first();
+
         return view('contenido.paginas.informes-evidencias-grupo.crear', compact('grupo', 'configuracion'));
     }
 
@@ -113,6 +111,7 @@ class InformeEvidenciaGrupoController extends Controller
     public function editar(Grupo $grupo, InformeEvidenciaGrupo $informe)
     {
         $configuracion = Configuracion::first();
+
         return view('contenido.paginas.informes-evidencias-grupo.crear', compact('grupo', 'informe', 'configuracion'));
     }
 
@@ -158,19 +157,20 @@ class InformeEvidenciaGrupoController extends Controller
 
         return redirect()->route('grupo.informeEvidencia.listar', $grupo)->with('success', 'Informe eliminado correctamente.');
     }
-    
+
     public function ver(Grupo $grupo, InformeEvidenciaGrupo $informe)
     {
-         $configuracion = Configuracion::first();
+        $configuracion = Configuracion::first();
+
         return view('contenido.paginas.informes-evidencias-grupo.ver', compact('grupo', 'informe', 'configuracion'));
     }
 
     public function descargar(Grupo $grupo, InformeEvidenciaGrupo $informe)
     {
         $configuracion = Configuracion::first();
-        
+
         $pdf = Pdf::loadView('contenido.paginas.informes-evidencias-grupo.pdf', compact('grupo', 'informe', 'configuracion'));
-        
+
         return $pdf->download('Informe-Evidencia-'.$informe->nombre.'-'.$informe->fecha.'.pdf');
     }
 }

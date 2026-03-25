@@ -7,20 +7,21 @@ use Illuminate\View\View;
 
 class RolController extends Controller
 {
-  public function gestionar(): View
-  {
-    $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-    $rolActivo->verificacionDelPermiso('configuraciones.subitem_roles');
-    return view('contenido.paginas.roles-privilegios.gestionar-roles-privilegios');
-  }
+    public function gestionar(): View
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('configuraciones.subitem_roles');
 
-  public function editarPermisos(Request $request, $id): View
-  {
-      $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-      $rolActivo->verificacionDelPermiso('configuraciones.subitem_roles');
+        return view('contenido.paginas.roles-privilegios.gestionar-roles-privilegios');
+    }
 
-      $role = \Spatie\Permission\Models\Role::findOrFail($id);
+    public function editarPermisos(Request $request, $id): View
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('configuraciones.subitem_roles');
 
-      return view('contenido.paginas.roles-privilegios.editar-permisos-rol', compact('role'));
-  }
+        $role = \Spatie\Permission\Models\Role::findOrFail($id);
+
+        return view('contenido.paginas.roles-privilegios.editar-permisos-rol', compact('role'));
+    }
 }

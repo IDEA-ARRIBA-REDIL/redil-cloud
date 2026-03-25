@@ -19,8 +19,6 @@ return new class extends Migration
             $table->foreignId('autor_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
 
-
-            
         });
     }
 

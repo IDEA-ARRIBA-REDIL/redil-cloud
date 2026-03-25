@@ -2,18 +2,17 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\Profesion;
+use Illuminate\Database\Seeder;
 
 class ProfesionSeeder extends Seeder
 {
-  /**
-   * Run the database seeds.
-   */
-  public function run(): void
-  {
-    $profesiones = '[
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $profesiones = '[
       {"id":"1","nombre":"Abogado"},
       {"id":"2","nombre":"Académico"},
       {"id":"3","nombre":"Adjunto"},
@@ -449,12 +448,12 @@ class ProfesionSeeder extends Seeder
       {"id":"433","nombre":"Camarero"}
     ]';
 
-    $items = json_decode($profesiones);
+        $items = json_decode($profesiones);
 
-    foreach ($items as $item) {
-      Profesion::firstOrCreate([
-        'nombre' => $item->nombre,
-      ]);
+        foreach ($items as $item) {
+            Profesion::firstOrCreate([
+                'nombre' => $item->nombre,
+            ]);
+        }
     }
-  }
 }

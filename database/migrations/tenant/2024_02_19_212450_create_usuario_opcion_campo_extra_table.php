@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-       // antes se llamaba la tabla  asistente_opcion_campo_extra_id
+        // antes se llamaba la tabla  asistente_opcion_campo_extra_id
         Schema::create('usuario_opcion_campo_extra', function (Blueprint $table) {
-          $table->id();
-          $table->integer('user_id');
-          $table->integer('campo_extra_id');
-          $table->text('valor')->nullable();
-          $table->timestamps();
+            $table->id();
+            $table->integer('user_id');
+            $table->integer('campo_extra_id');
+            $table->text('valor')->nullable();
+            $table->timestamps();
         });
     }
 

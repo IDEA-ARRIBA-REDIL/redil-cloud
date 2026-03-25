@@ -2,17 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\LazyCollection;
 
 class TipoUsuarioManantialSeeder extends Seeder
 {
     /**
      * Ruta del archivo JSON que contiene los tipos de usuario.
+     *
      * @var string
      */
     protected $filePath = 'seeders/tipo_asistentes_202507301621.json';
@@ -23,8 +19,9 @@ class TipoUsuarioManantialSeeder extends Seeder
     public function run(): void
     {
         // 1. Verificamos que el archivo JSON exista
-        if (!file_exists(base_path('storage/app/' . $this->filePath))) {
-            $this->command->error('¡Archivo JSON de tipos de asistente no encontrado en ' . base_path('storage/app/' . $this->filePath) . '!');
+        if (! file_exists(base_path('storage/app/'.$this->filePath))) {
+            $this->command->error('¡Archivo JSON de tipos de asistente no encontrado en '.base_path('storage/app/'.$this->filePath).'!');
+
             return;
         }
 
@@ -32,9 +29,8 @@ class TipoUsuarioManantialSeeder extends Seeder
 
         // 2. Vaciamos la tabla para una importación limpia
 
-
         // 3. Leemos y decodificamos el contenido del archivo JSON
-        $jsonContent = file_get_contents(base_path('storage/app/' . $this->filePath));
+        $jsonContent = file_get_contents(base_path('storage/app/'.$this->filePath));
         $data = json_decode($jsonContent, true);
 
         // Asumimos que los datos pueden venir dentro de una clave "RECORDS"
@@ -42,6 +38,7 @@ class TipoUsuarioManantialSeeder extends Seeder
 
         if (empty($tiposData)) {
             $this->command->error('El archivo JSON está vacío o no contiene un array de registros válido.');
+
             return;
         }
 
@@ -49,7 +46,7 @@ class TipoUsuarioManantialSeeder extends Seeder
         $tiposParaInsertar = [];
         foreach ($tiposData as $tipo) {
             // Saltamos registros mal formados que no tengan un 'id' o 'nombre'
-            if (!isset($tipo['id']) || !isset($tipo['nombre'])) {
+            if (! isset($tipo['id']) || ! isset($tipo['nombre'])) {
                 continue;
             }
 
@@ -77,6 +74,6 @@ class TipoUsuarioManantialSeeder extends Seeder
             );
         }
 
-        $this->command->info('✔️  ¡Proceso finalizado! Se han importado ' . count($tiposParaInsertar) . ' tipos de usuario.');
+        $this->command->info('✔️  ¡Proceso finalizado! Se han importado '.count($tiposParaInsertar).' tipos de usuario.');
     }
 }

@@ -58,6 +58,7 @@ use App\Http\Controllers\ThemeSettingController;
 use App\Http\Controllers\TiempoConDiosController;
 use App\Http\Controllers\TipoOfrendaController;
 use App\Http\Controllers\TipoPagosController;
+use App\Http\Controllers\TipoCargoCursoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UsuarioConfiguracionController;
 use App\Http\Controllers\VersiculoDiarioController;
@@ -586,9 +587,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Ruta para mostrar/editar/eliminar una escuela específica
 
     // /ruta historial calificaciones
+    
     Route::get('/escuelas/historial-calificaciones', [HistorialCalificacionesController::class, 'index'])->name('escuelas.historialCalificaciones');
 
     // / cursos (LMS)
+    Route::get('/cursos/dashboard', [CursoController::class, 'dashboard'])->name('cursos.dashboard');
+    Route::get('/cursos/exportar-inscritos/{curso?}', [CursoController::class, 'exportarInscritos'])->name('cursos.exportar-inscritos');
     Route::get('/cursos/gestionar', [CursoController::class, 'index'])->name('cursos.gestionar');
     Route::get('/cursos/crear', [CursoController::class, 'crear'])->name('cursos.crear');
     Route::get('/cursos/{curso}/editar', [CursoController::class, 'editar'])->name('cursos.editar');
@@ -598,6 +602,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/cursos/{curso}/contenido', [CursoController::class, 'contenido'])->name('cursos.contenido');
     // Nuevo: Gestión de Estudiantes
     Route::get('/cursos/{curso}/inscritos', [CursoController::class, 'inscritos'])->name('cursos.inscritos');
+
+    // Tipos de Cargo (LMS)
+    Route::prefix('cursos/tipos-cargo')->name('cursos.tipos-cargo.')->group(function () {
+        Route::get('/', [TipoCargoCursoController::class, 'index'])->name('index');
+        Route::post('/', [TipoCargoCursoController::class, 'store'])->name('store');
+        Route::patch('/{id}', [TipoCargoCursoController::class, 'update'])->name('update');
+        Route::delete('/{id}', [TipoCargoCursoController::class, 'destroy'])->name('destroy');
+    });
 
     // Nuevo: Panel Foro (LMS)
     Route::get('/cursos/foro', [CursoController::class, 'foro'])->name('cursos.foro');
@@ -614,6 +626,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/cursos/{curso}/equipo', [CursoController::class, 'equipo'])->name('cursos.equipo');
     Route::post('/cursos/{curso}/equipo', [CursoController::class, 'guardarEquipo'])->name('cursos.equipo.guardar');
+    Route::post('/cursos/equipo/asignar-carreras', [CursoController::class, 'asignarCarreras'])->name('cursos.equipo.asignar-carreras');
     Route::post('/cursos/equipo/activar/{miembro}', [CursoController::class, 'activarEquipo'])->name('cursos.equipo.activar');
     Route::post('/cursos/equipo/desactivar/{miembro}', [CursoController::class, 'desactivarEquipo'])->name('cursos.equipo.desactivar');
     Route::post('/cursos/equipo/eliminar', [CursoController::class, 'eliminarEquipo'])->name('cursos.equipo.eliminar');

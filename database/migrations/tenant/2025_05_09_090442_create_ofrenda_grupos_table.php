@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ofrenda_grupos', function (Blueprint $table) {
-          $table->id();
-          $table->integer('ofrenda_id');
-          $table->integer('reporte_grupo_id');
-          $table->timestamps();
+            $table->id();
+            $table->integer('ofrenda_id');
+            $table->integer('reporte_grupo_id');
+            $table->timestamps();
         });
     }
 

@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('banner_generales', function (Blueprint $table) {
-        $table->id();
-        $table->string('imagen');
-        $table->string('nombre')->nullable();
-        $table->string('fecha_inicio')->nullable();
-        $table->string('fecha_fin')->nullable();
-        $table->text('link')->nullable();
-        $table->boolean('visible');
-        $table->timestamps();
-      });
+        Schema::create('banner_generales', function (Blueprint $table) {
+            $table->id();
+            $table->string('imagen');
+            $table->string('nombre')->nullable();
+            $table->string('fecha_inicio')->nullable();
+            $table->string('fecha_fin')->nullable();
+            $table->text('link')->nullable();
+            $table->boolean('visible');
+            $table->timestamps();
+        });
     }
 
     /**
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-      Schema::dropIfExists('banner_generales');
+        Schema::dropIfExists('banner_generales');
     }
 };

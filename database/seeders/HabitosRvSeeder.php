@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\HabitosRv;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class HabitosRvSeeder extends Seeder
@@ -16,152 +15,150 @@ class HabitosRvSeeder extends Seeder
         //
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '1'
+            'metas_id' => '1',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '1'
+            'metas_id' => '1',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '1'
+            'metas_id' => '1',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '1'
-
-        ]);
-
-
-        //
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '2'
-
-        ]);
-
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '2'
-
-        ]);
-
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '2'
-
-        ]);
-
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '2'
-
-        ]);
-
-
-        //
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '3'
-
-        ]);
-
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '3'
-
-        ]);
-
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '3'
-
-        ]);
-
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '3'
+            'metas_id' => '1',
 
         ]);
 
         //
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '4'
+            'metas_id' => '2',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '4'
+            'metas_id' => '2',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '4'
+            'metas_id' => '2',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '4'
+            'metas_id' => '2',
 
         ]);
 
-         //
+        //
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '5'
-
-        ]);
-
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '5'
+            'metas_id' => '3',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '5'
+            'metas_id' => '3',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '5'
-
-        ]);
-
-         //
-        HabitosRv::firstOrCreate([
-            'nombre' => 'Habito',
-            'metas_id' => '6'
+            'metas_id' => '3',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '6'
+            'metas_id' => '3',
+
+        ]);
+
+        //
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '4',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '6'
+            'metas_id' => '4',
 
         ]);
 
         HabitosRv::firstOrCreate([
             'nombre' => 'Habito',
-            'metas_id' => '6'
+            'metas_id' => '4',
+
+        ]);
+
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '4',
+
+        ]);
+
+        //
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '5',
+
+        ]);
+
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '5',
+
+        ]);
+
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '5',
+
+        ]);
+
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '5',
+
+        ]);
+
+        //
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '6',
+
+        ]);
+
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '6',
+
+        ]);
+
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '6',
+
+        ]);
+
+        HabitosRv::firstOrCreate([
+            'nombre' => 'Habito',
+            'metas_id' => '6',
 
         ]);
     }

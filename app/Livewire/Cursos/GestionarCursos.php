@@ -66,21 +66,62 @@ class GestionarCursos extends Component
     {
         $query = Curso::query();
 
-        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        // 1. Jerarquía Superior: Permisos Globales (Spatie)
+        $user = auth()->user();
+        
+        if ($user->can('cursos.listar_todos_cursos')) {
+            // Acceso total por rol de sistema -> No aplicamos ningún filtro adicional
+        } elseif ($user->can('cursos.listar_solo_cursos_asignados')) {
+            // Acceso restringido -> Aplicamos el filtro de Cargos de Curso granular
+            $usuarioId = $user->id;
+            $cargosUsuario = \App\Models\CursoUsuarioCargo::with('tipoCargo')
+                ->where('usuario_id', $usuarioId)
+                ->where('activo', true)
+                ->get();
 
-        $verTodos = $rolActivo && $rolActivo->hasPermissionTo('cursos.listar_todos_cursos');
-        $verSoloAsignados = $rolActivo && $rolActivo->hasPermissionTo('cursos.listar_solo_cursos_asignados');
+            if ($cargosUsuario->isEmpty()) {
+                // Si tiene el permiso de Spatie pero no tiene ningún cargo asignado, no debería ver nada
+                $query->whereRaw('1 = 0');
+            } else {
+                // Verificar si algún cargo le da acceso total dentro del módulo
+                $tieneAccesoTotal = $cargosUsuario->contains(function ($cargo) {
+                    return $cargo->tipoCargo && $cargo->tipoCargo->puede_ver_todos_los_cursos;
+                });
 
-        if ($verTodos) {
-            // Ver todos -> no aplica restricción
-        } elseif ($verSoloAsignados) {
-            $query->whereHas('equipo', function ($q) {
-                // Filtramos por su ID de usuario en la tabla de asignaciones (curso_usuario_cargo)
-                $q->where('usuario_id', auth()->id())
-                  ->where('activo', true);
-            });
+                if (!$tieneAccesoTotal) {
+                    $carrerasPermitidasIds = [];
+                    $limitaAlgunaCarrera = false;
+                    
+                    foreach ($cargosUsuario as $cargo) {
+                        if ($cargo->tipoCargo && $cargo->tipoCargo->limita_carreras) {
+                            $limitaAlgunaCarrera = true;
+                            $permitidas = $cargo->tipoCargo->carreras_permitidas ?? [];
+                            if (is_array($permitidas)) {
+                                $carrerasPermitidasIds = array_merge($carrerasPermitidasIds, $permitidas);
+                            }
+                        }
+                    }
+                    
+                    $carrerasPermitidasIds = array_unique($carrerasPermitidasIds);
+
+                    if ($limitaAlgunaCarrera) {
+                        if (empty($carrerasPermitidasIds)) {
+                            $query->whereRaw('1 = 0');
+                        } else {
+                            $query->whereIn('carrera_id', $carrerasPermitidasIds);
+                        }
+                    } else {
+                        // Si no tiene "ver todos" Y ninguno de sus cargos limita carreras explícitamente, 
+                        // mantenemos el comportamiento por defecto de ver solo los cursos donde está asignado.
+                        $query->whereHas('equipo', function ($q) use ($usuarioId) {
+                            $q->where('usuario_id', $usuarioId)
+                              ->where('activo', true);
+                        });
+                    }
+                }
+            }
         } else {
-            // Si el usuario llega aquí pero no tiene explícitamente parametrizado su permiso de listado
+            // No tiene ninguno de los dos permisos de listado de Spatie
             $query->whereRaw('1 = 0');
         }
 

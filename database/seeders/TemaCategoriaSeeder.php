@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\TemaCategoria;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TemaCategoriaSeeder extends Seeder
@@ -16,34 +15,34 @@ class TemaCategoriaSeeder extends Seeder
         //
 
         TemaCategoria::firstOrCreate([
-          'tema_id'=> '1',
-          'categoria_tema_id'=> '1'
+            'tema_id' => '1',
+            'categoria_tema_id' => '1',
         ]);
 
         TemaCategoria::firstOrCreate([
-          'tema_id'=> '1',
-          'categoria_tema_id'=> '2'
+            'tema_id' => '1',
+            'categoria_tema_id' => '2',
         ]);
 
         TemaCategoria::firstOrCreate([
-          'tema_id'=> '2',
-          'categoria_tema_id'=> '1'
+            'tema_id' => '2',
+            'categoria_tema_id' => '1',
         ]);
 
         TemaCategoria::firstOrCreate([
-          'tema_id'=> '2',
-          'categoria_tema_id'=> '3'
+            'tema_id' => '2',
+            'categoria_tema_id' => '3',
         ]);
 
         TemaCategoria::firstOrCreate([
-          'tema_id'=> '3',
-          'categoria_tema_id'=> '2'
+            'tema_id' => '3',
+            'categoria_tema_id' => '2',
         ]);
 
         TemaCategoria::firstOrCreate([
-          'tema_id'=> '3',
-          'categoria_tema_id'=> '3'
-      ]);
+            'tema_id' => '3',
+            'categoria_tema_id' => '3',
+        ]);
 
     }
 }

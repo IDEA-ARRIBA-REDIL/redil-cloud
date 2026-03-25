@@ -162,6 +162,7 @@
                                                     </form>
                                                 </li>
                                             @endif
+
                                             <li>
                                                 <form action="{{ route('cursos.equipo.eliminar') }}" method="POST"
                                                     class="form-eliminar-miembro"
@@ -273,6 +274,8 @@
             </div>
         </form>
     </div>
+
+
 @endsection
 
 @section('page-script')
@@ -286,6 +289,8 @@
                     inputUsuarioId.value = event.id ? event.id : '';
                 }
             });
+
+
         });
     </script>
 @endsection

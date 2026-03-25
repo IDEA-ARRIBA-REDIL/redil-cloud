@@ -2,21 +2,15 @@
 
 namespace Database\Seeders;
 
-
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Facades\DB;
-
-
+use Illuminate\Support\Facades\Storage;
 
 class IntegrantesGrupoSeeder extends Seeder
 {
     /**
      * Ruta del archivo JSON dentro de la carpeta storage/app.
+     *
      * @var string
      */
     protected $filePath = 'seeders/integrantes_grupo_202507282019.json';
@@ -27,8 +21,9 @@ class IntegrantesGrupoSeeder extends Seeder
     public function run(): void
     {
         // 1. Verificamos que el archivo JSON exista
-        if (!file_exists(base_path('storage/app/' . $this->filePath))) {
+        if (! file_exists(base_path('storage/app/'.$this->filePath))) {
             $this->command->error('¡Archivo JSON de integrantes_grupo no encontrado!');
+
             return;
         }
 
@@ -37,7 +32,7 @@ class IntegrantesGrupoSeeder extends Seeder
         // 2. Vaciamos la tabla para una importación limpia
 
         // 3. Leemos y decodificamos el contenido del archivo JSON
-        $jsonContent = file_get_contents(base_path('storage/app/' . $this->filePath));
+        $jsonContent = file_get_contents(base_path('storage/app/'.$this->filePath));
         $data = json_decode($jsonContent, true);
 
         // Apuntamos al array de registros dentro de la clave "RECORDS"
@@ -45,6 +40,7 @@ class IntegrantesGrupoSeeder extends Seeder
 
         if (empty($integrantesData)) {
             $this->command->error('El archivo JSON de integrantes está vacío o no contiene registros válidos.');
+
             return;
         }
 
@@ -52,7 +48,7 @@ class IntegrantesGrupoSeeder extends Seeder
         $integrantesParaInsertar = [];
         foreach ($integrantesData as $integrante) {
             // Saltamos cualquier registro que no tenga un id
-            if (!isset($integrante['id'])) {
+            if (! isset($integrante['id'])) {
                 continue;
             }
 
@@ -66,7 +62,7 @@ class IntegrantesGrupoSeeder extends Seeder
         }
 
         // 5. Insertamos todos los registros en una sola consulta para mayor eficiencia
-        if (!empty($integrantesParaInsertar)) {
+        if (! empty($integrantesParaInsertar)) {
             // Dividimos la inserción en trozos (chunks) para manejar archivos muy grandes
             // Dividimos la inserción en trozos (chunks) para manejar archivos muy grandes
             foreach ($integrantesParaInsertar as $integrante) {
@@ -77,6 +73,6 @@ class IntegrantesGrupoSeeder extends Seeder
             }
         }
 
-        $this->command->info('✔️  ¡Proceso finalizado! Se han importado ' . count($integrantesParaInsertar) . ' integrantes de grupo.');
+        $this->command->info('✔️  ¡Proceso finalizado! Se han importado '.count($integrantesParaInsertar).' integrantes de grupo.');
     }
 }

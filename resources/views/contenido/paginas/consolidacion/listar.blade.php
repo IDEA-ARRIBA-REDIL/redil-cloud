@@ -481,6 +481,20 @@ $configData = Helper::appClasses();
                 <small class="fw-semibold text-black ">{{ $persona->edad() > 1 ?  $persona->edad().' años' : $persona->edad().' año'}}</small>
               </div>
 
+              <div class="col-6 d-flex flex-column mt-1">
+                <small class="text-black">Sede</small>
+                <small class="fw-semibold text-black ">{{ $persona->sede->nombre ?? 'No especificada'}}</small>
+              </div>
+
+              <div class="col-6 d-flex flex-column mt-1">
+                <small class="text-black">¿Dado de baja?</small>
+                @if($persona->trashed())
+                   <small class="fw-semibold text-danger">Sí</small>
+                @else
+                   <small class="fw-semibold text-success">No</small>
+                @endif
+              </div>
+
             </div>
 
             <div class="collapse" id="cardBodyPersona{{ $persona->id }}">
@@ -657,6 +671,16 @@ $configData = Helper::appClasses();
                   <option value="0" {{ $parametrosBusqueda->filtroPorSexo == 0 ? 'selected' : '' }}>Hombres</option>
                   <option value="1" {{ $parametrosBusqueda->filtroPorSexo == 1 ? 'selected' : '' }}>Mujeres</option>
                   <option value="" {{ !is_numeric($parametrosBusqueda->filtroPorSexo) ? 'selected' : '' }}>Todos</option>
+                </select>
+              </div>
+
+              <!-- Por sedes -->
+              <div class="col-12 mb-3">
+                <label for="filtroPorSede" class="form-label">Fitrar por sedes</label>
+                <select id="filtroPorSede" name="filtroPorSede[]" class="select2BusquedaAvanzada form-select" multiple>
+                  @foreach($sedes as $sede)
+                  <option value="{{ $sede->id }}" {{ $parametrosBusqueda->filtroPorSede && in_array($sede->id, $parametrosBusqueda->filtroPorSede) ? 'selected' : '' }}>{{ $sede->nombre }}</option>
+                  @endforeach
                 </select>
               </div>
 

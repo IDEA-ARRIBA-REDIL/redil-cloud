@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('albumes', function (Blueprint $table) {
+        Schema::create('albumes', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre',100);
+            $table->string('nombre', 100);
             $table->string('imagen')->nullable();
             $table->timestamps();
         });

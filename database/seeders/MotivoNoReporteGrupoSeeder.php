@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\MotivoNoReporteGrupo;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class MotivoNoReporteGrupoSeeder extends Seeder
@@ -14,20 +13,20 @@ class MotivoNoReporteGrupoSeeder extends Seeder
     public function run(): void
     {
         MotivoNoReporteGrupo::firstOrCreate([
-          'nombre'=>'Compromiso'
+            'nombre' => 'Compromiso',
         ]);
 
         MotivoNoReporteGrupo::firstOrCreate([
-          'nombre'=>'Enfermedad'
+            'nombre' => 'Enfermedad',
         ]);
 
         MotivoNoReporteGrupo::firstOrCreate([
-          'nombre'=>'Asunto familiar'
+            'nombre' => 'Asunto familiar',
         ]);
 
         MotivoNoReporteGrupo::firstOrCreate([
-          'nombre'=>'Otro',
-          'descripcion_adicional'=>true
+            'nombre' => 'Otro',
+            'descripcion_adicional' => true,
         ]);
 
     }

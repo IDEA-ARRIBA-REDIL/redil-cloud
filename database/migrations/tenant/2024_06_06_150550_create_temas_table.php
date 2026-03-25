@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->timestamps();
             $table->string('titulo', 100)->nullable();
-            $table->string('portada',500)->default("default.png")->nullable();
+            $table->string('portada', 500)->default('default.png')->nullable();
             $table->string('url', 500)->nullable();
             $table->boolean('estado')->default(0)->nullable();
             $table->text('contenido');

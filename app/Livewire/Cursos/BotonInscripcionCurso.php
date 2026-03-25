@@ -111,8 +111,18 @@ class BotonInscripcionCurso extends Component
             return;
         }
 
+        $usuario = Auth::user();
+
+        // Buscar carrito pendiente o crearlo para persistir la compra directa
+        $carrito = CarritoCursoUser::firstOrCreate(
+            ['user_id' => $usuario->id, 'estado' => 'pendiente'],
+            ['items' => [], 'total' => 0]
+        );
+
+        $carrito->agregarCurso($this->curso, $this->curso->precio);
+
         // Aquí redirigiremos a la nueva vista interactiva de CheckoutCursos
-        // Pasando el curso_id que quiere comprar directamente
+        // Pasando el curso_id que quiere comprar directamente (opcional si ya está en el carrito, pero útil para resaltar)
         return redirect()->to('/cursos/checkout?curso_id=' . $this->curso->id);
     }
 

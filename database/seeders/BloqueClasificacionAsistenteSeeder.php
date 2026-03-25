@@ -21,8 +21,8 @@ class BloqueClasificacionAsistenteSeeder extends Seeder
 
         // Asociar clasificaciones típicas de adultos si existen
         $clasificacionesAdultos = ClasificacionAsistente::whereIn('id', [
-            1, //Adultos que llegaron por grupo
-            2, //Adultos no creados
+            1, // Adultos que llegaron por grupo
+            2, // Adultos no creados
         ])->get();
 
         if ($clasificacionesAdultos->isNotEmpty()) {
@@ -37,8 +37,8 @@ class BloqueClasificacionAsistenteSeeder extends Seeder
 
         // Asociar clasificaciones típicas de niños si existen
         $clasificacionesMenores = ClasificacionAsistente::whereIn('id', [
-            3, //Niños que llegaron por grupo
-            4, //Niños no creados
+            3, // Niños que llegaron por grupo
+            4, // Niños no creados
         ])->get();
 
         if ($clasificacionesMenores->isNotEmpty()) {
@@ -53,7 +53,7 @@ class BloqueClasificacionAsistenteSeeder extends Seeder
 
         // Asociar clasificaciones típicas de conversiones si existen
         $clasificacionesConversiones = ClasificacionAsistente::whereIn('id', [
-            5, //Conversiones
+            5, // Conversiones
         ])->get();
 
         if ($clasificacionesConversiones->isNotEmpty()) {

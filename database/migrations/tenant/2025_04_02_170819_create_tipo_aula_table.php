@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('tipo_aula', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre',100);
+            $table->string('nombre', 100);
             $table->boolean('sector')->default(false); // si sector esta true es sector, si es false es de templo
             $table->timestamps();
         });

@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tipos_campo_tiempo_con_dios', function (Blueprint $table) {
-          $table->id();
-          $table->string('nombre', 100);
-          $table->boolean('es_input')->default(0);
-          $table->timestamps();
+            $table->id();
+            $table->string('nombre', 100);
+            $table->boolean('es_input')->default(0);
+            $table->timestamps();
         });
     }
 

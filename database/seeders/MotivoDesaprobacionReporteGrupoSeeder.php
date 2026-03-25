@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\MotivoDesaprobacionReporteGrupo;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class MotivoDesaprobacionReporteGrupoSeeder extends Seeder
@@ -14,17 +13,17 @@ class MotivoDesaprobacionReporteGrupoSeeder extends Seeder
     public function run(): void
     {
 
-      MotivoDesaprobacionReporteGrupo::firstOrCreate([
-        'nombre'=>'Excedente en el sobre'
-      ]);
+        MotivoDesaprobacionReporteGrupo::firstOrCreate([
+            'nombre' => 'Excedente en el sobre',
+        ]);
 
-      MotivoDesaprobacionReporteGrupo::firstOrCreate([
-        'nombre'=>'Faltante en el sobre'
-      ]);
+        MotivoDesaprobacionReporteGrupo::firstOrCreate([
+            'nombre' => 'Faltante en el sobre',
+        ]);
 
-      MotivoDesaprobacionReporteGrupo::firstOrCreate([
-        'nombre'=>'Otro'
-      ]);
+        MotivoDesaprobacionReporteGrupo::firstOrCreate([
+            'nombre' => 'Otro',
+        ]);
 
     }
 }

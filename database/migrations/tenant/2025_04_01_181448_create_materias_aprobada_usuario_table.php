@@ -30,8 +30,6 @@ return new class extends Migration
             $table->integer('total_asistencias')->nullable()->comment('Conteo final de asistencias');
             $table->string('motivo_reprobacion')->nullable()->comment('Motivo si el estado es reprobado');
 
-
-
             $table->boolean('es_homologacion')->default(false);
             $table->text('observacion_homologacion')->nullable();
             $table->integer('sede_id')->nullable()->default(2);

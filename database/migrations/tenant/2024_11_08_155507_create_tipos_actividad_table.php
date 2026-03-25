@@ -17,9 +17,9 @@ return new class extends Migration
             $table->text('descripcion');
             $table->timestamps();
             $table->string('color', 30)->nullable();
-            //$table->boolean('visualizada_por_todos')->default('false')->nullable();
-            //$table->boolean('tipo_evento')->default('false')->nullable();
-            //$table->integer('estado');
+            // $table->boolean('visualizada_por_todos')->default('false')->nullable();
+            // $table->boolean('tipo_evento')->default('false')->nullable();
+            // $table->integer('estado');
             $table->boolean('requiere_inscripcion')->default('false')->nullable();
             $table->boolean('unica_compra')->default('false')->nullable();
             $table->boolean('multiples_compras')->default('false')->nullable();
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->boolean('requiere_inicio_sesion')->default('false')->nullable();
             $table->boolean('permite_abonos')->default('false')->nullable();
             $table->boolean('es_gratuita')->default('false')->nullable();
-            //$table->boolean('visible')->default('false')->nullable();
+            // $table->boolean('visible')->default('false')->nullable();
             $table->boolean('tipo_escuelas')->default('false')->nullable();
             $table->boolean('inscripcion_parientes')->default('false')->nullable();
             $table->boolean('aplicar_restriccion_menores')->default('false')->nullable();

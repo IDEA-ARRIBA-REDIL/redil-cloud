@@ -403,6 +403,17 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Grupo::class, 'integrantes_grupo', 'user_id', 'grupo_id')->withTimestamps();
     }
 
+    // obtiene el histórico en grupos del usuario
+    public function bitacorasIntegranteGrupo(): HasMany
+    {
+        return $this->hasMany(BitacoraIntegranteGrupo::class, 'user_id');
+    }
+
+    public function bitacorasEstadoCivil(): HasMany
+    {
+        return $this->hasMany(BitacoraEstadoCivil::class, 'user_id');
+    }
+
     // obtiene los grupos donde el usuario el encargado
     public function gruposEncargados(): BelongsToMany
     {
@@ -836,6 +847,14 @@ class User extends Authenticatable implements MustVerifyEmail
                 $relacion_asistente_grupo->save();
                 $this->asignarSede($grupo_id);
 
+                // Registrar en la bitácora
+                \App\Models\BitacoraIntegranteGrupo::create([
+                    'grupo_id' => $grupo_id,
+                    'user_id' => $this->id,
+                    'estado_vinculacion' => true,
+                    'autor_id' => auth()->id() ?? $this->id,
+                ]);
+
                 return true;
             }
         }
@@ -847,6 +866,14 @@ class User extends Authenticatable implements MustVerifyEmail
             // Verifico si ya existe alguna relación de integrante entre este asistente y este grupo
             if (IntegranteGrupo::where('integrantes_grupo.user_id', $this->id)->where('grupo_id', $grupo_id)->count() > 0) {
                 $relacion_asistente_grupo = IntegranteGrupo::where('integrantes_grupo.user_id', $this->id)->where('grupo_id', $grupo_id)->delete();
+
+                // Registrar en la bitácora
+                \App\Models\BitacoraIntegranteGrupo::create([
+                    'grupo_id' => $grupo_id,
+                    'user_id' => $this->id,
+                    'estado_vinculacion' => false,
+                    'autor_id' => auth()->id() ?? $this->id,
+                ]);
             }
         }
 

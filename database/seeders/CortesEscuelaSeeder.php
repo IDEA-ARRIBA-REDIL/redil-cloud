@@ -2,11 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use App\Models\CorteEscuela;
 use App\Models\Escuela;       // Importar modelo Escuela
-use App\Models\CorteEscuela;  // Importar modelo CorteEscuela
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Seeder;  // Importar modelo CorteEscuela
 
 class CortesEscuelaSeeder extends Seeder
 {
@@ -38,9 +36,9 @@ class CortesEscuelaSeeder extends Seeder
         $sumaPorcentajes = array_sum(array_column($cortesPorDefecto, 'porcentaje'));
         if ($sumaPorcentajes !== 100) {
             $this->command->error("Error en el Seeder: Los porcentajes por defecto definidos no suman 100 (Suma actual: {$sumaPorcentajes}). Ajusta el array \$cortesPorDefecto.");
+
             return; // Detener el seeder si la suma no es 100
         }
-
 
         $this->command->info('Iniciando seeder de Cortes por Escuela con porcentajes...');
 
@@ -49,12 +47,13 @@ class CortesEscuelaSeeder extends Seeder
 
             // Verificar si la escuela ya tiene cortes para evitar duplicados
             if ($escuela->cortesEscuela()->count() > 0) {
-                $this->command->warn("-> La escuela ya tiene cortes definidos. Saltando...");
+                $this->command->warn('-> La escuela ya tiene cortes definidos. Saltando...');
+
                 continue; // Pasar a la siguiente escuela
             }
 
             // Crear los cortes por defecto para esta escuela
-            $this->command->info("-> Creando cortes por defecto con porcentajes...");
+            $this->command->info('-> Creando cortes por defecto con porcentajes...');
             foreach ($cortesPorDefecto as $corteData) {
                 try {
                     CorteEscuela::firstOrCreate([
@@ -65,7 +64,7 @@ class CortesEscuelaSeeder extends Seeder
                     ]);
                     $this->command->info("   - Corte '{$corteData['nombre']}' (Orden: {$corteData['orden']}, Porcentaje: {$corteData['porcentaje']}%) creado.");
                 } catch (\Exception $e) {
-                     $this->command->error("   - Error al crear corte '{$corteData['nombre']}': " . $e->getMessage());
+                    $this->command->error("   - Error al crear corte '{$corteData['nombre']}': ".$e->getMessage());
                 }
             }
         }

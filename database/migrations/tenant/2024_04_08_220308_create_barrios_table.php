@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('barrios', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            $table->string('nombre',55);
+            $table->string('nombre', 55);
             $table->integer('localidad_id')->nullable();
             $table->integer('municipio_id')->nullable();
-            $table->string('latitud',25)->nullable();
-            $table->string('longitud',25)->nullable();
+            $table->string('latitud', 25)->nullable();
+            $table->string('longitud', 25)->nullable();
         });
     }
 

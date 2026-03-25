@@ -2,20 +2,18 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
 use App\Models\TipoIdentificacion;
+use Illuminate\Database\Seeder;
 
 class TipoIdentificacionSeeder extends Seeder
 {
-  /**
-   * Run the database seeds.
-   */
-  public function run(): void
-  {
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
 
-      $tiposDeIdentificaciones = '[
+        $tiposDeIdentificaciones = '[
         {"id":"1","abreviatura":"RC","nombre":"Registro civil","formularioDonacion":"si"},
         {"id":"2","abreviatura":"TI","nombre":"Tarjeta de identificación","formularioDonacion":"si"},
         {"id":"3","abreviatura":"CC","nombre":"Cédula de ciudadanía","formularioDonacion":"si"},
@@ -42,13 +40,13 @@ class TipoIdentificacionSeeder extends Seeder
         {"id":"24","abreviatura":"PPT","nombre":"Permiso de Protección Temporal","formularioDonacion":"no"}
       ]';
 
-      $items = json_decode($tiposDeIdentificaciones);
-      foreach ($items as $item) {
-        TipoIdentificacion::firstOrCreate([
-          'nombre' => $item->nombre,
-          'formulario_donacion' => $item->formularioDonacion == 'si' ? true : false,
-          'abreviatura' => $item->abreviatura
-        ]);
-      }
-  }
+        $items = json_decode($tiposDeIdentificaciones);
+        foreach ($items as $item) {
+            TipoIdentificacion::firstOrCreate([
+                'nombre' => $item->nombre,
+                'formulario_donacion' => $item->formularioDonacion == 'si' ? true : false,
+                'abreviatura' => $item->abreviatura,
+            ]);
+        }
+    }
 }

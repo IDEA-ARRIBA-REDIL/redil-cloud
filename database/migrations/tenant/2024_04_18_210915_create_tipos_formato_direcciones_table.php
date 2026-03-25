@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tipos_formato_direcciones', function (Blueprint $table) {
-          $table->id();
-          $table->string('nombre', 100);
-          $table->softDeletes();
-          $table->timestamps();
+            $table->id();
+            $table->string('nombre', 100);
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 

@@ -198,7 +198,7 @@ class PeticionController extends Controller
     ]);
   }
 
-  public function gestionar(Request $request, $tipo = 'sin-responder')
+  public function gestionar(Request $request, $tipo = 'pendientes')
   {
 
     $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
@@ -235,43 +235,43 @@ class PeticionController extends Controller
     }
 
     $item = new stdClass();
-    $item->nombre = 'Sin responder';
-    $item->url = 'sin-responder';
+    $item->nombre = 'Pendientes';
+    $item->url = 'pendientes';
     $item->cantidad = $peticiones->where('estado', 1)->count();
     $item->color = 'bg-label-primary';
     $item->imagen = 'icono_indicador.png';
-    $item->icono = 'ti ti-notes';
+    $item->icono = 'ti ti-clock';
     $indicadores[] = $item;
 
     $item = new stdClass();
-    $item->nombre = 'Con seguimiento';
-    $item->url = 'con-seguimiento';
+    $item->nombre = 'En proceso';
+    $item->url = 'en-proceso';
     $item->cantidad = $peticiones->where('estado', 3)->count();
-    $item->color = 'bg-label-warning';
+    $item->color = 'bg-label-info';
     $item->imagen = 'icono_indicador.png';
-    $item->icono = 'ti ti-file-like';
+    $item->icono = 'ti ti-loader';
     $indicadores[] = $item;
 
     $item = new stdClass();
-    $item->nombre = 'Finalizadas';
-    $item->url = 'finalizadas';
+    $item->nombre = 'Cerradas';
+    $item->url = 'cerradas';
     $item->cantidad = $peticiones->where('estado', 2)->count();
     $item->color = 'bg-label-success';
     $item->imagen = 'icono_indicador.png';
-    $item->icono = 'ti ti-file-check';
+    $item->icono = 'ti ti-check';
     $indicadores[] = $item;
 
     $indicadores = collect($indicadores);
 
-    if ($tipo == 'sin-responder') {
+    if ($tipo == 'pendientes' || $tipo == 'sin-responder') {
       $peticiones = $peticiones->where('estado', 1);
-      $textoBusqueda .= '<b> Tipo: </b>"Sin resporder"';
-    } elseif ($tipo == 'finalizadas') {
+      $textoBusqueda .= '<b> Tipo: </b>"Pendientes"';
+    } elseif ($tipo == 'cerradas' || $tipo == 'finalizadas') {
       $peticiones = $peticiones->where('estado', 2);
-      $textoBusqueda .= '<b> Tipo: </b>"Finalizadas"';
-    } elseif ($tipo == 'con-seguimiento') {
+      $textoBusqueda .= '<b> Tipo: </b>"Cerradas"';
+    } elseif ($tipo == 'en-proceso' || $tipo == 'resueltas' || $tipo == 'con-seguimiento') {
       $peticiones = $peticiones->where('estado', 3);
-      $textoBusqueda .= '<b> Tipo: </b>"Con seguimiento"';
+      $textoBusqueda .= '<b> Tipo: </b>"En proceso"';
     }
 
     // Filtro por persona
@@ -461,7 +461,7 @@ class PeticionController extends Controller
     $peticion->tipo_peticion_id = $request->tipo_de_petición;
     $peticion->autor_creacion_id = auth()->user()->id;
     $peticion->pais_id = $usuario->pais_id;
-    $peticion->estado = 1; // 1=Iniciada, 2=Finalizada, 3=Seguimiento
+    $peticion->estado = 1; // 1=Pendiente, 3=En proceso, 2=Cerrada
 
     $peticion->fecha = Carbon::now()->format('Y-m-d');
     $peticion->save();
@@ -495,29 +495,30 @@ class PeticionController extends Controller
           $mensaje .=
             '<I>' . $respuestaText . '</I> <B>(' . $jsonVersiculos[$random - 1]->titulo . ', RVR60)</B></p>';
         }
-      } catch (Exception $e) {
+
+        $mensaje .= $peticion->tipoPeticion->mensaje_parte_2;
+
+        $mailData = new stdClass();
+        $mailData->subject = 'Petición';
+        $mailData->nombre = $usuario->nombre(3);
+        $mailData->mensaje = $mensaje;
+
+        if ($peticion->tipoPeticion->banner_email != '') {
+          $mailData->banner =
+            $configuracion->version == 1
+            ? Storage::url(
+              $configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email
+            )
+            : Storage::url(
+              $configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email
+            );
+        }
+
+        Mail::to($usuario->email)->send(new DefaultMail($mailData));
+
+      } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error("Error enviando correo de creacion de peticion ID {$peticion->id}: ".$e->getMessage());
       }
-
-      $mensaje .= $peticion->tipoPeticion->mensaje_parte_2;
-
-      $mailData = new stdClass();
-      $mailData->subject = 'Petición';
-      $mailData->nombre = $usuario->nombre(3);
-      $mailData->mensaje = $mensaje;
-
-      if ($peticion->tipoPeticion->banner_email != '') {
-        $mailData->banner =
-          $configuracion->version == 1
-          ? Storage::url(
-            $configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email
-          )
-          : Storage::url(
-            $configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email
-          );
-      }
-
-      //Mail::to($usuario->email)->send(new DefaultMail($mailData));
-      Mail::to('softjuancarlos@gmail.com')->send(new DefaultMail($mailData));
     }
 
     return back()->with('success', "La petición de <b>" . $usuario->nombre(3) . "</b> fue creada con éxito.");

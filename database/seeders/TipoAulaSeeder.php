@@ -1,8 +1,8 @@
 <?php
 
 namespace Database\Seeders;
+
 use App\Models\TipoAula;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TipoAulaSeeder extends Seeder
@@ -14,33 +14,33 @@ class TipoAulaSeeder extends Seeder
     {
         //
         TipoAula::firstOrCreate(
-            ['nombre'=>'Presencial Templo'],
-            ['sector'=>false]
+            ['nombre' => 'Presencial Templo'],
+            ['sector' => false]
         );
 
         TipoAula::firstOrCreate(
-            ['nombre'=>'Presencial Sector'],
-            ['sector'=> true]
+            ['nombre' => 'Presencial Sector'],
+            ['sector' => true]
         );
 
         TipoAula::firstOrCreate(
-            ['nombre'=>'Virtual True'],
-             ['sector'=>true]
+            ['nombre' => 'Virtual True'],
+            ['sector' => true]
         );
 
         TipoAula::firstOrCreate(
-            ['nombre'=>'Virtual False'],
-             ['sector'=>false]
+            ['nombre' => 'Virtual False'],
+            ['sector' => false]
         );
 
         TipoAula::firstOrCreate(
-            ['nombre'=>'Internacional'],
-            ['sector'=>false]
+            ['nombre' => 'Internacional'],
+            ['sector' => false]
         );
 
         TipoAula::firstOrCreate(
-            ['nombre'=>'Mixta'],
-            ['sector'=>false]
+            ['nombre' => 'Mixta'],
+            ['sector' => false]
         );
     }
 }

@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('monedas', function (Blueprint $table) {
-          $table->id();
-          $table->string('nombre',20);
-          $table->string('nombre_corto',10);
-          $table->double('donacion_maxima');
-          $table->boolean('habilitada_donacion')->default('false')->nullable();
-          $table->boolean('default')->default(0);
-          $table->string('codigo_alpha',10)->defult('co');
-          $table->timestamps();
+            $table->id();
+            $table->string('nombre', 20);
+            $table->string('nombre_corto', 10);
+            $table->double('donacion_maxima');
+            $table->boolean('habilitada_donacion')->default('false')->nullable();
+            $table->boolean('default')->default(0);
+            $table->string('codigo_alpha', 10)->defult('co');
+            $table->timestamps();
         });
     }
 

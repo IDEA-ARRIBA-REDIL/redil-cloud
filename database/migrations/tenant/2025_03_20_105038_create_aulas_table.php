@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('aulas', function (Blueprint $table) {
+        Schema::create('aulas', function (Blueprint $table) {
             $table->id(); // ID único del aula
             $table->string('nombre', 100); // Nombre del aula (ej: "Aula 101")
             $table->string('direccion', 100)->nullable();
             $table->text('descripcion')->nullable(); // Descripción del aula
             $table->integer('sede_id')->default(1);
             $table->integer('tipo_aula_id')->default(1);
-            $table->boolean('activo')->default(TRUE);
+            $table->boolean('activo')->default(true);
             $table->timestamps(); // Fechas de creación y actualización
             $table->softDeletes(); // Soft deletes para mantener historial
         });

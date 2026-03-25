@@ -11,10 +11,10 @@ use App\Models\Configuracion;
 return [
   "creatorName" => "IDEARRIBA",
   "creatorUrl" => "https://redil.co",
-  "templateName" => 'Crecer',
+  "templateName" => 'Software Redil',
   "templateNameColor" => 'white',
   "templateDescriptionLogin" => "Descubre lo que Dios tiene para ti",
-  "templateSuffix" => "Crecer, descubre lo que Dios tiene para ti",
+  "templateSuffix" => "Software Redil, descubre lo que Dios tiene para ti",
   "templateVersion" => "2.0.0",
   "templateFree" => false,
   "templateDescription" => "Plataforma para la administración de iglesias, pastores, eventos y crecimiento espiritual del creyente.",

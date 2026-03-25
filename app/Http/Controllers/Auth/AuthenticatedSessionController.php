@@ -9,10 +9,9 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\Session;
-
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Session;
+use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -24,20 +23,18 @@ class AuthenticatedSessionController extends Controller
         $formularios = FormularioUsuario::where('tipo_formulario_id', '=', 3)
             ->select('id', 'nombre', 'label', 'tipo_formulario_id')->get();
 
-        $emailDefault =  Session::get('emailDefault') ?  Session::get('emailDefault') : '';
+        $emailDefault = Session::get('emailDefault') ? Session::get('emailDefault') : '';
 
         // Limpiar la sesión
         Session::forget('emailDefault');
 
-
         if ($request->has('redirect')) {
-          session(['url.intended' => $request->input('redirect')]);
+            session(['url.intended' => $request->input('redirect')]);
         }
-
 
         return view('contenido.authentications.login', [
             'formularios' => $formularios,
-            'emailDefault' => $emailDefault
+            'emailDefault' => $emailDefault,
         ]);
     }
 
@@ -46,8 +43,6 @@ class AuthenticatedSessionController extends Controller
      * PASO 3 COMO EL TIENE ESE REQUEST LA SESSION YA CARGADA PERO ADEMAS TIENE LA RUTA EL PREGUNTA QUE SI INTENDED TIENE CUALQUIER COSA QUE LO REDIRIJA
      * ALLA Y SINO HAY RUTA DE INTENDED EL ENTIENDE QUE DEBE REDIRIGIRSE AL HOME
      */
-
-
     public function store(LoginRequest $request)
     {
         $request->authenticate();
@@ -55,7 +50,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         // Obtener la URL guardada
-       // $redirectUrl = Session::get('url.intended');
+        // $redirectUrl = Session::get('url.intended');
 
         // Limpiar la sesión
         /*$crearHijo = Session::get('crearHijo');
@@ -73,15 +68,16 @@ class AuthenticatedSessionController extends Controller
 
         // Verificamos si tiene hijos y si NUNCA se le ha mostrado el modal
         if ($user->tiene_hijos && $user->mostrar_modal_agregar_hijos) {
-          $request->session()->flash('show_children_modal', true);
+            $request->session()->flash('show_children_modal', true);
         }
 
-        //Session::forget('url.intended');
+        // Session::forget('url.intended');
         // Session::forget('crearHijo');
 
         // Redireccionar a la URL guardada o a la ruta por defecto AQUI HACE LO DE ARRIBA COMENTARIADO
         return redirect()->intended(RouteServiceProvider::HOME);
     }
+
     /**
      * Destroy an authenticated session.
      */

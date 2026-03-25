@@ -20,10 +20,12 @@ class EstadoCivilSeeder extends Seeder
 
     EstadoCivil::firstOrCreate([
       'nombre' => 'Casado por lo civil',
+      'es_matrimonio' => true,
     ]);
 
     EstadoCivil::firstOrCreate([
       'nombre' => 'Casado por la iglesia',
+      'es_matrimonio' => true,
     ]);
 
     EstadoCivil::firstOrCreate([
@@ -45,6 +47,7 @@ class EstadoCivilSeeder extends Seeder
 
     EstadoCivil::firstOrCreate([
       'nombre' => 'Casado por ambas',
+      'es_matrimonio' => true,
     ]);
   }
 }

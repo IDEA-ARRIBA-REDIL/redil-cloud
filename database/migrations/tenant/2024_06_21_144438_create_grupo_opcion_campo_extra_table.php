@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-      // antes se llamaba la tabla grupo_opcion_campo_extra_id
+        // antes se llamaba la tabla grupo_opcion_campo_extra_id
         Schema::create('grupo_opcion_campo_extra', function (Blueprint $table) {
             $table->id();
             $table->timestamps();

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Pago;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PagoSeeder extends Seeder
@@ -13,7 +12,7 @@ class PagoSeeder extends Seeder
      */
     public function run(): void
     {
-        // 
+        //
         Pago::firstOrCreate([
             'compra_id' => 1,
             'tipo_pago_id' => 1,
@@ -27,7 +26,7 @@ class PagoSeeder extends Seeder
             'registro_caja_id' => 0,
             'historial_carga_de_archivo_id' => 0,
             'comision' => 0,
-            'valor_neto' => '40000'
+            'valor_neto' => '40000',
         ]);
     }
 }

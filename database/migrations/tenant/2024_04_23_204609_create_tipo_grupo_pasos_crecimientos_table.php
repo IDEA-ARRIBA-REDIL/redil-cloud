@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-       Schema::dropIfExists('tipo_grupo_pasos_crecimientos');
+        Schema::dropIfExists('tipo_grupo_pasos_crecimientos');
     }
 };

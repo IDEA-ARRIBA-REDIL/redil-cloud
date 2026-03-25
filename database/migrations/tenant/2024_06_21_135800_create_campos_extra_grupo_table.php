@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('campos_extra_grupo', function (Blueprint $table) {
-          $table->id();
-          $table->timestamps();
-          $table->string('nombre',100);
-          $table->integer('tipo_de_campo');
-          $table->boolean('required')->default(1);
-          $table->string('class_col',100)->nullable();
-          $table->string('class_id',100)->nullable();
-          $table->text('opciones_select')->nullable();
-          $table->boolean('visible')->nullable();
+            $table->id();
+            $table->timestamps();
+            $table->string('nombre', 100);
+            $table->integer('tipo_de_campo');
+            $table->boolean('required')->default(1);
+            $table->string('class_col', 100)->nullable();
+            $table->string('class_id', 100)->nullable();
+            $table->text('opciones_select')->nullable();
+            $table->boolean('visible')->nullable();
         });
     }
 

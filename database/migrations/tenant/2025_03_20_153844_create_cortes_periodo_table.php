@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-         // Si necesitas eliminar una tabla 'cortes_periodo' preexistente:
-         // Schema::dropIfExists('cortes_periodo');
+        // Si necesitas eliminar una tabla 'cortes_periodo' preexistente:
+        // Schema::dropIfExists('cortes_periodo');
 
         Schema::create('cortes_periodo', function (Blueprint $table) {
             $table->id();

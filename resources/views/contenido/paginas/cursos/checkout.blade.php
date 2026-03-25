@@ -16,5 +16,5 @@
 
 @section('content')
     <!-- Inyectamos el componente Livewire para el Checkout -->
-    @livewire('cursos.checkout-cursos')
+    @livewire('cursos.checkout-cursos', ['carrito' => $carrito])
 @endsection

@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('versiculo_usuario_like', function (Blueprint $table) {
             $table->id();
-            
+
             // Relaciones
             $table->foreignId('usuario_id')
-                  ->constrained('users') // Asumiendo que tu tabla de usuarios es 'users'
-                  ->onDelete('cascade');
-                  
+                ->constrained('users') // Asumiendo que tu tabla de usuarios es 'users'
+                ->onDelete('cascade');
+
             $table->foreignId('versiculo_diario_id')
-                  ->constrained('versiculos_diarios')
-                  ->onDelete('cascade');
+                ->constrained('versiculos_diarios')
+                ->onDelete('cascade');
 
             $table->timestamps();
 

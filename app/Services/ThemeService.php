@@ -550,7 +550,7 @@ class ThemeService
               display: flex;
               justify-content: space-around;
               align-items: center;
-              z-index: 1095;
+              z-index: 1050;
               padding-bottom: 5px;
               box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
             }

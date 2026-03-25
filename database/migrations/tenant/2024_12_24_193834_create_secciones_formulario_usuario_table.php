@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('secciones_formulario_usuario', function (Blueprint $table) {
-          $table->id();
-          $table->timestamps();
-          $table->string('nombre', 200); //Este va ser para identificarlo en la plataforma
-          $table->string('titulo', 200); // Este es el que se va mostrar para el usuario
-          $table->integer('formulario_usuario_id');
-          $table->smallInteger('orden');
-          $table->string('icono', 200)->nullable(); // Esta es un icono que va a lado de titulo en la los formularios tipo step
-          $table->string('logo', 200)->nullable(); // Esta es una imagen que va a lado de titulo en algunos secciones de algunos formulario
+            $table->id();
+            $table->timestamps();
+            $table->string('nombre', 200); // Este va ser para identificarlo en la plataforma
+            $table->string('titulo', 200); // Este es el que se va mostrar para el usuario
+            $table->integer('formulario_usuario_id');
+            $table->smallInteger('orden');
+            $table->string('icono', 200)->nullable(); // Esta es un icono que va a lado de titulo en la los formularios tipo step
+            $table->string('logo', 200)->nullable(); // Esta es una imagen que va a lado de titulo en algunos secciones de algunos formulario
         });
     }
 

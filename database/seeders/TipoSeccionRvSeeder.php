@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\TipoSeccionRv;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TipoSeccionRvSeeder extends Seeder
@@ -15,7 +14,6 @@ class TipoSeccionRvSeeder extends Seeder
     {
         //
 
-
         TipoSeccionRv::firstOrCreate([
             'nombre' => 'contador',
             'min' => '0',
@@ -23,7 +21,7 @@ class TipoSeccionRvSeeder extends Seeder
             'validacion' => true,
             'encuesta' => false,
             'resumen' => false,
-            'url_imagen' => ''
+            'url_imagen' => '',
 
         ]);
 
@@ -34,7 +32,7 @@ class TipoSeccionRvSeeder extends Seeder
             'validacion' => true,
             'encuesta' => false,
             'resumen' => false,
-            'url_imagen' => ''
+            'url_imagen' => '',
 
         ]);
 
@@ -45,7 +43,7 @@ class TipoSeccionRvSeeder extends Seeder
             'validacion' => false,
             'encuesta' => true,
             'resumen' => false,
-            'url_imagen' => ''
+            'url_imagen' => '',
 
         ]);
 
@@ -56,7 +54,7 @@ class TipoSeccionRvSeeder extends Seeder
             'validacion' => false,
             'encuesta' => false,
             'resumen' => true,
-            'url_imagen' => ''
+            'url_imagen' => '',
 
         ]);
     }

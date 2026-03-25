@@ -30,7 +30,7 @@
                     </span>
                 @endif
                 <span style='color:{{ config('variables.templateNameColor') }} !important'
-                    class="app-brand-text demo menu-text fw-bold fs-4">{{ config('variables.templateName') }}</span>
+                    class="app-brand-text demo menu-text fw-bold fs-6">{{ config('variables.templateName') }}</span>
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -118,7 +118,8 @@
                     @endif
 
                     @if ($rolActivo->hasPermissionTo('consolidacion.reporte_desempeño'))
-                        <li class="menu-item {{ request()->routeIs('consolidacion.reporteDesempeño') ? 'active' : '' }}">
+                        <li
+                            class="menu-item {{ request()->routeIs('consolidacion.reporteDesempeño') ? 'active' : '' }}">
                             <a href="{{ route('consolidacion.reporteDesempeño') }}" class="menu-link">
                                 <div>Reporte de desempeño</div>
                             </a>
@@ -428,6 +429,20 @@
                         <li class="menu-item {{ request()->routeIs('cursos.foro') ? 'active' : '' }}">
                             <a href="{{ route('cursos.foro') }}" class="menu-link">
                                 <div>Foro (Q&A)</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('cursos.dashboard_cursos'))
+                        <li class="menu-item {{ request()->routeIs('cursos.dashboard') ? 'active' : '' }}">
+                            <a href="{{ route('cursos.dashboard') }}" class="menu-link">
+                                <div>Dashboard</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('cursos.subitem_gestionar_cursos'))
+                        <li class="menu-item {{ request()->routeIs('cursos.tipos-cargo.index') ? 'active' : '' }}">
+                            <a href="{{ route('cursos.tipos-cargo.index') }}" class="menu-link">
+                                <div>Tipos de Cargo</div>
                             </a>
                         </li>
                     @endif

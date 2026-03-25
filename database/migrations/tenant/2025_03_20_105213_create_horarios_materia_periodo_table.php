@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('fecha_fin_habilitado')->nullable(); // Fecha de fin de habilitación
             $table->integer('capacidad')->default(0); // Capacidad del aula
             $table->integer('capacidad_limite')->default(50); // Capacidad del aula aumentada
-            $table->boolean('ampliar_cupos_limite')->default(false); // aqui esto se pone para aumentar la capacidad de cupos de la cantidad normal a la cantidad limite 
+            $table->boolean('ampliar_cupos_limite')->default(false); // aqui esto se pone para aumentar la capacidad de cupos de la cantidad normal a la cantidad limite
             $table->integer('cupos_disponibles')->nullable();
             $table->timestamps(); // Fechas de creación y actualización
             $table->index(['materia_periodo_id', 'horario_base_id']); // Índice para mejorar consultas

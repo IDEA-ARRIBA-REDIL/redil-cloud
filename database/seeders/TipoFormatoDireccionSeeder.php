@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\TipoFormatoDireccion;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TipoFormatoDireccionSeeder extends Seeder
@@ -13,7 +12,7 @@ class TipoFormatoDireccionSeeder extends Seeder
      */
     public function run(): void
     {
-      $tiposDeDirecciones = '[
+        $tiposDeDirecciones = '[
         {"nombre":"Aeropuerto"},
         {"nombre":"Agrupación"},
         {"nombre":"Anillo"},
@@ -105,11 +104,11 @@ class TipoFormatoDireccionSeeder extends Seeder
         {"nombre":"Callejón"}
       ]';
 
-      $items = json_decode($tiposDeDirecciones);
-      foreach ($items as $item) {
-        TipoFormatoDireccion::firstOrCreate([
-          'nombre' => $item->nombre,
-        ]);
-      }
+        $items = json_decode($tiposDeDirecciones);
+        foreach ($items as $item) {
+            TipoFormatoDireccion::firstOrCreate([
+                'nombre' => $item->nombre,
+            ]);
+        }
     }
 }

@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('item_corte_materia_periodo', function (Blueprint $table) {
+        Schema::create('item_corte_materia_periodo', function (Blueprint $table) {
             $table->id();
             $table->foreignId('materia_periodo_id')->constrained('materia_periodo')->onDelete('cascade');
             $table->foreignId('corte_periodo_id')->constrained('cortes_periodo')->onDelete('cascade');
@@ -35,7 +35,7 @@ return new class extends Migration
             $table->index(['materia_periodo_id', 'corte_periodo_id']);
             $table->index('horario_materia_periodo_id');
         });
-       
+
     }
 
     /**

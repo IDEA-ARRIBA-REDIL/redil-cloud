@@ -2756,5 +2756,11 @@ class PermisoSeeder extends Seeder
             'descripcion' => 'Permite ver las conversaciones solo de cursos donde el cargo permite responder foro',
             'name' => 'cursos.conversaciones_cursos_asignados',
         ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'dashboard_cursos',
+            'descripcion' => 'Permite ver el dashboard de cursos',
+            'name' => 'cursos.dashboard_cursos',
+        ])->syncRoles([$superAdmin]);
     }
 }

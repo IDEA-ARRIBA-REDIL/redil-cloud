@@ -261,6 +261,42 @@ $configData = Helper::appClasses();
     });
   });
 </script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Seleccionamos todos los elementos que se pueden colapsar
+    const collapseElements = document.querySelectorAll('.collapse');
+
+    collapseElements.forEach(function(collapseEl) {
+      // Escuchamos el evento que Bootstrap dispara ANTES de empezar a MOSTRAR el contenido
+      collapseEl.addEventListener('show.bs.collapse', function() {
+        // Buscamos el botón que controla este div en específico
+        const triggerButton = document.querySelector(`[data-bs-target="#${collapseEl.id}"]`);
+        if (triggerButton) {
+          const icon = triggerButton.querySelector('span.ti');
+          // Cambiamos el ícono a 'menos'
+          if(icon){
+             icon.classList.remove('ti-plus');
+             icon.classList.add('ti-minus');
+          }
+        }
+      });
+
+      // Escuchamos el evento que Bootstrap dispara ANTES de empezar a OCULTAR el contenido
+      collapseEl.addEventListener('hide.bs.collapse', function() {
+        const triggerButton = document.querySelector(`[data-bs-target="#${collapseEl.id}"]`);
+        if (triggerButton) {
+          const icon = triggerButton.querySelector('span.ti');
+          // Cambiamos el ícono a 'más'
+          if(icon){
+             icon.classList.remove('ti-minus');
+             icon.classList.add('ti-plus');
+          }
+        }
+      });
+    });
+  });
+</script>
 @endsection
 
 
@@ -352,123 +388,133 @@ $configData = Helper::appClasses();
   </form>
 
   <!-- lista de peticiones -->
-  <div class="row g-4 mt-1">
-    @foreach($peticiones as $peticion)
-    <div class="col-12 col-xl-4 col-lg-6 col-md-6">
-      <div class="card border rounded p-2">
+  <div class="row equal-height-row g-4 mt-1">
+    @if(count($peticiones)>0)
+      @foreach($peticiones as $peticion)
+      <div class="col equal-height-col col-12 col-xl-4 col-lg-6 col-md-6" id="peticion-card-{{ $peticion->id }}">
+        <div class="card rounded-3 shadow">
+          
+          <div class="card-header border-bottom d-flex px-4 pt-3 pb-1" style="background-color:#F9F9F9!important">
+            <div class="flex-fill row">
+              <div class="d-flex justify-content-between align-items-center">
 
-        <div class="card-header">
-          <div class="d-flex align-items-start">
-            <div class="d-flex align-items-start">
-              <div class="px-1">
-                <button class="btn rounded-pill btn-icon btn-primary waves-effect waves-light btn-xl"><i class="ti ti-notes ti-xl mx-2"></i></button>
-              </div>
-              <div class="me-2 ms-1 mt-1">
-                <h5 class="mb-0"><a href="javascript:;" class="text-body"><b>Tipo:</b> {{ $peticion->tipoPeticion ? $peticion->tipoPeticion->nombre : 'No definido'}}</a></h5>
-                <div class="client-info"><span class="fw-medium"><i class="ti ti-calendar"></i> {{ $peticion->fecha }}</span></div>
+                <div class="d-flex flex-column">
+                  <h5 class="fw-semibold ms-1 text-black m-0 line-clamp-1" title="{{ $peticion->nombreUsuario }}">
+                    {{ $peticion->nombreUsuario }}
+                  </h5>             
+                  <small class="text-black ms-1"><i>Fecha:</i> {{ $peticion->fecha ?? 'Sin fecha' }} </small>
+                </div>
+
+                <span class="badge rounded-pill fw-light mt-1 me-1 bg-label-primary">
+                  {{ $peticion->tipoPeticion ? $peticion->tipoPeticion->nombre : 'No definido'}}
+                </span>
               </div>
             </div>
-            <div class="ms-auto">
-              <div class="dropdown zindex-2 border rounded p-1">
-                <button type="button" class="btn dropdown-toggle hide-arrow p-0" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical text-muted"></i></button>
-                <ul class="dropdown-menu dropdown-menu-end">
 
-                  <hr class="dropdown-divider">
-                  @if($rolActivo->hasPermissionTo('peticiones.opcion_eliminar'))
-                    <li><a class="dropdown-item text-danger" href="javascript:void(0);" onclick="confirmarEliminacion('{{$peticion->id}}')" >Eliminar</a></li>
-                  @endif
-
-
-
-
-                </ul>
+            <div class="">
+              <div class="ms-auto">
+                <div class="dropdown zindex-2 p-1 float-end">
+                  <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i> </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    @if($rolActivo->hasPermissionTo('peticiones.opcion_eliminar'))
+                      <li><a class="dropdown-item text-danger" href="javascript:void(0);" onclick="confirmarEliminacion('{{$peticion->id}}')">Eliminar</a></li>
+                    @else
+                      <li><a class="dropdown-item disabled" href="javascript:void(0);">Sin acciones</a></li>
+                    @endif
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="card-body">
 
-        <div class="d-flex align-items-center">
-          <ul class="list-unstyled d-flex align-items-center avatar-group mb-0 zindex-2">
-              <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="{{$peticion->nombreUsuario}}" class="avatar pull-up">
-                <img class="rounded-circle" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario }}" alt="foto {{$peticion->nombreUsuario}}">
-              </li>
-              <span class="text-muted mx-1">{{ $peticion->nombreUsuario }}</span>
-          </ul>
-        </div>
-        <div class="list-unstyled mb-4 mt-3">
-          <ul class="list-unstyled mb-4 mt-3">
-            <li class="d-flex align-items-center mb-1"><i class="ti ti-phone-call text-heading"></i> <span class="mx-2">{{ $peticion->telefonosUsuario }}</span> </li>
-            <li class="d-flex align-items-center mb-1"><i class="ti ti-mail text-heading"></i> <span class="mx-2">{{ $peticion->emailUsuario }}</span></li>
+          <div class="card-body">
+            <div class="row mt-4">
+              
+              <div class="col-12 d-flex flex-column mb-3">
+                <small class="text-black">Creada por</small>
+                <div class="d-flex align-items-center mt-1">
+                  <div class="avatar avatar-sm me-2">
+                     <img class="rounded-circle" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario }}" alt="foto">
+                  </div>
+                  <small class="fw-semibold text-black ">{{ $peticion->usuarioCreacion ?? 'No especificado'}}</small>
+                </div>
+              </div>
 
-          </ul>
-        </div>
+              <div class="col-12">
+                <hr class="my-3 border-1">
+              </div>
 
-        <div class="accordion mt-3" id="accordionDePeticiones{{$peticion->id}}">
+              <div class="col-6 d-flex flex-column mt-1">
+                <small class="text-black">Correo</small>
+                <small class="fw-semibold text-black text-truncate" title="{{ $peticion->emailUsuario ?? 'No especificado' }}">{{ $peticion->emailUsuario ?? 'No especificado'}}</small>
+              </div>
 
-          <div class="card accordion-item">
-            <h2 class="accordion-header" id="headingPeticion{{$peticion->id}}">
-              <button type="button" class="accordion-button collapsed fw-bold" data-bs-toggle="collapse" data-bs-target="#accordionPeticion{{$peticion->id}}" aria-expanded="true" aria-controls="accordionPeticion{{$peticion->id}}">
-                Petición
+              <div class="col-6 d-flex flex-column mt-1">
+                <small class="text-black">Teléfono</small>
+                <small class="fw-semibold text-black ">{{ $peticion->telefonosUsuario ?? 'No especificado' }}</small>
+              </div>
+
+            </div>
+
+            <div class="collapse" id="cardBodyPeticion{{ $peticion->id }}">
+              <div class="col-12">
+                <hr class="my-3 border-1">
+              </div>
+
+              <h6 class="fw-bold text-black px-4 mb-2">Petición</h6>
+              <div class="px-4 mb-3" style="max-height: 150px; overflow-y: auto;">
+                <p class="m-0 text-sm" style="font-size: 0.875rem;">{!! $peticion->descripcion !!}</p>
+              </div>
+
+              @if($peticion->estado > 1)
+                <h6 class="fw-bold text-black px-4 mb-2 border-top pt-3">Seguimiento</h6>
+                <div class="px-4 mb-3" style="max-height: 150px; overflow-y: auto;">
+                  @foreach($peticion->seguimientos as $seguimiento)
+                  <p class="text-secondary mt-0 mb-1"><small><b><i class="ti ti-user-circle"></i> Por:</b> {{$seguimiento->usuarioCreacion ? $seguimiento->usuarioCreacion->nombre(3) : 'No definido' }}</small></p>
+                  <p class="m-0 text-sm" style="font-size: 0.875rem;">{!! $seguimiento->descripcion !!}</p>
+                  @if(!$loop->last) <hr class="my-2"> @endif
+                  @endforeach
+                </div>
+              @endif
+
+              @if($peticion->estado==2)
+                <h6 class="fw-bold text-black px-4 mb-2 border-top pt-3">Respuesta</h6>
+                <div class="px-4 mb-3" style="font-size: 0.875rem;">
+                  {!! $peticion->respuesta !!}
+                </div>
+              @endif
+
+              <div class="d-flex justify-content-center gap-2 mt-4 px-3 mb-2">
+                <button type="button" onclick="Livewire.dispatch('modalResponder', { peticionId: '{{$peticion->id}}', personaId: '{{$peticion->user_id}}'})" class="btn btn-sm rounded-pill btn-primary waves-effect"> <i class="ti ti-messages me-1"></i> Responder</button>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="card-footer border-top p-1">
+            <div class="d-flex justify-content-center">
+              <button type="button"
+                class="btn btn-xs rounded-pill btn-icon btn-outline-secondary waves-effect my-2 align-items-center justify-content-center d-flex btn-collapse-card"
+                data-bs-toggle="collapse"
+                data-bs-target="#cardBodyPeticion{{ $peticion->id }}"
+                aria-expanded="false"
+                aria-controls="cardBodyPeticion{{ $peticion->id }}">
+                <span class="ti ti-plus"></span>
               </button>
-            </h2>
-
-            <div id="accordionPeticion{{$peticion->id}}" class="accordion-collapse collapse" data-bs-parent="#accordionDePeticiones{{$peticion->id}}">
-              <div class="accordion-body" style="height: 100px; overflow-y: scroll;">
-                <p class="text-secondary mt-0 mb-2"><b><i class="ti ti-user-circle"></i> Creada por:</b> {{$peticion->usuarioCreacion }}</p>
-                <p class="m-0">{!! $peticion->descripcion !!}</p>
-              </div>
             </div>
           </div>
-
-          @if($peticion->estado > 1)
-          <div class="card accordion-item">
-            <h2 class="accordion-header" id="headingSeguimiengo{{$peticion->id}}">
-              <button type="button" class="accordion-button collapsed fw-bold" data-bs-toggle="collapse" data-bs-target="#accordionSeguimiengo{{$peticion->id}}" aria-expanded="false" aria-controls="accordionSeguimiengo{{$peticion->id}}">
-                Seguimiento
-              </button>
-            </h2>
-            <div id="accordionSeguimiengo{{$peticion->id}}" class="accordion-collapse collapse" aria-labelledby="headingSeguimiengo{{$peticion->id}}" data-bs-parent="#accordionDePeticiones{{$peticion->id}}">
-              <div class="accordion-body" style="height: 100px; overflow-y: scroll;">
-                @foreach($peticion->seguimientos as $seguimiento)
-                <p class="text-secondary mt-0 mb-2"><b><i class="ti ti-user-circle"></i> Creada por:</b> {{$seguimiento->usuarioCreacion ? $seguimiento->usuarioCreacion->nombre(3) : 'No definido' }}</p>
-                <p class="m-0">{!! $seguimiento->descripcion !!}</p>
-                <hr>
-                @endforeach
-              </div>
-            </div>
-          </div>
-          @endif
-
-          @if($peticion->estado==2)
-          <div class="card accordion-item">
-            <h2 class="accordion-header" id="headingRespuesta{{$peticion->id}}">
-              <button type="button" class="accordion-button collapsed fw-bold" data-bs-toggle="collapse" data-bs-target="#accordionRespuesta{{$peticion->id}}" aria-expanded="false" aria-controls="accordionRespuesta{{$peticion->id}}">
-                Respuesta
-              </button>
-            </h2>
-            <div id="accordionRespuesta{{$peticion->id}}" class="accordion-collapse collapse" aria-labelledby="headingRespuesta{{$peticion->id}}" data-bs-parent="#accordionDePeticiones{{$peticion->id}}">
-              <div class="accordion-body">
-                {!! $peticion->respuesta !!}
-              </div>
-            </div>
-          </div>
-          @endif
-
-          @if($peticion->estado!=2)
-          <div class="mt-3">
-            <center>
-              <button type="button" onclick="modalRespuesta('{{$peticion->id}}', '{{$peticion->user_id}}')" class="btn btn-sm rounded-pill btn-outline-primary waves-effect"> <i class="ti ti-file-check"></i> Respuesta</button>
-              <button type="button" onclick="modalSeguimiento('{{$peticion->id}}', '{{$peticion->user_id}}')" class="btn btn-sm rounded-pill btn-outline-warning waves-effect"> <i class="ti ti-file-like"></i> Seguimiento</button>
-            </center>
-          </div>
-          @endif
-        </div>
 
         </div>
       </div>
+      @endforeach
+    @else
+    <div class="mt-5 mb-5 py-5 w-100">
+      <center>
+        <i class="ti ti-notes ti-xl text-muted"></i>
+        <p class="text-muted mt-2">No se encontraron peticiones.</p>
+      </center>
     </div>
-    @endforeach
+    @endif
   </div>
   <!--/ lista de peticiones -->
 

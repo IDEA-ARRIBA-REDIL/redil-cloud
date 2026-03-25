@@ -26,18 +26,16 @@ class InformeEvidenciasGrupoSeeder extends Seeder
             InformeEvidenciaGrupo::firstOrCreate(
                 [
                     'grupo_id' => $grupoId,
-                    'nombre' => 'Informe Semanal ' . ($i + 1),
+                    'nombre' => 'Informe Semanal '.($i + 1),
                     'fecha' => $date->format('Y-m-d'),
                 ],
                 [
-                    'campo1' => 'Evidencia ' . ($i + 1) . ' para campo 1',
-                    'campo2' => 'Evidencia ' . ($i + 1) . ' para campo 2',
-                    'campo3' => 'Evidencia ' . ($i + 1) . ' para campo 3',
+                    'campo1' => 'Evidencia '.($i + 1).' para campo 1',
+                    'campo2' => 'Evidencia '.($i + 1).' para campo 2',
+                    'campo3' => 'Evidencia '.($i + 1).' para campo 3',
                 ]
             );
         }
-
-
 
         $grupoId = 2;
         $startDate = Carbon::now()->startOfYear();
@@ -52,13 +50,13 @@ class InformeEvidenciasGrupoSeeder extends Seeder
             InformeEvidenciaGrupo::firstOrCreate(
                 [
                     'grupo_id' => $grupoId,
-                    'nombre' => 'Informe Semanal ' . ($i + 1),
+                    'nombre' => 'Informe Semanal '.($i + 1),
                     'fecha' => $date->format('Y-m-d'),
                 ],
                 [
-                    'campo1' => 'Evidencia ' . ($i + 1) . ' para campo 1',
-                    'campo2' => 'Evidencia ' . ($i + 1) . ' para campo 2',
-                    'campo3' => 'Evidencia ' . ($i + 1) . ' para campo 3',
+                    'campo1' => 'Evidencia '.($i + 1).' para campo 1',
+                    'campo2' => 'Evidencia '.($i + 1).' para campo 2',
+                    'campo3' => 'Evidencia '.($i + 1).' para campo 3',
                 ]
             );
         }

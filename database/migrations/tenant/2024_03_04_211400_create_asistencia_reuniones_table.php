@@ -16,11 +16,11 @@ return new class extends Migration
             $table->timestamps();
             $table->integer('user_id');	// Antes asistente_id
             $table->integer('reporte_reunion_id');
-            //$table->integer('invitados')->nullable();
-            //$table->boolean('reservacion')->nullable()->default(0);
-            //$table->boolean('asistio')->nullable()->default(0);
-            //$table->text('observacion')->nullable();
-            //$table->integer('autor_creacion_reserva_id')->nullable();
+            // $table->integer('invitados')->nullable();
+            // $table->boolean('reservacion')->nullable()->default(0);
+            // $table->boolean('asistio')->nullable()->default(0);
+            // $table->text('observacion')->nullable();
+            // $table->integer('autor_creacion_reserva_id')->nullable();
             $table->integer('autor_creacion_asistencia_id')->nullable();
         });
     }

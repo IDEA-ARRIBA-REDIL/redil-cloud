@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\AsesorPdp; // ¡Cambiado!
 use App\Models\Configuracion;
-use App\Models\User;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use stdClass;
+use Illuminate\Support\Facades\Log;
 
 class AsesorPdpController extends Controller
 {
@@ -40,36 +39,36 @@ class AsesorPdpController extends Controller
         // APLICACIÓN DE FILTROS
 
         // Filtro de Búsqueda General
-        if (!empty($filtros['filtro_busqueda_general'])) {
+        if (! empty($filtros['filtro_busqueda_general'])) {
             $termino = strtolower($filtros['filtro_busqueda_general']);
             $queryAsesores->whereHas('user', function ($qUser) use ($termino) {
                 $qUser->where(
-                    fn($q) => $q->whereRaw('LOWER(primer_nombre) LIKE ?', ["%{$termino}%"])
+                    fn ($q) => $q->whereRaw('LOWER(primer_nombre) LIKE ?', ["%{$termino}%"])
                         ->orWhereRaw('LOWER(primer_apellido) LIKE ?', ["%{$termino}%"])
                         ->orWhereRaw('LOWER(identificacion) LIKE ?', ["%{$termino}%"])
                         ->orWhereRaw('LOWER(email) LIKE ?', ["%{$termino}%"])
                 );
             });
-            $tagsBusqueda[] = (object)['label' => $filtros['filtro_busqueda_general'], 'field' => 'filtro_busqueda_general'];
+            $tagsBusqueda[] = (object) ['label' => $filtros['filtro_busqueda_general'], 'field' => 'filtro_busqueda_general'];
             $banderaFiltros = true;
         }
 
         // Filtro por Estado
         if (isset($filtros['filtro_estado_asesor']) && $filtros['filtro_estado_asesor'] !== '') {
-            $queryAsesores->where('activo', (bool)$filtros['filtro_estado_asesor']);
-            $label = 'Estado: ' . ((bool)$filtros['filtro_estado_asesor'] ? 'Activo' : 'Inactivo');
-            $tagsBusqueda[] = (object)['label' => $label, 'field' => 'filtro_estado_asesor'];
+            $queryAsesores->where('activo', (bool) $filtros['filtro_estado_asesor']);
+            $label = 'Estado: '.((bool) $filtros['filtro_estado_asesor'] ? 'Activo' : 'Inactivo');
+            $tagsBusqueda[] = (object) ['label' => $label, 'field' => 'filtro_estado_asesor'];
             $banderaFiltros = true;
         }
 
         // ¡NUEVO FILTRO! Por tipo de asesor
-        if (!empty($filtros['filtro_tipo_asesor'])) {
+        if (! empty($filtros['filtro_tipo_asesor'])) {
             if ($filtros['filtro_tipo_asesor'] == 'cajero') {
                 $queryAsesores->where('es_cajero', true);
-                $tagsBusqueda[] = (object)['label' => 'Tipo: Cajero', 'field' => 'filtro_tipo_asesor'];
+                $tagsBusqueda[] = (object) ['label' => 'Tipo: Cajero', 'field' => 'filtro_tipo_asesor'];
             } elseif ($filtros['filtro_tipo_asesor'] == 'encargado') {
                 $queryAsesores->where('es_encargado', true);
-                $tagsBusqueda[] = (object)['label' => 'Tipo: Encargado', 'field' => 'filtro_tipo_asesor'];
+                $tagsBusqueda[] = (object) ['label' => 'Tipo: Encargado', 'field' => 'filtro_tipo_asesor'];
             }
             $banderaFiltros = true;
         }
@@ -114,7 +113,7 @@ class AsesorPdpController extends Controller
             $usuario->roles()->attach($request->role_id, [
                 'activo' => 0,
                 'dependiente' => 0,
-                'model_type' => 'App\Models\User'
+                'model_type' => 'App\Models\User',
             ]);
 
             // Crea el registro en la tabla 'asesores_pdp'
@@ -130,7 +129,8 @@ class AsesorPdpController extends Controller
             return redirect()->route('asesores_pdp.gestionar')
                 ->with('mensaje_exito', 'Asesor creado correctamente.');
         } catch (\Exception $e) {
-            Log::error("Error al crear asesor: " . $e->getMessage());
+            Log::error('Error al crear asesor: '.$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al crear el asesor. Inténtalo de nuevo.')
                 ->withInput();
         }
@@ -149,7 +149,7 @@ class AsesorPdpController extends Controller
         try {
             $asesor = AsesorPdp::with('user')->findOrFail($asesorId);
             $usuario = $asesor->user;
-            $nombreUsuario = optional($usuario)->nombre(3) ?? 'Asesor ID ' . $asesor->id;
+            $nombreUsuario = optional($usuario)->nombre(3) ?? 'Asesor ID '.$asesor->id;
 
             if ($usuario) {
                 // 1. Identificar roles de 'cajero' o 'encargado' que tiene el usuario
@@ -170,15 +170,16 @@ class AsesorPdpController extends Controller
 
             // 3. Eliminar físicamente el registro de la tabla 'asesores_pdp'
             // Se usa forceDelete() para borrarlo definitivamente de la BD, no solo SoftDelete.
-            $asesor->forceDelete(); 
-            
+            $asesor->forceDelete();
+
             DB::commit();
 
             return redirect()->route('asesores_pdp.gestionar')
                 ->with('mensaje_success', "Asesor '{$nombreUsuario}' eliminado y rol desvinculado correctamente.");
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al eliminar asesor ID {$asesorId}: " . $e->getMessage());
+            Log::error("Error al eliminar asesor ID {$asesorId}: ".$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al eliminar el asesor.');
         }
     }
@@ -191,10 +192,12 @@ class AsesorPdpController extends Controller
         try {
             $asesor->activo = true;
             $asesor->save();
+
             return redirect()->route('asesores_pdp.gestionar')
                 ->with('mensaje_exito', "El asesor '{$asesor->user->nombre(3)}' ha sido activado.");
         } catch (\Exception $e) {
-            Log::error("Error al activar asesor ID {$asesor->id}: " . $e->getMessage());
+            Log::error("Error al activar asesor ID {$asesor->id}: ".$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al activar el asesor.');
         }
     }
@@ -207,10 +210,12 @@ class AsesorPdpController extends Controller
         try {
             $asesor->activo = false;
             $asesor->save();
+
             return redirect()->route('asesores_pdp.gestionar')
                 ->with('mensaje_exito', "El asesor '{$asesor->user->nombre(3)}' ha sido desactivado.");
         } catch (\Exception $e) {
-            Log::error("Error al desactivar asesor ID {$asesor->id}: " . $e->getMessage());
+            Log::error("Error al desactivar asesor ID {$asesor->id}: ".$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al desactivar el asesor.');
         }
     }

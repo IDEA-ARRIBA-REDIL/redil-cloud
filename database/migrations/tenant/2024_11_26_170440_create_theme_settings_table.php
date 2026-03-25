@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-          Schema::create('theme_settings', function (Blueprint $table) {
+        Schema::create('theme_settings', function (Blueprint $table) {
             $table->id();
             $table->string('nombre')->unique();
             $table->string('class')->nullable();  // Nombre de la variable (ej: 'blue', 'indigo', 'primary')

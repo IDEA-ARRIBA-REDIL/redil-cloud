@@ -2,17 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\TipoItem; // Asegúrate que el namespace del modelo sea correcto
+use App\Models\TipoItem;
+use Illuminate\Database\Seeder; // Asegúrate que el namespace del modelo sea correcto
 use Illuminate\Support\Facades\DB; // Para usar DB::table si prefieres o para transacciones
 
 class TipoItemSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     *
-     * @return void
      */
     public function run(): void
     {
@@ -46,7 +43,7 @@ class TipoItemSeeder extends Seeder
                 $this->command->info("Tipo de Ítem '{$tipo['nombre']}' procesado/creado.");
 
             } catch (\Exception $e) {
-                $this->command->error("Error al procesar Tipo de Ítem '{$tipo['nombre']}': " . $e->getMessage());
+                $this->command->error("Error al procesar Tipo de Ítem '{$tipo['nombre']}': ".$e->getMessage());
             }
         }
 

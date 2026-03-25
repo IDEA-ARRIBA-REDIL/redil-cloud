@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\ActividadDestinatario;
+use Illuminate\Database\Seeder;
 
 class ActividadDestinatarioSeeder extends Seeder
 {
@@ -14,10 +13,10 @@ class ActividadDestinatarioSeeder extends Seeder
     public function run(): void
     {
         //
-            // Id: 1
+        // Id: 1
         ActividadDestinatario::firstOrCreate([
-          'actividad_id'=> 1,
-          'destinatario_id'=>1,
+            'actividad_id' => 1,
+            'destinatario_id' => 1,
         ]);
 
     }

@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class CursoUsuarioCargo extends Pivot
 {
@@ -14,10 +14,12 @@ class CursoUsuarioCargo extends Pivot
         'usuario_id',
         'tipo_cargo_curso_id',
         'activo',
+        'carreras_permitidas',
     ];
 
     protected $casts = [
         'activo' => 'boolean',
+        'carreras_permitidas' => 'array',
     ];
 
     public function curso(): BelongsTo

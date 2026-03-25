@@ -22,7 +22,7 @@ class TipoUsuarioSeeder extends Seeder
       'icono' => 'ti ti-book',
       'imagen' => 'icono_indicador.png',
       'id_rol_dependiente' => 2,
-      'puntaje' => 4
+      'puntaje' => 5
     ]);
 
     TipoUsuario::firstOrCreate(
@@ -33,7 +33,7 @@ class TipoUsuarioSeeder extends Seeder
       'icono' => 'ti ti-star',
       'imagen' => 'icono_indicador.png',
       'id_rol_dependiente' => 3,
-      'puntaje' => 3
+      'puntaje' => 4
     ]);
 
     TipoUsuario::firstOrCreate(
@@ -83,5 +83,19 @@ class TipoUsuarioSeeder extends Seeder
       'visible' => 0,
       'puntaje' => 0
     ]);
+
+     TipoUsuario::firstOrCreate(
+      ['nombre' => 'Hermano mayor'],
+      [
+      'nombre_plural' => 'Hermano mayor',
+      'color' => '#966201b6',
+      'icono' => 'ti ti-mood-heart',
+      'imagen' => 'icono_indicador.png',
+      'id_rol_dependiente' => 4,
+      'puntaje' => 3,
+      'habilitado_para_consolidacion' => false,
+      'es_miembro_oficial' => true,
+    ]);
+
   }
 }

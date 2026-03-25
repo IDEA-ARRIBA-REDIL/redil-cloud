@@ -2,12 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\LazyCollection;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\LazyCollection;
 
 class UserFromTxtSeeder extends Seeder
 {
@@ -15,8 +13,9 @@ class UserFromTxtSeeder extends Seeder
 
     public function run(): void
     {
-        if (!file_exists(base_path('storage/app/' . $this->filePath))) {
+        if (! file_exists(base_path('storage/app/'.$this->filePath))) {
             $this->command->error('¡Archivo no encontrado!');
+
             return;
         }
 
@@ -55,7 +54,7 @@ class UserFromTxtSeeder extends Seeder
             'password',
             'grupo',
             'matricula_id',
-            'fecha_matricula'
+            'fecha_matricula',
         ];
 
         $createdCount = 0;
@@ -63,14 +62,14 @@ class UserFromTxtSeeder extends Seeder
         $errorCount = 0;
 
         LazyCollection::make(function () {
-            $file = fopen(base_path('storage/app/' . $this->filePath), 'r');
+            $file = fopen(base_path('storage/app/'.$this->filePath), 'r');
             while (($line = fgets($file)) !== false) {
                 yield $line;
             }
             fclose($file);
         })
             ->skip(1)
-            ->filter(fn($line) => !empty(trim($line)) && !str_starts_with(trim($line), '|--'))
+            ->filter(fn ($line) => ! empty(trim($line)) && ! str_starts_with(trim($line), '|--'))
             ->each(function ($line, $index) use ($headers, &$createdCount, &$skippedCount, &$errorCount) {
 
                 $valuesRaw = explode('|', $line);
@@ -78,6 +77,7 @@ class UserFromTxtSeeder extends Seeder
 
                 if (count($headers) !== count($values)) {
                     $skippedCount++;
+
                     return;
                 }
 
@@ -86,23 +86,24 @@ class UserFromTxtSeeder extends Seeder
 
                     // Verificación de duplicado por Identificación
                     if ($rowData['identificacion'] && User::where('identificacion', $rowData['identificacion'])->exists()) {
-                        $this->command->warn("🟡 OMITIDO (identificación ya existe): " . $rowData['identificacion']);
+                        $this->command->warn('🟡 OMITIDO (identificación ya existe): '.$rowData['identificacion']);
                         $skippedCount++;
+
                         return;
                     }
 
                     // --- [NUEVA VERIFICACIÓN DE EMAIL DUPLICADO] ---
                     if ($rowData['email'] && User::where('email', $rowData['email'])->exists()) {
-                        $this->command->warn("🟡 OMITIDO (email ya existe): " . $rowData['email']);
+                        $this->command->warn('🟡 OMITIDO (email ya existe): '.$rowData['email']);
                         $skippedCount++;
+
                         return; // Salta al siguiente registro
                     }
                     // --- [FIN DE LA VERIFICACIÓN] ---
 
-
                     $user = User::firstOrCreate([
-                        'id' => str_replace(".", "", $rowData['asistente_id']),
-                        'asistente_id' => str_replace(".", "", $rowData['asistente_id']),
+                        'id' => str_replace('.', '', $rowData['asistente_id']),
+                        'asistente_id' => str_replace('.', '', $rowData['asistente_id']),
                         'email' => $rowData['email'],
                         'email_verified_at' => now(),
                         'password' => $rowData['password'],
@@ -131,13 +132,11 @@ class UserFromTxtSeeder extends Seeder
                     $createdCount++;
                 } catch (\Exception $e) {
                     $email = $rowData['email'] ?? "en línea #{$index}";
-                    $this->command->error("🔴 Error para email: {$email}. Error: " . $e->getMessage());
-                    Log::error("Fallo en Seeder para email: {$email}, Error: " . $e->getMessage());
+                    $this->command->error("🔴 Error para email: {$email}. Error: ".$e->getMessage());
+                    Log::error("Fallo en Seeder para email: {$email}, Error: ".$e->getMessage());
                     $errorCount++;
                 }
             });
-
-
 
         $this->command->info('----------------------------------');
         $this->command->info('📊 REPORTE FINAL:');

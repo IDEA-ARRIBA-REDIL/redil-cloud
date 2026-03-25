@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('departamentos', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            $table->string('nombre',50);
+            $table->string('nombre', 50);
             $table->integer('region_id')->nullable();
-            $table->string('latitud',25) ->nullable();
-            $table->string('longitud',25) ->nullable();
+            $table->string('latitud', 25)->nullable();
+            $table->string('longitud', 25)->nullable();
         });
     }
 

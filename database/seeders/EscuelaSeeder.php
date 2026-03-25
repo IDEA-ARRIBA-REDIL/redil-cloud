@@ -8,8 +8,7 @@ use Illuminate\Database\Seeder;
 class EscuelaSeeder extends Seeder
 {
     public function run(): void
-
-        {/*
+    {/*
             Escuela::firstOrCreate([
             'nombre' => 'Escuela Dominical',
             'descripcion' => 'Escuela para niños y jóvenes',

@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\NivelEscuela; // Namespace correcto
+use App\Models\NivelEscuela;
+use Illuminate\Database\Seeder; // Namespace correcto
 
 class NivelEscuelaSeeder extends Seeder
 {
@@ -16,7 +15,6 @@ class NivelEscuelaSeeder extends Seeder
         //   // // Niveles para Escuela de Liderazgo
         // --- Asignación Manual (Asumiendo que Escuela ID 1 existe) ---
         $escuelaId = 2; // Cambia este ID si la escuela deseada tiene otro ID
-
 
         // --- Creación de Niveles ---
         NivelEscuela::firstOrCreate([

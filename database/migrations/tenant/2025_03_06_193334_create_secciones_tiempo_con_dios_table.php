@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('secciones_tiempo_con_dios', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            $table->string('nombre', 200); //Este va ser para identificarlo en la plataforma
+            $table->string('nombre', 200); // Este va ser para identificarlo en la plataforma
             $table->string('titulo_step', 100); // Esta titulo se muestra a lado de icono
             $table->string('titulo', 200); // Este se muestra dentro de contenido
             $table->string('subtitulo', 200); // Este se muestra tambien dentro del contenido

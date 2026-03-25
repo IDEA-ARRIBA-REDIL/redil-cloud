@@ -17,12 +17,12 @@ return new class extends Migration
             $table->foreignId('curso_id')->constrained('cursos')->onDelete('cascade');
             $table->foreignId('curso_item_id')->constrained('curso_items')->onDelete('cascade');
             $table->foreignId('curso_evaluacion_id')->constrained('curso_evaluaciones')->onDelete('cascade');
-            
+
             $table->decimal('nota', 5, 2)->comment('Nota o porcentaje obtenido (0-100)');
             $table->boolean('aprobado')->default(false);
             $table->integer('intento')->default(1);
             $table->json('respuestas_json')->nullable()->comment('Copia de seguridad de las respuestas marcadas');
-            
+
             $table->timestamps();
         });
     }

@@ -29,7 +29,7 @@ return new class extends Migration
             $table->string('label_btn_inferior_atras', 100);
             $table->integer('min')->default(0);
             $table->integer('max')->default(10);
-            $table->string('color',50)->nullable();
+            $table->string('color', 50)->nullable();
             $table->integer('promedio_minimo')->nullable();
             $table->softDeletes();
             $table->timestamps();

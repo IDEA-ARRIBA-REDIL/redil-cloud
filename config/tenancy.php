@@ -17,21 +17,24 @@ return [
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
     'central_domains' => [
-        // Producci¨®n (Dominio principal)
+        // Produccion (Dominio principal)
         'ubicalo.com',
         'redil.ubicalo.com',
         'www.ubicalo.com',
 
-        // Producci¨®n (Technical/Internal domain)
+        // Produccion (Technical/Internal domain)
         'redil-cloud-main-2rwsrc.laravel.cloud',
 
-        // Din¨¢mico seg¨²n variable de entorno
+        // Dinamico segun variable de entorno
         env('CENTRAL_DOMAIN'),
 
         // Desarrollo local
         '127.0.0.1',
+        '127.0.0.1:8000',
         'localhost',
+        'localhost:8000',
         'redilcloud',
+        'redilcloud:8000',
     ],
 
     /**

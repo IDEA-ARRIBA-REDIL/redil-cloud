@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\HorarioHabitual;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class HorarioHabitualSeeder extends Seeder
@@ -13,7 +12,7 @@ class HorarioHabitualSeeder extends Seeder
      */
     public function run(): void
     {
-       // Limpiar datos anteriores solo para este consejero
+        // Limpiar datos anteriores solo para este consejero
         HorarioHabitual::where('consejero_id', 1)->delete();
 
         // Crear nuevos datos de ejemplo para el Consejero con ID 1
@@ -50,5 +49,4 @@ class HorarioHabitualSeeder extends Seeder
             'hora_fin' => '12:00:00',
         ]);
     }
-
 }

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->date('fecha')->nullable();
             $table->text('detalle')->nullable();
             $table->foreignId('tarea_consolidacion_usuario_id')
-              ->constrained('tarea_consolidacion_usuario');
+                ->constrained('tarea_consolidacion_usuario');
             $table->integer('usuario_creacion_id');
             $table->timestamps();
         });

@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-            Schema::create('corte_materia_periodo', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('materia_periodo_id')->constrained('materia_periodo')->onDelete('cascade');
-                $table->foreignId('corte_periodo_id')->constrained('cortes_periodo')->onDelete('cascade'); // Asumiendo que la tabla se llamaba cortes_periodo
-                $table->decimal('porcentaje', 5, 2)->nullable();
-                $table->boolean('cerrado')->default(false);
-                $table->timestamps();
-                $table->unique(['materia_periodo_id', 'corte_periodo_id']);
+        Schema::create('corte_materia_periodo', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('materia_periodo_id')->constrained('materia_periodo')->onDelete('cascade');
+            $table->foreignId('corte_periodo_id')->constrained('cortes_periodo')->onDelete('cascade'); // Asumiendo que la tabla se llamaba cortes_periodo
+            $table->decimal('porcentaje', 5, 2)->nullable();
+            $table->boolean('cerrado')->default(false);
+            $table->timestamps();
+            $table->unique(['materia_periodo_id', 'corte_periodo_id']);
         });
     }
 

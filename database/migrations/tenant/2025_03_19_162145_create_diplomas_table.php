@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('diplomas', function (Blueprint $table) {
+        Schema::create('diplomas', function (Blueprint $table) {
             $table->id(); // ID único del diploma
             $table->string('nombre', 100); // Nombre del diploma
             $table->string('logo1', 30)->nullable(); // Logo 1

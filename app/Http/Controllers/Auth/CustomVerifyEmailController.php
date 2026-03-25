@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CustomVerifyEmailController extends Controller
@@ -13,7 +13,6 @@ class CustomVerifyEmailController extends Controller
     /**
      * Mark the authenticated user's email address as verified.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function __invoke(Request $request)
@@ -31,7 +30,7 @@ class CustomVerifyEmailController extends Controller
 
         // 3. Si el usuario ya tiene el email verificado, lo redirigimos.
         if ($user->hasVerifiedEmail()) {
-            return redirect(config('app.frontend_url') . '/dashboard?verified=1');
+            return redirect(config('app.frontend_url').'/dashboard?verified=1');
         }
 
         // 4. Si pasa las comprobaciones, marcamos el email como verificado.
@@ -44,6 +43,6 @@ class CustomVerifyEmailController extends Controller
         Auth::login($user);
 
         // 6. Redirigimos al usuario a su panel de control (dashboard).
-        return redirect(config('app.frontend_url') . '/dashboard?verified=1');
+        return redirect(config('app.frontend_url').'/dashboard?verified=1');
     }
 }

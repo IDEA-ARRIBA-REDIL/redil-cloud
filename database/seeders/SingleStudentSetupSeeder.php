@@ -2,34 +2,34 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Escuela;
-use App\Models\User;
-use App\Models\Maestro;
-use App\Models\Periodo;
-use App\Models\MateriaPeriodo;
 use App\Models\CortePeriodo;
+use App\Models\Escuela;
 use App\Models\HorarioBase;
 use App\Models\HorarioMateriaPeriodo;
-use App\Models\ItemPlantilla;
 use App\Models\ItemCorteMateriaPeriodo;
+use App\Models\ItemPlantilla;
+use App\Models\Maestro;
+use App\Models\MateriaPeriodo;
 use App\Models\Matricula;
 use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
+use App\Models\Periodo;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class SingleStudentSetupSeeder extends Seeder
 {
-
     // --- PARÁMETROS DE CONFIGURACIÓN ---
     const PERIODO_NOMBRE = 'PERIODO DE PRUEBA PARA ALUMNO';
+
     const ESCUELA_ID = 3;
+
     const ALUMNO_USER_ID = 6;
+
     const MAESTRO_USER_ID = 6;
 
     /**
      * Punto de entrada para ejecutar el seeder.
      */
-
-
     public function run(): void
     {
         $this->command->info('>> INICIANDO SEEDER DE ESCENARIO PARA ALUMNO ÚNICO <<');
@@ -73,6 +73,7 @@ class SingleStudentSetupSeeder extends Seeder
             $maestroUser = User::findOrFail(self::MAESTRO_USER_ID);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             $this->command->error('Error: No se encontró la Escuela, el Alumno o el Maestro especificado. Asegúrate de que los IDs existan.');
+
             return;
         }
 
@@ -101,8 +102,9 @@ class SingleStudentSetupSeeder extends Seeder
         // 4. Seleccionar una materia, crear un horario y asignar el maestro
         $materiaDePrueba = $materiaPeriodos->first(); // Tomamos la primera materia como ejemplo
         $horarioBase = HorarioBase::where('materia_id', $materiaDePrueba->materia_id)->first();
-        if (!$horarioBase) {
+        if (! $horarioBase) {
             $this->command->error("Error: La materia '{$materiaDePrueba->materia->nombre}' no tiene un Horario Base configurado.");
+
             return;
         }
 

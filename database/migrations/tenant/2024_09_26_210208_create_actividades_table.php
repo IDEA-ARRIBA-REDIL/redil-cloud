@@ -17,8 +17,8 @@ return new class extends Migration
             $table->text('descripcion')->nullable();
             $table->text('descripcion_corta')->nullable();
             $table->text('mensaje_informativo')->nullable();
-            
-            $table->date('fecha_inicio')->nullable(); 
+
+            $table->date('fecha_inicio')->nullable();
             $table->date('fecha_finalizacion')->nullable();
             $table->date('fecha_visualizacion')->nullable();
             $table->date('fecha_cierre')->nullable();
@@ -50,7 +50,7 @@ return new class extends Migration
             $table->integer('aforo_ocupado')->nullable();
             $table->integer('aforo')->nullable();
             $table->integer('periodo_id')->nullable();
-            $table->tinyInteger('estado_inscripcion_defecto')->default(3)->nullable()->after('activa'); //'1: Iniciada, 2: Pendiente, 3: Finalizada'
+            $table->tinyInteger('estado_inscripcion_defecto')->default(3)->nullable()->after('activa'); // '1: Iniciada, 2: Pendiente, 3: Finalizada'
             $table->boolean('tiene_invitados')->default('false');
             $table->boolean('editar_formulario')->default('false');
             $table->boolean('pagos_abonos_con_valores_cerrados')->default('false');

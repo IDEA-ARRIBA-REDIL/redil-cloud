@@ -96,21 +96,30 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th class="fw-bold text-black">ID</th>
                     <th class="fw-bold text-black">Nombre</th>
+                    <th class="fw-bold text-black">Teléfono</th>
+                    <th class="fw-bold text-black">Email</th>
                     <th class="fw-bold text-black">Sede</th>
-                    <th class="fw-bold text-black">Fecha llegada</th>
+                    <th class="fw-bold text-black">Fecha Creación</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($usuarios as $usuario)
                 <tr>
-                    <td class="text-black">{{ $usuario->id }}</td>
                     <td class="text-black">
                         <span class="fw-semibold">{{ $usuario->nombre(3) }}</span>
                         @if($usuario->trashed())
                             <br><small class="text-danger fw-bold"><i class="ti ti-user-x fs-6"></i> Dado de baja</small>
                         @endif
+                    </td>
+                    <td class="text-black">
+                        @php
+                            $telefonos = collect([$usuario->telefono_fijo, $usuario->telefono_movil, $usuario->telefono_otro])->filter();
+                        @endphp
+                        {{ $telefonos->isNotEmpty() ? $telefonos->implode(', ') : 'N/A' }}
+                    </td>
+                    <td class="text-black">
+                        {{ $usuario->email ?? 'N/A' }}
                     </td>
                     <td class="text-black">
                         {{ $usuario->sede->nombre ?? 'N/A' }}
@@ -121,7 +130,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="4" class="text-center py-5 text-black">
+                    <td colspan="5" class="text-center py-5 text-black">
                         <h4>No se encontraron registros</h4>
                         <p class="text-muted">Intenta cambiar los filtros o el término de búsqueda.</p>
                     </td>

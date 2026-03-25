@@ -4,7 +4,7 @@
 
 @extends('layouts/blankLayout')
 
-@section('title', 'Catálogo de Cursos')
+@section('title', 'Campus general')
 
 @section('page-style')
     <style>

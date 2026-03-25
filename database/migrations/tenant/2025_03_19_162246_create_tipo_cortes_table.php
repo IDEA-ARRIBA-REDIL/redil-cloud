@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('tipo_cortes', function (Blueprint $table) {
+        Schema::create('tipo_cortes', function (Blueprint $table) {
             $table->id(); // ID único del tipo de corte
             $table->string('nombre', 100); // Nombre del tipo de corte
             $table->timestamps(); // Fechas de creación y actualización

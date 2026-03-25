@@ -73,9 +73,9 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
         }
 
-       
 
-       
+
+
 
 
         .accordion-button:focus {
@@ -83,20 +83,21 @@
             border-color: rgba(0, 0, 0, .125);
         }
 
-        
+
 
         /* Estilos responsivos (móviles) */
         @media (max-width: 576px) {
             .course-title-mobile {
                 line-height: 30px !important;
-                font-size: 1.5rem; /* Opcional: ajustar ligeramente el tamaño si es muy grande */
+                font-size: 1.5rem;
+                /* Opcional: ajustar ligeramente el tamaño si es muy grande */
             }
-            
+
             .play-btn-mobile {
                 width: 50px !important;
                 height: 50px !important;
             }
-            
+
             .play-btn-mobile i {
                 font-size: 1.5rem !important;
             }
@@ -120,8 +121,12 @@
                     <!-- Video / Image Preview -->
                     <div class="col-lg-8 mb-4 mb-lg-0">
                         <div class="text-black small mb-3 fw-medium">
-                            Inicio <span class="mx-1">|</span> Crecimiento espiritual <span class="mx-1">|</span> <span
-                                class="text-primary">{{ $curso->nombre }}</span>
+                            Inicio <span class="mx-1">|</span>
+                            @if ($curso->carrera)
+                                {{ $curso->carrera->nombre }}
+                            @endif
+                            <span class="mx-1">|</span>
+                            <span class="text-primary">{{ $curso->nombre }}</span>
                         </div>
 
                         @if ($curso->video_preview_url)
@@ -149,7 +154,8 @@
                             </div>
                         @endif
 
-                        <h4 class="mt-4 mb-1 fw-semibold text-black course-title-mobile" style="letter-spacing: -0.5px;">{{ $curso->nombre }}</h4>
+                        <h4 class="mt-4 mb-1 fw-semibold text-black course-title-mobile" style="letter-spacing: -0.5px;">
+                            {{ $curso->nombre }}</h4>
                     </div>
 
                     <!-- Playlist -->
@@ -160,31 +166,35 @@
                         <div class="playlist-container pe-2">
                             @forelse($curso->modulos->take(3) as $moduloIndex => $modulo)
                                 <div class="mb-3">
-                                    <h6 class="text-black text-uppercase mb-2 fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                    <h6 class="text-black text-uppercase mb-2 fw-bold"
+                                        style="font-size: 0.75rem; letter-spacing: 0.5px;">
                                         Módulo {{ $loop->iteration }}: {{ $modulo->nombre }}
                                     </h6>
-                                    
+
                                     @forelse($modulo->items as $itemIndex => $item)
                                         @php
                                             // Establecer si es el primer item del primer modulo (para 'desbloqueado')
-                                            $isFirstItem = ($moduloIndex == 0 && $itemIndex == 0);
+                                            $isFirstItem = $moduloIndex == 0 && $itemIndex == 0;
                                             // Identificar si es video (id = 2 asumiendo la estructura habitual)
-                                            $isVideo = ($item->curso_item_tipo_id == 2);
+                                            $isVideo = $item->curso_item_tipo_id == 2;
                                         @endphp
-                                        
-                                        <div class="video-playlist-item d-flex align-items-center mb-2 p-2 rounded-3 {{ $isFirstItem ? 'active bg-light border border-primary border-opacity-25' : 'bg-white border text-black' }}" 
-                                             style="transition: all 0.2s;">
-                                            
-                                            @if($isVideo)
+
+                                        <div class="video-playlist-item d-flex align-items-center mb-2 p-2 rounded-3 {{ $isFirstItem ? 'active bg-light border border-primary border-opacity-25' : 'bg-white border text-black' }}"
+                                            style="transition: all 0.2s;">
+
+                                            @if ($isVideo)
                                                 {{-- ESTILO PARA VIDEOS --}}
-                                                <div class="position-relative me-3 rounded overflow-hidden flex-shrink-0" style="width: 90px; height: 50px;">
+                                                <div class="position-relative me-3 rounded overflow-hidden flex-shrink-0"
+                                                    style="width: 90px; height: 50px;">
                                                     <img src="{{ $curso->imagen_portada ? \Storage::url($configuracion->ruta_almacenamiento . '/img/cursos/' . $curso->imagen_portada) : 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2070&auto=format&fit=crop' }}"
-                                                        alt="Thumb" class="img-fluid w-100 h-100" style="object-fit: cover; filter: {{ $isFirstItem ? 'none' : 'grayscale(50%)' }}; opacity: 0.8;">
-                                                    
+                                                        alt="Thumb" class="img-fluid w-100 h-100"
+                                                        style="object-fit: cover; filter: {{ $isFirstItem ? 'none' : 'grayscale(50%)' }}; opacity: 0.8;">
+
                                                     @if ($isFirstItem)
                                                         <div class="position-absolute top-50 start-50 translate-middle text-white d-flex align-items-center justify-content-center"
                                                             style="width: 24px; height: 24px; background-color: rgba(99, 102, 241, 0.9); border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.3);">
-                                                            <i class="ti ti-player-play-filled" style="font-size: 0.7rem; margin-left:1px;"></i>
+                                                            <i class="ti ti-player-play-filled"
+                                                                style="font-size: 0.7rem; margin-left:1px;"></i>
                                                         </div>
                                                     @else
                                                         <div class="position-absolute top-50 start-50 translate-middle text-dark d-flex align-items-center justify-content-center"
@@ -195,27 +205,34 @@
                                                 </div>
                                             @else
                                                 {{-- ESTILO PARA OTROS RECURSOS (Lecturas, Tareas, etc) --}}
-                                                <div class="d-flex align-items-center justify-content-center rounded-2 me-3 flex-shrink-0 {{ $isFirstItem ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary' }}" style="width: 45px; height: 45px;">
-                                                    @if($item->curso_item_tipo_id == 1) {{-- Lectura --}}
+                                                <div class="d-flex align-items-center justify-content-center rounded-2 me-3 flex-shrink-0 {{ $isFirstItem ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary' }}"
+                                                    style="width: 45px; height: 45px;">
+                                                    @if ($item->curso_item_tipo_id == 1)
+                                                        {{-- Lectura --}}
                                                         <i class="ti ti-book fs-4"></i>
-                                                    @elseif($item->curso_item_tipo_id == 3) {{-- Cuestionario/Actividad --}}
+                                                    @elseif($item->curso_item_tipo_id == 3)
+                                                        {{-- Cuestionario/Actividad --}}
                                                         <i class="ti ti-clipboard-list fs-4"></i>
                                                     @else
                                                         <i class="ti ti-file-description fs-4"></i>
                                                     @endif
                                                 </div>
                                             @endif
-                                            
+
                                             <div class="flex-grow-1 overflow-hidden">
-                                                <h6 class="mb-1 {{ $isFirstItem ? 'text-primary fw-bold' : 'text-dark fw-medium' }} text-truncate" style="font-size: 0.85rem;" title="{{ $item->titulo }}">
+                                                <h6 class="mb-1 {{ $isFirstItem ? 'text-primary fw-bold' : 'text-dark fw-medium' }} text-truncate"
+                                                    style="font-size: 0.85rem;" title="{{ $item->titulo }}">
                                                     {{ $item->titulo }}
                                                 </h6>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="badge {{ $isVideo ? 'bg-danger bg-opacity-10 text-danger' : 'bg-info bg-opacity-10 text-info' }} rounded-pill" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;">
+                                                    <span
+                                                        class="badge {{ $isVideo ? 'bg-danger bg-opacity-10 text-danger' : 'bg-info bg-opacity-10 text-info' }} rounded-pill"
+                                                        style="font-size: 0.6rem; padding: 0.2rem 0.4rem;">
                                                         {{ $isVideo ? 'Video' : 'Lectura/Recurso' }}
                                                     </span>
-                                                    @if(!$isFirstItem)
-                                                        <small class="text-black" style="font-size: 0.65rem;"><i class="ti ti-lock me-1"></i>Bloqueado</small>
+                                                    @if (!$isFirstItem)
+                                                        <small class="text-black" style="font-size: 0.65rem;"><i
+                                                                class="ti ti-lock me-1"></i>Bloqueado</small>
                                                     @endif
                                                 </div>
                                             </div>
@@ -244,8 +261,7 @@
                     <div class="d-flex align-items-center mb-4 text-black small fw-medium">
                         <div class="me-4  px-3 py-1 d-flex align-items-center"><i
                                 class="ti ti-layout-grid me-2 text-primary"></i> Crecimiento</div>
-                        <div class=" px-3 py-1 d-flex align-items-center"><i
-                                class="ti ti-clock me-2 text-primary"></i>
+                        <div class=" px-3 py-1 d-flex align-items-center"><i class="ti ti-clock me-2 text-primary"></i>
                             @if ($curso->duracion_estimada_dias >= 30)
                                 {{ round($curso->duracion_estimada_dias / 30) }} Meses
                             @else
@@ -272,7 +288,7 @@
                                             <i class="ti ti-check text-primary"
                                                 style="font-size: 0.9rem; font-weight: bold;"></i>
                                         </div>
-                                        <span class="text-black text-break pt-2" 
+                                        <span class="text-black text-break pt-2"
                                             style="font-size: 0.9rem; line-height: 1.5;">{{ $aprendizaje->texto }}</span>
                                     </div>
                                 @endforeach
@@ -360,7 +376,7 @@
                     @php
                         $totalModulos = $curso->modulos->count();
                         $totalItems = 0;
-                        foreach($curso->modulos as $mod) {
+                        foreach ($curso->modulos as $mod) {
                             $totalItems += $mod->items->count();
                         }
                     @endphp
@@ -369,8 +385,10 @@
                     <div class="d-flex justify-content-between align-items-end mb-4 border-bottom pb-3">
                         <h4 class="fw-bold mb-0" style="color: #2b3445;">Contenido del curso</h4>
                         <div class="text-black small fw-medium d-none d-md-flex">
-                            <span class="me-4"><i class="ti ti-folder me-1 text-primary"></i> {{ $totalModulos }} {{ $totalModulos == 1 ? 'Modulo' : 'Modulos' }}</span>
-                            <span class="me-4"><i class="ti ti-file-description me-1 text-primary"></i> {{ $totalItems }} lecciones</span>
+                            <span class="me-4"><i class="ti ti-folder me-1 text-primary"></i> {{ $totalModulos }}
+                                {{ $totalModulos == 1 ? 'Modulo' : 'Modulos' }}</span>
+                            <span class="me-4"><i class="ti ti-file-description me-1 text-primary"></i>
+                                {{ $totalItems }} lecciones</span>
                         </div>
                     </div>
 
@@ -378,29 +396,37 @@
                         @forelse($curso->modulos as $index => $modulo)
                             <div class="accordion-item bg-transparent border-bottom rounded">
                                 <h2 class="accordion-header" id="heading{{ $modulo->id }}">
-                                    <button class="accordion-button {{ $index == 0 ? '' : 'collapsed' }} fw-bold bg-transparent px-4 py-4 d-flex align-items-center" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#collapse{{ $modulo->id }}" aria-expanded="{{ $index == 0 ? 'true' : 'false' }}"
+                                    <button
+                                        class="accordion-button {{ $index == 0 ? '' : 'collapsed' }} fw-bold bg-transparent px-4 py-4 d-flex align-items-center"
+                                        type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapse{{ $modulo->id }}"
+                                        aria-expanded="{{ $index == 0 ? 'true' : 'false' }}"
                                         aria-controls="collapse{{ $modulo->id }}" style="font-size: 1.1rem;">
-                                        
+
                                         <div class="flex-grow-1 text-start pe-3">
                                             {{ $modulo->nombre }}
                                         </div>
-                                        
+
                                         <div class="d-flex align-items-center text-black small fw-normal ms-auto me-3 flex-shrink-0"
                                             style="font-size: 0.85rem;">
-                                            <span class="me-2"><i class="ti ti-file-description text-primary"></i> {{ $modulo->items->count() }} lecciones</span>
+                                            <span class="me-2"><i class="ti ti-file-description text-primary"></i>
+                                                {{ $modulo->items->count() }} lecciones</span>
                                         </div>
 
                                     </button>
                                 </h2>
-                                <div id="collapse{{ $modulo->id }}" class="accordion-collapse collapse {{ $index == 0 ? 'show' : '' }}" aria-labelledby="heading{{ $modulo->id }}"
+                                <div id="collapse{{ $modulo->id }}"
+                                    class="accordion-collapse collapse {{ $index == 0 ? 'show' : '' }}"
+                                    aria-labelledby="heading{{ $modulo->id }}"
                                     data-bs-parent="#courseContentAccordion">
                                     <div class="accordion-body ps-0 pt-0 pb-3">
                                         <ul class="list-group list-group-flush ms-4">
                                             @forelse($modulo->items as $item)
-                                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3 bg-transparent border-0">
-                                                    <div class="d-flex align-items-center text-black" style="font-size: 0.95rem;">
-                                                        @if($item->tipo && $item->tipo->icono)
+                                                <li
+                                                    class="list-group-item d-flex justify-content-between align-items-center px-0 py-3 bg-transparent border-0">
+                                                    <div class="d-flex align-items-center text-black"
+                                                        style="font-size: 0.95rem;">
+                                                        @if ($item->tipo && $item->tipo->icono)
                                                             <i class="{{ $item->tipo->icono }} me-3 text-dark"></i>
                                                         @else
                                                             <i class="ti ti-file-description me-3 text-dark"></i>
@@ -409,7 +435,8 @@
                                                     </div>
                                                 </li>
                                             @empty
-                                                <li class="list-group-item px-0 py-3 bg-transparent border-0 text-black small">
+                                                <li
+                                                    class="list-group-item px-0 py-3 bg-transparent border-0 text-black small">
                                                     No hay ítems registrados en este módulo.
                                                 </li>
                                             @endforelse
@@ -418,7 +445,8 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="text-center py-4 text-black border rounded">Aún no hay contenido estipulado para este curso.</div>
+                            <div class="text-center py-4 text-black border rounded">Aún no hay contenido estipulado para
+                                este curso.</div>
                         @endforelse
                     </div>
 
@@ -471,7 +499,8 @@
                                 <li
                                     class="list-group-item d-flex justify-content-between align-items-center px-0 py-3 text-black border-bottom-0 pb-4">
                                     <span class="fw-medium">Lecciones</span>
-                                    <span class="fw-bold text-dark text-end">{{ count($curso->modulos->pluck('items')->flatten()) }}</span>
+                                    <span
+                                        class="fw-bold text-dark text-end">{{ count($curso->modulos->pluck('items')->flatten()) }}</span>
                                 </li>
                             </ul>
 

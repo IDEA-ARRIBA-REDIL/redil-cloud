@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('secciones_pasos_crecimiento', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre',50);
+            $table->string('nombre', 50);
             $table->smallInteger('orden')->nullable();
             $table->timestamps();
         });

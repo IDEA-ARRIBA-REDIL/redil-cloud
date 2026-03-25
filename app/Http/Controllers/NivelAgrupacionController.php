@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Escuela;
 use App\Models\NivelAgrupacion;
 use App\Models\NivelAgrupacionConfiguracion;
-use App\Models\NivelTareaRequisito;
 use App\Models\NivelTareaCulminada;
+use App\Models\NivelTareaRequisito;
 use App\Models\TipoUsuario;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class NivelAgrupacionController extends Controller
@@ -20,13 +20,13 @@ class NivelAgrupacionController extends Controller
     public function index(Escuela $escuela)
     {
         if ($escuela->tipo_matricula !== 'niveles_agrupados') {
-             // Opcional: manejar error o redirigir
-             // abort(403, 'Esta escuela no gestiona niveles agrupados.');
+            // Opcional: manejar error o redirigir
+            // abort(403, 'Esta escuela no gestiona niveles agrupados.');
         }
 
         return view('contenido.paginas.escuelas.niveles.listar', [
             'escuela' => $escuela,
-            'niveles' => $escuela->nivelesAgrupacion()->orderBy('orden')->get()
+            'niveles' => $escuela->nivelesAgrupacion()->orderBy('orden')->get(),
         ]);
     }
 
@@ -36,6 +36,7 @@ class NivelAgrupacionController extends Controller
     public function create(Escuela $escuela)
     {
         $tiposUsuario = TipoUsuario::where('visible', true)->get();
+
         return view('contenido.paginas.escuelas.niveles.crear', compact('escuela', 'tiposUsuario'));
     }
 
@@ -67,7 +68,7 @@ class NivelAgrupacionController extends Controller
         ]);
 
         // Validación de lógica de negocio (Al menos uno habilitado)
-        if (!$request->has('habilitar_calificaciones') && !$request->has('habilitar_asistencias')) {
+        if (! $request->has('habilitar_calificaciones') && ! $request->has('habilitar_asistencias')) {
             return redirect()->back()
                 ->withErrors(['general' => 'Debe habilitar al menos Calificaciones o Asistencias.'])
                 ->withInput();
@@ -82,7 +83,7 @@ class NivelAgrupacionController extends Controller
                 'nombre' => $request->nombre,
                 'descripcion' => $request->descripcion,
                 'orden' => $request->orden,
-                'activo' => true
+                'activo' => true,
             ]);
 
             // 3. Crear Configuración
@@ -120,8 +121,9 @@ class NivelAgrupacionController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
-                ->withErrors(['error' => 'Ocurrió un error al guardar el nivel: ' . $e->getMessage()])
+                ->withErrors(['error' => 'Ocurrió un error al guardar el nivel: '.$e->getMessage()])
                 ->withInput();
         }
     }
@@ -137,7 +139,7 @@ class NivelAgrupacionController extends Controller
                     'estado_paso_crecimiento_usuario_id' => $paso['estado_id'],
                     'estado' => $paso['estado_id'], // Legacy support
                     'al_iniciar' => true,
-                    'indice' => $indice++
+                    'indice' => $indice++,
                 ]);
             }
         }
@@ -149,7 +151,7 @@ class NivelAgrupacionController extends Controller
                 $nivel->procesosPrerrequisito()->attach($paso['paso_id'], [
                     'estado_paso_crecimiento_usuario_id' => $paso['estado_id'],
                     'estado_proceso' => $paso['estado_id'], // Legacy support
-                    'indice' => $indice++
+                    'indice' => $indice++,
                 ]);
             }
         }
@@ -162,7 +164,7 @@ class NivelAgrupacionController extends Controller
                     'estado_paso_crecimiento_usuario_id' => $paso['estado_id'],
                     'estado' => $paso['estado_id'], // Legacy support
                     'al_iniciar' => false,
-                    'indice' => $indice++
+                    'indice' => $indice++,
                 ]);
             }
         }
@@ -175,7 +177,7 @@ class NivelAgrupacionController extends Controller
                     'nivel_agrupacion_id' => $nivel->id,
                     'tarea_consolidacion_id' => $tarea['tarea_id'],
                     'estado_tarea_consolidacion_id' => $tarea['estado_id'],
-                    'indice' => $indice++
+                    'indice' => $indice++,
                 ]);
             }
         }
@@ -188,7 +190,7 @@ class NivelAgrupacionController extends Controller
                     'nivel_agrupacion_id' => $nivel->id,
                     'tarea_consolidacion_id' => $tarea['tarea_id'],
                     'estado_tarea_consolidacion_id' => $tarea['estado_id'],
-                    'indice' => $indice++
+                    'indice' => $indice++,
                 ]);
             }
         }

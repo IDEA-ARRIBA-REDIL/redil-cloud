@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('inscripciones', function (Blueprint $table) {
             $table->id(); // Equivalente a tu primary key auto-incremental
 
-
             // Definimos las llaves foráneas. Las hacemos 'nullable' como en tu esquema.
             // El método constrained() asume que las tablas se llaman 'users', 'actividad_categorias', etc.
             // y que la columna es 'id'. Ajusta si tus tablas tienen otros nombres.

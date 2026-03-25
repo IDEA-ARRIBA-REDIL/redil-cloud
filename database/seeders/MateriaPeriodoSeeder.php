@@ -2,14 +2,7 @@
 
 namespace Database\Seeders;
 
-
 use App\Models\MateriaPeriodo;
-use App\Models\Sede;
-use App\Models\TipoAula;
-use App\Models\Aula;
-use App\Models\HorarioBase;
-use App\Models\HorarioMateriaPeriodo;
-use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class MateriaPeriodoSeeder extends Seeder

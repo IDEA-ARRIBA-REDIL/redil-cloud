@@ -73,6 +73,11 @@ class Grupo extends Model
     return $this->belongsToMany(User::class, 'integrantes_grupo', 'grupo_id', 'user_id')->withTimestamps();
   }
 
+  public function bitacorasIntegrantes(): HasMany
+  {
+      return $this->hasMany(BitacoraIntegranteGrupo::class, 'grupo_id');
+  }
+
   public function sede(): BelongsTo
   {
     return $this->belongsTo(Sede::class);

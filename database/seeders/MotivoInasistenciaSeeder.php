@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\MotivoInasistencia; // Asegúrate que el namespace de tu modelo sea correcto
+use App\Models\MotivoInasistencia;
+use Illuminate\Database\Seeder; // Asegúrate que el namespace de tu modelo sea correcto
 use Illuminate\Support\Facades\DB; // Alternativa si no usas el modelo directamente
 
 class MotivoInasistenciaSeeder extends Seeder
@@ -69,7 +68,7 @@ class MotivoInasistenciaSeeder extends Seeder
                 'nombre' => 'Inasistencia No Justificada',
                 'descripcion' => 'El alumno no asistió y no presentó justificación válida.',
                 'activo' => false, // Podrías tener este como inactivo si solo quieres motivos "válidos"
-            ]
+            ],
         ];
 
         // Opción 1: Usando el Modelo (Recomendado si tienes casts, eventos, etc.)

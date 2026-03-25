@@ -3,23 +3,20 @@
 namespace Database\Seeders;
 
 use App\Models\Pais;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class PaisSeeder extends Seeder
 {
-  /**
-   * Run the database seeds.
-   */
-  public function run(): void
-  {
-    $path = base_path('storage/app/archivos_desarrollador/paises.sql');
-    DB::unprepared(file_get_contents($path));
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $path = base_path('storage/app/archivos_desarrollador/paises.sql');
+        DB::unprepared(file_get_contents($path));
 
-
-    $codigoPaises = '[
+        $codigoPaises = '[
       {"codigo": "AF", "nombre":"Afganistán"},
       {"codigo": "AX", "nombre":"Islas de Åland"},
       {"codigo": "AL", "nombre":"Albania"},
@@ -268,20 +265,18 @@ class PaisSeeder extends Seeder
       {"codigo": "ZW", "nombre":"Zimbabue"}
    ]';
 
-   $codigoPaises = collect(json_decode($codigoPaises));
+        $codigoPaises = collect(json_decode($codigoPaises));
 
-   $paises = Pais::get();
-   foreach($paises as $pais)
-   {
-     $filtro = $codigoPaises->filter(function ($item) use ($pais) {
-       return strpos($item->nombre, $pais->nombre) !== false;
-     });
+        $paises = Pais::get();
+        foreach ($paises as $pais) {
+            $filtro = $codigoPaises->filter(function ($item) use ($pais) {
+                return strpos($item->nombre, $pais->nombre) !== false;
+            });
 
-     if($filtro->first())
-     {
-       $pais->codigo_alpha = $filtro->first()->codigo;
-       $pais->save();
-     }
-   }
-  }
+            if ($filtro->first()) {
+                $pais->codigo_alpha = $filtro->first()->codigo;
+                $pais->save();
+            }
+        }
+    }
 }

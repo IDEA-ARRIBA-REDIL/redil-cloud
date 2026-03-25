@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\Abono;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Seeder;
 
 class AbonoSeeder extends Seeder
 {
@@ -30,8 +28,7 @@ class AbonoSeeder extends Seeder
             'fecha_fin' => '2024-10-30',
         ]);
 
-        ////ABONOS ACTIVIDAD CON ABONOS
-
+        // //ABONOS ACTIVIDAD CON ABONOS
 
         Abono::firstOrCreate([
             'fecha_inicio' => '2025-03-01',

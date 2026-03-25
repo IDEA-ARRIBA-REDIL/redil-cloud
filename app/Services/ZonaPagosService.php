@@ -2,17 +2,20 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use App\Models\Compra;
 use App\Models\Pago;
+use Illuminate\Support\Facades\Log;
 
 class ZonaPagosService
 {
     protected $apiUrl;
+
     protected $idComercio;
+
     protected $usuario;
+
     protected $clave;
+
     protected $codigoServicio;
 
     public function __construct()
@@ -27,9 +30,8 @@ class ZonaPagosService
     /**
      * Inicia un proceso de pago.
      *
-     * @param Pago $pago El objeto Pago que se va a procesar.
-     * @param array $datosComprador Datos del comprador.
-     * @return array
+     * @param  Pago  $pago  El objeto Pago que se va a procesar.
+     * @param  array  $datosComprador  Datos del comprador.
      */
     // 2. CORRECCIÓN: Se cambia el tipo del primer argumento de Compra a Pago.
     // CAMBIO N°3: Se añade el parámetro $tipoCompra a la firma del método.
@@ -40,37 +42,37 @@ class ZonaPagosService
         // Se construye el string JSON
         $jsonString = ' {
                         "InformacionPago": {
-                            "flt_total_con_iva": ' . $pago->valor . ',
+                            "flt_total_con_iva": '.$pago->valor.',
                             "flt_valor_iva": 0.00,
-                            "str_id_pago": "' . (string)$pago->id . '",
-                            "str_descripcion_pago": "Pago Actividad:' . $compra->actividad->nombre . '",
-                            "str_email": "' . $datosComprador['email'] . '",
-                            "str_id_cliente": "' . $datosComprador['identificacion'] . '",
+                            "str_id_pago": "'.(string) $pago->id.'",
+                            "str_descripcion_pago": "Pago Actividad:'.$compra->actividad->nombre.'",
+                            "str_email": "'.$datosComprador['email'].'",
+                            "str_id_cliente": "'.$datosComprador['identificacion'].'",
                             "str_tipo_id": "1",
-                            "str_nombre_cliente": "' . $datosComprador['nombre'] . '",
-                            "str_apellido_cliente": "' . ($datosComprador['apellido'] ?? ' ') . '",
-                            "str_telefono_cliente": "' . $datosComprador['telefono'] . '",
+                            "str_nombre_cliente": "'.$datosComprador['nombre'].'",
+                            "str_apellido_cliente": "'.($datosComprador['apellido'] ?? ' ').'",
+                            "str_telefono_cliente": "'.$datosComprador['telefono'].'",
                             
-                            "str_opcional1": "' . $tipoCompra . '",
+                            "str_opcional1": "'.$tipoCompra.'",
                             "str_opcional2": "",
                             "str_opcional3": "",
                             "str_opcional4": "",
                             "str_opcional5": ""
                         },
                         "InformacionSeguridad": {
-                            "int_id_comercio" : "' . $this->idComercio . '",
-                            "str_usuario" : "' . $this->usuario . '",
-                            "str_clave" : "' . $this->clave . '",
+                            "int_id_comercio" : "'.$this->idComercio.'",
+                            "str_usuario" : "'.$this->usuario.'",
+                            "str_clave" : "'.$this->clave.'",
                             "int_modalidad" : 1
                         },
                         "AdicionalesConfiguracion": [
                             {
                             "int_codigo": 50,
-                            "str_valor": "' . $this->codigoServicio . '"
+                            "str_valor": "'.$this->codigoServicio.'"
                             },
                             {
                             "int_codigo": 104,
-                            "str_valor": "' . route('zonapagos.handleCallback') . '"
+                            "str_valor": "'.route('zonapagos.handleCallback').'"
                             }
                         ]
         }';
@@ -79,7 +81,7 @@ class ZonaPagosService
         try {
             $ch = curl_init();
             curl_setopt_array($ch, [
-                CURLOPT_URL => $this->apiUrl . '/InicioPago',
+                CURLOPT_URL => $this->apiUrl.'/InicioPago',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => $jsonString,
@@ -94,12 +96,14 @@ class ZonaPagosService
                 return [
                     'success' => true,
                     'payment_url' => $responseJson['str_url'],
-                    'gateway_response' => $responseJson
+                    'gateway_response' => $responseJson,
                 ];
             }
+
             return ['success' => false, 'message' => 'Error de pasarela'];
         } catch (\Exception $e) {
-            Log::error('Excepción en ZonaPagosService::iniciarPago (cURL): ' . $e->getMessage());
+            Log::error('Excepción en ZonaPagosService::iniciarPago (cURL): '.$e->getMessage());
+
             return ['success' => false, 'message' => 'Ocurrió un error inesperado al conectar con el banco.'];
         }
     }
@@ -108,10 +112,10 @@ class ZonaPagosService
     {
         // El manual indica que la verificación se hace con un JSON que contiene las credenciales y el id del pago.
         $data = [
-            'int_id_comercio' => (int)$this->idComercio,
+            'int_id_comercio' => (int) $this->idComercio,
             'str_usr_comercio' => $this->usuario,
             'str_pwd_comercio' => $this->clave,
-            'str_id_pago' => (string)$pago->id,
+            'str_id_pago' => (string) $pago->id,
             'int_no_pago' => -1, // Como indica el manual, si no se usa, se envía -1.
         ];
 
@@ -120,7 +124,7 @@ class ZonaPagosService
         try {
             $ch = curl_init();
             curl_setopt_array($ch, [
-                CURLOPT_URL => $this->apiUrl . '/VerificacionPago',
+                CURLOPT_URL => $this->apiUrl.'/VerificacionPago',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => $jsonString,
@@ -133,7 +137,7 @@ class ZonaPagosService
             curl_close($ch);
 
             if ($curlError) {
-                throw new \Exception("cURL Error: " . $curlError);
+                throw new \Exception('cURL Error: '.$curlError);
             }
 
             $responseJson = json_decode($responseBody, true);
@@ -148,15 +152,16 @@ class ZonaPagosService
 
             return ['success' => false, 'message' => 'La transacción no fue encontrada o hubo un error.', 'response' => $responseJson];
         } catch (\Exception $e) {
-            Log::error('Excepción en ZonaPagosService::verificarPago (cURL): ' . $e->getMessage());
+            Log::error('Excepción en ZonaPagosService::verificarPago (cURL): '.$e->getMessage());
+
             return ['success' => false, 'message' => 'Ocurrió un error inesperado al verificar el pago.'];
         }
     }
 
     /**
      * Helper para parsear la respuesta de verificación de pago.
-     * @param string $resultadoString
-     * @return array
+     *
+     * @param  string  $resultadoString
      */
     public function parsearRespuestaVerificacion(string $strResPago): array
     {

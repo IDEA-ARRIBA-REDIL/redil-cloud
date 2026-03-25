@@ -13,7 +13,7 @@ package-lock.json
 .env.production
 .phpunit.result.cache
 .editorconfig
-/vendor
+
 docker-compose.override.yml
 /storage/debugbar
 Homestead.json
@@ -25,7 +25,8 @@ storage/logs/*.log
 /.idea
 /.vscode
 /vendor
-
+/app/Providers/AppServiceProvider.php
+/config/tenants.php
 /public/css
 /routes/tenant.php
 /app/Providers
@@ -33,3 +34,6 @@ storage/logs/*.log
 !/bootstrap/cache/.gitignore
 deploy_key
 storage/app/google-calendar/oauth-credentials.json
+test_optimization.php
+verify_logic.php
+vendor.zip

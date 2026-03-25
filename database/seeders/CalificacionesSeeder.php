@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB; // Asegúrate de importar el Facade DB
-use Carbon\Carbon; // Opcional, útil si necesitas manipular fechas
+
+// Opcional, útil si necesitas manipular fechas
 
 class CalificacionesSeeder extends Seeder
 {

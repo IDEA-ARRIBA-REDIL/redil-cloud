@@ -113,16 +113,18 @@ $configData = Helper::appClasses();
     };
 
     // Gráfico de Vinculación
-    const chartEl = document.querySelector('#vinculacionChart');
-    if (chartEl) {
-      const seriesData = @json($vinculacionesCosecha->pluck('usuarios_count'));
-      const labelsData = @json($vinculacionesCosecha->pluck('nombre'));
+    const vincEl = document.querySelector('#vinculacionChart');
+    if (vincEl) {
+      const seriesData = JSON.parse(vincEl.getAttribute('data-series') || '[]');
+      const labelsData = JSON.parse(vincEl.getAttribute('data-labels') || '[]');
+      const totalCosecha = vincEl.getAttribute('data-total') || '0';
 
-      const chartConfig = {
+      const vincConfig = {
         chart: {
           height: 400,
           type: 'donut',
-          toolbar: { show: true }
+          toolbar: { show: true },
+          fontFamily: 'Poppins'
         },
         labels: labelsData,
         series: seriesData,
@@ -160,7 +162,7 @@ $configData = Helper::appClasses();
                   fontSize: '1.5rem',
                   label: 'Total',
                   formatter: function (w) {
-                    return '{{ $totalCosecha }}';
+                    return totalCosecha;
                   }
                 }
               }
@@ -169,8 +171,7 @@ $configData = Helper::appClasses();
         }
       };
 
-      const chart = new ApexCharts(chartEl, chartConfig);
-      chart.render();
+      new ApexCharts(vincEl, vincConfig).render();
     }
 
     // Inicializar gráficos de los bloques
@@ -396,6 +397,8 @@ $configData = Helper::appClasses();
         };
         new ApexCharts(unionLibreEl, unionLibreConfig).render();
     }
+
+
 
     // Gráfico Donut Deserciones vs Efectivos
     const desercionesEl = document.querySelector('#desercionesChart');
@@ -641,7 +644,11 @@ $configData = Helper::appClasses();
             </div>
           </div>
           <div class="card-body">                  
-            <div id="vinculacionChart"></div>
+            <div id="vinculacionChart" 
+                 data-series='@json($vinculacionesCosecha->pluck("usuarios_count"))' 
+                 data-labels='@json($vinculacionesCosecha->pluck("nombre"))'
+                 data-total='{{ $totalCosecha }}'
+                 style="min-height: 400px;"></div>
           </div>
         </div>
       </div>
@@ -1082,6 +1089,7 @@ $configData = Helper::appClasses();
           </div>
         </div>
 
+
         <!-- Matrículas Unión Libre vs Aptos -->
         <div class="col equal-height-col col-12 col-lg-4 col-sm-6 mb-4">
           <div class="card h-100">
@@ -1274,6 +1282,7 @@ $configData = Helper::appClasses();
                               </div>
                             </div>
 
+
                             <!-- Matrículas Unión Libre vs Aptos -->
                             <div class="col equal-height-col col-12 col-lg-4 col-sm-6 mb-4">
                               <div class="card h-100">
@@ -1458,6 +1467,7 @@ $configData = Helper::appClasses();
                          }).render();
                      }
 
+
                      // 4. Union Libre Donut
                      const unionLibreEl{{ $dato->id }} = document.querySelector('#unionLibreChart{{ $dato->id }}');
                      if (unionLibreEl{{ $dato->id }}) {
@@ -1485,13 +1495,478 @@ $configData = Helper::appClasses();
     </div>
   </div>
 
-  <!-- Tab 3: Futuro Contenido -->
-  <div class="tab-pane fade" id="navs-tab-indicador-3" role="tabpanel">
-     <div class="alert alert-warning">
-        <h6 class="alert-heading fw-bold mb-1">En construcción</h6>
-        <span>Próximamente más indicadores aquí.</span>
-     </div>
-  </div>
-</div> <!-- Fin Tab Content -->
+  <!-- Tab 3: Membresías -->
+  <div class="tab-pane fade {{ $activeTab == 'indicador-3' ? 'show active' : '' }}" id="navs-tab-indicador-3" role="tabpanel">
+
+      <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+        <h4 class="mb-0 text-black fw-semibold text-uppercase">Membresías 
+          @if($esVistaDetalle)
+              <span class="text-primary">{{ $bloqueActual->nombre }}</span>
+          @else
+              <!-- Podría ponerse información de todos los bloques si se desea -->
+          @endif
+        </h4>
+
+        @if($esVistaDetalle)
+          <a href="{{ route('consolidacion.dashboard', array_merge(request()->except(['bloque_detalle_id', 'tab']), ['tab' => 'indicador-3'])) }}" class="btn btn-outline-secondary rounded-pill">
+              <i class="ti ti-arrow-left me-1"></i> Volver a bloques
+          </a>
+        @endif
+      </div>
+
+    <div class="row equal-height-row g-2">
+
+       <!-- Total miembros -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $totalMiembros }}</h5>
+              <small class="text-black">
+                Total miembros
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="mb-4 text-black">Total matrículas efectivas vs. Total aptos membresías</h6>
+      
+      @php
+        $efectividadMembresiasAptos = $matriculasEfectivos > 0 ? round(($totalMiembros / $matriculasEfectivos) * 100, 2) : 0;
+      @endphp
+      <!-- Porcentaje de efectividad (Matrículas Efectivas vs Miembros) -->
+
+
+    
+      <!-- Bautismos vs Traslados -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h6 class="card-title mb-0 fw-bold">Membresías</h6>
+              <small class="text-black">Bautismos vs Traslados</small>
+            </div>
+          </div>
+          <div class="card-body">                  
+            <div id="bautismosTrasladosChart"
+                 data-bautismos="{{ $miembrosBautismos }}"
+                 data-traslados="{{ $miembrosTraslados }}"
+                 style="min-height: 250px;">
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Traslados: Adultos vs Warriors -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h6 class="card-title mb-0 fw-bold">Traslados</h6>
+              <small class="text-black">Adultos vs Warriors</small>
+            </div>
+          </div>
+          <div class="card-body">                  
+            <div id="trasladosEdadesChart"
+                 data-adultos="{{ $trasladosAdultos }}"
+                 data-menores="{{ $trasladosMenores }}"
+                 style="min-height: 250px;">
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Bautismos: Adultos vs Warriors -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h6 class="card-title mb-0 fw-bold">Bautismos</h6>
+              <small class="text-black">Adultos vs Warriors</small>
+            </div>
+          </div>
+          <div class="card-body">                  
+            <div id="bautismosEdadesChart"
+                 data-adultos="{{ $bautismosAdultos }}"
+                 data-menores="{{ $bautismosMenores }}"
+                 style="min-height: 250px;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Efectividad matrículas a membresías -->
+      <div class="col-12 col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center pb-0">
+            <small class="text-black">Efectividad matrículas a membresías</small>
+            <h4 class="text-black fw-semibold mb-0">
+              {{ $efectividadMembresiasAptos }}%
+            </h4>
+          </div>
+          <div class="card-body">              
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar" role="progressbar" style="width: {{ $efectividadMembresiasAptos }}%" aria-valuenow="{{ $efectividadMembresiasAptos }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+     
+      <hr>
+      <h6 class="mb-4 text-black ">Personas en unión libre matriculadas en CHLL vs. Total membresías</h6>
+
+      <!-- Unión libre matriculados -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $totalUnionLibreMatriculados }}</h5>
+              <small class="text-black">
+                Unión libre matriculados
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Miembros que estaban en unión libre -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $miembrosFormalizados }}</h5>
+              <small class="text-black">
+                Miembros que estaban en unión libre
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pendientes por membresía (Unión libre) -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $pendientesMembresiaUnionLibre }}</h5>
+              <small class="text-black">
+                Pendientes por membresía (Unión libre)
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      @php
+        $efectividadFormalizacionUnionLibre = $totalUnionLibreMatriculados > 0 ? round(($miembrosFormalizados / $totalUnionLibreMatriculados) * 100, 2) : 0;
+      @endphp
+      <!-- Efectividad formalización unión libre -->
+      <div class="col-12 col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center pb-0">
+            <small class="text-black">Efectividad formalización unión libre</small>
+            <h4 class="text-black fw-semibold mb-0">
+              {{ $efectividadFormalizacionUnionLibre }}%
+            </h4>
+          </div>
+          <div class="card-body">              
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar" role="progressbar" style="width: {{ $efectividadFormalizacionUnionLibre }}%" aria-valuenow="{{ $efectividadFormalizacionUnionLibre }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr>
+
+      <h6 class="mb-4 text-black ">Membresías VS. Ubicación en grupos</h6>
+    
+
+      <!-- Miembros ubicados en grupo -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $miembrosUbicados }}</h5>
+              <small class="text-black">
+                Miembros ubicados en grupo
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Efectividad ubicación en grupos-->
+      <div class="col-12 col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center pb-0">
+            <small class="text-black">Efectividad ubicación en grupos</small>
+            <h4 class="text-black fw-semibold mb-0">
+              {{ $porcentajeEfectividadMembresia }}%
+            </h4>
+          </div>
+          <div class="card-body">              
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar" role="progressbar" style="width: {{ $porcentajeEfectividadMembresia }}%" aria-valuenow="{{ $porcentajeEfectividadMembresia }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+    </div>
+
+    
+   
+
+    <!-- Sección de Detalles por Bloque/Sede -->
+    <div class="mb-4 mt-5">
+      <h4 class="text-black fw-semibold text-uppercase mb-0">
+          @if($esVistaDetalle)
+              Detalle por Sedes: <span class="text-primary">{{ $bloqueActual->nombre }}</span>
+          @else
+              Detalle por bloques
+          @endif
+      </h4>   
+    </div>
+  
+    <div class="accordion" id="accordionDesgloseTab3">
+        @foreach($datosDesglose as $dato)
+            <div class="accordion-item card mb-3 border active">
+                <h6 class="accordion-header d-flex flex-column justify-content-between align-items-center pe-3" id="headingTab3_{{ $dato->id }}">
+                    <button type="button" class="accordion-button collapsed flex-grow-1 d-flex align-items-center" data-bs-toggle="collapse" data-bs-target="#collapseTab3_{{ $dato->id }}" aria-expanded="false" aria-controls="collapseTab3_{{ $dato->id }}">
+                        <div class="d-flex flex-column text-start">
+                            <span class="fs-5 fw-semibold text-uppercase">{{ $dato->nombre }}</span>
+                            <small class="text-black">Total miembros: {{ $dato->totalMiembros }}</small>
+                        </div>
+                    </button>
+                </h6>
+
+                <div id="collapseTab3_{{ $dato->id }}" class="accordion-collapse collapse border-top border-2 pt-4" aria-labelledby="headingTab3_{{ $dato->id }}">
+                    <div class="accordion-body">
+                        <div class="row g-3">
+
+                          
+                          <div class="col-12">
+                            <small class="text-black text-uppercase" style="font-size: 0.75rem;">Total matrículas efectivas vs. Total aptos membresías</small>
+                          </div>
+                          <div class="col-md-4 mb-3">
+                            <div class="card border shadow-none h-100 p-5">
+                              <div class="card-header pb-0 pt-1 border-0 bg-transparent">
+                                  <small class="text-black fw-bold text-uppercase">Tipos de membresía</small>
+                              </div>
+                              <div class="card-body p-0">
+                                 <div id="bautismosTrasladosChart_{{ $dato->id }}"
+                                      data-bautismos="{{ $dato->miembrosBautismos }}"
+                                      data-traslados="{{ $dato->miembrosTraslados }}"
+                                      class="donut-chart-bautismos"
+                                      style="min-height: 200px;">
+                                 </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-4 mb-3">
+                            <div class="card border shadow-none h-100 p-5">
+                              <div class="card-header pb-0 pt-1 border-0 bg-transparent">
+                                  <small class="text-black fw-bold text-uppercase">Traslados (Edades)</small>
+                              </div>
+                              <div class="card-body p-0">
+                                 <div id="trasladosEdadesChart_{{ $dato->id }}"
+                                      data-adultos="{{ $dato->trasladosAdultos }}"
+                                      data-menores="{{ $dato->trasladosMenores }}"
+                                      class="donut-chart-traslados-edades"
+                                      style="min-height: 200px;">
+                                 </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-4 mb-3">
+                            <div class="card border shadow-none h-100 p-5">
+                              <div class="card-header pb-0 pt-1 border-0 bg-transparent">
+                                  <small class="text-black fw-bold text-uppercase">Bautismos (Edades)</small>
+                              </div>
+                              <div class="card-body p-0">
+                                 <div id="bautismosEdadesChart_{{ $dato->id }}"
+                                      data-adultos="{{ $dato->bautismosAdultos }}"
+                                      data-menores="{{ $dato->bautismosMenores }}"
+                                      class="donut-chart-bautismos-edades"
+                                      style="min-height: 200px;">
+                                 </div>
+                              </div>
+                            </div>
+                          </div>
+                        
+
+                          <!-- Divisor -->
+                          <div class="col-12"><hr class="my-1"></div>
+                          <div class="col-12">
+                            <small class="text-black text-uppercase" style="font-size: 0.75rem;">Personas en unión libre matriculadas en CHLL vs. Total membresías</small>
+                          </div>
+
+                          <!-- Fila 2: Unión Libre -->
+                          <div class="col-md-4">
+                            <div class="p-3 border rounded h-100">
+                              <h5 class="mb-0 fw-bold text-black">{{ $dato->pendientesMembresiaUnionLibre }}</h5>
+                              <small class="text-black">Unión libre matriculados</small>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="p-3 border rounded h-100">
+                              <h5 class="mb-0 fw-bold text-black">{{ $dato->miembrosFormalizados }}</h5>
+                              <small class="text-black">Miembros que estaban en unión libre</small>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="p-3 border rounded h-100">
+                              <h5 class="mb-0 fw-bold text-black">{{ $dato->totalUnionLibreMatriculados }}</h5>
+                              <small class="text-black">Pendientes por membresía (Unión libre)</small>
+                            </div>
+                          </div>
+
+                          <!-- Fila 3: Bautismos vs Traslados -->
+                          <div class="col-12"><hr class="my-1"></div>
+
+                           <!-- Fila Membresía General -->
+                          <div class="col-12">
+                            <small class="text-black text-uppercase" style="font-size: 0.75rem;">Membresías VS. Ubicación en grupos de crecimiento</small>
+                          </div>
+
+                          <div class="col-md-4">
+                            <div class="card mb-3 shadow-none border">
+                              <div class="card-body py-3 border-bottom">
+                                <h5 class="card-title mb-0 fw-semibold">{{ $dato->totalMiembros }}</h5>
+                                <small class="text-black text-uppercase">Total miembros</small> 
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="col-md-4">
+                            <div class="card mb-3 shadow-none border">
+                              <div class="card-body py-3 border-bottom">
+                                <h5 class="card-title mb-0 fw-semibold">{{ $dato->miembrosUbicados }}</h5>
+                                <small class="text-black text-uppercase">Ubicados en grupo</small>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="col-md-4">
+                            @php 
+                              $percMemb = $dato->totalMiembros > 0 ? round(($dato->miembrosUbicados / $dato->totalMiembros) * 100, 2) : 0;
+                            @endphp
+                            <div class="card shadow-none border h-100">
+                              <div class="card-body py-3 border-bottom h-100 d-flex flex-column justify-content-center">
+                                <h5 class="card-title mb-0 fw-semibold">{{ $percMemb }}%</h5>
+                                <small class="text-black text-uppercase">Efectividad</small>
+                                <div class="progress mt-2" style="height: 6px;">
+                                  <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $percMemb }}%" aria-valuenow="{{ $percMemb }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+</div>
+                         
+                        @if(!$esVistaDetalle)
+                        <div class="d-flex justify-content-end py-2">
+                              <!-- Botón para ir al Drill-Down del Bloque -->
+                              <a href="{{ route('consolidacion.dashboard', array_merge(request()->all(), ['bloque_detalle_id' => $dato->id, 'tab' => 'indicador-3'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
+                                  Ver detalle sedes
+                              </a>
+                        </div>
+                        @endif
+                        
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+  </div> <!-- Fin Tab Content (End of Indicator 3 content) -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const commonOptions = {
+        chart: { type: 'donut', height: 250, toolbar: { show: false } },
+        dataLabels: { enabled: true, formatter: function(val, opt) { return opt.w.globals.seriesTotals[opt.seriesIndex]; } },
+        legend: { position: 'bottom', horizontalAlign: 'center', fontSize: '12px', markers: { radius: 12 } },
+        stroke: { show: false },
+        plotOptions: {
+            pie: { donut: { labels: { show: true, name: { fontSize: '14px', fontFamily: 'Poppins' }, value: { fontSize: '18px', fontFamily: 'Poppins', formatter: function(val) { return val; } }, total: { show: true, label: 'Total', fontSize: '14px', formatter: function(w) { return w.globals.seriesTotals.reduce((a, b) => a + b, 0); } } } } }
+        }
+    };
+
+    // Global
+    const globalChartEl = document.querySelector('#bautismosTrasladosChart');
+    if (globalChartEl) {
+        const bautismos = parseInt(globalChartEl.getAttribute('data-bautismos') || 0);
+        const traslados = parseInt(globalChartEl.getAttribute('data-traslados') || 0);
+        new ApexCharts(globalChartEl, {
+            ...commonOptions,
+            labels: ['Bautismos', 'Traslados'],
+            series: [bautismos, traslados],
+            colors: ['#00cfe8', '#ea5455']
+        }).render();
+    }
+
+    // Desglose Loops
+    document.querySelectorAll('.donut-chart-bautismos').forEach(function(el) {
+        const bautismos = parseInt(el.getAttribute('data-bautismos') || 0);
+        const traslados = parseInt(el.getAttribute('data-traslados') || 0);
+        new ApexCharts(el, {
+            ...commonOptions,
+            chart: { type: 'donut', height: 200, toolbar: { show: false } }, // override height for breakdown
+            labels: ['Bautismos', 'Traslados'],
+            series: [bautismos, traslados],
+            colors: ['#00cfe8', '#ea5455']
+        }).render();
+    });
+    // Global Edades
+    const globalTrasladosEl = document.querySelector('#trasladosEdadesChart');
+    if (globalTrasladosEl) {
+        const adultos = parseInt(globalTrasladosEl.getAttribute('data-adultos') || 0);
+        const menores = parseInt(globalTrasladosEl.getAttribute('data-menores') || 0);
+        new ApexCharts(globalTrasladosEl, {
+            ...commonOptions,
+            labels: ['Adultos', 'Warriors'],
+            series: [adultos, menores],
+            colors: ['#28c76f', '#00cfe8']
+        }).render();
+    }
+
+    const globalBautismosEl = document.querySelector('#bautismosEdadesChart');
+    if (globalBautismosEl) {
+        const adultos = parseInt(globalBautismosEl.getAttribute('data-adultos') || 0);
+        const menores = parseInt(globalBautismosEl.getAttribute('data-menores') || 0);
+        new ApexCharts(globalBautismosEl, {
+            ...commonOptions,
+            labels: ['Adultos', 'Warriors'],
+            series: [adultos, menores],
+            colors: ['#28c76f', '#00cfe8']
+        }).render();
+    }
+
+    // Desglose Loops Edades
+    document.querySelectorAll('.donut-chart-traslados-edades').forEach(function(el) {
+        const adultos = parseInt(el.getAttribute('data-adultos') || 0);
+        const menores = parseInt(el.getAttribute('data-menores') || 0);
+        new ApexCharts(el, {
+            ...commonOptions,
+            chart: { type: 'donut', height: 200, toolbar: { show: false } }, // override height for breakdown
+            labels: ['Adultos', 'Warriors'],
+            series: [adultos, menores],
+            colors: ['#28c76f', '#00cfe8']
+        }).render();
+    });
+
+    document.querySelectorAll('.donut-chart-bautismos-edades').forEach(function(el) {
+        const adultos = parseInt(el.getAttribute('data-adultos') || 0);
+        const menores = parseInt(el.getAttribute('data-menores') || 0);
+        new ApexCharts(el, {
+            ...commonOptions,
+            chart: { type: 'donut', height: 200, toolbar: { show: false } }, // override height for breakdown
+            labels: ['Adultos', 'Warriors'],
+            series: [adultos, menores],
+            colors: ['#28c76f', '#00cfe8']
+        }).render();
+    });
+});
+</script>
 
 @endsection

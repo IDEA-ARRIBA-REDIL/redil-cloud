@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\TipoConsejeria;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TipoConsejeriaSeeder extends Seeder
@@ -15,22 +14,22 @@ class TipoConsejeriaSeeder extends Seeder
     {
         TipoConsejeria::firstOrCreate([
             'nombre' => 'Consejería matrimonial',
-            'descripcion' => 'Consejeria ....'
+            'descripcion' => 'Consejeria ....',
         ]);
 
         TipoConsejeria::firstOrCreate([
             'nombre' => 'Consejería familiar',
-            'descripcion' => 'Consejeria ....'
+            'descripcion' => 'Consejeria ....',
         ]);
 
         TipoConsejeria::firstOrCreate([
             'nombre' => 'Consejería emocional',
-            'descripcion' => 'Consejeria ....'
+            'descripcion' => 'Consejeria ....',
         ]);
 
         TipoConsejeria::firstOrCreate([
             'nombre' => 'Consejería conéctate',
-            'descripcion' => 'Consejeria ....'
+            'descripcion' => 'Consejeria ....',
         ]);
     }
 }

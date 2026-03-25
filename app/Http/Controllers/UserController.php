@@ -4133,7 +4133,31 @@ class UserController extends Controller
                 ->get();
 
             $automatizacionTipoUsuarios += $gruposNuevos->whereNotNull('automatizacion_tipo_usuario_id')->pluck('automatizacion_tipo_usuario_id')->toArray();
-            $usuario->gruposDondeAsiste()->sync($idsGrupos);
+            
+            $cambiosSync = $usuario->gruposDondeAsiste()->sync($idsGrupos);
+
+            // Registrar en la bitácora los vinculados y desvinculados
+            if (isset($cambiosSync['attached'])) {
+                foreach ($cambiosSync['attached'] as $gId) {
+                    \App\Models\BitacoraIntegranteGrupo::create([
+                        'grupo_id' => $gId,
+                        'user_id' => $usuario->id,
+                        'estado_vinculacion' => true,
+                        'autor_id' => auth()->id() ?? $usuario->id,
+                    ]);
+                }
+            }
+
+            if (isset($cambiosSync['detached'])) {
+                foreach ($cambiosSync['detached'] as $gId) {
+                    \App\Models\BitacoraIntegranteGrupo::create([
+                        'grupo_id' => $gId,
+                        'user_id' => $usuario->id,
+                        'estado_vinculacion' => false,
+                        'autor_id' => auth()->id() ?? $usuario->id,
+                    ]);
+                }
+            }
 
             // asigno la sede al usuario del ultimo grupo agregado
             if ($idsGrupos && count($idsGrupos) > 0) {

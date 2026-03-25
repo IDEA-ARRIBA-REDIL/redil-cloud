@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('traslados_matricula_log', function (Blueprint $table) {
+        Schema::create('traslados_matricula_log', function (Blueprint $table) {
             $table->id();
             $table->foreignId('matricula_id')->constrained('matriculas')->onDelete('cascade');
             $table->foreignId('origen_horario_id')->comment('ID del HorarioMateriaPeriodo original')->constrained('horarios_materia_periodo')->onDelete('cascade');

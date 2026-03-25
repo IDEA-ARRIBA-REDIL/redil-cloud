@@ -2,39 +2,35 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Hash;
-
-// --- Modelos ---
-use App\Models\Escuela;
-use App\Models\Sede;
-use App\Models\TipoAula;
-use App\Models\Aula;
-use App\Models\CorteEscuela;
-use App\Models\Materia;
-use App\Models\HorarioBase;
-use App\Models\TipoItem;
-use App\Models\ItemPlantilla;
-use App\Models\SistemaCalificacion;
-use App\Models\Periodo;
-use App\Models\CortePeriodo;
-use App\Models\MateriaPeriodo;
-use App\Models\HorarioMateriaPeriodo;
-use App\Models\ItemCorteMateriaPeriodo;
-use App\Models\Maestro;
-use App\Models\User;
-use App\Models\Matricula;
-use App\Models\MateriaAprobadaUsuario;
-use App\Models\ReporteAsistenciaClase;
-use App\Models\ReporteAsistenciaAlumnos;
-use App\Models\AlumnoRespuestaItem;
 use App\Models\Actividad;
 use App\Models\ActividadCategoria;
-use App\Models\Moneda;
+// --- Modelos ---
+use App\Models\AlumnoRespuestaItem;
+use App\Models\Aula;
+use App\Models\CorteEscuela;
+use App\Models\CortePeriodo;
+use App\Models\Escuela;
+use App\Models\HorarioBase;
+use App\Models\HorarioMateriaPeriodo;
+use App\Models\ItemCorteMateriaPeriodo;
+use App\Models\ItemPlantilla;
+use App\Models\Maestro;
+use App\Models\Materia;
+use App\Models\MateriaAprobadaUsuario;
+use App\Models\MateriaPeriodo;
+use App\Models\Matricula;
 use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
+use App\Models\Moneda;
+use App\Models\Periodo;
+use App\Models\ReporteAsistenciaAlumnos;
+use App\Models\ReporteAsistenciaClase;
+use App\Models\Sede;
+use App\Models\SistemaCalificacion;
+use App\Models\TipoAula;
+use App\Models\TipoItem;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class GeneralEscuelaSeeder extends Seeder
 {
@@ -45,6 +41,7 @@ class GeneralEscuelaSeeder extends Seeder
         $configuracionBase = $this->_crearEstructuraAcademicaBase();
         if (empty($configuracionBase)) {
             $this->command->error('No se pudo crear la estructura base. Deteniendo el seeder.');
+
             return;
         }
         $this->command->info('FASE 1: Estructura base creada con éxito.');
@@ -76,7 +73,7 @@ class GeneralEscuelaSeeder extends Seeder
             ['nombre' => 'Salón Manantial 2 (IMDVET)', 'sede_id' => $sede1->id, 'tipo_aula_id' => $tipoAulaPresencial->id, 'activo' => true],
             ['nombre' => 'Salón Vida Eterna 1 (IMDVET)', 'sede_id' => $sede2->id, 'tipo_aula_id' => $tipoAulaPresencial->id, 'activo' => true],
         ];
-        $aulasCreadas = collect($aulasData)->map(fn($data) => Aula::firstOrCreate(['nombre' => $data['nombre']], $data));
+        $aulasCreadas = collect($aulasData)->map(fn ($data) => Aula::firstOrCreate(['nombre' => $data['nombre']], $data));
         $this->command->info('-- Creando Escuela, Materias y Cortes...');
         $escuela = Escuela::firstOrCreate(['nombre' => 'IGLESIA MANANTIAL DE VIDA ETERNA'], ['descripcion' => 'Escuela de formación integral.', 'tipo_matricula' => 'materias_independientes']);
         $cortesData = [
@@ -87,15 +84,15 @@ class GeneralEscuelaSeeder extends Seeder
 
         // --- CORRECCIÓN ---
         // Se renombra la variable a snake_case para mantener consistencia.
-        $cortes_escuela = collect($cortesData)->map(fn($data) => CorteEscuela::firstOrCreate(['nombre' => $data['nombre'], 'escuela_id' => $escuela->id], $data));
+        $cortes_escuela = collect($cortesData)->map(fn ($data) => CorteEscuela::firstOrCreate(['nombre' => $data['nombre'], 'escuela_id' => $escuela->id], $data));
 
         $materiasData = ['Mentor Espiritual', 'Carácter y Servicio', 'Familia', 'Corazones Activos', 'Cosmovisión Bíblica', 'Espíritu Santo'];
-        $materias = collect($materiasData)->map(fn($nombre) => Materia::firstOrCreate(['nombre' => $nombre, 'escuela_id' => $escuela->id], [
+        $materias = collect($materiasData)->map(fn ($nombre) => Materia::firstOrCreate(['nombre' => $nombre, 'escuela_id' => $escuela->id], [
             'asistencias_minimas' => 8,
             'habilitar_asistencias' => true,
             'habilitar_calificaciones' => true,
         ]));
-        $this->command->info("-- Asignando prerrequisitos secuenciales...");
+        $this->command->info('-- Asignando prerrequisitos secuenciales...');
         for ($i = 1; $i < $materias->count(); $i++) {
             $materias[$i]->prerrequisitosMaterias()->syncWithoutDetaching($materias[$i - 1]->id);
         }
@@ -116,12 +113,14 @@ class GeneralEscuelaSeeder extends Seeder
         $maestroUsers = User::findMany([3, 4]);
         if ($maestroUsers->isEmpty()) {
             $this->command->error('No se encontraron usuarios (IDs 3,4) para maestros.');
+
             return [];
         }
-        $maestros = $maestroUsers->map(fn($user) => Maestro::firstOrCreate(['user_id' => $user->id]));
+        $maestros = $maestroUsers->map(fn ($user) => Maestro::firstOrCreate(['user_id' => $user->id]));
         $alumnos = User::whereIn('id', range(5, 10))->get();
         if ($alumnos->count() < 2) {
             $this->command->error('No se encontraron suficientes usuarios (IDs 5-10) para alumnos.');
+
             return [];
         }
 
@@ -137,22 +136,23 @@ class GeneralEscuelaSeeder extends Seeder
             ['fecha_inicio' => $fechaReferencia, 'fecha_fin' => $fechaReferencia->copy()->addMonths(5), 'estado' => $esActivo, 'sistema_calificaciones_id' => 3, 'fecha_inicio_matricula' => $fechaReferencia->copy()->subMonth(), 'fecha_fin_matricula' => $fechaReferencia->copy()->subDay()]
         );
         $periodo->sedes()->syncWithoutDetaching([1, 2]);
-        $materiaPeriodos = collect($configBase['materias'])->map(fn($materia) => MateriaPeriodo::firstOrCreate(['materia_id' => $materia->id, 'periodo_id' => $periodo->id]));
+        $materiaPeriodos = collect($configBase['materias'])->map(fn ($materia) => MateriaPeriodo::firstOrCreate(['materia_id' => $materia->id, 'periodo_id' => $periodo->id]));
 
         // --- CORRECCIÓN ---
         // Aquí se usa la clave correcta 'cortes_escuela' (snake_case)
-        $cortesPeriodo = collect($configBase['cortes_escuela'])->map(fn($corteEsc) => CortePeriodo::firstOrCreate(['periodo_id' => $periodo->id, 'corte_escuela_id' => $corteEsc->id], ['porcentaje' => $corteEsc->porcentaje]));
+        $cortesPeriodo = collect($configBase['cortes_escuela'])->map(fn ($corteEsc) => CortePeriodo::firstOrCreate(['periodo_id' => $periodo->id, 'corte_escuela_id' => $corteEsc->id], ['porcentaje' => $corteEsc->porcentaje]));
 
         $materiaDePrueba = $materiaPeriodos->first();
         $horarioBase = HorarioBase::where('materia_id', $materiaDePrueba->materia_id)->first();
-        if (!$horarioBase) {
+        if (! $horarioBase) {
             $this->command->error("No se encontró HorarioBase para la materia {$materiaDePrueba->materia->nombre}");
+
             return null;
         }
 
         $horario = HorarioMateriaPeriodo::firstOrCreate(['materia_periodo_id' => $materiaDePrueba->id, 'horario_base_id' => $horarioBase->id]);
 
-        if($horario->wasRecentlyCreated) {
+        if ($horario->wasRecentlyCreated) {
             $horario->maestros()->attach($configBase['maestros']->first()->id);
         }
 
@@ -170,7 +170,9 @@ class GeneralEscuelaSeeder extends Seeder
         }
 
         foreach ($cortesPeriodo as $corteIndex => $corte) {
-            if ($corteIndex + 1 > $limiteCortesAPoblar) continue;
+            if ($corteIndex + 1 > $limiteCortesAPoblar) {
+                continue;
+            }
 
             $itemsPlantilla = ItemPlantilla::where('materia_id', $materiaDePrueba->materia_id)->where('corte_escuela_id', $corte->corte_escuela_id)->get();
             foreach ($itemsPlantilla as $plantilla) {
@@ -199,7 +201,7 @@ class GeneralEscuelaSeeder extends Seeder
             }
         }
 
-        if (!$esActivo) {
+        if (! $esActivo) {
             $this->command->info("-- Finalizando datos para período concluido: '{$nombrePeriodo}'");
             foreach ($matriculas as $mat) {
                 MateriaAprobadaUsuario::firstOrCreate(
@@ -248,7 +250,7 @@ class GeneralEscuelaSeeder extends Seeder
                 'activa' => true,
                 'totalmente_publica' => false,
                 'restriccion_por_categoria' => true,
-                'mostrar_en_proximas_actividades' => true
+                'mostrar_en_proximas_actividades' => true,
             ]
         );
 

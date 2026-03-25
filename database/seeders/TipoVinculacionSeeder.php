@@ -34,5 +34,10 @@ class TipoVinculacionSeeder extends Seeder
     TipoVinculacion::firstOrCreate([
       'nombre' => 'Campaña conéctate',
     ]);
+
+    TipoVinculacion::firstOrCreate([
+      'nombre' => 'Vengo de otra iglesia',
+      'viene_de_otra_iglesia' => true
+    ]);
   }
 }

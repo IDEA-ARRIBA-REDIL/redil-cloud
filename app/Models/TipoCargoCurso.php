@@ -15,10 +15,26 @@ class TipoCargoCurso extends Model
     protected $fillable = [
         'nombre',
         'puede_responder_preguntas',
+        'puede_editar_curso',
+        'puede_editar_restricciones',
+        'puede_editar_contenido',
+        'puede_gestionar_equipo',
+        'puede_gestionar_estudiantes',
+        'limita_carreras',
+        'carreras_permitidas',
+        'puede_ver_todos_los_cursos',
     ];
 
     protected $casts = [
         'puede_responder_preguntas' => 'boolean',
+        'puede_editar_curso' => 'boolean',
+        'puede_editar_restricciones' => 'boolean',
+        'puede_editar_contenido' => 'boolean',
+        'puede_gestionar_equipo' => 'boolean',
+        'puede_gestionar_estudiantes' => 'boolean',
+        'limita_carreras' => 'boolean',
+        'carreras_permitidas' => 'array',
+        'puede_ver_todos_los_cursos' => 'boolean',
     ];
 
     public function asignaciones(): HasMany

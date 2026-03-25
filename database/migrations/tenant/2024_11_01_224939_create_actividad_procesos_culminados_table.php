@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('actividad_id');
             $table->integer('paso_crecimiento_id');
-             $table->integer('estado_paso_crecimiento_usuario_id');
+            $table->integer('estado_paso_crecimiento_usuario_id');
             $table->integer('estado');
             $table->integer('indice');
             $table->timestamps();

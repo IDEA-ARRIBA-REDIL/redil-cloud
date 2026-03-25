@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('centro_de_costos_ingresos', function (Blueprint $table) {
-          $table->id();
-          $table->string('nombre', 100);
-          $table->string('codigo', 50);
-          $table->timestamps();
+            $table->id();
+            $table->string('nombre', 100);
+            $table->string('codigo', 50);
+            $table->timestamps();
         });
     }
 

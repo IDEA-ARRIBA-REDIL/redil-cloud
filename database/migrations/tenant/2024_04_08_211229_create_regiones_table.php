@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('regiones', function (Blueprint $table) {
-          $table->id();
-          $table->timestamps();
-          $table->string('nombre',50);
-          $table->integer('pais_id')->nullable();
-          $table->string('latitud',25) ->nullable();
-          $table->string('longitud',25) ->nullable();
+            $table->id();
+            $table->timestamps();
+            $table->string('nombre', 50);
+            $table->integer('pais_id')->nullable();
+            $table->string('latitud', 25)->nullable();
+            $table->string('longitud', 25)->nullable();
         });
     }
 

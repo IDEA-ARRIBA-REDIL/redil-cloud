@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\ClasificacionAsistente;
 use App\Models\Grupo;
 use App\Models\ReporteGrupo;
 use App\Models\User;
@@ -69,7 +68,6 @@ class EstructuraGruposPruebaSeeder extends Seeder
 
         $grupoDidier->encargados()->attach($didier->id);
 
-
         // 4. Crear 5 Líderes (Nivel 1)
         for ($i = 1; $i <= 5; $i++) {
             $liderN1 = User::create([
@@ -115,7 +113,6 @@ class EstructuraGruposPruebaSeeder extends Seeder
             // Generar Reportes para este grupo N1
             $this->generarReportesParaGrupo($grupoEvangelisticoN1);
 
-
             // 5. Crear 7-10 Asistentes (Nivel 2) para el grupo de N1
             $cantidadAsistentes = rand(7, 10);
             $asistentesN2 = [];
@@ -153,9 +150,8 @@ class EstructuraGruposPruebaSeeder extends Seeder
                 $elegidoN2->update(['tipo_usuario_id' => 2]);
                 $elegidoN2->roles()->syncWithoutDetaching([$lider->id => ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']]);
 
-
                 $grupoEvangelisticoN3 = Grupo::updateOrCreate(
-                    ['nombre' => "Grupo N3 - Nieto de Didier (" . $elegidoN2->primer_nombre . ")"],
+                    ['nombre' => 'Grupo N3 - Nieto de Didier ('.$elegidoN2->primer_nombre.')'],
                     [
                         'id' => 50 + $i,
                         'tipo_grupo_id' => 3, // Grupo Warriors (Evangelístico)
@@ -170,8 +166,8 @@ class EstructuraGruposPruebaSeeder extends Seeder
 
                 $grupoEvangelisticoN3->encargados()->attach($elegidoN2->id);
 
-                 // Crear 4 Asistentes (Nivel 3 - Bisnietos)
-                 for ($k = 1; $k <= 4; $k++) {
+                // Crear 4 Asistentes (Nivel 3 - Bisnietos)
+                for ($k = 1; $k <= 4; $k++) {
                     $asistenteN3 = User::create([
                         'email' => "asistente.nivel3.$i.$k@reporte.com", // Emails únicos
                         'password' => bcrypt('12345678'),
@@ -190,7 +186,7 @@ class EstructuraGruposPruebaSeeder extends Seeder
                     ]);
                     $asistenteN3->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
                     $grupoEvangelisticoN3->asistentes()->attach($asistenteN3->id);
-                 }
+                }
 
                 // Generar Reportes Grupo N3
                 $this->generarReportesParaGrupo($grupoEvangelisticoN3);
@@ -214,7 +210,7 @@ class EstructuraGruposPruebaSeeder extends Seeder
         // $diaGrupoCarbon = $diaGrupoUser - 1; // 0=Domingo, 6=Sábado
 
         $diaGrupoUser = $grupo->dia;
-        $diaGrupoCarbon = $diaGrupoUser - 1; 
+        $diaGrupoCarbon = $diaGrupoUser - 1;
 
         // Avanzamos fechaInicio hasta encontrar el día correcto
         while ($fechaInicio->dayOfWeek != $diaGrupoCarbon) {
@@ -224,7 +220,7 @@ class EstructuraGruposPruebaSeeder extends Seeder
         $fechaIteracion = $fechaInicio->copy();
 
         while ($fechaIteracion->lte($fechaActual)) {
-            
+
             // Probabilidad de reporte
             $rand = rand(1, 100);
 
@@ -262,7 +258,7 @@ class EstructuraGruposPruebaSeeder extends Seeder
                         'fecha' => $fechaIteracion->format('Y-m-d'),
                     ],
                     [
-                        'tema' => 'Tema del Seeder ' . $fechaIteracion->format('d/m'),
+                        'tema' => 'Tema del Seeder '.$fechaIteracion->format('d/m'),
                         'observacion' => 'Reporte exitoso generado automáticamente.',
                         'no_reporte' => false,
                         'autor_creacion' => 1,
@@ -275,9 +271,12 @@ class EstructuraGruposPruebaSeeder extends Seeder
 
                 // Asistencia Individual (Pivote asistencia_grupos)
                 foreach ($asistentes as $asistente) {
-                    $asistio = (bool)rand(0, 1);
-                    if ($asistio) $asistenciaTotal++;
-                    else $inasistenciaTotal++;
+                    $asistio = (bool) rand(0, 1);
+                    if ($asistio) {
+                        $asistenciaTotal++;
+                    } else {
+                        $inasistenciaTotal++;
+                    }
 
                     $reporte->usuarios()->attach($asistente->id, [
                         'asistio' => $asistio,
@@ -289,7 +288,7 @@ class EstructuraGruposPruebaSeeder extends Seeder
                 // Actualizar contadores
                 $reporte->update([
                     'cantidad_asistencias' => $asistenciaTotal,
-                    'cantidad_inasistencias' => $inasistenciaTotal
+                    'cantidad_inasistencias' => $inasistenciaTotal,
                 ]);
 
                 // Clasificaciones Manuales (1-5)

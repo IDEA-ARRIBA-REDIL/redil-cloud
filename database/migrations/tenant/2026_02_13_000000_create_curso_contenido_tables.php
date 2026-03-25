@@ -36,12 +36,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('curso_modulo_id')->constrained('curso_modulos')->onDelete('cascade');
             $table->foreignId('curso_item_tipo_id')->constrained('curso_item_tipos');
-            
+
             $table->string('titulo');
             $table->integer('orden')->default(0);
 
             // Columnas Polimórficas: itemable_id e itemable_type
-            $table->morphs('itemable'); 
+            $table->morphs('itemable');
 
             $table->timestamps();
         });
@@ -60,7 +60,7 @@ return new class extends Migration
         // 5. Contenido tipo Evaluación
         Schema::create('curso_evaluaciones', function (Blueprint $table) {
             $table->id();
-            $table->integer('minimo_aprobacion')->default(50)->comment('Porcentaje de 0 a 100'); 
+            $table->integer('minimo_aprobacion')->default(50)->comment('Porcentaje de 0 a 100');
             $table->integer('limite_tiempo')->nullable()->comment('En minutos');
             $table->integer('cantidad_repeticiones')->default(0)->comment('0 es sin repetición, 1 es un intento extra, etc.');
             $table->integer('tiempo_dilatacion')->default(0)->comment('Tiempo de espera entre repeticiones en horas');

@@ -25,7 +25,7 @@ return new class extends Migration
             $table->boolean('habilitar_alerta_inasistencias')->default(false); // Habilitar alerta de inasistencias
             $table->boolean('habilitar_traslado')->default(false); // Habilitar traslados
             $table->boolean('caracter_obligatorio')->default(false); // Carácter obligatorio de la materia
-            $table->string('portada', 500)->default("default.png")->nullable();
+            $table->string('portada', 500)->default('default.png')->nullable();
             $table->integer('limite_reporte_asistencias')->nullable();
             $table->integer('dia_limite_reporte')->nullable();
             $table->integer('dias_plazo_reporte')->nullable();

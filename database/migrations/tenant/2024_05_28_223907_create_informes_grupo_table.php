@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('user_id'); // antes asistente_id
             $table->integer('grupo_id');
             $table->integer('grupo_id_inicial_de_asistente')->nullable();
-            $table->string('observaciones',100)->nullable();
+            $table->string('observaciones', 100)->nullable();
             $table->integer('servicio_prestado_en_grupo_inicial')->nullable();
             $table->integer('tipo_asignacion_id');
             $table->integer('user_autor_asignacion');

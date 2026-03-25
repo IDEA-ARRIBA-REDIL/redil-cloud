@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class RegionSeeder extends Seeder
 {
@@ -14,7 +12,7 @@ class RegionSeeder extends Seeder
      */
     public function run(): void
     {
-      $path = base_path('storage/app/archivos_desarrollador/regiones.sql');
-      DB::unprepared(file_get_contents($path));
+        $path = base_path('storage/app/archivos_desarrollador/regiones.sql');
+        DB::unprepared(file_get_contents($path));
     }
 }

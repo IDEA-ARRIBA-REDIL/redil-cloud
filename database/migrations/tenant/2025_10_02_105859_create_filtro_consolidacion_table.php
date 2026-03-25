@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('nombre', 100);
             $table->string('descripcion', 255)->nullable();
             $table->smallInteger('orden')->default(0);
-            $table->string('color',10)->nullable();
+            $table->string('color', 10)->nullable();
             $table->timestamps();
         });
     }

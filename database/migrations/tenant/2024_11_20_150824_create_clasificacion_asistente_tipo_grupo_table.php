@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-       // Esta tabla nace de la relación de muchos a muchos, entre el tipo_grupo y clasificaciones_asistentes.
+        // Esta tabla nace de la relación de muchos a muchos, entre el tipo_grupo y clasificaciones_asistentes.
         Schema::create('clasificacion_asistente_tipo_grupo', function (Blueprint $table) {
             $table->id();
             $table->integer('tipo_grupo_id');
             $table->integer('clasificacion_asistente_id'); // antes clasificacion_asistente_reporte_grupo_id
             $table->timestamps();
 
-            //add comentario a la tabla
+            // add comentario a la tabla
             $table->comment('Esta tabla nace de la relación de muchos a muchos, entre el tipo_grupo y clasificaciones_asistentes');
         });
     }

@@ -22,6 +22,7 @@ Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
+    \App\Http\Middleware\RevisarSuspensionTenant::class,
 ])->group(function () {
     // Cargamos las rutas originales de la aplicación (ahora en app.php)
     require __DIR__.'/app.php';

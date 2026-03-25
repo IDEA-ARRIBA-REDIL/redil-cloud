@@ -31,51 +31,48 @@ class CheckoutCursos extends Component
     // Si viene directo de "Comprar Ahora", pasamos un curso específico
     // en mount() en vez de usar el carrito completo.
 
-    public function mount()
+    public function mount($carrito = null)
     {
         $this->usuarioCompra = Auth::user();
 
-        // 1. Verificar si viene de un "Comprar Ahora" leyendo la URL
-        $cursoIdDirecto = request()->query('curso_id');
+        // 1. Usar el carrito pasado o buscar uno pendiente
+        $this->carrito = $carrito ?? CarritoCursoUser::where('user_id', $this->usuarioCompra->id)
+            ->where('estado', 'pendiente')
+            ->first();
 
+        // 2. Si viene de un "Comprar Ahora" (curso_id en URL)
+        $cursoIdDirecto = request()->query('curso_id');
         if ($cursoIdDirecto) {
             $curso = Curso::find($cursoIdDirecto);
             if ($curso && !$curso->es_gratuito) {
-                // Generamos un carrito virtual on-the-fly para la vista
-                $this->carrito = new CarritoCursoUser([
-                    'items' => [
-                        [
-                            'curso_id' => $curso->id,
-                            'nombre'   => $curso->nombre,
-                            'precio'   => $curso->precio
-                        ]
-                    ],
-                    'total' => $curso->precio,
-                    'estado' => 'virtual'
-                ]);
-
-                // Los tipos de pago permitidos se rigen por los de ESTE curso.
-                $this->tiposPagoDisponibles = $curso->tiposPago()->with('estadosPago')->get();
-            }
-        } else {
-            // 2. Viene del carrito general de LMS
-            $this->carrito = CarritoCursoUser::where('user_id', $this->usuarioCompra->id)
-                ->where('estado', 'pendiente')
-                ->first();
-
-            if ($this->carrito && !empty($this->carrito->items)) {
-                $cursoIds = collect($this->carrito->items)->pluck('curso_id')->toArray();
-                $cursos = Curso::whereIn('id', $cursoIds)->with('tiposPago.estadosPago')->get();
-
-                $todosTipos = collect();
-                foreach ($cursos as $curso) {
-                    $todosTipos = $todosTipos->merge($curso->tiposPago);
+                // Si no tiene carrito, lo creamos
+                if (!$this->carrito) {
+                    $this->carrito = CarritoCursoUser::create([
+                        'user_id' => $this->usuarioCompra->id,
+                        'items' => [],
+                        'total' => 0,
+                        'estado' => 'pendiente'
+                    ]);
                 }
-
-                $this->tiposPagoDisponibles = $todosTipos->unique('id')->values();
-            } else {
-                $this->tiposPagoDisponibles = collect();
+                // Aseguramos que el curso esté en el carrito persistente
+                $this->carrito->agregarCurso($curso, $curso->precio);
+                $this->carrito->refresh(); // Recargar para tener los items actualizados
             }
+        }
+
+        // 3. Cargar tipos de pago basados en el contenido del carrito persistente
+        if ($this->carrito && !empty($this->carrito->items)) {
+            $cursoIds = collect($this->carrito->items)->pluck('curso_id')->toArray();
+            $cursos = Curso::whereIn('id', $cursoIds)->with('tiposPago.estadosPago')->get();
+
+            $todosTipos = collect();
+            foreach ($cursos as $curso) {
+                $todosTipos = $todosTipos->merge($curso->tiposPago);
+            }
+
+            $this->tiposPagoDisponibles = $todosTipos->unique('id')->values();
+        } else {
+            $this->tiposPagoDisponibles = collect();
         }
 
         if (!$this->carrito || empty($this->carrito->items)) {

@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\PuntoDePago;
-use App\Models\Caja;
 use App\Models\AsesorPdp;
+use App\Models\Caja;
+use App\Models\PuntoDePago;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class PruebasPdpCajaSeeder extends Seeder
 {
@@ -22,8 +22,9 @@ class PruebasPdpCajaSeeder extends Seeder
         $rolEncargado = Role::where('es_encargado_pdp', true)->first();
         $rolCajero = Role::where('es_cajero_pdp', true)->first();
 
-        if (!$rolEncargado || !$rolCajero) {
+        if (! $rolEncargado || ! $rolCajero) {
             $this->command->error('No se encontraron roles con flags es_encargado_pdp o es_cajero_pdp. Asegúrate de correr PermisoSeeder primero o tener los roles creados.');
+
             return;
         }
 
@@ -55,7 +56,7 @@ class PruebasPdpCajaSeeder extends Seeder
             }
         });
 
-        $this->command->info('Puntos de Pago creados: ' . count($puntosCreados));
+        $this->command->info('Puntos de Pago creados: '.count($puntosCreados));
 
         // 4. Crear Cajas (2 por cada PDP)
         $cajasCreadas = [];
@@ -70,7 +71,7 @@ class PruebasPdpCajaSeeder extends Seeder
                 $cajasCreadas[] = $caja;
             }
         }
-        $this->command->info('Cajas creadas: ' . count($cajasCreadas));
+        $this->command->info('Cajas creadas: '.count($cajasCreadas));
 
         // 5. Crear Asesores Tipo Encargado (User ID 2 y 5)
         $encargadosIds = [2, 5];
@@ -84,17 +85,17 @@ class PruebasPdpCajaSeeder extends Seeder
                         'es_encargado' => true,
                         'es_cajero' => false,
                         'activo' => true,
-                        'descripcion' => 'Encargado de prueba creado por seeder'
+                        'descripcion' => 'Encargado de prueba creado por seeder',
                     ]
                 );
 
                 // Asignar Rol
-                if (!$user->hasRole($rolEncargado)) {
+                if (! $user->hasRole($rolEncargado)) {
                     // Usamos attach explícito para evitar error de model_type null
                     $user->roles()->attach($rolEncargado->id, [
                         'model_type' => 'App\Models\User',
                         'activo' => true, // Lo dejamos activo para pruebas
-                        'dependiente' => 0
+                        'dependiente' => 0,
                     ]);
                 }
 
@@ -123,17 +124,17 @@ class PruebasPdpCajaSeeder extends Seeder
                         'es_encargado' => false,
                         'es_cajero' => true,
                         'activo' => true,
-                        'descripcion' => 'Cajero de prueba creado por seeder'
+                        'descripcion' => 'Cajero de prueba creado por seeder',
                     ]
                 );
 
                 // Asignar Rol
-                if (!$user->hasRole($rolCajero)) {
-                     // Usamos attach explícito para evitar error de model_type null
+                if (! $user->hasRole($rolCajero)) {
+                    // Usamos attach explícito para evitar error de model_type null
                     $user->roles()->attach($rolCajero->id, [
                         'model_type' => 'App\Models\User',
                         'activo' => true, // Lo dejamos activo para pruebas
-                        'dependiente' => 0
+                        'dependiente' => 0,
                     ]);
                 }
 

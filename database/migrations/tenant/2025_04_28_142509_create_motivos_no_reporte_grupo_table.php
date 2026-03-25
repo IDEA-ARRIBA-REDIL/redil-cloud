@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('motivos_no_reporte_grupo', function (Blueprint $table) {
-          $table->id();
-          $table->string('nombre', 100);
-          $table->boolean('descripcion_adicional')->default(false);
-          $table->timestamps();
+            $table->id();
+            $table->string('nombre', 100);
+            $table->boolean('descripcion_adicional')->default(false);
+            $table->timestamps();
         });
     }
 

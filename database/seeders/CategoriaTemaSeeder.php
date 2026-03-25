@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\CategoriaTema;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CategoriaTemaSeeder extends Seeder
@@ -16,27 +15,27 @@ class CategoriaTemaSeeder extends Seeder
         //
 
         CategoriaTema::firstOrCreate([
-            'nombre'=> 'Devocional',
-            
+            'nombre' => 'Devocional',
+
         ]);
         CategoriaTema::firstOrCreate([
-            'nombre'=> 'Jesús',
-            
+            'nombre' => 'Jesús',
+
         ]);
 
         CategoriaTema::firstOrCreate([
-            'nombre'=> 'Espiritu Santo',
-            
+            'nombre' => 'Espiritu Santo',
+
         ]);
 
         CategoriaTema::firstOrCreate([
-            'nombre'=> 'Alabanza',
-            
+            'nombre' => 'Alabanza',
+
         ]);
 
         CategoriaTema::firstOrCreate([
-            'nombre'=> 'Parejas',
-            
+            'nombre' => 'Parejas',
+
         ]);
     }
 }

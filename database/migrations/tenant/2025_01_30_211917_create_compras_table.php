@@ -9,7 +9,6 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-
     public function up(): void
     {
         Schema::create('compras', function (Blueprint $table) {
@@ -18,7 +17,7 @@ return new class extends Migration
             $table->integer('moneda_id');
             $table->date('fecha');
             $table->double('valor');
-            $table->integer('estado')->default(1);  /* 1=INICIADA 2=EN PASARELA DE PAGO 3=PAGADA 4=ABANDONADA/ ERROR / NO PAGADO/ RECHAZO*/
+            $table->integer('estado')->default(1);  /* 1=INICIADA 2=EN PASARELA DE PAGO 3=PAGADA 4=ABANDONADA/ ERROR / NO PAGADO/ RECHAZO */
             $table->integer('pariente_usuario_id')->nullable();
             $table->integer('metodo_pago_id')->default(0);
             $table->integer('destinatario_id')->nullable();

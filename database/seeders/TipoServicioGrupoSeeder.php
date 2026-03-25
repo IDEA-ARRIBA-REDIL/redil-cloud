@@ -2,31 +2,29 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
 use App\Models\TipoServicioGrupo;
+use Illuminate\Database\Seeder;
 
 class TipoServicioGrupoSeeder extends Seeder
 {
-  /**
-   * Run the database seeds.
-   */
-  public function run(): void
-  {
-    TipoServicioGrupo::firstOrCreate([
-      'nombre' => 'Anfitrion',
-      'descripcion' => '',
-    ]);
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        TipoServicioGrupo::firstOrCreate([
+            'nombre' => 'Anfitrion',
+            'descripcion' => '',
+        ]);
 
-    TipoServicioGrupo::firstOrCreate([
-      'nombre' => 'Tesorero',
-      'descripcion' => '',
-    ]);
+        TipoServicioGrupo::firstOrCreate([
+            'nombre' => 'Tesorero',
+            'descripcion' => '',
+        ]);
 
-    TipoServicioGrupo::firstOrCreate([
-      'nombre' => 'Timoteo',
-      'descripcion' => '',
-    ]);
-  }
+        TipoServicioGrupo::firstOrCreate([
+            'nombre' => 'Timoteo',
+            'descripcion' => '',
+        ]);
+    }
 }

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('calificaciones', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre',100);
+            $table->string('nombre', 100);
             $table->double('nota_minima');
             $table->double('nota_maxima');
             $table->integer('sistema_calificacion_id');

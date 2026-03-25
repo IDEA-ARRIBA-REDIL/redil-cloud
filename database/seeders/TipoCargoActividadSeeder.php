@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\TipoCargoActividad;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TipoCargoActividadSeeder extends Seeder
@@ -38,7 +37,7 @@ class TipoCargoActividadSeeder extends Seeder
             'pestana_encargados' => false,
             'pestana_asistencias' => true,
             'pestana_multimedia' => false,
-            'pestana_formulario' => false
+            'pestana_formulario' => false,
 
         ]);
 
@@ -51,7 +50,7 @@ class TipoCargoActividadSeeder extends Seeder
             'pestana_encargados' => false,
             'pestana_asistencias' => false,
             'pestana_multimedia' => true,
-            'pestana_formulario' => false
+            'pestana_formulario' => false,
 
         ]);
 
@@ -78,7 +77,7 @@ class TipoCargoActividadSeeder extends Seeder
             'pestana_encargados' => false,
             'pestana_asistencias' => false,
             'pestana_multimedia' => false,
-            'pestana_formulario' => false
+            'pestana_formulario' => false,
 
         ]);
 
@@ -91,7 +90,7 @@ class TipoCargoActividadSeeder extends Seeder
             'pestana_encargados' => false,
             'pestana_asistencias' => false,
             'pestana_multimedia' => false,
-            'pestana_formulario' => false
+            'pestana_formulario' => false,
 
         ]);
     }

@@ -15,8 +15,6 @@ class EstadoPagoSeeder extends Seeder
     public function run()
     {
 
-
-
         $estados = [
             ['id' => 9, 'nombre' => 'Pago Finalizado OK', 'color' => '#00a65a', 'tipo_pago_id' => 1, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => true, 'id_codigo_externo' => 1, 'estado_anulado_inscripcion' => false, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => false, 'estado_pendiente' => false],
             ['id' => 12, 'nombre' => 'Finalizado', 'color' => '#00a65a', 'tipo_pago_id' => 4, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => true, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => false, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => false, 'estado_pendiente' => false],
@@ -32,7 +30,7 @@ class EstadoPagoSeeder extends Seeder
             ['id' => 10, 'nombre' => 'Pendiente', 'color' => '#f39c12', 'tipo_pago_id' => 4, 'estado_inicial_defecto' => true, 'estado_final_inscripcion' => false, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => false, 'imprimir_recibo' => true, 'modificar' => true, 'eliminar' => true, 'estado_pendiente' => true],
             ['id' => 14, 'nombre' => 'Finalizado', 'color' => '#00a65a', 'tipo_pago_id' => 5, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => true, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => false, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => false, 'estado_pendiente' => false],
             ['id' => 15, 'nombre' => 'Anulado', 'color' => '#dd4b39', 'tipo_pago_id' => 5, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => false, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => true, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => false, 'estado_pendiente' => false],
-             ['id' => 45, 'nombre' => 'Pendiente ', 'color' => '#f39c12', 'tipo_pago_id' => 5, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => false, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => true, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => false, 'estado_pendiente' => true],
+            ['id' => 45, 'nombre' => 'Pendiente ', 'color' => '#f39c12', 'tipo_pago_id' => 5, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => false, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => true, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => false, 'estado_pendiente' => true],
             ['id' => 16, 'nombre' => 'Transacción abandonada', 'color' => '#dd4d39', 'tipo_pago_id' => 1, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => false, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => true, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => true, 'estado_pendiente' => false],
             ['id' => 17, 'nombre' => 'Anulado', 'color' => '#dd4b39', 'tipo_pago_id' => 6, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => false, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => true, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => false, 'estado_pendiente' => false],
             ['id' => 18, 'nombre' => 'Anulado', 'color' => '#dd4b39', 'tipo_pago_id' => 7, 'estado_inicial_defecto' => false, 'estado_final_inscripcion' => false, 'id_codigo_externo' => null, 'estado_anulado_inscripcion' => true, 'imprimir_recibo' => false, 'modificar' => false, 'eliminar' => false, 'estado_pendiente' => false],

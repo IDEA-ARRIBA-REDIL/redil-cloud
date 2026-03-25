@@ -21,10 +21,10 @@ return new class extends Migration
             $table->foreignId('usuario_afectado_id')->constrained('users');
             $table->foreignId('actividad_id')->constrained('actividades');
             $table->foreignId('categoria_actividad_id')->constrained('actividad_categorias');
-            $table->foreignId('tipo_pago_id')->constrained('tipos_pago'); 
+            $table->foreignId('tipo_pago_id')->constrained('tipos_pago');
             $table->decimal('valor', 10, 2);
             $table->text('motivo');
-            
+
             $table->timestamps();
         });
     }

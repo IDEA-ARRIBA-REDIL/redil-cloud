@@ -22,12 +22,12 @@ return new class extends Migration
             $table->dateTime('fecha_hora_fin');
             $table->text('notas_paciente')->nullable(); // Notas que el paciente añade al agendar
             $table->text('notas_cancelacion')->nullable(); // Motivo de cancelación
-            $table->text('conclusiones_consejero')->nullable();             
+            $table->text('conclusiones_consejero')->nullable();
             $table->boolean('concluida')->default(false);
             $table->unsignedBigInteger('cancelado_por')->nullable(); // ID del usuario que canceló
             $table->softDeletes(); // Para borrado lógico
             $table->timestamps();
-            
+
             // --- ÍNDICES PARA BÚSQUEDAS RÁPIDAS ---
             $table->index('user_id');
             $table->index('consejero_id');

@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('usuario_campo_formulario_usuario', function (Blueprint $table) {
-          $table->id();
-          $table->integer('user_id');
-          $table->integer('campo_formulario_usuario_id');
-          $table->text('valor')->nullable();
-          $table->timestamps();
+            $table->id();
+            $table->integer('user_id');
+            $table->integer('campo_formulario_usuario_id');
+            $table->text('valor')->nullable();
+            $table->timestamps();
         });
     }
 

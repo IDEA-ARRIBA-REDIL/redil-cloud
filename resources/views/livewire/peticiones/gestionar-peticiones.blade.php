@@ -1,68 +1,70 @@
 <div>
-  <!-- Modal respuesta -->
-  <div wire:ignore.self class="modal fade" id="modalRespuesta" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-simple ">
-      <div class="modal-content">
-        <div class="modal-body">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          <div class="text-center mb-4">
-          <h3 class="mb-2">{!! $titulo !!}</h3>
+  <!-- Se ha consolidado en el modal Responder -->
+
+  <!-- Offcanvas Responder -->
+  <div wire:ignore.self class="offcanvas offcanvas-end h-100 d-flex flex-column" tabindex="-1" id="modalResponder" aria-labelledby="offcanvasResponderLabel" style="width: 450px; max-width: 100%;">
+    <div class="offcanvas-header pb-2 d-flex justify-content-center flex-column position-relative flex-shrink-0">
+      <button type="button" class="btn-close text-reset position-absolute top-0 end-0 m-3" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      <h6 id="offcanvasResponderLabel" class="offcanvas-title mb-0">{!! $titulo !!}</h6>
+    </div>
+    <div class="offcanvas-body mx-0 pt-0 overflow-y-auto flex-grow-1">
+      <form id="formResponder" wire:submit="addResponder" class="pt-0 row g-3">
+
+        <div class="col-12">
+          <!-- Observacion -->
+          <div wire:ignore class="col-12 mt-2">
+            <div id="editorResponder" style="height: 200px;"></div>
           </div>
-          <form wire:submit="addRespuesta" class="row g-3">
+          <!--/Observacion-->
 
-            <!-- Observacion -->
-            <div wire:ignore>
-              <div id="editorRespuesta"></div>
+          <div id="buscarBiblia" class="mt-2">
+            <button type="button" class="btn btn-success rounded-pill waves-effect waves-light btn-sm openBible"> <i class="ti ti-book"> </i> Buscar en la Biblia</button>
+          </div>
+
+          <div id="versiculosRecomendados" class="demo-inline-spacing mt-1">
+            {!! $versiculosRecomendados !!}
+          </div>
+
+          <!-- Selector de estado -->
+          <div class="col-12 mt-4 px-1 pb-5">
+            <label class="form-label d-block mb-3 fw-semibold text-black">Estado de petición:</label>
+            <div class="d-flex flex-column gap-2 ms-1">
+            
+            <div class="form-check mb-0">
+              <input name="estadoSiguiente" class="form-check-input" type="radio" value="1" id="estado-pendiente" wire:model="estadoSiguiente" />
+              <label class="form-check-label text-black ms-1" for="estado-pendiente">
+                Pendiente
+              </label>
             </div>
-            <!--/Observacion-->
 
-            <div class="col-12 text-center">
-              <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar</button>
-              <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+            <div class="form-check mb-0 mt-2">
+              <input name="estadoSiguiente" class="form-check-input" type="radio" value="3" id="estado-resuelto" wire:model="estadoSiguiente" />
+              <label class="form-check-label text-black ms-1" for="estado-resuelto">
+                En proceso
+              </label>
             </div>
 
-          </form>
+            <div class="form-check mb-0 mt-2">
+              <input name="estadoSiguiente" class="form-check-input" type="radio" value="2" id="estado-cerrado" wire:model="estadoSiguiente" />
+              <label class="form-check-label text-black ms-1" for="estado-cerrado">
+                Cerrado
+              </label>
+            </div>
+
+          </div>
         </div>
-      </div>
+        <!-- / Selector de estado -->
+
+        </div>
+      </form>
+    </div>
+
+    <div class="offcanvas-footer border-top p-3 text-center bg-white flex-shrink-0">
+      <button type="submit" form="formResponder" class="btn btn-primary rounded-pill me-sm-3 me-1 px-5"> <i class="ti ti-device-floppy me-1"></i> Guardar</button>
+      <button type="button" class="btn btn-label-secondary rounded-pill" data-bs-dismiss="offcanvas" aria-label="Close">Cancelar</button>
     </div>
   </div>
-  <!--/ Modal respuesta  -->
-
-  <!-- Modal Seguimiento -->
-  <div wire:ignore.self class="modal fade" id="modalSeguimiento" tabindex="-2" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-simple ">
-      <div class="modal-content">
-        <div class="modal-body">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          <div class="text-center mb-4">
-          <h3 class="mb-2">{!! $titulo !!}</h3>
-          </div>
-          <form wire:submit="addSeguimiento" class="row g-3">
-
-            <!-- Observacion -->
-            <div wire:ignore>
-              <div id="editorSeguimiento"></div>
-            </div>
-            <!--/Observacion-->
-
-            <div id="buscarBiblia" class="mt-0">
-              <button type="button" class="btn btn-success rounded-pill waves-effect waves-light mt-1 btn-sm openBible"> <i class="ti ti-book"> </i> Buscar en la  Biblia</button>
-            </div>
-
-            <div id="versiculosRecomendados" class="demo-inline-spacing mt-1">
-              {!! $versiculosRecomendados !!}
-            </div>
-
-            <div class="col-12 text-center">
-              <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar</button>
-              <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!--/ Modal respuesta  -->
+  <!--/ Offcanvas Responder  -->
 
   <!-- Modal buscarBiblia -->
   <div wire:ignore.self id="modalBuscarBiblia"  class="modal fade" tabindex="-1" aria-hidden="true">
@@ -143,9 +145,9 @@
 @script
 <script >
 
-  /* editor Respuesta */
-  editorRespuesta = new Quill('#editorRespuesta', {
-    bounds: '#editorRespuesta',
+  /* editor Responder */
+  editorResponder = new Quill('#editorResponder', {
+    bounds: '#editorResponder',
     placeholder: 'Escribe aquí la respuesta de la persona',
     modules: {
       toolbar: [
@@ -164,47 +166,47 @@
     theme: 'snow'
   });
 
-  editorRespuesta.on('text-change', (delta, oldDelta, source) => {
-    $wire.set('respuesta', editorRespuesta.root.innerHTML);
-  });
-  /* fin editor respuesta */
-
-  /* editor seguimiento */
-  editorSeguimiento = new Quill('#editorSeguimiento', {
-    bounds: '#editorSeguimiento',
-    placeholder: 'Escribe aquí el seguimiento de la persona',
-    modules: {
-      toolbar: [
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'header': 1 }, { 'header': 2 }],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        [{ 'size': ['small', false, 'large', 'huge'] }],
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        [{ 'font': [] }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        ['clean']
-      ]
-    },
-    theme: 'snow'
+  $wire.on('textoInicialRespuesta', () => {
+    editorResponder.root.innerHTML = event.detail.textoInicial;
   });
 
-  $wire.on('textoInicialSeguimiento', () => {
-    editorSeguimiento.root.innerHTML = event.detail.textoInicial;
+  editorResponder.on('text-change', (delta, oldDelta, source) => {
+    $wire.set('descripcionRespuesta', editorResponder.root.innerHTML);
+  });
+  /* fin editor responder */
+
+  $wire.on('abrirModal', (data) => {
+    let el = document.getElementById(data.nombreModal);
+    if(el && el.classList.contains('offcanvas')){
+      let bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(el);
+      bsOffcanvas.show();
+    } else {
+      $('#' + data.nombreModal).modal('show');
+    }
   });
 
-  editorSeguimiento.on('text-change', (delta, oldDelta, source) => {
-    $wire.set('descripcionSeguimiento', editorSeguimiento.root.innerHTML);
+  $wire.on('cerrarModal', (data) => {
+    let el = document.getElementById(data.nombreModal);
+    if(el && el.classList.contains('offcanvas')){
+      let bsOffcanvas = bootstrap.Offcanvas.getInstance(el);
+      if(bsOffcanvas) bsOffcanvas.hide();
+    } else {
+      $('#' + data.nombreModal).modal('hide');
+    }
   });
-  /* fin editor seguimiento */
 
-  $wire.on('abrirModal', () => {
-    $('#' + event.detail.nombreModal).modal('show');
+  // Limpieza manual de backdrops huérfanos si persisten
+  document.addEventListener('hidden.bs.offcanvas', function (event) {
+    document.querySelectorAll('.offcanvas-backdrop').forEach(el => el.remove());
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
   });
 
-  $wire.on('cerrarModal', () => {
-    $('#' + event.detail.nombreModal).modal('hide');
+  document.addEventListener('hidden.bs.modal', function (event) {
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
   });
 
   $wire.on('cargarVersiculosRecomendados', () => {
@@ -214,8 +216,8 @@
   $(document).on('click', '.add-versiculo', function (e) {
     let verso = $(this).attr("data-verso");
     let cita =  $(this).attr("data-cita");
-    editorSeguimiento.root.innerHTML = editorSeguimiento.root.innerHTML+'<p><i>"'+verso+'"</i> <b>('+cita+', RVR60)</b></p>';
-    $wire.set('descripcionSeguimiento', editorSeguimiento.root.innerHTML);
+    editorResponder.root.innerHTML = editorResponder.root.innerHTML+'<p><i>"'+verso+'"</i> <b>('+cita+', RVR60)</b></p>';
+    $wire.set('descripcionRespuesta', editorResponder.root.innerHTML);
 
     $('#modalBuscarBiblia').modal('hide');
   });

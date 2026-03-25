@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('dia'); // Día de la semana
             $table->time('hora_inicio'); // Hora de inicio (ej: "07:00")
             $table->time('hora_fin'); // Hora de fin (ej: "09:00")
-            $table->boolean('activo')->default(TRUE);
+            $table->boolean('activo')->default(true);
             $table->timestamps(); // Fechas de creación y actualización
             $table->softDeletes(); // Soft deletes para mantener historial
             $table->index(['materia_id', 'aula_id']); // Índice para mejorar consultas

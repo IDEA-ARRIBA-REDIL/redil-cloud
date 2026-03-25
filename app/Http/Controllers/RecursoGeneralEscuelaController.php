@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use App\Models\RecursoGeneralEscuela;
+use Illuminate\Support\Facades\Auth;
 
 class RecursoGeneralEscuelaController extends Controller
 {
@@ -39,7 +37,7 @@ class RecursoGeneralEscuelaController extends Controller
 
         // 5. Pasamos la colección de recursos (llena o vacía) a la vista.
         return view('contenido.paginas.escuelas.recursos-generales.mis-recursos', [
-            'recursos' => $recursos
+            'recursos' => $recursos,
         ]);
     }
 }

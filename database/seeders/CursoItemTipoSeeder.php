@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\CursoItemTipo;
 
 class CursoItemTipoSeeder extends Seeder
 {
@@ -17,13 +16,13 @@ class CursoItemTipoSeeder extends Seeder
                 'nombre' => 'Lección',
                 'codigo' => 'leccion',
                 'categoria' => 'leccion',
-                'icono' => 'fas fa-book', 
+                'icono' => 'fas fa-book',
             ],
             [
                 'nombre' => 'Video',
                 'codigo' => 'video',
                 'categoria' => 'leccion',
-                'icono' => 'fas fa-play-circle', 
+                'icono' => 'fas fa-play-circle',
             ],
             [
                 'nombre' => 'Lectura',
@@ -31,7 +30,7 @@ class CursoItemTipoSeeder extends Seeder
                 'categoria' => 'leccion',
                 'icono' => 'fas fa-align-left',
             ],
-             [
+            [
                 'nombre' => 'Recurso',
                 'codigo' => 'recurso',
                 'categoria' => 'leccion',

@@ -12,21 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('horarios_habituales', function (Blueprint $table) {
-          $table->id();
-          $table->foreignId('consejero_id')->constrained('consejeros')->onDelete('cascade');
+            $table->id();
+            $table->foreignId('consejero_id')->constrained('consejeros')->onDelete('cascade');
 
-          /** * Día de la semana. (1 = Lunes, ..., 7 = Domingo) */
-          $table->unsignedTinyInteger('dia_semana');
+            /** * Día de la semana. (1 = Lunes, ..., 7 = Domingo) */
+            $table->unsignedTinyInteger('dia_semana');
 
-          $table->time('hora_inicio');
-          $table->time('hora_fin');
+            $table->time('hora_inicio');
+            $table->time('hora_fin');
 
-          $table->timestamps();
+            $table->timestamps();
 
-          // Índices
-          $table->index(['consejero_id', 'dia_semana']);
-          // Tu restricción para evitar duplicados exactos
-          $table->unique(['consejero_id', 'dia_semana', 'hora_inicio']);
+            // Índices
+            $table->index(['consejero_id', 'dia_semana']);
+            // Tu restricción para evitar duplicados exactos
+            $table->unique(['consejero_id', 'dia_semana', 'hora_inicio']);
         });
     }
 

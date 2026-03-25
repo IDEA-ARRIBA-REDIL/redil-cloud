@@ -2,16 +2,15 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use App\Models\Grupo;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class GruposYMiembrosSeeder extends Seeder
 {
     /**
      * Ruta del archivo JSON dentro de la carpeta storage/app.
+     *
      * @var string
      */
     protected $filePath = 'seeders/grupos_202507281947.json';
@@ -21,16 +20,15 @@ class GruposYMiembrosSeeder extends Seeder
      */
     public function run(): void
     {
-        if (!file_exists(base_path('storage/app/' . $this->filePath))) {
-            $this->command->error('¡Archivo JSON no encontrado en ' . base_path('storage/app/' . $this->filePath) . '!');
+        if (! file_exists(base_path('storage/app/'.$this->filePath))) {
+            $this->command->error('¡Archivo JSON no encontrado en '.base_path('storage/app/'.$this->filePath).'!');
+
             return;
         }
 
         $this->command->info('✅ Archivo JSON encontrado. Vaciando tabla e iniciando la importación...');
 
-
-
-        $jsonContent = file_get_contents(base_path('storage/app/' . $this->filePath));
+        $jsonContent = file_get_contents(base_path('storage/app/'.$this->filePath));
         $data = json_decode($jsonContent, true);
 
         // --- [LA CORRECCIÓN QUE FALTABA] ---
@@ -40,6 +38,7 @@ class GruposYMiembrosSeeder extends Seeder
 
         if (empty($gruposData)) {
             $this->command->error('El archivo JSON está vacío o no contiene registros válidos dentro de la clave "RECORDS".');
+
             return;
         }
 
@@ -88,6 +87,6 @@ class GruposYMiembrosSeeder extends Seeder
             );
         }
 
-        $this->command->info('✔️  ¡Proceso finalizado! Se han importado ' . count($gruposParaInsertar) . ' grupos.');
+        $this->command->info('✔️  ¡Proceso finalizado! Se han importado '.count($gruposParaInsertar).' grupos.');
     }
 }

@@ -23,14 +23,13 @@ return new class extends Migration
 
             $table->boolean('incluir')->default(true)->after('estado_tarea_consolidacion_id');
 
-
             // ----> ESTA ES LA LÍNEA CORREGIDA <----
             // La clave primaria ahora es la combinación de los tres campos.
             // Esto permite (Filtro 1, Tarea 1, Estado 3) y (Filtro 1, Tarea 1, Estado 4) como filas válidas.
             $table->primary([
                 'filtro_consolidacion_id',
                 'tarea_consolidacion_id',
-                'estado_tarea_consolidacion_id'
+                'estado_tarea_consolidacion_id',
             ]);
         });
     }

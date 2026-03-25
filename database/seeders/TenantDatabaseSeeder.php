@@ -220,10 +220,11 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(BloqueClasificacionAsistenteSeeder::class);
         $this->call(EstructuraGruposPruebaSeeder::class);
         $this->call(CursoItemTipoSeeder::class);
-        $this->call(TipoCargoCursoSeeder::class);
-        $this->call(CursoDemoSeeder::class);
         $this->call(CarreraSeeder::class);
-        $this->call(CategoriaCursoSeeder::class);
+         $this->call(CategoriaCursoSeeder::class);
+        $this->call(TipoCargoCursoSeeder::class);
+        $this->call(CursoDemoSeeder::class);     
         $this->call(VersiculoDiarioSeeder::class);
+        $this->call(BitacoraIntegranteGrupoSeeder::class);
     }
 }

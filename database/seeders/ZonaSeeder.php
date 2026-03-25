@@ -2,11 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
-
 use App\Models\Zona;
+use Illuminate\Database\Seeder;
 
 class ZonaSeeder extends Seeder
 {
@@ -27,7 +24,7 @@ class ZonaSeeder extends Seeder
         ]);
 
         $zona2->sedes()->attach([2]);
-        $zona2->localidades()->attach([9,10]);
+        $zona2->localidades()->attach([9, 10]);
 
         $zona3 = Zona::create([
             'nombre' => 'Zona localidad Bosa',
@@ -40,7 +37,7 @@ class ZonaSeeder extends Seeder
             'nombre' => 'Zona sedes Bogotá',
         ]);
 
-        $zona4->sedes()->attach([29,28,30,17,14,22,210,24,31,45,44]);
+        $zona4->sedes()->attach([29, 28, 30, 17, 14, 22, 210, 24, 31, 45, 44]);
 
         $zona5 = Zona::create([
             'nombre' => 'Zona sedes Medellín',
@@ -48,12 +45,11 @@ class ZonaSeeder extends Seeder
 
         $zona5->sedes()->attach([309]);
 
-        $zona6= Zona::create([
+        $zona6 = Zona::create([
             'nombre' => 'Zona auditorio principal',
         ]);
 
         $zona6->sedes()->attach([2]);
-
 
     }
 }

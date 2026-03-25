@@ -2,14 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\SedeDestinatario;
-
+use Illuminate\Database\Seeder;
 
 class SedeDestinatarioSeeder extends Seeder
 {
-   
     /**
      * Run the database seeds.
      */
@@ -21,7 +18,7 @@ class SedeDestinatarioSeeder extends Seeder
             'direccion' => 'Calle 123',
             'latitud' => 4.7240832,
             'longitud' => -74.0320435,
-            'detalle' => 'Sede principal en el norte de Bogotá'
+            'detalle' => 'Sede principal en el norte de Bogotá',
         ]);
 
         SedeDestinatario::firstOrCreate([
@@ -30,7 +27,7 @@ class SedeDestinatarioSeeder extends Seeder
             'direccion' => 'Calle 123',
             'latitud' => 4.6463074,
             'longitud' => -74.0636443,
-            'detalle' => 'Sede cultural en zona comercial'
+            'detalle' => 'Sede cultural en zona comercial',
         ]);
 
         SedeDestinatario::firstOrCreate([
@@ -39,7 +36,7 @@ class SedeDestinatarioSeeder extends Seeder
             'direccion' => 'Calle 123',
             'latitud' => 4.5978901,
             'longitud' => -74.0760437,
-            'detalle' => 'Sede histórica en el centro'
+            'detalle' => 'Sede histórica en el centro',
         ]);
 
         SedeDestinatario::firstOrCreate([
@@ -48,7 +45,7 @@ class SedeDestinatarioSeeder extends Seeder
             'direccion' => 'Calle 123',
             'latitud' => 4.6436289,
             'longitud' => -74.1560431,
-            'detalle' => 'Sede comunitaria popular'
+            'detalle' => 'Sede comunitaria popular',
         ]);
 
         SedeDestinatario::firstOrCreate([
@@ -57,7 +54,7 @@ class SedeDestinatarioSeeder extends Seeder
             'direccion' => 'Calle 123',
             'latitud' => 4.7420832,
             'longitud' => -74.0920435,
-            'detalle' => 'Sede con enfoque familiar'
+            'detalle' => 'Sede con enfoque familiar',
         ]);
     }
 }

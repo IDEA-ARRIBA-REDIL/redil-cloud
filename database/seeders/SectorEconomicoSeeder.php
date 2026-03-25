@@ -2,19 +2,17 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
 use App\Models\SectorEconomico;
+use Illuminate\Database\Seeder;
 
 class SectorEconomicoSeeder extends Seeder
 {
-  /**
-   * Run the database seeds.
-   */
-  public function run(): void
-  {
-    $sectoresEconomicos = '[
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $sectoresEconomicos = '[
       {"id":"1","nombre":"Administración"},
       {"id":"2","nombre":"Comercial"},
       {"id":"3","nombre":"Construcción"},
@@ -36,11 +34,11 @@ class SectorEconomicoSeeder extends Seeder
       {"id":"19","nombre":"Agricultura"}
     ]';
 
-    $items = json_decode($sectoresEconomicos);
-    foreach ($items as $item) {
-      SectorEconomico::firstOrCreate([
-        'nombre' => $item->nombre,
-      ]);
+        $items = json_decode($sectoresEconomicos);
+        foreach ($items as $item) {
+            SectorEconomico::firstOrCreate([
+                'nombre' => $item->nombre,
+            ]);
+        }
     }
-  }
 }

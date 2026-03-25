@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('estado_civil_filtro_consolidacion', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-               // La conexión al filtro
+            // La conexión al filtro
             $table->foreignId('filtro_consolidacion_id')->constrained('filtros_consolidacion')->onDelete('cascade');
 
             // La conexión a la tarea

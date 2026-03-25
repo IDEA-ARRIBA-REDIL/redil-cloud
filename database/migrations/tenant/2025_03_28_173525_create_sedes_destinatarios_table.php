@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('longitud', 11, 8); // Ej: -74.08175000
             $table->text('detalle')->nullable();
             $table->timestamps();
-            
+
             // Index para búsquedas
             $table->index('barrio');
             $table->index('nombre');

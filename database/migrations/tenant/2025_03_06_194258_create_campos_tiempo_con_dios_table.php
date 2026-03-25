@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('name_id', 100)->nullable();
             $table->string('placeholder', 100)->nullable()->nullable();
             $table->boolean('requerido')->default(0)->nullable();
-            $table->string('class',200)->default('col-12')->nullable();
+            $table->string('class', 200)->default('col-12')->nullable();
             $table->string('informacion_de_apoyo')->nullable()->nullable();
 
             $table->string('url_imagen')->nullable();
