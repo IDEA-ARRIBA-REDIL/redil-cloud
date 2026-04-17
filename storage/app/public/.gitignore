@@ -1,2 +1,4 @@
-*
 !.gitignore
+# No ignorar nada en esta carpeta para asegurar que los archivos base se suban al repo
+!*/
+!**
