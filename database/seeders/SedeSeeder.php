@@ -30,7 +30,7 @@ class SedeSeeder extends Seeder
 
         Sede::firstOrCreate([
             'id' => '2',
-            'nombre' => 'Sede Secundaria',
+            'nombre' => 'Sede Auditorio principal',
             'grupo_id' => 1,
             'tipo_sede_id' => 1,
             'continente_id' => 2,

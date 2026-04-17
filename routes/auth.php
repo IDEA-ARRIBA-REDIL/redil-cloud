@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Auth\ReactivacionCuentaController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -34,6 +35,18 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
                 ->name('password.store');
+
+    // Rutas para la reactivación de cuenta (Usuarios que están como SoftDeleted)
+    Route::get('reactivar-cuenta', [ReactivacionCuentaController::class, 'mostrarFormulario'])
+                ->name('auth.reactivar');
+
+    Route::post('reactivar-cuenta', [ReactivacionCuentaController::class, 'enviarEnlaceReactivacion'])
+                ->name('auth.reactivar.enviar');
+
+    // Esta ruta usa el middleware 'signed' para verificar que la URL no haya sido alterada
+    Route::get('restaurar-cuenta/{id}', [ReactivacionCuentaController::class, 'restaurarCuenta'])
+                ->middleware(['signed'])
+                ->name('auth.reactivar.procesar');
 });
 
     Route::get('verify-email/{id}/{hash}', CustomVerifyEmailController::class)

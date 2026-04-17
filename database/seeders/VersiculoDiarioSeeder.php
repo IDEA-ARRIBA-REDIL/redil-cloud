@@ -24,6 +24,7 @@ class VersiculoDiarioSeeder extends Seeder
                         ],
                     ],
                 ],
+            
                 'usuario_id' => 1,
             ],
             [
@@ -38,6 +39,7 @@ class VersiculoDiarioSeeder extends Seeder
                         ],
                     ],
                 ],
+               
                 'usuario_id' => 1,
             ],
             [
@@ -52,6 +54,7 @@ class VersiculoDiarioSeeder extends Seeder
                         ],
                     ],
                 ],
+           
                 'usuario_id' => 1,
             ],
         ];

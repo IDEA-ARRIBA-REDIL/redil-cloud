@@ -12,6 +12,8 @@ use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
+use App\Models\Configuracion;
+use Illuminate\Support\Facades\Schema;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -103,6 +105,55 @@ class TenancyServiceProvider extends ServiceProvider
         $this->mapRoutes();
 
         $this->makeTenancyMiddlewareHighestPriority();
+
+        // Sobreescribir las variables globales con la config del tenant
+        Event::listen(Events\TenancyBootstrapped::class, function () {
+            if (Schema::hasTable('configuraciones')) {
+                $configuracion = Configuracion::first();
+                if ($configuracion) {
+                    
+                    // Fallbacks globales por defecto
+                    $logoUrl = asset('storage/global/img/logo_crecer.png');
+                    $faviconUrl = asset('assets/img/favicon/logo_crecer.ico');
+                    
+                    $branding = [
+                        'templateName' => $configuracion->nombre_app_personalizado ?: config('variables.templateName'),
+                        'templateNameColor' => $configuracion->color_nombre_app ?: config('variables.templateNameColor'),
+                        'creatorName' => $configuracion->nombre_creador ?: config('variables.creatorName'),
+                        'creatorUrl' => $configuracion->url_creador ?: config('variables.creatorUrl'),
+                        'templateDescriptionLogin' => $configuracion->descripcion_login ?: config('variables.templateDescriptionLogin'),
+                        'templateSuffix' => $configuracion->sufijo_app ?: config('variables.templateSuffix'),
+                        'templateVersion' => $configuracion->version_app ?: config('variables.templateVersion'),
+                    ];
+
+                    // Si tiene Marca Blanca activa, intentamos cargar sus archivos personalizados
+                    if ($configuracion->marca_blanca) {
+                        $rutaBase = $configuracion->ruta_almacenamiento ? $configuracion->ruta_almacenamiento . '/' : '';
+                        
+                        if ($configuracion->logo_app) {
+                            $logoUrl = tenant_asset($rutaBase . 'img/branding/' . $configuracion->logo_app);
+                        }
+                        if ($configuracion->favicon_app) {
+                            $faviconUrl = tenant_asset($rutaBase . 'img/branding/' . $configuracion->favicon_app);
+                        }
+                    }
+
+                    // Inyectamos todo al config global de la ejecución
+                    config([
+                        'variables.templateName' => $branding['templateName'],
+                        'variables.templateNameColor' => $branding['templateNameColor'],
+                        'variables.creatorName' => $branding['creatorName'],
+                        'variables.creatorUrl' => $branding['creatorUrl'],
+                        'variables.templateDescriptionLogin' => $branding['templateDescriptionLogin'],
+                        'variables.templateSuffix' => $branding['templateSuffix'],
+                        'variables.templateVersion' => $branding['templateVersion'],
+                        'variables.logoApp' => $logoUrl,
+                        'variables.faviconApp' => $faviconUrl,
+                        'app.name' => $branding['templateName'],
+                    ]);
+                }
+            }
+        });
     }
 
     protected function bootEvents()

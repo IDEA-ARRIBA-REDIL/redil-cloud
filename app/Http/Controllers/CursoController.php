@@ -10,7 +10,7 @@ class CursoController extends Controller
 {
     public function index()
     {
-       
+
         return view('contenido.paginas.cursos.gestionar-cursos');
     }
 
@@ -151,7 +151,6 @@ class CursoController extends Controller
         return redirect()->back()->with('success', 'Miembro del equipo asignado correctamente.');
     }
 
-
     public function activarEquipo(\App\Models\CursoUsuarioCargo $miembro)
     {
         $miembro->update(['activo' => true]);
@@ -190,8 +189,22 @@ class CursoController extends Controller
     public function dashboard(Request $request): \Illuminate\View\View
     {
         // Filtros (valores por defecto)
-        $fechaInicio = $request->query('fecha_inicio', \Carbon\Carbon::now()->subMonth()->format('Y-m-d'));
-        $fechaFin = $request->query('fecha_fin', \Carbon\Carbon::now()->format('Y-m-d'));
+        $rangoFechas = $request->query('rango_fechas');
+        if ($rangoFechas) {
+            $fechas = explode(' a ', $rangoFechas);
+            if (count($fechas) >= 2) {
+                $fechaInicio = \Carbon\Carbon::parse(trim($fechas[0]))->format('Y-m-d');
+                $fechaFin = \Carbon\Carbon::parse(trim($fechas[1]))->format('Y-m-d');
+            } else {
+                $fechaInicio = \Carbon\Carbon::parse(trim($fechas[0]))->format('Y-m-d');
+                $fechaFin = \Carbon\Carbon::parse(trim($fechas[0]))->format('Y-m-d');
+            }
+        } else {
+            $fechaInicio = $request->query('fecha_inicio', \Carbon\Carbon::now()->subMonth()->format('Y-m-d'));
+            $fechaFin = $request->query('fecha_fin', \Carbon\Carbon::now()->format('Y-m-d'));
+            $rangoFechas = $fechaInicio.' a '.$fechaFin;
+        }
+
         $carreraId = $request->query('carrera_id', '');
 
         // 1. Jerarquía Superior: Permisos Globales (Spatie)
@@ -208,7 +221,6 @@ class CursoController extends Controller
                 ->where('usuario_id', $usuarioId)
                 ->where('activo', true)
                 ->get();
-               
 
             if ($cargosUsuario->isNotEmpty()) {
                 // Verificar si algún cargo le da acceso total dentro del módulo
@@ -216,7 +228,7 @@ class CursoController extends Controller
                     return $cargo->tipoCargo && $cargo->tipoCargo->puede_ver_todos_los_cursos;
                 });
 
-                if (!$tieneAccesoTotal) {
+                if (! $tieneAccesoTotal) {
                     foreach ($cargosUsuario as $cargo) {
                         if ($cargo->tipoCargo && $cargo->tipoCargo->limita_carreras) {
                             $permitidas = $cargo->tipoCargo->carreras_permitidas ?? [];
@@ -226,14 +238,14 @@ class CursoController extends Controller
                         }
                     }
                     $carrerasPermitidasIds = array_unique($carrerasPermitidasIds);
-                    
-                    // Si no tiene "Ver Todos" y no limita carreras en ningún cargo, 
-                    // se asume que solo ve lo asignado (pero el dashboard es por carrera, 
-                    // así que si no hay carreras limitadas y tampoco acceso total, 
-                    // mostramos vacío o podrías decidir mostrar todo lo asignado... 
-                    // Por simplicidad, si limita_carreras es false en todos sus cargos 
+
+                    // Si no tiene "Ver Todos" y no limita carreras en ningún cargo,
+                    // se asume que solo ve lo asignado (pero el dashboard es por carrera,
+                    // así que si no hay carreras limitadas y tampoco acceso total,
+                    // mostramos vacío o podrías decidir mostrar todo lo asignado...
+                    // Por simplicidad, si limita_carreras es false en todos sus cargos
                     // le damos acceso total para el dashboard si tiene el permiso de Spatie)
-                    if (empty($carrerasPermitidasIds) && !$cargosUsuario->contains(fn($c) => $c->tipoCargo?->limita_carreras)) {
+                    if (empty($carrerasPermitidasIds) && ! $cargosUsuario->contains(fn ($c) => $c->tipoCargo?->limita_carreras)) {
                         $tieneAccesoTotal = true;
                     }
                 }
@@ -247,7 +259,7 @@ class CursoController extends Controller
         ]);
 
         // Aplicar la restricción de visibilidad de carreras según los permisos del asesor
-        if (!$tieneAccesoTotal) {
+        if (! $tieneAccesoTotal) {
             if (empty($carrerasPermitidasIds)) {
                 $queryInscripciones->whereRaw('1 = 0');
             } else {
@@ -257,12 +269,14 @@ class CursoController extends Controller
             }
         }
 
-       
-
-        // Filtrar por carrera si se selecciona una
+        // Filtrar por carrera si se selecciona una o varias
         if ($carreraId) {
             $queryInscripciones->whereHas('curso', function ($q) use ($carreraId) {
-                $q->where('carrera_id', $carreraId);
+                if (is_array($carreraId)) {
+                    $q->whereIn('carrera_id', array_filter($carreraId));
+                } else {
+                    $q->where('carrera_id', $carreraId);
+                }
             });
         }
 
@@ -290,6 +304,43 @@ class CursoController extends Controller
             ->groupBy('roles.name')
             ->get();
 
+        // 5.1 Datos por Entidad Apilados por Carrera
+        $queryCarrerasEntidades = (clone $queryInscripciones)
+            ->join('cursos', 'curso_users.curso_id', '=', 'cursos.id')
+            ->join('carreras', 'cursos.carrera_id', '=', 'carreras.id')
+            ->join('users', 'curso_users.user_id', '=', 'users.id')
+            ->join('tipo_usuarios', 'users.tipo_usuario_id', '=', 'tipo_usuarios.id')
+            ->leftJoin('entidades_relacionadas', 'tipo_usuarios.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
+            ->select(
+                'carreras.nombre as carrera',
+                \Illuminate\Support\Facades\DB::raw("COALESCE(entidades_relacionadas.nombre, 'Sin Entidad') as entidad"),
+                \Illuminate\Support\Facades\DB::raw('count(*) as total')
+            )
+            ->groupBy('carrera', 'entidad')
+            ->orderBy('carrera')
+            ->get();
+
+        $carrerasLabels = $queryCarrerasEntidades->pluck('carrera')->unique()->values()->toArray();
+        $todasEntidades = $queryCarrerasEntidades->pluck('entidad')->unique()->values()->toArray();
+
+        $seriesEntidades = [];
+        foreach ($todasEntidades as $entidad) {
+            $dataEntidad = [];
+            foreach ($carrerasLabels as $carrera) {
+                $valor = $queryCarrerasEntidades->where('carrera', $carrera)->where('entidad', $entidad)->first();
+                $dataEntidad[] = $valor ? $valor->total : 0;
+            }
+            $seriesEntidades[] = [
+                'name' => $entidad,
+                'data' => $dataEntidad,
+            ];
+        }
+
+        $datosCarrerasEntidades = [
+            'labels' => $carrerasLabels,
+            'series' => $seriesEntidades,
+        ];
+
         // 6. Desglose por curso (Tabla General)
         $inscritosPorCurso = (clone $queryInscripciones)
             ->join('cursos', 'curso_users.curso_id', '=', 'cursos.id')
@@ -300,7 +351,7 @@ class CursoController extends Controller
 
         // 7. Estadísticas detalladas para cada curso (para el acordeón)
         $cursosDetalle = \App\Models\Curso::where(function ($q) use ($carreraId, $tieneAccesoTotal, $carrerasPermitidasIds) {
-            if (!$tieneAccesoTotal) {
+            if (! $tieneAccesoTotal) {
                 if (empty($carrerasPermitidasIds)) {
                     $q->whereRaw('1 = 0');
                 } else {
@@ -309,7 +360,11 @@ class CursoController extends Controller
             }
 
             if ($carreraId) {
-                $q->where('carrera_id', $carreraId);
+                if (is_array($carreraId)) {
+                    $q->whereIn('carrera_id', array_filter($carreraId));
+                } else {
+                    $q->where('carrera_id', $carreraId);
+                }
             }
         })->get()->map(function ($curso) use ($fechaInicio, $fechaFin) {
             // Filtro base de inscripciones para este curso específico
@@ -339,6 +394,15 @@ class CursoController extends Controller
                 ->groupBy('roles.name')
                 ->get();
 
+            // Distribución por Entidad para este curso
+            $curso->stats_entidades = (clone $queryCurso)
+                ->join('users', 'curso_users.user_id', '=', 'users.id')
+                ->join('tipo_usuarios', 'users.tipo_usuario_id', '=', 'tipo_usuarios.id')
+                ->leftJoin('entidades_relacionadas', 'tipo_usuarios.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
+                ->select(\Illuminate\Support\Facades\DB::raw("COALESCE(entidades_relacionadas.nombre, 'Sin Entidad') as entidad"), \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+                ->groupBy('entidad')
+                ->get();
+
             return $curso;
         });
 
@@ -354,12 +418,14 @@ class CursoController extends Controller
             'totalCompletados' => $totalCompletados,
             'datosGenero' => $datosGenero,
             'datosRoles' => $datosRoles,
+            'datosCarrerasEntidades' => $datosCarrerasEntidades,
             'inscritosPorCurso' => $inscritosPorCurso,
             'cursosDetalle' => $cursosDetalle,
             'carreras' => $carreras,
             'fechaInicio' => $fechaInicio,
             'fechaFin' => $fechaFin,
             'carreraId' => $carreraId,
+            'rangoFechas' => $rangoFechas,
         ]);
     }
 
@@ -394,7 +460,7 @@ class CursoController extends Controller
                     return $cargo->tipoCargo && $cargo->tipoCargo->puede_ver_todos_los_cursos;
                 });
 
-                if (!$tieneAccesoTotal) {
+                if (! $tieneAccesoTotal) {
                     foreach ($cargosUsuario as $cargo) {
                         if ($cargo->tipoCargo && $cargo->tipoCargo->limita_carreras) {
                             $permitidas = $cargo->tipoCargo->carreras_permitidas ?? [];
@@ -405,7 +471,7 @@ class CursoController extends Controller
                     }
                     $carrerasPermitidasIds = array_unique($carrerasPermitidasIds);
 
-                    if (empty($carrerasPermitidasIds) && !$cargosUsuario->contains(fn($c) => $c->tipoCargo?->limita_carreras)) {
+                    if (empty($carrerasPermitidasIds) && ! $cargosUsuario->contains(fn ($c) => $c->tipoCargo?->limita_carreras)) {
                         $tieneAccesoTotal = true;
                     }
                 }

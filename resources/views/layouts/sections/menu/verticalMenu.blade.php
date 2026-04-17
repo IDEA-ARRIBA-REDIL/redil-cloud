@@ -15,28 +15,20 @@
 
     <!-- ! Hide app brand if navbar-full -->
     @if (!isset($navbarFull))
-        <div style="padding-left: 20px !important;" class="app-brand demo p-0">
+        <div style="padding-left: 20px !important;" class="app-brand demo p-0 mb-3">
             <a href="{{ url('/') }}" class="app-brand-link">
-                @if ($configuracion->version == 1)
-                    <img style="width:30px" class="app-brand-logo"
-                        src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/logo_crecer.png') }}">
-                @else
-                    <span class="app-brand-logo demo p-0">
-                        @include('_partials.macros', [
-                            'height' => '40px',
-                            'width' => '40px',
-                            'fill' => '#3772e4',
-                        ])
-                    </span>
-                @endif
-                <span style='color:{{ config('variables.templateNameColor') }} !important'
-                    class="app-brand-text demo menu-text fw-bold fs-6">{{ config('variables.templateName') }}</span>
+                <img style="width:150px" class="app-brand-logo" src="{{ config('variables.logoApp') }}">
+               
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
                 <i class="ti menu-toggle-icon d-none d-xl-block ti-sm align-middle pe-5"></i>
                 <i class="ti ti-x d-block d-xl-none ti-sm align-middle pe-2"></i>
             </a>
+        </div>
+        <div>
+             <span style='color:{{ config('variables.templateNameColor') }} !important'
+                    class="app-brand-text demo menu-text fw-bold fs-6">{{ config('variables.templateName') }}</span>
         </div>
     @endif
 
@@ -393,6 +385,41 @@
             </li>
         @endif
 
+        @if ($rolActivo->hasPermissionTo('iglesia_infantil.item_iglesia_infantil'))
+            <li class="menu-item {{ request()->routeIs('iglesiaInfantil.*') ? 'active open' : '' }}">
+                <a href="" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-baby-carriage"></i>
+                    <div>Iglesia Infantil</div>
+                </a>
+
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('iglesia_infantil.item_administracion'))
+                        <li class="menu-item {{ request()->routeIs('iglesiaInfantil.administracion') ? 'active' : '' }}">
+                            <a href="{{ route('iglesiaInfantil.administracion') }}" class="menu-link">
+                                <div>Administración</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($rolActivo->hasPermissionTo('iglesia_infantil.subitem_checkin'))
+                        <li class="menu-item {{ request()->routeIs('iglesiaInfantil.checkin') ? 'active' : '' }}">
+                            <a href="{{ route('iglesiaInfantil.checkin') }}" class="menu-link">
+                                <div>Check-in</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($rolActivo->hasPermissionTo('iglesia_infantil.subitem_lista_turno'))
+                        <li class="menu-item {{ request()->routeIs('iglesiaInfantil.listaTurno') ? 'active' : '' }}">
+                            <a href="{{ route('iglesiaInfantil.listaTurno') }}" class="menu-link">
+                                <div>Lista del turno</div>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+            </li>
+        @endif
+
         @if ($rolActivo->hasPermissionTo('escuelas.item_escuelas'))
             <li class="menu-item">
                 <a target="_blank" href="{{ route('escuelas.dashboard') }}" class="menu-link ">
@@ -439,7 +466,7 @@
                             </a>
                         </li>
                     @endif
-                    @if ($rolActivo->hasPermissionTo('cursos.subitem_gestionar_cursos'))
+                    @if ($rolActivo->hasPermissionTo('cursos.gestionar_tipos_cargo_cursos'))
                         <li class="menu-item {{ request()->routeIs('cursos.tipos-cargo.index') ? 'active' : '' }}">
                             <a href="{{ route('cursos.tipos-cargo.index') }}" class="menu-link">
                                 <div>Tipos de Cargo</div>
@@ -672,6 +699,32 @@
         </li>
     @endif
 
+    @if ($rolActivo->hasPermissionTo('planes_lectores.item_planes_lectores'))
+        <li class="menu-item {{ request()->routeIs('planes-lectores.*') ? 'active open' : '' }}">
+            <a href="" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons ti ti-book"></i>
+                <div>Plan Lector </div>
+            </a>
+
+            <ul class="menu-sub">
+                @if ($rolActivo->hasPermissionTo('planes_lectores.subitem_gestionar_planes_lectores'))
+                    <li class="menu-item {{ request()->routeIs('planes-lectores.gestionar') ? 'active' : '' }}">
+                        <a href="{{ route('planes-lectores.gestionar') }}" class="menu-link">
+                            <div>Gestionar</div>
+                        </a>
+                    </li>
+                @endif
+                @if ($rolActivo->hasPermissionTo('planes_lectores.mis_planes_lectores'))
+                    <li class="menu-item {{ request()->routeIs('planes-lectores.inicio') ? 'active' : '' }}">
+                        <a href="{{ route('planes-lectores.inicio') }}" class="menu-link">
+                            <div>Mis planes</div>
+                        </a>
+                    </li>
+                @endif
+            </ul>
+        </li>
+    @endif
+
     @if ($rolActivo->hasPermissionTo('iglesia.item_iglesia'))
         <li class="menu-item">
             <a href="" class="menu-link menu-toggle">
@@ -708,6 +761,7 @@
       {{ request()->routeIs('configuracion.*') ||
       request()->routeIs('formularioUsuario.*') ||
       request()->routeIs('gestionar-tipos-de-grupos.*') ||
+      request()->routeIs('gestionar-tipos-de-actividad.*') ||
       request()->routeIs('gestionar-pasos-de-crecimiento.*')
           ? 'active open'
           : '' }}">
@@ -782,6 +836,17 @@
             </ul>
 
             <ul class="menu-sub">
+                @if ($rolActivo->hasPermissionTo('configuraciones.gestionar_tipos_actividad'))
+                    <li
+                        class="menu-item {{ request()->routeIs('gestionar-tipos-de-actividad.index') ? 'active' : '' }}">
+                        <a href="{{ route('gestionar-tipos-de-actividad.index') }}" class="menu-link">
+                            <div>Tipos de actividad</div>
+                        </a>
+                    </li>
+                @endif
+            </ul>
+
+            <ul class="menu-sub">
                 @if ($rolActivo->hasPermissionTo('configuraciones.subitem_tipo_de_usuarios'))
                     <li class="menu-item {{ request()->routeIs('tipo-usuario.listar') ? 'active' : '' }}">
                         <a href="{{ route('tipo-usuario.listar') }}" class="menu-link">
@@ -828,6 +893,26 @@
                     <li class="menu-item {{ request()->routeIs('tipo-ofrenda.listar') ? 'active' : '' }}">
                         <a href="{{ route('tipo-ofrenda.listar') }}" class="menu-link">
                             <div>Tipos de ofrendas</div>
+                        </a>
+                    </li>
+                @endif
+            </ul>
+
+            <ul class="menu-sub">
+                @if ($rolActivo->hasPermissionTo('configuraciones.item_configuraciones'))
+                    <li class="menu-item {{ request()->routeIs('tipo-servicio-actividad.*') ? 'active' : '' }}">
+                        <a href="{{ route('tipo-servicio-actividad.listar') }}" class="menu-link">
+                            <div>Servicios Actividades</div>
+                        </a>
+                    </li>
+                @endif
+            </ul>
+
+            <ul class="menu-sub">
+                @if ($rolActivo->hasPermissionTo('configuraciones.item_configuraciones'))
+                    <li class="menu-item {{ request()->routeIs('tipo-servicio-reunion.*') ? 'active' : '' }}">
+                        <a href="{{ route('tipo-servicio-reunion.listar') }}" class="menu-link">
+                            <div>Servicios Reuniones</div>
                         </a>
                     </li>
                 @endif

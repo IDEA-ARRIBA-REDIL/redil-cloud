@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('tipo_usuarios', function (Blueprint $table) {
+            $table->dropForeign(['entidad_relacionada_id']);
+            $table->dropColumn(['entidad_relacionada_id', 'es_administrativo', 'es_empleado']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('tipo_usuarios', function (Blueprint $table) {
+            $table->unsignedBigInteger('entidad_relacionada_id')->nullable()->default(1);
+            $table->boolean('es_administrativo')->default(false);
+            $table->boolean('es_empleado')->default(false);
+            $table->foreign('entidad_relacionada_id')->references('id')->on('entidades_relacionadas')->onDelete('set null');
+        });
+    }
+};

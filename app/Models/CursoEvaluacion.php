@@ -16,9 +16,13 @@ class CursoEvaluacion extends Model
         'limite_tiempo',
         'cantidad_repeticiones',
         'tiempo_dilatacion',
+        'mostrar_respuestas_si_aprueba',
+        'mostrar_respuestas_si_pierde',
     ];
 
     protected $casts = [
+        'mostrar_respuestas_si_aprueba' => 'boolean',
+        'mostrar_respuestas_si_pierde' => 'boolean',
     ];
 
     public function item()

@@ -2,14 +2,14 @@
     @php
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
     @endphp
-
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Listado de cursos</h5>
+ <div class="card-header d-flex justify-content-end align-items-center mb-3">
+           
             @if ($rolActivo && $rolActivo->hasPermissionTo('cursos.opcion_crear_curso'))
             <a href="{{ route('cursos.crear') }}" class="btn btn-primary"><i class="ti ti-plus me-1 text-white"></i> Nuevo curso</a>
             @endif
         </div>
+    <div class="card">
+       
 
         <div class="card-body p-5">
             <div class="d-flex justify-content-end align-items-center mb-3 flex-wrap gap-2">
@@ -19,7 +19,7 @@
                         <input wire:model.live.debounce.500ms="search" type="text" class="form-control border-start-0 ps-0 shadow-none" placeholder="Buscar cursos...">
                     </div>
 
-                    <button style="width:auto; padding:10px 15px;" type="button" class="btn btn-outline-secondary rounded text-nowrap" data-bs-toggle="offcanvas" data-bs-target="#filtrosCursosOffcanvas">
+                    <button style="width:140px; padding:10px 15px;" type="button" class="btn btn-outline-secondary rounded text-nowrap" data-bs-toggle="offcanvas" data-bs-target="#filtrosCursosOffcanvas">
                         Filtros <i class="ti ti-filter ms-1"></i>
                     </button>
                 </div>

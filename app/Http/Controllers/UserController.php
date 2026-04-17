@@ -10,6 +10,8 @@ use App\Models\CampoInformeExcel;
 use App\Models\Configuracion;
 use App\Models\Continente;
 use App\Models\CrecimientoUsuario;
+use App\Models\EmailChangeRequest;
+use App\Models\EntidadRelacionada;
 use App\Models\Escuela;
 use App\Models\EstadoCivil;
 use App\Models\EstadoNivelAcademico;
@@ -41,6 +43,7 @@ use App\Models\TipoUsuario;
 use App\Models\TipoVinculacion;
 use App\Models\TipoVivienda;
 use App\Models\User;
+use App\Notifications\EnviarCodigoCambioCorreo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
@@ -50,6 +53,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
@@ -104,6 +108,101 @@ class UserController extends Controller
 
         // Redirigimos al usuario a la página anterior con un mensaje de éxito.
         return back()->with('success', 'Has cambiado al rol: '.$role->name);
+    }
+
+    /**
+     * Muestra el formulario para iniciar el proceso de cambio de correo electrónico.
+     */
+    public function cambiarCorreoForm(): View
+    {
+        $usuario = auth()->user();
+        $configuracion = Configuracion::find(1);
+
+        // 1. Buscamos si existe una solicitud pendiente para el usuario actual.
+        // Solo nos interesa la más reciente que no haya finalizado.
+        $solicitudPendiente = EmailChangeRequest::where('user_id', $usuario->id)
+            ->where('finalizado', false)
+            ->latest()
+            ->first();
+
+        return view('contenido.paginas.usuario.cambiar-correo', [
+            'usuario' => $usuario,
+            'configuracion' => $configuracion,
+            'solicitudPendiente' => $solicitudPendiente,
+        ]);
+    }
+
+    /**
+     * Genera un código de verificación y lo envía al nuevo correo electrónico.
+     */
+    public function solicitarCodigoCorreo(Request $request)
+    {
+        // 1. Validar que el nuevo correo sea válido y no esté en uso por otro usuario.
+        $request->validate([
+            'correo_nuevo' => ['required', 'email', 'unique:users,email,'.auth()->id()],
+        ], [
+            'correo_nuevo.unique' => 'Este correo ya está registrado en nuestro sistema.',
+            'correo_nuevo.required' => 'Debes ingresar un nuevo correo electrónico.',
+            'correo_nuevo.email' => 'El formato del correo electrónico no es válido.',
+        ]);
+
+        $usuario = auth()->user();
+
+        // 2. Generar un código aleatorio de 6 dígitos.
+        $codigo = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        // 3. Crear o actualizar la solicitud de cambio de correo para este usuario.
+        // Usamos updateOrCreate para no llenar la tabla de intentos fallidos si el usuario vuelve a solicitar.
+        EmailChangeRequest::updateOrCreate(
+            ['user_id' => $usuario->id, 'finalizado' => false],
+            [
+                'correo_actual' => $usuario->email,
+                'correo_nuevo' => $request->correo_nuevo,
+                'codigo' => $codigo,
+            ]
+        );
+
+        // 4. Enviar la notificación con el código al NUEVO correo electrónico.
+        Notification::route('mail', $request->correo_nuevo)->notify(new EnviarCodigoCambioCorreo($codigo));
+
+        return back()->with('success', 'Hemos enviado un código de verificación a '.$request->correo_nuevo);
+    }
+
+    /**
+     * Verifica el código ingresado y realiza el cambio de correo electrónico si es correcto.
+     */
+    public function verificarCambioCorreo(Request $request)
+    {
+        $request->validate([
+            'codigo' => 'required|string|size:6',
+        ]);
+
+        $usuario = auth()->user();
+
+        // 1. Buscar la solicitud pendiente más reciente.
+        $solicitud = EmailChangeRequest::where('user_id', $usuario->id)
+            ->where('finalizado', false)
+            ->latest()
+            ->first();
+
+        // 2. Comprobar si existe la solicitud y si el código coincide.
+        if (! $solicitud || $solicitud->codigo !== $request->codigo) {
+            return back()->with('error', 'El código de verificación es incorrecto o no existe una solicitud pendiente.');
+        }
+
+        // 3. Proceder con el cambio de correo en la tabla users.
+        $usuario->email = $solicitud->correo_nuevo;
+
+        // Opcional: Si el sistema requiere volver a verificar el correo principal tras el cambio.
+        // $usuario->email_verified_at = null;
+
+        $usuario->save();
+
+        // 4. Marcar la solicitud como finalizada.
+        $solicitud->finalizado = true;
+        $solicitud->save();
+
+        return redirect()->back()->with('email_cambiado_exitosamente', true);
     }
 
     public function listar(Request $request, $tipo = 'todos') // : View
@@ -223,8 +322,9 @@ class UserController extends Controller
             $item->url = 'todos';
             $item->cantidad = $countTodas;
             $item->color = 'bg-label-success';
-            $item->imagen = 'icono_indicador.png';
+            $item->imagen = 'Todos.png';
             $item->icono = 'ti ti-asterisk';
+            $item->es_global = true;
             $indicadoresGenerales[] = $item;
 
             // 2. Sin grupo
@@ -239,8 +339,9 @@ class UserController extends Controller
             $item->url = 'sin-grupo';
             $item->cantidad = $countSinGrupo;
             $item->color = 'bg-label-primary';
-            $item->imagen = 'icono_indicador.png';
+            $item->imagen = 'Sin-grupo.png';
             $item->icono = 'ti ti-users';
+            $item->es_global = true;
             $indicadoresGenerales[] = $item;
 
             // 3. Dadas de baja
@@ -252,8 +353,9 @@ class UserController extends Controller
             $item->url = 'dados-de-baja';
             $item->cantidad = $countBajas;
             $item->color = 'bg-label-secondary';
-            $item->imagen = 'icono_indicador.png';
+            $item->imagen = 'Dados-de-baja.png';
             $item->icono = 'ti ti-user-off';
+            $item->es_global = true;
             $indicadoresGenerales[] = $item;
 
             // 4. Inactivas reunión
@@ -271,8 +373,9 @@ class UserController extends Controller
             $item->url = 'inactivas-reunion';
             $item->cantidad = $countInactivasReunion;
             $item->color = 'bg-label-danger';
-            $item->imagen = 'icono_indicador.png';
+            $item->imagen = 'Inactivas-en-reunion.png';
             $item->icono = 'ti ti-building-church';
+            $item->es_global = true;
             $indicadoresGenerales[] = $item;
 
             // 5. Inactivas grupo
@@ -290,8 +393,9 @@ class UserController extends Controller
             $item->url = 'inactivas-grupo';
             $item->cantidad = $countInactivasGrupo;
             $item->color = 'bg-label-danger';
-            $item->imagen = 'icono_indicador.png';
+            $item->imagen = 'Inactivas-en-grupo.png';
             $item->icono = 'ti ti-user-exclamation';
+            $item->es_global = true;
             $indicadoresGenerales[] = $item;
 
             // 6. Inactivas en todo
@@ -313,8 +417,9 @@ class UserController extends Controller
             $item->url = 'inactivas-todo';
             $item->cantidad = $countInactivasTodo;
             $item->color = 'bg-label-danger';
-            $item->imagen = 'icono_indicador.png';
+            $item->imagen = 'Inactivas-en-todo.png';
             $item->icono = 'ti ti-x';
+            $item->es_global = true;
             $indicadoresGenerales[] = $item;
 
             // Indicadores por Tipo de Usuario
@@ -332,8 +437,9 @@ class UserController extends Controller
                 $item->url = $tipoUsuario->id;
                 $item->cantidad = $c;
                 $item->color = $tipoUsuario->color;
-                $item->imagen = 'icono_indicador.png';
+                $item->imagen = $tipoUsuario->imagen;
                 $item->icono = $tipoUsuario->icono;
+                $item->es_global = ($tipoUsuario->imagen === 'indicador_general.png');
                 $indicadoresPorTipoUsuario[] = $item;
             }
 
@@ -1756,6 +1862,7 @@ class UserController extends Controller
         $profesiones = Profesion::orderBy('nombre', 'asc')->get();
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
+        $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
         $sedes = Sede::orderBy('nombre', 'asc')->get();
         $tipoPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
         $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
@@ -1799,6 +1906,7 @@ class UserController extends Controller
             'profesiones' => $profesiones,
             'ocupaciones' => $ocupaciones,
             'sectoresEconomicos' => $sectoresEconomicos,
+            'entidadesRelacionadas' => $entidadesRelacionadas,
             'tiposDeSangres' => $tiposDeSangres,
             'tipoPeticiones' => $tipoPeticiones,
             'tiposDeEstadosCiviles' => $tiposDeEstadosCiviles,
@@ -1999,6 +2107,14 @@ class UserController extends Controller
             $validarSectorEconomico = $campoTemporal->requerido ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarSectorEconomico]);
             $usuario->sector_economico_id = $request[$campoTemporal->name_id];
+        }
+
+        // entidad_relacionada
+        if ($campos->where('nombre_bd', 'entidad_relacionada_id')->count() > 0) {
+            $campoTemporal = $campos->where('nombre_bd', 'entidad_relacionada_id')->first();
+            $validarEntidadRelacionada = $campoTemporal->requerido ? ['required', 'exists:entidades_relacionadas,id'] : ['nullable', 'exists:entidades_relacionadas,id'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarEntidadRelacionada]);
+            $usuario->entidad_relacionada_id = $request[$campoTemporal->name_id];
         }
 
         // tipo_sangre
@@ -2690,6 +2806,7 @@ class UserController extends Controller
         $profesiones = Profesion::orderBy('nombre', 'asc')->get();
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
+        $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
         $sedes = Sede::orderBy('nombre', 'asc')->get();
         $tipoPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
         $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
@@ -2726,6 +2843,7 @@ class UserController extends Controller
             'profesiones' => $profesiones,
             'ocupaciones' => $ocupaciones,
             'sectoresEconomicos' => $sectoresEconomicos,
+            'entidadesRelacionadas' => $entidadesRelacionadas,
             'tiposDeSangres' => $tiposDeSangres,
             'tipoPeticiones' => $tipoPeticiones,
             'tiposDeEstadosCiviles' => $tiposDeEstadosCiviles,
@@ -2920,6 +3038,14 @@ class UserController extends Controller
             $validarSectorEconomico = $campoTemporal->requerido ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarSectorEconomico]);
             $usuario->sector_economico_id = $request[$campoTemporal->name_id];
+        }
+
+        // entidad_relacionada
+        if ($campos->where('nombre_bd', 'entidad_relacionada_id')->count() > 0) {
+            $campoTemporal = $campos->where('nombre_bd', 'entidad_relacionada_id')->first();
+            $validarEntidadRelacionada = $campoTemporal->requerido ? ['required', 'exists:entidades_relacionadas,id'] : ['nullable', 'exists:entidades_relacionadas,id'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarEntidadRelacionada]);
+            $usuario->entidad_relacionada_id = $request[$campoTemporal->name_id];
         }
 
         // tipo_sangre
@@ -4109,6 +4235,7 @@ class UserController extends Controller
 
             // Validar si privilegio_asignar_asistente_todo_tipo_asistente_a_un_grupo
             if (! $rolActivo->hasPermissionTo('grupos.privilegio_asignar_asistente_todo_tipo_asistente_a_un_grupo')) {
+
                 foreach ($grupos as $grupo) {
                     $tipoGrupo = $grupo->tipoGrupo;
                     $usuarioPermintidos = $tipoGrupo->tipoUsuariosPermitidos()
@@ -4133,7 +4260,7 @@ class UserController extends Controller
                 ->get();
 
             $automatizacionTipoUsuarios += $gruposNuevos->whereNotNull('automatizacion_tipo_usuario_id')->pluck('automatizacion_tipo_usuario_id')->toArray();
-            
+
             $cambiosSync = $usuario->gruposDondeAsiste()->sync($idsGrupos);
 
             // Registrar en la bitácora los vinculados y desvinculados

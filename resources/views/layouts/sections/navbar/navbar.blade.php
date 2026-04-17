@@ -30,7 +30,7 @@
     @if (isset($navbarFull))
         <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-4">
             <a href="{{ url('/') }}" class="app-brand-link">
-                <span class="app-brand-logo demo">@include('_partials.macros', ['height' => 20])</span>
+                <img style="width:25px" class="app-brand-logo me-2" src="{{ config('variables.logoApp') }}">
                 <span class="app-brand-text demo menu-text fw-bold">{{ config('variables.templateName') }} </span>
             </a>
             @if (isset($menuHorizontal))
@@ -151,6 +151,12 @@
                         <div class="dropdown-divider my-1 mx-n2"></div>
                     </li>
                     <li>
+                      <a class="dropdown-item" href="{{ route('usuario.cambiarCorreo') }}">
+                        <i class="ti ti-mail-fast me-3 ti-md"></i><span class="align-middle">Cambiar correo</span>
+                      </a>
+                    </li>
+
+                    <li>
 
                       @can('verPerfilUsuarioPolitica', [auth()->user(), 'principal'])
                         <a class="dropdown-item" href=" {{ route('usuario.perfil', auth()->user()) }}">
@@ -167,7 +173,7 @@
                             <div class="d-grid px-2 pt-2 pb-1">
                                 <a class="btn btn-sm btn-primary d-flex rounded-pill" href="{{ route('logout') }}"
                                     onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                    <small class="align-middle">Cerrar sesión</small>
+                                    <small class="align-middle">Cerrar sesión </small>
                                     <i class="ti ti-logout ms-2 ti-14px"></i>
                                 </a>
                             </div>

@@ -90,6 +90,26 @@
             </div>
 
 
+            {{-- Límite de Reinicios --}}
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Límite de reinicios del curso</label>
+                <input type="number" wire:model ="limite_reintentos" class="form-control" placeholder="0 = Ilimitado">
+                <small class="text-muted">Cantidad máxima de veces que un estudiante puede reiniciar el curso.</small>
+            </div>
+
+            {{-- Días de Castigo --}}
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Días de castigo (espera)</label>
+                <input type="number" wire:model="dias_castigo" class="form-control" placeholder="0 = Sin castigo">
+                <small class="text-muted">Días que debe esperar el estudiante para volver a inscribirse tras agotar intentos.</small>
+            </div>
+
+            {{-- Términos y Condiciones --}}
+            <div class="col-12 mb-3">
+                <label class="form-label">Términos y condiciones (Explicación de intentos y reinicio)</label>
+                <textarea wire:model="terminos_condiciones" class="form-control" rows="4" placeholder="Explica aquí las reglas de reinicio, pagos, etc."></textarea>
+                <small class="text-muted">Este texto se mostrará al estudiante cuando intente reiniciar el curso.</small>
+            </div>
 
             <div class="col-12 mt-3">
                 <button type="submit" class="btn btn-primary">Guardar Restricciones Generales</button>

@@ -17,7 +17,7 @@ class ThemeSettingSeeder extends Seeder
 
         $defaultColors = [
             ['nombre' => 'Color texto primario', 'class' => 'primary', 'value' => '#32700A', 'category' => 'colors'],  // $purple
-            ['nombre' => 'Color texto secundario', 'class' => 'secondary', 'value' => '#1977E5', 'category' => 'colors'], // #1977E5
+            ['nombre' => 'Color texto secundario', 'class' => 'secondary', 'value' => '#16B29F', 'category' => 'colors'], // #16B29F
             ['nombre' => 'Color texto exitoso', 'class' => 'success', 'value' => '#13964f', 'category' => 'colors'],   // $green
             ['nombre' => 'Color texto informativo', 'class' => 'info', 'value' => '#0099cc', 'category' => 'colors'],      // $cyan
             ['nombre' => 'Color texto precaución', 'class' => 'warning', 'value' => '#f3aa01', 'category' => 'colors'],   // $yellow
@@ -28,7 +28,7 @@ class ThemeSettingSeeder extends Seeder
 
             // ACA PARA LOS BOTONES
             ['nombre' => 'Color botón primario', 'class' => 'btn-primary', 'value' => '#32700A', 'category' => 'button'],  // $purple
-            ['nombre' => 'Color botón secundario', 'class' => 'btn-secondary', 'value' => '#1977E5', 'category' => 'button'], // #1977E5
+            ['nombre' => 'Color botón secundario', 'class' => 'btn-secondary', 'value' => '#16B29F', 'category' => 'button'], // #16B29F
             ['nombre' => 'Color botón exitoso', 'class' => 'btn-success', 'value' => '#13964f', 'category' => 'button'],   // $green
             ['nombre' => 'Color botón información', 'class' => 'btn-info', 'value' => '#0099cc', 'category' => 'button'],      // $cyan
             ['nombre' => 'Color botón precaucón', 'class' => 'btn-warning', 'value' => '#f3aa01', 'category' => 'button'],   // $yellow
@@ -39,7 +39,7 @@ class ThemeSettingSeeder extends Seeder
 
             // ACA PARA el BACKGROUND
             ['nombre' => 'Color backround primario', 'class' => 'theme-bg-primary', 'value' => '#32700A', 'category' => 'background'],  // $purple
-            ['nombre' => 'Color backround secundario', 'class' => 'theme-bg-secondary', 'value' => '#1977E5', 'category' => 'background'], // #1977E5
+            ['nombre' => 'Color backround secundario', 'class' => 'theme-bg-secondary', 'value' => '#16B29F', 'category' => 'background'], // #16B29F
             ['nombre' => 'Color backround exitoso', 'class' => 'theme-bg-success', 'value' => '#13964f', 'category' => 'background'],   // $green
             ['nombre' => 'Color backround información', 'class' => 'theme-bg-info', 'value' => '#0099cc', 'category' => 'background'],      // $cyan
             ['nombre' => 'Color backround precaucón', 'class' => 'theme-bg-warning', 'value' => '#f3aa01', 'category' => 'background'],   // $yellow
@@ -51,7 +51,7 @@ class ThemeSettingSeeder extends Seeder
             // // BTN CON TEXT
 
             ['nombre' => 'Color botón text primario', 'class' => 'btn-text-primary', 'value' => '#32700A', 'category' => 'button-text'],  // $purple
-            ['nombre' => 'Color botón text secundario', 'class' => 'btn-text-secondary', 'value' => '#1977E5', 'category' => 'button-text'], // #1977E5
+            ['nombre' => 'Color botón text secundario', 'class' => 'btn-text-secondary', 'value' => '#16B29F', 'category' => 'button-text'], // #16B29F
             ['nombre' => 'Color botón text exitoso', 'class' => 'btn-text-success', 'value' => '#13964f', 'category' => 'button-text'],   // $green
             ['nombre' => 'Color botón text información', 'class' => 'btn-text-info', 'value' => '#0099cc', 'category' => 'button-text'],      // $cyan
             ['nombre' => 'Color botón text precaucón', 'class' => 'btn-text-warning', 'value' => '#f3aa01', 'category' => 'button-text'],   // $yellow
@@ -62,7 +62,7 @@ class ThemeSettingSeeder extends Seeder
 
             // ACA PARA LOS HOVER
             ['nombre' => 'Hover primario', 'class' => 'btn-primary', 'value' => '#32700A', 'category' => 'hover'],  // $purple
-            ['nombre' => 'Hover secundario', 'class' => 'btn-secondary', 'value' => '#1977E5', 'category' => 'hover'], // #1977E5
+            ['nombre' => 'Hover secundario', 'class' => 'btn-secondary', 'value' => '#16B29F', 'category' => 'hover'], // #16B29F
             ['nombre' => 'Hover exitoso', 'class' => 'btn-success', 'value' => '#0e743c', 'category' => 'hover'],   // $green
             ['nombre' => 'Hover informativo', 'class' => 'btn-info', 'value' => '#02779d', 'category' => 'hover'],      // $cyan
             ['nombre' => 'Hover precaución', 'class' => 'btn-warning', 'value' => '#ca8d02', 'category' => 'hover'],   // $yellow
@@ -73,7 +73,7 @@ class ThemeSettingSeeder extends Seeder
 
             // ACA PARA LOS LABEL
             ['nombre' => 'Label primaria', 'class' => 'bg-label-primary', 'value' => '#32700A', 'category' => 'label'],  // $purple
-            ['nombre' => 'Label secundario', 'class' => 'bg-label-secondary', 'value' => '#1977E5', 'category' => 'label'], // #1977E5
+            ['nombre' => 'Label secundario', 'class' => 'bg-label-secondary', 'value' => '#16B29F', 'category' => 'label'], // #16B29F
             ['nombre' => 'Label exitoso', 'class' => 'bg-label-success', 'value' => '#13964f', 'category' => 'label'],   // $green
             ['nombre' => 'Label informatico', 'class' => 'bg-label-info', 'value' => '#0099cc', 'category' => 'label'],      // $cyan
             ['nombre' => 'Label precaución', 'class' => 'bg-label-warning', 'value' => '#f3aa01', 'category' => 'label'],   // $yellow
@@ -84,7 +84,7 @@ class ThemeSettingSeeder extends Seeder
 
             // ACA PARA LOS ALERTS
             ['nombre' => 'alert primario', 'class' => 'alert-primary', 'value' => '#32700A', 'category' => 'alert alert-text'],  // $purple
-            ['nombre' => 'alert secundario', 'class' => ' alert-secondary', 'value' => '#1977E5', 'category' => 'alert alert-text'], // #1977E5
+            ['nombre' => 'alert secundario', 'class' => ' alert-secondary', 'value' => '#16B29F', 'category' => 'alert alert-text'], // #16B29F
             ['nombre' => 'alert exitoso', 'class' => 'alert-success', 'value' => '#13964f', 'category' => 'alert alert-text'],   // $green
             ['nombre' => 'alert información', 'class' => 'alert-info', 'value' => '#0099cc', 'category' => 'alert alert-text'],      // $cyan
             ['nombre' => 'alert precaucón', 'class' => 'alert-warning', 'value' => '#f3aa01', 'category' => 'alert alert-text'],   // $yellow
@@ -95,7 +95,7 @@ class ThemeSettingSeeder extends Seeder
 
             // ACA PARA LOS LABEL LIGTHS
             ['nombre' => 'Label Claro primaria', 'class' => 'bg-label-claro-primary', 'value' => '#32700A8c', 'category' => 'label-claro'],  // $purple
-            ['nombre' => 'Label Claro secundario', 'class' => 'bg-label-claro-secondary', 'value' => '#1977E58c', 'category' => 'label-claro'], // #1977E5
+            ['nombre' => 'Label Claro secundario', 'class' => 'bg-label-claro-secondary', 'value' => '#16B29F8c', 'category' => 'label-claro'], // #16B29F
             ['nombre' => 'Label Claro exitoso', 'class' => 'bg-label-claro-success', 'value' => '#13964f8c', 'category' => 'label-claro'],   // $green
             ['nombre' => 'Label Claro informatico', 'class' => 'bg-label-claro-info', 'value' => '#0099cc8c', 'category' => 'label-claro'],      // $cyan
             ['nombre' => 'Label Claro precaución', 'class' => 'bg-label-claro-warning', 'value' => '#f3aa018c', 'category' => 'label-claro'],   // $yellow

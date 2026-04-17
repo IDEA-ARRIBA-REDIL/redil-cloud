@@ -737,6 +737,23 @@ $configData = Helper::appClasses();
               @endif
               <!-- /Sector económico -->
 
+              <!-- Entidad relacionada -->
+              @if($campo->nombre_bd == 'entidad_relacionada_id')
+              <div class="mb-3 {{$campo->pivot->class}}">
+                <label class="form-label" for="entidad_relacionada">
+                  {{ $campo->nombre }}
+                </label>
+                <select id="entidad_relacionada" data-placeholder="{{$campo->placeholder}}" name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
+                  <option value="">Ninguno</option>
+                  @foreach ($entidadesRelacionadas as $entidadRelacionada)
+                  <option value="{{$entidadRelacionada->id}}" {{ old($campo->name_id)==$entidadRelacionada->id ? 'selected' : '' }}>{{ucwords ($entidadRelacionada->nombre)}}</option>
+                  @endforeach
+                </select>
+                 <div id="error{{$campo->name_id}}"></div>
+              </div>
+              @endif
+              <!-- /Entidad relacionada -->
+
               <!-- Tipo de sangre -->
               @if($campo->nombre_bd == 'tipo_sangre_id')
               <div class="mb-3 {{ $campo->pivot->class }}">

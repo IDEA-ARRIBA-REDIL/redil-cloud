@@ -14,7 +14,9 @@ class DashboardCursos extends Component
 {
     // Filtros
     public $fechaInicio;
+
     public $fechaFin;
+
     public $carreraId = '';
 
     /**
@@ -42,8 +44,8 @@ class DashboardCursos extends Component
     {
         // Obtener el query base de inscripciones según el rango de fecha
         $queryInscripciones = CursoUser::whereBetween('fecha_inscripcion', [
-            $this->fechaInicio . ' 00:00:00',
-            $this->fechaFin . ' 23:59:59'
+            $this->fechaInicio.' 00:00:00',
+            $this->fechaFin.' 23:59:59',
         ]);
 
         // Filtrar por carrera si se selecciona una
@@ -68,7 +70,7 @@ class DashboardCursos extends Component
             ->get();
 
         // 4. Datos por Roles
-        // Nota: Los roles suelen estar en model_has_roles. 
+        // Nota: Los roles suelen estar en model_has_roles.
         // Vamos a obtener los nombres de los roles de los usuarios inscritos.
         $datosRoles = (clone $queryInscripciones)
             ->join('model_has_roles', 'curso_users.user_id', '=', 'model_has_roles.model_id')
@@ -85,12 +87,31 @@ class DashboardCursos extends Component
             ->orderBy('total', 'desc')
             ->get();
 
+        // 6. Usuarios por Entidad (Global)
+        $datosEntidad = User::query()
+            ->leftJoin('entidades_relacionadas', 'users.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
+            ->select(DB::raw('COALESCE(entidades_relacionadas.nombre, "Sin Entidad") as entidad'), DB::raw('count(*) as total'))
+            ->groupBy('entidades_relacionadas.id', 'entidades_relacionadas.nombre')
+            ->orderBy('total', 'desc')
+            ->get();
+
+        // 7. Inscritos por Entidad (En el rango de fecha seleccionado)
+        $inscritosPorEntidad = (clone $queryInscripciones)
+            ->join('users', 'curso_users.user_id', '=', 'users.id')
+            ->leftJoin('entidades_relacionadas', 'users.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
+            ->select(DB::raw('COALESCE(entidades_relacionadas.nombre, "Sin Entidad") as entidad'), DB::raw('count(*) as total'))
+            ->groupBy('entidades_relacionadas.id', 'entidades_relacionadas.nombre')
+            ->orderBy('total', 'desc')
+            ->get();
+
         return view('livewire.cursos.dashboard-cursos', [
             'totalInscritos' => $totalInscritos,
             'promedioAvance' => round($promedioAvance, 2),
             'datosGenero' => $datosGenero,
             'datosRoles' => $datosRoles,
             'inscritosPorCurso' => $inscritosPorCurso,
+            'datosEntidad' => $datosEntidad,
+            'inscritosPorEntidad' => $inscritosPorEntidad,
             'carreras' => Carrera::orderBy('nombre')->get(),
         ]);
     }

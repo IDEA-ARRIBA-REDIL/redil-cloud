@@ -51,7 +51,6 @@ class FormularioActividad extends Component
   public $opciones;
   public $showOffcanvas = false;
 
-  public $variable;
 
 
 
@@ -75,29 +74,16 @@ class FormularioActividad extends Component
   public function mount()
   {
     $this->tipos = TipoElementoFormularioActividad::all();
-    $this->elementos = ElementoFormularioActividad::with(['tipoElemento'])->where('actividad_id', $this->actividad->id)->orderBy('orden', 'asc')->get();
-
-    $this->titulo;
-    $this->tipo_elemento_id;
-    $this->required;
-    $this->visible;
-    $this->visible_asistencia;
-    $this->descripcion;
-    $this->actividad;
-
-    $this->pesoMaximo;
-    $this->altoImagen;
-    $this->anchoImagen;
-    $this->pesoMaximoArchivo;
-
-    $this->variable = 'inicio';
-
-    $this->elementoSeleccionado;
-
-    /// todas las actividades para modal de duplicar elementos
-
     $this->actividadesTotales = Actividad::all();
+
+    $this->cargarElementos();
   }
+
+  public function cargarElementos()
+  {
+    $this->elementos = ElementoFormularioActividad::with(['tipoElemento'])->where('actividad_id', $this->actividad->id)->orderBy('orden', 'asc')->get();
+  }
+
 
   /// metodo para validar el modal de nuevo son dos sencillas
   public function rules()
@@ -142,7 +128,7 @@ class FormularioActividad extends Component
 
     $elementoModel->save();
 
-    $this->mount();
+    $this->cargarElementos();
 
     $this->dispatch(
       'msn',
@@ -160,14 +146,13 @@ class FormularioActividad extends Component
   #[On('updateOrders')]
   public function updateOrders($orderedIds)
   {
-    $this->variable = $orderedIds;
     foreach ($orderedIds as $index => $id) {
       $elementoActual = ElementoFormularioActividad::find($id);
       $elementoActual->orden = $index;
       $elementoActual->save();
     }
 
-    $this->mount();
+    $this->cargarElementos();
   }
 
 
@@ -245,7 +230,7 @@ class FormularioActividad extends Component
     $this->elementoSeleccionado->tipo_elemento_id = $this->elementoTipo;
     $this->elementoSeleccionado->save();
 
-    $this->mount();
+    $this->cargarElementos();
 
     $this->dispatch(
       'msn',
@@ -316,30 +301,27 @@ class FormularioActividad extends Component
 
   public function duplicarElemento($actividadOrigenId)
   {
-    // Obtener elementos de la actividad origen
+    \Illuminate\Support\Facades\DB::transaction(function () use ($actividadOrigenId) {
+      $elementosOriginales = ElementoFormularioActividad::where('actividad_id', $this->actividadIduplicar)
+        ->with('opciones')
+        ->get();
 
+      foreach ($elementosOriginales as $elementoOriginal) {
+        // Crear nuevo elemento con actividad_id actual
+        $nuevoElemento = $elementoOriginal->replicate();
+        $nuevoElemento->actividad_id = $actividadOrigenId;
+        $nuevoElemento->save();
 
-
-    $elementosOriginales = ElementoFormularioActividad::where('actividad_id', $this->actividadIduplicar)
-      ->with('opciones')
-      ->get();
-
-    foreach ($elementosOriginales as $elementoOriginal) {
-      // Crear nuevo elemento con actividad_id actual
-      $nuevoElemento = $elementoOriginal->replicate();
-      $nuevoElemento->actividad_id = $actividadOrigenId;
-      $nuevoElemento->save();
-
-      // Duplicar opciones si existen
-      foreach ($elementoOriginal->opciones as $opcion) {
-        $nuevaOpcion = $opcion->replicate();
-        $nuevaOpcion->elemento_formulario_actividad_id = $nuevoElemento->id;
-        $nuevaOpcion->save();
+        // Duplicar opciones si existen
+        foreach ($elementoOriginal->opciones as $opcion) {
+          $nuevaOpcion = $opcion->replicate();
+          $nuevaOpcion->elemento_formulario_actividad_id = $nuevoElemento->id;
+          $nuevaOpcion->save();
+        }
       }
-    }
+    });
 
-
-    $this->mount();
+    $this->cargarElementos();
     $this->dispatch(
       'msn',
       msnIcono: 'success',

@@ -43,9 +43,29 @@
 <script type="module">
 
     document.addEventListener('DOMContentLoaded', function() {
-
-  var actividades = @json($arrayActividades);
+      var actividadesOriginales = @json($arrayActividades);
       var calendarEl = document.getElementById('calendar');
+      
+      // Función para filtrar actividades basadas en los checkboxes seleccionados
+      function getActividadesFiltradas() {
+        var seleccionados = Array.from(document.querySelectorAll('.input-filter:checked')).map(cb => cb.getAttribute('data-value'));
+        var verTodo = document.getElementById('selectAll').checked;
+        
+        if (verTodo) return actividadesOriginales;
+        
+        return actividadesOriginales.filter(function(event) {
+          var eventTags = event.extendedProps.tags || [];
+          
+          // Caso: "Sin Tag" (valor '0')
+          if (seleccionados.includes('0') && eventTags.length === 0) {
+            return true;
+          }
+          
+          // Caso: Algún tag coincide
+          return eventTags.some(tag => seleccionados.includes(tag.toString()));
+        });
+      }
+
       var calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, interactionPlugin, listPlugin, timegridPlugin],
         initialView: 'dayGridMonth',
@@ -63,25 +83,37 @@
         },
         initialDate: new Date(),
         navLinks: true,
-        events: actividades,
+        events: function(info, successCallback, failureCallback) {
+          successCallback(getActividadesFiltradas());
+        },
         editable: true,
         selectable: true,
         locale:'es',
-        select:function(start, allDay){
-
-        },
         dateClick: function(info) {
           var fecha_ini= (moment(info.dateStr).format('YYYY-MM-DD'));
           $('#fecha_inicio').val(fecha_ini);
           document.getElementById('new_actividad').click();
-
         },
         eventClick: function (info) {
           var idActividad=info.event.id;
           window.open(idActividad+'/actualizar');
-      }
-    });
+        }
+      });
+      
       calendar.render();
+
+      // Escuchar cambios en los filtros
+      document.querySelectorAll('.input-filter, .select-all').forEach(el => {
+        el.addEventListener('change', function() {
+          if (this.id === 'selectAll') {
+            document.querySelectorAll('.input-filter').forEach(cb => cb.checked = this.checked);
+          } else {
+            // Si desmarcas uno individual, desmarcar "View All"
+            if (!this.checked) document.getElementById('selectAll').checked = false;
+          }
+          calendar.refetchEvents();
+        });
+      });
     });
 </script>
 
@@ -151,25 +183,16 @@
         </div>
 
         <div class="app-calendar-events-filter ms-3">
-          <div class="form-check form-check-danger mb-2">
-            <input class="form-check-input input-filter" type="checkbox" id="select-personal" data-value="personal" checked>
-            <label class="form-check-label" for="select-personal">Personal</label>
-          </div>
+          @foreach($tagsGenerales as $tag)
           <div class="form-check mb-2">
-            <input class="form-check-input input-filter" type="checkbox" id="select-business" data-value="business" checked>
-            <label class="form-check-label" for="select-business">Business</label>
+            <input class="form-check-input input-filter" type="checkbox" id="select-{{ $tag->id }}" data-value="{{ $tag->id }}" checked>
+            <label class="form-check-label" for="select-{{ $tag->id }}">{{ $tag->nombre }}</label>
           </div>
-          <div class="form-check form-check-warning mb-2">
-            <input class="form-check-input input-filter" type="checkbox" id="select-family" data-value="family" checked>
-            <label class="form-check-label" for="select-family">Family</label>
-          </div>
-          <div class="form-check form-check-success mb-2">
-            <input class="form-check-input input-filter" type="checkbox" id="select-holiday" data-value="holiday" checked>
-            <label class="form-check-label" for="select-holiday">Holiday</label>
-          </div>
-          <div class="form-check form-check-info">
-            <input class="form-check-input input-filter" type="checkbox" id="select-etc" data-value="etc" checked>
-            <label class="form-check-label" for="select-etc">ETC</label>
+          @endforeach
+          
+          <div class="form-check form-check-secondary">
+            <input class="form-check-input input-filter" type="checkbox" id="select-others" data-value="0" checked>
+            <label class="form-check-label" for="select-others">Sin Categoría (Otros)</label>
           </div>
         </div>
       </div>
@@ -216,17 +239,45 @@
               <label class="form-label fecha-picke" for="eventEndDate">Fecha fin actividad</label>
               <input required id="fecha_fin" value="{{ old('fecha_fin') }}"  placeholder="YYYY-MM-DD" name="fecha_fin" class="fecha form-control fecha-picker" type="text" />
 
-            <div class="mb-3 mt-3">
-              <label class="form-label" for="eventGuests">Habilitada para punto de pago</label>
-              <select required class="select2 select-event-guests form-select" id="habilitada_pdp" name="habilitada_pdp">
-                <option value="0">No</option>
-                <option value="1">Si</option>
+            <div class="mb-3">
+              <label class="form-label" for="tags">Etiquetas (Categorías)</label>
+              <select id="tags" name="tags[]" class="select2 form-select" multiple="multiple">
+               @foreach($tagsGenerales as $tag)
+               <option value="{{$tag->id}}"> {{$tag->nombre}}</option>
+               @endforeach
               </select>
+            </div>
+
+            <div class="mb-3 row g-2">
+              <div class="col-12">
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" id="mostrar_en_proximas_actividades" name="mostrar_en_proximas_actividades" checked>
+                  <label class="form-check-label" for="mostrar_en_proximas_actividades">¿Ver en próximas actividades?</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" id="totalmente_publica" name="totalmente_publica" checked>
+                  <label class="form-check-label" for="totalmente_publica">¿Vista por todos?</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" id="habilitada_pdp" name="habilitada_pdp" value="1">
+                  <label class="form-check-label" for="habilitada_pdp">¿Habilitar punto de pago?</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" id="restriccion_por_categoria" name="restriccion_por_categoria">
+                  <label class="form-check-label" for="restriccion_por_categoria">Activar restricciones por categoría</label>
+                </div>
+              </div>
             </div>
 
             <div class="mb-3">
               <label class="form-label" for="eventDescription">Descripción</label>
-              <textarea required value="{{ old('descripcion') }}"   class="form-control" name="descripcion" id="descripcion"></textarea>
+              <textarea required class="form-control" name="descripcion" id="descripcion">{{ old('descripcion') }}</textarea>
             </div>
             <div class="mb-3 d-flex justify-content-sm-between justify-content-start my-4">
               <div>

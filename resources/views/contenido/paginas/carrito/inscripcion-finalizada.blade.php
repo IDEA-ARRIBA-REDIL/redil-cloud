@@ -57,7 +57,7 @@ $configData = Helper::appClasses();
                 <div class="text-center mb-4 col-12">
 
                     {{-- La imagen ahora usa la variable $icono que viene del controlador --}}
-                    <img style="width: 240px; height: 240px;" src="{{ Storage::url('generales/img/otros/verificacion.png') }}" class="p-0">
+                    <img style="width: 240px; height: 240px; object-fit: contain;" src="{{ Storage::disk('global_media')->url('Inscipcion-exitosa.png') }}" alt="Inscripción exitosa" class="p-0">
                 </div>
                 @else
                 <div class="col-md-6  text-center col-12">
@@ -65,7 +65,7 @@ $configData = Helper::appClasses();
                 </div>
                 <div class="text-center mb-4 col-md-6 col-12">
                     {{-- La imagen ahora usa la variable $icono que viene del controlador --}}
-                    <img style="width: 140px; height: 140px;" src="{{ Storage::url('generales/img/otros/verificacion.png') }}" class="p-0">
+                    <img style="width: 140px; height: 140px; object-fit: contain;" src="{{ Storage::disk('global_media')->url('Inscipcion-exitosa.png') }}" alt="Inscripción exitosa" class="p-0">
                 </div>
                 @endif
 

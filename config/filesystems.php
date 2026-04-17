@@ -56,6 +56,21 @@ return [
       'throw' => false,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Disco Globalizado para Medios Generales (Evita Multi-Tenancy)
+    |--------------------------------------------------------------------------
+    | Se utiliza para imágenes estáticas, configuraciones globales y seeders
+    | que deben ser visibles para todas las iglesias sin distinción.
+    */
+    'global_media' => [
+      'driver' => 'local',
+      'root' => storage_path('app/global_media'),
+      'url' => env('APP_URL') . '/global_media',
+      'visibility' => 'public',
+      'throw' => false,
+    ],
+
   ],
 
   /*
@@ -71,6 +86,8 @@ return [
 
   'links' => [
     public_path('storage') => storage_path('app/public'),
+    // Enlace para el disco globalizado de medios
+    public_path('global_media') => storage_path('app/global_media'),
   ],
 
 ];

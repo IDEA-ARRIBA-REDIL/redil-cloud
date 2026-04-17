@@ -234,7 +234,7 @@ use App\Models\TagGeneral;
                 </div>
 
                 <div class="col-lg-6 col-sm-12 col-md-6 text-end mb-2">
-                    <button type="button" style="width:126px;padding:16px 10px;margin-top:-20px" class="btn btn-meddium btn-outline-secondary fw-semibold" id="btnFiltro" data-bs-toggle="offcanvas" data-bs-target="#addEventSidebar" aria-controls="addEventSidebar">
+                    <button type="button" style="width:126px;padding:16px 10px;" class="btn btn-meddium btn-outline-secondary fw-semibold" id="btnFiltro" data-bs-toggle="offcanvas" data-bs-target="#addEventSidebar" aria-controls="addEventSidebar">
                         Filtros <i class="ti ti-filter"></i>
                     </button>
                 </div>

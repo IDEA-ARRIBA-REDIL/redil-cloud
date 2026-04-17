@@ -8,24 +8,21 @@
 @endphp
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme-escuelas">
-    <div class="app-brand demo">
-        <a href="{{ url('/') }}" class="app-brand-link">
-            <span class="app-brand-logo demo p-0">
-                @include('_partials.macros', [
-                    'height' => '40px',
-                    'width' => '40px',
-                    'fill' => '#3772e4',
-                ])
-            </span>
-            <span style='color:{{ config('variables.templateNameColor') }} !important'
-                class="app-brand-text demo menu-text fw-bold fs-4 pt-3">{{ config('variables.templateName') }}</span>
-        </a>
+      <div style="padding-left: 20px !important;" class="app-brand demo p-0 mb-3">
+            <a href="{{ url('/') }}" class="app-brand-link">
+                <img style="width:150px" class="app-brand-logo" src="{{ config('variables.logoApp') }}">
+               
+            </a>
 
-        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
-            <i class="ti menu-toggle-icon d-none d-xl-block ti-sm align-middle"></i>
-            <i class="ti ti-x d-block d-xl-none ti-sm align-middle"></i>
-        </a>
-    </div>
+            <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+                <i class="ti menu-toggle-icon d-none d-xl-block ti-sm align-middle pe-5"></i>
+                <i class="ti ti-x d-block d-xl-none ti-sm align-middle pe-2"></i>
+            </a>
+        </div>
+        <div>
+             <span style='color:{{ config('variables.templateNameColor') }} !important'
+                    class="app-brand-text demo menu-text fw-bold fs-6">{{ config('variables.templateName') }}</span>
+        </div>
 
     <div class="menu-inner-shadow"></div>
 

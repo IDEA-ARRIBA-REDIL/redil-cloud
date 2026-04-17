@@ -244,62 +244,7 @@ class TemaController extends Controller
         $temas = [];
 
         // / AQUI PRIMERO FILTRO LOS TEMAS TOTALES SI TIENE ESE PERMISO
-        if ($rolActivo->hasPermissionTo('temas.ver_todos_los_temas')) {
-            $temas = Tema::leftJoin('temas_categorias', 'temas.id', '=', 'temas_categorias.tema_id')
-                ->select('temas.*', 'temas_categorias.categoria_tema_id')
-                ->get();
-        } else {
-            // /AQUI ES PARA SOLO CARGAR LOS TEMAS QUE ME CORRESPONDEN
-            $user = auth()->user();
-            $grupos = $user->gruposDondeAsiste()->select('grupos.id')->pluck('grupos.id')->toArray();
-            $tiposGrupo = $user->gruposDondeAsiste()->select('grupos.tipo_grupo_id')->pluck('grupos.tipo_grupo_id')->toArray();
-            $sede = $user->sede;
-            $tipoUsuario = $user->tipoUsuario;
-
-            $temas = Tema::leftJoin('sedes_temas', 'temas.id', '=', 'sedes_temas.tema_id')
-                ->leftJoin('tipos_usuarios_temas', 'temas.id', '=', 'tipos_usuarios_temas.tema_id')
-                ->leftJoin('tipos_grupos_temas', 'temas.id', '=', 'tipos_grupos_temas.tema_id')
-                ->leftJoin('grupos_temas', 'temas.id', '=', 'grupos_temas.tema_id')
-                ->leftJoin('temas_categorias', 'temas.id', '=', 'temas_categorias.tema_id')
-                ->where(function ($query) {
-                    return $query->where('sedes_temas.sede_id', null)
-                        ->where('tipos_usuarios_temas.tipo_usuario_id', null);
-                })
-                ->orWhere(function ($query) use ($sede) {
-                    return $query->where('sedes_temas.sede_id', $sede->id);
-                })->orWhere(function ($query) use ($tipoUsuario) {
-                    return $query->where('tipos_usuarios_temas.tipo_usuario_id', $tipoUsuario->id);
-                })
-                ->orWhere(function ($query) use ($tiposGrupo) {
-                    return $query->whereIn('tipos_grupos_temas.tipo_grupo_id', $tiposGrupo);
-                })->orWhere(function ($query) use ($grupos) {
-                    return $query->whereIn('grupos_temas.grupo_id', $grupos);
-                })
-                ->select('temas.*', 'sedes_temas.sede_id', 'tipos_usuarios_temas.tipo_usuario_id', 'tipos_grupos_temas.tipo_grupo_id', 'grupos_temas.grupo_id', 'temas_categorias.categoria_tema_id')
-                ->get();
-
-            $temas = $temas->filter(function ($tema) use ($sede, $grupos, $tipoUsuario, $tiposGrupo) {
-                $bandera = true;
-                // FILTRO DE TEMA POR SEDE
-                if ($tema->sede_id && $tema->sede_id != $sede->id) {
-                    $bandera = false;
-                }
-                // FILTRO DE TEMA POR GRUPOS
-                if ($tema->grupo_id && ! in_array($tema->grupo_id, $grupos)) {
-                    $bandera = false;
-                }
-                // FILTRO DE TEMA POR TIPOUSUARIO
-                if ($tema->tipo_usuario_id && $tema->tipo_usuario_id != $tipoUsuario->id) {
-                    $bandera = false;
-                }
-                // FILTRO DE TEMA POR TIPOS GRUPO
-                if ($tema->tipo_grupo_id && ! in_array($tema->tipo_grupo_id, $tiposGrupo)) {
-                    $bandera = false;
-                }
-
-                return $bandera;
-            });
-        }
+        $temas = Tema::filtrarTemasPermitidos(auth()->user(), $rolActivo);
         // Busqueda por palabra clave
         if ($request->buscar) {
             $buscar = htmlspecialchars($request->buscar);
@@ -308,11 +253,7 @@ class TemaController extends Controller
             $buscar_array = explode(' ', $buscar);
 
             foreach ($buscar_array as $palabra) {
-                $temas = $temas->filter(function ($tema) use ($palabra) {
-                    $respuesta = stristr(Helpers::sanearStringConEspacios($tema->titulo), $palabra) !== false;
-
-                    return $respuesta;
-                });
+                $temas = $temas->where('temas.titulo', 'like', '%'.$palabra.'%');
             }
 
             $buscar = $request->buscar;
@@ -333,7 +274,9 @@ class TemaController extends Controller
 
         if ($request->categorias) {
             $categoriasSeleccionadas = $request->categorias;
-            $temas = $temas->whereIn('categoria_tema_id', $request->categorias);
+            $temas = $temas->whereHas('categorias', function ($query) use ($categoriasSeleccionadas) {
+                $query->whereIn('categoria_tema_id', $categoriasSeleccionadas);
+            });
 
             $cts = CategoriaTema::whereIn('id', $request->categorias)
                 ->select('nombre')
@@ -358,7 +301,7 @@ class TemaController extends Controller
         if ($temas->count() > 0) {
             // / AQUI PONGO ESA FUNCION TOQUERY PORQUE DEBO PASARLO DEL FORMATO COLLECTION QUE USO PARA EL FILTER
             // / Y LUEGO DEBO PONERLA EN UN ARREGLO DE TIPO OBJETO PARA PODER HACER EL ORDER BY Y EL PAGINATE
-            $temas = $temas->toQuery()->orderBy('id', 'desc')->paginate(12);
+            $temas = $temas->orderBy('temas.id', 'desc')->paginate(12);
         } else {
             $temas = Tema::whereRaw('1=2')->paginate(12);
         }

@@ -87,7 +87,8 @@ class GrupoController extends Controller
         $item->url = 'todos';
         $item->cantidad = $gruposParaIndicadores->where('dado_baja', false)->pluck('id')->count();
         $item->color = 'bg-label-success';
-        $item->imagen = 'icono_indicador.png';
+        $item->imagen = 'Todos.png';
+        $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
         $item = new stdClass;
@@ -95,7 +96,8 @@ class GrupoController extends Controller
         $item->url = 'nuevos';
         $item->cantidad = Grupo::gruposNuevos()->select('grupos.id')->count();
         $item->color = 'bg-label-info';
-        $item->imagen = 'icono_indicador.png';
+        $item->imagen = 'Nuevos.png';
+        $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
         $item = new stdClass;
@@ -103,7 +105,8 @@ class GrupoController extends Controller
         $item->url = 'sin-georreferencia';
         $item->cantidad = $gruposParaIndicadores->whereNull('latitud')->whereNull('longitud')->where('dado_baja', false)->pluck('id')->count();
         $item->color = 'bg-label-danger';
-        $item->imagen = 'icono_indicador.png';
+        $item->imagen = 'Sin-georeferencia.png';
+        $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
         $item = new stdClass;
@@ -111,7 +114,8 @@ class GrupoController extends Controller
         $item->url = 'grupos-sin-lideres';
         $item->cantidad = Grupo::gruposSinLider()->select('grupos.id')->count();
         $item->color = 'bg-label-danger';
-        $item->imagen = 'icono_indicador.png';
+        $item->imagen = 'Grupos-sin-lideres.png';
+        $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
         $item = new stdClass;
@@ -126,7 +130,8 @@ class GrupoController extends Controller
               $grupo->ultimo_reporte_grupo == null;
         })->pluck('id')->count();
         $item->color = 'bg-label-danger';
-        $item->imagen = 'icono_indicador.png';
+        $item->imagen = 'Sin-actividad.png';
+        $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
         $item = new stdClass;
@@ -134,7 +139,8 @@ class GrupoController extends Controller
         $item->url = 'dados-de-baja';
         $item->cantidad = $gruposParaIndicadores->where('dado_baja', true)->pluck('id')->count();
         $item->color = 'bg-label-secondary';
-        $item->imagen = 'icono_indicador.png';
+        $item->imagen = 'Dados-de-baja.png';
+        $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
         foreach ($tiposDeGrupo as $tipoGrupo) {
@@ -146,7 +152,15 @@ class GrupoController extends Controller
                 ->where('tipo_grupo_id', $tipoGrupo->id)
                 ->count();
             $item->color = 'bg-label-success';
-            $item->imagen = $tipoGrupo->imagen;
+            
+            if (empty($tipoGrupo->imagen)) {
+                $item->imagen = 'indicador_general.png';
+                $item->es_global = true;
+            } else {
+                $item->imagen = $tipoGrupo->imagen;
+                $item->es_global = false;
+            }
+            
             $indicadoresPortipoGrupo[] = $item;
         }
         // Fin contadores
@@ -3723,7 +3737,7 @@ class GrupoController extends Controller
 
                 $imagenPartes = explode(';base64,', $request->foto);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'grupo'.$grupo->id.'.png';
+                $nombreFoto = 'grupo'.$grupo->id.'.jpg';
                 $imagenPath = $path.$nombreFoto;
                 file_put_contents($imagenPath, $imagenBase64);
                 $grupo->portada = $nombreFoto;
@@ -3739,6 +3753,6 @@ class GrupoController extends Controller
             $grupo->save();
         }
 
-        return back()->with('success', 'La foto de perfil de <b>'.$grupo->nombre(3).'</b> fue actualizada con éxito.');
+        return back()->with('success', 'La foto de perfil de <b>'.$grupo->nombre.'</b> fue actualizada con éxito.');
     }
 }

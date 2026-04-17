@@ -118,6 +118,9 @@ $configData = Helper::appClasses();
                   @if($rolActivo->hasPermissionTo('sedes.opcion_ver_perfil_sede'))
                     <li><a class="dropdown-item" href="{{ route('sede.perfil', $sede)}}">Perfil</a></li>
                   @endif
+                  @if($rolActivo->hasPermissionTo('sedes.opcion_dashboard_consolidacion'))
+                    <li><a class="dropdown-item" href="{{ route('sede.dashboardConsolidacion', $sede)}}">Dashboard consolidación</a></li>
+                  @endif
                   @if($rolActivo->hasPermissionTo('sedes.opcion_modificar_sede'))
                     <li><a class="dropdown-item" href="{{ route('sede.modificar', $sede)}}">Modificar</a></li>
                   @endif

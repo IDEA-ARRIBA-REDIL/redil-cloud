@@ -64,6 +64,8 @@ return new class extends Migration
             $table->integer('limite_tiempo')->nullable()->comment('En minutos');
             $table->integer('cantidad_repeticiones')->default(0)->comment('0 es sin repetición, 1 es un intento extra, etc.');
             $table->integer('tiempo_dilatacion')->default(0)->comment('Tiempo de espera entre repeticiones en horas');
+             $table->boolean('mostrar_respuestas_si_aprueba')->default(false);
+            $table->boolean('mostrar_respuestas_si_pierde')->default(false);
             $table->timestamps();
         });
 

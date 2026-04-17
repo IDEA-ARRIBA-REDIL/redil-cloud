@@ -18,6 +18,9 @@ class GestionarRestriccionesGenerales extends Component
     public $vinculacion_grupo;
     public $actividad_grupo;
     public $excluyente;
+    public $limite_reintentos;
+    public $dias_castigo;
+    public $terminos_condiciones;
 
     // Campos relaciones (Array IDs)
     public $sedesSeleccionadas = [];
@@ -40,6 +43,9 @@ class GestionarRestriccionesGenerales extends Component
         $this->vinculacion_grupo = $curso->vinculacion_grupo ?? 3;
         $this->actividad_grupo = $curso->actividad_grupo ?? 3;
         $this->excluyente = $curso->excluyente;
+        $this->limite_reintentos = $curso->limite_reintentos ?? 0;
+        $this->dias_castigo = $curso->dias_castigo ?? 0;
+        $this->terminos_condiciones = $curso->terminos_condiciones;
 
         // Cargar relaciones
         $this->sedesSeleccionadas = $curso->sedes->pluck('id')->toArray();
@@ -62,6 +68,9 @@ class GestionarRestriccionesGenerales extends Component
             'vinculacion_grupo' => 'required|integer|in:1,2,3',
             'actividad_grupo' => 'required|integer|in:1,2,3',
             'excluyente' => 'required|boolean',
+            'limite_reintentos' => 'required|integer|min:0',
+            'dias_castigo' => 'required|integer|min:0',
+            'terminos_condiciones' => 'nullable|string',
             'sedesSeleccionadas' => 'nullable|array',
             'rangosEdadSeleccionados' => 'nullable|array',
             'estadosCivilesSeleccionados' => 'nullable|array',
@@ -74,6 +83,9 @@ class GestionarRestriccionesGenerales extends Component
             'vinculacion_grupo' => $this->vinculacion_grupo,
             'actividad_grupo' => $this->actividad_grupo,
             'excluyente' => $this->excluyente,
+            'limite_reintentos' => $this->limite_reintentos,
+            'dias_castigo' => $this->dias_castigo,
+            'terminos_condiciones' => $this->terminos_condiciones,
         ]);
 
         // Sincronizar Relaciones

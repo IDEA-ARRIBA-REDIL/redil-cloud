@@ -182,6 +182,7 @@
               @endforeach
             </select>
           </div>
+
         </div>
 
         {{-- === FILA 4 === --}}
@@ -212,6 +213,8 @@
               <label for="visible" class="form-check-label">Mostrar en búsquedas</label>
             </div>
           </div>
+
+         
         </div>
 
         {{-- === FILA 5 === --}}
@@ -244,8 +247,25 @@
           </div>
         </div>
 
-        {{-- === FILA 6 === --}}
+        {{-- === FILA 6 (Inactividad) === --}}
         <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion" class="form-label">Días de inactividad para baja</label>
+            <input type="number" name="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion"
+              id="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion" class="form-control"
+              value="{{ old('dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion', $tipoUsuario->dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion) }}">
+            <small class="text-muted">0 para deshabilitar por días.</small>
+          </div>
+
+          <div class="col-md-4 mb-3 d-flex align-items-end">
+            <div class="form-check form-switch mb-2">
+              <input type="checkbox" class="form-check-input" id="seguimiento_para_dar_de_baja_automaticamente"
+                name="seguimiento_para_dar_de_baja_automaticamente"
+                {{ old('seguimiento_para_dar_de_baja_automaticamente', $tipoUsuario->seguimiento_para_dar_de_baja_automaticamente) ? 'checked' : '' }}>
+              <label for="seguimiento_para_dar_de_baja_automaticamente" class="form-check-label">Habilitar baja automática</label>
+            </div>
+          </div>
+
           {{-- Tipo usuario por defecto --}}
           <div class="col-md-4 mb-3">
             <div class="form-check form-switch">

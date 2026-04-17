@@ -20,7 +20,7 @@ class TipoUsuarioSeeder extends Seeder
       'nombre_plural' => 'Pastores',
       'color' => '#6b2682',
       'icono' => 'ti ti-book',
-      'imagen' => 'icono_indicador.png',
+      'imagen' => 'indicador_general.png',
       'id_rol_dependiente' => 2,
       'puntaje' => 5
     ]);
@@ -31,7 +31,7 @@ class TipoUsuarioSeeder extends Seeder
       'nombre_plural' => 'Lideres',
       'color' => '#a251bd',
       'icono' => 'ti ti-star',
-      'imagen' => 'icono_indicador.png',
+      'imagen' => 'indicador_general.png',
       'id_rol_dependiente' => 3,
       'puntaje' => 4
     ]);
@@ -42,7 +42,7 @@ class TipoUsuarioSeeder extends Seeder
       'nombre_plural' => 'Hermano menor',
       'color' => '#dd4b39',
       'icono' => 'ti ti-mood-heart',
-      'imagen' => 'icono_indicador.png',
+      'imagen' => 'indicador_general.png',
       'id_rol_dependiente' => 4,
       'puntaje' => 2,
       'habilitado_para_consolidacion' => true,
@@ -54,7 +54,7 @@ class TipoUsuarioSeeder extends Seeder
       'nombre_plural' => 'Nuevos',
       'color' => '#00c0ef',
       'icono' => 'ti ti-mood-smile',
-      'imagen' => 'icono_indicador.png',
+      'imagen' => 'indicador_general.png',
       'id_rol_dependiente' => 5,
       'default' => TRUE,
       'puntaje' => 1,
@@ -67,7 +67,7 @@ class TipoUsuarioSeeder extends Seeder
       'nombre_plural' => 'Empleados',
       'color' => '#055498',
       'icono' => 'ti ti-building-skyscraper',
-      'imagen' => 'icono_indicador.png',
+      'imagen' => 'indicador_general.png',
       'id_rol_dependiente' => 6,
       'puntaje' => 0
     ]);
@@ -78,7 +78,7 @@ class TipoUsuarioSeeder extends Seeder
       'nombre_plural' => 'Desarrolladores',
       'color' => '#055498',
       'icono' => 'ti ti-building-skyscraper',
-      'imagen' => 'icono_indicador.png',
+      'imagen' => 'indicador_general.png',
       'id_rol_dependiente' => 7,
       'visible' => 0,
       'puntaje' => 0
@@ -90,7 +90,7 @@ class TipoUsuarioSeeder extends Seeder
       'nombre_plural' => 'Hermano mayor',
       'color' => '#966201b6',
       'icono' => 'ti ti-mood-heart',
-      'imagen' => 'icono_indicador.png',
+      'imagen' => 'indicador_general.png',
       'id_rol_dependiente' => 4,
       'puntaje' => 3,
       'habilitado_para_consolidacion' => false,

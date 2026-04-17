@@ -511,6 +511,10 @@
 
                         </div>
                     </div>
+
+                    @guest
+                        @livewire('auth.inline-login')
+                    @endguest
                 </div>
 
             </div>

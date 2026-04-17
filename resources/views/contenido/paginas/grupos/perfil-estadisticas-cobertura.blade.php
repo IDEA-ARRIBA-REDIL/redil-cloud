@@ -1342,7 +1342,7 @@ use Carbon\Carbon;
     <div class="col-12">
       <div class="card mb-6">
         <div class="user-profile-header-banner">
-          <img src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/'.$grupo->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/default.png')}}" alt="Banner image" class="rounded-top">
+          <img src="{{ $grupo->portada_vinculada }}" alt="Banner image" class="rounded-top">
         </div>
         <div class="user-profile-header d-flex flex-column flex-md-row text-sm-start text-center mb-5">
           <div class="flex-shrink-0 mt-n2 mx-0 mx-auto">

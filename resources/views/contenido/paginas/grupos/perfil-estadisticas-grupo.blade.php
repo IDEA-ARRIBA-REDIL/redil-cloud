@@ -113,7 +113,7 @@ use Carbon\Carbon;
           height: 376,
           width: 1693 // input value
         })
-        .toDataURL();
+        .toDataURL('image/jpeg', 0.8);
 
       inputResultadoPortada.value = imgSrc;
       cropBtnPortada.disabled = true;
@@ -809,7 +809,7 @@ use Carbon\Carbon;
     <div class="col-12">
       <div class="card mb-5">
         <div class="user-profile-header-banner ">
-          <img src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/'.$grupo->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/default.png')}}" alt="Banner image" class="rounded-top">
+          <img src="{{ $grupo->portada_vinculada }}" alt="Banner image" class="rounded-top">
           @if($rolActivo->hasPermissionTo('grupos.opcion_modificar_grupo'))
           <button type="button" style="background-color: rgba(255, 255, 255, 0.5);" class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2" data-bs-toggle="modal" data-bs-target="#modalPortada">Cambiar portada <i style="padding-left: 5px;" class="ti ti-camera"></i></button>
           @endif

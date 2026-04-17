@@ -68,7 +68,7 @@ class Biblia extends Component
     public function abrirBiblia()
     {
       $this->subrayadosTemp = [];
-      $this->dispatch('abrirModal', nombreModal: 'modalBiblia');
+      $this->dispatch('abrirModal', nombreModal: 'modalBiblia_'.$this->name_id);
     }
 
     public function updatedSelectLibro($value)
@@ -228,7 +228,7 @@ class Biblia extends Component
           $this->updatedSelectLibro($x['libro']);
           $this->updatedSelectCapitulo($x['capitulo']);
           $this->updatedSelectVersion($x['version']);
-          $this->dispatch('abrirModal',  nombreModal: 'modalBiblia');
+          $this->dispatch('abrirModal',  nombreModal: 'modalBiblia_'.$this->name_id);
 
 
           foreach ($x['versiculos'] as $versiculo)

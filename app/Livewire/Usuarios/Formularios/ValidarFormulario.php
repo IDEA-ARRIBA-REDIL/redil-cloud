@@ -195,11 +195,18 @@ class ValidarFormulario extends Component
         $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarOcupacion]);
       }
 
-      //sector_economico
+      // sector_economico
       if ($campos->where('nombre_bd','sector_economico_id')->count() > 0) {
         $campoTemporal = $campos->where('nombre_bd','sector_economico_id')->first();
         $validarSectorEconomico = $campoTemporal->requerido ? ['numeric', 'required'] : ['numeric', 'nullable'];
         $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarSectorEconomico]);
+      }
+
+      // entidad_relacionada
+      if ($campos->where('nombre_bd','entidad_relacionada_id')->count() > 0) {
+        $campoTemporal = $campos->where('nombre_bd','entidad_relacionada_id')->first();
+        $validarEntidadRelacionada = $campoTemporal->requerido ? ['numeric', 'required', 'exists:entidades_relacionadas,id'] : ['numeric', 'nullable', 'exists:entidades_relacionadas,id'];
+        $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarEntidadRelacionada]);
       }
 
 

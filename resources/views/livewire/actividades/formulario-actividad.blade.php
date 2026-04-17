@@ -1,196 +1,81 @@
 <div>
 
     <!-- Botón para abrir modal -->
-    <button type="button" class="btn rounded-pill btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoElemento">
+    <button type="button" class="btn rounded-pill btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#modalNuevoElemento">
         <i class="fa fa-plus me-1"></i> Crear elemento
     </button>
 
-    @if(count($elementos) == 0)
     <!-- Botón para abrir modal duplicar categoria -->
-    <button type="button" class="btn rounded-pill btn-secondary" data-bs-toggle="modal" data-bs-target="#modalDuplicaeElemento">
+    <button type="button" class="btn rounded-pill btn-secondary mb-2" data-bs-toggle="modal" data-bs-target="#modalDuplicaeElemento">
         <i class="ti ti-folders me-1"></i> Duplicar elementos
     </button>
-
-    @endif
 
 
     <!-- Lista de elementos existentes -->
     <div class="h-100 mt-4">
         @if(count($elementos) > 0)
-        <!-- AQUI DEBE TENER ESETE ELEMENTOS PORQUE ES DONDE LEE EL SCRIPT DEL DRAG AND DROP -->
+        <!-- AQUI DEBE TENER ESTE ELEMENTOS PORQUE ES DONDE LEE EL SCRIPT DEL DRAG AND DROP -->
         <div class="mt-4" id="elementos-container">
             @foreach($elementos as $elemento)
-            @if($elemento->tipoElemento->clase == 'encabezado')
-            <!-- AQUI LA PROPIEDAD DATA-ID LA UTILIZA EL MAP DE JAVASCRIPT Y CON ESO SE OBTIENE EL ID DEL ELEMENTO PARA LUEGO ACTUALIZAR EL ORDEN-->
-            <div class="card mb-3 draggable-item" data-id="{{$elemento->id}}">
-                <center> <i class="fas pt-3 w-100  fa-grip-vertical me-2 drag-handle"></i></center>
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
+                @php
+                    $borderColor = 'primary';
+                    if($elemento->tipoElemento->clase == 'encabezado') $borderColor = 'secondary';
+                    if(in_array($elemento->tipoElemento->clase, ['corta', 'larga'])) $borderColor = 'info';
+                    if(in_array($elemento->tipoElemento->clase, ['fecha', 'numero', 'moneda'])) $borderColor = 'success';
+                    if(in_array($elemento->tipoElemento->clase, ['archivo', 'imagen'])) $borderColor = 'warning';
+                    if(in_array($elemento->tipoElemento->clase, ['unica_respuesta', 'multiple_respuesta', 'si_no'])) $borderColor = 'primary';
+                @endphp
 
-                        <div class="flex-grow-1">
-                            <h5 class="card-title">{{$elemento->titulo}}</h5>
-                            <p class="card-text">Descripción:{{$elemento->descripcion}}</p>
+                <div class="card mb-3 draggable-item shadow-sm border-0" data-id="{{$elemento->id}}" style="border-left: 4px solid var(--bs-{{$borderColor}}) !important; transition: all 0.2s ease-in-out;">
+                    <div class="d-flex align-items-stretch">
+                        <div class="drag-handle d-flex align-items-center justify-content-center bg-lighter" style="width: 40px; cursor: grab; border-top-left-radius: 0.375rem; border-bottom-left-radius: 0.375rem;">
+                            <i class="fas fa-grip-vertical text-muted"></i>
                         </div>
-                    </div>
-
-                </div>
-                <div class="footer me-2 mb-2">
-                    <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn ms-3 btn-editar-input btn-secondary float-end p-1_5">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                    <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-editar-input btn-primary float-end p-1_5">
-                        <i class="ti ti-pencil"> </i>
-                        <span class=" " style=" font-size: 14px; font-weight: 400;">Editar</span>
-                    </button>
-                </div>
-            </div>
-            @endif
-
-            <!-- CARGA DE CONFIGURACIÓN POR ITEM -->
-            @if($elemento->tipoElemento->clase == 'corta' || $elemento->tipoElemento->clase == 'fecha' || $elemento->tipoElemento->clase == 'numero' || $elemento->tipoElemento->clase == 'moneda')
-            <div class="card mb-3 draggable-item" data-id="{{$elemento->id}}">
-                <center> <i class="fas pt-3 fa-grip-vertical w-100 me-2 drag-handle"></i></center>
-                <div class="card-body">
-                    <div class="col-lg-12 col-sm-12">
-                        <div class="d-flex align-items-center">
+                        
+                        <div class="card-body py-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100">
                             <div class="flex-grow-1">
-                                <h5 class="card-title">Tipo elemento: {{$elemento->tipoElemento->nombre }}</h5>
-                                <p id='input-{{$elemento->tipoElemento->clase}}-{{$elemento->id}}'>Nombre: {{$elemento->titulo}} </p>
-                                <p class="card-text">Descripción:{{$elemento->descripcion}}</p>
+                                @if($elemento->tipoElemento->clase == 'encabezado')
+                                    <h5 class="card-title fw-bold mb-1">{{$elemento->titulo}}</h5>
+                                    <p class="card-text text-muted mb-0 small">{{$elemento->descripcion}}</p>
+                                @else
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="badge bg-label-{{$borderColor}} me-2">{{$elemento->tipoElemento->nombre}}</span>
+                                        @if($elemento->required)
+                                            <span class="badge bg-label-danger me-2" title="Requerido"><i class="ti ti-star"></i></span>
+                                        @endif
+                                        @if(!$elemento->visible)
+                                            <span class="badge bg-label-secondary me-2" title="Oculto al público"><i class="ti ti-eye-off"></i></span>
+                                        @endif
+                                        @if($elemento->visible_asistencia)
+                                            <span class="badge bg-label-info me-2" title="Asistencia"><i class="ti ti-clipboard-check"></i></span>
+                                        @endif
+                                    </div>
+                                    <h6 class="card-title mb-1" id='input-{{$elemento->tipoElemento->clase}}-{{$elemento->id}}'>{{$elemento->titulo}}</h6>
+                                    @if($elemento->descripcion)
+                                        <p class="card-text text-muted mb-0 small">{{$elemento->descripcion}}</p>
+                                    @endif
+                                    
+                                    @if(in_array($elemento->tipoElemento->clase, ['unica_respuesta', 'multiple_respuesta']))
+                                        <ul class="mt-2 mb-0 ps-3 text-muted small">
+                                            @foreach($elemento->opciones as $opcion)
+                                            <li>{{$opcion->valor_texto}}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                @endif
+                            </div>
+
+                            <div class="d-flex align-items-center mt-3 mt-md-0 ms-md-3">
+                                <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-sm btn-icon btn-label-primary me-2" title="Editar">
+                                    <i class="ti ti-pencil"></i>
+                                </button>
+                                <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn btn-sm btn-icon btn-label-danger" title="Eliminar">
+                                    <i class="ti ti-trash"></i>
+                                </button>
                             </div>
                         </div>
-
-                    </div>
-
-                </div>
-                <div class="footer me-2 mb-2">
-                    <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn ms-3 btn-editar-input btn-secondary float-end p-1_5">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                    <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-editar-input btn-primary float-end p-1_5">
-                        <i class="ti ti-pencil"> </i>
-                        <span class=" " style=" font-size: 14px; font-weight: 400;">Editar</span>
-                    </button>
-                </div>
-            </div>
-            @endif
-
-            @if($elemento->tipoElemento->clase == 'archivo')
-            <div class="card mb-3 draggable-item" data-id="{{$elemento->id}}">
-                <center> <i class="fas pt-3 fa-grip-vertical w-100 me-2 drag-handle"></i></center>
-                <div class="card-body">
-                    <div class="col-lg-12 col-sm-12">
-                        <div class="d-flex align-items-center">
-
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">Tipo elemento:{{$elemento->tipoElemento->nombre }}</h5>
-                                <p id='input-{{$elemento->tipoElemento->clase}}-{{$elemento->id}}'>Nombre: {{$elemento->titulo}} </p>
-                                <p class="card-text">Descripción:{{$elemento->descripcion}}</p>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
-                <div class="footer me-2 mb-2">
-                    <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn ms-3 btn-editar-input btn-secondary float-end p-1_5">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                    <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-editar-input btn-primary float-end p-1_5">
-                        <i class="ti ti-pencil"> </i>
-                        <span class=" " style=" font-size: 14px; font-weight: 400;">Editar</span>
-                    </button>
-                </div>
-            </div>
-            @endif
-
-            @if($elemento->tipoElemento->clase == 'imagen')
-            <div class="card mb-3 draggable-item" data-id="{{$elemento->id}}">
-                <center> <i class="fas pt-3 fa-grip-vertical w-100 me-2 drag-handle"></i></center>
-                <div class="card-body">
-                    <div class="col-lg-12 col-sm-12">
-                        <div class="d-flex align-items-center">
-
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">Tipo elemento:{{$elemento->tipoElemento->nombre }}</h5>
-                                <p id='input-{{$elemento->tipoElemento->clase}}-{{$elemento->id}}'>Nombre: {{$elemento->titulo}} </p>
-                                <p class="card-text">Descripción:{{$elemento->descripcion}}</p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                <div class="footer me-2 mb-2">
-                    <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn ms-3 btn-editar-input btn-secondary float-end p-1_5">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                    <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-editar-input btn-primary float-end p-1_5">
-                        <i class="ti ti-pencil"> </i>
-                        <span class=" " style=" font-size: 14px; font-weight: 400;">Editar</span>
-                    </button>
-                </div>
-            </div>
-            @endif
-
-            @if($elemento->tipoElemento->clase == 'si_no')
-            <div class="card mb-3 draggable-item" data-id="{{$elemento->id}}">
-                <center> <i class="fas pt-3 fa-grip-vertical w-100 me-2 drag-handle"></i></center>
-                <div class="card-body">
-                    <div class="col-lg-12 col-sm-12">
-                        <div class="d-flex align-items-center">
-
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">Tipo elemento:{{$elemento->tipoElemento->nombre }}</h5>
-                                <p id='input-{{$elemento->tipoElemento->clase}}-{{$elemento->id}}'>Nombre: {{$elemento->titulo}} </p>
-                                <p class="card-text">Descripción:{{$elemento->descripcion}}</p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                <div class="footer me-2 mb-2">
-                    <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn ms-3 btn-editar-input btn-secondary float-end p-1_5">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                    <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-editar-input btn-primary float-end p-1_5">
-                        <i class="ti ti-pencil"> </i>
-                        <span class=" " style=" font-size: 14px; font-weight: 400;">Editar</span>
-                    </button>
-                </div>
-            </div>
-            @endif
-
-            @if($elemento->tipoElemento->clase == 'unica_respuesta' || $elemento->tipoElemento->clase == 'multiple_respuesta')
-            <div class="card mb-3 draggable-item" data-id="{{$elemento->id}}">
-                <center> <i class="fas pt-3 fa-grip-vertical w-100 me-2 drag-handle"></i></center>
-                <div class="card-body">
-                    <div class="col-lg-12 col-sm-12">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">Tipo elemento:{{$elemento->tipoElemento->nombre }}</h5>
-                                <p id='input-{{$elemento->tipoElemento->clase}}-{{$elemento->id}}'>Nombre: {{$elemento->titulo}} </p>
-                                <p class="card-text">Descripción: {{$elemento->descripcion}}</p>
-                                <span> Listado de opciones</span>
-                                <ul class="mt-2">
-                                    @foreach($elemento->opciones as $opcion)
-                                    <li> {{$opcion->valor_texto}}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                <div class="footer me-2 mb-2">
-                    <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn ms-3 btn-editar-input btn-secondary float-end p-1_5">
-                        <i class="ti ti-trash"></i>
-                    </button>
-                    <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-editar-input btn-primary float-end p-1_5">
-                        <i class="ti ti-pencil"> </i>
-                        <span class=" " style=" font-size: 14px; font-weight: 400;">Editar</span>
-                    </button>
-                </div>
-            </div>
-            @endif
             @endforeach
         </div>
         @else
@@ -215,34 +100,36 @@
                         <span class="text-black ti-14px mb-4">Actualiza la configuración de tu elemento o pregunta.</span>
                     </div>
                     <!-- Titulo del elemento -->
-                    <div id='container-titulo' class="form-group mb-3">
-                        <label class="form-label">Titulo del elemento o pregunta</label>
-                        <input class='form-control' id='elementoTitulo' wire:model="elementoTitulo">
+                    <div id='container-titulo' class="form-floating mb-4">
+                        <input class='form-control' id='elementoTitulo' placeholder="Título" wire:model="elementoTitulo">
+                        <label for="elementoTitulo">Titulo del elemento o pregunta</label>
                     </div>
-
-                    <!-- es requerido -->
-                    <div id="container-required" class="mb-3 form-group">
-                        <label>Requerido</label>
-                        <input type="checkbox" wire:model="elementoRequired">
-                    </div>
-
-                    <!-- es visible -->
-                    <div id="container-required" class="mb-3 form-group">
-                        <label>Visible</label>
-                        <input type="checkbox" wire:model="elementoVisible">
-                    </div>
-
-                    <!-- es visible asistencia-->
-                    <div id="container-required" class="mb-3 form-group">
-                        <label>Visible en Asistencia</label>
-                        <input type="checkbox" wire:model="elementoVisibleAsistencia">
-                    </div>
-
 
                     <!-- descripcion -->
-                    <div id='container-descripcion' class="form-group mb-3">
-                        <label class="form-label">Descripción elemento</label>
-                        <textarea max=500 class='form-control' wire:model="elementoDescripcion" id='elementoDescrpcion'>{!!trim($elementoSeleccionado->descripcion)!!}</textarea>
+                    <div id='container-descripcion' class="form-floating mb-4">
+                        <textarea max=500 class='form-control' placeholder="Descripción" wire:model="elementoDescripcion" id='elementoDescrpcion' style="height: 100px">{!!trim($elementoSeleccionado->descripcion)!!}</textarea>
+                        <label for="elementoDescrpcion">Descripción elemento</label>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label mb-2 d-block">Ajustes Generales</label>
+                        <!-- es requerido -->
+                        <div class="form-check form-switch mb-3 bg-lighter p-2 rounded border d-flex justify-content-between align-items-center">
+                            <label class="form-check-label ms-0 fw-medium" for="elementoRequired">Requerido <br><small class="text-muted fw-normal text-wrap" style="font-size:0.75rem;">El usuario debe llenarlo obligatoriamente</small></label>
+                            <input class="form-check-input" type="checkbox" role="switch" wire:model="elementoRequired" id="elementoRequired">
+                        </div>
+
+                        <!-- es visible -->
+                        <div class="form-check form-switch mb-3 bg-lighter p-2 rounded border d-flex justify-content-between align-items-center">
+                            <label class="form-check-label ms-0 fw-medium" for="elementoVisible">Visible <br><small class="text-muted fw-normal text-wrap" style="font-size:0.75rem;">Se muestra en el formulario de inscripción</small></label>
+                            <input class="form-check-input" type="checkbox" role="switch" wire:model="elementoVisible" id="elementoVisible">
+                        </div>
+
+                        <!-- es visible asistencia-->
+                        <div class="form-check form-switch mb-3 bg-lighter p-2 rounded border d-flex justify-content-between align-items-center">
+                            <label class="form-check-label ms-0 fw-medium" for="elementoVisibleAsistencia">Visible en Toma de Asistencia <br><small class="text-muted fw-normal text-wrap" style="font-size:0.75rem;">Los consolidadores verán este campo</small></label>
+                            <input class="form-check-input" type="checkbox" role="switch" wire:model="elementoVisibleAsistencia" id="elementoVisibleAsistencia">
+                        </div>
                     </div>
 
 
@@ -320,16 +207,23 @@
 
                     @if($tipoElemento->clase == 'unica_respuesta' || $tipoElemento->clase == 'multiple_respuesta')
 
-                    <div class="tags-input-container border p-2 rounded">
-                        <!-- AQUI EL CARGA LAS OPCIONES QUE VIENEN POR BASE DE DATOS -->
-                        @foreach($opcionesElementosActualizadas as $opcion)
-                        <span class="tag px-2 py-1 m-1 bg-primary text-white rounded">
-                            {{ $opcion->valor_texto }}
-                            <!-- AQUI ES DONDE ESTA LA X QUE EJECUTA LA FUNCION DE ELIMINAR DEL ARREGLO DE OPCIONES-->
-                            <span wire:click="removeOpcion('{{ $opcion->valor_texto }}')" class="ms-1 cursor-pointer">&times;</span>
-                        </span>
-                        @endforeach
-                        <input type="text" wire:model="nuevaOpcion" wire:keydown.space.prevent="addOpcion" placeholder="Agregar opción..." class="border-0">
+                    <div class="border p-4 rounded mt-3 bg-lighter">
+                        <label class="form-label d-block mb-3 fw-medium">Opciones de Respuesta</label>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <!-- AQUI EL CARGA LAS OPCIONES QUE VIENEN POR BASE DE DATOS -->
+                            @foreach($opcionesElementosActualizadas as $opcion)
+                            <span class="badge bg-primary d-flex align-items-center rounded-pill py-2 px-3 shadow-sm" style="font-size: 0.85rem">
+                                {{ $opcion->valor_texto }}
+                                <i wire:click="removeOpcion('{{ $opcion->valor_texto }}')" class="ti ti-x ms-2 cursor-pointer bg-white text-primary rounded-circle d-flex align-items-center justify-content-center" style="width:16px; height:16px; font-size: 0.65rem;"></i>
+                            </span>
+                            @endforeach
+                        </div>
+                        <div class="input-group">
+                            <input type="text" wire:model="nuevaOpcion" wire:keydown.space.prevent="addOpcion" wire:keydown.enter.prevent="addOpcion" placeholder="Escribe y presiona Enter o Espacio..." class="form-control">
+                            <button class="btn btn-primary" type="button" wire:click="addOpcion">
+                                <i class="ti ti-plus me-1"></i> Añadir
+                            </button>
+                        </div>
                     </div>
                     @endif
                     @endif
@@ -413,7 +307,7 @@
                 <div class="modal-footer">
                     <div class="col-12 text-center">
                         <button wire:click="guardar" type="button" class="btn btn-primary me-sm-3 me-1">Guardar</button>
-                        <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                        <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
                     </div>
                 </div>
             </div>
@@ -428,7 +322,7 @@
                 <div class="modal-body">
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     <div class="text-center mb-4">
-                        <h3 class="mb-2"><i class="ti ti-plus"></i> Duplicar elementos </h3>{{$variable}}
+                        <h3 class="mb-2"><i class="ti ti-plus"></i> Duplicar elementos </h3>
                         <p class="text-muted">elige una actividad de la que deseas duplicar sus elementos </p>
                     </div>
                     <div class="col-12 mb-3 ">
@@ -453,7 +347,7 @@
                     <div class="modal-footer pb-0 mt-10">
                         <div class="col-12 text-center">
                             <button wire:click="duplicarElemento({{$actividad->id}})" type="button" class="btn btn-primary me-sm-3 me-1">Duplicar</button>
-                            <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cerrar</button>
+                            <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cerrar</button>
                         </div>
                     </div>
                 </div>

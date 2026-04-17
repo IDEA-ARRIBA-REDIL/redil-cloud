@@ -94,7 +94,7 @@
           height: 376,
           width: 1693 // input value
         })
-        .toDataURL();
+        .toDataURL('image/jpeg', 0.8);
 
       inputResultadoPortada.value = imgSrc;
       cropBtnPortada.disabled = true;
@@ -162,7 +162,7 @@
         .getCroppedCanvas({
           width: 300 // input value
         })
-        .toDataURL();
+        .toDataURL('image/jpeg', 0.8);
 
       inputResultado.value = imgSrc;
       cropBtn.disabled = true;
@@ -488,9 +488,17 @@
           <li class="nav-item flex-fill"><a id="tap-congregacion" href="{{ route('usuario.perfil.congregacion', $usuario) }}" class="nav-link p-3 waves-effect waves-light" data-tap="congregacion"><i class='ti-xs ti ti-building-church me-2'></i> Congregación</a></li>
           @endcan
 
+          @can('verPerfilUsuarioPolitica', [$usuario, 'escuelas'])
           <li class="nav-item flex-fill"><a id="tap-otro1" href="{{ route('usuario.historial-escuelas', $usuario) }}" class="nav-link p-3 waves-effect waves-light" data-tap="escuelas"><i class='ti-xs ti ti-school me-2'></i> Escuelas</a></li>
+          @endcan
+
+          @can('verPerfilUsuarioPolitica', [$usuario, 'financiera'])
           <li class="nav-item flex-fill"><a id="tap-otro2"href="javascript:void(0);" class="nav-link p-3 waves-effect waves-light" data-tap="otro2"><i class='ti-xs ti ti-report-money me-2'></i> Financiera</a></li>
+          @endcan
+
+          @can('verPerfilUsuarioPolitica', [$usuario, 'hitos'])
           <li class="nav-item flex-fill"><a id="tap-otro3"href="javascript:void(0);" class="nav-link p-3 waves-effect waves-light" data-tap="otro3"><i class='ti-xs ti ti-album me-2'></i> Hitos</a></li>
+          @endcan
         </ul>
       </div>
     </div>
@@ -676,6 +684,13 @@
                 <div class="p-2 border-bottom">
                   <p class="fs-6 text-black m-0">{{$campo->nombre}}</p>
                   <p class="fs-6 text-black fw-semibold m-0">{{ $usuario->sectorEconomico ? $usuario->sectorEconomico->nombre : 'Sin dato' }}</p>
+                </div>
+              </div>
+              @elseif($campo->nombre_bd=='entidad_relacionada_id')
+              <div class="{{ $campo->pivot->class }}">
+                <div class="p-2 border-bottom">
+                  <p class="fs-6 text-black m-0">{{$campo->nombre}}</p>
+                  <p class="fs-6 text-black fw-semibold m-0">{{ $usuario->entidadRelacionada ? $usuario->entidadRelacionada->nombre : 'Sin dato' }}</p>
                 </div>
               </div>
               @elseif($campo->nombre_bd=='sector_economico_id')
@@ -1342,6 +1357,23 @@
                     </div>
                     @endif
                     <!-- /Sector económico -->
+
+                    <!-- Entidad relacionada -->
+                    @if($campo->nombre_bd == 'entidad_relacionada_id')
+                    <div class="mb-3 col-12">
+                      <label class="form-label" for="entidad_relacionada">
+                        {{ $campo->nombre }}
+                      </label>
+                      <select id="entidad_relacionada" data-placeholder="{{$campo->placeholder}}" name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
+                        <option value="">Ninguno</option>
+                        @foreach ($entidadesRelacionadas as $entidadRelacionada)
+                        <option value="{{$entidadRelacionada->id}}" {{ old($campo->name_id, $usuario->entidad_relacionada_id)==$entidadRelacionada->id ? 'selected' : '' }}>{{ucwords ($entidadRelacionada->nombre)}}</option>
+                        @endforeach
+                      </select>
+                    <div id="error{{$campo->name_id}}"></div>
+                    </div>
+                    @endif
+                    <!-- /Entidad relacionada -->
 
                     <!-- Tipo de sangre -->
                     @if($campo->nombre_bd == 'tipo_sangre_id')

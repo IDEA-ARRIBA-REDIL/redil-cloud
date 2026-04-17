@@ -29,12 +29,26 @@
                             <!-- Top Image/Text -->
                             <div class="card-img-top position-relative overflow-hidden"
                                 style="width: 100%; height: 0; padding-bottom: 177.77%;">
-                                @if ($post->image_path)
-                                    @php
-                                        $relativeUrl = Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path);
-                                    @endphp
+                                @php
+                                    $imageName = $post->image_path;
+                                    $imgUrl = '';
+                                    
+                                    if ($imageName) {
+                                        // 1. Intentar por ruta física pública (como lo hace el controlador)
+                                        $relativePublicPath = 'storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/' . $imageName;
+                                        if (file_exists(public_path($relativePublicPath))) {
+                                            $imgUrl = asset($relativePublicPath);
+                                        } 
+                                        // 2. Fallback a global_media
+                                        elseif (Storage::disk('global_media')->exists($imageName)) {
+                                            $imgUrl = Storage::disk('global_media')->url($imageName);
+                                        }
+                                    }
+                                @endphp
+
+                                @if ($imgUrl)
                                     <div id="capture-post-{{ $post->id }}" class="position-absolute top-0 start-0 w-100 h-100">
-                                        <img src="{{ $relativeUrl }}" alt="Publicación"
+                                        <img src="{{ $imgUrl }}" alt="Publicación"
                                             class="w-100 h-100"
                                             style="object-fit: cover; object-position: center;"
                                             crossorigin="anonymous">
@@ -99,14 +113,10 @@
 
                                     <!-- Compartir / Descargar -->
                                     @php
-                                        $postImageUrl = $post->image_path
-                                            ? Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path)
-                                            : '';
-                                        
-                                        if ($postImageUrl) {
-                                            $postImageUrl = str_starts_with($postImageUrl, 'http') 
-                                                ? $postImageUrl 
-                                                : request()->getSchemeAndHttpHost() . $postImageUrl;
+                                        if ($imgUrl) {
+                                            $postImageUrl = str_starts_with($imgUrl, 'http') 
+                                                ? $imgUrl 
+                                                : request()->getSchemeAndHttpHost() . $imgUrl;
                                         } else {
                                             $postImageUrl = url()->current();
                                         }
@@ -116,12 +126,12 @@
                                     <i class="ti ti-share text-white cursor-pointer btn-share-post d-none"
                                         style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"
                                         title="Compartir"
-                                        onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
+                                        onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($imgUrl ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
 
                                     <i class="ti ti-download text-white cursor-pointer btn-download-post d-none"
                                         style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"
                                         title="Descargar imagen"
-                                        onclick="downloadPostImage(event, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
+                                        onclick="downloadPostImage(event, {{ Js::from($imgUrl ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
                                 </div>
                             </div>
                         </div>
@@ -196,13 +206,27 @@
                                                         class="ti ti-x"></i></button>
                                             </div>
 
+                                            @php
+                                                $imageNameModal = $post->image_path;
+                                                $imgUrlModal = '';
+                                                
+                                                if ($imageNameModal) {
+                                                    // 1. Intentar por ruta física pública
+                                                    $relativePublicPathModal = 'storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/' . $imageNameModal;
+                                                    if (file_exists(public_path($relativePublicPathModal))) {
+                                                        $imgUrlModal = asset($relativePublicPathModal);
+                                                    } 
+                                                    // 2. Fallback a global_media
+                                                    elseif (Storage::disk('global_media')->exists($imageNameModal)) {
+                                                        $imgUrlModal = Storage::disk('global_media')->url($imageNameModal);
+                                                    }
+                                                }
+                                            @endphp
+
                                             <!-- Fondo: Imagen o Gradiente -->
-                                            @if ($post->image_path)
-                                                @php
-                                                    $relativeUrl = Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path);
-                                                @endphp
+                                            @if ($imgUrlModal)
                                                 <div id="modal-capture-post-{{ $post->id }}" class="w-100 h-100">
-                                                    <img src="{{ $relativeUrl }}" alt="Publicación" class="w-100 h-100"
+                                                    <img src="{{ $imgUrlModal }}" alt="Publicación" class="w-100 h-100"
                                                         style="object-fit: cover; object-position: center;"
                                                         crossorigin="anonymous">
                                                 </div>
@@ -285,14 +309,10 @@
 
                                                 <!-- Botón Compartir / Descargar -->
                                                 @php
-                                                    $postImageUrl = $post->image_path
-                                                        ? Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path)
-                                                        : '';
-                                                    
-                                                    if ($postImageUrl) {
-                                                        $postImageUrl = str_starts_with($postImageUrl, 'http') 
-                                                            ? $postImageUrl 
-                                                            : request()->getSchemeAndHttpHost() . $postImageUrl;
+                                                    if ($imgUrlModal) {
+                                                        $postImageUrl = str_starts_with($imgUrlModal, 'http') 
+                                                            ? $imgUrlModal 
+                                                            : request()->getSchemeAndHttpHost() . $imgUrlModal;
                                                     } else {
                                                         $postImageUrl = url()->current();
                                                     }

@@ -20,6 +20,9 @@ class EventServiceProvider extends ServiceProvider
         CitaAgendadaConsejeria::class => [
             EnviarNotificacionesDeCitaConsejeria::class,
         ],
+        \Illuminate\Auth\Events\Login::class => [
+            \App\Listeners\UpdateLastLogin::class,
+        ],
     ];
 
     /**

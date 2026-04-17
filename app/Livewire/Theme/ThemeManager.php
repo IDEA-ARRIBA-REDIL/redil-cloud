@@ -39,7 +39,10 @@ class ThemeManager extends Component
 
     public function loadSettings()
     {
-        $allSettings = ThemeSetting::orderBy('category','ASC')->where('is_active','true')->get();
+        $allSettings = ThemeSetting::orderBy('category', 'ASC')
+            ->orderBy('id', 'ASC')
+            ->where('is_active', 'true')
+            ->get();
         $this->categories = $allSettings->pluck('category')->unique()->values()->toArray();
 
         // Agrupar configuraciones por categoría
@@ -73,8 +76,7 @@ class ThemeManager extends Component
         $this->validate();
 
         $setting = ThemeSetting::find($this->editingId);
-        $currentSetting = $setting->first(); // Obtener la categoría del color actual
-        $this->activeCategory = $currentSetting->category; // Guardar la categoría actual
+        $this->activeCategory = $setting->category; // Guardar la categoría actual
 
         $setting->value = $this->editingValue;
         $setting->value2 = $this->editingValue2;

@@ -146,7 +146,7 @@
             height: 376,
             width: 1693 // input value
           })
-          .toDataURL();
+          .toDataURL('image/jpeg', 0.8);
         croppedImg.src = imgSrc;
         inputResultado.value = imgSrc;
         //dwn.setAttribute('href', imgSrc);

@@ -14,7 +14,7 @@ class ConfiguracionSeeder extends Seeder
     {
         Configuracion::firstOrCreate([
             'dias_plazo_reporte_grupo' => null,
-            'reportar_grupo_cualquier_dia' => true,
+            'reportar_grupo_cualquier_dia' => false,
             'version' => 1,
             'sumar_encargado_asistencia_grupo' => 1,
             'dia_corte_reportes_grupos' => 1,
@@ -36,7 +36,7 @@ class ConfiguracionSeeder extends Seeder
             'direccion_obligatoria' => 1,
             'limite_menor_edad' => 18,
             'enviar_correo_bienvenida_nuevo_asistente' => 1,
-            'logo_personalizado' => 0,
+            'logo_personalizado' => 1,
             // 'label_invitados_reporte_grupo' => '',
             // 'label_campo_opcional1'         => '',
             'campo_opcional1_obligatorio' => 1,
@@ -99,8 +99,19 @@ class ConfiguracionSeeder extends Seeder
             'habilitar_traslados' => 1,
             'cantidad_dias_alerta_notas_maestro' => 12,
             'ruta_almacenamiento' => 'iglesia1',
-            'nombre_app_personalizado' => 'Crecer',
+            'nombre_app_personalizado' => '',
+            'marca_blanca' => false,
+            'nombre_creador' => 'IGLESIA MANANTIAL DE VIDA ETERNA',
+            'url_creador' => 'https://redil.co',
+            'color_nombre_app' => 'white',
+            'descripcion_login' => 'Descubre lo que Dios tiene para ti',
+            'sufijo_app' => 'Descubre lo que Dios tiene para ti',
+            'version_app' => '2.0.0',
+            'logo_app' => null,
+            'favicon_app' => null,
             'tiene_sistema_aprobacion_de_reporte' => true,
+             'marca_blanca' => true,
+             'logo_app'=>'logo_1776201784.png'
         ]);
 
         /*

@@ -60,10 +60,10 @@ class GrupoSeeder extends Seeder
             'usuario_creacion_id' => 1,
             'latitud' => '3.9008',
             'longitud' => '-76.2937',
-            'dia' => 2,
+            'dia' => 5,
             'dia_planeacion' => 2,
             'rhema' => 'este es el super rhema',
-            'hora' => '10:00:00',
+            'hora' => '13:00:00',
             'hora_planeacion' => '11:00:00',
             'ultimo_reporte_grupo' => '2024-11-13',
             'fecha_apertura' => '2023-06-14',
@@ -173,12 +173,12 @@ class GrupoSeeder extends Seeder
             ['grupo_id' => 4, 'user_id' => 7]
         );
 
-        DB::table('integrantes_grupo')->updateOrInsert(
+       /* DB::table('integrantes_grupo')->updateOrInsert(
             ['grupo_id' => 4, 'user_id' => 9]
-        );
+        );*/
 
-        DB::table('integrantes_grupo')->updateOrInsert(
+       /* DB::table('integrantes_grupo')->updateOrInsert(
             ['grupo_id' => 4, 'user_id' => 11]
-        );
+        );*/
     }
 }

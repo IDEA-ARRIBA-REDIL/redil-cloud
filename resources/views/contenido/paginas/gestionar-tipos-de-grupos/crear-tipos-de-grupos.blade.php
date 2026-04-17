@@ -71,7 +71,7 @@ $configData = Helper::appClasses();
 
       {{-- Imagen --}}
       <div class="col-md-4 mb-3">
-        <label for="imagen" class="form-label">Imagen (100x100px)</label>
+        <label for="imagen" class="form-label">Imagen (Icono)</label>
         <div id="contenedor-input-imagen">
           <div class="input-group">
             <input type="file" id="imagen" name="imagen" class="form-control" accept="image/png">
@@ -82,6 +82,20 @@ $configData = Helper::appClasses();
         </div>
       </div>
       {{-- /Imagen --}}
+
+      {{-- Portada --}}
+      <div class="col-md-4 mb-3">
+        <label for="portada" class="form-label">Portada / Banner (Fallback)</label>
+        <div id="contenedor-input-portada">
+          <div class="input-group">
+            <input type="file" id="portada" name="portada" class="form-control" accept="image/*">
+          </div>
+          @error('portada')
+          <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+          @enderror
+        </div>
+      </div>
+      {{-- /Portada --}}
 
       <div class="col-md-8">
         <label class="form-label">Descripción</label>

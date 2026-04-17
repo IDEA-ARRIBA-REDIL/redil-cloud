@@ -1,21 +1,5 @@
 <div class="{{ $claseColumnas }}" wire:key="versiculo-dia-root-{{ $versiculoId ?? 'none' }}">
     @if ($versiculo)
-        @php
-            $relativeUrl = $versiculo->ruta_imagen
-                ? Storage::url($configuracion->ruta_almacenamiento . '/img/versiculo-diario/' . $versiculo->ruta_imagen)
-                : '';
-            
-            // Si la URL es relativa, le anteponemos el host actual para evitar problemas con config('app.url') en multi-tenancy
-            $imageUrl = '';
-            if ($relativeUrl) {
-                $imageUrl = str_starts_with($relativeUrl, 'http') 
-                    ? $relativeUrl 
-                    : request()->getSchemeAndHttpHost() . $relativeUrl;
-            } else {
-                $imageUrl = url()->current();
-            }
-        @endphp
-
         <div class="card h-100 shadow-sm border-0 overflow-hidden position-relative" style="border-radius: 15px;">
             <!-- Imagen Cuadrada o Texto si no hay imagen -->
             <div class="card-img-top position-relative overflow-hidden"

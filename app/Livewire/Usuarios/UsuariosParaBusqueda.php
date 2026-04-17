@@ -148,9 +148,23 @@ class UsuariosParaBusqueda extends Component
     protected $listeners = [
         'cargarMas',
         'loadMore',
+        'limpiar-seleccion' => 'limpiarSeleccion',
         'asistenciaRegistrada' => '$refresh',
         'asistenciaEliminada' => '$refresh',
     ];
+
+    public function limpiarSeleccion()
+    {
+        $this->usuarioSeleccionado = null;
+        $this->usuarioSeleccionadoId = null;
+        $this->usuariosSeleccionados = [];
+        $this->usuariosSeleccionadosIds = [];
+        $this->busqueda = '';
+        $this->verInputBusqueda = true;
+        $this->verListaBusqueda = false;
+        
+        $this->dispatch('usuario-seleccionado', id: null);
+    }
 
     // / variables para registrar asistencias en la acitividad
     public $asistenciasRegistradas = [];

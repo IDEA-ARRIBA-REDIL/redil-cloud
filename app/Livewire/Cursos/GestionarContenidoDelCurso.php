@@ -433,6 +433,8 @@ class GestionarContenidoDelCurso extends Component
                 'limite_tiempo' => isset($data['limite_tiempo']) ? (int)$data['limite_tiempo'] : $evaluacion->limite_tiempo,
                 'cantidad_repeticiones' => isset($data['cantidad_repeticiones']) ? (int)$data['cantidad_repeticiones'] : $evaluacion->cantidad_repeticiones,
                 'tiempo_dilatacion' => isset($data['tiempo_dilatacion']) ? (int)$data['tiempo_dilatacion'] : $evaluacion->tiempo_dilatacion,
+                'mostrar_respuestas_si_aprueba' => isset($data['mostrar_respuestas_si_aprueba']) ? (bool)$data['mostrar_respuestas_si_aprueba'] : $evaluacion->mostrar_respuestas_si_aprueba,
+                'mostrar_respuestas_si_pierde' => isset($data['mostrar_respuestas_si_pierde']) ? (bool)$data['mostrar_respuestas_si_pierde'] : $evaluacion->mostrar_respuestas_si_pierde,
             ]);
             $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Hecho!', msnTexto: 'Configuración guardada exitosamente.');
         }

@@ -26,6 +26,7 @@ use App\Http\Controllers\GrupoController;
 use App\Http\Controllers\HistorialCalificacionesController;
 use App\Http\Controllers\HomologacionController;
 use App\Http\Controllers\IglesiaController;
+use App\Http\Controllers\IglesiaInfantilController;
 use App\Http\Controllers\InformeEvidenciaGrupoController;
 use App\Http\Controllers\InformesController;
 use App\Http\Controllers\ListaReproducionController;
@@ -56,14 +57,18 @@ use App\Http\Controllers\TemaController;
 use App\Http\Controllers\TestPermissionController;
 use App\Http\Controllers\ThemeSettingController;
 use App\Http\Controllers\TiempoConDiosController;
+use App\Http\Controllers\TipoCargoCursoController;
 use App\Http\Controllers\TipoOfrendaController;
 use App\Http\Controllers\TipoPagosController;
-use App\Http\Controllers\TipoCargoCursoController;
+use App\Http\Controllers\TipoServicioActividadController;
+use App\Http\Controllers\TipoServicioReporteReunionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UsuarioConfiguracionController;
 use App\Http\Controllers\VersiculoDiarioController;
+use App\Http\Controllers\TipoActividadGestionController;
 use App\Http\Controllers\ZonaController;
 use App\Http\Controllers\ZonaPagosController;
+use App\Http\Controllers\PlanLectorController;
 use App\Livewire\Escuelas\AdminDashboard;
 use App\Models\Actividad;
 use App\Models\BannerGeneral;
@@ -133,6 +138,7 @@ Route::get('/dashboard', function () {
         ->get();
 
     $configuracion = Configuracion::find(1);
+    $temas = App\Models\Tema::filtrarTemasPermitidos($usuario, $rolActivo)->orderBy('temas.id', 'desc')->take(12)->get();
 
     return view('contenido.paginas.dashboard', [
         'configuracion' => $configuracion,
@@ -140,6 +146,7 @@ Route::get('/dashboard', function () {
         'actividades' => $actividades,
         'banners' => $banners,
         'rolActivo' => $rolActivo,
+        'temas' => $temas,
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -256,6 +263,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reuniones/{reunion}/editar', [ReunionesController::class, 'editar'])->name('reuniones.editar');
     Route::delete('/reuniones/{reunion}/dar-baja', [ReunionesController::class, 'darBaja'])->name('reuniones.darBaja');
     Route::delete('/reuniones/{reunion}/eliminar', [ReunionesController::class, 'eliminar'])->name('reuniones.eliminar');
+
+    // Iglesia Infantil
+    Route::prefix('iglesia-infantil')->name('iglesiaInfantil.')->group(function () {
+        Route::get('/administracion', [IglesiaInfantilController::class, 'administracion'])->name('administracion');
+        Route::post('/salones/crear', [IglesiaInfantilController::class, 'crearSalon'])->name('salones.crear');
+        Route::patch('/salones/{salon}/actualizar', [IglesiaInfantilController::class, 'actualizarSalon'])->name('salones.actualizar');
+        Route::delete('/salones/{salon}/eliminar', [IglesiaInfantilController::class, 'eliminarSalon'])->name('salones.eliminar');
+        Route::post('/salones/{salon}/estaciones', [IglesiaInfantilController::class, 'asignarEstacionesSalon'])->name('salones.estaciones.asignar');
+        Route::post('/estaciones/crear', [IglesiaInfantilController::class, 'crearEstacion'])->name('estaciones.crear');
+        Route::patch('/estaciones/{estacion}/actualizar', [IglesiaInfantilController::class, 'actualizarEstacion'])->name('estaciones.actualizar');
+        Route::get('/checkin', [IglesiaInfantilController::class, 'checkin'])->name('checkin');
+        Route::get('/datos-adulto/{user}', [IglesiaInfantilController::class, 'datosCheckinAdulto']);
+        Route::post('/checkin/registrar', [IglesiaInfantilController::class, 'registrar'])->name('checkin.registrar');
+        Route::post('/checkin/retiro', [IglesiaInfantilController::class, 'procesarRetiro'])->name('checkin.retiro');
+        Route::post('/checkin/retiro-qr', [IglesiaInfantilController::class, 'retirarConQr'])->name('checkin.retiroQr');
+        Route::get('/lista-turno', [IglesiaInfantilController::class, 'listaTurno'])->name('listaTurno');
+        Route::patch('/registro/{registro}/salon-estacion', [IglesiaInfantilController::class, 'actualizarSalonEstacion'])->name('registro.actualizarSalonEstacion');
+        Route::delete('/registro/{registro}/eliminar', [IglesiaInfantilController::class, 'eliminarRegistro'])->name('registro.eliminar');
+        Route::get('/registro/{registro}/ticket', [IglesiaInfantilController::class, 'imprimirTicket'])->name('registro.ticket');
+        Route::get('/exportar', [IglesiaInfantilController::class, 'exportarExcel'])->name('exportar');
+    });
     Route::patch('/reuniones/{reunion}/actualizar', [ReunionesController::class, 'actualizar'])->name('reuniones.actualizar');
 
     // Reporte Reuniones
@@ -324,6 +352,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::get('/usuarios/{tipo?}', [UserController::class, 'listar'])->middleware('permission:personas.subitem_lista_asistentes')->name('usuario.lista');
     Route::get('/usuarios/{tipo?}', [UserController::class, 'listar'])->name('usuario.lista');
     Route::get('/usuario/{formulario}/nuevo', [UserController::class, 'nuevo'])->name('usuario.nuevo');
+
+    // Cambio de Correo Seguro
+    Route::get('/usuario/cambiar-correo', [UserController::class, 'cambiarCorreoForm'])->name('usuario.cambiarCorreo');
+    Route::post('/usuario/solicitar-codigo-correo', [UserController::class, 'solicitarCodigoCorreo'])->name('usuario.solicitarCodigoCorreo');
+    Route::post('/usuario/verificar-cambio-correo', [UserController::class, 'verificarCambioCorreo'])->name('usuario.verificarCambioCorreo');
 
     Route::middleware('verificarUsuario')->group(function () {
         Route::get('/usuario/{usuario}/perfil', [UserController::class, 'perfil'])->name('usuario.perfil')->withTrashed();
@@ -419,6 +452,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/sede/nueva', [SedeController::class, 'nueva'])->name('sede.nueva');
     Route::get('/sede/{sede}/modificar', [SedeController::class, 'modificar'])->name('sede.modificar');
     Route::get('/sede/{sede}/perfil', [SedeController::class, 'perfil'])->name('sede.perfil');
+    Route::get('/sede/{sede}/dashboard-consolidacion', [SedeController::class, 'dashboardConsolidacion'])->name('sede.dashboardConsolidacion');
+    Route::get('/sede/{sede}/dashboard-consolidacion/exportar', [SedeController::class, 'downloadExportSede'])->name('sede.dashboardConsolidacion.exportar');
+    Route::get('/sede/{sede}/dashboard-consolidacion/detalle-kpi', [SedeController::class, 'detalleKpi'])->name('sede.dashboardConsolidacion.detalleKpi');
+    Route::get('/sede/{sede}/dashboard-consolidacion/detalle-kpi/exportar', [SedeController::class, 'exportarDetalleKpi'])->name('sede.dashboardConsolidacion.detalleKpi.exportar');
 
     Route::post('/sede/crear', [SedeController::class, 'crear'])->name('sede.crear');
     Route::post('/sede/{sede}/eliminar', [SedeController::class, 'eliminar'])->name('sede.eliminar');
@@ -587,7 +624,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Ruta para mostrar/editar/eliminar una escuela específica
 
     // /ruta historial calificaciones
-    
+
     Route::get('/escuelas/historial-calificaciones', [HistorialCalificacionesController::class, 'index'])->name('escuelas.historialCalificaciones');
 
     // / cursos (LMS)
@@ -794,6 +831,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/posts/{post}/update', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}/destroy', [PostController::class, 'destroy'])->name('posts.destroy');
 
+    // Planes Lectores
+    Route::get('/planes-lectores/gestionar', [PlanLectorController::class, 'gestionar'])->name('planes-lectores.gestionar');
+    Route::get('/planes-lectores/crear', [PlanLectorController::class, 'crear'])->name('planes-lectores.crear');
+    Route::post('/planes-lectores/nuevo', [PlanLectorController::class, 'nuevo'])->name('planes-lectores.nuevo');
+    Route::get('/planes-lectores/{plan}/editar', [PlanLectorController::class, 'editar'])->name('planes-lectores.editar');
+    Route::patch('/planes-lectores/{plan}/actualizar', [PlanLectorController::class, 'actualizar'])->name('planes-lectores.actualizar');
+    Route::delete('/planes-lectores/{plan}/eliminar', [PlanLectorController::class, 'eliminar'])->name('planes-lectores.eliminar');
+    Route::get('/planes-lectores/{plan}/contenido', [PlanLectorController::class, 'gestionarContenido'])->name('planes-lectores.contenido');
+    Route::patch('/planes-lectores/{plan}/estado', [PlanLectorController::class, 'cambiarEstado'])->name('planes-lectores.cambiar-estado');
+    Route::get('/planes-lectores/inicio', [PlanLectorController::class, 'inicio'])->name('planes-lectores.inicio');
+    Route::post('/planes-lectores/{plan}/inscribirse', [PlanLectorController::class, 'inscribirse'])->name('planes-lectores.inscribirse');
+    Route::get('/planes-lectores/{plan:slug}/lectura/{dia?}', [PlanLectorController::class, 'lectura'])->name('planes-lectores.lectura');
+
+    
     // informes
     Route::get('/informe/{tipoInforme?}', [InformesController::class, 'listar'])->name('informe.lista');
     Route::get('/informes/configuracion-semanas', [InformesController::class, 'configuracionSemanas'])->name('informe.configuracionSemanas');
@@ -870,6 +921,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/gestionar-tipos-de-grupos/{tipoGrupo}/cambiar-estado', [GestionarTipoDeGruposController::class, 'cambiarEstadoTipoDeGrupo'])
         ->name('gestionar-tipos-de-grupos.cambiarEstadoTipoDeGrupo');
 
+    // Gestionar Tipos de Actividad
+    Route::get('/gestionar-tipos-de-actividad', [TipoActividadGestionController::class, 'index'])->name('gestionar-tipos-de-actividad.index');
+    Route::get('/gestionar-tipos-de-actividad/nuevo', [TipoActividadGestionController::class, 'nuevo'])->name('gestionar-tipos-de-actividad.nuevo');
+    Route::post('/gestionar-tipos-de-actividad/crear', [TipoActividadGestionController::class, 'crear'])->name('gestionar-tipos-de-actividad.crear');
+    Route::get('/gestionar-tipos-de-actividad/{tipoActividad}/editar', [TipoActividadGestionController::class, 'editar'])->name('gestionar-tipos-de-actividad.editar');
+    Route::patch('/gestionar-tipos-de-actividad/{tipoActividad}', [TipoActividadGestionController::class, 'actualizar'])->name('gestionar-tipos-de-actividad.actualizar');
+
     // Gestionar Rangos de Edad
     Route::prefix('rangos-edad')->group(function () {
         Route::get('/', [RangoEdadController::class, 'listar'])->name('rangos-edad.listar');
@@ -886,11 +944,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{tipoOfrenda}', [TipoOfrendaController::class, 'eliminar'])->name('tipo-ofrenda.eliminar');
     });
 
+    // Gestionar Tipo Servicio Actividad
+    Route::prefix('tipo-servicio-actividad')->group(function () {
+        Route::get('/', [TipoServicioActividadController::class, 'listar'])->name('tipo-servicio-actividad.listar');
+        Route::post('/', [TipoServicioActividadController::class, 'crear'])->name('tipo-servicio-actividad.crear');
+        Route::patch('/{tipoServicioActividad}', [TipoServicioActividadController::class, 'actualizar'])->name('tipo-servicio-actividad.actualizar');
+        Route::delete('/{tipoServicioActividad}', [TipoServicioActividadController::class, 'eliminar'])->name('tipo-servicio-actividad.eliminar');
+    });
+
+    // Gestionar Tipo Servicio Reporte Reunion
+    Route::prefix('tipo-servicio-reunion')->group(function () {
+        Route::get('/', [TipoServicioReporteReunionController::class, 'listar'])->name('tipo-servicio-reunion.listar');
+        Route::post('/', [TipoServicioReporteReunionController::class, 'crear'])->name('tipo-servicio-reunion.crear');
+        Route::patch('/{tipoServicioReporteReunion}', [TipoServicioReporteReunionController::class, 'actualizar'])->name('tipo-servicio-reunion.actualizar');
+        Route::delete('/{tipoServicioReporteReunion}', [TipoServicioReporteReunionController::class, 'eliminar'])->name('tipo-servicio-reunion.eliminar');
+    });
+
     // Consolidacion
     Route::get('/consolidacion/lista/{tipo?}', [ConsolidacionController::class, 'listar'])->name('consolidacion.lista');
     Route::get('/consolidacion/gestionar-tareas/{usuario}', [ConsolidacionController::class, 'gestionarTareas'])->name('consolidacion.gestionarTareas');
 
     Route::get('/consolidacion/dashboard', [ConsolidacionController::class, 'dashboard'])->name('consolidacion.dashboard');
+    Route::get('/consolidacion/dashboard/exportar', [ConsolidacionController::class, 'exportarDashboard'])->name('consolidacion.dashboard.exportar');
+    Route::get('/consolidacion/dashboard/detalle-kpi', [ConsolidacionController::class, 'detalleKpiDashboard'])->name('consolidacion.dashboard.detalle-kpi');
+    Route::get('/consolidacion/dashboard/detalle-kpi/exportar', [ConsolidacionController::class, 'exportarDetalleKpiDashboard'])->name('consolidacion.dashboard.detalle-kpi.exportar');
     Route::get('/consolidacion/reporte-desempeño', [ConsolidacionController::class, 'reporteDesempeño'])->name('consolidacion.reporteDesempeño');
     Route::get('/consolidacion/bloques', [ConsolidacionController::class, 'bloques'])->name('consolidacion.bloques');
     Route::get('/consolidacion/detalle-kpi', [ConsolidacionController::class, 'detalleKpi'])->name('consolidacion.detalle-kpi');

@@ -43,13 +43,14 @@ $configData = Helper::appClasses();
       <div class="w-px-400 mx-auto mt-2 mt-lg-3 pt-5">
 
         <!-- Logo -->
-        <div class="app-brand demo d-flex">
-          <a href="{{url('/')}}" class="app-brand-link gap-0 d-flex align-self-end">
-            <span class=" d-none app-brand-logo demo">
-              @include('_partials.macros',["height"=>"50px", "width"=>"50px", "fill"=> "#3772e4" ])
-            </span>
-            <span class=" menu-text fw-bold h1 titulo-login">{{config('variables.templateName')}}</span>
+        <div class="app-brand demo d-flex mb-3">
+          <a href="{{url('/')}}" class="app-brand-link gap-0 d-flex align-items-center">
+            <img style="width:90%" class="app-brand-logo me-2" src="{{ config('variables.logoApp') }}">
+            
           </a>
+        </div>
+        <div>
+          <span class=" menu-text fw-bold h1 titulo-login m-0">{{config('variables.templateName')}}</span>
         </div>
         <!-- /Logo -->
 

@@ -18,12 +18,15 @@ class CursoUser extends Model
         'estado',
         'fecha_inscripcion',
         'fecha_vencimiento_acceso',
-        'porcentaje_progreso'
+        'porcentaje_progreso',
+        'numero_reintentos',
+        'ultimo_reintento_at',
     ];
 
     protected $casts = [
         'fecha_inscripcion' => 'datetime',
         'fecha_vencimiento_acceso' => 'datetime',
+        'ultimo_reintento_at' => 'datetime',
     ];
 
     public function curso(): BelongsTo

@@ -6,7 +6,12 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Curso;
 use App\Models\CategoriaCurso;
+use App\Models\CursoUser;
+use App\Models\CursoItemUser;
+use App\Models\CursoEvaluacionResultado;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class CatalogoCursos extends Component
 {
@@ -50,6 +55,74 @@ class CatalogoCursos extends Component
             $this->categoriasSeleccionadas[] = $id;
         }
         $this->resetPage();
+    }
+
+    /**
+     * Reinicia el progreso de un curso para el usuario autenticado.
+     */
+    public function reiniciarCurso($cursoId)
+    {
+        $usuario = Auth::user();
+        $curso = Curso::findOrFail($cursoId);
+
+        // 1. Obtener la inscripción
+        $inscripcion = CursoUser::where('curso_id', $cursoId)
+            ->where('user_id', $usuario->id)
+            ->firstOrFail();
+
+        // 2. Validar límites de reinicio
+        if ($curso->limite_reintentos > 0 && $inscripcion->numero_reintentos >= $curso->limite_reintentos) {
+            $msn = "Has alcanzado el límite máximo de " . $curso->limite_reintentos . " reinicios para este curso.";
+            if ($curso->dias_castigo > 0) {
+                $msn .= " Debes esperar " . $curso->dias_castigo . " días para volver a intentarlo o realizar un nuevo pago según las condiciones.";
+            }
+
+            $this->dispatch('msn', [
+                'msn' => $msn,
+                'icon' => 'error'
+            ]);
+            return;
+        }
+
+        // 3. Ejecutar reinicio dentro de una transacción
+        try {
+            DB::transaction(function () use ($curso, $usuario, $inscripcion) {
+                // A. Obtener IDs de los items del curso para limpiar progreso
+                $itemIds = DB::table('curso_items')
+                    ->join('curso_modulos', 'curso_items.curso_modulo_id', '=', 'curso_modulos.id')
+                    ->where('curso_modulos.curso_id', $curso->id)
+                    ->pluck('curso_items.id');
+
+                // B. Borrar progreso de lecciones e ítems
+                CursoItemUser::where('user_id', $usuario->id)
+                    ->whereIn('curso_item_id', $itemIds)
+                    ->delete();
+
+                // C. Borrar resultados de evaluaciones
+                CursoEvaluacionResultado::where('user_id', $usuario->id)
+                    ->where('curso_id', $curso->id)
+                    ->delete();
+
+                // D. Actualizar inscripción
+                $inscripcion->update([
+                    'numero_reintentos' => $inscripcion->numero_reintentos + 1,
+                    'ultimo_reintento_at' => now(),
+                    'porcentaje_progreso' => 0,
+                    'estado' => 'activo' // Asegurar que esté activo si estaba finalizado o suspendido
+                ]);
+            });
+
+            $this->dispatch('msn', [
+                'msn' => 'El curso ha sido reiniciado correctamente. Tu progreso ha vuelto a cero.',
+                'icon' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            $this->dispatch('msn', [
+                'msn' => 'Ocurrió un error al intentar reiniciar el curso: ' . $e->getMessage(),
+                'icon' => 'error'
+            ]);
+        }
     }
 
     public function render()

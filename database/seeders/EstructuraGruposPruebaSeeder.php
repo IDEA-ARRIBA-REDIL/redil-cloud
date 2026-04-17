@@ -18,7 +18,7 @@ class EstructuraGruposPruebaSeeder extends Seeder
     public function run(): void
     {
         // 1. Roles
-        $lider = Role::findByName('Lider');
+       /* $lider = Role::findByName('Lider');
         $oveja = Role::findByName('Oveja');
 
         // 2. Crear usuario Didier
@@ -191,7 +191,72 @@ class EstructuraGruposPruebaSeeder extends Seeder
                 // Generar Reportes Grupo N3
                 $this->generarReportesParaGrupo($grupoEvangelisticoN3);
             }
-        }
+        }*/
+
+            
+        // Crear 4 Asistentes (Nivel 3 - Bisnietos)
+        $oveja = Role::findByName('Oveja');
+        for ($k = 1; $k <= 3; $k++) {
+            $asistenteN3 = User::create([
+                'email' => "asistente.nivel3.$k@reporte.com", // Emails únicos
+                'password' => bcrypt('12345678'),
+                'foto' => 'default-m.png',
+                'primer_nombre' => "Asistente $k",
+                'primer_apellido' => 'Medellin',
+                'segundo_nombre' => 'Test',
+                'segundo_apellido' => 'Test',
+                'tipo_identificacion_id' => 1,
+                'identificacion' => "ASISTN3-$k",
+                'telefono_fijo' => '3123456789',
+                'telefono_movil' => '3123456789',
+                'telefono_otro' => '3123456789',
+                'direccion' => 'Calle 123',
+                'pais_id' => 1,
+                'nivel_academico_id' => 1,
+                'tipo_usuario_id' => 3,
+                'sede_id' => 309,
+                'activo' => 1,
+                'asistente_id' => 1,
+                'estado_civil_id' => 4,
+                'genero' => rand(0, 1),
+                'fecha_nacimiento' => '2005-01-01',
+                'tipo_vinculacion_id' => 1,
+                'email_verified_at' => now(),
+            ]);
+            $asistenteN3->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
+        
+        }   
+        
+        for ($k = 1; $k <= 1; $k++) {
+            $asistenteN3 = User::create([
+                'email' => "asistente.nivel3menor.$k@reporte.com", // Emails únicos
+                'password' => bcrypt('12345678'),
+                'foto' => 'default-m.png',
+                'primer_nombre' => "Asistente menor $k",
+                'primer_apellido' => 'Medellin',
+                'segundo_nombre' => 'Test',
+                'segundo_apellido' => 'Test',
+                'tipo_identificacion_id' => 1,
+                'identificacion' => "ASISTN3x-$k",
+                'tipo_usuario_id' => 3,
+                'telefono_fijo' => '3123456789',
+                'telefono_movil' => '3123456789',
+                'telefono_otro' => '3123456789',
+                'direccion' => 'Calle 123',
+                'pais_id' => 1,
+                'nivel_academico_id' => 1,
+                'sede_id' => 309,
+                'activo' => 1,
+                'asistente_id' => 1,
+                'estado_civil_id' => 1, 
+                'genero' => 0,
+                'fecha_nacimiento' => '2020-01-01',
+                'tipo_vinculacion_id' => 1,
+                'email_verified_at' => now(),
+            ]);
+            $asistenteN3->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
+        
+        }   
     }
 
     /**

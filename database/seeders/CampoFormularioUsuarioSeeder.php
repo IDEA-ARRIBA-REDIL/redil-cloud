@@ -595,5 +595,14 @@ class CampoFormularioUsuarioSeeder extends Seeder
         // seccion cc $campo->secciones()->attach(6, [ 'requerido' => true, 'class' => 'col-12 col-sm-6 col-md-3', 'orden' => 6 ]);
         $campo->secciones()->attach(19, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 4]);
 
+        $campo = CampoFormularioUsuario::firstOrCreate([
+            'nombre' => 'Entidad relacionada',
+            'nombre_bd' => 'entidad_relacionada_id',
+            'placeholder' => 'Selecciona la entidad relacionada',
+            'name_id' => 'entidad_relacionada',
+            'visible_resumen' => true,
+        ]);
+        $campo->secciones()->attach(14, ['requerido' => false, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 6]);
+
     }
 }

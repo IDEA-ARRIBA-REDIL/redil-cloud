@@ -61,6 +61,11 @@
             }
         }
 
+       #swiper-temas .swiper-pagination{
+            position:unset !important;
+
+       }
+
         /* Estilos para las flechas de navegación de Swiper */
         .swiper-button-next-banners,
         .swiper-button-prev-banners {
@@ -133,6 +138,46 @@
                 },
             });
         }
+
+        window.initTemasSwiper = function() {
+            const temasContainer = document.querySelector('#swiper-temas');
+            if (temasContainer && typeof Swiper !== 'undefined') {
+                console.log('Iniciando carrusel de temas...');
+                const temasSwiper = new Swiper(temasContainer, {
+                    slidesPerView: 1.2,
+                    spaceBetween: 15,
+                    initialSlide: 0,
+                    centeredSlides: false,
+                    observer: true,
+                    observeParents: true,
+                    pagination: {
+                        el: "#swiper-temas .swiper-pagination",
+                        clickable: true,
+                    },
+                    breakpoints: {
+                        768: {
+                            slidesPerView: 2.2,
+                            spaceBetween: 20,
+                        },
+                        1024: {
+                            slidesPerView: 3.2,
+                            spaceBetween: 20,
+                        },
+                        1200: {
+                            slidesPerView: 4,
+                            spaceBetween: 15,
+                        },
+                    },
+                });
+                console.log('Carrusel de temas inicializado:', temasSwiper);
+            } else {
+                if (!temasContainer) console.warn('No se encontró el contenedor #swiper-temas');
+                if (typeof Swiper === 'undefined') console.error('Swiper no está definido en el momento de la carga');
+            }
+        };
+
+        // Forzar un pequeño delay para asegurar la carga de assets
+        setTimeout(initTemasSwiper, 500);
     </script>
 @endsection
 
@@ -179,9 +224,20 @@
                                 @if ($banner->link)
                                     <a href="{{ $banner->link }}" target="_blank">
                                 @endif
+                                @php
+                                    $tenantPath = $configuracion->ruta_almacenamiento . '/img/banners/' . $banner->imagen;
+                                    $imgUrl = '';
+                                    if ($banner->imagen) {
+                                        if (Storage::disk('public')->exists($tenantPath)) {
+                                            $imgUrl = Storage::url($tenantPath);
+                                        } elseif (Storage::disk('global_media')->exists($banner->imagen)) {
+                                            $imgUrl = Storage::disk('global_media')->url($banner->imagen);
+                                        }
+                                    }
+                                @endphp
                                 <div class="card shadow-none border-0 overflow-hidden rounded-3 position-relative">
                                     <img class="img-fluid w-100 object-fit-cover" style="height: 350px;"
-                                        src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/banners/' . $banner->imagen) }}"
+                                        src="{{ $imgUrl }}"
                                         alt="{{ $banner->nombre }}">
                                     <div class="card-img-overlay d-flex flex-column justify-content-end p-4"
                                         style="background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);">
@@ -294,6 +350,49 @@
         @endif
 
         @livewire('dashboard.posts-widget', ['claseColumnas' => 'col-12 col-lg-12 mt-3'])
+
+        <div class="col-12 col-lg-12 mt-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-black fw-bold mb-0">Temas para ti</h5>
+                <a href="{{ route('tema.lista') }}" class="btn btn-sm btn-outline-primary rounded-pill">Ver todos los
+                    temas</a>
+            </div>
+
+            @if ($temas->isNotEmpty())
+                <div class="swiper-container swiper-container-horizontal swiper swiper-multiple-slides mb-3"
+                    id="swiper-temas">
+                    <div class="swiper-wrapper">
+                        @foreach ($temas as $tema)
+                            <div class="swiper-slide h-auto">
+                                <div class="card h-100 shadow-sm border-0 rounded-3 overflow-hidden">
+                                    <div class="position-relative">
+                                        <a href="{{ route('tema.ver', $tema) }}">
+                                            <img class="card-img-top object-fit-cover" style="height: 160px;"
+                                                src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/temas/' . $tema->portada) : Storage::url($configuracion->ruta_almacenamiento . '/img/temas/default.png') }}"
+                                                alt="{{ $tema->titulo }}">
+                                        </a>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <a href="{{ route('tema.ver', $tema) }}">
+                                            <h6 class="card-title fw-bold text-black mb-0 text-truncate"
+                                                title="{{ $tema->titulo }}">
+                                                {{ $tema->titulo }}</h6>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="swiper-pagination mt-4"></div>
+                </div>
+            @else
+                <div class="col-12">
+                    <div class="card border rounded-3 py-4 text-center bg-light">
+                        <p class="text-muted mb-0">No hay temas disponibles en este momento.</p>
+                    </div>
+                </div>
+            @endif
+        </div>
 
 
 
@@ -439,6 +538,10 @@
                             });
                     });
                 }
+            });
+
+            document.addEventListener('livewire:navigated', () => {
+                setTimeout(initTemasSwiper, 100);
             });
         </script>
     @endif

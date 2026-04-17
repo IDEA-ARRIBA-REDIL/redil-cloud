@@ -45,18 +45,32 @@
                                                     {{ $progreso }}% completado</div>
                                             </div>
 
-                                            <div
+                                             <div
                                                 class="d-flex flex-row justify-content-end align-items-center gap-2 mt-3 mt-sm-2">
-                                                <a href="#" class="btn btn-icon rounded"
-                                                    style="background-color: #f4f0ff; color: #8c57ff; border: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                
+                                                <button type="button"  
+                                                    x-on:click="confirmarReinicio({{ $miCurso->id }}, '{{ addslashes($miCurso->nombre) }}', '{{ str_replace(["\r", "\n"], [' ', ' '], addslashes($miCurso->terminos_condiciones ?? '')) }}')"
+                                                    class="btn btn-icon rounded btn-reinicio"
+                                                    style="background-color: #f4f0ff; color: #8c57ff; border: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
+                                                    title="Reiniciar Curso">
                                                     <i class="ti ti-restore fs-5"></i>
-                                                </a>
+                                                </button>
+
                                                 <a href="{{ route('cursos.mi-campus', $miCurso->slug) }}"
                                                     class="btn rounded px-4 btn-outline-primary"
                                                     style=" font-weight: 500; height: 40px; display: flex; align-items: center;">
                                                     Continuar
                                                 </a>
                                             </div>
+                                            
+                                            {{-- Info de Intentos --}}
+                                            @if($miCurso->limite_reintentos > 0)
+                                                <div class="text-end mt-1">
+                                                    <small class="text-muted" style="font-size: 0.7rem;">
+                                                        Intentos realizados: {{ $miCurso->usuarios->first()->pivot->numero_reintentos ?? 0 }} / {{ $miCurso->limite_reintentos }}
+                                                    </small>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -296,3 +310,58 @@
 
 
 </div>
+
+@script
+<script>
+    window.confirmarReinicio = function(cursoId, nombreCurso, terminos) {
+        console.log('Iniciando confirmación de reinicio para curso:', cursoId, nombreCurso);
+        
+        let htmlContent = `
+            <div class="text-start">
+                <p>¿Estás seguro de que deseas reiniciar el curso <strong>${nombreCurso}</strong>?</p>
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <i class="ti ti-alert-triangle me-2 fs-4"></i>
+                    <div>
+                        Se borrará todo tu progreso actual de lecciones y evaluaciones de forma permanente.
+                    </div>
+                </div>
+                ${terminos ? `<div class="mt-3"><strong>Condiciones adicionales:</strong><br><small>${terminos}</small></div>` : ''}
+            </div>
+        `;
+
+        Swal.fire({
+            title: 'Confirmar Reinicio',
+            html: htmlContent,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, reiniciar progreso',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                confirmButton: 'btn btn-primary me-3',
+                cancelButton: 'btn btn-label-secondary'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                console.log('Usuario confirmó reinicio. Llamando a Livewire...');
+                $wire.call('reiniciarCurso', cursoId);
+            }
+        });
+    }
+
+    $wire.on('msn', (data) => {
+        const payload = Array.isArray(data) ? data[0] : data;
+        console.log('Mensaje de respuesta recibido:', payload);
+        Swal.fire({
+            title: payload.icon === 'success' ? '¡Éxito!' : 'Atención',
+            text: payload.msn,
+            icon: payload.icon,
+            confirmButtonText: 'Aceptar',
+            customClass: {
+                confirmButton: 'btn btn-primary'
+            },
+            buttonsStyling: false
+        });
+    });
+</script>
+@endscript

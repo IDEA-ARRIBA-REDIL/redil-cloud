@@ -91,7 +91,7 @@ class DireccionConListaGeografica extends Component
     public function updatedPaisSelect()
     {
       $this->ciudades = $this->paisSelect
-      ? Region::where('pais_id', $this->paisSelect)
+      ? Region::where('regiones.pais_id', $this->paisSelect)
       ->leftJoin('departamentos','regiones.id','=','departamentos.region_id')
       ->leftJoin('municipios','departamentos.id','=','municipios.departamento_id')
       ->selectRaw("CONCAT(municipios.nombre,', ',departamentos.nombre) as nombre, municipios.id")
@@ -106,7 +106,7 @@ class DireccionConListaGeografica extends Component
 
     public function updatedCiudadSelect()
     {
-      $this->barrios = $this->ciudadSelect ? Localidad::where('municipio_id', $this->ciudadSelect)
+      $this->barrios = $this->ciudadSelect ? Localidad::where('localidades.municipio_id', $this->ciudadSelect)
       ->whereNotNull('barrios.id')
       ->leftJoin('barrios','localidades.id','=','barrios.localidad_id')
       ->selectRaw("CONCAT(barrios.nombre,', ',localidades.nombre) as nombre, barrios.id")
@@ -170,7 +170,7 @@ class DireccionConListaGeografica extends Component
       ->get();
 
       $this->ciudades = $this->paisSelect
-      ? Region::where('pais_id', $this->paisSelect)
+      ? Region::where('regiones.pais_id', $this->paisSelect)
       ->leftJoin('departamentos','regiones.id','=','departamentos.region_id')
       ->leftJoin('municipios','departamentos.id','=','municipios.departamento_id')
       ->selectRaw("CONCAT(municipios.nombre,', ',departamentos.nombre, ', ', regiones.nombre) as nombre, municipios.id")
@@ -178,7 +178,7 @@ class DireccionConListaGeografica extends Component
       ->get()
       : collect();
 
-      $this->barrios = $this->ciudadSelect ? Localidad::where('municipio_id', $this->ciudadSelect)
+      $this->barrios = $this->ciudadSelect ? Localidad::where('localidades.municipio_id', $this->ciudadSelect)
       ->whereNotNull('barrios.id')
       ->leftJoin('barrios','localidades.id','=','barrios.localidad_id')
       ->selectRaw("CONCAT(barrios.nombre,', ',localidades.nombre) as nombre, barrios.id")

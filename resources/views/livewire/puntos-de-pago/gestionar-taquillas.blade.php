@@ -5,7 +5,7 @@
     <h4 class="mb-1 fw-semibold text-primary"> Gestionar cajas</h4>
 
     <div class="row pt-5">
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-3 col-6 mb-2 ">
             <a href="{{ route('taquillas.gestionar', ['tipo' => 'todos']) }}">
                 <div
                     class="h-100 card border rounded-3 shadow-sm {{ $tipo == 'todos' ? 'border-primary border-2' : '' }}">
@@ -18,7 +18,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-lg-3 col-6">
+        <div class="col-lg-3 col-6 mb-2">
             <a href="{{ route('taquillas.gestionar', ['tipo' => 'dados-de-baja']) }}">
                 <div
                     class="h-100 card border rounded-3 shadow-sm {{ $tipo == 'dados-de-baja' ? 'border-primary border-2' : '' }}">
@@ -31,33 +31,39 @@
                 </div>
             </a>
         </div>
-    </div>
-
 
 
     {{-- ================================================================== --}}
     {{-- 2. SECCIÓN DE BOTONES Y FILTROS (Sin cambios)                    --}}
     {{-- ================================================================== --}}
-    <div class="row mt-md-n9 ">
-        <div class="col-12 mb-3 d-flex justify-content-end">
-            <button wire:click="abrirModalCrearCaja" type="button"
-                class="btn btn-primary waves-effect   w-md-auto me-2">
-                <i class="ti ti-plus me-1"></i>
-                <span class="fw-semibold">Crear caja</span>
-            </button>
-
-            <button wire:click="exportarExcel" type="button"
-                class="btn btn-outline-secondary waves-effect  w-md-auto me-2">
-                <i class="ti ti-file-spreadsheet me-1"></i>
-                <span class="fw-semibold">Exportar</span>
-            </button>
-
-            <button class="btn btn-outline-secondary  w-md-auto" type="button" data-bs-toggle="offcanvas"
-                data-bs-target="#offcanvasFiltrosTaquillas" aria-controls="offcanvasFiltrosTaquillas">
-                <i class="ti ti-filter me-1"></i> Filtros
-            </button>
+        <div class="col-lg-6 col-12">
+            <div class="row">
+              <div class="col-lg-4 col-12 mb-3  ">
+                <button style="max-width:200px"  wire:click="abrirModalCrearCaja" type="button"
+                    class="btn btn-primary waves-effect   w-md-auto me-2">
+                    <i class="ti ti-plus me-1"></i>
+                    <span class="fw-semibold">Crear caja</span>
+                </button>
+            </div>
+            <div class="col-lg-4 col-12 mb-3  ">
+                <button style="max-width:200px"  wire:click="exportarExcel" type="button"
+                    class="btn btn-outline-secondary waves-effect  w-md-auto me-2">
+                    <i class="ti ti-file-spreadsheet me-1"></i>
+                    <span class="fw-semibold">Exportar</span>
+                </button>
+            </div>
+            <div class="  col-lg-4 col-12 mb-3  ">
+                <button style="max-width:200px"  class="btn btn-outline-secondary  w-md-auto" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#offcanvasFiltrosTaquillas" aria-controls="offcanvasFiltrosTaquillas">
+                    <i class="ti ti-filter me-1"></i> Filtros
+                </button>
+            </div>
+            </div>
         </div>
     </div>
+
+
+    
 
     <hr>
     {{-- ================================================================== --}}

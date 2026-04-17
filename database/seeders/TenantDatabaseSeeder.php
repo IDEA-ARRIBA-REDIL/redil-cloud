@@ -24,6 +24,7 @@ class TenantDatabaseSeeder extends Seeder
      */
     protected function baseSeeders(): void
     {
+        $this->call(EntidadRelacionadaSeeder::class);
         $this->call(TipoUsuarioSeeder::class);
         $this->call(EstadoCivilSeeder::class);
         $this->call(SedeSeeder::class);
@@ -221,10 +222,17 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(EstructuraGruposPruebaSeeder::class);
         $this->call(CursoItemTipoSeeder::class);
         $this->call(CarreraSeeder::class);
-         $this->call(CategoriaCursoSeeder::class);
+        $this->call(CategoriaCursoSeeder::class);
         $this->call(TipoCargoCursoSeeder::class);
-        $this->call(CursoDemoSeeder::class);     
+        $this->call(CursoDemoSeeder::class);
         $this->call(VersiculoDiarioSeeder::class);
         $this->call(BitacoraIntegranteGrupoSeeder::class);
+        $this->call(IglesiaInfantilSeeder::class);
+        $this->call(TipoServiciosSeeder::class);
+        $this->call(FormularioActividadPruebaSeeder::class);
+        $this->call(PlanLectorCategoriaSeeder::class);
+        $this->call(PlanLectorTipoContenidoSeeder::class);
+        $this->call(PlanLectorEjemploSeeder::class);
+        $this->call(PostSeeder::class);
     }
 }

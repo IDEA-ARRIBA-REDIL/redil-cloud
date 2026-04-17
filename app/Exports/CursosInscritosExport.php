@@ -46,7 +46,7 @@ class CursosInscritosExport implements FromQuery, WithHeadings, WithMapping
     public function query()
     {
         $query = CursoUser::query()
-            ->with(['user.sede', 'curso.carrera'])
+            ->with(['user.sede', 'user.entidadRelacionada', 'user.pais', 'user.estadoCivil', 'curso.carrera'])
             ->leftJoin('users', 'curso_users.user_id', '=', 'users.id')
             ->leftJoin('cursos', 'curso_users.curso_id', '=', 'cursos.id');
 
@@ -63,7 +63,11 @@ class CursosInscritosExport implements FromQuery, WithHeadings, WithMapping
         }
 
         if ($this->carreraId) {
-            $query->where('cursos.carrera_id', $this->carreraId);
+            if (is_array($this->carreraId)) {
+                $query->whereIn('cursos.carrera_id', array_filter($this->carreraId));
+            } else {
+                $query->where('cursos.carrera_id', $this->carreraId);
+            }
         }
 
         if ($this->fechaInicio) {
@@ -84,7 +88,11 @@ class CursosInscritosExport implements FromQuery, WithHeadings, WithMapping
             'Identificación',
             'Correo Electrónico',
             'Teléfono',
+            'Género',
             'Edad',
+            'País',
+            'Estado Civil',
+            'Organización',
             'Sede',
             'Curso',
             'Carrera',
@@ -106,7 +114,11 @@ class CursosInscritosExport implements FromQuery, WithHeadings, WithMapping
             $user ? $user->identificacion : 'N/A',
             $user ? $user->email : 'N/A',
             $user ? $user->telefono_movil : 'N/A',
+            $user ? ($user->genero == 1 ? 'Femenino' : 'Masculino') : 'N/A',
             $user && $user->fecha_nacimiento ? $user->edad() : 'N/A',
+            ($user && $user->pais) ? $user->pais->nombre : 'N/A',
+            ($user && $user->estadoCivil) ? $user->estadoCivil->nombre : 'N/A',
+            ($user && $user->entidadRelacionada) ? $user->entidadRelacionada->nombre : 'N/A',
             ($user && $user->sede) ? $user->sede->nombre : 'N/A',
             $inscripcion->curso ? $inscripcion->curso->nombre : 'N/A',
             ($inscripcion->curso && $inscripcion->curso->carrera) ? $inscripcion->curso->carrera->nombre : 'N/A',

@@ -13,40 +13,42 @@ class BannerGeneralSeeder extends Seeder
      */
     public function run(): void
     {
-        // Banner 1: Activo y Visible
-        BannerGeneral::firstOrCreate([
-            'nombre' => 'Bienvenida al Dashboard',
-            'imagen' => 'banner_1767124764.jpeg', // Imagen de prueba online
-            'fecha_inicio' => Carbon::now()->subDays(5)->format('Y-m-d'),
-            'fecha_fin' => Carbon::now()->addDays(30)->format('Y-m-d'),
-            'visible' => true,
-        ]);
+        // 1. Definimos los datos de los 4 banners
+        $bannersData = [
+            [
+                'nombre' => 'Calendario Legacy 2026',
+                'imagen' => 'legacy.jpeg',
+                'visible' => true,
+            ],
+            [
+                'nombre' => 'Manantial Kids 2026',
+                'imagen' => 'manantialkids.jpeg',
+                'visible' => true,
+            ],
+            [
+                'nombre' => 'Legendarios 2026',
+                'imagen' => 'legenderios.jpeg',
+                'visible' => true,
+            ],
+            [
+                'nombre' => 'Campaña 2026 Ora por Colombia',
+                'imagen' => 'ora.jpeg',
+                'visible' => true,
+            ],
+        ];
 
-        // Banner 2: Activo y Visible (Campaña Jovenes)
-        BannerGeneral::firstOrCreate([
-            'nombre' => 'Campaña Jóvenes 2024',
-            'imagen' => 'banner_1767127511.jpeg',
-            'fecha_inicio' => Carbon::now()->format('Y-m-d'),
-            'fecha_fin' => Carbon::now()->addDays(15)->format('Y-m-d'),
-            'visible' => true,
-        ]);
-
-        // Banner 3: INVISIBLE (Para probar que tu filtro funciona)
-        BannerGeneral::firstOrCreate([
-            'nombre' => 'Banner Oculto Admin',
-            'imagen' => 'banner_1767124726.jpeg',
-            'fecha_inicio' => Carbon::now()->format('Y-m-d'),
-            'fecha_fin' => Carbon::now()->addDays(10)->format('Y-m-d'),
-            'visible' => false, // Este no debería salir en tu vista
-        ]);
-
-        // Banner 4: Visible
-        BannerGeneral::firstOrCreate([
-            'nombre' => 'Retiro Espiritual',
-            'imagen' => 'banner_1767026177.jpeg',
-            'fecha_inicio' => Carbon::now()->addDays(1)->format('Y-m-d'),
-            'fecha_fin' => Carbon::now()->addMonths(1)->format('Y-m-d'),
-            'visible' => true,
-        ]);
+        // 2. Creación de registros
+        foreach ($bannersData as $data) {
+            // Creamos o actualizamos el registro en la base de datos
+            BannerGeneral::firstOrCreate(
+                ['nombre' => $data['nombre']],
+                [
+                    'imagen'       => $data['imagen'],
+                    'fecha_inicio' => Carbon::now()->subDays(5)->format('Y-m-d'),
+                    'fecha_fin'    => Carbon::now()->addDays(30)->format('Y-m-d'),
+                    'visible'      => true,
+                ]
+            );
+        }
     }
 }

@@ -13,13 +13,17 @@
                 <div class="card h-100 ">
                     <div class="card-header pb-0">
                         <h4 class="card-title fw-semibold mb-3 border-bottom">{{ $grupo->bloque->nombre }}</h5>
-
                     </div>
                     <div class="card-body">
                         <div class="row">
                             @foreach ($grupo->permisos as $permiso)
                                 <div class="col-6 col-md-3 col-lg-4 mb-4">
-                                    <div class="form-label mb-2">{{ str_replace('_', ' ', $permiso->titulo) }}</div>
+                                    <div class="form-label mb-2">
+                                        {{ str_replace('_', ' ', $permiso->titulo) }}
+                                        @if($rolActivo && $rolActivo->hasPermissionTo($permiso->name))
+                                            <i class="ti ti-shield-check text-success ms-1" title="Tu rol activo ya tiene este permiso"></i>
+                                        @endif
+                                    </div>
                                     <label class="switch switch-lg">
                                         <input type="checkbox"
                                                class="switch-input"

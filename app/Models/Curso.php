@@ -40,7 +40,10 @@ class Curso extends Model
         'actividad_grupo',
         'excluyente',
         'mensaje_bienvenida',
-        'mensaje_aprobacion'
+        'mensaje_aprobacion',
+        'limite_reintentos',
+        'dias_castigo',
+        'terminos_condiciones',
     ];
 
     // Relaciones
@@ -165,7 +168,7 @@ class Curso extends Model
     public function usuarios()
     {
         return $this->belongsToMany(User::class, 'curso_users', 'curso_id', 'user_id')
-            ->withPivot('estado', 'fecha_inscripcion', 'fecha_vencimiento_acceso', 'porcentaje_progreso')
+            ->withPivot('estado', 'fecha_inscripcion', 'fecha_vencimiento_acceso', 'porcentaje_progreso', 'numero_reintentos', 'ultimo_reintento_at')
             ->withTimestamps();
     }
 
@@ -179,18 +182,40 @@ class Curso extends Model
         $razones = [];
         $cumple = true;
 
-        // 1. Verificación: ¿Ya está inscrito de forma activa?
-        $inscrito = CursoUser::where('curso_id', $this->id)
+        // 1. Verificación: ¿Ya está inscrito?
+        $inscripcion = CursoUser::where('curso_id', $this->id)
             ->where('user_id', $usuario->id)
-            ->where('estado', 'activo')
-            ->exists();
+            ->first();
 
-        if ($inscrito) {
-            return [
-                'cumple' => false,
-                'codigo' => 'YA_INSCRITO',
-                'razones' => ['Ya te encuentras inscrito en este curso.']
-            ];
+        if ($inscripcion) {
+            // Si está activo y NO ha superado el límite de reintentos, ya está inscrito
+            if ($inscripcion->estado === 'activo') {
+                if ($this->limite_reintentos == 0 || $inscripcion->numero_reintentos < $this->limite_reintentos) {
+                    return [
+                        'cumple' => false,
+                        'codigo' => 'YA_INSCRITO',
+                        'razones' => ['Ya te encuentras inscrito en este curso.']
+                    ];
+                }
+            }
+
+            // Si superó el límite, verificar tiempo de castigo
+            if ($this->limite_reintentos > 0 && $inscripcion->numero_reintentos >= $this->limite_reintentos) {
+                if ($this->dias_castigo > 0 && $inscripcion->ultimo_reintento_at) {
+                    $fechaLiberacion = \Carbon\Carbon::parse($inscripcion->ultimo_reintento_at)->addDays($this->dias_castigo);
+                    if (now()->lessThan($fechaLiberacion)) {
+                        $diasRestantes = now()->diffInDays($fechaLiberacion, false);
+                        return [
+                            'cumple' => false,
+                            'codigo' => 'EN_PENALIZACION',
+                            'razones' => ["Has agotado tus intentos. Debes esperar {$diasRestantes} días más para volver a inscribirte."]
+                        ];
+                    }
+                }
+                
+                // Si el tiempo de castigo ya pasó, permitimos que se vuelva a inscribir (lo cual creará/actualizará la inscripción más adelante)
+                // Nota: La lógica de re-inscripción debería resetear el contador si es una "nueva compra" o "nueva entrada".
+            }
         }
 
         // 2. Verificación de Género

@@ -223,7 +223,7 @@ $configData = Helper::appClasses();
   <div class="row pt-5">
     <div class="swiper-container swiper-container-horizontal swiper swiper-card-advance-bg" id="swiper-with-pagination-cards">
       <div class="swiper-wrapper">
-          <!-- Cards with few info -->
+          <!-- Indicadores generales   -->
           @foreach( $indicadoresGenerales->chunk(4) as $chunk )
           <div class="swiper-slide">
             <div class="row equal-height-row  g-2">
@@ -234,7 +234,11 @@ $configData = Helper::appClasses();
                     <div class="card-body d-flex flex-row p-3">
 
                       <div class="card-icon me-1 ">
-                      <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/'. $indicador->imagen) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/'. $indicador->imagen) }}" alt="icono" class="me-2" width="50">
+                        @if(isset($indicador->es_global) && $indicador->es_global)
+                          <img src="{{ \Illuminate\Support\Facades\Storage::disk('global_media')->url($indicador->imagen) }}" alt="icono" class="me-2" width="50">
+                        @else
+                          <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $indicador->imagen) }}" alt="icono" class="me-2" width="50">
+                        @endif
                       </div>
 
                       <div class="card-title mb-0 lh-sm">
@@ -250,7 +254,7 @@ $configData = Helper::appClasses();
             </div>
           </div>
           @endforeach
-          <!--/ Cards with few info -->
+          <!--/ Indicadores generales -->
       </div>
       <div class="d-flex mt-10">
           <div class="swiper-pagination"></div>
@@ -301,7 +305,7 @@ $configData = Helper::appClasses();
     <div class="col-12 col-xl-4 col-md-6">
 
       <div class="card ">
-        <img class="card-img-top object-fit-cover" style="height: 130px;"  src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/'.$grupo->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/default.png')}}" alt="Card imagen {{ $grupo->nombre }}" />
+        <img class="card-img-top object-fit-cover" style="height: 130px;"  src="{{ $grupo->portada_vinculada }}" alt="Card imagen {{ $grupo->nombre }}" />
         <div class="card-header pb-2">
           <div class="d-flex justify-content-between">
             <div class="d-flex align-items-start">
@@ -428,7 +432,6 @@ $configData = Helper::appClasses();
           </div>
 
         </div>
-
         <div class="card-footer" style="background-color:#ededed!important">
           <div class="d-flex mt-3 ">
 
@@ -450,7 +453,7 @@ $configData = Helper::appClasses();
           </div>
         </div>
       </div>
-    </div>
+    </div> 
     @endforeach
   </div>
   <!--/ lista de grupos -->

@@ -29,7 +29,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array<int, string>
      */
-    protected $fillable = ['name', 'email', 'password', 'mostrar_modal_agregar_hijos'];
+    protected $fillable = ['name', 'email', 'password', 'mostrar_modal_agregar_hijos', 'entidad_relacionada_id'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -330,6 +330,13 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ruedasDeLaVida(): HasMany
     {
         return $this->hasMany(RuedaDeLaVidaUser::class, 'usuario_id');
+    }
+
+    public function planesLectoresInscritos(): BelongsToMany
+    {
+        return $this->belongsToMany(PlanLector::class, 'plan_lector_users', 'user_id', 'plan_lector_id')
+                    ->withPivot('estado', 'fecha_inscripcion', 'porcentaje_progreso')
+                    ->withTimestamps();
     }
 
     public function reportesReunion(): BelongsToMany
@@ -819,7 +826,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $todosGruposIds = array_unique(array_merge($groupIds, $gruposSinLider));
 
         if ($tipo == 'objeto') {
-            return Grupo::whereIn('id', $todosGruposIds);
+            return Grupo::whereIn('grupos.id', $todosGruposIds);
         } else {
             return $todosGruposIds;
         }
@@ -912,20 +919,48 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sedesEncargadas($tipo = 'objeto')
     {
+        $rolActivo = $this->roles()->wherePivot('activo', true)->first();
+        $query = Sede::query();
 
-        $sedes = Sede::leftJoin('grupos', 'grupos.id', '=', 'sedes.grupo_id')
-            ->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
-            ->leftJoin('users', 'users.id', '=', 'encargados_grupo.user_id')
-            ->where('users.id', '=', $this->id)
-            ->select('sedes.*');
+        // 1. Jerarquía Máxima: Sede específica en el rol
+        if ($rolActivo && $rolActivo->lista_sedes_sede_id) {
+            $query->where('sedes.id', $rolActivo->lista_sedes_sede_id);
+        }
+        // 2. Jerarquía Media: Solo ministerio (donde es encargado)
+        elseif ($this->hasPermissionTo('sedes.lista_sedes_solo_ministerio')) {
+            $query->leftJoin('grupos', 'grupos.id', '=', 'sedes.grupo_id')
+                ->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
+                ->where('encargados_grupo.user_id', $this->id)
+                ->select('sedes.*')
+                ->distinct();
+        }
+        // Fallback: Si no hay restricciones específicas, sedesEncargadas devuelve vacío
+        else {
+            $query->whereRaw('1=2');
+        }
 
         if ($tipo == 'array') {
-            return $sedes->select('sedes.id')
-                ->pluck('sedes.id')
-                ->toArray();
-        } else {
-            return $sedes->get();
+            return $query->pluck('sedes.id')->toArray();
         }
+
+        if ($tipo == 'query') {
+            return $query;
+        }
+
+        return $query->get();
+    }
+
+    public function tieneJurisdiccionSobreSede(Sede $sede): bool
+    {
+        $rolActivo = $this->roles()->wherePivot('activo', true)->first();
+
+        // Si hay una restricción activa (ID fijo o Ministerio), verificamos contra el query restringido
+        if (($rolActivo && $rolActivo->lista_sedes_sede_id) || $this->hasPermissionTo('sedes.lista_sedes_solo_ministerio')) {
+            return $this->sedesEncargadas('query')->where('sedes.id', $sede->id)->exists();
+        }
+
+        // Si no hay restricciones, depende de si tiene el permiso global
+        return $this->hasPermissionTo('sedes.lista_sedes_todas');
     }
 
     public function misPeticiones()
@@ -1809,5 +1844,19 @@ class User extends Authenticatable implements MustVerifyEmail
     public function postLikes(): HasMany
     {
         return $this->hasMany(PostLike::class);
+    }
+
+    
+    public function entidadRelacionada(): BelongsTo
+    {
+        return $this->belongsTo(EntidadRelacionada::class, 'entidad_relacionada_id');
+    }
+
+    /**
+     * Planes de lectura bíblica creados por el usuario (autor).
+     */
+    public function planesLectoresCreados(): HasMany
+    {
+        return $this->hasMany(PlanLector::class, 'autor_id');
     }
 }

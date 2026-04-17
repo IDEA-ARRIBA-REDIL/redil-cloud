@@ -106,9 +106,9 @@
                                 </div>
                                 <div class="col-12 col-xl-6 col-md-6 align-items-center mb-2">
                                     <div class="d-flex flex-column text-xl-end text-md-end text-sm-start">
-                                        <small class="text-black"><i class="ti ti-calendar-event text-black me-2"></i>Inscripción:</small>
+                                        <small class="text-black"><i class="ti ti-restore text-black me-2"></i>Reinicios:</small>
                                         <small class="fw-semibold text-black">
-                                            {{ \Carbon\Carbon::parse($inscripcion->fecha_inscripcion)->format('Y-m-d') }}
+                                            {{ $inscripcion->numero_reintentos ?? 0 }}
                                         </small>
                                     </div>
                                 </div>

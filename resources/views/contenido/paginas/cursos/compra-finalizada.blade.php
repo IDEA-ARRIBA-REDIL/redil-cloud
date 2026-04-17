@@ -16,9 +16,10 @@
             <div class="col-lg-7 col-xl-5 mx-auto mt-5">
                 <div class="card p-4 shadow-sm border-0 rounded-4 mb-5 text-center">
                     <div class="card-header border-0 bg-transparent pt-4 pb-2">
-                        <div
-                            style="width: 120px; height: 120px; background-color: #e8fadf; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
-                            <i class="ti ti-check text-success" style="font-size: 4rem;"></i>
+                        <div style="margin: 0 auto 20px auto;">
+                            <img src="{{ Storage::disk('global_media')->url('Felicidades.png') }}"
+                                alt="¡Felicidades!"
+                                style="width: 120px; height: 120px; object-fit: contain;">
                         </div>
 
                         <h2 class="text-black fw-bold mb-0 lh-sm mt-3">¡Felicidades,

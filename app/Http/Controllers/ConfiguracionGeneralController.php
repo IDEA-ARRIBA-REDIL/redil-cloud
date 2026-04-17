@@ -90,6 +90,17 @@ class ConfiguracionGeneralController extends Controller
       // Consolidación
       'edadMinimaConsolidacion' => 'required|integer',
 
+      // --- BRANDING / MARCA BLANCA ---
+      'marcaBlanca' => 'nullable|string',
+      'nombreCreador' => 'nullable|string|max:100',
+      'urlCreador' => 'nullable|url|max:255',
+      'colorNombreApp' => 'nullable|string|max:50',
+      'descripcionLogin' => 'nullable|string|max:255',
+      'sufijoApp' => 'nullable|string|max:255',
+      'versionApp' => 'nullable|string|max:20',
+      'logoAppFile' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+      'faviconAppFile' => 'nullable|file|mimes:ico,png|max:512',
+
       // Informes Evidencias Grupo
       'labelCampo1InformeEvidenciasGrupo' => 'nullable|string|max:50',
       'labelCampo2InformeEvidenciasGrupo' => 'nullable|string|max:50',
@@ -159,6 +170,15 @@ class ConfiguracionGeneralController extends Controller
       'logo_personalizado' => $on('logoPersonalizado'),
       'usa_listas_geograficas' => $on('usaListasGeograficas'),
       'direccion_obligatoria' => $on('direccionObligatoria'),
+
+      // --- Branding / Marca Blanca ---
+      'marca_blanca' => $on('marcaBlanca'),
+      'nombre_creador' => $request->input('nombreCreador'),
+      'url_creador' => $request->input('urlCreador'),
+      'color_nombre_app' => $request->input('colorNombreApp'),
+      'descripcion_login' => $request->input('descripcionLogin'),
+      'sufijo_app' => $request->input('sufijoApp'),
+      'version_app' => $request->input('versionApp'),
 
       // --- Grupos ---
       'dia_corte_reportes_grupos' => $usaDiaCorte ? ($request->input('diaCorteReporteGrupos') ?: null) : null,
@@ -269,6 +289,24 @@ class ConfiguracionGeneralController extends Controller
       'campo_3_informe_evidencias_grupo_obligatorio' => $on('campo3InformeEvidenciasGrupoObligatorio'),
     
     ];
+
+    // --- Procesamiento de Archivos (Logo / Favicon) ---
+    $rutaAlmacenamiento = $configuracion->ruta_almacenamiento ? $configuracion->ruta_almacenamiento . '/' : '';
+    $pathBranding = $rutaAlmacenamiento . 'img/branding';
+
+    if ($request->hasFile('logoAppFile')) {
+      $file = $request->file('logoAppFile');
+      $fileName = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
+      $file->storeAs($pathBranding, $fileName, 'public');
+      $datos['logo_app'] = $fileName;
+    }
+
+    if ($request->hasFile('faviconAppFile')) {
+      $file = $request->file('faviconAppFile');
+      $fileName = 'favicon_' . time() . '.' . $file->getClientOriginalExtension();
+      $file->storeAs($pathBranding, $fileName, 'public');
+      $datos['favicon_app'] = $fileName;
+    }
 
     // Si se usa día de corte, ignoramos plazo de días (por lógica de negocio)
     if (!empty($datos['dia_corte_reportes_grupos'])) {

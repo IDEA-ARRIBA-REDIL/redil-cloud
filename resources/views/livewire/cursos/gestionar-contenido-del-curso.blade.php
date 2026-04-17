@@ -293,6 +293,8 @@
                                                              x-data="{ 
                                                                  config: {
                                                                      minimo_aprobacion: {{ $item->itemable->minimo_aprobacion ?? 50 }},
+                                                                     mostrar_respuestas_si_aprueba: {{ ($item->itemable->mostrar_respuestas_si_aprueba ?? false) ? 'true' : 'false' }},
+                                                                     mostrar_respuestas_si_pierde: {{ ($item->itemable->mostrar_respuestas_si_pierde ?? false) ? 'true' : 'false' }},
                                                                      limite_tiempo: {{ $item->itemable->limite_tiempo ?? 0 }},
                                                                      cantidad_repeticiones: {{ $item->itemable->cantidad_repeticiones ?? 0 }},
                                                                      tiempo_dilatacion: {{ $item->itemable->tiempo_dilatacion ?? 0 }}
@@ -316,6 +318,18 @@
                                                                 <div class="col-md-6">
                                                                     <label class="form-label small">Tiempo de espera tras fallar (Horas)</label>
                                                                     <input type="number" class="form-control form-control-sm" min="0" x-model="config.tiempo_dilatacion">
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-check form-switch mt-2">
+                                                                        <input class="form-check-input" type="checkbox" x-model="config.mostrar_respuestas_si_aprueba" id="respAprueba{{ $item->id }}">
+                                                                        <label class="form-check-label small" for="respAprueba{{ $item->id }}">Mostrar respuestas si aprueba</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-check form-switch mt-2">
+                                                                        <input class="form-check-input" type="checkbox" x-model="config.mostrar_respuestas_si_pierde" id="respPierde{{ $item->id }}">
+                                                                        <label class="form-check-label small" for="respPierde{{ $item->id }}">Mostrar respuestas si pierde (sin intentos)</label>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <div class="mt-3 text-end">

@@ -92,6 +92,7 @@
             <div class="col-12">
                <small class="text-black">Consolidación:</small> <span class="text-black fw-semibold">{{ $tipoUsuario->habilitado_para_consolidacion ? 'Sí' : 'No' }}</span>
             </div>
+          
             @if($tipoUsuario->descripcion)
             <div class="col-12 mt-2">
               <p class="mb-0 text-muted small text-truncate-2" title="{{ $tipoUsuario->descripcion }}">

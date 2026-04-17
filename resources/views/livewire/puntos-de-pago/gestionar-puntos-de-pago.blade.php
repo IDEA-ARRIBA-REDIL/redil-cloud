@@ -48,19 +48,23 @@
         </div>
 
         {{-- Botones de Acción --}}
-        <div class="col-12 col-md-6 mb-3 d-flex justify-content-start justify-content-md-end align-items-end">
-            <button wire:click="abrirModalCrearPunto" type="button" class="btn btn-primary waves-effect  me-2">
+        <div class="col-12 col-md-6 mb-3  justify-content-start justify-content-md-end align-items-end">
+            <div class="row mt-5">
+
+            
+            <button style="max-width: 200px;" wire:click="abrirModalCrearPunto" type="button" class="btn btn-primary waves-effect col-sm-12  col-md-3 m-2  ">
                 <i class="ti ti-plus me-1"></i>
                 <span class="fw-semibold">Crear punto</span>
             </button>
-            <button wire:click="exportarExcel" type="button" class="btn btn-outline-secondary waves-effect  me-2">
+            <button style="max-width: 200px;" wire:click="exportarExcel" type="button" class="btn btn-outline-secondary col-sm-12  col-md-3 waves-effect m-2  ">
                 <i class="ti ti-file-spreadsheet me-1"></i>
                 <span class="fw-semibold">Exportar</span>
             </button>
-            <button class="btn btn-outline-secondary " type="button" data-bs-toggle="offcanvas"
+            <button style="max-width: 200px;" class="btn btn-outline-secondary  col-sm-12 col-md-3 waves-effect m-2" type="button" data-bs-toggle="offcanvas"
                 data-bs-target="#offcanvasFiltrosPuntos" aria-controls="offcanvasFiltrosPuntos">
                 <i class="ti ti-filter me-1"></i> Filtros
             </button>
+            </div>
         </div>
     </div>
 

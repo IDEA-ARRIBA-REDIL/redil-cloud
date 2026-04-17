@@ -85,6 +85,30 @@
             </div>
         </div>
 
+        <!-- Gráfico por Entidades (Global) -->
+        <div class="col-md-6 col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="card-title mb-0">Usuarios por organización</h5>
+                </div>
+                <div class="card-body">
+                    <div id="chartEntidades"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico por Entidades (Inscritos) -->
+        <div class="col-md-6 col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="card-title mb-0">Inscripciones por organización</h5>
+                </div>
+                <div class="card-body">
+                    <div id="chartInscritosEntidad"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Gráfico por Cursos -->
         <div class="col-12 mb-4">
             <div class="card">
@@ -199,6 +223,56 @@
 
                 const chartCursos = new ApexCharts(document.querySelector("#chartCursos"), optionsCursos);
                 chartCursos.render();
+
+                // Datos de Entidades (Global)
+                const entidadData = @json($datosEntidad);
+                const entidadLabels = entidadData.map(item => item.entidad);
+                const entidadSeries = entidadData.map(item => item.total);
+
+                const optionsEntidad = {
+                    chart: {
+                        type: 'donut',
+                        height: 300
+                    },
+                    series: entidadSeries,
+                    labels: entidadLabels,
+                    colors: ['#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#FF5722'],
+                    legend: {
+                        position: 'bottom'
+                    }
+                };
+
+                const chartEntidad = new ApexCharts(document.querySelector("#chartEntidades"), optionsEntidad);
+                chartEntidad.render();
+
+                // Datos de Inscritos por Entidad
+                const inscritosEntidadData = @json($inscritosPorEntidad);
+                const inscritosEntidadLabels = inscritosEntidadData.map(item => item.entidad);
+                const inscritosEntidadSeries = [{
+                    name: 'Asociados',
+                    data: inscritosEntidadData.map(item => item.total)
+                }];
+
+                const optionsInscritosEntidad = {
+                    chart: {
+                        type: 'bar',
+                        height: 300
+                    },
+                    series: inscritosEntidadSeries,
+                    plotOptions: {
+                        bar: {
+                            borderRadius: 4,
+                            horizontal: true
+                        }
+                    },
+                    xaxis: {
+                        categories: inscritosEntidadLabels
+                    },
+                    colors: ['#03A9F4']
+                };
+
+                const chartInscritosEntidad = new ApexCharts(document.querySelector("#chartInscritosEntidad"), optionsInscritosEntidad);
+                chartInscritosEntidad.render();
             }
         </script>
     @endpush

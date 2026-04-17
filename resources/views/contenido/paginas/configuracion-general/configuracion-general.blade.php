@@ -123,6 +123,10 @@ $configData = Helper::appClasses();
     const switchHabCampo2 = document.getElementById('habilitarCampo2InformeEvidenciasGrupo');
     const switchHabCampo3 = document.getElementById('habilitarCampo3InformeEvidenciasGrupo');
     
+    // Branding
+    const switchMarcaBlanca = document.getElementById('marca_blanca');
+    const contBranding = document.getElementById('contenedor_detalles_branding');
+    
     // Contenedores a ocultar/mostrar
     // Campo 1
     const contLabel1 = document.getElementById('contenedor_labelCampo1InformeEvidenciasGrupo');
@@ -203,6 +207,8 @@ $configData = Helper::appClasses();
 
       toggleCampo(switchHabCampo3?.checked, contLabel3);
       toggleCampo(switchHabCampo3?.checked, contOblig3);
+
+      toggleCampo(switchMarcaBlanca?.checked, contBranding);
     }
 
     // Re-evaluar al cambiar el switch
@@ -222,6 +228,7 @@ $configData = Helper::appClasses();
     switchHabCampo1?.addEventListener('change', actualizarVisibilidadCampos);
     switchHabCampo2?.addEventListener('change', actualizarVisibilidadCampos);
     switchHabCampo3?.addEventListener('change', actualizarVisibilidadCampos);
+    switchMarcaBlanca?.addEventListener('change', actualizarVisibilidadCampos);
 
     actualizarVisibilidadCampos();
   });
@@ -324,6 +331,87 @@ $configData = Helper::appClasses();
                 </span>
               </label>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-12">
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Branding / Marca Blanca</h5>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-12 mb-4">
+              <div class="alert alert-info d-flex align-items-center" role="alert">
+                <span class="alert-icon text-info me-2">
+                  <i class="ti ti-info-circle ti-xs"></i>
+                </span>
+                <div>
+                  La <strong>Marca Blanca</strong> permite personalizar completamente la identidad visual del software para este tenant. Si está desactivada, se mostrarán los logos y créditos de la empresa por defecto.
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4 col-sm-6 col-12 mb-3">
+              <div class="form-label">¿Habilitar Marca Blanca?</div>
+              <label class="switch switch-lg">
+                <input type="checkbox" @checked($configuracion->marca_blanca) class="switch-input" id="marca_blanca" name="marcaBlanca" />
+                <span class="switch-toggle-slider">
+                  <span class="switch-on">Si</span>
+                  <span class="switch-off">No</span>
+                </span>
+              </label>
+            </div>
+
+            <div id="contenedor_detalles_branding" class="col-12 {{ $configuracion->marca_blanca ? '' : 'd-none' }}">
+              <div class="row border-top pt-4">
+                 <div class="col-md-4 col-sm-6 col-12 mb-3">
+                  <label class="form-label">Nombre del creador</label>
+                  <input class="form-control" name="nombreCreador" type="text" value="{{ $configuracion->nombre_creador }}" placeholder="Ej: Mi Iglesia" />
+                </div>
+                <div class="col-md-4 col-sm-6 col-12 mb-3">
+                  <label class="form-label">URL del creador</label>
+                  <input class="form-control" name="urlCreador" type="url" value="{{ $configuracion->url_creador }}" placeholder="https://miiglesia.com" />
+                </div>
+                <div class="col-md-4 col-sm-6 col-12 mb-3">
+                  <label class="form-label">Color nombre app</label>
+                  <input class="form-control" name="colorNombreApp" type="text" value="{{ $configuracion->color_nombre_app }}" placeholder="Ej: white o #ffffff" />
+                </div>
+                <div class="col-md-6 col-12 mb-3">
+                  <label class="form-label">Descripción Login</label>
+                  <input class="form-control" name="descripcionLogin" type="text" value="{{ $configuracion->descripcion_login }}" placeholder="Frase motivadora en el inicio de sesión" />
+                </div>
+                <div class="col-md-6 col-12 mb-3">
+                  <label class="form-label">Sufijo App (SEO)</label>
+                  <input class="form-control" name="sufijoApp" type="text" value="{{ $configuracion->sufijo_app }}" placeholder="Descripción para buscadores" />
+                </div>
+                <div class="col-md-4 col-sm-6 col-12 mb-3">
+                  <label class="form-label">Versión personalizada</label>
+                  <input class="form-control" name="versionApp" type="text" value="{{ $configuracion->version_app }}" placeholder="Ej: 1.0.0" />
+                </div>
+
+                <div class="col-md-4 col-sm-6 col-12 mb-3">
+                  <label class="form-label">Logo de la App (PNG sugerido)</label>
+                  <input class="form-control" name="logoAppFile" type="file" accept="image/*" />
+                  @if($configuracion->logo_app)
+                    <div class="mt-2">
+                       <span class="badge bg-label-secondary">Actual: {{ $configuracion->logo_app }}</span>
+                    </div>
+                  @endif
+                </div>
+
+                <div class="col-md-4 col-sm-6 col-12 mb-3">
+                  <label class="form-label">Favicon (.ico)</label>
+                  <input class="form-control" name="faviconAppFile" type="file" accept=".ico,image/png" />
+                   @if($configuracion->favicon_app)
+                    <div class="mt-2">
+                      <span class="badge bg-label-secondary">Actual: {{ $configuracion->favicon_app }}</span>
+                    </div>
+                  @endif
+                </div>
+              </div>
+            </div>
+            
           </div>
         </div>
       </div>

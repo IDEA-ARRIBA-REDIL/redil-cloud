@@ -31,7 +31,8 @@
     </div>
 
     <!-- modalBiblia -->
-    <div class="modal fade" id="modalBiblia" tabindex="-1" wire:ignore.self aria-hidden="true">
+    @teleport('body')
+    <div class="modal fade" id="modalBiblia_{{ $name_id }}" tabindex="-1" wire:ignore.self aria-hidden="true">
       <div class="modal-dialog modal-fullscreen" role="document">
         <div class="modal-content">
           <div class="modal-header border-bottom pb-4 row">
@@ -166,6 +167,7 @@
         </div>
       </div>
     </div>
+    @endteleport
     <!-- modalBiblia -->
 
 
@@ -178,8 +180,13 @@
 
 @script
   <script>
-    $wire.on('abrirModal', () => {
-      $('#' + event.detail.nombreModal).modal('show');
+    $wire.on('abrirModal', (event) => {
+      // Solo actuar si el modal corresponde a ESTA instancia
+      if (event.nombreModal === 'modalBiblia_{{ $name_id }}') {
+        const modalEl = document.getElementById(event.nombreModal);
+        const modalBus = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modalBus.show();
+      }
     });
 
     window.addEventListener('msn', event => {

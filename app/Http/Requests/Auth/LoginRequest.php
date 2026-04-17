@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class LoginRequest extends FormRequest
 {
@@ -33,7 +35,9 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
+     * Intenta autenticar las credenciales de la solicitud.
+     * Aquí verificamos si el usuario fue dado de baja (SoftDeleted) antes de proceder con el intento de login normal.
+     * Si está de baja y la contraseña es correcta, detenemos el login y le ofrecemos reactivar su cuenta.
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -41,6 +45,26 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        // 1. Verificar si el usuario está dado de baja (eliminado lógicamente usando trashed())
+        // Usamos withTrashed() para incluir en la búsqueda a los usuarios que tienen deleted_at
+        $usuario = User::withTrashed()->where('email', $this->input('email'))->first();
+
+        // Si el usuario existe, está dado de baja (trashed) y la contraseña ingresada es la correcta
+        if ($usuario && $usuario->trashed() && Hash::check($this->input('password'), $usuario->password)) {
+            // Limpiamos los intentos fallidos porque las credenciales sí son reales, solo el usuario está inactivo.
+            RateLimiter::clear($this->throttleKey());
+
+            // Enviamos un mensaje a la sesión tipo 'danger' que sí permite renderizar enlaces HTML gracias a {!! !!} en status-msn.blade.php
+            session()->flash('danger', 'Esta cuenta ha sido dada de baja. Para reactivarla haz clic <a href="' . route('auth.reactivar', ['email' => $usuario->email]) . '"><b>aquí</b></a>.');
+
+            // Lanzamos un error genérico en el input para detener el flujo de validación.
+            throw ValidationException::withMessages([
+                'email' => 'Cuenta dada de baja.',
+            ]);
+        }
+
+        // 2. Intento de inicio de sesión habitual
+        // Auth::attempt() ignora por defecto a los usuarios que están dados de baja, por lo que nunca iniciará sesión acá.
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 

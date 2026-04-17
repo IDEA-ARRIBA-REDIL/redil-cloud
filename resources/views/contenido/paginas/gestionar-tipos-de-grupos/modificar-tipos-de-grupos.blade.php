@@ -2,6 +2,7 @@
 $configData = Helper::appClasses();
 // Determina si estamos en modo edición o creación
 $modoEdicion = isset($tipoGrupo);
+$configuracion = \App\Models\Configuracion::find(1);
 @endphp
 
 @extends('layouts/layoutMaster')
@@ -22,6 +23,11 @@ $modoEdicion = isset($tipoGrupo);
 
     // Muestra el input para subir una nueva
     $('#contenedor-input-imagen').removeClass('d-none');
+  });
+
+  $('#btn-reemplazar-portada').on('click', function() {
+    $('#info-portada-actual').addClass('d-none');
+    $('#contenedor-input-portada').removeClass('d-none');
   });
 
   // Mostrar el input file cuando se presiona el botón "Adjuntar imagen/archivo"
@@ -80,18 +86,21 @@ $modoEdicion = isset($tipoGrupo);
 
       {{-- Imagen --}}
       <div class="col-md-4 mb-3">
-        <label for="imagen" class="form-label">Imagen</label>
+        <label for="imagen" class="form-label">Imagen (Icono)</label>
 
         @if ($tipoGrupo->imagen)
         {{-- Muestra la info de la imagen actual y el botón para reemplazar --}}
-        <div id="info-imagen-actual">
-          <div class="alert alert-info d-flex justify-content-between align-items-center p-2">
-            <span class="text-truncate" style="font-size: 0.85rem;">
-              <i class="ti ti-photo ti-sm me-1"></i>
-              {{ $tipoGrupo->imagen }}
-            </span>
-            <button type="button" id="btn-reemplazar" class="btn btn-sm p-1">
-              <i class="ti ti-circle-x"></i>
+        <div id="info-imagen-actual" class="mb-2">
+          <div class="border rounded p-2 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->imagen) }}" alt="Imagen actual" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
+              <div class="d-flex flex-column">
+                <span style="font-size: 0.75rem;" class="text-muted">Imagen actual</span>
+                <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ basename($tipoGrupo->imagen) }}</span>
+              </div>
+            </div>
+            <button type="button" id="btn-reemplazar" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
+              <i class="ti ti-trash"></i>
             </button>
           </div>
         </div>
@@ -111,6 +120,40 @@ $modoEdicion = isset($tipoGrupo);
         </div>
       </div>
       {{-- /Imagen --}}
+
+      {{-- Portada --}}
+      <div class="col-md-4 mb-3">
+        <label for="portada" class="form-label">Portada / Banner (Fallback)</label>
+
+        @if ($tipoGrupo->portada)
+        <div id="info-portada-actual" class="mb-2">
+          <div class="border rounded p-2 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->portada) }}" alt="Portada actual" class="rounded me-3 border" style="width: 80px; height: 50px; object-fit: cover;">
+              <div class="d-flex flex-column">
+                <span style="font-size: 0.75rem;" class="text-muted">Portada actual</span>
+                <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ basename($tipoGrupo->portada) }}</span>
+              </div>
+            </div>
+            <button type="button" id="btn-reemplazar-portada" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+        @endif
+
+        <div id="contenedor-input-portada" class="{{ $tipoGrupo->portada ? 'd-none' : '' }}">
+          <div class="input-group">
+            <input type="file" id="portada" name="portada" class="form-control" accept="image/*">
+          </div>
+          @error('portada')
+          <div class="text-danger ti-12px mt-2">
+            <i class="ti ti-circle-x"></i> {{ $message }}
+          </div>
+          @enderror
+        </div>
+      </div>
+      {{-- /Portada --}}
 
       <div class="col-md-8">
         <label class="form-label">Descripción</label>
@@ -231,49 +274,3 @@ $modoEdicion = isset($tipoGrupo);
   </div>
 </form>
 @endsection
-
-<script>
-  document.getElementById('imagenInput').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validar extensión
-    if (file.type !== 'image/png') {
-      alert("Solo se permiten archivos PNG.");
-      event.target.value = "";
-      return;
-    }
-
-    // Validar dimensiones
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = function() {
-      if (img.width !== 100 || img.height !== 100) {
-        alert("La imagen debe ser exactamente de 100x100 píxeles.");
-        event.target.value = "";
-      }
-    };
-  });
-
-  document.getElementById('geoIconoInput').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validar extensión
-    if (file.type !== 'image/png') {
-      alert("Solo se permiten archivos PNG.");
-      event.target.value = "";
-      return;
-    }
-
-    // Validar dimensiones
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = function() {
-      if (img.width !== 100 || img.height !== 100) {
-        alert("El icono debe ser exactamente de 100x100 píxeles.");
-        event.target.value = "";
-      }
-    };
-  });
-</script>

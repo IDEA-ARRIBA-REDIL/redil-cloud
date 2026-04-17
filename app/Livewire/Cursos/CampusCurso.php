@@ -5,6 +5,7 @@ namespace App\Livewire\Cursos;
 use App\Models\Curso;
 use App\Models\CursoItem;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class CampusCurso extends Component
@@ -42,6 +43,26 @@ class CampusCurso extends Component
     public $evaluacionConfig = null;
 
     public $inicioExamen = null;
+
+    public $mostrarRespuestas = false;
+
+    public $puedeVerRespuestasActual = false;
+
+    #[Computed]
+    public function evaluacionEstaCompleta(): bool
+    {
+        if (empty($this->preguntasEvaluacion)) {
+            return false;
+        }
+
+        foreach ($this->preguntasEvaluacion as $pregunta) {
+            if (empty($this->respuestasEvaluacion[$pregunta->id])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public function mount($slug)
     {
@@ -163,12 +184,31 @@ class CampusCurso extends Component
         ]);
 
         // Si el ítem es una evaluación, disparamos el flujo de carga
-        if (in_array($this->itemActivo->tipo->codigo, ['evaluacion', 'quiz', 'final']) && $this->itemActivo->itemable) {
+        if (in_array($this->itemActivo->tipo->codigo, ['evaluacion', 'quiz', 'evaluacion_final']) && $this->itemActivo->itemable) {
             $this->cargarEvaluacion();
         }
 
         // Emitimos un evento a Alpine/JavaScript para que reinicie los oyentes de progreso (scroll, video duration)
         $this->dispatch('item-cambiado', itemId: $itemId);
+    }
+
+    /**
+     * Verifica si todas las lecciones de un módulo han sido completadas.
+     */
+    public function isModuloCompletado($modulo): bool
+    {
+        if (! $modulo || ! $modulo->items) {
+            return false;
+        }
+
+        foreach ($modulo->items as $item) {
+            $estado = $this->itemsProgreso[$item->id] ?? 'bloqueado';
+            if ($estado !== 'completado') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -188,12 +228,39 @@ class CampusCurso extends Component
             ->get();
 
         $this->intentosRealizados = $intentos->count();
-        $ultimoIntento = $intentos->first();
+        $this->evaluacionResultado = $intentos->first();
 
         $this->evaluacionBloqueada = false;
         $this->horasRestantesDilatacion = 0;
+        $this->puedeVerRespuestasActual = false;
 
-        // 0. Si ya está aprobado, no aplicamos bloqueos de intentos
+        // Lógica para determinar si puede ver respuestas (basada en el último intento)
+        $totalPermitidos = 1 + ($evaluacion->cantidad_repeticiones ?? 0);
+        $sinMasIntentos = $this->intentosRealizados >= $totalPermitidos;
+
+        if ($this->evaluacionResultado) {
+            $haRevisado = $this->evaluacionResultado->respuestas_json['__revisado'] ?? false;
+
+            if (!$haRevisado) {
+                if ($this->evaluacionResultado->aprobado && $evaluacion->mostrar_respuestas_si_aprueba) {
+                    $this->puedeVerRespuestasActual = true;
+                } elseif (! $this->evaluacionResultado->aprobado && $sinMasIntentos && $evaluacion->mostrar_respuestas_si_pierde) {
+                    $this->puedeVerRespuestasActual = true;
+                }
+            }
+        }
+
+        // 3. Cargar preguntas (siempre las cargamos para que el modal de revisión pueda usarlas)
+        $preguntas = $evaluacion->preguntas()->with('opciones')->get();
+        $this->preguntasEvaluacion = $preguntas->shuffle()->values()->all();
+        $this->preguntaActualIndex = 0;
+        $this->respuestasEvaluacion = [];
+
+        foreach ($this->preguntasEvaluacion as $pregunta) {
+            $this->respuestasEvaluacion[$pregunta->id] = [];
+        }
+
+        // 0. Si ya está aprobado o completado, omitimos la lógica de bloqueos y tiempos de examen activos
         if (isset($this->itemsProgreso[$this->itemActivo->id]) && $this->itemsProgreso[$this->itemActivo->id] === 'completado') {
             return;
         }
@@ -202,16 +269,16 @@ class CampusCurso extends Component
         $totalPermitidos = 1 + ($evaluacion->cantidad_repeticiones ?? 0);
 
         if ($this->intentosRealizados > 0 && $this->intentosRealizados >= $totalPermitidos) {
-            if ($ultimoIntento) {
+            if ($this->evaluacionResultado) {
                 // Ya cumplió todos los intentos. Verificar si ya pasó el tiempo de dilatación.
-                $fechaUltimo = $ultimoIntento->created_at;
+                $fechaUltimo = $this->evaluacionResultado->created_at;
                 $horasTranscurridas = $fechaUltimo->diffInHours(now());
 
                 if ($horasTranscurridas < $evaluacion->tiempo_dilatacion) {
                     $this->evaluacionBloqueada = true;
                     $this->horasRestantesDilatacion = $evaluacion->tiempo_dilatacion - $horasTranscurridas;
 
-                    return; // No cargamos preguntas, está bloqueado
+                    return; // Está bloqueado
                 } else {
                     // Pasó el tiempo de dilatación. "Borramos" registros anteriores para reiniciar ciclo
                     \App\Models\CursoEvaluacionResultado::where('user_id', $user->id)
@@ -222,21 +289,13 @@ class CampusCurso extends Component
             }
         }
 
-        // 3. Cargar preguntas si no está bloqueado
-        $preguntas = $evaluacion->preguntas()->with('opciones')->get();
-        $this->preguntasEvaluacion = $preguntas->shuffle()->values()->all();
-        $this->preguntaActualIndex = 0;
-        $this->respuestasEvaluacion = [];
-
-        foreach ($this->preguntasEvaluacion as $pregunta) {
-            $this->respuestasEvaluacion[$pregunta->id] = [];
-        }
-
         $sessionKey = "eval_start_{$user->id}_{$this->itemActivo->id}";
         if (!session()->has($sessionKey)) {
             session()->put($sessionKey, now()->timestamp);
         }
         $this->inicioExamen = session($sessionKey);
+        $this->inicioExamen = session($sessionKey);
+        $this->mostrarRespuestas = false;
     }
 
     /**
@@ -287,18 +346,7 @@ class CampusCurso extends Component
      */
     public function validarYEnviarEvaluacion()
     {
-        $todasRespondidas = true;
-
-        foreach ($this->preguntasEvaluacion as $pregunta) {
-            // Si el array de esta pregunta está vacío, es que no seleccionó nada
-            if (empty($this->respuestasEvaluacion[$pregunta->id])) {
-                $todasRespondidas = false;
-                break;
-            }
-        }
-
-        if (! $todasRespondidas) {
-            // Emitimos evento de Fire SweetAlert (el script en la vista lo captura)
+        if (! $this->evaluacionEstaCompleta) {
             $this->dispatch('evaluacion-incompleta');
         } else {
             // Si todas tienen respuesta, emitimos evento para preguntar "¿Estás seguro de enviar?"
@@ -380,17 +428,41 @@ class CampusCurso extends Component
         // Limpiar tiempo de inicio en sesión al terminar
         session()->forget("eval_start_{$user->id}_{$this->itemActivo->id}");
 
+        // Lógica de visualización de respuestas (Configuración)
+        $totalPermitidos = 1 + ($evaluacion->cantidad_repeticiones ?? 0);
+        $sinMasIntentos = $intentoActual >= $totalPermitidos;
+
+        if ($aprobado && $evaluacion->mostrar_respuestas_si_aprueba) {
+            $this->puedeVerRespuestasActual = true;
+        } elseif (!$aprobado && $sinMasIntentos && $evaluacion->mostrar_respuestas_si_pierde) {
+            $this->puedeVerRespuestasActual = true;
+        }
+
         if ($aprobado) {
-            $this->dispatch('evaluacion-aprobada', nota: round($notaFinal, 2));
-            $this->marcarCompletado($this->itemActivo->id);
+            $this->dispatch('evaluacion-aprobada', nota: round($notaFinal, 2), puedeVerRespuestas: $this->puedeVerRespuestasActual);
+            $this->marcarCompletado($this->itemActivo->id, false);
         } else {
             $this->intentosRealizados = $intentoActual;
-            $totalPermitidos = 1 + ($evaluacion->cantidad_repeticiones ?? 0);
 
-            if ($this->intentosRealizados >= $totalPermitidos) {
+            if ($sinMasIntentos) 
+            {
+                $this->preguntasEvaluacion = [];
                 $this->evaluacionBloqueada = true;
                 $this->horasRestantesDilatacion = $evaluacion->tiempo_dilatacion;
-                $this->dispatch('evaluacion-reprobada-bloqueada', nota: round($notaFinal, 2), horas: $evaluacion->tiempo_dilatacion);
+
+                // Si es Quiz y perdió todos los intentos, lo dejamos continuar marcándolo como completado
+                if ($this->itemActivo->tipo->codigo === 'quiz') {
+                    $this->marcarCompletado($this->itemActivo->id, false); // false para no avanzar automáticamente aún si queremos mostrar respuestas
+                    $this->dispatch('evaluacion-reprobada-finalizar-quiz', nota: round($notaFinal, 2), puedeVerRespuestas: $this->puedeVerRespuestasActual);
+                } else {
+                    // Evaluación Final u otro: Bloqueo total y notificación
+                    $this->dispatch('evaluacion-reprobada-bloqueada', 
+                        nota: round($notaFinal, 2), 
+                        horas: $evaluacion->tiempo_dilatacion, 
+                        puedeVerRespuestas: $this->puedeVerRespuestasActual,
+                        esFinal: $this->itemActivo->tipo->codigo === 'evaluacion_final'
+                    );
+                }
             } else {
                 $restantes = $totalPermitidos - $this->intentosRealizados;
                 $this->dispatch('evaluacion-reprobada', nota: round($notaFinal, 2), restantes: $restantes);
@@ -400,10 +472,41 @@ class CampusCurso extends Component
         }
     }
 
+    public function verRespuestas(): void
+    {
+        if ($this->puedeVerRespuestasActual) {
+            $this->mostrarRespuestas = true;
+        }
+    }
+
+    public function cerrarRespuestas(): void
+    {
+        $this->mostrarRespuestas = false;
+
+        // Marcar como revisado para que no pueda volver a entrar (salvaguarda de una sola vez)
+        if ($this->evaluacionResultado) {
+            $respuestas = $this->evaluacionResultado->respuestas_json;
+            if (! isset($respuestas['__revisado'])) {
+                $respuestas['__revisado'] = true;
+                $this->evaluacionResultado->update(['respuestas_json' => $respuestas]);
+                $this->puedeVerRespuestasActual = false; // Ocultar botón inmediatamente
+            }
+        }
+
+        // Si era una evaluación final y perdió sin más intentos, redireccionar al catálogo al cerrar respuestas
+        $evaluacion = $this->evaluacionConfig;
+        $totalPermitidos = 1 + ($evaluacion->cantidad_repeticiones ?? 0);
+        $sinMasIntentos = $this->intentosRealizados >= $totalPermitidos;
+
+        if ($this->itemActivo->tipo->codigo === 'evaluacion_final' && !$this->evaluacionResultado->aprobado && $sinMasIntentos) {
+            $this->redirect(route('cursos.catalogo'), navigate: true);
+        }
+    }
+
     /**
      * Llamado por el botón "Hecho" cuando el JavaScript valida que el estudiante consumió el contenido.
      */
-    public function marcarCompletado($itemId)
+    public function marcarCompletado($itemId, $avanzar = true)
     {
         $user = Auth::user();
 
@@ -419,10 +522,11 @@ class CampusCurso extends Component
         // Recargamos el estado general para recalcular el porcentaje y desbloquear el siguiente ítem
         $this->cargarProgreso();
 
-        session()->flash('successItems', '¡Excelente! Has completado esta lección.');
-
-        // Automáticamente intentamos avanzar al siguiente ítem disponible
-        $this->avanzarSiguiente();
+        if ($avanzar) {
+            session()->flash('successItems', '¡Excelente! Has completado esta lección.');
+            // Automáticamente intentamos avanzar al siguiente ítem disponible
+            $this->avanzarSiguiente();
+        }
     }
 
     /**

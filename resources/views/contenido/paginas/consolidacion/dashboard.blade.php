@@ -457,17 +457,35 @@ $configData = Helper::appClasses();
         };
         new ApexCharts(desercionesEl, desercionesConfig).render();
     }
+    window.alertaExportandoExcel = function() {
+        // En un export desde un form submit, la página no recarga, por eso limitamos a un tiempo prudente
+        Swal.fire({
+            title: 'Preparando Excel...',
+            html: 'Por favor, espera un momento.<br><br><b>La descarga iniciará automáticamente.</b>',
+            icon: 'info',
+            timer: 4500, // Tiempo prudente de 4.5s
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    };
   });
 </script>
 @endsection
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h4 class="mb-1 fw-semibold text-primary">Dashboard consolidación</h4>
+  <h4 class="mb-1 fw-semibold text-primary">Dashboard consolidación </h4>
 </div>
 
   <div class="d-flex justify-content-end mb-5">
-    <a href="{{ route('consolidacion.bloques') }}" class="btn btn-outline-primary">
+    <button type="submit" form="formFiltros" formaction="{{ route('consolidacion.dashboard.exportar') }}" class="btn btn-primary rounded-pill me-2 border-0 shadow-sm" onclick="window.alertaExportandoExcel()">
+      <i class="ti ti-file-spreadsheet me-1"></i> Exportar excel 
+    </button>
+    <a href="{{ route('consolidacion.bloques') }}" class="btn btn-primary rounded-pill shadow-sm border-0">
       <i class="ti ti-settings me-1"></i> Gestionar bloques
     </a>
   </div>
@@ -591,7 +609,9 @@ $configData = Helper::appClasses();
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
-              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $totalCosecha }}</h5>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_total', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $totalCosecha }}</a>
+              </h5>
               <small class="text-black">
                 Total cosecha
               </small>
@@ -604,7 +624,9 @@ $configData = Helper::appClasses();
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
-              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $cosechaEfectiva }}</h5>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_efectiva', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $cosechaEfectiva }}</a>
+              </h5>
               <small class="text-black">
                 Cosecha efectiva
               </small>
@@ -670,7 +692,9 @@ $configData = Helper::appClasses();
                 @foreach ($vinculacionesCosecha as $vinculacion)
                 <div class=" col-12 d-flex flex-column">
                   <small class="text-black">{{ $vinculacion->nombre }} </small>
-                  <small class="fw-semibold text-black ">{{ $vinculacion->usuarios_count }}</small>
+                  <small class="fw-semibold text-black ">
+                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_vinculacion_' . $vinculacion->id])) }}">{{ $vinculacion->usuarios_count }}</a>
+                  </small>
                   <hr class="my-3 border-2">
                 </div>
                 @endforeach
@@ -861,13 +885,17 @@ $configData = Helper::appClasses();
                             <div class="col-12 col-md-4">
                                 <div class="card mb-3">
                                     <div class="card-body py-3 border-bottom">
-                                        <h5 class="card-title mb-0 fw-semibold">{{ $dato->totalCosecha }}</h5>
+                                        <h5 class="card-title mb-0 fw-semibold">
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_total', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalCosecha }}</a>
+                                        </h5>
                                         <small class="text-black">Total cosecha</small> 
                                     </div>
                                 </div>
                                 <div class="card mb-3">
                                     <div class="card-body py-3 border-bottom">
-                                        <h5 class="card-title mb-0 fw-semibold">{{ $dato->cosechaEfectiva }}</h5>
+                                        <h5 class="card-title mb-0 fw-semibold">
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_efectiva', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->cosechaEfectiva }}</a>
+                                        </h5>
                                         <small class="text-black">Cosecha efectiva</small>
                                     </div>
                                 </div>
@@ -884,7 +912,7 @@ $configData = Helper::appClasses();
 
                             <!-- Gráfico -->
                             <div class="col-12 col-md-4">
-                                <h6 class="text-center fw-semibold mb-3">Cosecha por semanas</h6>
+                                <h6 class="text-center fw-semibold mb-3">Cosecha por vinculación</h6>
                                 <div id="chart-desglose-{{ $dato->id }}" class="chart-bloque" 
                                     data-series='@json($dato->vinculacionesCosecha->pluck("usuarios_count"))' 
                                     data-labels='@json($dato->vinculacionesCosecha->pluck("nombre"))'
@@ -894,12 +922,13 @@ $configData = Helper::appClasses();
 
                             <!-- Lista -->
                             <div class="col-12 col-md-4">
-                                <h6 class="fw-semibold mb-3">Tipo de vinculación semanal</h6>
+                                <h6 class="fw-semibold mb-3">Lista de cosecha por vinculación</h6>
                                 <ul class="list-group list-group-flush">
                                     @foreach($dato->vinculacionesCosecha as $vinc)
                                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
                                             {{ $vinc->nombre }}
-                                            <span class="text-black fw-semibold">{{ $vinc->usuarios_count }}</span>
+                                                <a class="fw-semibold" href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_vinculacion_' . $vinc->id, $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $vinc->usuarios_count }}</a>
+                                           
                                         </li>
                                     @endforeach
                                 </ul>
@@ -1004,7 +1033,7 @@ $configData = Helper::appClasses();
                         @if(!$esVistaDetalle)
                         <div class="d-flex justify-content-end py-2 ">
                               <!-- Botón para ir al Drill-Down del Bloque -->
-                              <a href="{{ route('consolidacion.dashboard', array_merge(request()->all(), ['bloque_detalle_id' => $dato->id, 'tab' => 'indicador-1'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
+                              <a href="{{ route('consolidacion.dashboard', array_merge(request()->except(['sede_id', 'bloque_id']), ['bloque_detalle_id' => $dato->id, 'tab' => 'indicador-1'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
                                   Ver detalle sedes
                               </a>
                         </div>
@@ -1023,7 +1052,7 @@ $configData = Helper::appClasses();
   <!-- Tab 2: Escuelas -->
   <div class="tab-pane fade {{ $activeTab == 'escuelas' ? 'show active' : '' }}" id="navs-tab-indicador-2" role="tabpanel">    
       
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 text-black fw-bold">
       <h4 class="mb-4 text-black fw-semibold text-uppercase">Estadísticas de Escuelas
           @if($esVistaDetalle)
             <span class="text-primary">{{ $bloqueActual->nombre }}</span>
@@ -1035,6 +1064,53 @@ $configData = Helper::appClasses();
               <i class="ti ti-arrow-left me-1"></i> Volver a bloques
           </a>
       @endif
+    </div>
+
+    <div class="row align-items-center mb-4 g-2">
+      <!-- Total Matrículas -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'total_matriculas', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $totalMatriculas }}</a>
+              </h5>
+              <small class="text-black">Total matrículas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matrículas Efectivas -->
+      <div class="col col-12 equal-height-col col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'matriculas_efectivos', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $matriculasEfectivos }}</a>
+              </h5>
+              <small class="text-black">Matrículas efectivas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Efectividad de Matrículas -->
+      <div class="col-12 col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center pb-0">
+            <small class="text-black">Efectividad de matrículas</small>
+            <h4 class="text-black fw-semibold mb-0">
+                {{ $porcentajeEfectividadMatriculas }}%
+              </h4>
+          </div>
+          <div class="card-body">              
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar" role="progressbar" style="width: {{ $porcentajeEfectividadMatriculas }}%" aria-valuenow="{{ $porcentajeEfectividadMatriculas }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="row equal-height-row g-2">
@@ -1118,7 +1194,7 @@ $configData = Helper::appClasses();
                 </small>
               </div>
             </div>
-            <div class="card-body">                  
+            <div class="card-body">                   
               <div id="desercionesChart"></div>
             </div>
           </div>
@@ -1126,21 +1202,6 @@ $configData = Helper::appClasses();
 
         <!-- Porcentaje Efectividad Matrículas -->
 
-         <div class="col equal-height-col col-12 col-lg-4 col-sm-6 mb-4">
-          <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center pb-0">
-              <small class="text-black">Efectividad de matrículas</small>
-              <h4 class="text-black fw-semibold mb-0">
-                {{ $porcentajeEfectividadMatriculas }}%
-              </h4>
-            </div>
-            <div class="card-body">              
-              <div class="progress" style="height: 8px;">
-                <div class="progress-bar" role="progressbar" style="width: {{ $porcentajeEfectividadMatriculas }}%" aria-valuenow="{{ $porcentajeEfectividadMatriculas }}" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
-          </div>
-        </div>
     </div>
 
     <div class="row mt-4 mb-4">
@@ -1236,6 +1297,43 @@ $configData = Helper::appClasses();
                 <div id="collapseEscuela{{ $dato->id }}" class="accordion-collapse collapse border-top border-2 pt-4" aria-labelledby="headingEscuela{{ $dato->id }}">
                     <div class="accordion-body">
                         
+                        <div class="row align-items-center mb-4 g-2">
+                            <!-- Total Matrículas (Dato Local) -->
+                            <div class="col col-12 col-md-4">
+                                <div class="card mb-3">
+                                    <div class="card-body py-3">
+                                        <h5 class="card-title mb-0 fw-semibold">
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'total_matriculas', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalMatriculas }}</a>
+                                        </h5>
+                                        <small class="text-black">Total matrículas</small> 
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Matrículas Efectivas (Dato Local) -->
+                            <div class="col col-12 col-md-4">
+                                <div class="card mb-3 ">
+                                    <div class="card-body py-3">
+                                        <h5 class="card-title mb-0 fw-semibold">
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'matriculas_efectivos', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->matriculasEfectivos }}</a>
+                                        </h5>
+                                        <small class="text-black">Matrículas efectivas</small> 
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Efectividad (Dato Local) -->
+                            <div class="col col-12 col-md-4">
+                                <div class="card mb-3 ">
+                                    <div class="card-body py-3">
+                                        <h5 class="card-title mb-0 fw-semibold">{{ $dato->porcentajeEfectividadMatriculas }}%</h5>
+                                        <small class="text-black">Efectividad de matrículas</small>
+                                        <div class="progress" style="height: 8px;">
+                                          <div class="progress-bar" role="progressbar" style="width: {{ $dato->porcentajeEfectividadMatriculas }}%" aria-valuenow="{{ $dato->porcentajeEfectividadMatriculas }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row equal-height-row g-2">
                             <!-- Gráfico Distribución Sector vs Templo -->
                             <div class="col equal-height-col col-12 col-lg-4 col-sm-6 mb-4">
@@ -1309,22 +1407,7 @@ $configData = Helper::appClasses();
                                 </div>
                                 <div class="card-body">                  
                                   <div id="desercionesChart{{ $dato->id }}"></div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <!-- Porcentaje Efectividad Matrículas -->
-                            <div class="col equal-height-col col-12 col-lg-4 col-sm-6 mb-4">
-                              <div class="card">
-                                <div class="card-header d-flex justify-content-between align-items-center pb-0">
-                                  <small class="text-black">Efectividad de matrículas</small>
-                                  <h4 class="text-black fw-semibold mb-0">{{ $dato->porcentajeEfectividadMatriculas }}%</h4>
-                                </div>
-                                <div class="card-body">              
-                                  <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar" role="progressbar" style="width: {{ $dato->porcentajeEfectividadMatriculas }}%" aria-valuenow="{{ $dato->porcentajeEfectividadMatriculas }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                  </div>
-                                </div>
+                                    </div>
                               </div>
                             </div>
                         </div>
@@ -1390,7 +1473,7 @@ $configData = Helper::appClasses();
                         
                         @if(!$esVistaDetalle)
                         <div class="d-flex justify-content-end py-2 ">
-                              <a href="{{ route('consolidacion.dashboard', array_merge(request()->all(), ['bloque_detalle_id' => $dato->id, 'tab' => 'escuelas'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
+                              <a href="{{ route('consolidacion.dashboard', array_merge(request()->except(['sede_id', 'bloque_id']), ['bloque_detalle_id' => $dato->id, 'tab' => 'escuelas'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
                                   Ver detalle sedes
                               </a>
                         </div>
@@ -1521,7 +1604,9 @@ $configData = Helper::appClasses();
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
-              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $totalMiembros }}</h5>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'total_miembros', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $totalMiembros }}</a>
+              </h5>
               <small class="text-black">
                 Total miembros
               </small>
@@ -1594,6 +1679,7 @@ $configData = Helper::appClasses();
         </div>
       </div>
 
+
       <!-- Efectividad matrículas a membresías -->
       <div class="col-12 col-md-4 mb-4">
         <div class="card h-100">
@@ -1619,7 +1705,9 @@ $configData = Helper::appClasses();
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
-              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $totalUnionLibreMatriculados }}</h5>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'union_libre_matriculados', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $totalUnionLibreMatriculados }}</a>
+              </h5>
               <small class="text-black">
                 Unión libre matriculados
               </small>
@@ -1633,7 +1721,9 @@ $configData = Helper::appClasses();
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
-              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $miembrosFormalizados }}</h5>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'miembros_formalizados', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $miembrosFormalizados }}</a>
+              </h5>
               <small class="text-black">
                 Miembros que estaban en unión libre
               </small>
@@ -1647,7 +1737,9 @@ $configData = Helper::appClasses();
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
-              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $pendientesMembresiaUnionLibre }}</h5>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'pendientes_membresia_union_libre', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $pendientesMembresiaUnionLibre }}</a>
+              </h5>
               <small class="text-black">
                 Pendientes por membresía (Unión libre)
               </small>
@@ -1673,7 +1765,7 @@ $configData = Helper::appClasses();
               <div class="progress-bar" role="progressbar" style="width: {{ $efectividadFormalizacionUnionLibre }}%" aria-valuenow="{{ $efectividadFormalizacionUnionLibre }}" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
           </div>
-        </div>
+        </div> 
       </div>
 
       <hr>
@@ -1686,7 +1778,9 @@ $configData = Helper::appClasses();
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
-              <h5 class="card-title text-uppercase mb-0 fw-semibold">{{ $miembrosUbicados }}</h5>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'miembros_ubicados', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $miembrosUbicados }}</a>
+              </h5>
               <small class="text-black">
                 Miembros ubicados en grupo
               </small>
@@ -1745,129 +1839,152 @@ $configData = Helper::appClasses();
                     <div class="accordion-body">
                         <div class="row g-3">
 
+                          <!-- Total miembros -->
+                          <div class="col-md-4 mb-3">
+                              <div class="p-3 rounded h-100">
+                                  <h5 class="mb-0 fw-bold text-black">
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'total_miembros', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalMiembros }}</a>
+                                  </h5>
+                                  <small class="text-black">Total miembros</small>
+                              </div>
+                          </div>
+
+
+                          <!-- Título 1 -->
+                          <div class="col-12 mt-2">
+                              <small class="text-black text-uppercase fw-bold" style="font-size: 0.75rem;">Total matrículas efectivas vs. Total aptos membresías</small>
+                          </div>
+
+                          <!-- Gráficos -->
+                          <div class="col-md-4 mb-3">
+                              <div class="card  shadow-none h-100 p-2">
+                                  <div class="card-header pb-0 pt-1 border-0 bg-transparent">
+                                      <small class="text-black fw-bold text-uppercase">Membresía</small>
+                                  </div>
+                                  <div class="card-body p-0">
+                                      <div id="bautismosTrasladosChart_{{ $dato->id }}" data-bautismos="{{ $dato->miembrosBautismos }}" data-traslados="{{ $dato->miembrosTraslados }}" class="donut-chart-bautismos" style="min-height: 200px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="col-md-4 mb-3">
+                              <div class="card  shadow-none h-100 p-2">
+                                  <div class="card-header pb-0 pt-1 border-0 bg-transparent">
+                                      <small class="text-black fw-bold text-uppercase">Traslados</small>
+                                  </div>
+                                  <div class="card-body p-0">
+                                      <div id="trasladosEdadesChart_{{ $dato->id }}" data-adultos="{{ $dato->trasladosAdultos }}" data-menores="{{ $dato->trasladosMenores }}" class="donut-chart-traslados-edades" style="min-height: 200px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="col-md-4 mb-3">
+                              <div class="card shadow-none h-100 p-2">
+                                  <div class="card-header pb-0 pt-1 border-0 bg-transparent">
+                                      <small class="text-black fw-bold text-uppercase">Bautismos</small>
+                                  </div>
+                                  <div class="card-body p-0">
+                                      <div id="bautismosEdadesChart_{{ $dato->id }}" data-adultos="{{ $dato->bautismosAdultos }}" data-menores="{{ $dato->bautismosMenores }}" class="donut-chart-bautismos-edades" style="min-height: 200px;"></div>
+                                  </div>
+                              </div>
+                          </div>
+
+                          @php
+                          $efectividadMembresiasAptosItem = $dato->matriculasEfectivos > 0 ? round(($dato->totalMiembros / $dato->matriculasEfectivos) * 100, 2) : 0;
+                          @endphp
+                          <!-- Efectividad matrículas a membresías -->
+                          <div class="col-12 col-md-4 mb-3">
+                              <div class="p-3 rounded h-100">
+                                  <div class="d-flex justify-content-between align-items-center mb-1">
+                                      <small class="text-black">Efectividad matrículas a membresías</small>
+                                      <h5 class="text-black fw-semibold mb-0">{{ $efectividadMembresiasAptosItem }}%</h5>
+                                  </div>
+                                  <div class="progress" style="height: 6px;">
+                                      <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $efectividadMembresiasAptosItem }}%" aria-valuenow="{{ $efectividadMembresiasAptosItem }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  </div>
+                              </div>
+                          </div>
+
+
+                          <!-- Título 2 -->
+                          <div class="col-12 mt-2">
+                              <small class="text-black text-uppercase fw-bold" style="font-size: 0.75rem;">Personas en unión libre matriculadas en CHLL vs. Total membresías</small>
+                          </div>
+
+                          <div class="col-md-4 mb-3">
+                              <div class="p-3 rounded h-100">
+                                  <h5 class="mb-0 fw-bold text-black">
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'union_libre_matriculados', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalUnionLibreMatriculados }}</a>
+                                  </h5>
+                                  <small class="text-black">Unión libre matriculados</small>
+                              </div>
+                          </div>
+                          <div class="col-md-4 mb-3">
+                              <div class="p-3 rounded h-100">
+                                  <h5 class="mb-0 fw-bold text-black">
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'miembros_formalizados', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->miembrosFormalizados }}</a>
+                                  </h5>
+                                  <small class="text-black">Miembros que estaban en unión libre</small>
+                              </div>
+                          </div>
+                          <div class="col-md-4 mb-3">
+                              <div class="p-3 rounded h-100">
+                                  <h5 class="mb-0 fw-bold text-black">
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'pendientes_membresia_union_libre', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->pendientesMembresiaUnionLibre }}</a>
+                                  </h5>
+                                  <small class="text-black">Pendientes por membresía (Unión libre)</small>
+                              </div>
+                          </div>
                           
-                          <div class="col-12">
-                            <small class="text-black text-uppercase" style="font-size: 0.75rem;">Total matrículas efectivas vs. Total aptos membresías</small>
+                          @php
+                              $efectividadFormalizacionUnionLibreItem = $dato->totalUnionLibreMatriculados > 0 ? round(($dato->miembrosFormalizados / $dato->totalUnionLibreMatriculados) * 100, 2) : 0;
+                          @endphp
+                          <div class="col-12 col-md-4 mb-3">
+                              <div class="p-3 rounded h-100">
+                                  <div class="d-flex justify-content-between align-items-center mb-1">
+                                      <small class="text-black">Efectividad formalización unión libre</small>
+                                      <h5 class="text-black fw-semibold mb-0">{{ $efectividadFormalizacionUnionLibreItem }}%</h5>
+                                  </div>
+                                  <div class="progress" style="height: 6px;">
+                                      <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $efectividadFormalizacionUnionLibreItem }}%" aria-valuenow="{{ $efectividadFormalizacionUnionLibreItem }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  </div>
+                              </div>
                           </div>
+
+
+                          <!-- Título 3 -->
+                          <div class="col-12 mt-2">
+                              <small class="text-black text-uppercase fw-bold" style="font-size: 0.75rem;">Membresías VS. Ubicación en grupos</small>
+                          </div>
+
                           <div class="col-md-4 mb-3">
-                            <div class="card border shadow-none h-100 p-5">
-                              <div class="card-header pb-0 pt-1 border-0 bg-transparent">
-                                  <small class="text-black fw-bold text-uppercase">Tipos de membresía</small>
+                              <div class="p-3 rounded h-100">
+                                  <h5 class="mb-0 fw-bold text-black">
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'miembros_ubicados', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->miembrosUbicados }}</a>
+                                  </h5>
+                                  <small class="text-black">Miembros ubicados en grupo</small>
                               </div>
-                              <div class="card-body p-0">
-                                 <div id="bautismosTrasladosChart_{{ $dato->id }}"
-                                      data-bautismos="{{ $dato->miembrosBautismos }}"
-                                      data-traslados="{{ $dato->miembrosTraslados }}"
-                                      class="donut-chart-bautismos"
-                                      style="min-height: 200px;">
-                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="col-md-4 mb-3">
-                            <div class="card border shadow-none h-100 p-5">
-                              <div class="card-header pb-0 pt-1 border-0 bg-transparent">
-                                  <small class="text-black fw-bold text-uppercase">Traslados (Edades)</small>
-                              </div>
-                              <div class="card-body p-0">
-                                 <div id="trasladosEdadesChart_{{ $dato->id }}"
-                                      data-adultos="{{ $dato->trasladosAdultos }}"
-                                      data-menores="{{ $dato->trasladosMenores }}"
-                                      class="donut-chart-traslados-edades"
-                                      style="min-height: 200px;">
-                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="col-md-4 mb-3">
-                            <div class="card border shadow-none h-100 p-5">
-                              <div class="card-header pb-0 pt-1 border-0 bg-transparent">
-                                  <small class="text-black fw-bold text-uppercase">Bautismos (Edades)</small>
-                              </div>
-                              <div class="card-body p-0">
-                                 <div id="bautismosEdadesChart_{{ $dato->id }}"
-                                      data-adultos="{{ $dato->bautismosAdultos }}"
-                                      data-menores="{{ $dato->bautismosMenores }}"
-                                      class="donut-chart-bautismos-edades"
-                                      style="min-height: 200px;">
-                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                        
-
-                          <!-- Divisor -->
-                          <div class="col-12"><hr class="my-1"></div>
-                          <div class="col-12">
-                            <small class="text-black text-uppercase" style="font-size: 0.75rem;">Personas en unión libre matriculadas en CHLL vs. Total membresías</small>
                           </div>
 
-                          <!-- Fila 2: Unión Libre -->
-                          <div class="col-md-4">
-                            <div class="p-3 border rounded h-100">
-                              <h5 class="mb-0 fw-bold text-black">{{ $dato->pendientesMembresiaUnionLibre }}</h5>
-                              <small class="text-black">Unión libre matriculados</small>
-                            </div>
-                          </div>
-                          <div class="col-md-4">
-                            <div class="p-3 border rounded h-100">
-                              <h5 class="mb-0 fw-bold text-black">{{ $dato->miembrosFormalizados }}</h5>
-                              <small class="text-black">Miembros que estaban en unión libre</small>
-                            </div>
-                          </div>
-                          <div class="col-md-4">
-                            <div class="p-3 border rounded h-100">
-                              <h5 class="mb-0 fw-bold text-black">{{ $dato->totalUnionLibreMatriculados }}</h5>
-                              <small class="text-black">Pendientes por membresía (Unión libre)</small>
-                            </div>
-                          </div>
-
-                          <!-- Fila 3: Bautismos vs Traslados -->
-                          <div class="col-12"><hr class="my-1"></div>
-
-                           <!-- Fila Membresía General -->
-                          <div class="col-12">
-                            <small class="text-black text-uppercase" style="font-size: 0.75rem;">Membresías VS. Ubicación en grupos de crecimiento</small>
-                          </div>
-
-                          <div class="col-md-4">
-                            <div class="card mb-3 shadow-none border">
-                              <div class="card-body py-3 border-bottom">
-                                <h5 class="card-title mb-0 fw-semibold">{{ $dato->totalMiembros }}</h5>
-                                <small class="text-black text-uppercase">Total miembros</small> 
+                          @php 
+                              $percMembItem = $dato->totalMiembros > 0 ? round(($dato->miembrosUbicados / $dato->totalMiembros) * 100, 2) : 0;
+                          @endphp
+                          <div class="col-12 col-md-4 mb-3">
+                              <div class="p-3 rounded h-100">
+                                  <div class="d-flex justify-content-between align-items-center mb-1">
+                                      <small class="text-black">Efectividad ubicación en grupos</small>
+                                      <h5 class="text-black fw-semibold mb-0">{{ $percMembItem }}%</h5>
+                                  </div>
+                                  <div class="progress" style="height: 6px;">
+                                      <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $percMembItem }}%" aria-valuenow="{{ $percMembItem }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                  </div>
                               </div>
-                            </div>
                           </div>
 
-                          <div class="col-md-4">
-                            <div class="card mb-3 shadow-none border">
-                              <div class="card-body py-3 border-bottom">
-                                <h5 class="card-title mb-0 fw-semibold">{{ $dato->miembrosUbicados }}</h5>
-                                <small class="text-black text-uppercase">Ubicados en grupo</small>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div class="col-md-4">
-                            @php 
-                              $percMemb = $dato->totalMiembros > 0 ? round(($dato->miembrosUbicados / $dato->totalMiembros) * 100, 2) : 0;
-                            @endphp
-                            <div class="card shadow-none border h-100">
-                              <div class="card-body py-3 border-bottom h-100 d-flex flex-column justify-content-center">
-                                <h5 class="card-title mb-0 fw-semibold">{{ $percMemb }}%</h5>
-                                <small class="text-black text-uppercase">Efectividad</small>
-                                <div class="progress mt-2" style="height: 6px;">
-                                  <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $percMemb }}%" aria-valuenow="{{ $percMemb }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-</div>
+                        </div>
                          
                         @if(!$esVistaDetalle)
                         <div class="d-flex justify-content-end py-2">
                               <!-- Botón para ir al Drill-Down del Bloque -->
-                              <a href="{{ route('consolidacion.dashboard', array_merge(request()->all(), ['bloque_detalle_id' => $dato->id, 'tab' => 'indicador-3'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
+                              <a href="{{ route('consolidacion.dashboard', array_merge(request()->except(['sede_id', 'bloque_id']), ['bloque_detalle_id' => $dato->id, 'tab' => 'indicador-3'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
                                   Ver detalle sedes
                               </a>
                         </div>
