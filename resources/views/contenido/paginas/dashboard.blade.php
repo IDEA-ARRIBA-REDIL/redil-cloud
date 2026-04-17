@@ -224,20 +224,9 @@
                                 @if ($banner->link)
                                     <a href="{{ $banner->link }}" target="_blank">
                                 @endif
-                                @php
-                                    $tenantPath = $configuracion->ruta_almacenamiento . '/img/banners/' . $banner->imagen;
-                                    $imgUrl = '';
-                                    if ($banner->imagen) {
-                                        if (Storage::disk('public')->exists($tenantPath)) {
-                                            $imgUrl = Storage::url($tenantPath);
-                                        } elseif (Storage::disk('global_media')->exists($banner->imagen)) {
-                                            $imgUrl = Storage::disk('global_media')->url($banner->imagen);
-                                        }
-                                    }
-                                @endphp
                                 <div class="card shadow-none border-0 overflow-hidden rounded-3 position-relative">
                                     <img class="img-fluid w-100 object-fit-cover" style="height: 350px;"
-                                        src="{{ $imgUrl }}"
+                                        src="{{ $banner->imagen_vinculada }}"
                                         alt="{{ $banner->nombre }}">
                                     <div class="card-img-overlay d-flex flex-column justify-content-end p-4"
                                         style="background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);">

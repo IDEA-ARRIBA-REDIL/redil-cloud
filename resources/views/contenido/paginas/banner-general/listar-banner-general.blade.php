@@ -350,7 +350,7 @@ $configData = Helper::appClasses();
             <div class="card h-100 border rounded shadow-sm">
                 <div class="position-relative">
                     <img class="card-img-top object-fit-cover" style="height: 180px; width: 100%;"
-                         src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/banners/' . $banner->imagen) }}"
+                         src="{{ $banner->imagen_vinculada }}"
                          alt="{{ $banner->nombre }}" />
 
                     <span class="badge position-absolute top-0 end-0 m-2 {{ $banner->visible ? 'bg-label-success' : 'bg-label-secondary' }}">
@@ -375,7 +375,7 @@ $configData = Helper::appClasses();
                                             '{{$banner->nombre}}',
                                             '{{ ($banner->fecha_inicio && $banner->fecha_fin) ? $banner->fecha_inicio->format('Y-m-d') . ' a ' . $banner->fecha_fin->format('Y-m-d') : '' }}',
                                             '{{$banner->visible}}',
-                                            '{{ Storage::url($configuracion->ruta_almacenamiento . '/img/banners/' . $banner->imagen) }}'
+                                            '{{ $banner->imagen_vinculada }}'
                                         )">
                                         <i class="ti ti-pencil me-1"></i> Editar
                                     </a>

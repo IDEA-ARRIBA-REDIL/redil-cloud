@@ -61,7 +61,7 @@ class BannerGeneralController extends Controller
         $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/banners/');
 
         if (! is_dir($path)) {
-            mkdir($path, 0777, true);
+            mkdir($path, 0755, true);
         }
 
         if ($request->filled('imagen_recortada')) {
@@ -126,11 +126,11 @@ class BannerGeneralController extends Controller
         $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/banners/');
 
         if (! is_dir($path)) {
-            mkdir($path, 0777, true);
+            mkdir($path, 0755, true);
         }
 
         if ($request->filled('imagen_recortada')) {
-            // Borrar imagen anterior si existe en la NvA ubicación
+            // Borrar imagen anterior si existe en la NvA ubicación y no es una global
             if ($banner->imagen && file_exists($path.$banner->imagen)) {
                 unlink($path.$banner->imagen);
             }
@@ -171,6 +171,7 @@ class BannerGeneralController extends Controller
         $configuracion = Configuracion::find(1);
         $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/banners/');
 
+        // Borrar el archivo local del tenant, sin afectar global
         if ($banner->imagen && file_exists($path.$banner->imagen)) {
             unlink($path.$banner->imagen);
         }
