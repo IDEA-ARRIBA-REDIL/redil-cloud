@@ -105,13 +105,13 @@ Route::get('/pwa-icon.png', [PwaController::class, 'icon']);
 Route::get('/test-notificacion', function () {
     $user = auth()->user();
     if ($user) {
-        $user->notify(new \App\Notifications\NotificacionGeneral(
-            '¡Prueba de Badging! 🚀',
-            'Esta notificación se generó para probar el ícono de la app.',
-            '/dashboard',
-            'ti-message-circle',
-            'success'
-        ));
+        $user->notify(new \App\Notifications\NotificacionGeneral([
+            'titulo' => '¡Prueba de Badging! 🚀',
+            'mensaje' => 'Esta notificación se generó para probar el ícono de la app.',
+            'url' => '/dashboard',
+            'icono' => 'ti-message-circle',
+            'color' => 'success'
+        ]));
         return "Notificación de prueba creada. Vuelve a la app y revisa el globo de notificaciones.";
     }
     return "Inicia sesión primero.";
