@@ -99,6 +99,7 @@ Route::get('/', function () {
 
 // Pwa Manifest
 Route::get('/manifest.json', [PwaController::class, 'manifest']);
+Route::get('/pwa-icon.png', [PwaController::class, 'icon']);
 
 Route::get('/dashboard', function () {
     $usuario = auth()->user();

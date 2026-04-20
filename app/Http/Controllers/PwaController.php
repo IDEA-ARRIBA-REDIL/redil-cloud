@@ -46,14 +46,14 @@ class PwaController extends Controller
             'theme_color' => $themeColor,
             'icons' => [
                 [
-                    'src' => $logoUrl,
-                    'sizes' => '192x192',
+                    'src' => url('/pwa-icon.png'),
+                    'sizes' => '512x512',
                     'type' => 'image/png',
                     'purpose' => 'any maskable',
                 ],
                 [
-                    'src' => $logoUrl,
-                    'sizes' => '512x512',
+                    'src' => url('/pwa-icon.png'),
+                    'sizes' => '192x192',
                     'type' => 'image/png',
                     'purpose' => 'any maskable',
                 ],
@@ -62,5 +62,90 @@ class PwaController extends Controller
 
         return response()->json($manifest)
             ->header('Content-Type', 'application/manifest+json');
+    }
+
+    /**
+     * Genera un ícono cuadrado opaco en tiempo real para iOS y PWA.
+     * iOS no soporta transparencias ni imágenes rectangulares adecuadamente.
+     */
+    public function icon()
+    {
+        $configuracion = Configuracion::first();
+
+        // Default global path
+        $logoPath = storage_path('app/public/global/img/logo_crecer.png');
+
+        if (! file_exists($logoPath)) {
+            $logoPath = public_path('storage/global/img/logo_crecer.png');
+        }
+
+        if ($configuracion && $configuracion->marca_blanca) {
+            $rutaBase = $configuracion->ruta_almacenamiento ? $configuracion->ruta_almacenamiento.'/' : '';
+            if ($configuracion->logo_app) {
+                try {
+                    $tenantPath = \Illuminate\Support\Facades\Storage::disk('public')->path($rutaBase.'img/branding/'.$configuracion->logo_app);
+                    if (file_exists($tenantPath)) {
+                        $logoPath = $tenantPath;
+                    }
+                } catch (\Exception $e) {
+                    // Fallback
+                }
+            }
+        }
+
+        if (! file_exists($logoPath)) {
+            abort(404);
+        }
+
+        $mime = mime_content_type($logoPath);
+        $source = null;
+
+        if (str_contains($mime, 'png')) {
+            $source = @imagecreatefrompng($logoPath);
+        } elseif (str_contains($mime, 'jpeg') || str_contains($mime, 'jpg')) {
+            $source = @imagecreatefromjpeg($logoPath);
+        } elseif (str_contains($mime, 'webp')) {
+            $source = @imagecreatefromwebp($logoPath);
+        }
+
+        if (! $source) {
+            return response()->file($logoPath, ['Content-Type' => $mime]);
+        }
+
+        $sourceWidth = imagesx($source);
+        $sourceHeight = imagesy($source);
+
+        $size = 512;
+        $canvas = imagecreatetruecolor($size, $size);
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        imagefill($canvas, 0, 0, $white);
+
+        // Padding para que el logo respire (100px por lado en 512)
+        $padding = 50;
+        $maxWidth = $size - ($padding * 2);
+        $maxHeight = $size - ($padding * 2);
+
+        $scale = min($maxWidth / $sourceWidth, $maxHeight / $sourceHeight);
+        $newWidth = (int) ($sourceWidth * $scale);
+        $newHeight = (int) ($sourceHeight * $scale);
+
+        $x = (int) (($size - $newWidth) / 2);
+        $y = (int) (($size - $newHeight) / 2);
+
+        // Preservar la mezcla alfa del PNG original sobre el fondo blanco
+        imagealphablending($canvas, true);
+        imagecopyresampled($canvas, $source, $x, $y, 0, 0, $newWidth, $newHeight, $sourceWidth, $sourceHeight);
+
+        ob_start();
+        imagepng($canvas);
+        $image_data = ob_get_clean();
+
+        imagedestroy($source);
+        imagedestroy($canvas);
+
+        return response($image_data, 200, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 }

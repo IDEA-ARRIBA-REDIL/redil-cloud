@@ -52,7 +52,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="{{ config('variables.templateName') }}">
-    <link rel="apple-touch-icon" href="{{ config('variables.logoApp') }}">
+    <link rel="apple-touch-icon" href="{{ url('/pwa-icon.png') }}">
     <link rel="manifest" href="{{ url('/manifest.json') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
         crossorigin="anonymous"></script>
