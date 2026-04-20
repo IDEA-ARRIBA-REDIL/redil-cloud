@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Mis Planes Lectores')
+@section('title', 'Mis planes lectores')
 
 @section('vendor-style')
 @vite([

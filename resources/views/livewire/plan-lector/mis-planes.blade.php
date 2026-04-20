@@ -58,7 +58,7 @@
                 : null;
             $selectedGradientInscrito = $gradients[$planInscrito->id % count($gradients)];
           @endphp
-          <div class="col-12 col-md-6 col-lg-3">
+          <div class="col-12 col-md-4">
             <div class="card shadow-none border h-100">
               @if($tieneImagenInscrito)
                 <img src="{{ $urlImagenInscrito }}" class="card-img-top" alt="Imagen del plan" style="height: 150px; object-fit: cover;">
@@ -68,7 +68,7 @@
                 </div>
               @endif
               <div class="card-body d-flex flex-column">
-                <h5 class="card-title" title="{{ $planInscrito->titulo }}">{{ Str::limit($planInscrito->titulo, 45) }}</h5>
+                <h5 class="card-title fs-6 fw-semibold" title="{{ $planInscrito->titulo }}">{{ Str::limit($planInscrito->titulo, 45) }}</h5>
                 <div class="mb-3">
                   <div class="d-flex justify-content-between align-items-center mb-1">
                     <small class="text-black">
@@ -89,7 +89,7 @@
                          style="width: {{ $pestanaActiva === 'completado' ? 100 : $planInscrito->pivot->porcentaje_progreso }}%;"></div>
                   </div>
                 </div>
-                <div class="d-flex gap-2 mt-auto">
+                <div class="d-flex gap-2 flex-column flex-md-row mt-auto">
                   <a href="{{ route('planes-lectores.lectura', $planInscrito->slug) }}" class="btn btn-outline-primary rounded-pill flex-grow-1">
                     <span class="ti-xs ti ti-book-open me-1"></span>
                     {{ $pestanaActiva === 'completado' ? 'Repasar' : 'Continuar' }}
@@ -107,7 +107,7 @@
           @endforeach
         </div>
         
-        <div class="mt-4">
+        <div class="mt-4 pagination-container">
           {{ $planesInscritos->links() }}
         </div>
       @endif
@@ -216,7 +216,7 @@
               : null;
           $selectedGradientExplorar = $gradients[$plan->id % count($gradients)];
         @endphp
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-4">
           <div class="card shadow-sm border-0 h-100 position-relative overflow-hidden card-plan-explorar">
             @if($tieneImagenExplorar)
               <img src="{{ $urlImagenExplorar }}" class="card-img-top" alt="Imagen del plan" style="height: 180px; object-fit: cover;">
@@ -267,7 +267,7 @@
         @endforelse
       </div>
       
-      <div class="mt-4 text-black">
+      <div class="mt-4 text-black pagination-container">
         {{ $planesDisponibles->links() }}
       </div>
     </div>
@@ -413,6 +413,45 @@
     #modalDetallePlan .btn-dark {
       background-color: #2d3436;
       border-color: #2d3436;
+    }
+
+    /* Ajuste responsivo para la paginación (Ocultar texto Anterior/Siguiente en móviles) */
+    @media (max-width: 768px) {
+      .pagination .page-item .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 38px;
+        height: 38px;
+        padding: 0;
+        border-radius: 50% !important;
+        margin: 0 2px;
+        font-size: 0; /* Oculta el texto */
+      }
+      
+      .pagination .page-item:first-child .page-link::before {
+        content: "\ea60"; /* ti-chevron-left */
+        font-family: 'tabler-icons' !important;
+        font-size: 1.25rem;
+      }
+      
+      .pagination .page-item:last-child .page-link::after {
+        content: "\ea61"; /* ti-chevron-right */
+        font-family: 'tabler-icons' !important;
+        font-size: 1.25rem;
+      }
+
+      /* Asegurar que los números de página (si aparecen) se sigan viendo */
+      .pagination .page-item:not(:first-child):not(:last-child) .page-link {
+        font-size: 0.9rem;
+      }
+      
+      /* Ocultar el texto de "Mostrando X de Y" en móviles si ocupa mucho espacio, o dejarlo centrado */
+      .pagination-container .text-muted {
+        display: block;
+        text-align: center;
+        margin-bottom: 10px;
+      }
     }
   </style>
 
