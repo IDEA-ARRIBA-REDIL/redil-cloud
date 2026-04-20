@@ -47,11 +47,11 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 - [x] Integración de la campana en el `navbar.blade.php`
 
 ### Fase 2 — Configuración PWA
-- [ ] Archivo `manifest.json` dinámico (nombre, iconos, colores del tenant)
-- [ ] Service Worker base (`sw.js`) registrado via Vite
-- [ ] Splash screens y meta tags PWA en layout principal
-- [ ] Prompt de instalación ("Añadir a pantalla de inicio")
-- [ ] Estrategia de caché offline (shell de la app)
+- [x] Archivo `manifest.json` dinámico (nombre, iconos, colores del tenant)
+- [x] Service Worker base (`sw.js`) registrado con bypass de navegación
+- [x] Splash screens y meta tags PWA en layout principal
+- [x] Prompt de instalación ("Añadir a pantalla de inicio")
+- [x] Estrategia de caché offline (versionamiento por params url)
 
 ### Fase 3 — Notificaciones Push Externas
 - [ ] Generación de claves VAPID (por tenant o global)
@@ -59,7 +59,7 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 - [ ] Modelo `PushSubscription` vinculado al usuario
 - [ ] Envío de notificaciones push desde el backend (queue)
 - [ ] Recepción y display en Service Worker (`push` + `notificationclick`)
-- [ ] App Badge API para "puntito rojo" en icono
+- [x] App Badge API para "puntito rojo" en icono (W3C Standard App Badging)
 - [ ] Integración WhatsApp Business API (fallback)
 
 ---
@@ -92,9 +92,9 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 | `app/Livewire/Notificaciones/ListaNotificaciones.php`                         | ✅ Creado     | Página completa de todas las notificaciones|
 | `resources/views/livewire/notificaciones/lista-notificaciones.blade.php`      | ✅ Creado     | Vista de lista con filtros y paginación    |
 | `resources/views/layouts/sections/navbar/navbar.blade.php`                    | ✅ Modificado | Integración del componente campana         |
-| `routes/app.php`                                                              | ✅ Modificado | Ruta `/notificaciones`                     |
-| `public/manifest.json`                                                        | 🔲 Pendiente  | Manifiesto PWA (Fase 2)                    |
-| `public/sw.js`                                                                | 🔲 Pendiente  | Service Worker (Fase 2)                    |
+| `routes/app.php`                                                              | ✅ Modificado | Ruta `/notificaciones` y Rutas PWA         |
+| `app/Http/Controllers/PwaController.php`                                      | ✅ Creado     | Controlador de Manifest e Iconos Dinámicos |
+| `public/sw.js`                                                                | ✅ Creado     | Service Worker V4 (Ignora Navegación)      |
 | `app/Models/PushSubscription.php`                                             | 🔲 Pendiente  | Modelo para suscripciones push (Fase 3)    |
 
 ---
