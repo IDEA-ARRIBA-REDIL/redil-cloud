@@ -26,7 +26,11 @@ class CampanaNotificaciones extends Component
      */
     public function actualizarConteo(): void
     {
+        $viejoConteo = $this->conteoNoLeidas;
         $this->conteoNoLeidas = auth()->user()->unreadNotifications()->count();
+
+        // Siempre despachar el estado actual para la PWA al montar y actualizar
+        $this->dispatch('AppBadgeUpdated', count: $this->conteoNoLeidas);
     }
 
     /**

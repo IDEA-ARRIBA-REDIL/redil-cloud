@@ -84,4 +84,43 @@
             </li>
         </ul>
     </li>
+    
+    @push('scripts')
+    <script>
+        document.addEventListener('livewire:init', () => {
+            // Sincronización inicial al cargar la plataforma
+            const initialCount = {{ $conteoNoLeidas }};
+            if ('setAppBadge' in navigator && initialCount > 0) {
+                navigator.setAppBadge(initialCount).catch(e => console.error('Error Badge Inicial', e));
+            } else if ('clearAppBadge' in navigator && initialCount === 0) {
+                navigator.clearAppBadge().catch(e => console.error('Error Badge Inicial', e));
+            }
+
+            // Escuchar el evento de actualización de Livewire y sincronizar con PWA
+            window.addEventListener('AppBadgeUpdated', (event) => {
+                // Livewire v3 suele mandar el dato de una forma directa, pero verificamos ambos casos
+                let unreadCount = 0;
+                if (event.detail && typeof event.detail.count !== 'undefined') {
+                    unreadCount = event.detail.count;
+                } else if (event.detail && event.detail[0] && typeof event.detail[0].count !== 'undefined') {
+                    unreadCount = event.detail[0].count;
+                }
+                
+                if (unreadCount > 0) {
+                    if ('setAppBadge' in navigator) {
+                        navigator.setAppBadge(unreadCount).catch((error) => {
+                            console.error('Error al actualizar el Badge de la PWA:', error);
+                        });
+                    }
+                } else {
+                    if ('clearAppBadge' in navigator) {
+                        navigator.clearAppBadge().catch((error) => {
+                            console.error('Error al limpiar el Badge de la PWA:', error);
+                        });
+                    }
+                }
+            });
+        });
+    </script>
+    @endpush
 </div>
