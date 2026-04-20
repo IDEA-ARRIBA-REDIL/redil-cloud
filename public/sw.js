@@ -41,15 +41,29 @@ self.addEventListener('fetch', (event) => {
     // Solo manejamos peticiones GET
     if (event.request.method !== 'GET') return;
 
+    // Evitar interceptar peticiones de extensiones o esquemas no soportados
+    if (!event.request.url.startsWith('http')) return;
+
     event.respondWith(
         caches.match(event.request).then((response) => {
-            // Retornar desde cache si existe
+            // 1. Si está en cache, lo devolvemos
             if (response) {
                 return response;
             }
 
-            // Si no está en cache, intentar red
-            return fetch(event.request).catch(() => {
+            // 2. Si no está en cache, vamos a la red
+            return fetch(event.request).then((fetchResponse) => {
+                // IMPORTANTE: Si es una redirección y es una navegación (Safari Fix)
+                // Devolvemos la respuesta tal cual para que el navegador la maneje,
+                // pero si es una navegación y hay redirección, Safari a veces falla si se devuelve desde aquí.
+                // Una técnica es no interceptar si sabemos que puede redirigir.
+                
+                if (fetchResponse.redirected && event.request.mode === 'navigate') {
+                    return fetchResponse; 
+                }
+
+                return fetchResponse;
+            }).catch(() => {
                 // Si falla la red y es una navegación de página, mostrar offline fallback
                 if (event.request.mode === 'navigate') {
                     return caches.match(OFFLINE_URL);
