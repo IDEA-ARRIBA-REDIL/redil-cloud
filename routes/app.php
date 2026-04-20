@@ -257,38 +257,6 @@ Route::get('/reporteReunion/{reporteReunion}/compartir-link-reserva', [ReporteRe
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // ⚠️ RUTA TEMPORAL - ELIMINAR DESPUÉS DE PROBAR
-    Route::get('/test-notificaciones', function () {
-        $user = auth()->user();
-
-        $user->notify(new \App\Notifications\NotificacionGeneral([
-            'titulo' => '¡Sistema Activo!',
-            'mensaje' => 'Las notificaciones están funcionando correctamente',
-            'icono' => 'ti-confetti',
-            'color' => 'success',
-            'url' => '/dashboard',
-        ]));
-
-        $user->notify(new \App\Notifications\NotificacionGeneral([
-            'titulo' => 'Nueva Petición',
-            'mensaje' => 'Se ha recibido una nueva petición de oración',
-            'icono' => 'ti-heart-handshake',
-            'color' => 'warning',
-            'url' => null,
-        ]));
-
-        $user->notify(new \App\Notifications\NotificacionGeneral([
-            'titulo' => 'Reporte de Grupo',
-            'mensaje' => 'Tienes un nuevo reporte pendiente por revisar',
-            'icono' => 'ti-users-group',
-            'color' => 'info',
-            'url' => null,
-        ]));
-
-        return redirect('/dashboard')->with('status', '✅ Se crearon 3 notificaciones de prueba');
-    })->name('test.notificaciones');
-    // ⚠️ FIN RUTA TEMPORAL
-
     // Reuniones
     Route::get('/reuniones/nueva', [ReunionesController::class, 'nueva'])->name('reuniones.nueva');
     Route::post('/reuniones/crear', [ReunionesController::class, 'crear'])->name('reuniones.crear');
