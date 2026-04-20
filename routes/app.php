@@ -101,6 +101,22 @@ Route::get('/', function () {
 Route::get('/manifest.json', [PwaController::class, 'manifest']);
 Route::get('/pwa-icon.png', [PwaController::class, 'icon']);
 
+// RUTA TEMPORAL DE PRUEBA
+Route::get('/test-notificacion', function () {
+    $user = auth()->user();
+    if ($user) {
+        $user->notify(new \App\Notifications\NotificacionGeneral(
+            '¡Prueba de Badging! 🚀',
+            'Esta notificación se generó para probar el ícono de la app.',
+            '/dashboard',
+            'ti-message-circle',
+            'success'
+        ));
+        return "Notificación de prueba creada. Vuelve a la app y revisa el globo de notificaciones.";
+    }
+    return "Inicia sesión primero.";
+});
+
 Route::get('/dashboard', function () {
     $usuario = auth()->user();
     $rolActivo = $usuario->roles()->wherePivot('activo', true)->first();
