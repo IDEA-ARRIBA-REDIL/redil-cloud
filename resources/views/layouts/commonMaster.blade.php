@@ -95,8 +95,13 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Service Worker registrado (V3 Safe)', reg.scope))
+                // Agregamos ?v=4 para forzar al navegador a descargar la nueva versión
+                navigator.serviceWorker.register('/sw.js?v=4')
+                    .then(reg => {
+                        console.log('Service Worker registrado (V4 Final)', reg.scope);
+                        // Forzar comprobación de actualización imediata
+                        reg.update();
+                    })
                     .catch(err => console.error('Error al registrar Service Worker PWA', err));
             });
         }

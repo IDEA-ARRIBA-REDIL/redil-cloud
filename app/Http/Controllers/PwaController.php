@@ -35,12 +35,12 @@ class PwaController extends Controller
             }
         }
 
-        // Usamos '/' como start_url pero nos aseguramos que el SW no intercepte la navegación
+        // Usamos '/login' como start_url para entrar directo sin rebotes
         $manifest = [
             'name' => $name,
             'short_name' => substr($shortName, 0, 12),
             'description' => $description,
-            'start_url' => '/',
+            'start_url' => '/login',
             'display' => 'standalone',
             'background_color' => '#ffffff',
             'theme_color' => $themeColor,
