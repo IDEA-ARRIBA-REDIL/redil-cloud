@@ -46,14 +46,6 @@
     <link rel="canonical" href="{{ config('variables.productPage') ? config('variables.productPage') : '' }}">
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ config('variables.faviconApp') }}" />
-
-    <!-- PWA Config -->
-    <meta name="theme-color" content="{{ config('variables.templateNameColor') }}">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="{{ config('variables.templateName') }}">
-    <link rel="apple-touch-icon" href="{{ config('variables.logoApp') }}">
-    <link rel="manifest" href="{{ url('/manifest.json') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
         crossorigin="anonymous"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,17 +82,6 @@
     @include('layouts/sections/scripts' . $isFront)
     <!-- Stack for additional scripts -->
     @stack('scripts')
-
-    <!-- PWA Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Service Worker registrado', reg))
-                    .catch(err => console.error('Error al registrar Service Worker', err));
-            });
-        }
-    </script>
 </body>
 
 </html>
