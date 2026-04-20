@@ -3,7 +3,7 @@
     <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-2">
         <a class="nav-link btn btn-text-secondary btn-icon rounded-pill dropdown-toggle hide-arrow"
             href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-            aria-expanded="false" wire:click="abrirDropdown">
+            aria-expanded="false" wire:click="abrirDropdown" id="campanaNotificacionesBtn">
             <span class="position-relative">
                 <i class="ti ti-bell ti-md"></i>
                 @if ($conteoNoLeidas > 0)
@@ -88,37 +88,53 @@
     @push('scripts')
     <script>
         document.addEventListener('livewire:init', () => {
-            // Sincronización inicial al cargar la plataforma
-            const initialCount = {{ $conteoNoLeidas }};
-            if ('setAppBadge' in navigator && initialCount > 0) {
-                navigator.setAppBadge(initialCount).catch(e => console.error('Error Badge Inicial', e));
-            } else if ('clearAppBadge' in navigator && initialCount === 0) {
-                navigator.clearAppBadge().catch(e => console.error('Error Badge Inicial', e));
+
+            // Función centralizada para aplicar el badge de manera segura
+            const triggerBadge = async (count) => {
+                if (!('setAppBadge' in navigator && 'clearAppBadge' in navigator)) {
+                    console.log('App Badging API no soportado por este dispositivo o no instalado como App.');
+                    return;
+                }
+                try {
+                    if (count > 0) {
+                        await navigator.setAppBadge(count);
+                        console.log('Badge colocado:', count);
+                    } else {
+                        await navigator.clearAppBadge();
+                        console.log('Badge limpiado.');
+                    }
+                } catch (error) {
+                    console.error('Error aplicando Badge (quizás sin permisos):', error);
+                }
+            };
+
+            // Solicitud de permisos obligatorios (iOS y Android moderno) al interactuar con la campana
+            const btnCampana = document.getElementById('campanaNotificacionesBtn');
+            if(btnCampana) {
+                btnCampana.addEventListener('click', async () => {
+                    if ('Notification' in window && Notification.permission !== 'granted') {
+                        const perm = await Notification.requestPermission();
+                        console.log('Permisos configurados como:', perm);
+                        // Re-aplicar el badge si obtuvimos el permiso en este clic
+                        if(perm === 'granted'){
+                            triggerBadge({{ $conteoNoLeidas }});
+                        }
+                    }
+                });
             }
 
-            // Escuchar el evento de actualización de Livewire y sincronizar con PWA
+            // Sincronización inicial rápida
+            triggerBadge({{ $conteoNoLeidas }});
+
+            // Sincronización al momento en que la Base de Datos cambia
             window.addEventListener('AppBadgeUpdated', (event) => {
-                // Livewire v3 suele mandar el dato de una forma directa, pero verificamos ambos casos
                 let unreadCount = 0;
                 if (event.detail && typeof event.detail.count !== 'undefined') {
                     unreadCount = event.detail.count;
                 } else if (event.detail && event.detail[0] && typeof event.detail[0].count !== 'undefined') {
                     unreadCount = event.detail[0].count;
                 }
-                
-                if (unreadCount > 0) {
-                    if ('setAppBadge' in navigator) {
-                        navigator.setAppBadge(unreadCount).catch((error) => {
-                            console.error('Error al actualizar el Badge de la PWA:', error);
-                        });
-                    }
-                } else {
-                    if ('clearAppBadge' in navigator) {
-                        navigator.clearAppBadge().catch((error) => {
-                            console.error('Error al limpiar el Badge de la PWA:', error);
-                        });
-                    }
-                }
+                triggerBadge(unreadCount);
             });
         });
     </script>
