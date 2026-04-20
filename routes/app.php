@@ -43,7 +43,6 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PuntoDePagoController;
-use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RangoEdadController;
 use App\Http\Controllers\RecursoGeneralEscuelaController;
 use App\Http\Controllers\ReporteEscuelaController;
@@ -98,7 +97,6 @@ Route::get('/', function () {
 });
 
 // Pwa Manifest
-Route::get('/manifest.json', [PwaController::class, 'manifest']);
 
 Route::get('/dashboard', function () {
     $usuario = auth()->user();
