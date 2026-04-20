@@ -22,6 +22,12 @@
                         </span>
                     @endif
                 </div>
+                <!-- Banner para pedir permisos de alertas (Oculto por defecto, JS lo muestra) -->
+                <div id="banner-permiso-notificaciones" class="d-none px-3 pb-2">
+                    <button id="btn-pedir-permisos" class="btn btn-sm btn-label-warning w-100 rounded-pill">
+                        <i class="ti ti-bell-ringing me-1"></i> Activar alertas en celular
+                    </button>
+                </div>
             </li>
 
             {{-- Lista de notificaciones --}}
@@ -108,14 +114,25 @@
                 }
             };
 
-            // Solicitud de permisos obligatorios (iOS y Android moderno) al interactuar con la campana
-            const btnCampana = document.getElementById('campanaNotificacionesBtn');
-            if(btnCampana) {
-                btnCampana.addEventListener('click', async () => {
+            // Solicitud de permisos obligatorios (iOS y Android moderno) al interactuar internamente
+            const bannerPermisos = document.getElementById('banner-permiso-notificaciones');
+            const btnPedirPermisos = document.getElementById('btn-pedir-permisos');
+
+            // Mostrar el banner solo si el navegador soporta Notificaciones y el usuario no ha respondido
+            if ('Notification' in window && Notification.permission === 'default' && 'setAppBadge' in navigator && bannerPermisos) {
+                bannerPermisos.classList.remove('d-none');
+            }
+
+            if(btnPedirPermisos) {
+                btnPedirPermisos.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation(); // Evitar que Bootstrap cierre la lista al hacer click extrañamente
                     if ('Notification' in window && Notification.permission !== 'granted') {
                         const perm = await Notification.requestPermission();
                         console.log('Permisos configurados como:', perm);
-                        // Re-aplicar el badge si obtuvimos el permiso en este clic
+                        if(perm === 'granted' || perm === 'denied'){
+                            bannerPermisos.classList.add('d-none'); // Ocultarlo ya que respondió
+                        }
                         if(perm === 'granted'){
                             triggerBadge({{ $conteoNoLeidas }});
                         }
