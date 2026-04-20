@@ -76,21 +76,9 @@
                 <!-- /Search -->
             @endif
 
-            
-
-            <!-- Notification -->
-            <li class="nav-item d-nonex dropdown-notifications navbar-dropdown dropdown me-3 me-xl-2">
-                <a class="nav-link btn btn-text-secondary btn-icon rounded-pill dropdown-toggle hide-arrow"
-                    href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-                    aria-expanded="false">
-                    <span class="position-relative">
-                        <i class="ti ti-bell ti-md"></i>
-                        <span class="badge rounded-pill bg-danger badge-dot badge-notifications border"></span>
-                    </span>
-                </a>
-
-            </li>
-            <!--/ Notification -->
+            <!-- Notificaciones -->
+            @livewire('notificaciones.campana-notificaciones')
+            <!--/ Notificaciones -->
 
             <!-- User -->
             <li class="nav-item navbar-dropdown dropdown-user dropdown">

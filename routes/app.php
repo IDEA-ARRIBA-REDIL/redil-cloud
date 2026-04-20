@@ -38,6 +38,7 @@ use App\Http\Controllers\ParienteUsuarioController;
 use App\Http\Controllers\PasosDeCrecimientoController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\PeticionController;
+use App\Http\Controllers\PlanLectorController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProfileController;
@@ -57,6 +58,7 @@ use App\Http\Controllers\TemaController;
 use App\Http\Controllers\TestPermissionController;
 use App\Http\Controllers\ThemeSettingController;
 use App\Http\Controllers\TiempoConDiosController;
+use App\Http\Controllers\TipoActividadGestionController;
 use App\Http\Controllers\TipoCargoCursoController;
 use App\Http\Controllers\TipoOfrendaController;
 use App\Http\Controllers\TipoPagosController;
@@ -65,11 +67,10 @@ use App\Http\Controllers\TipoServicioReporteReunionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UsuarioConfiguracionController;
 use App\Http\Controllers\VersiculoDiarioController;
-use App\Http\Controllers\TipoActividadGestionController;
 use App\Http\Controllers\ZonaController;
 use App\Http\Controllers\ZonaPagosController;
-use App\Http\Controllers\PlanLectorController;
 use App\Livewire\Escuelas\AdminDashboard;
+use App\Livewire\Notificaciones\ListaNotificaciones;
 use App\Models\Actividad;
 use App\Models\BannerGeneral;
 use App\Models\Configuracion;
@@ -844,7 +845,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/planes-lectores/{plan}/inscribirse', [PlanLectorController::class, 'inscribirse'])->name('planes-lectores.inscribirse');
     Route::get('/planes-lectores/{plan:slug}/lectura/{dia?}', [PlanLectorController::class, 'lectura'])->name('planes-lectores.lectura');
 
-    
     // informes
     Route::get('/informe/{tipoInforme?}', [InformesController::class, 'listar'])->name('informe.lista');
     Route::get('/informes/configuracion-semanas', [InformesController::class, 'configuracionSemanas'])->name('informe.configuracionSemanas');
@@ -1049,6 +1049,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('/theme-setting/index', [ThemeSettingController::class, 'index'])->name('theme-setting.index');
+
+    // Notificaciones
+    Route::get('/notificaciones', ListaNotificaciones::class)->name('notificaciones.lista');
 });
 
 require __DIR__.'/auth.php';

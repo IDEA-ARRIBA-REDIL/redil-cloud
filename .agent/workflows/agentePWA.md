@@ -37,12 +37,14 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 ## 3. Hoja de Ruta (Fases de Implementación)
 
 ### Fase 1 — Notificaciones Internas + Tiempo Real
-- [ ] Tabla `notifications` (sistema nativo de Laravel)
-- [ ] Modelo/Migración para notificaciones por tenant
-- [ ] Componente Livewire `CampanaNotificaciones` (icono + badge contador)
-- [ ] Integración con Laravel Reverb para actualizar contador en tiempo real
-- [ ] Vista de listado de notificaciones del usuario
-- [ ] Marcar como leídas / eliminar
+- [x] Tabla `notifications` (sistema nativo de Laravel)
+- [x] Clase `NotificacionGeneral` (canal database)
+- [x] Componente Livewire `CampanaNotificaciones` (icono + badge contador con `wire:poll.30s`)
+- [ ] Integración con Laravel Reverb para actualizar contador en tiempo real (diferido a Fase 3)
+- [x] Vista de listado de notificaciones del usuario (`ListaNotificaciones`)
+- [x] Marcar como leídas / eliminar
+- [x] Ruta `/notificaciones` en `routes/app.php`
+- [x] Integración de la campana en el `navbar.blade.php`
 
 ### Fase 2 — Configuración PWA
 - [ ] Archivo `manifest.json` dinámico (nombre, iconos, colores del tenant)
@@ -81,14 +83,19 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 
 ## 6. Archivos Clave del Módulo (se actualizará conforme avancemos)
 
-| Archivo                                          | Estado     | Descripción                                |
-| ------------------------------------------------ | ---------- | ------------------------------------------ |
-| `public/manifest.json`                           | 🔲 Pendiente | Manifiesto PWA                             |
-| `public/sw.js`                                   | 🔲 Pendiente | Service Worker                             |
-| `resources/views/layouts/app.blade.php`          | 🔲 Pendiente | Meta tags PWA + registro SW                |
-| `app/Livewire/Notificaciones/Campana.php`        | 🔲 Pendiente | Componente campana con badge               |
-| `database/migrations/xxxx_notifications.php`     | 🔲 Pendiente | Migración de notificaciones                |
-| `app/Models/PushSubscription.php`                | 🔲 Pendiente | Modelo para suscripciones push             |
+| Archivo                                                                       | Estado       | Descripción                                |
+| ----------------------------------------------------------------------------- | ------------ | ------------------------------------------ |
+| `database/migrations/tenant/2026_04_20_170000_create_notifications_table.php` | ✅ Creado     | Migración de notificaciones (tenant)       |
+| `app/Notifications/NotificacionGeneral.php`                                   | ✅ Creado     | Clase de notificación genérica (database)  |
+| `app/Livewire/Notificaciones/CampanaNotificaciones.php`                       | ✅ Creado     | Componente campana con badge + dropdown    |
+| `resources/views/livewire/notificaciones/campana-notificaciones.blade.php`    | ✅ Creado     | Vista de la campana en el navbar           |
+| `app/Livewire/Notificaciones/ListaNotificaciones.php`                         | ✅ Creado     | Página completa de todas las notificaciones|
+| `resources/views/livewire/notificaciones/lista-notificaciones.blade.php`      | ✅ Creado     | Vista de lista con filtros y paginación    |
+| `resources/views/layouts/sections/navbar/navbar.blade.php`                    | ✅ Modificado | Integración del componente campana         |
+| `routes/app.php`                                                              | ✅ Modificado | Ruta `/notificaciones`                     |
+| `public/manifest.json`                                                        | 🔲 Pendiente  | Manifiesto PWA (Fase 2)                    |
+| `public/sw.js`                                                                | 🔲 Pendiente  | Service Worker (Fase 2)                    |
+| `app/Models/PushSubscription.php`                                             | 🔲 Pendiente  | Modelo para suscripciones push (Fase 3)    |
 
 ---
 
@@ -99,6 +106,17 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 - ✅ Estado de git verificado (rama `main`, actualizada)
 - ✅ Branch `feature/pwa-notificaciones` creada
 - ✅ Workflow `agentePWA.md` creado
+
+### 2026-04-20 — Fase 1 Completada
+- ✅ Migración `notifications` creada en `database/migrations/tenant/`
+- ✅ Clase `NotificacionGeneral` creada (canal database)
+- ✅ Componente `CampanaNotificaciones` (PHP + Blade) con `wire:poll.30s`
+- ✅ Componente `ListaNotificaciones` (PHP + Blade) con filtros y paginación
+- ✅ Navbar modificado para integrar la campana Livewire
+- ✅ Ruta `/notificaciones` agregada en `routes/app.php`
+- ✅ Laravel Pint ejecutado, código formateado
+- ✅ Validación de sintaxis PHP sin errores
+- ⏳ **Pendiente**: Ejecutar migración en servidor y probar en `cloud.laravel.com`
 
 ---
 
