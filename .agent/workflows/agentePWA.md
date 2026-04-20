@@ -117,13 +117,14 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 - ✅ Laravel Pint ejecutado, código formateado
 - ✅ Sincronización exitosa en `cloud.laravel.com` (Main Branch)
 
-### 2026-04-20 — Fase 2 Completada
-- ✅ `PwaController` creado para generación de `manifest.json` dinámico
-- ✅ Ruta `/manifest.json` registrada públicamente por tenant
-- ✅ Service Worker base `public/sw.js` con soporte para caché y push
-- ✅ Layout `commonMaster.blade.php` con meta tags de PWA e integración de manifest
-- ✅ Registro de Service Worker añadido al layout principal
-- ✅ Formateo final con Laravel Pint
+### 2026-04-20 — Fase 2 (Re-intento Seguro) Completada
+- ✅ `PwaController` re-creado con branding dinámico por tenant
+- ✅ Ruta `/manifest.json` re-integrada
+- ✅ Service Worker V3 (Seguro) implementado: **Ignora peticiones de navegación**
+- ✅ Se eliminaron errores de redirección de Safari y Android
+- ✅ Layout `commonMaster.blade.php` actualizado con tags y registro V3
+- ✅ Laravel Pint ejecutado
+- ✅ Sincronización final en `main` lista para deploy
 
 ---
 
