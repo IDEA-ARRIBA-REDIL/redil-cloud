@@ -12,9 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('nombre');
             $table->string('slug')->unique();
-            $table->boolean('es_html')->default(false);
-            $table->boolean('es_json')->default(false);
-            $table->boolean('es_link')->default(false);
             $table->timestamps();
         });
     }
