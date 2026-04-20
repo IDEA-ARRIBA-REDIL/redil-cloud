@@ -1,9 +1,9 @@
 <div wire:poll.30s="actualizarConteo">
     {{-- Campana de Notificaciones --}}
-    <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-2">
+    <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-2" wire:ignore.self>
         <a class="nav-link btn btn-text-secondary btn-icon rounded-pill dropdown-toggle hide-arrow"
             href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside"
-            aria-expanded="false" wire:click="abrirDropdown" id="campanaNotificacionesBtn">
+            aria-expanded="false" id="campanaNotificacionesBtn">
             <span class="position-relative">
                 <i class="ti ti-bell ti-md"></i>
                 @if ($conteoNoLeidas > 0)
