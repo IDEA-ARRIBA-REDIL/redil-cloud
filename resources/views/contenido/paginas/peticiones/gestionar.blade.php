@@ -434,7 +434,7 @@ $configData = Helper::appClasses();
                 <small class="text-black">Creada por</small>
                 <div class="d-flex align-items-center mt-1">
                   <div class="avatar avatar-sm me-2">
-                     <img class="rounded-circle" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario }}" alt="foto">
+                     <img class="rounded-circle" src="{{ $peticion->fotoUsuario ? ($configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : asset('assets/img/avatars/1.png') }}" alt="foto">
                   </div>
                   <small class="fw-semibold text-black ">{{ $peticion->usuarioCreacion ?? 'No especificado'}}</small>
                 </div>
@@ -485,7 +485,7 @@ $configData = Helper::appClasses();
               @endif
 
               <div class="d-flex justify-content-center gap-2 mt-4 px-3 mb-2">
-                <button type="button" onclick="Livewire.dispatch('modalResponder', { peticionId: '{{$peticion->id}}', personaId: '{{$peticion->user_id}}'})" class="btn btn-sm rounded-pill btn-primary waves-effect"> <i class="ti ti-messages me-1"></i> Responder</button>
+                <button type="button" onclick="Livewire.dispatch('modalResponder', { peticionId: '{{$peticion->id}}', personaId: '{{$peticion->user_id ?? 0}}'})" class="btn btn-sm rounded-pill btn-primary waves-effect"> <i class="ti ti-messages me-1"></i> Responder</button>
               </div>
 
             </div>

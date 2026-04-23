@@ -912,6 +912,8 @@ class ConsolidacionController extends Controller
             ->tap($filtroSedesCallback)
             ->count();
 
+        $cosechaDesercion = $totalCosecha - $cosechaEfectiva;
+
         $porcentajeEfectividad = $totalCosecha > 0 ? round(($cosechaEfectiva / $totalCosecha) * 100, 2) : 0;
 
         // Vinculaciones Globales
@@ -1354,6 +1356,7 @@ class ConsolidacionController extends Controller
                 'nombre' => $item->nombre,
                 'totalCosecha' => $totalItem,
                 'cosechaEfectiva' => $efectivaItem,
+                'cosechaDesercion' => $totalItem - $efectivaItem,
                 'porcentajeEfectividad' => $totalItem > 0 ? round(($efectivaItem / $totalItem) * 100, 2) : 0,
                 'vinculacionesCosecha' => $vinculacionesItem,
 
@@ -1794,6 +1797,7 @@ class ConsolidacionController extends Controller
             'rangoFechas',
             'totalCosecha',
             'cosechaEfectiva',
+            'cosechaDesercion',
             'porcentajeEfectividad',
             'vinculacionesCosecha',
             'esVistaDetalle',
@@ -2937,6 +2941,7 @@ class ConsolidacionController extends Controller
                 $fila = [
                     'Sede / Bloque' => $sede->nombre,
                     'Total Cosecha' => $metricasSede['total'] == 0 ? '0' : $metricasSede['total'],
+                    'Deserciones' => $metricasSede['deserciones'] == 0 ? '0' : $metricasSede['deserciones'],
                     'Cosecha Efectiva' => $metricasSede['efectiva'] == 0 ? '0' : $metricasSede['efectiva'],
                     'Efectividad (%)' => $metricasSede['porcentaje'] == 0 ? '0' : $metricasSede['porcentaje'],
                 ];
@@ -2982,6 +2987,7 @@ class ConsolidacionController extends Controller
             $filaBloque = [
                 'Sede / Bloque' => 'TOTAL: ' . strtoupper($bloque->nombre),
                 'Total Cosecha' => $metricasBloque['total'] == 0 ? '0' : $metricasBloque['total'],
+                'Deserciones' => $metricasBloque['deserciones'] == 0 ? '0' : $metricasBloque['deserciones'],
                 'Cosecha Efectiva' => $metricasBloque['efectiva'] == 0 ? '0' : $metricasBloque['efectiva'],
                 'Efectividad (%)' => $metricasBloque['porcentaje'] == 0 ? '0' : $metricasBloque['porcentaje'],
             ];
@@ -3323,6 +3329,7 @@ class ConsolidacionController extends Controller
         return [
             'total' => $totalItem,
             'efectiva' => $efectivaItem,
+            'deserciones' => $totalItem - $efectivaItem,
             'porcentaje' => $porcentaje,
             'vinculaciones' => $vinculacionesArray,
             

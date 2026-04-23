@@ -47,18 +47,39 @@ $configData = Helper::appClasses();
   </script>
 
   <script type="module">
+    $('input[name="es_externo"]').change(function() {
+      if ($(this).val() == '1') {
+        $('#persona-container').fadeOut('fast', function() {
+          $('#campos_externos').fadeIn('fast');
+        });
+      } else {
+        $('#campos_externos').fadeOut('fast', function() {
+          $('#persona-container').fadeIn('fast');
+        });
+      }
+    });
+
     $('#formulario').submit(function(e){
 
       // Limpiar errores previos
       $('.custom-error').remove();
       let isValid = true;
+      let esExterno = $('input[name="es_externo"]:checked').val() == '1';
 
-      // Validar Persona
-      // El componente 'usuarios-para-busqueda' genera un input oculto con id 'persona' y name 'persona' solo si hay selección
-      let personaInput = $('input[name="persona"]');
-      if (personaInput.length === 0 || !personaInput.val()) {
-        $('#persona-container').append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
-        isValid = false;
+      if (!esExterno) {
+        // Validar Persona (solo si el campo existe)
+        let personaInput = $('input[name="persona"]');
+        if (personaInput.length > 0 && !personaInput.val()) {
+          $('#persona-container').append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
+          isValid = false;
+        }
+      } else {
+        // Validar Nombre Externo
+        let nombreExterno = $('#nombre_externo').val().trim();
+        if (!nombreExterno) {
+          $('#nombre_externo').parent().append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
+          isValid = false;
+        }
       }
 
       // Validar Tipo de petición
@@ -135,20 +156,85 @@ $configData = Helper::appClasses();
           <div class="card-body">
             <div class="row mt-3">
 
-              <div class="mb-3 col-12 mb-md-3" id="persona-container">
-                @livewire('Usuarios.usuarios-para-busqueda', [
-                  'id' => 'persona',
-                  'class' => 'col-12 mb-3',
-                  'label' => '¿De quién es la petición?',
-                  'estiloSeleccion' => 'pequeno',
-                  'tipoBuscador' => 'unico',
-                  'queUsuariosCargar' => $queUsuariosCargar,
-                  'conDadosDeBaja' => 'no',
-                  'modulo' => 'peticiones',
-                  'obligatorio' => true,
-                  'usuarioSeleccionadoId' => old('persona') ?  old('persona') : ''
-                ])
-              </div>
+              @if($crearPeticionOtros)
+                <!-- Opciones para Tipo de Persona (Registrada vs No Registrada) -->
+                <div class="col-12 mb-4">
+                  <label class="form-label">¿Para quién es la petición?</label>
+                  <div class="row">
+                    <div class="col-md-6 mb-md-0 mb-2">
+                      <div class="form-check custom-option custom-option-basic rounded-3 shadow-sm border {{ !old('es_externo') ? 'checked' : '' }}">
+                        <label class="form-check-label custom-option-content p-3" for="es_externo_no">
+                          <span class="custom-option-header m-0 pb-0">
+                            <span class="h6 mb-0 d-flex align-items-center text-black"><i class="ti ti-user-check me-3 text-black" style="color: black !important;"></i> Persona registrada</span>
+                            <input name="es_externo" class="form-check-input" type="radio" value="0" id="es_externo_no" {{ !old('es_externo') ? 'checked' : '' }} />
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-check custom-option custom-option-basic rounded-3 shadow-sm border {{ old('es_externo') == '1' ? 'checked' : '' }}">
+                        <label class="form-check-label custom-option-content p-3" for="es_externo_si">
+                          <span class="custom-option-header m-0 pb-0">
+                            <span class="h6 mb-0 d-flex align-items-center text-black"><i class="ti ti-user-plus me-3 text-black" style="color: black !important;"></i> Persona no registrada</span>
+                            <input name="es_externo" class="form-check-input" type="radio" value="1" id="es_externo_si" {{ old('es_externo') == '1' ? 'checked' : '' }} />
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3 col-12 mb-md-3" id="persona-container" style="display: {{ old('es_externo') == '1' ? 'none' : 'block' }};">
+                  @livewire('Usuarios.usuarios-para-busqueda', [
+                    'id' => 'persona',
+                    'class' => 'col-12 mb-3',
+                    'label' => '¿De quién es la petición?',
+                    'estiloSeleccion' => 'pequeno',
+                    'tipoBuscador' => 'unico',
+                    'queUsuariosCargar' => $queUsuariosCargar,
+                    'conDadosDeBaja' => 'no',
+                    'modulo' => 'peticiones',
+                    'obligatorio' => true,
+                    'usuarioSeleccionadoId' => old('persona') ?  old('persona') : ''
+                  ])
+                </div>
+
+                <div id="campos_externos" class="col-12" style="display: {{ old('es_externo') == '1' ? 'block' : 'none' }};">
+                  <div class="mb-3">
+                      <label class="form-label" for="nombre_externo">Nombre completo de la persona</label>
+                      <input type="text" id="nombre_externo" name="nombre_externo" class="form-control" value="{{ old('nombre_externo') }}" placeholder="Ej: Juan Pérez">
+                  </div>
+                  <div class="row">
+                      <div class="mb-3 col-md-6">
+                          <label class="form-label" for="email_externo">Correo electrónico (opcional)</label>
+                          <input type="email" id="email_externo" name="email_externo" class="form-control" value="{{ old('email_externo') }}" placeholder="ejemplo@correo.com">
+                      </div>
+                      <div class="mb-3 col-md-6">
+                          <label class="form-label" for="telefono_externo">Teléfono / WhatsApp (opcional)</label>
+                          <input type="text" id="telefono_externo" name="telefono_externo" class="form-control" value="{{ old('telefono_externo') }}" placeholder="Ej: +573001234567">
+                      </div>
+                  </div>
+                  <div class="row">
+                      <div class="mb-3 col-md-6">
+                          <label class="form-label" for="genero_externo">Género</label>
+                          <select id="genero_externo" name="genero_externo" class="form-select">
+                              <option value="0" {{ old('genero_externo') == '0' ? 'selected' : '' }}>Hombre</option>
+                              <option value="1" {{ old('genero_externo') == '1' ? 'selected' : '' }}>Mujer</option>
+                          </select>
+                      </div>
+                      <div class="mb-3 col-md-6">
+                          <label class="form-label" for="pais_id">País</label>
+                          <select id="pais_id" name="pais_id" class="form-select">
+                              @foreach($paises as $pais)
+                                  <option value="{{ $pais->id }}" {{ old('pais_id', 1) == $pais->id ? 'selected' : '' }}>{{ $pais->nombre }}</option>
+                              @endforeach
+                          </select>
+                      </div>
+                  </div>
+                </div>
+              @else
+                <input type="hidden" name="es_externo" value="0">
+              @endif
 
               <!-- Tipos de petición -->
               <div class="mb-3 col-12 mb-md-3" id="container_tipo_peticion">

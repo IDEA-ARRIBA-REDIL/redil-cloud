@@ -43,6 +43,7 @@ use App\Models\TipoUsuario;
 use App\Models\TipoVinculacion;
 use App\Models\TipoVivienda;
 use App\Models\User;
+use App\Services\NotificacionService;
 use App\Notifications\EnviarCodigoCambioCorreo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -2343,6 +2344,21 @@ class UserController extends Controller
         }
 
         if ($usuario->save()) {
+            // Despachar notificación de creación de persona
+            try {
+                $nombreCompleto = trim("{$usuario->primer_nombre} {$usuario->segundo_nombre} {$usuario->primer_apellido} {$usuario->segundo_apellido}");
+                NotificacionService::dispatch('crear_persona', [
+                    'titulo' => 'Nueva Persona Registrada',
+                    'mensaje' => "Se ha registrado a: {$nombreCompleto}",
+                    'icono' => 'ti-user-plus',
+                    'url' => route('usuario.perfil', $usuario->id),
+                    'color' => 'success',
+                ], auth()->user(), $usuario);
+            } catch (\Exception $e) {
+                // No detenemos el flujo si la notificación falla
+                \Log::error("Error al despachar notificación crear_persona: " . $e->getMessage());
+            }
+
             // / esta sección es para el guardado de los campos extra
             foreach ($campos->where('es_campo_extra', true) as $campoExtra) {
                 if ($campoExtra->tipo_de_campo != 4) {

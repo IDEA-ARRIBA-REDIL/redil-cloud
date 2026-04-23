@@ -22,14 +22,21 @@ class CampanaNotificaciones extends Component
     }
 
     /**
-     * Actualiza el conteo de no leídas (llamado por wire:poll).
+     * Actualiza el conteo de no leídas (llamado por wire:poll cada 30s).
      */
     public function actualizarConteo(): void
     {
         $viejoConteo = $this->conteoNoLeidas;
         $this->conteoNoLeidas = auth()->user()->unreadNotifications()->count();
 
-        // Siempre despachar el estado actual para la PWA al montar y actualizar
+        // ============================================================================
+        // CONEXIÓN LARAVEL -> NAVEGADOR
+        // ============================================================================
+        // Aquí le decimos al frontend (JavaScript en el navegador) cuál es el nuevo
+        // número de notificaciones usando el sistema de Eventos de Livewire (dispatch).
+        // El navegador está "escuchando" este evento ('AppBadgeUpdated') y cuando lo
+        // recibe, usa la API del navegador (App Badging API) para mandarle ese número
+        // al icono de la PWA en la pantalla de inicio del teléfono celular.
         $this->dispatch('AppBadgeUpdated', count: $this->conteoNoLeidas);
     }
 

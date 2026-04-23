@@ -1583,16 +1583,22 @@ class PermisoSeeder extends Seeder
 
         // Peticiones
         Permission::firstOrCreate([
+            'titulo' => 'crear_peticion_otros',
+            'descripcion' => 'Permite crear peticiones para otras personas o externos',
+            'name' => 'peticiones.crear_peticion_otros',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
             'titulo' => 'subitem_nueva_peticion',
             'descripcion' => '',
             'name' => 'peticiones.subitem_nueva_peticion',
-        ]);
+        ])->syncRoles([$superAdmin, $lider]);
 
         Permission::firstOrCreate([
             'titulo' => 'item_peticiones',
             'descripcion' => '',
             'name' => 'peticiones.item_peticiones',
-        ])->syncRoles([$superAdmin]);
+        ])->syncRoles([$superAdmin, $lider]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_mis_peticiones',
@@ -2873,5 +2879,11 @@ class PermisoSeeder extends Seeder
             'descripcion' => 'Opción para ver los planes lectores del usuario',
             'name' => 'planes_lectores.mis_planes_lectores',
         ])->syncRoles([$superAdmin, $lider]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'dashboard_planes_lectores',
+            'descripcion' => 'Permite ver el dashboard de estadísticas de los planes lectores',
+            'name' => 'planes_lectores.dashboard',
+        ])->syncRoles([$superAdmin]);
     }
 }

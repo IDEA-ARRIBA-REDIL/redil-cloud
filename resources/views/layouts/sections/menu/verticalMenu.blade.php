@@ -707,6 +707,13 @@
             </a>
 
             <ul class="menu-sub">
+                @if ($rolActivo->hasPermissionTo('planes_lectores.dashboard'))
+                    <li class="menu-item {{ request()->routeIs('planes-lectores.dashboard') ? 'active' : '' }}">
+                        <a href="{{ route('planes-lectores.dashboard') }}" class="menu-link">
+                            <div>Dashboard</div>
+                        </a>
+                    </li>
+                @endif
                 @if ($rolActivo->hasPermissionTo('planes_lectores.subitem_gestionar_planes_lectores'))
                     <li class="menu-item {{ request()->routeIs('planes-lectores.gestionar') ? 'active' : '' }}">
                         <a href="{{ route('planes-lectores.gestionar') }}" class="menu-link">
@@ -762,7 +769,8 @@
       request()->routeIs('formularioUsuario.*') ||
       request()->routeIs('gestionar-tipos-de-grupos.*') ||
       request()->routeIs('gestionar-tipos-de-actividad.*') ||
-      request()->routeIs('gestionar-pasos-de-crecimiento.*')
+      request()->routeIs('gestionar-pasos-de-crecimiento.*') ||
+      request()->routeIs('notificaciones.configuracion')
           ? 'active open'
           : '' }}">
 
@@ -807,6 +815,16 @@
                     <li class="menu-item {{ request()->routeIs('theme-setting.index') ? 'active' : '' }}">
                         <a href="{{ route('theme-setting.index') }}" class="menu-link">
                             <div>Plantilla</div>
+                        </a>
+                    </li>
+                @endif
+            </ul>
+
+            <ul class="menu-sub">
+                @if ($rolActivo->hasPermissionTo('configuraciones.subitem_general'))
+                    <li class="menu-item {{ request()->routeIs('notificaciones.configuracion') ? 'active' : '' }}">
+                        <a href="{{ route('notificaciones.configuracion') }}" class="menu-link">
+                            <div>Tipos de Notificaciones</div>
                         </a>
                     </li>
                 @endif

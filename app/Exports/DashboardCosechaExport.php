@@ -31,7 +31,7 @@ class DashboardCosechaExport implements FromArray, WithHeadings, WithStyles, Sho
     public function headings(): array
     {
         $numVinculaciones = count($this->tiposVinculaciones);
-        $totalCols = 4 + $numVinculaciones + 11 + 14; // Cosecha + Escuelas(11) + Membresías(14)
+        $totalCols = 5 + $numVinculaciones + 11 + 14; // Cosecha(5) + Escuelas(11) + Membresías(14)
 
         // Fila 1: Título principal
         $row1 = ['Detalle de consolidación'];
@@ -47,7 +47,7 @@ class DashboardCosechaExport implements FromArray, WithHeadings, WithStyles, Sho
             'COSECHA',       // B3
         ];
         // Relleno para COSECHA
-        for ($i = 1; $i < (3 + $numVinculaciones); $i++) $row3[] = '';
+        for ($i = 1; $i < (4 + $numVinculaciones); $i++) $row3[] = '';
         
         $row3[] = 'ESCUELAS'; 
         for ($i = 1; $i < 11; $i++) $row3[] = ''; // Relleno Escuelas
@@ -59,9 +59,10 @@ class DashboardCosechaExport implements FromArray, WithHeadings, WithStyles, Sho
         $row4 = [
             '', // A4 (fusionado con A3)
             'Total cosecha', // B4
-            'Cosecha efectiva', // C4
-            'Efectividad (%)', // D4
-            'Cosecha por vinculación', // E4
+            'Deserciones', // C4
+            'Cosecha efectiva', // D4
+            'Efectividad (%)', // E4
+            'Cosecha por vinculación', // F4
         ];
         // Relleno Vinculación
         for ($i = 1; $i < $numVinculaciones; $i++) $row4[] = ''; 
@@ -101,6 +102,7 @@ class DashboardCosechaExport implements FromArray, WithHeadings, WithStyles, Sho
             '', // B5 (fusionado con B4)
             '', // C5 (fusionado con C4)
             '', // D5 (fusionado con D4)
+            '', // E5 (fusionado con E4)
         ];
         foreach ($this->tiposVinculaciones as $nombreVinculacion) {
             $row5[] = $nombreVinculacion; // E5, F5...
@@ -175,7 +177,7 @@ class DashboardCosechaExport implements FromArray, WithHeadings, WithStyles, Sho
                 ]);
 
                 // 2. Súper-grupos (Fila 3)
-                $colCosechaEndIdx = 4 + $numVinc;
+                $colCosechaEndIdx = 5 + $numVinc;
                 $colCosechaEnd = $colStr($colCosechaEndIdx);
                 $sheet->mergeCells("B3:{$colCosechaEnd}3");
 
@@ -193,7 +195,7 @@ class DashboardCosechaExport implements FromArray, WithHeadings, WithStyles, Sho
 
                 // 3. Sub-grupos horizontales (Fila 4) - Cosecha y Escuelas
                 if ($numVinc > 0) {
-                    $sheet->mergeCells("E4:{$colCosechaEnd}4"); 
+                    $sheet->mergeCells("F4:{$colCosechaEnd}4"); 
                 }
 
                 $idxTvS = $colEscuelasStartIdx + 3; 
@@ -222,6 +224,7 @@ class DashboardCosechaExport implements FromArray, WithHeadings, WithStyles, Sho
                 $sheet->mergeCells("B4:B5");
                 $sheet->mergeCells("C4:C5");
                 $sheet->mergeCells("D4:D5");
+                $sheet->mergeCells("E4:E5");
 
                 $idxTotMat = $colEscuelasStartIdx;
                 $idxMatEf = $colEscuelasStartIdx + 1;

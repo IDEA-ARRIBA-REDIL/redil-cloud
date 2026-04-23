@@ -1,8 +1,3 @@
-@php
-    $configData = Helper::appClasses();
-@endphp
-
-@section('title', 'Mis Notificaciones')
 
 <div>
     <div class="row">
@@ -62,7 +57,8 @@
                                 $datos = $notificacion->data;
                                 $esLeida = $notificacion->read_at !== null;
                             @endphp
-                            <li class="list-group-item py-3 {{ !$esLeida ? 'bg-label-primary bg-opacity-10' : '' }}">
+                            <li style="{{ !$esLeida ? 'background-color: #e6f5ffd1  !important;' : '' }}" class="list-group-item list-group-item-action py-3 " 
+                                @if(isset($datos['url'])) wire:click="marcarComoLeida('{{ $notificacion->id }}')" style="cursor: pointer;" @endif>
                                 <div class="d-flex align-items-start">
                                     {{-- Icono --}}
                                     <div class="flex-shrink-0 me-3">
@@ -78,13 +74,13 @@
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div>
-                                                <h6 class="mb-1 {{ !$esLeida ? 'fw-bold' : 'text-muted' }}">
+                                                <h6 class="mb-1 {{ !$esLeida ? 'fw-bold' : 'text-black' }}">
                                                     {{ $datos['titulo'] ?? 'Notificación' }}
                                                 </h6>
-                                                <p class="mb-1 text-body">
+                                                <p class="mb-1 text-black">
                                                     {{ $datos['mensaje'] ?? '' }}
                                                 </p>
-                                                <small class="text-muted">
+                                                <small class="text-black">
                                                     <i class="ti ti-clock me-1"></i>
                                                     {{ $notificacion->created_at->diffForHumans() }}
                                                 </small>

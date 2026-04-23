@@ -24,8 +24,8 @@ $configData = Helper::appClasses();
 ])
 @endsection
 
-@section('page-script')
-<script>
+@section('page-script') 
+<script> 
   $(document).ready(function() {
     $('.selectpicker').selectpicker();
 
@@ -605,7 +605,7 @@ $configData = Helper::appClasses();
 
       </div>
 
-      <div class="col col-12 equal-height-col col-md-4 mb-4">
+      <div class="col col-12 equal-height-col col-md-3 mb-4">
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
@@ -620,7 +620,22 @@ $configData = Helper::appClasses();
         </div>
       </div>
 
-      <div class="col col-12 equal-height-col col-md-4 mb-4">
+      <div class="col col-12 equal-height-col col-md-3 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'deserciones', 'bloque_id' => request('bloque_detalle_id')])) }}">{{ $cosechaDesercion }}</a>
+              </h5>
+              <small class="text-black">
+                Deserciones
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col col-12 equal-height-col col-md-3 mb-4">
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
@@ -635,7 +650,7 @@ $configData = Helper::appClasses();
         </div>
       </div>
 
-      <div class="col-12 col-md-4 mb-4">
+      <div class="col-12 col-md-3 mb-4">
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between align-items-center pb-0">
             <small class="text-black">Efectividad de la cosecha</small>
@@ -889,6 +904,14 @@ $configData = Helper::appClasses();
                                             <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_total', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalCosecha }}</a>
                                         </h5>
                                         <small class="text-black">Total cosecha</small> 
+                                    </div>
+                                </div>
+                                <div class="card mb-3">
+                                    <div class="card-body py-3 border-bottom">
+                                        <h5 class="card-title mb-0 fw-semibold">
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'deserciones', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->cosechaDesercion }}</a>
+                                        </h5>
+                                        <small class="text-black">Deserciones</small>
                                     </div>
                                 </div>
                                 <div class="card mb-3">

@@ -525,6 +525,7 @@ class SedeController extends Controller
       ->count();
 
     $porcentajeEfectividad = $totalCosecha > 0 ? round(($cosechaEfectiva / $totalCosecha) * 100, 2) : 0;
+    $cosechaDesercion = $totalCosecha - $cosechaEfectiva;
 
     // Vinculaciones
     $userIdsCosecha = User::withTrashed()
@@ -863,6 +864,7 @@ class SedeController extends Controller
       'rangoFechas' => $rangoFechas,
       'totalCosecha' => $totalCosecha,
       'cosechaEfectiva' => $cosechaEfectiva,
+      'cosechaDesercion' => $cosechaDesercion,
       'porcentajeEfectividad' => $porcentajeEfectividad,
       'vinculacionesCosecha' => $vinculacionesCosecha,
       'datosGraficaSemanal' => $datosGraficaSemanal,
@@ -925,6 +927,7 @@ class SedeController extends Controller
     $fila = [
       'Sede / Bloque' => $sede->nombre,
       'Total Cosecha' => $metricasSede['totalCosecha'] == 0 ? '0' : $metricasSede['totalCosecha'],
+      'Deserciones' => $metricasSede['cosechaDesercion'] == 0 ? '0' : $metricasSede['cosechaDesercion'],
       'Cosecha Efectiva' => $metricasSede['cosechaEfectiva'] == 0 ? '0' : $metricasSede['cosechaEfectiva'],
       'Efectividad (%)' => $metricasSede['porcentajeEfectividad'] == 0 ? '0' : $metricasSede['porcentajeEfectividad'],
     ];
@@ -1068,6 +1071,22 @@ class SedeController extends Controller
                   ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
                   ->where('dado_baja', false);
               });
+          });
+        break;
+      case 'deserciones':
+        $query->whereBetween('created_at', [$inicio, $fin])
+          ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
+            $q->whereBetween('created_at', [$inicio, $fin])
+              ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+              ->whereHas('tipoUsuarioNuevo', function ($q2) {
+                $q2->where('habilitado_para_consolidacion', true)
+                  ->orWhere('es_miembro_oficial', true);
+              });
+          })
+          ->whereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+            $sub->whereBetween('created_at', [$inicio, $fin])
+              ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+              ->where('dado_baja', true);
           });
         break;
 

@@ -564,7 +564,7 @@ $configData = Helper::appClasses();
               <div class="d-flex align-items-center">
                 <ul class="list-unstyled d-flex align-items-center avatar-group mb-0 zindex-2">
                     <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="{{$peticion->nombreUsuario}}" class="avatar pull-up">
-                      <img class="rounded-circle" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario }}" alt="foto {{$peticion->nombreUsuario}}">
+                      <img class="rounded-circle" src="{{ $peticion->fotoUsuario ? ($configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : asset('assets/img/avatars/1.png') }}" alt="foto {{$peticion->nombreUsuario}}">
                     </li>
                     <span class="text-muted mx-1">{{ $peticion->nombreUsuario }}</span>
                 </ul>

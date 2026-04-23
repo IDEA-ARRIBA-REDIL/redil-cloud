@@ -95,18 +95,25 @@
     <script>
         document.addEventListener('livewire:init', () => {
 
-            // Función centralizada para aplicar el badge de manera segura
+            // ========================================================================
+            // NAVEGADOR -> SISTEMA OPERATIVO DEL TELÉFONO (App Badging API)
+            // ========================================================================
+            // Función centralizada para aplicar el "puntito rojo" de manera segura.
+            // Esta función usa 'navigator.setAppBadge' que es una tecnología web
+            // moderna (PWA). Le permite a un sitio web comunicarse con el sistema
+            // operativo de iOS o Android para ponerle un número al icono de la app.
             const triggerBadge = async (count) => {
+                // Primero validamos que el teléfono/navegador soporte esta función.
                 if (!('setAppBadge' in navigator && 'clearAppBadge' in navigator)) {
                     console.log('App Badging API no soportado por este dispositivo o no instalado como App.');
                     return;
                 }
                 try {
                     if (count > 0) {
-                        await navigator.setAppBadge(count);
+                        await navigator.setAppBadge(count); // Pone el número en el icono de la pantalla de inicio
                         console.log('Badge colocado:', count);
                     } else {
-                        await navigator.clearAppBadge();
+                        await navigator.clearAppBadge(); // Quita el número si llegó a cero
                         console.log('Badge limpiado.');
                     }
                 } catch (error) {
@@ -114,11 +121,15 @@
                 }
             };
 
-            // Solicitud de permisos obligatorios (iOS y Android moderno) al interactuar internamente
+            // ========================================================================
+            // PERMISOS DEL USUARIO
+            // ========================================================================
+            // Apple y Google exigen que el usuario dé permiso explícito para recibir 
+            // notificaciones y para poder modificar el icono de la app.
             const bannerPermisos = document.getElementById('banner-permiso-notificaciones');
             const btnPedirPermisos = document.getElementById('btn-pedir-permisos');
 
-            // Mostrar el banner solo si el navegador soporta Notificaciones y el usuario no ha respondido
+            // Mostrar el banner solo si el navegador soporta Notificaciones y el usuario no ha respondido ('default')
             if ('Notification' in window && Notification.permission === 'default' && 'setAppBadge' in navigator && bannerPermisos) {
                 bannerPermisos.classList.remove('d-none');
             }
@@ -127,6 +138,7 @@
                 btnPedirPermisos.addEventListener('click', async (e) => {
                     e.preventDefault();
                     e.stopPropagation(); // Evitar que Bootstrap cierre la lista al hacer click extrañamente
+                    // Si el usuario da click, mostramos el cuadro de diálogo nativo del teléfono: "¿Deseas permitir notificaciones?"
                     if ('Notification' in window && Notification.permission !== 'granted') {
                         const perm = await Notification.requestPermission();
                         console.log('Permisos configurados como:', perm);
@@ -134,23 +146,29 @@
                             bannerPermisos.classList.add('d-none'); // Ocultarlo ya que respondió
                         }
                         if(perm === 'granted'){
-                            triggerBadge({{ $conteoNoLeidas }});
+                            triggerBadge({{ $conteoNoLeidas }}); // Si dijo que sí, aplicamos el número inmediatamente
                         }
                     }
                 });
             }
 
-            // Sincronización inicial rápida
+            // Sincronización inicial rápida cuando la página carga
             triggerBadge({{ $conteoNoLeidas }});
 
-            // Sincronización al momento en que la Base de Datos cambia
+            // ========================================================================
+            // ESCUCHADOR DE EVENTOS DE LIVEWIRE
+            // ========================================================================
+            // Cuando Livewire allá en el servidor PHP hace un ->dispatch('AppBadgeUpdated'),
+            // este bloque de código lo escucha en tiempo real.
             window.addEventListener('AppBadgeUpdated', (event) => {
                 let unreadCount = 0;
+                // Extraemos el número que PHP nos envió
                 if (event.detail && typeof event.detail.count !== 'undefined') {
                     unreadCount = event.detail.count;
                 } else if (event.detail && event.detail[0] && typeof event.detail[0].count !== 'undefined') {
                     unreadCount = event.detail[0].count;
                 }
+                // Llamamos a la función que habla con el teléfono para actualizar el número en el icono.
                 triggerBadge(unreadCount);
             });
         });

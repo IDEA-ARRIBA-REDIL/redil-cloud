@@ -18,25 +18,27 @@ description: Carga el contexto y memoria del Agente de Notificaciones PWA (Progr
 📄 **Referencia**: `_docs_agente/analisis_notificaciones_pwa.md`
 
 ### Visión General
+
 Implementar un sistema de engagement y notificaciones sin depender de una aplicación nativa, utilizando tecnologías web modernas (PWA, Web Push, WebSockets) para maximizar la retención de usuarios en la plataforma REDIL CLOUD.
 
 ### Tecnologías del Módulo
 
-| Tecnología           | Uso                                                               |
-| -------------------- | ----------------------------------------------------------------- |
-| **PWA**              | Instalación en pantalla de inicio, icono, splash screen           |
-| **Service Worker**   | Caché offline, interceptar push, gestión de notificaciones        |
-| **Web Push API**     | Notificaciones nativas (Android Chrome 42+, iOS 16.4+)           |
-| **App Badge API**    | Contador ("puntito rojo") sobre el icono de la PWA                |
-| **Laravel Reverb**   | WebSockets para actualizaciones en tiempo real dentro de la app   |
-| **WhatsApp API**     | Canal fallback para dispositivos sin soporte Push                 |
-| **Vite**             | Bundling del Service Worker y manifest                            |
+| Tecnología         | Uso                                                             |
+| ------------------ | --------------------------------------------------------------- |
+| **PWA**            | Instalación en pantalla de inicio, icono, splash screen         |
+| **Service Worker** | Caché offline, interceptar push, gestión de notificaciones      |
+| **Web Push API**   | Notificaciones nativas (Android Chrome 42+, iOS 16.4+)          |
+| **App Badge API**  | Contador ("puntito rojo") sobre el icono de la PWA              |
+| **Laravel Reverb** | WebSockets para actualizaciones en tiempo real dentro de la app |
+| **WhatsApp API**   | Canal fallback para dispositivos sin soporte Push               |
+| **Vite**           | Bundling del Service Worker y manifest                          |
 
 ---
 
 ## 3. Hoja de Ruta (Fases de Implementación)
 
 ### Fase 1 — Notificaciones Internas + Tiempo Real
+
 - [x] Tabla `notifications` (sistema nativo de Laravel)
 - [x] Clase `NotificacionGeneral` (canal database)
 - [x] Componente Livewire `CampanaNotificaciones` (icono + badge contador con `wire:poll.30s`)
@@ -47,6 +49,7 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 - [x] Integración de la campana en el `navbar.blade.php`
 
 ### Fase 2 — Configuración PWA
+
 - [x] Archivo `manifest.json` dinámico (nombre, iconos, colores del tenant)
 - [x] Service Worker base (`sw.js`) registrado con bypass de navegación
 - [x] Splash screens y meta tags PWA en layout principal
@@ -54,6 +57,7 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 - [x] Estrategia de caché offline (versionamiento por params url)
 
 ### Fase 3 — Notificaciones Push Externas
+
 - [ ] Generación de claves VAPID (por tenant o global)
 - [ ] Endpoint para suscripción Push (`PushSubscription`)
 - [ ] Modelo `PushSubscription` vinculado al usuario
@@ -83,31 +87,33 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 
 ## 6. Archivos Clave del Módulo (se actualizará conforme avancemos)
 
-| Archivo                                                                       | Estado       | Descripción                                |
-| ----------------------------------------------------------------------------- | ------------ | ------------------------------------------ |
-| `database/migrations/tenant/2026_04_20_170000_create_notifications_table.php` | ✅ Creado     | Migración de notificaciones (tenant)       |
-| `app/Notifications/NotificacionGeneral.php`                                   | ✅ Creado     | Clase de notificación genérica (database)  |
-| `app/Livewire/Notificaciones/CampanaNotificaciones.php`                       | ✅ Creado     | Componente campana con badge + dropdown    |
-| `resources/views/livewire/notificaciones/campana-notificaciones.blade.php`    | ✅ Creado     | Vista de la campana en el navbar           |
-| `app/Livewire/Notificaciones/ListaNotificaciones.php`                         | ✅ Creado     | Página completa de todas las notificaciones|
-| `resources/views/livewire/notificaciones/lista-notificaciones.blade.php`      | ✅ Creado     | Vista de lista con filtros y paginación    |
-| `resources/views/layouts/sections/navbar/navbar.blade.php`                    | ✅ Modificado | Integración del componente campana         |
-| `routes/app.php`                                                              | ✅ Modificado | Ruta `/notificaciones` y Rutas PWA         |
-| `app/Http/Controllers/PwaController.php`                                      | ✅ Creado     | Controlador de Manifest e Iconos Dinámicos |
-| `public/sw.js`                                                                | ✅ Creado     | Service Worker V4 (Ignora Navegación)      |
-| `app/Models/PushSubscription.php`                                             | 🔲 Pendiente  | Modelo para suscripciones push (Fase 3)    |
+| Archivo                                                                       | Estado        | Descripción                                 |
+| ----------------------------------------------------------------------------- | ------------- | ------------------------------------------- |
+| `database/migrations/tenant/2026_04_20_170000_create_notifications_table.php` | ✅ Creado     | Migración de notificaciones (tenant)        |
+| `app/Notifications/NotificacionGeneral.php`                                   | ✅ Creado     | Clase de notificación genérica (database)   |
+| `app/Livewire/Notificaciones/CampanaNotificaciones.php`                       | ✅ Creado     | Componente campana con badge + dropdown     |
+| `resources/views/livewire/notificaciones/campana-notificaciones.blade.php`    | ✅ Creado     | Vista de la campana en el navbar            |
+| `app/Livewire/Notificaciones/ListaNotificaciones.php`                         | ✅ Creado     | Página completa de todas las notificaciones |
+| `resources/views/livewire/notificaciones/lista-notificaciones.blade.php`      | ✅ Creado     | Vista de lista con filtros y paginación     |
+| `resources/views/layouts/sections/navbar/navbar.blade.php`                    | ✅ Modificado | Integración del componente campana          |
+| `routes/app.php`                                                              | ✅ Modificado | Ruta `/notificaciones` y Rutas PWA          |
+| `app/Http/Controllers/PwaController.php`                                      | ✅ Creado     | Controlador de Manifest e Iconos Dinámicos  |
+| `public/sw.js`                                                                | ✅ Creado     | Service Worker V4 (Ignora Navegación)       |
+| `app/Models/PushSubscription.php`                                             | 🔲 Pendiente  | Modelo para suscripciones push (Fase 3)     |
 
 ---
 
 ## 7. Registro de Progreso
 
 ### 2026-04-20 — Inicio del Proyecto
+
 - ✅ Documento de análisis revisado (`analisis_notificaciones_pwa.md`)
 - ✅ Estado de git verificado (rama `main`, actualizada)
 - ✅ Branch `feature/pwa-notificaciones` creada
 - ✅ Workflow `agentePWA.md` creado
 
 ### 2026-04-20 — Fase 1 Completada
+
 - ✅ Migración `notifications` creada en `database/migrations/tenant/`
 - ✅ Clase `NotificacionGeneral` creada (canal database)
 - ✅ Componente `CampanaNotificaciones` (PHP + Blade) con `wire:poll.30s`
@@ -118,6 +124,7 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 - ✅ Sincronización exitosa en `cloud.laravel.com` (Main Branch)
 
 ### 2026-04-20 — Fase 2 (Re-intento Seguro) Completada
+
 - ✅ `PwaController` re-creado con branding dinámico por tenant
 - ✅ Ruta `/manifest.json` re-integrada
 - ✅ Service Worker V3 (Seguro) implementado: **Ignora peticiones de navegación**
@@ -125,6 +132,17 @@ Implementar un sistema de engagement y notificaciones sin depender de una aplica
 - ✅ Layout `commonMaster.blade.php` actualizado con tags y registro V3
 - ✅ Laravel Pint ejecutado
 - ✅ Sincronización final en `main` lista para deploy
+
+### 2026-04-22/23 — Refactorización Avanzada de Notificaciones (Multi-Alcance y Event-Driven)
+
+- ✅ Transformación del sistema para soportar arquitecturas multi-sede y restricciones de destino.
+- ✅ Actualización de `TipoNotificacion` para incluir `sedes_ids` y `tipos_usuario_ids` (formato JSON en PostgreSQL).
+- ✅ Soporte de vigencia (`dias_vigencia`) e inyección de fecha de caducidad `expira_en` en el payload de la notificación.
+- ✅ Refactorización de queries en Livewire (`ListaNotificaciones`) para soportar operadores JSON nativos de Postgres (`data::jsonb->>'expira_en'`).
+- ✅ Creación de `NotificacionService` como "Cerebro" de despachos, resolviendo audiencias de forma dinámica.
+- ✅ UI Administrativa actualizada para gestionar selección múltiple de alcances, sedes y roles (Livewire `AdminTiposNotificaciones`).
+- ✅ Integración Event-Driven (El Gatillo) en `UserController` para el evento `crear_persona`.
+- ✅ Integración Event-Driven (El Gatillo) en `ModalNuevoReporte` para el evento `grupo_reporte_creado`.
 
 ---
 

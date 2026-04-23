@@ -29,6 +29,12 @@ class ListaNotificaciones extends Component
 
         if ($notificacion) {
             $notificacion->markAsRead();
+
+            // Si tiene URL, redirigir
+            $url = $notificacion->data['url'] ?? null;
+            if ($url) {
+                $this->redirect($url);
+            }
         }
     }
 
@@ -58,7 +64,13 @@ class ListaNotificaciones extends Component
 
     public function render(): \Illuminate\Contracts\View\View
     {
-        $query = auth()->user()->notifications()->latest();
+        $query = auth()->user()->notifications()->latest()
+            ->where(function ($q) {
+                // Excluir notificaciones expiradas — cast a jsonb requerido en PostgreSQL
+                // porque la columna data es text, no jsonb nativo
+                $q->whereRaw("(data::jsonb)->>'expira_en' IS NULL")
+                    ->orWhereRaw("((data::jsonb)->>'expira_en')::timestamptz > NOW()");
+            });
 
         if ($this->filtro === 'no-leidas') {
             $query->whereNull('read_at');
@@ -72,6 +84,6 @@ class ListaNotificaciones extends Component
         return view('livewire.notificaciones.lista-notificaciones', [
             'notificaciones' => $notificaciones,
             'conteoNoLeidas' => $conteoNoLeidas,
-        ])->layout('layouts.layoutMaster');
+        ]);
     }
 }

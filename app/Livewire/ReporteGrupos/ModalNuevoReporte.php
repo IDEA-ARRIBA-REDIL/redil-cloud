@@ -6,6 +6,7 @@ use App\Models\Configuracion;
 use App\Models\Grupo;
 use App\Models\MotivoNoReporteGrupo;
 use App\Models\ReporteGrupo;
+use App\Services\NotificacionService;
 use Livewire\Component;
 use Livewire\Attributes\On;
 
@@ -232,9 +233,6 @@ class ModalNuevoReporte extends Component
           {
               $reporte->descripcion_adicional_motivo = $this->descripcionAdicionalMotivo;
           }
-          $reporte->save();
-
-          return redirect()->route('reporteGrupo.mensajeExitoso', $reporte);
         }else{
           $reporte->tema = $this->tema;
           $reporte->no_reporte=FALSE;
@@ -245,11 +243,27 @@ class ModalNuevoReporte extends Component
           {
             $reporte->aprobado=TRUE;
           }
+        }
 
-          $reporte->save();
+        $reporte->save();
 
+        try {
+            $grupoName = $this->grupo->nombre ?? 'Desconocido';
+            NotificacionService::dispatch('grupo_reporte_creado', [
+                'titulo' => 'Reporte Creado',
+                'mensaje' => "Se ha creado un reporte para el grupo: {$grupoName}",
+                'icono' => 'ti-file-description',
+                'url' => route('reporteGrupo.resumen', $reporte->id),
+                'color' => 'success',
+            ], auth()->user(), $reporte);
+        } catch (\Exception $e) {
+            \Log::error("Error al despachar notificación grupo_reporte_creado: " . $e->getMessage());
+        }
 
-          return redirect()->route('reporteGrupo.asistencia', $reporte);
+        if($this->seRealizo == 'no') {
+            return redirect()->route('reporteGrupo.mensajeExitoso', $reporte);
+        } else {
+            return redirect()->route('reporteGrupo.asistencia', $reporte);
         }
       }
 

@@ -402,7 +402,7 @@ $configData = Helper::appClasses();
     <div class="row g-2 mb-4">
 
 
-      <div class="col col-12 equal-height-col col-md-4 mb-4">
+      <div class="col col-12 equal-height-col col-md-3 mb-4">
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
@@ -417,7 +417,22 @@ $configData = Helper::appClasses();
         </div>
       </div>
 
-      <div class="col col-12 equal-height-col col-md-4 mb-4">
+      <div class="col col-12 equal-height-col col-md-3 mb-4">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between">
+            <div>
+              <h5 class="card-title text-uppercase mb-0 fw-semibold">
+                <a href="{{ route('sede.dashboardConsolidacion.detalleKpi', [$sede, 'kpi' => 'deserciones', 'rango_fechas' => $rangoFechas]) }}">{{ $cosechaDesercion }}</a>
+              </h5>
+              <small class="text-black">
+                Deserciones
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col col-12 equal-height-col col-md-3 mb-4">
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between">
             <div>
@@ -432,7 +447,7 @@ $configData = Helper::appClasses();
         </div>
       </div>
 
-      <div class="col-12 col-md-4 mb-4">
+      <div class="col-12 col-md-3 mb-4">
         <div class="card h-100">
           <div class="card-header d-flex justify-content-between align-items-center pb-0">
             <small class="text-black">Efectividad de la cosecha</small>

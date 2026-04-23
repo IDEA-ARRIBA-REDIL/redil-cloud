@@ -16,6 +16,7 @@ use App\Models\PlanLectorCategoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 class PlanLectorController extends Controller
 {
     /**
@@ -528,5 +529,158 @@ class PlanLectorController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Error al cambiar el estado del plan lector: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Muestra el dashboard de estadísticas de planes lectores.
+     */
+    public function dashboard(Request $request)
+    {
+        $configuracion = Configuracion::find(1);
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('planes_lectores.dashboard');
+
+        // 1. Manejo de Filtros de Fecha (Estilo Consolidación)
+        $rangoFechas = $request->get('rango_fechas');
+        if ($rangoFechas && str_contains($rangoFechas, ' a ')) {
+            $fechas = explode(' a ', $rangoFechas);
+            $fechaInicio = Carbon::parse($fechas[0])->startOfDay();
+            $fechaFin = isset($fechas[1]) ? Carbon::parse($fechas[1])->endOfDay() : Carbon::parse($fechas[0])->endOfDay();
+        } else {
+            $fechaInicio = now()->startOfMonth();
+            $fechaFin = now()->endOfDay();
+            $rangoFechas = $fechaInicio->format('Y-m-d') . ' a ' . $fechaFin->format('Y-m-d');
+        }
+
+        // 2. Filtro de Sede
+        $sedeId = $request->get('sede_id');
+        $sedes = Sede::orderBy('nombre')->get();
+
+        // 3. Consultas de KPIs
+        $queryInscripciones = DB::table('plan_lector_users')
+            ->join('users', 'plan_lector_users.user_id', '=', 'users.id')
+            ->whereBetween('plan_lector_users.fecha_inscripcion', [$fechaInicio, $fechaFin]);
+
+        if ($sedeId) {
+            $queryInscripciones->where('users.sede_id', $sedeId);
+        }
+
+        $totalInscritos = (clone $queryInscripciones)->count();
+        $totalFinalizados = (clone $queryInscripciones)->where('plan_lector_users.estado', 'completado')->count();
+
+        // Lecturas Realizadas
+        $queryLecturas = DB::table('plan_lector_dia_users')
+            ->join('users', 'plan_lector_dia_users.user_id', '=', 'users.id')
+            ->whereBetween('plan_lector_dia_users.fecha_completado', [$fechaInicio, $fechaFin]);
+
+        if ($sedeId) {
+            $queryLecturas->where('users.sede_id', $sedeId);
+        }
+        $totalLecturas = $queryLecturas->count();
+
+        // 4. Datos para Gráficos
+        $esMensual = $fechaInicio->diffInDays($fechaFin) > 30;
+        $formatoAgrupacionSql = $esMensual ? "TO_CHAR(fecha_inscripcion, 'YYYY-MM')" : "TO_CHAR(fecha_inscripcion, 'YYYY-MM-DD')";
+        $formatoAgrupacionLecturaSql = $esMensual ? "TO_CHAR(fecha_completado, 'YYYY-MM')" : "TO_CHAR(fecha_completado, 'YYYY-MM-DD')";
+        
+        // Gráfico de Actividad (Línea)
+        $actividadDiaria = (clone $queryInscripciones)
+            ->select(DB::raw($formatoAgrupacionSql . ' as fecha'), DB::raw('COUNT(*) as total'))
+            ->groupBy('fecha')
+            ->orderBy('fecha')
+            ->get();
+
+        $lecturasDiariasQuery = DB::table('plan_lector_dia_users')
+            ->join('users', 'plan_lector_dia_users.user_id', '=', 'users.id')
+            ->whereBetween('plan_lector_dia_users.fecha_completado', [$fechaInicio, $fechaFin]);
+        
+        if ($sedeId) { $lecturasDiariasQuery->where('users.sede_id', $sedeId); }
+
+        $lecturasDiarias = $lecturasDiariasQuery->select(DB::raw($formatoAgrupacionLecturaSql . ' as fecha'), DB::raw('COUNT(*) as total'))
+            ->groupBy('fecha')
+            ->orderBy('fecha')
+            ->get();
+
+        // Formatear datos para la gráfica de línea
+        $labelsGrafica = [];
+        $dataSerieInscripciones = [];
+        $dataSerieLecturas = [];
+
+        $tempInicio = $esMensual ? $fechaInicio->copy()->startOfMonth() : $fechaInicio->copy();
+        $tempFin = $fechaFin->copy();
+        
+        $intervalo = $esMensual ? 'P1M' : 'P1D';
+        $formatoPHP = $esMensual ? 'Y-m' : 'Y-m-d';
+        
+        $periodo = new \DatePeriod($tempInicio, new \DateInterval($intervalo), $tempFin->addSecond());
+        foreach ($periodo as $dt) {
+            $f = $dt->format($formatoPHP);
+            // Label amigable para el frontend
+            $labelsGrafica[] = $esMensual ? ucfirst(Carbon::instance($dt)->translatedFormat('M Y')) : $dt->format('d-M');
+            $dataSerieInscripciones[] = $actividadDiaria->firstWhere('fecha', $f)?->total ?? 0;
+            $dataSerieLecturas[] = $lecturasDiarias->firstWhere('fecha', $f)?->total ?? 0;
+        }
+
+        // Top 10 Planes
+        $topPlanes = (clone $queryInscripciones)
+            ->join('planes_lectores', 'plan_lector_users.plan_lector_id', '=', 'planes_lectores.id')
+            ->select(
+                'planes_lectores.titulo', 
+                DB::raw('COUNT(*) as total'),
+                DB::raw('AVG(plan_lector_users.porcentaje_progreso) as progreso_promedio')
+            )
+            ->groupBy('planes_lectores.titulo')
+            ->orderByDesc('total')
+            ->take(10)
+            ->get();
+
+        // Top 10 Categorías
+        $distribucionCategoriasQuery = DB::table('plan_lector_users')
+            ->join('users', 'plan_lector_users.user_id', '=', 'users.id')
+            ->join('categoria_plan_lector', 'plan_lector_users.plan_lector_id', '=', 'categoria_plan_lector.plan_lector_id')
+            ->join('plan_lector_categorias', 'categoria_plan_lector.plan_lector_categoria_id', '=', 'plan_lector_categorias.id')
+            ->whereBetween('plan_lector_users.fecha_inscripcion', [$fechaInicio, $fechaFin]);
+
+        if ($sedeId) { $distribucionCategoriasQuery->where('users.sede_id', $sedeId); }
+
+        $topCategorias = (clone $distribucionCategoriasQuery)
+            ->select('plan_lector_categorias.nombre', DB::raw('COUNT(*) as total'))
+            ->groupBy('plan_lector_categorias.nombre')
+            ->orderByDesc('total')
+            ->take(10)
+            ->get();
+
+        // Top 10 Autores
+        $topAutores = (clone $queryInscripciones)
+            ->join('planes_lectores', 'plan_lector_users.plan_lector_id', '=', 'planes_lectores.id')
+            ->join('users as autores', 'planes_lectores.autor_id', '=', 'autores.id')
+            ->select(
+                'autores.id',
+                'autores.foto',
+                'autores.primer_nombre',
+                'autores.primer_apellido',
+                DB::raw("CONCAT(autores.primer_nombre, ' ', autores.primer_apellido) as name"), 
+                DB::raw('COUNT(*) as total')
+            )
+            ->groupBy('autores.id', 'autores.foto', 'autores.primer_nombre', 'autores.primer_apellido')
+            ->orderByDesc('total')
+            ->take(10)
+            ->get();
+
+        return view('contenido.paginas.plan-lector.dashboard', compact(
+            'configuracion',
+            'rangoFechas',
+            'sedes',
+            'sedeId',
+            'totalInscritos',
+            'totalLecturas',
+            'totalFinalizados',
+            'labelsGrafica',
+            'dataSerieInscripciones',
+            'dataSerieLecturas',
+            'topPlanes',
+            'topCategorias',
+            'topAutores'
+        ));
     }
 }

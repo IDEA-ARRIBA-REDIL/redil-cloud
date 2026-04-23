@@ -94,6 +94,48 @@
 @endsection
 
 @section('page-script')
+    {{-- Notificaciones: activar / blocked --}}
+    <script>
+        (function () {
+            const esMobil = window.innerWidth < 900;
+            if (!esMobil) return;
+
+            const permisoActual = ('Notification' in window) ? Notification.permission : 'granted';
+
+            if (permisoActual === 'default') {
+                const banner = document.getElementById('banner-notif-permiso');
+                if (banner) banner.style.display = 'block';
+            } else if (permisoActual === 'denied') {
+                const bannerBloqueado = document.getElementById('banner-notif-bloqueado');
+                if (bannerBloqueado) bannerBloqueado.style.display = 'block';
+            }
+        })();
+
+        async function pedirPermisoNotificaciones() {
+            if (!('Notification' in window)) return;
+            await Notification.requestPermission();
+            cerrarBannerNotif();
+        }
+
+        function cerrarBannerNotif() {
+            const banner = document.getElementById('banner-notif-permiso');
+            if (banner) {
+                banner.style.transition = 'opacity 0.3s ease';
+                banner.style.opacity = '0';
+                setTimeout(() => banner.style.display = 'none', 300);
+            }
+        }
+
+        function cerrarBannerBloqueado() {
+            const banner = document.getElementById('banner-notif-bloqueado');
+            if (banner) {
+                banner.style.transition = 'opacity 0.3s ease';
+                banner.style.opacity = '0';
+                setTimeout(() => banner.style.display = 'none', 300);
+            }
+        }
+    </script>
+
     <script type="module">
         const swiperContainer = document.querySelector('#swiper-with-pagination-cards');
         const swiper = new Swiper(swiperContainer, {
@@ -212,8 +254,84 @@
         </div>
     </div>
 
-    <div class="row  me-md-3">
-        <div class="col-12 col-lg-6 mt-3">
+    <div id="row-contenido-general" class="row  me-md-3">
+
+        {{-- Banner habilitar notificaciones (solo móvil, solo si no están activas) --}}
+        <div id="banner-notif-permiso" class="col-12 mb-2" style="display:none;">
+            <div style="
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 16px;
+                padding: 14px 18px;
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                box-shadow: 0 4px 18px rgba(102,126,234,0.3);
+            ">
+                <span style="font-size:28px;flex-shrink:0;">🔔</span>
+                <div style="flex:1;">
+                    <p style="margin:0;color:white;font-weight:700;font-size:14px;">Activa las notificaciones</p>
+                    <p style="margin:0;color:rgba(255,255,255,0.8);font-size:12px;">Recibe avisos importantes en tiempo real.</p>
+                </div>
+                <button onclick="pedirPermisoNotificaciones()" style="
+                    background: white;
+                    color: #667eea;
+                    border: none;
+                    border-radius: 50px;
+                    padding: 8px 16px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                ">Activar</button>
+                <button onclick="cerrarBannerNotif()" style="
+                    background: transparent;
+                    border: none;
+                    color: rgba(255,255,255,0.7);
+                    font-size: 18px;
+                    cursor: pointer;
+                    padding: 0 0 0 4px;
+                    flex-shrink:0;
+                ">&times;</button>
+            </div>
+        </div>
+
+        {{-- Banner notificaciones bloqueadas (denied) --}}
+        <div id="banner-notif-bloqueado" class="col-12 mb-2" style="display:none;">
+            <div style="
+                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                border-radius: 16px;
+                padding: 14px 18px;
+                display: flex;
+                align-items: flex-start;
+                gap: 14px;
+                box-shadow: 0 4px 18px rgba(245,87,108,0.3);
+            ">
+                <span style="font-size:28px;flex-shrink:0;margin-top:2px;">🔕</span>
+                <div style="flex:1;">
+                    <p style="margin:0 0 3px;color:white;font-weight:700;font-size:14px;">Notificaciones bloqueadas</p>
+                    <p style="margin:0 0 8px;color:rgba(255,255,255,0.9);font-size:12px;line-height:1.5;"
+                    >Para recibirlas, ve a la <strong>configuración de tu navegador</strong>, busca los permisos de este sitio y cambia las notificaciones a <strong>Permitir</strong>.</p>
+                    <p style="margin:0;color:rgba(255,255,255,0.75);font-size:11px;">
+                        📱 Android: Menú → Configuración → Configuración del sitio → Notificaciones<br>
+                        🍏 iOS: Configuración → Safari → Notificaciones
+                    </p>
+                </div>
+                <button onclick="cerrarBannerBloqueado()" style="
+                    background: transparent;
+                    border: none;
+                    color: rgba(255,255,255,0.7);
+                    font-size: 20px;
+                    cursor: pointer;
+                    padding: 0;
+                    flex-shrink:0;
+                    line-height:1;
+                ">&times;</button>
+            </div>
+        </div>
+        {{-- Fin banners --}}
+
+        <div id="col-novedades" class="col-12 col-lg-6 mt-3">
             <h5 class="text-black fw-bold">Novedades</h5>
 
             @if ($banners->count() > 0)

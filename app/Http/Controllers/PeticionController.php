@@ -25,6 +25,19 @@ use \stdClass;
 class PeticionController extends Controller
 {
 
+  public function publicaNueva()
+  {
+    $configuracion = Configuracion::find(1);
+    $paises = Pais::all();
+    $tiposPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
+
+    return view('contenido.paginas.peticiones.publica', [
+      'configuracion' => $configuracion,
+      'paises' => $paises,
+      'tiposPeticiones' => $tiposPeticiones,
+    ]);
+  }
+
   public function panel(Request $request)
   {
     $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
@@ -48,7 +61,7 @@ class PeticionController extends Controller
 
       if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas')) {
         $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'genero')
+          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
           ->get();
       }
     }
@@ -151,24 +164,31 @@ class PeticionController extends Controller
     if ($peticiones->count() > 0) {
 
       $peticiones = $peticiones->toQuery()->leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-        ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido')
+        ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
         ->orderBy('peticiones.id', 'desc')->paginate(12);
       $peticiones->map(function ($peticion) {
 
-        $peticion->nombreUsuario = $peticion->primer_nombre . ' ' . $peticion->segundo_nombre . ' ' . $peticion->primer_apellido;
-        $peticion->fotoUsuario = $peticion->foto;
+        if ($peticion->user_id) {
+          $peticion->nombreUsuario = $peticion->primer_nombre . ' ' . $peticion->segundo_nombre . ' ' . $peticion->primer_apellido;
+          $peticion->fotoUsuario = $peticion->foto;
 
-        $telefonosArray = [];
-        $peticion->telefono_fijo ? array_push($telefonosArray, $peticion->telefono_fijo) : '';
-        $peticion->telefono_movil ? array_push($telefonosArray, $peticion->telefono_movil) : '';
-        $peticion->telefono_otro ? array_push($telefonosArray, $peticion->telefono_otro) : '';
+          $telefonosArray = [];
+          $peticion->telefono_fijo ? array_push($telefonosArray, $peticion->telefono_fijo) : '';
+          $peticion->telefono_movil ? array_push($telefonosArray, $peticion->telefono_movil) : '';
+          $peticion->telefono_otro ? array_push($telefonosArray, $peticion->telefono_otro) : '';
 
-        $peticion->telefonosUsuario = $telefonosArray && is_array($telefonosArray) ? implode(", ", $telefonosArray) : ' Sin datos';
-        $peticion->emailUsuario = $peticion->email ?: 'Sin dato';
+          $peticion->telefonosUsuario = $telefonosArray && is_array($telefonosArray) ? implode(", ", $telefonosArray) : ' Sin datos';
+          $peticion->emailUsuario = $peticion->email ?: 'Sin dato';
+        } else {
+          $peticion->nombreUsuario = $peticion->nombre_externo . ' (Externo)';
+          $peticion->fotoUsuario = null;
+          $peticion->telefonosUsuario = $peticion->telefono_externo ?: 'Sin dato';
+          $peticion->emailUsuario = $peticion->email_externo ?: 'Sin dato';
+        }
 
         // usuarioCreacion =
         $usuarioCreacion = $peticion->autorCreacion()->withTrashed()->select('id', 'primer_nombre', 'segundo_nombre', 'primer_apellido')->first();
-        $peticion->usuarioCreacion = ($usuarioCreacion && $peticion->user_id != $usuarioCreacion->autor_creacion_id)
+        $peticion->usuarioCreacion = ($usuarioCreacion && $peticion->user_id != $usuarioCreacion->id)
           ? $usuarioCreacion->nombre(3)
           : 'Autogestión';
       });
@@ -229,7 +249,7 @@ class PeticionController extends Controller
 
       if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas')) {
         $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido')
+          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
           ->get();
       }
     }
@@ -369,24 +389,31 @@ class PeticionController extends Controller
     if ($peticiones->count() > 0) {
 
       $peticiones = $peticiones->toQuery()->leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-        ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido')
+        ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
         ->orderBy('peticiones.id', 'desc')->paginate(12);
       $peticiones->map(function ($peticion) {
 
-        $peticion->nombreUsuario = $peticion->primer_nombre . ' ' . $peticion->segundo_nombre . ' ' . $peticion->primer_apellido;
-        $peticion->fotoUsuario = $peticion->foto;
+        if ($peticion->user_id) {
+          $peticion->nombreUsuario = $peticion->primer_nombre . ' ' . $peticion->segundo_nombre . ' ' . $peticion->primer_apellido;
+          $peticion->fotoUsuario = $peticion->foto;
 
-        $telefonosArray = [];
-        $peticion->telefono_fijo ? array_push($telefonosArray, $peticion->telefono_fijo) : '';
-        $peticion->telefono_movil ? array_push($telefonosArray, $peticion->telefono_movil) : '';
-        $peticion->telefono_otro ? array_push($telefonosArray, $peticion->telefono_otro) : '';
+          $telefonosArray = [];
+          $peticion->telefono_fijo ? array_push($telefonosArray, $peticion->telefono_fijo) : '';
+          $peticion->telefono_movil ? array_push($telefonosArray, $peticion->telefono_movil) : '';
+          $peticion->telefono_otro ? array_push($telefonosArray, $peticion->telefono_otro) : '';
 
-        $peticion->telefonosUsuario = $telefonosArray && is_array($telefonosArray) ? implode(", ", $telefonosArray) : ' Sin datos';
-        $peticion->emailUsuario = $peticion->email ?: 'Sin dato';
+          $peticion->telefonosUsuario = $telefonosArray && is_array($telefonosArray) ? implode(", ", $telefonosArray) : ' Sin datos';
+          $peticion->emailUsuario = $peticion->email ?: 'Sin dato';
+        } else {
+          $peticion->nombreUsuario = $peticion->nombre_externo . ' (Externo)';
+          $peticion->fotoUsuario = null;
+          $peticion->telefonosUsuario = $peticion->telefono_externo ?: 'Sin dato';
+          $peticion->emailUsuario = $peticion->email_externo ?: 'Sin dato';
+        }
 
         // usuarioCreacion =
         $usuarioCreacion = $peticion->autorCreacion()->withTrashed()->select('id', 'primer_nombre', 'segundo_nombre', 'primer_apellido')->first();
-        $peticion->usuarioCreacion = ($usuarioCreacion && $peticion->user_id != $usuarioCreacion->autor_creacion_id)
+        $peticion->usuarioCreacion = ($usuarioCreacion && $peticion->user_id != $usuarioCreacion->id)
           ? $usuarioCreacion->nombre(3)
           : 'Autogestión';
       });
@@ -438,37 +465,71 @@ class PeticionController extends Controller
       : 'todos';
 
     $tiposPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
+    $paises = Pais::orderBy('nombre', 'asc')->get();
+
+    $crearPeticionOtros = $rolActivo->hasPermissionTo('peticiones.crear_peticion_otros');
 
     return view('contenido.paginas.peticiones.nueva', [
       'rolActivo' => $rolActivo,
       'queUsuariosCargar' => $queUsuariosCargar,
-      'tiposPeticiones'  => $tiposPeticiones
+      'tiposPeticiones'  => $tiposPeticiones,
+      'paises' => $paises,
+      'crearPeticionOtros' => $crearPeticionOtros
     ]);
   }
 
   public function crear(Request $request)
   {
+    $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+    $crearPeticionOtros = $rolActivo->hasPermissionTo('peticiones.crear_peticion_otros');
+
     $request->validate([
-      'persona' => 'required',
+      'persona' => 'nullable|integer',
+      'nombre_externo' => $crearPeticionOtros ? 'required_without:persona' : 'nullable',
+      'email_externo' => 'nullable|email',
       'tipo_de_petición' => 'required',
       'descripción' => 'required'
+    ], [
+      'nombre_externo.required_without' => 'El nombre es obligatorio cuando la petición es para una persona externa.'
     ]);
+
     $configuracion = Configuracion::find(1);
-    $usuario = User::find($request->persona);
     $peticion = new Peticion;
-    $peticion->user_id = $usuario->id;
+
+    if ($request->persona && $crearPeticionOtros) {
+      $usuario = User::find($request->persona);
+      $peticion->user_id = $usuario->id;
+      $peticion->pais_id = $usuario->pais_id;
+      $emailDestino = $usuario->email;
+      $nombreDestino = $usuario->nombre(3);
+    } elseif (!$crearPeticionOtros) {
+      // Si no tiene permiso, la petición es para el usuario logueado
+      $usuario = auth()->user();
+      $peticion->user_id = $usuario->id;
+      $peticion->pais_id = $usuario->pais_id;
+      $emailDestino = $usuario->email;
+      $nombreDestino = $usuario->nombre(3);
+    } else {
+      // Es externo (solo si tiene permiso para crear para otros o si es explícitamente externo)
+      $peticion->nombre_externo = $request->nombre_externo;
+      $peticion->email_externo = $request->email_externo;
+      $peticion->telefono_externo = $request->telefono_externo;
+      $peticion->genero_externo = $request->genero_externo;
+      $peticion->pais_id = $request->pais_id;
+      $emailDestino = $request->email_externo;
+      $nombreDestino = $request->nombre_externo;
+    }
+
     $peticion->descripcion = $request->descripción;
     $peticion->tipo_peticion_id = $request->tipo_de_petición;
-    $peticion->autor_creacion_id = auth()->user()->id;
-    $peticion->pais_id = $usuario->pais_id;
+    $peticion->autor_creacion_id = auth()->check() ? auth()->user()->id : null;
     $peticion->estado = 1; // 1=Pendiente, 3=En proceso, 2=Cerrada
-
     $peticion->fecha = Carbon::now()->format('Y-m-d');
     $peticion->save();
 
     // Enviar el correo
     $mensaje = $peticion->tipoPeticion->mensaje_parte_1;
-    if ($usuario->email != '' && $mensaje != '') {
+    if ($emailDestino != '' && $mensaje != '') {
       $key = config('variables.biblia_key');
       $arrContextOptions = [
         'ssl' => [
@@ -500,28 +561,22 @@ class PeticionController extends Controller
 
         $mailData = new stdClass();
         $mailData->subject = 'Petición';
-        $mailData->nombre = $usuario->nombre(3);
+        $mailData->nombre = $nombreDestino;
         $mailData->mensaje = $mensaje;
 
         if ($peticion->tipoPeticion->banner_email != '') {
           $mailData->banner =
-            $configuracion->version == 1
-            ? Storage::url(
-              $configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email
-            )
-            : Storage::url(
-              $configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email
-            );
+            Storage::url($configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email);
         }
 
-        Mail::to($usuario->email)->send(new DefaultMail($mailData));
+        Mail::to($emailDestino)->send(new DefaultMail($mailData));
 
       } catch (\Exception $e) {
-        \Illuminate\Support\Facades\Log::error("Error enviando correo de creacion de peticion ID {$peticion->id}: ".$e->getMessage());
+        \Illuminate\Support\Facades\Log::error("Error enviando correo de creacion de peticion ID {$peticion->id}: " . $e->getMessage());
       }
     }
 
-    return back()->with('success', "La petición de <b>" . $usuario->nombre(3) . "</b> fue creada con éxito.");
+    return back()->with('success', "La petición de <b>" . $nombreDestino . "</b> fue creada con éxito.");
   }
 
   public function eliminaciones(Request $request, $tipo)

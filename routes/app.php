@@ -71,6 +71,7 @@ use App\Http\Controllers\VersiculoDiarioController;
 use App\Http\Controllers\ZonaController;
 use App\Http\Controllers\ZonaPagosController;
 use App\Livewire\Escuelas\AdminDashboard;
+use App\Http\Controllers\NotificacionController;
 use App\Livewire\Notificaciones\ListaNotificaciones;
 use App\Models\Actividad;
 use App\Models\BannerGeneral;
@@ -275,6 +276,11 @@ Route::get('/reportes-grupo/{reporte}/mi-asistencia', [ReporteGrupoController::c
 Route::post('/reportes-grupo/{reporte}/reportar-mi-asistencia', [ReporteGrupoController::class, 'reportarMiAsistancia'])->name('reporteGrupo.reportarMiAsistancia');
 
 Route::get('/reporteReunion/{reporteReunion}/compartir-link-reserva', [ReporteReunionController::class, 'compartirLinkReserva'])->name('reporteReunion.compartirLinkReserva');
+
+
+// Peticiones públicas
+Route::get('/peticion/publica', [PeticionController::class, 'publicaNueva'])->name('peticion.publica.nueva');
+Route::post('/peticion/publica/crear', [PeticionController::class, 'crear'])->name('peticion.publica.crear');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -854,6 +860,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/posts/{post}/destroy', [PostController::class, 'destroy'])->name('posts.destroy');
 
     // Planes Lectores
+    Route::get('/planes-lectores/dashboard', [PlanLectorController::class, 'dashboard'])->name('planes-lectores.dashboard');
     Route::get('/planes-lectores/gestionar', [PlanLectorController::class, 'gestionar'])->name('planes-lectores.gestionar');
     Route::get('/planes-lectores/crear', [PlanLectorController::class, 'crear'])->name('planes-lectores.crear');
     Route::post('/planes-lectores/nuevo', [PlanLectorController::class, 'nuevo'])->name('planes-lectores.nuevo');
@@ -1072,7 +1079,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/theme-setting/index', [ThemeSettingController::class, 'index'])->name('theme-setting.index');
 
     // Notificaciones
-    Route::get('/notificaciones', ListaNotificaciones::class)->name('notificaciones.lista');
+    Route::get('/notificaciones', [NotificacionController::class, 'lista'])->name('notificaciones.lista');
+    Route::get('/notificaciones/configuracion', [NotificacionController::class, 'configuracion'])->name('notificaciones.configuracion');
 });
 
 require __DIR__.'/auth.php';
