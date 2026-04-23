@@ -137,20 +137,27 @@
             if(btnPedirPermisos) {
                 btnPedirPermisos.addEventListener('click', async (e) => {
                     e.preventDefault();
-                    e.stopPropagation(); // Evitar que Bootstrap cierre la lista al hacer click extrañamente
-                    // Si el usuario da click, mostramos el cuadro de diálogo nativo del teléfono: "¿Deseas permitir notificaciones?"
-                    if ('Notification' in window && Notification.permission !== 'granted') {
+                    e.stopPropagation();
+                    
+                    // Usamos el objeto PwaPush que creamos en assets/js/pwa-push.js
+                    // Este objeto no solo pide permiso, sino que registra la llave VAPID y la envía al servidor.
+                    if (typeof PwaPush !== 'undefined') {
+                        const success = await PwaPush.requestPermission();
+                        if (success) {
+                            bannerPermisos.classList.add('d-none');
+                            triggerBadge({{ $conteoNoLeidas }});
+                            // Opcional: Feedback al usuario
+                            alert('¡Notificaciones activadas correctamente!');
+                        }
+                    } else {
+                        // Fallback si por alguna razón el script no cargó
                         const perm = await Notification.requestPermission();
-                        console.log('Permisos configurados como:', perm);
-                        if(perm === 'granted' || perm === 'denied'){
-                            bannerPermisos.classList.add('d-none'); // Ocultarlo ya que respondió
-                        }
-                        if(perm === 'granted'){
-                            triggerBadge({{ $conteoNoLeidas }}); // Si dijo que sí, aplicamos el número inmediatamente
-                        }
+                        if(perm === 'granted' || perm === 'denied') bannerPermisos.classList.add('d-none');
+                        if(perm === 'granted') triggerBadge({{ $conteoNoLeidas }});
                     }
                 });
             }
+
 
             // Sincronización inicial rápida cuando la página carga
             triggerBadge({{ $conteoNoLeidas }});

@@ -44,6 +44,8 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PuntoDePagoController;
 use App\Http\Controllers\PwaController;
+use App\Http\Controllers\PushSubscriptionController;
+
 use App\Http\Controllers\RangoEdadController;
 use App\Http\Controllers\RecursoGeneralEscuelaController;
 use App\Http\Controllers\ReporteEscuelaController;
@@ -101,6 +103,13 @@ Route::get('/', function () {
 // Pwa Manifest
 Route::get('/manifest.json', [PwaController::class, 'manifest']);
 Route::get('/pwa-icon.png', [PwaController::class, 'icon']);
+
+// PWA Push Subscriptions
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
+});
+
 
 // RUTA TEMPORAL DE PRUEBA
 Route::get('/test-notificacion', function () {

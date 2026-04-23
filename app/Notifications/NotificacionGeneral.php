@@ -4,6 +4,9 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
+
 
 class NotificacionGeneral extends Notification
 {
@@ -23,8 +26,9 @@ class NotificacionGeneral extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', WebPushChannel::class];
     }
+
 
     /**
      * Datos que se almacenan en la tabla notifications (columna data).
@@ -40,5 +44,18 @@ class NotificacionGeneral extends Notification
             'color' => $this->datos['color'] ?? 'primary',
             'url' => $this->datos['url'] ?? null,
         ];
+    }
+
+    /**
+     * Formato para notificaciones Push (navegador/sistema).
+     */
+    public function toWebPush(object $notifiable, mixed $notification): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title($this->datos['titulo'] ?? 'REDIL CLOUD')
+            ->icon('/assets/img/favicon/logo_crecer.ico')
+            ->body($this->datos['mensaje'] ?? '')
+            ->action('Ver ahora', 'view_action')
+            ->data(['url' => $this->datos['url'] ?? '/dashboard']);
     }
 }

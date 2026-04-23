@@ -93,6 +93,8 @@
 
     <!-- PWA Service Worker Registration -->
     <script>
+        window.VAPID_PUBLIC_KEY = "{{ config('webpush.vapid.public_key') }}";
+        
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 // Agregamos ?v=4 para forzar al navegador a descargar la nueva versión
@@ -106,6 +108,7 @@
             });
         }
     </script>
+    <script src="{{ asset('assets/js/pwa-push.js') }}"></script>
 </body>
 
 </html>

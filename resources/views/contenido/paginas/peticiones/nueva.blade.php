@@ -144,8 +144,6 @@ $configData = Helper::appClasses();
 
         @include('layouts.status-msn')
 
-        <h4 class="fw-semibold text-black ps-0 mb-5">Agendando nueva petición</h4>
-
         <!-- Información principal -->
         <div class="card mb-5 shadow-sm" style="background-color: #f8f7fa">
           <div class="card-header pb-1">

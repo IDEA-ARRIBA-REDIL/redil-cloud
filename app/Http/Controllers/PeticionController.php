@@ -478,10 +478,22 @@ class PeticionController extends Controller
     ]);
   }
 
+  public function exito(Peticion $peticion)
+  {
+    return view('contenido.paginas.peticiones.mensaje-peticion-exitosa', [
+      'peticion' => $peticion
+    ]);
+  }
+
   public function crear(Request $request)
   {
-    $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-    $crearPeticionOtros = $rolActivo->hasPermissionTo('peticiones.crear_peticion_otros');
+    $user = auth()->user();
+    $crearPeticionOtros = false;
+
+    if ($user) {
+      $rolActivo = $user->roles()->wherePivot('activo', true)->first();
+      $crearPeticionOtros = $rolActivo ? $rolActivo->hasPermissionTo('peticiones.crear_peticion_otros') : false;
+    }
 
     $request->validate([
       'persona' => 'nullable|integer',
@@ -502,7 +514,7 @@ class PeticionController extends Controller
       $peticion->pais_id = $usuario->pais_id;
       $emailDestino = $usuario->email;
       $nombreDestino = $usuario->nombre(3);
-    } elseif (!$crearPeticionOtros) {
+    } elseif (auth()->check() && !$crearPeticionOtros) {
       // Si no tiene permiso, la petición es para el usuario logueado
       $usuario = auth()->user();
       $peticion->user_id = $usuario->id;
@@ -576,7 +588,7 @@ class PeticionController extends Controller
       }
     }
 
-    return back()->with('success', "La petición de <b>" . $nombreDestino . "</b> fue creada con éxito.");
+    return redirect()->route('peticion.exito', $peticion->id)->with('success', "La petición de <b>" . $nombreDestino . "</b> fue creada con éxito.");
   }
 
   public function eliminaciones(Request $request, $tipo)

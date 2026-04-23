@@ -47,17 +47,36 @@ $configData = Helper::appClasses();
   </script>
 
   <script type="module">
+    $(document).ready(function() {
+      $('input[name="tengo_cuenta"]').change(function() {
+        if ($(this).val() == '1') {
+          $('#seccion_invitado').fadeOut('fast', function() {
+            $('#seccion_login').fadeIn('fast');
+          });
+        } else {
+          $('#seccion_login').fadeOut('fast', function() {
+            $('#seccion_invitado').fadeIn('fast');
+          });
+        }
+      });
+    });
+  </script>
+
+  <script type="module">
     $('#formulario').submit(function(e){
 
       // Limpiar errores previos
       $('.custom-error').remove();
       let isValid = true;
+      let esInvitado = {{ auth()->check() ? 'false' : '$(\'input[name="tengo_cuenta"]:checked\').val() == "0"' }};
 
-      // Validar Nombre
-      let nombreExterno = $('#nombre_externo').val().trim();
-      if (!nombreExterno) {
-        $('#nombre_externo').parent().append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
-        isValid = false;
+      if (esInvitado) {
+        // Validar Nombre
+        let nombreExterno = $('#nombre_externo').val().trim();
+        if (!nombreExterno) {
+          $('#nombre_externo').parent().append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
+          isValid = false;
+        }
       }
 
       // Validar Tipo de petición
@@ -96,32 +115,102 @@ $configData = Helper::appClasses();
 @section('content')
 <div class="min-vh-100 bg-body">
 
-  <nav class="navbar navbar-expand-lg navbar-light bg-menu-theme p-3 row justify-content-md-center shadow-none border-bottom">
+
+
+   <nav class="navbar navbar-expand-lg navbar-light bg-menu-theme p-3 row justify-content-md-center shadow-none border-bottom">
     <div class="col-3 text-start">
+      @auth
+        <a href="{{ route('dashboard') }}" class="btn rounded-pill waves-effect waves-light text-white">
+          <span class="ti-xs ti ti-home mx-2"></span>
+          <span class="d-none d-md-inline-block fw-normal">Ir a plataforma</span>
+        </a>
+      @endauth
     </div>
     <div class="col-6 pl-5 text-center">
-      <h5 id="tituloPrincipal" class="text-white my-auto fw-normal">Petición de Oración</h5>
+      <h5 id="tituloPrincipal" class="text-white my-auto fw-normal">Petición de oración</h5>
     </div>
     <div class="col-3 text-end">
+      @auth
+        <form method="POST" action="{{ route('logout') }}" class="d-inline">
+          @csrf
+          <input type="hidden" name="redirect" value="{{ route('peticion.publica.nueva') }}">
+          <button type="submit" class="btn rounded-pill waves-effect waves-light text-white" style="background: transparent; border: none;">
+            <span class="d-none d-md-inline-block fw-normal">Cerrar sesión</span>
+            <span class="ti-xs ti ti-logout mx-2"></span>
+          </button>
+        </form>
+      @else
+        <a href="{{ url()->previous() }}" type="button" class="btn rounded-pill waves-effect waves-light text-white">
+          <span class="d-none d-md-inline-block fw-normal">Salir</span>
+          <span class="ti-xs ti ti-x mx-2"></span>
+        </a>
+      @endauth
     </div>
   </nav>
 
   <div class="container my-5" style="padding-bottom: 100px;">
     <div class="col-12 col-sm-10 offset-sm-1 col-lg-8 offset-lg-2 mt-4">
 
-      <form id="formulario" role="form" class="forms-sample" method="POST" action="{{ route('peticion.publica.crear') }}" enctype="multipart/form-data">
-        @csrf
-        <input type="hidden" name="es_externo" value="1">
+      @include('layouts.status-msn')
 
-        @include('layouts.status-msn')
-
+      @auth
+        <h4 class="fw-semibold text-black ps-0 mb-5 text-center">Hola {{ auth()->user()->primer_nombre }}, escribe tu petición</h4>
+      @else
         <h4 class="fw-semibold text-black ps-0 mb-5 text-center">Envíanos tu petición de oración</h4>
+      @endauth
+
+        @guest
+
+          <div class="col-12 mb-4">
+            <div class="card shadow-sm" >
+              <div class="card-body">
+                
+              <label class="form-label">¿Tienes una cuenta creada?</label>
+              <div class="row">
+                <div class="col-md-6 mb-md-0 mb-2">
+                  <div class="form-check custom-option custom-option-basic rounded-3 shadow-sm border checked">
+                    <label class="form-check-label custom-option-content p-3" for="tengo_cuenta_no">
+                      <span class="custom-option-header m-0 pb-0">
+                        <span class="h6 mb-0 d-flex align-items-center text-black"><i class="ti ti-user-plus me-3 text-black" style="color: black !important;"></i> Persona no registrada</span>
+                        <input name="tengo_cuenta" class="form-check-input" type="radio" value="0" id="tengo_cuenta_no" checked />
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check custom-option custom-option-basic rounded-3 shadow-sm border">
+                    <label class="form-check-label custom-option-content p-3" for="tengo_cuenta_si">
+                      <span class="custom-option-header m-0 pb-0">
+                        <span class="h6 mb-0 d-flex align-items-center text-black"><i class="ti ti-user-check me-3 text-black" style="color: black !important;"></i> Persona registrada</span>
+                        <input name="tengo_cuenta" class="form-check-input" type="radio" value="1" id="tengo_cuenta_si" />
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+        @endguest
+
+        <hr>
+
+        <div id="seccion_login" style="display: none;" class="mb-5">
+        
+              <p class="mb-4 text-black">Inicia sesión para que tu petición quede asociada a tu cuenta.</p>
+              @livewire('auth.inline-login')
+         
+        </div>
+
+        <form id="formulario" role="form" class="forms-sample" method="POST" action="{{ route('peticion.publica.crear') }}" enctype="multipart/form-data">
+          @csrf
+          <input type="hidden" name="es_externo" value="{{ auth()->check() ? '0' : '1' }}">
 
         <!-- Información principal -->
-        <div class="card mb-5 shadow-sm" style="background-color: #f8f7fa">
-          <div class="card-header pb-1 text-center">
-            <h6 class="card-title mb-0 fw-semibold text-primary">
-              Tus Datos de Contacto
+        <div id="seccion_invitado" class="card mb-5 shadow-sm" style="display: {{ auth()->check() ? 'none' : 'block' }};">
+          <div class="card-header pb-1">
+             <h6 class="card-title mb-0 fw-semibold">
+              Tus datos de contacto
             </h6>
           </div>
           <div class="card-body">
@@ -134,14 +223,14 @@ $configData = Helper::appClasses();
                 </div>
                 <div class="row">
                     <div class="mb-3 col-md-6">
-                        <label class="form-label" for="email_externo">Correo electrónico (opcional)</label>
+                        <label class="form-label" for="email_externo">Email</label>
                         <input type="email" id="email_externo" name="email_externo" class="form-control" value="{{ old('email_externo') }}" placeholder="ejemplo@correo.com">
                     </div>
                     <div class="mb-3 col-md-6">
-                        <label class="form-label" for="telefono_externo">Teléfono / WhatsApp (opcional)</label>
+                        <label class="form-label" for="telefono_externo">Teléfono</label>
                         <input type="text" id="telefono_externo" name="telefono_externo" class="form-control" value="{{ old('telefono_externo') }}" placeholder="Ej: +573001234567">
                     </div>
-                </div>
+                </div> 
                 <div class="row">
                     <div class="mb-3 col-md-6">
                         <label class="form-label" for="genero_externo">Género</label>
@@ -160,6 +249,19 @@ $configData = Helper::appClasses();
                     </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalles de la petición -->
+        <div class="card mb-5 shadow-sm" >
+          <div class="card-header pb-1">
+             <h6 class="card-title mb-0 fw-semibold">
+              Detalles de la petición
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row mt-3">
 
               <!-- Tipos de petición -->
               <div class="mb-3 col-12 mb-md-3" id="container_tipo_peticion">
@@ -188,10 +290,13 @@ $configData = Helper::appClasses();
           </div>
         </div>
 
-        <div class="w-100 py-4 px-6 px-sm-0 d-grid gap-2 d-sm-flex justify-content-sm-center">
-            <button type="submit" class="btn btnGuardar btn-primary rounded-pill px-7 py-2" >
-              <span class="align-middle me-sm-1 me-0"> Enviar Petición </span>
+
+         <div class="w-100 fixed-bottom py-4 px-6 px-sm-0 border-top shadow-lg" style="background-color: #f8f7fa; z-index: 1040;">
+          <div class="col-12 col-sm-8 offset-sm-2 col-lg-6 offset-lg-3 d-grid gap-2 d-sm-flex justify-content-sm-end">
+             <button type="submit" class="btn btnGuardar btn-primary rounded-pill px-7 py-2" >
+              <span class="align-middle me-sm-1 me-0"> Enviar petición </span>
             </button>
+          </div>
         </div>
 
       </form>
