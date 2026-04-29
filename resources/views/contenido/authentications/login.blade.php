@@ -103,16 +103,19 @@ $configData = Helper::appClasses();
 
           <div class="d-flex justify-content-center">
 
-            <a href="javascript:;" class="btn btn-icon btn-label-facebook mx-1">
-              <i class="tf-icons fa-brands fa-facebook-f fs-5"></i>
+            <a href="javascript:;" class="btn fs-5 ">
+              <i style="font-size: 30px;
+    color: #fff;" class="ti ti-brand-facebook"></i>
             </a>
 
-            <a href="javascript:;" class="btn btn-icon btn-label-instagram mx-1">
-              <i class="tf-icons fa-brands fa-instagram fs-5"></i>
+            <a href="javascript:;" class="btn fs-5">
+              <i style="font-size: 30px;
+    color: #fff;"  class="ti ti-brand-instagram"></i>
             </a>
 
-            <a href="javascript:;" class="btn btn-icon btn-label-youtube mx-1">
-              <i class="tf-icons fa-brands fa-youtube fs-5"></i>
+            <a href="javascript:;" class="btn fs-5">
+              <i style="font-size: 30px;
+    color: #fff;"  class="ti ti-brand-youtube"></i>
             </a>
 
           </div>
@@ -135,7 +138,7 @@ $configData = Helper::appClasses();
 
      <!-- /Left Text -->
      <div class="d-none d-lg-flex col-lg-7 p-0">
-      <div class="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center"  style="background-image: url({{ asset('assets/img/illustrations/bg-redil2.jpg') }}); background-size: cover;">
+      <div class="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center"  style="background-image: url( {{Storage::disk('global_media')->url('Banner-login.png')  }}); background-size: cover;">
 
       </div>
     </div>

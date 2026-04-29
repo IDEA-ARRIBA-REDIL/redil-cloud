@@ -387,6 +387,30 @@ class Helpers
     $item->nombre = 'Pais petición';
     $camposPeticiones[] = $item;
 
+    $item = new \stdClass();
+    $item->id = 8;
+    $item->value = 'nombre_solicitante';
+    $item->nombre = 'Nombre Solicitante';
+    $camposPeticiones[] = $item;
+
+    $item = new \stdClass();
+    $item->id = 9;
+    $item->value = 'email_solicitante';
+    $item->nombre = 'Email Solicitante';
+    $camposPeticiones[] = $item;
+
+    $item = new \stdClass();
+    $item->id = 10;
+    $item->value = 'telefono_solicitante';
+    $item->nombre = 'Teléfono Solicitante';
+    $camposPeticiones[] = $item;
+
+    $item = new \stdClass();
+    $item->id = 11;
+    $item->value = 'genero_solicitante';
+    $item->nombre = 'Género Solicitante';
+    $camposPeticiones[] = $item;
+
     return $camposPeticiones;
   }
 

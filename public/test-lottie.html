@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+<dotlottie-player id="player" src="global_media/seca.lottie" style="width:100px; height:100px;"></dotlottie-player>
+<script type="module">
+  import 'https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs';
+  const player = document.getElementById('player');
+  player.addEventListener('ready', () => {
+    console.log("METHODS:", Object.keys(player));
+    console.log("PROTO METHODS:", Object.getOwnPropertyNames(Object.getPrototypeOf(player)));
+  });
+</script>
+</body>
+</html>

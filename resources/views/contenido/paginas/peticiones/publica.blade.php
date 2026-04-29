@@ -27,6 +27,7 @@ $configData = Helper::appClasses();
 @endsection
 
 @section('page-script')
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <script type="module">
     $(document).ready(function() {
       $('#tipo_de_peticion').select2({
@@ -91,6 +92,15 @@ $configData = Helper::appClasses();
       if (!descripcion) {
         $('#descripcion').parent().append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
         isValid = false;
+      }
+
+      // Validar reCAPTCHA
+      if (esInvitado && typeof grecaptcha !== 'undefined') {
+        let recaptchaResponse = grecaptcha.getResponse();
+        if (recaptchaResponse.length === 0) {
+          $('#container_recaptcha').append('<div class="text-danger form-label custom-error mt-1">Por favor, verifica que no eres un robot.</div>');
+          isValid = false;
+        }
       }
 
       if (!isValid) {
@@ -285,6 +295,14 @@ $configData = Helper::appClasses();
                 <textarea onkeypress="return sinComillas(event)" id="descripcion" name="descripción" class="form-control" rows="5" spellcheck="false" data-ms-editor="true" placeholder="Escribe aquí lo que necesites..."></textarea>
                 @if($errors->has('descripción')) <div class="text-danger form-label">{{ $errors->first('descripción') }}</div> @endif
               </div>
+
+              @guest
+              <!-- reCAPTCHA -->
+              <div class="mb-3 col-12 mt-2 mb-md-3 d-flex flex-column align-items-start" id="container_recaptcha">
+                <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                @if($errors->has('g-recaptcha-response')) <div class="text-danger form-label mt-1">{{ $errors->first('g-recaptcha-response') }}</div> @endif
+              </div>
+              @endguest
 
             </div>
           </div>

@@ -51,7 +51,7 @@ class PeticionesExport implements FromView
 
         if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas')) {
           $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-          ->select('peticiones.*','users.foto','users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre','users.segundo_nombre', 'users.primer_apellido')
+          ->select('peticiones.*','users.foto','users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre','users.segundo_nombre', 'users.primer_apellido', 'users.genero')
           ->get();
         }
 
@@ -99,7 +99,10 @@ class PeticionesExport implements FromView
             false !== stristr(Helpers::sanearStringConEspacios($peticion->identificacion), $palabra) ||
             false !== stristr(Helpers::sanearStringConEspacios($peticion->direccion), $palabra) ||
             false !== stristr(Helpers::sanearStringConEspacios($peticion->telefono_movil), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->email), $palabra);
+            false !== stristr(Helpers::sanearStringConEspacios($peticion->email), $palabra) ||
+            false !== stristr(Helpers::sanearStringConEspacios($peticion->nombre_externo), $palabra) ||
+            false !== stristr(Helpers::sanearStringConEspacios($peticion->email_externo), $palabra) ||
+            false !== stristr(Helpers::sanearStringConEspacios($peticion->telefono_externo), $palabra);
 
             return $respuesta;
           });
@@ -123,9 +126,29 @@ class PeticionesExport implements FromView
           $peticion->usuarioCreacion = 'Autogestión';
         }
 
+        if ($peticion->user_id) {
+          $peticion->nombre_solicitante = $peticion->primer_nombre . ' ' . $peticion->segundo_nombre . ' ' . $peticion->primer_apellido;
+          $peticion->email_solicitante = $peticion->email;
+
+          $telefonosArray = [];
+          $peticion->telefono_fijo ? array_push($telefonosArray, $peticion->telefono_fijo) : '';
+          $peticion->telefono_movil ? array_push($telefonosArray, $peticion->telefono_movil) : '';
+          $peticion->telefono_otro ? array_push($telefonosArray, $peticion->telefono_otro) : '';
+          $peticion->telefono_solicitante = $telefonosArray ? implode(", ", $telefonosArray) : 'Sin datos';
+
+          // El género del usuario ya viene en el join (users.genero)
+          // Pero en PeticionesExport el select dice 'peticiones.*', so if we want to be safe:
+          $peticion->genero_solicitante = $peticion->genero == 1 ? 'Mujer' : 'Hombre';
+        } else {
+          $peticion->nombre_solicitante = $peticion->nombre_externo;
+          $peticion->email_solicitante = $peticion->email_externo;
+          $peticion->telefono_solicitante = $peticion->telefono_externo;
+          $peticion->genero_solicitante = $peticion->genero_externo == 1 ? 'Mujer' : 'Hombre';
+        }
+
         if($peticion->pais_id)
         {
-          $peticion->paisNombre = $peticion->pais_id ? $peticion->pais->nombre : 'No indicado';
+          $peticion->paisNombre = $peticion->pais ? $peticion->pais->nombre : 'No indicado';
         }else{
           $peticion->paisNombre = 'No indicado';
         }

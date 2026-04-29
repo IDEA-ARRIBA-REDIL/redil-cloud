@@ -90,11 +90,13 @@ class ReporteGrupo extends Model
     if (!$this->grupo || !$this->fecha || !$this->grupo->hora) {
       return false;
     }
-
+    
     if($this->finalizado)
     return false;
+  
+   
+    $plazoParaLinkDeAsistencia = $grupo->tipoGrupo->horas_disponiblidad_link_asistencia;
 
-    $plazoParaLinkDeAsistencia = $grupo->tipoGrupo->horasDisponiblidadLinkAsistencia;
     $fechaHoraReunion = Carbon::parse($this->fecha . ' ' . $grupo->hora);
     $limiteFechaHoraLinkAsistencia = $fechaHoraReunion->copy()->addHours($plazoParaLinkDeAsistencia)->format('Y-m-d H:i:s');
 

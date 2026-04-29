@@ -4,27 +4,10 @@
 
 {{-- 1. ESTILOS --}}
 @section('page-style')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 @vite([
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
 ])
 <style>
-  .img-container {
-    min-height: 300px;
-    max-height: 80vh;
-    background-color: #f7f7f7;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-  }
-
-  .img-container img {
-    display: block;
-    max-width: 100%;
-  }
-
-  /* Estilo para el contenedor de la previsualización */
   .preview-container {
     min-height: 100px;
     display: flex;
@@ -45,126 +28,29 @@
 </style>
 @endsection
 
-{{-- 2. SCRIPTS DE VENDOR --}}
 @section('vendor-script')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 @vite([
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
 ])
 @endsection
 
-{{-- 3. LOGICA JS DEL CROPPER --}}
 @section('page-script')
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // --- Variables Globales del Cropper ---
-    var croppingImage = document.getElementById('croppingImage');
-    var cropBtn = document.querySelector('.crop-btn');
-    var modalRecorteEl = document.getElementById('modalRecorte');
-    var modalRecorte = new bootstrap.Modal(modalRecorteEl);
-    var cropper = null;
-
-    // Variables para saber qué input se está editando actualmente
-    var activeFileInput = null;
-    var activeHiddenInput = null;
-    var activePreviewImg = null;
-
-    // Detectar todos los inputs con la clase 'crop-input'
-    var fileInputs = document.querySelectorAll('.crop-input');
-
-    fileInputs.forEach(function(input) {
+    // Previsualizar imagen al seleccionar archivo
+    document.querySelectorAll('.preview-input').forEach(function(input) {
       input.addEventListener('change', function(e) {
         if (e.target.files.length) {
-          var file = e.target.files[0];
-          var fileType = file.type;
-
-          if (fileType.startsWith('image/')) {
-            // Guardamos referencia a los elementos actuales basados en los atributos data
-            activeFileInput = input;
-            activeHiddenInput = document.getElementById(input.dataset.hidden);
-            activePreviewImg = document.getElementById(input.dataset.preview);
-
-            var reader = new FileReader();
-            reader.onload = function(e) {
-              croppingImage.src = e.target.result;
-
-              // Si ya había una instancia, la limpiamos
-              if (cropper) {
-                cropper.destroy();
-                cropper = null;
-              }
-
-              // Abrir modal
-              modalRecorte.show();
-            };
-            reader.readAsDataURL(file);
-          } else {
-            Swal.fire('Error', 'Formato de archivo no soportado', 'error');
-            input.value = ''; // Limpiar input
-          }
+          var previewId = input.dataset.preview;
+          var previewImg = document.getElementById(previewId);
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            previewImg.src = ev.target.result;
+            previewImg.style.display = 'block';
+          };
+          reader.readAsDataURL(e.target.files[0]);
         }
       });
-    });
-
-    // Al mostrar el modal, iniciar Cropper
-    modalRecorteEl.addEventListener('shown.bs.modal', function() {
-      cropper = new Cropper(croppingImage, {
-        zoomable: false,
-        viewMode: 1,
-        // aspectRatio: 16 / 9, // Puedes usar NaN para libre
-        autoCropArea: 1,
-        responsive: true,
-        restore: false,
-        checkCrossOrigin: false,
-      });
-    });
-
-    // Al ocultar el modal, destruir Cropper y limpiar si se canceló
-    modalRecorteEl.addEventListener('hidden.bs.modal', function() {
-      if (cropper) {
-        cropper.destroy();
-        cropper = null;
-      }
-      // Si el input hidden está vacío (se canceló), limpiamos el input file
-      if (activeHiddenInput && activeHiddenInput.value === "") {
-        activeFileInput.value = "";
-      }
-    });
-
-    // Botón "Recortar y Guardar" del modal
-    cropBtn.addEventListener('click', function() {
-      if (!cropper) return;
-
-      // Obtener el canvas recortado
-      var canvas = cropper.getCroppedCanvas({
-        width: 800, // Reducir tamaño para optimizar
-        fillColor: '#fff',
-      });
-
-      // Convertir a Base64
-      var imgSrc = canvas.toDataURL('image/jpeg');
-
-      // 1. Guardar en el input hidden correspondiente
-      if (activeHiddenInput) {
-        activeHiddenInput.value = imgSrc;
-      }
-
-      // 2. Actualizar la vista previa correspondiente
-      if (activePreviewImg) {
-        activePreviewImg.src = imgSrc;
-        activePreviewImg.style.display = 'block'; // Asegurar que se vea
-      }
-
-      Swal.fire({
-        position: 'top-end',
-        icon: 'success',
-        title: 'Imagen recortada correctamente',
-        showConfirmButton: false,
-        timer: 1500
-      });
-
-      // Cerrar modal
-      modalRecorte.hide();
     });
   });
 </script>
@@ -264,36 +150,31 @@
               <textarea class="form-control" name="observaciones" rows="2" >{{ old('observaciones') }}</textarea>
             </div>
 
-            {{-- CAMPO: IMAGEN (LOGO) - CON CROPPER --}}
+            {{-- CAMPO: IMAGEN (LOGO) --}}
             <div class="col-md-6">
               <label class="form-label">Imagen (obligatorio)</label>
-              {{-- Previsualización vacía --}}
               <div class="preview-container">
                 <img id="preview_imagen_logo" src="" alt="Previsualización" style="display:none;">
               </div>
-              {{-- Input file requerido --}}
-              <input type="file" class="form-control crop-input"
+              <input type="file" class="form-control preview-input"
+                name="imagen"
                 id="input_imagen_logo"
                 accept="image/*"
-               
-                data-hidden="imagen_recortada"
-                data-preview="preview_imagen_logo">
-              <input type="hidden" name="imagen_recortada" id="imagen_recortada" >
+                data-preview="preview_imagen_logo"
+                required>
             </div>
 
-            {{-- CAMPO: FONDO (IMAGEN) - CON CROPPER --}}
+            {{-- CAMPO: FONDO (IMAGEN) --}}
             <div class="col-md-6">
               <label class="form-label">Fondo (Imagen)</label>
-              {{-- Previsualización vacía --}}
               <div class="preview-container">
                 <img id="preview_imagen_fondo" src="" alt="Previsualización" style="display:none;">
               </div>
-              <input type="file" class="form-control crop-input"
+              <input type="file" class="form-control preview-input"
+                name="fondo"
                 id="input_imagen_fondo"
                 accept="image/*"
-                data-hidden="fondo_recortado"
                 data-preview="preview_imagen_fondo">
-              <input type="hidden" name="fondo_recortado" id="fondo_recortado">
             </div>
 
           </div>
@@ -429,24 +310,4 @@
 </div>
 
 {{-- MODAL DE RECORTE --}}
-<div class="modal fade" id="modalRecorte" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Recortar Imagen</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-0">
-        <div class="img-container">
-          <img src="" id="croppingImage" alt="Imagen para recortar">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary crop-btn">Recortar y Guardar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 @endsection

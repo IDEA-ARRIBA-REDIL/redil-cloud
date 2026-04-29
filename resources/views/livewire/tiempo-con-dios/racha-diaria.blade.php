@@ -41,7 +41,31 @@
     }
   </style>
 
-   <div id="rachaSemanal" class="d-flex justify-content-center align-items-center my-8">
+   <div class="d-flex flex-column align-items-center my-2" x-data="{ loops: 0 }" x-init="
+      $refs.player.addEventListener('complete', () => {
+          loops++;
+          if (loops < 2) {
+              $refs.player.play();
+          }
+      });
+  ">
+      <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+      <dotlottie-player 
+          x-ref="player"
+          src="{{ $cantidadTotalTiempoConDios === 0 ? asset('global_media/fruto.lottie') : ($cantidadRachaDiaria <= 0 ? asset('global_media/seca.lottie') : asset('global_media/fruto.lottie')) }}" 
+          background="transparent" 
+          speed="1" 
+          autoplay
+          @if($cantidadTotalTiempoConDios === 0)
+          segment="[0, 2]"
+          @elseif($cantidadRachaDiaria > 0 && $cantidadRachaDiaria <= 3)
+          segment="[0, 3]"
+          @endif
+          style="width: 180px; height: 180px;"
+      ></dotlottie-player>
+   </div>
+
+   <div id="rachaSemanal" class="d-flex justify-content-center align-items-center mb-2 border rounded-3 pt-5 py-10">
       @foreach ($rachaSemanal as $dia => $infoDia)
         <div class="d-flex align-items-center">
           @if($infoDia['estado'])

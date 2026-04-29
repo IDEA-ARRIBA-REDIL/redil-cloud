@@ -42,21 +42,25 @@ $configData = Helper::appClasses();
                       <div class="col-12 col-sm-6 d-flex flex-column px-2 my-1">
                         <small class="text-black">Tipo</small>
                         <small class="fw-semibold text-black ">{{$peticion->tipoPeticion->nombre}}</small>
+                        <hr class="my-1">
                       </div>
                       <div class="col-12 col-sm-6 d-flex flex-column px-2  my-1">
                         <small class="text-black">Nombre</small>
                         <small class="fw-semibold text-black ">
                           {{ $peticion->user_id ? $peticion->usuario->nombre(3) : $peticion->nombre_externo }}
                         </small>
+                        <hr class="my-1">
                       </div>
                       <div class="col-12 d-flex flex-column px-2 my-1">
                         <small class="text-black">Fecha</small>
                         <small class="fw-semibold text-black ">{{ $peticion->created_at->isoFormat('D [de] MMMM [de] YYYY - HH:mm A') }}</small>
+                        <hr class="my-1">
                       </div>
 
                       <div class="col-12 d-flex flex-column  my-1">
                         <small class="text-black">Descripción</small>
                         <small class="fw-semibold text-black ">{{ $peticion->descripcion }}</small>
+                        <hr class="my-1">
                       </div>
                     </div>
               </div>

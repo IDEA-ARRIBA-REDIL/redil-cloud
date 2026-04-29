@@ -209,8 +209,7 @@
                                                             wire:model="tipoPagoSeleccionado"
                                                             :checked="activeTab === '{{ $tipo->id }}'">
                                                         <span class="custom-option-body">
-                                                            <img src="{{ asset('assets/img/illustrations/' . $tipo->imagen) }}"
-                                                                alt="{{ $tipo->nombre }}" width="58">
+                                                           
                                                             <span
                                                                 class="ms-4 fw-medium text-heading">{{ $tipo->nombre }}</span>
                                                         </span>

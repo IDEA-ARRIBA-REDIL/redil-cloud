@@ -53,7 +53,7 @@
             <div class="row">
                 <div class="col-12 col-lg-12 d-flex align-items-center">
                     <div class=" mx-auto my-auto text-center">
-                        <img src="{{ Storage::url('generales/img/otros/dibujo_formulario_usuario_respuesta.png') }}"
+                        <img src="{{Storage::disk('global_media')->url('Compra-finalizada.png')  }}"
                             class="w-50 p-0">
                         <h2 class="text-black fw-bold mb-0">Compra exitosa</h2>
 

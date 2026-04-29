@@ -55,11 +55,12 @@
                 <div class="card-header row">
                     {{-- 1. Encabezado de Éxito (Simplificado de tu ejemplo) --}}
                     <div class="text-center mb-4 col-12">
-                        <img style="width: 240px; height: 240px;"
-                            src="{{ Storage::url('generales/img/otros/dibujo_formulario_usuario_respuesta.png') }}"
-                            class="p-0">
+                       
 
                         @if ($compra->estado == 3 || $esAbono)
+                         <img style="width: 240px; height: 240px;"
+                            src="{{ Storage::disk('global_media')->url('Reserva_exitosa.png') }}"
+                            class="p-0">
                             {{-- 3 = Pagada --}}
                             <h2 class="text-black fw-bold mb-0 lh-sm mt-3">{{ $titulo }}</h2>
                             <h3 style="color: {{ $colorEncabezado }};" class="fw-bold mb-1">
@@ -78,6 +79,10 @@
                                 @endif
                             </p>
                         @else
+                         <img style="width: 240px; height: 240px;"
+                            src="{{ Storage::disk('global_media')->url('Resumen-exitoso.png') }}"
+                            class="p-0">
+
                             <h2 class="text-black fw-bold mb-0 lh-sm mt-3">Estado pendiente</h2>
                             <h3 style="color: {{ $colorEncabezado }};" class="fw-bold mb-1">Tu pago está siendo
                                 procesado

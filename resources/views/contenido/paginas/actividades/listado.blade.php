@@ -255,7 +255,7 @@ use App\Models\TagGeneral;
                         </div>
                         @else
                         <div class="rounded-top text-center">
-                            <img class="img-fluid p-0 rounded-top " src="{{ asset('assets/img/illustrations/actividad.png') }}" alt="Card girl image" />
+                            <img class="img-fluid p-0 rounded-top " src="{{Storage::disk('global_media')->url('Portada-default-actividades.png')}}" alt="Card girl image" />
                         </div>
                         @endif
 

@@ -88,7 +88,7 @@
                         <div class="text-center mb-4 col-12">
                             {{-- La imagen ahora usa la variable $icono que viene del controlador --}}
                             <img style="width: 240px; height: 240px;"
-                                src="{{ Storage::url('generales/img/otros/dibujo_formulario_usuario_respuesta.png') }}"
+                                src="{{ Storage::disk('global_media')->url('Reserva_exitosa.png') }}"
                                 class="p-0">
 
                             {{-- El título ahora usa el color en un estilo en línea --}}
@@ -119,7 +119,7 @@
                         <div class="text-center mb-4 col-md-6 col-12">
                             {{-- La imagen ahora usa la variable $icono que viene del controlador --}}
                             <img style="width: 140px; height: 140px;"
-                                src="{{ Storage::url('generales/img/otros/dibujo_formulario_usuario_respuesta.png') }}"
+                                src="{{ Storage::disk('global_media')->url('Reserva_fallida.png') }}"
                                 class="p-0">
                         </div>
 

@@ -1,7 +1,7 @@
 <div>
     @if ($posts->isNotEmpty())
         <!-- Botón de Estado (Estilo WhatsApp) -->
-        <li class="nav-item me-3 d-flex align-items-center">
+        <li class="nav-item ms-2 me-3 d-flex align-items-center">
             <a class="nav-link p-0 position-relative cursor-pointer" onclick="openNavbarPostModal(0)"
                 title="Nuevas publicaciones">
                 <div class="avatar avatar-md border border-2 rounded-circle"

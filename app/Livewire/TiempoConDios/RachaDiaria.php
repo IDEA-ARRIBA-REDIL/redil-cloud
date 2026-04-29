@@ -6,14 +6,28 @@ use Livewire\Component;
 
 class RachaDiaria extends Component
 {
-  public $rachaSemanal = null, $cantidadRachaSemanal = null, $diaDeLaSemana, $largoLinea = "60px", $ocultarDispositivosMoviles = false;
+    public $rachaSemanal = null;
 
-  public function mount()
-  {
-    $user = auth()->user();
-    $this->rachaSemanal = $user->rachaSemanalActual();
+    public $cantidadRachaSemanal = null;
 
-  }
+    public $diaDeLaSemana;
+
+    public $largoLinea = '60px';
+
+    public $ocultarDispositivosMoviles = false;
+
+    public $cantidadRachaDiaria = 0;
+
+    public $cantidadTotalTiempoConDios = 0;
+
+    public function mount()
+    {
+        $user = auth()->user();
+        $this->rachaSemanal = $user->rachaSemanalActual();
+        $this->cantidadRachaDiaria = $user->cantidadRachaDiaria();
+        $this->cantidadTotalTiempoConDios = $user->tiemposConDios()->count();
+    }
+
     public function render()
     {
         return view('livewire.tiempo-con-dios.racha-diaria');

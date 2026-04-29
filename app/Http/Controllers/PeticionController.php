@@ -495,14 +495,21 @@ class PeticionController extends Controller
       $crearPeticionOtros = $rolActivo ? $rolActivo->hasPermissionTo('peticiones.crear_peticion_otros') : false;
     }
 
-    $request->validate([
+    $reglas = [
       'persona' => 'nullable|integer',
       'nombre_externo' => $crearPeticionOtros ? 'required_without:persona' : 'nullable',
       'email_externo' => 'nullable|email',
       'tipo_de_petición' => 'required',
       'descripción' => 'required'
-    ], [
-      'nombre_externo.required_without' => 'El nombre es obligatorio cuando la petición es para una persona externa.'
+    ];
+
+    if (!auth()->check()) {
+      $reglas['g-recaptcha-response'] = ['required', new \App\Rules\Recaptcha];
+    }
+
+    $request->validate($reglas, [
+      'nombre_externo.required_without' => 'El nombre es obligatorio cuando la petición es para una persona externa.',
+      'g-recaptcha-response.required' => 'Por favor, verifica que no eres un robot.'
     ]);
 
     $configuracion = Configuracion::find(1);

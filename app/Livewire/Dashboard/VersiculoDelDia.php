@@ -2,19 +2,19 @@
 
 namespace App\Livewire\Dashboard;
 
-use Livewire\Component;
-use App\Models\VersiculoDiario;
 use App\Models\Configuracion;
+use App\Models\VersiculoDiario;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Attributes\Renderless;
+use Livewire\Component;
 
 class VersiculoDelDia extends Component
 {
     public $versiculoId;
-    public $configuracion;
-    public $claseColumnas;
 
+    public $configuracion;
+
+    public $claseColumnas;
 
     public function mount($claseColumnas = 'col-12 col-md-4')
     {
@@ -27,7 +27,7 @@ class VersiculoDelDia extends Component
 
     public function toggleLike($id)
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return;
         }
 
@@ -40,8 +40,8 @@ class VersiculoDelDia extends Component
     public function render()
     {
         $versiculo = $this->versiculoId ? VersiculoDiario::with('usuariosQueDieronLike')->find($this->versiculoId) : null;
-        $plainText = "";
-        $fullTextModal = "";
+        $plainText = '';
+        $fullTextModal = '';
 
         if ($versiculo) {
             $dataVersiculos = $versiculo->texto_versiculo;
@@ -50,14 +50,14 @@ class VersiculoDelDia extends Component
                 $dataVersiculos = json_decode($dataVersiculos, true);
             }
 
-            if(isset($dataVersiculos) && is_array($dataVersiculos)) {
-                foreach($dataVersiculos as $selection) {
+            if (isset($dataVersiculos) && is_array($dataVersiculos)) {
+                foreach ($dataVersiculos as $selection) {
                     $versiculosArray = isset($selection['versiculos']) ? $selection['versiculos'] : [];
-                    foreach($versiculosArray as $v) {
-                        $plainText .= (isset($v['texto']) ? $v['texto'] : '') . " ";
+                    foreach ($versiculosArray as $v) {
+                        $plainText .= (isset($v['texto']) ? $v['texto'] : '').' ';
                         $num = isset($v['numero']) ? $v['numero'] : '';
                         $texto = isset($v['texto']) ? $v['texto'] : '';
-                        $fullTextModal .= "<strong>".$num."</strong> " . $texto . "<br><br>";
+                        $fullTextModal .= '<strong>'.$num.'</strong> '.$texto.'<br><br>';
                     }
                 }
             }
@@ -73,37 +73,29 @@ class VersiculoDelDia extends Component
         $relativeUrl = '';
 
         if ($versiculo && $versiculo->ruta_imagen) {
-            $tenantPath = $this->configuracion->ruta_almacenamiento . '/img/versiculo-diario/' . $versiculo->ruta_imagen;
+            $tenantPath = $this->configuracion->ruta_almacenamiento.'/img/versiculo-diario/'.$versiculo->ruta_imagen;
 
-            // 1. Prioridad: Disco del Inquilino (Público)
-            if (Storage::disk('public')->exists($tenantPath)) {
+            // 1. Prioridad: Archivo físico en public/storage (donde lo guarda el controller con public_path)
+            if (file_exists(public_path('storage/'.$tenantPath))) {
                 $relativeUrl = Storage::url($tenantPath);
             }
             // 2. Fallback: Disco Global
             else {
                 $possibleGlobalPaths = [
-                    $versiculo->ruta_imagen
+                    $versiculo->ruta_imagen,
                 ];
 
-                // Si no se encuentra con la ruta exacta, intentar con extensiones comunes (.jpg vs .jpeg)
-                if (preg_match('/\.(jpe?g|png|webp|png)$/i', $versiculo->ruta_imagen)) {
+                // Intentar con extensiones alternativas (.jpg vs .jpeg)
+                if (preg_match('/\.(jpe?g|png|webp)$/i', $versiculo->ruta_imagen)) {
                     $baseName = pathinfo($versiculo->ruta_imagen, PATHINFO_FILENAME);
-                    $exts = ['jpg', 'jpeg', 'png', 'webp'];
-                    foreach ($exts as $targetExt) {
-                        $possibleGlobalPaths[] = $baseName . '.' . $targetExt;
+                    foreach (['jpg', 'jpeg', 'png', 'webp'] as $targetExt) {
+                        $possibleGlobalPaths[] = $baseName.'.'.$targetExt;
                     }
                 }
 
                 foreach ($possibleGlobalPaths as $path) {
-                    // Verificación vía disco
                     if (Storage::disk('global_media')->exists($path)) {
                         $relativeUrl = Storage::disk('global_media')->url($path);
-                        break;
-                    }
-                    
-                    // Verificación física directa (bypass abstraction)
-                    if (file_exists(storage_path('app/global_media/' . $path))) {
-                        $relativeUrl = '/global_media/' . $path;
                         break;
                     }
                 }
@@ -113,7 +105,7 @@ class VersiculoDelDia extends Component
                 // Asegurar URL absoluta
                 $imageUrl = str_starts_with($relativeUrl, 'http')
                     ? $relativeUrl
-                    : request()->getSchemeAndHttpHost() . $relativeUrl;
+                    : request()->getSchemeAndHttpHost().$relativeUrl;
             }
         }
 
@@ -122,7 +114,7 @@ class VersiculoDelDia extends Component
             'plainText' => $plainText,
             'fullTextModal' => $fullTextModal,
             'imageUrl' => $imageUrl,
-            'relativeUrl' => $relativeUrl
+            'relativeUrl' => $relativeUrl,
         ]);
     }
 }

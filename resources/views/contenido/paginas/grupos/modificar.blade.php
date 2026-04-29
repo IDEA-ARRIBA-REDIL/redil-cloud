@@ -219,7 +219,6 @@ $configData = Helper::appClasses();
     <div class="col-md-12">
       <div class="card mb-4">
         <h5 class="card-header text-black fw-semibold">
-          <img src="{{ Storage::url('generales/img/grupos/icono_seccion_informacion_principal.png') }}" alt="icono" class="me-2" width="30">
           Información principal
         </h5>
         <div class="card-body">
@@ -300,9 +299,9 @@ $configData = Helper::appClasses();
             <!-- Direccion -->
             @if($configuracion->habilitar_direccion_grupo == true)
             @if($configuracion->usa_listas_geograficas==TRUE)
-            @livewire('Generales.direccion-con-lista-geografica', ['modulo' => 'grupos', 'classDireccion' => 'mb-3 col-12 col-md-6'])
+            @livewire('Generales.direccion-con-lista-geografica', ['modulo' => 'grupos', 'grupo' => $grupo, 'classDireccion' => 'mb-3 col-12 col-md-6'])
             @else
-            <div class="mb-3 col-12 col-md-6">
+            <div class="mb-3 col-12 col-md-6">       
               <label class="form-label" for="direccion">
                 @if($configuracion->direccion_grupo_obligatorio)@endif
                 @if($configuracion->label_direccion_grupo!="")
@@ -359,7 +358,6 @@ $configData = Helper::appClasses();
     <div class="col-md-12">
       <div class="card mb-4">
         <h5 class="card-header text-black fw-semibold">
-          <img src="{{ Storage::url('generales/img/grupos/icono_seccion_horarios.png') }}" alt="icono" class="me-2" width="30">
           {{$configuracion->titulo_seccion_reunion_grupo ? $configuracion->titulo_seccion_reunion_grupo : '¿En qué horario se reúne grupo?'}}
         </h5>
         <div class="card-body">
@@ -404,7 +402,6 @@ $configData = Helper::appClasses();
     <div class="col-md-12">
       <div class="card mb-4">
         <h5 class="card-header text-black fw-semibold">
-          <img src="{{ Storage::url('generales/img/grupos/icono_seccion_campos_extras.png') }}" alt="icono" class="me-2" width="30">
           {{$configuracion->label_seccion_campos_extra}}
         </h5>
         <div class="card-body">

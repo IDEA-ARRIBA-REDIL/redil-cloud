@@ -290,6 +290,7 @@ Route::get('/reporteReunion/{reporteReunion}/compartir-link-reserva', [ReporteRe
 // Peticiones públicas
 Route::get('/peticion/publica', [PeticionController::class, 'publicaNueva'])->name('peticion.publica.nueva');
 Route::post('/peticion/publica/crear', [PeticionController::class, 'crear'])->name('peticion.publica.crear');
+Route::get('/peticion/{peticion}/exito', [PeticionController::class, 'exito'])->name('peticion.exito');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 

@@ -6,7 +6,7 @@ use App\Models\Configuracion;
 use App\Models\Moneda;
 use App\Models\TipoPago;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class TipoPagosController extends Controller
 {
@@ -32,44 +32,62 @@ class TipoPagosController extends Controller
 
     public function crearTipoPagos(Request $request)
     {
+        $configuracion = Configuracion::find(1);
+
         // 1. Validaciones
-        $validated = $request->validate([
-            // Obligatorios
+        $request->validate([
             'nombre' => 'required|max:30',
-            'enlace' => 'required|max:100',
-            'cuenta_sap' => 'required|max:30',
+            'enlace' => 'nullable|max:100',
+            'cuenta_sap' => 'nullable|max:30',
             'observaciones' => 'required',
-            // Validamos que venga la cadena Base64 del logo
-            'imagen_recortada' => 'required',
+            'imagen' => 'nullable|image|max:2048',
+            'fondo' => 'nullable|image|max:2048',
         ], [
-            'imagen_recortada.required' => 'Debes seleccionar y recortar una imagen para el Logo.',
+            'imagen.required' => 'Debes seleccionar una imagen para el Logo.',
+            'imagen.image' => 'El archivo del logo debe ser una imagen.',
             'nombre.required' => 'El nombre es obligatorio.',
             'cuenta_sap.required' => 'La cuenta SAP es obligatoria.',
             'observaciones' => 'Las observaciones son obligatorias',
         ]);
 
-        // Clonamos el request para manipular datos
-        $data = $request->except(['imagen_recortada', 'fondo_recortado']);
+        // 2. Preparar datos (sin imágenes ni tokens)
+        $data = $request->except(['imagen', 'fondo', '_token', '_method']);
 
-        // 2. Procesar Logo (Obligatorio)
-        if ($request->filled('imagen_recortada')) {
-            $filename = $this->procesarImagenBase64($request->imagen_recortada, 'logos');
-            $data['imagen'] = $filename;
-        }
-
-        // 3. Procesar Fondo (Opcional)
-        if ($request->filled('fondo_recortado')) {
-            $filename = $this->procesarImagenBase64($request->fondo_recortado, 'fondos');
-            $data['fondo'] = $filename;
-        } else {
-            $data['fondo'] = null; // Asegurar null si no hay imagen
-        }
-
-        // 4. Normalizar Booleanos
+        // 3. Normalizar Booleanos
         $this->normalizarBooleanos($data);
 
-        // 5. Crear
-        TipoPago::create($data);
+        // 4. Crear el registro base (sin imágenes)
+        $tipoPago = new TipoPago($data);
+        $tipoPago->save();
+
+        // 5. Procesar Logo (Obligatorio)
+        if ($request->hasFile('imagen')) {
+            $nombreLogo = $this->guardarImagen(
+                $request->file('imagen'),
+                $configuracion->ruta_almacenamiento,
+                'logos',
+                $tipoPago->id
+            );
+            $tipoPago->imagen = $nombreLogo;
+        }
+
+        // 6. Procesar Fondo (Opcional)
+        if ($request->hasFile('fondo')) {
+            $nombreFondo = $this->guardarImagen(
+                $request->file('fondo'),
+                $configuracion->ruta_almacenamiento,
+                'fondos',
+                $tipoPago->id
+            );
+            $tipoPago->fondo = $nombreFondo;
+        }
+
+        // 7. Guardar de nuevo si hubo imágenes
+        if ($request->hasFile('imagen') || $request->hasFile('fondo')) {
+            $tipoPago->save();
+        }
+
+        Log::info('TipoPago creado ID: '.$tipoPago->id.' | imagen: '.($tipoPago->imagen ?? 'NULL'));
 
         return redirect()->route('tipo-pagos.listarTipoPagos')
             ->with('success', 'Tipo de pago creado correctamente.');
@@ -90,18 +108,17 @@ class TipoPagosController extends Controller
 
     public function actualizarTipoPagos(Request $request, $id)
     {
-        // 1. Buscar el registro. Si no existe, lanza error 404 automáticamente.
+        $configuracion = Configuracion::find(1);
+
+        // 1. Buscar el registro
         $tipoPago = TipoPago::findOrFail($id);
 
-        // 2. Validación COMPLETA de todos los campos de tu vista HTML
+        // 2. Validación
         $request->validate(
             [
-                // Campos de texto obligatorios
                 'nombre' => 'required|string|max:30',
                 'enlace' => 'required|string|max:100',
                 'cuenta_sap' => 'required|string|max:30',
-
-                // Campos de texto opcionales (pero con límite según tu HTML)
                 'client_id' => 'nullable|string|max:500',
                 'key_id' => 'nullable|string|max:500',
                 'bussines_id' => 'nullable|string|max:500',
@@ -109,20 +126,13 @@ class TipoPagosController extends Controller
                 'identity_token' => 'nullable|string|max:500',
                 'key_reservada' => 'nullable|string|max:50',
                 'account_id' => 'nullable|string|max:50',
-
-                // Color
                 'color' => 'nullable|string',
-
-                // Campos Numéricos (pueden ser nulos o números)
                 'unica_moneda_id' => 'required|numeric',
                 'porcentaje_tax1' => 'nullable|numeric',
                 'porcentaje_tax2' => 'nullable|numeric',
                 'transaccion_minima' => 'nullable|numeric',
                 'transaccion_maxima' => 'nullable|numeric',
                 'incremento_pdp' => 'nullable|numeric',
-
-                // Campos Booleanos (check switches)
-                // Se validan como integer o boolean porque llegan como "0" o "1"
                 'activo' => 'required|in:0,1',
                 'habilitado_punto_pago' => 'required|in:0,1',
                 'subir_archivo_pagos' => 'required|in:0,1',
@@ -132,119 +142,62 @@ class TipoPagosController extends Controller
                 'punto_de_pago' => 'required|in:0,1',
                 'permite_personas_externas' => 'required|in:0,1',
                 'codigo_datafono' => 'required|in:0,1',
-
-                // Textareas
                 'label_destinatario' => 'nullable|string',
                 'observaciones' => 'required|string',
-
-                // Inputs hidden de las imágenes (Base64)
-                'imagen_recortada' => 'nullable|string',
-                'fondo_recortado' => 'nullable|string',
+                'imagen' => 'nullable|image|max:2048',
+                'fondo' => 'nullable|image|max:2048',
             ],
             [
-                // Textos Generales
                 'nombre.required' => 'El nombre del tipo de pago es obligatorio.',
                 'nombre.max' => 'El nombre no puede tener más de 30 caracteres.',
-
                 'enlace.required' => 'El enlace es obligatorio.',
                 'enlace.max' => 'El enlace no puede exceder los 100 caracteres.',
-
                 'cuenta_sap.required' => 'La cuenta SAP es obligatoria.',
-
-                // Numéricos / Selects
                 'unica_moneda_id.required' => 'Debes seleccionar una moneda de la lista.',
                 'unica_moneda_id.numeric' => 'El formato de la moneda no es válido.',
-
-                // Textareas
                 'observaciones.required' => 'Las observaciones son obligatorias.',
-
-                // Imágenes
-                'imagen_recortada.required' => 'Debes cargar una imagen para el logo.',
+                'imagen.image' => 'El archivo del logo debe ser una imagen.',
             ]
         );
 
-        // 3. Preparar los datos base
-        // Excluimos 'imagen_recortada' y 'fondo_recortado' porque no son columnas reales en la BD
-        // Excluimos '_token' y '_method' por seguridad, aunque el update suele ignorarlos
-        $data = $request->except(['imagen_recortada', 'fondo_recortado', '_token', '_method']);
+        // 3. Actualizar campos de texto, numéricos y booleanos (sin imágenes)
+        $data = $request->except(['imagen', 'fondo', '_token', '_method']);
+        $tipoPago->fill($data);
+        $tipoPago->save();
 
-        // --- LOGICA DE IMAGEN (LOGO) ---
-        // Verificamos si el input hidden tiene contenido (viene la cadena Base64)
-        if ($request->filled('imagen_recortada')) {
-            try {
-                // Obtener el string base64
-                $base64_string = $request->input('imagen_recortada');
+        // 4. Procesar Logo si se envió uno nuevo
+        if ($request->hasFile('imagen')) {
+            $this->eliminarImagenAnterior($tipoPago->imagen, $configuracion->ruta_almacenamiento, 'logos');
 
-                // Separar la metadata del contenido real (data:image/jpeg;base64,CONTENIDO)
-                // Esto evita errores si la cadena viene sucia
-                if (strpos($base64_string, ';base64,') !== false) {
-                    $image_parts = explode(';base64,', $base64_string);
-
-                    // Determinar extensión (jpeg, png, etc)
-                    $image_type_aux = explode('image/', $image_parts[0]);
-                    $image_type = $image_type_aux[1] ?? 'png'; // fallback a png si falla
-
-                    // Decodificar
-                    $image_base64 = base64_decode($image_parts[1]);
-
-                    // Crear nombre único
-                    $nombreImagen = 'logo_'.uniqid().'.'.$image_type;
-
-                    // Guardar en disco 'public' dentro de la carpeta 'logos'
-                    Storage::disk('public')->put('logos/'.$nombreImagen, $image_base64);
-
-                    // Borrar imagen anterior si existía
-                    if ($tipoPago->imagen) {
-                        if (Storage::disk('public')->exists('logos/'.$tipoPago->imagen)) {
-                            Storage::disk('public')->delete('logos/'.$tipoPago->imagen);
-                        }
-                    }
-
-                    // Asignar el nuevo nombre al array de datos
-                    $data['imagen'] = $nombreImagen;
-                }
-            } catch (Exception $e) {
-                // Si falla la imagen, no detenemos todo el proceso, pero podrías loguearlo
-                // Log::error("Error subiendo logo: " . $e->getMessage());
-            }
+            $nombreLogo = $this->guardarImagen(
+                $request->file('imagen'),
+                $configuracion->ruta_almacenamiento,
+                'logos',
+                $tipoPago->id
+            );
+            $tipoPago->imagen = $nombreLogo;
         }
 
-        // --- LOGICA DE FONDO (IMAGEN) ---
-        // Exactamente la misma lógica que arriba pero para el fondo
-        if ($request->filled('fondo_recortado')) {
-            try {
-                $base64_string_fondo = $request->input('fondo_recortado');
+        // 5. Procesar Fondo si se envió uno nuevo
+        if ($request->hasFile('fondo')) {
+            $this->eliminarImagenAnterior($tipoPago->fondo, $configuracion->ruta_almacenamiento, 'fondos');
 
-                if (strpos($base64_string_fondo, ';base64,') !== false) {
-                    $image_parts = explode(';base64,', $base64_string_fondo);
-                    $image_type_aux = explode('image/', $image_parts[0]);
-                    $image_type = $image_type_aux[1] ?? 'jpg';
-                    $image_base64 = base64_decode($image_parts[1]);
-
-                    $nombreFondo = 'fondo_'.uniqid().'.'.$image_type;
-
-                    // Guardar en carpeta 'fondos'
-                    Storage::disk('public')->put('fondos/'.$nombreFondo, $image_base64);
-
-                    // Borrar fondo anterior
-                    if ($tipoPago->fondo) {
-                        if (Storage::disk('public')->exists('fondos/'.$tipoPago->fondo)) {
-                            Storage::disk('public')->delete('fondos/'.$tipoPago->fondo);
-                        }
-                    }
-
-                    $data['fondo'] = $nombreFondo;
-                }
-            } catch (Exception $e) {
-                // Log::error("Error subiendo fondo: " . $e->getMessage());
-            }
+            $nombreFondo = $this->guardarImagen(
+                $request->file('fondo'),
+                $configuracion->ruta_almacenamiento,
+                'fondos',
+                $tipoPago->id
+            );
+            $tipoPago->fondo = $nombreFondo;
         }
 
-        // 4. Actualizar el registro en la base de datos
-        // Aquí se guardan tanto los campos de texto, números, booleanos (0/1) y nombres de archivos
-        $tipoPago->update($data);
+        // 6. Guardar de nuevo si hubo imágenes
+        if ($request->hasFile('imagen') || $request->hasFile('fondo')) {
+            $tipoPago->save();
+        }
 
-        // 5. Redireccionar
+        Log::info('TipoPago actualizado ID: '.$tipoPago->id.' | imagen: '.($tipoPago->imagen ?? 'NULL'));
+
         return redirect()->route('tipo-pagos.listarTipoPagos')
             ->with('success', 'Tipo de pago actualizado correctamente.');
     }
@@ -261,8 +214,6 @@ class TipoPagosController extends Controller
     public function toggleEstado($id)
     {
         $tipoPago = TipoPago::findOrFail($id);
-
-        // Invertimos el estado (si es 1 pasa a 0, si es 0 pasa a 1)
         $tipoPago->activo = ! $tipoPago->activo;
         $tipoPago->save();
 
@@ -274,31 +225,52 @@ class TipoPagosController extends Controller
     }
 
     /**
-     * Función auxiliar para decodificar Base64 y guardar archivo
+     * Guarda un archivo de imagen subido en la carpeta pública del tenant.
+     * Mismo patrón que GestionarTipoDeGruposController.
+     *
+     * @param  \Illuminate\Http\UploadedFile  $file  El archivo subido
+     * @param  string  $rutaAlmacenamiento  El identificador del tenant (ej: 'iglesia1')
+     * @param  string  $carpeta  Subcarpeta destino (ej: 'logos', 'fondos')
+     * @param  int  $tipoPagoId  ID del tipo de pago para generar nombre único
      */
-    private function procesarImagenBase64($base64String, $folder)
+    private function guardarImagen($file, string $rutaAlmacenamiento, string $carpeta, int $tipoPagoId): string
     {
-        // Obtener extensión (png, jpg, etc)
-        // formato: data:image/jpeg;base64,....
-        $extension = explode('/', explode(':', substr($base64String, 0, strpos($base64String, ';')))[1])[1];
+        $extension = $file->getClientOriginalExtension();
+        $nombreArchivo = $carpeta.'-'.$tipoPagoId.'.'.$extension;
 
-        // Limpiar encabezado para obtener solo la data
-        $replace = substr($base64String, 0, strpos($base64String, ',') + 1);
-        $image = str_replace($replace, '', $base64String);
-        $image = str_replace(' ', '+', $image);
+        $destinationDir = public_path('storage/'.$rutaAlmacenamiento.'/'.$carpeta);
 
-        // Generar nombre único corto para cumplir con el límite de varchar(100) o (30)
-        // Usamos uniqid que son 13 caracteres + extensión. Seguro para varchar(30).
-        $imageName = uniqid().'.'.$extension;
+        if (! is_dir($destinationDir)) {
+            mkdir($destinationDir, 0755, true);
+        }
 
-        // Guardar en Storage
-        Storage::disk('public')->put($folder.'/'.$imageName, base64_decode($image));
+        $file->move($destinationDir, $nombreArchivo);
 
-        return $imageName;
+        Log::info("TipoPago: Imagen guardada en {$rutaAlmacenamiento}/{$carpeta}/{$nombreArchivo}");
+
+        return $nombreArchivo;
     }
 
-    // Método auxiliar para asegurar que los checkbox desmarcados se guarden como 0 o false
-    private function normalizarBooleanos(&$data)
+    /**
+     * Elimina una imagen anterior del filesystem si existe.
+     */
+    private function eliminarImagenAnterior(?string $nombreArchivo, string $rutaAlmacenamiento, string $carpeta): void
+    {
+        if (! $nombreArchivo) {
+            return;
+        }
+
+        $rutaCompleta = public_path('storage/'.$rutaAlmacenamiento.'/'.$carpeta.'/'.$nombreArchivo);
+
+        if (file_exists($rutaCompleta)) {
+            unlink($rutaCompleta);
+        }
+    }
+
+    /**
+     * Normaliza los checkboxes para que los desmarcados se guarden como 0.
+     */
+    private function normalizarBooleanos(array &$data): void
     {
         $camposBooleanos = [
             'activo',

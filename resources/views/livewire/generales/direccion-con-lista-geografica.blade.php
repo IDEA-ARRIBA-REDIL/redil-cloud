@@ -1,7 +1,7 @@
 
 <div class="mb-2 {{$classDireccion}}">
     <label class="form-label" for="direccion">
-      {{ $labelDireccion ? $labelDireccion : 'Dirección' }}
+      {{ $labelDireccion ? $labelDireccion : 'Dirección' }} 
     </label>
     <div class="input-group input-group-merge">
       <span class="input-group-text"><i class="ti ti-map"></i></span>

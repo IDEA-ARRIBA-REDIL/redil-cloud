@@ -162,8 +162,7 @@ $configData = Helper::appClasses();
 ])
 
   <script type="module">
-    $('#formulario').submit(function() {
-      e.preventDefault();
+    $('#formulario').submit(function(e) {
       $('.btnGuardar').attr('disabled', 'disabled');
 
       Swal.fire({
@@ -175,6 +174,20 @@ $configData = Helper::appClasses();
         showDenyButton: false
       });
     });
+
+    // Bloquear Enter para evitar envío prematuro del formulario
+    // Solo se permite en el último paso (cuando el botón de envío es type="submit")
+    document.getElementById('formulario').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const activeStep = document.querySelector('.step:not(.d-none)');
+        const submitBtn = activeStep ? activeStep.querySelector('button[type="submit"]') : null;
+
+        if (!submitBtn) {
+          // No estamos en el último paso: bloquear Enter
+          e.preventDefault();
+        }
+      }
+    });
   </script>
 
   <script>
@@ -184,16 +197,19 @@ $configData = Helper::appClasses();
       inputNumbers.forEach(inputNumber => {
           const minusButton = inputNumber.querySelector('.minus');
           const plusButton = inputNumber.querySelector('.plus');
-          const inputField = inputNumber.querySelector('input');
+          const inputField = inputNumber.querySelector('input[type="number"]');
+
+          if (!inputField) return;
+
+          const minVal = parseInt(inputField.min) || 0;
+          const maxVal = parseInt(inputField.max) || 10;
 
           minusButton.addEventListener('click', () => {
-              // Aquí se usa inputField, que está dentro del scope de cada iteración
-              inputField.value = parseInt(inputField.value) - 1;
+              inputField.value = Math.max(minVal, parseInt(inputField.value) - 1);
           });
 
           plusButton.addEventListener('click', () => {
-              // Aquí también se usa inputField del scope de la iteración
-              inputField.value = parseInt(inputField.value) + 1;
+              inputField.value = Math.min(maxVal, parseInt(inputField.value) + 1);
           });
       });
   </script>
@@ -242,6 +258,59 @@ let nombresCampos = {};
   let chart ;
   let json_string;
 
+// Función central para procesar el cambio de valor de un input
+function procesarCambioInput(input) {
+    const seccionId = input.dataset.seccion;
+    const promedioMinimo = input.dataset.promedio;
+    const inputContainer = input.closest('.input-number');
+    const seccion = inputContainer.closest('.row').closest('.col-lg-5');
+
+    // Clampear el valor entre min y max (máximo 10)
+    const minVal = parseInt(input.min) || 0;
+    const maxVal = Math.min(parseInt(input.max) || 10, 10);
+    let nuevoValor = parseInt(input.value);
+    if (isNaN(nuevoValor)) { nuevoValor = minVal; }
+    nuevoValor = Math.max(minVal, Math.min(maxVal, nuevoValor));
+    input.value = nuevoValor;
+
+    // Obtener todos los inputs de la sección
+    const inputsSeccion = seccion.querySelectorAll('.input-number input[type="number"]');
+
+    // Calcular suma y promedio
+    let suma = 0;
+    inputsSeccion.forEach(i => {
+        suma += parseInt(i.value);
+    });
+
+    const promedio = inputsSeccion.length > 0 ? suma / inputsSeccion.length : 0;
+
+    // Actualizar los valores del promedio
+    $(`#promedioSeccion-${seccionId}`).val(promedio.toFixed(1));
+    $(`#promedioSeccionGeneral-${seccionId}`).val(promedio.toFixed(1));
+
+    // Actualizar clases CSS según el promedio
+    if (promedioMinimo >= promedio) {
+        $('#valorPromedioVisible-' + seccionId).addClass('text-danger').removeClass('text-success');
+        $(`#promedioSeccionGeneral-${seccionId}`).addClass('text-danger').removeClass('text-success');
+    } else {
+        $('#valorPromedioVisible-' + seccionId).addClass('text-success').removeClass('text-danger');
+        $(`#promedioSeccionGeneral-${seccionId}`).addClass('text-success').removeClass('text-danger');
+    }
+
+    $('#valorPromedioVisible-' + seccionId).html(promedio.toFixed(1));
+
+    // Actualizar el gráfico
+    const chart = charts.find(chart => chart.el.id === `polarChart-${seccionId}`);
+    if (chart) {
+        let series = [...chart.w.config.series];
+        const allInputRows = Array.from(seccion.querySelectorAll('.row'));
+        const currentRow = inputContainer.closest('.row');
+        const indice = allInputRows.indexOf(currentRow);
+        series[indice] = nuevoValor;
+        chart.updateOptions({ series: series });
+    }
+}
+
 // Función para inicializar los listeners de los botones
 function initializeButtonListeners() {
     // Obtener todos los botones "más" y "menos"
@@ -250,74 +319,31 @@ function initializeButtonListeners() {
     // Recorrer cada botón
     botones.forEach(boton => {
         boton.addEventListener('click', () => {
-            // Obtener el input asociado al botón (ahora dentro de input-number)
             const inputContainer = boton.closest('.input-number');
-            const input = inputContainer.querySelector('input');
-            const seccionId = input.dataset.seccion;
-            const promedioMinimo = input.dataset.promedio;
+            const input = inputContainer.querySelector('input[type="number"]');
+            if (!input) return;
 
-            // Obtener la sección padre (ajustado para la nueva estructura)
-            const seccion = inputContainer.closest('.row').closest('.col-lg-5');
+            const minVal = parseInt(input.min) || 0;
+            const maxVal = Math.min(parseInt(input.max) || 10, 10);
+            let nuevoValor = parseInt(input.value) || 0;
 
-            // Obtener el nuevo valor del input
-            let nuevoValor = parseInt(input.value);
-
-            // Ajustar el valor según el botón presionado
             if (boton.classList.contains('minus')) {
-                nuevoValor = Math.max(1, nuevoValor - 1);
+                nuevoValor = Math.max(minVal, nuevoValor - 1);
             } else {
-                nuevoValor = Math.min(input.max, nuevoValor );
+                nuevoValor = Math.min(maxVal, nuevoValor + 1);
             }
 
-            // Actualizar el valor del input
             input.value = nuevoValor;
+            procesarCambioInput(input);
+        });
+    });
 
-            // Obtener todos los inputs de la sección (ajustado para la nueva estructura)
-            const inputsSeccion = seccion.querySelectorAll('.input-number input[type="number"]');
-
-            // Calcular suma y promedio
-            let suma = 0;
-            inputsSeccion.forEach(input => {
-                suma += parseInt(input.value);
-            });
-
-            // Calcular promedio
-            const promedio = inputsSeccion.length > 0 ? suma / inputsSeccion.length : 0;
-
-            // Actualizar los valores del promedio
-            $(`#promedioSeccion-${seccionId}`).val(promedio.toFixed(1));
-            $(`#promedioSeccionGeneral-${seccionId}`).val(promedio.toFixed(1));
-
-            // Actualizar clases CSS según el promedio
-            if (promedioMinimo >= promedio) {
-                $('#valorPromedioVisible-' + seccionId).addClass('text-danger').removeClass('text-success');
-                $(`#promedioSeccionGeneral-${seccionId}`).addClass('text-danger').removeClass('text-success');
-            } else {
-                $('#valorPromedioVisible-' + seccionId).addClass('text-success').removeClass('text-danger');
-                $(`#promedioSeccionGeneral-${seccionId}`).addClass('text-success').removeClass('text-danger');
-            }
-
-            $('#valorPromedioVisible-' + seccionId).html(promedio.toFixed(1));
-
-            // Actualizar el gráfico
-            const chart = charts.find(chart => chart.el.id === `polarChart-${seccionId}`);
-            if (chart) {
-                // Crear una copia de la serie actual
-                let series = [...chart.w.config.series];
-
-                // Encontrar el índice del valor a actualizar (ajustado para la nueva estructura)
-                const allInputRows = Array.from(seccion.querySelectorAll('.row'));
-                const currentRow = inputContainer.closest('.row');
-                const indice = allInputRows.indexOf(currentRow);
-
-                // Actualizar el valor en la serie
-                series[indice] = nuevoValor;
-
-                // Actualizar el gráfico
-                chart.updateOptions({
-                    series: series
-                });
-            }
+    // Listener de teclado: ejecuta la misma lógica al tipear
+    const inputsNumericos = document.querySelectorAll('.input-number input[type="number"]');
+    inputsNumericos.forEach(input => {
+        input.addEventListener('input', () => {
+            // Diferir ligeramente para que el valor del input esté actualizado
+            setTimeout(() => procesarCambioInput(input), 0);
         });
     });
 }

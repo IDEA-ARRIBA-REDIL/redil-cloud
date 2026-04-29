@@ -30,13 +30,20 @@ return [
       'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
     ],
   ],
+  
   // config/services.php
-'zonapagos' => [
-    'api_url' => env('ZONAPAGOS_API_URL'),
-    'id_comercio' => env('ZONAPAGOS_ID_COMERCIO'),
-    'usuario' => env('ZONAPAGOS_USUARIO'),
-    'clave' => env('ZONAPAGOS_CLAVE'),
-    'codigo_servicio' => env('ZONAPAGOS_CODIGO_SERVICIO'),
-],
+  'zonapagos' => [
+      'api_url' => env('ZONAPAGOS_API_URL'),
+      'id_comercio' => env('ZONAPAGOS_ID_COMERCIO'),
+      'usuario' => env('ZONAPAGOS_USUARIO'),
+      'clave' => env('ZONAPAGOS_CLAVE'),
+      'codigo_servicio' => env('ZONAPAGOS_CODIGO_SERVICIO'),
+  ],
 
-];
+  'recaptcha' => [
+    'site_key' => env('RECAPTCHA_SITE_KEY'),
+    'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+  ],
+
+
+]; 

@@ -52,13 +52,31 @@ border: 1px solid blue;
         <td>{{$peticion->paisNombre}}</td>
         @endif
 
-        {!!
-          $peticion->usuario()->withTrashed()->first()->dataTd(
-          $arrayCamposInfoPersonal,
-          $arrayPasosCrecimiento,
-          $arrayDatosCongregacionales,
-          $arrayCamposExtra
-        ) !!}
+        @if($camposPeticiones->where('value', 'nombre_solicitante')->count() > 0)
+        <td>{{$peticion->nombre_solicitante}}</td>
+        @endif
+
+        @if($camposPeticiones->where('value', 'email_solicitante')->count() > 0)
+        <td>{{$peticion->email_solicitante}}</td>
+        @endif
+
+        @if($camposPeticiones->where('value', 'telefono_solicitante')->count() > 0)
+        <td>{{$peticion->telefono_solicitante}}</td>
+        @endif
+
+        @if($camposPeticiones->where('value', 'genero_solicitante')->count() > 0)
+        <td>{{$peticion->genero_solicitante}}</td>
+        @endif
+
+        @if($peticion->user_id)
+          {!!
+            $peticion->usuario()->withTrashed()->first()->dataTd(
+            $arrayCamposInfoPersonal,
+            $arrayPasosCrecimiento,
+            $arrayDatosCongregacionales,
+            $arrayCamposExtra
+          ) !!}
+        @endif
 
       </tr>
     @endforeach
