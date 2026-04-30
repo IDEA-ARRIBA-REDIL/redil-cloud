@@ -36,55 +36,78 @@ class TipoPagosController extends Controller
 
         // 1. Validaciones
         $request->validate([
-            'nombre' => 'required|max:30',
+            'nombre' => 'required|max:100',
             'enlace' => 'nullable|max:100',
-            'cuenta_sap' => 'nullable|max:30',
-            'observaciones' => 'required',
+            'cuenta_sap' => 'nullable|max:100',
+            'observaciones' => 'nullable',
             'imagen' => 'nullable|image|max:2048',
             'fondo' => 'nullable|image|max:2048',
         ], [
-            'imagen.required' => 'Debes seleccionar una imagen para el Logo.',
             'imagen.image' => 'El archivo del logo debe ser una imagen.',
             'nombre.required' => 'El nombre es obligatorio.',
-            'cuenta_sap.required' => 'La cuenta SAP es obligatoria.',
-            'observaciones' => 'Las observaciones son obligatorias',
         ]);
 
-        // 2. Preparar datos (sin imágenes ni tokens)
-        $data = $request->except(['imagen', 'fondo', '_token', '_method']);
+        // 2. Crear el registro base explícitamente
+        $tipoPago = new TipoPago();
+        $tipoPago->nombre = $request->nombre;
+        $tipoPago->enlace = $request->enlace;
+        $tipoPago->cuenta_sap = $request->cuenta_sap;
+        $tipoPago->client_id = $request->client_id;
+        $tipoPago->key_id = $request->key_id;
+        $tipoPago->bussines_id = $request->bussines_id;
+        $tipoPago->url_retorno = $request->url_retorno;
+        $tipoPago->identity_token = $request->identity_token;
+        $tipoPago->key_reservada = $request->key_reservada;
+        $tipoPago->account_id = $request->account_id;
+        $tipoPago->color = $request->color;
+        $tipoPago->unica_moneda_id = $request->unica_moneda_id;
+        $tipoPago->porcentaje_tax1 = $request->porcentaje_tax1;
+        $tipoPago->porcentaje_tax2 = $request->porcentaje_tax2;
+        $tipoPago->transaccion_minima = $request->transaccion_minima;
+        $tipoPago->transaccion_maxima = $request->transaccion_maxima;
+        $tipoPago->incremento_pdp = $request->incremento_pdp;
+        $tipoPago->label_destinatario = $request->label_destinatario;
+        $tipoPago->observaciones = $request->observaciones;
 
-        // 3. Normalizar Booleanos
-        $this->normalizarBooleanos($data);
+        // Booleanos
+        $tipoPago->activo = $request->activo ?? 0;
+        $tipoPago->habilitado_punto_pago = $request->habilitado_punto_pago ?? 0;
+        $tipoPago->subir_archivo_pagos = $request->subir_archivo_pagos ?? 0;
+        $tipoPago->botones_valores_moneda = $request->botones_valores_moneda ?? 0;
+        $tipoPago->habilitado_donacion = $request->habilitado_donacion ?? 0;
+        $tipoPago->tiene_limite_dinero_acumulado = $request->tiene_limite_dinero_acumulado ?? 0;
+        $tipoPago->punto_de_pago = $request->punto_de_pago ?? 0;
+        $tipoPago->permite_personas_externas = $request->permite_personas_externas ?? 0;
+        $tipoPago->codigo_datafono = $request->codigo_datafono ?? 0;
+        // 4. Procesar Logo (Obligatorio) ANTES de guardar
+        $identificadorUnico = time() . '_' . uniqid();
 
-        // 4. Crear el registro base (sin imágenes)
-        $tipoPago = new TipoPago($data);
-        $tipoPago->save();
-
-        // 5. Procesar Logo (Obligatorio)
         if ($request->hasFile('imagen')) {
             $nombreLogo = $this->guardarImagen(
                 $request->file('imagen'),
                 $configuracion->ruta_almacenamiento,
                 'logos',
-                $tipoPago->id
+                $identificadorUnico
             );
             $tipoPago->imagen = $nombreLogo;
         }
 
-        // 6. Procesar Fondo (Opcional)
+        // 5. Procesar Fondo (Opcional) ANTES de guardar
         if ($request->hasFile('fondo')) {
             $nombreFondo = $this->guardarImagen(
                 $request->file('fondo'),
                 $configuracion->ruta_almacenamiento,
                 'fondos',
-                $tipoPago->id
+                $identificadorUnico
             );
             $tipoPago->fondo = $nombreFondo;
         }
 
-        // 7. Guardar de nuevo si hubo imágenes
-        if ($request->hasFile('imagen') || $request->hasFile('fondo')) {
+        // 6. Guardar en base de datos
+        try {
             $tipoPago->save();
+        } catch (\Exception $e) {
+            dd('ERROR DE BASE DE DATOS AL CREAR:', $e->getMessage());
         }
 
         Log::info('TipoPago creado ID: '.$tipoPago->id.' | imagen: '.($tipoPago->imagen ?? 'NULL'));
@@ -116,17 +139,17 @@ class TipoPagosController extends Controller
         // 2. Validación
         $request->validate(
             [
-                'nombre' => 'required|string|max:30',
-                'enlace' => 'required|string|max:100',
-                'cuenta_sap' => 'required|string|max:30',
+                'nombre' => 'required|string|max:100',
+                'enlace' => 'nullable|string|max:100',
+                'cuenta_sap' => 'nullable|string|max:100',
                 'client_id' => 'nullable|string|max:500',
                 'key_id' => 'nullable|string|max:500',
                 'bussines_id' => 'nullable|string|max:500',
                 'url_retorno' => 'nullable|string|max:500',
                 'identity_token' => 'nullable|string|max:500',
-                'key_reservada' => 'nullable|string|max:50',
-                'account_id' => 'nullable|string|max:50',
-                'color' => 'nullable|string',
+                'key_reservada' => 'nullable|string|max:100',
+                'account_id' => 'nullable|string|max:100',
+                'color' => 'nullable|string|max:100',
                 'unica_moneda_id' => 'required|numeric',
                 'porcentaje_tax1' => 'nullable|numeric',
                 'porcentaje_tax2' => 'nullable|numeric',
@@ -143,26 +166,50 @@ class TipoPagosController extends Controller
                 'permite_personas_externas' => 'required|in:0,1',
                 'codigo_datafono' => 'required|in:0,1',
                 'label_destinatario' => 'nullable|string',
-                'observaciones' => 'required|string',
+                'observaciones' => 'nullable|string',
                 'imagen' => 'nullable|image|max:2048',
                 'fondo' => 'nullable|image|max:2048',
             ],
             [
                 'nombre.required' => 'El nombre del tipo de pago es obligatorio.',
-                'nombre.max' => 'El nombre no puede tener más de 30 caracteres.',
-                'enlace.required' => 'El enlace es obligatorio.',
-                'enlace.max' => 'El enlace no puede exceder los 100 caracteres.',
-                'cuenta_sap.required' => 'La cuenta SAP es obligatoria.',
+                'nombre.max' => 'El nombre no puede tener más de 100 caracteres.',
                 'unica_moneda_id.required' => 'Debes seleccionar una moneda de la lista.',
                 'unica_moneda_id.numeric' => 'El formato de la moneda no es válido.',
-                'observaciones.required' => 'Las observaciones son obligatorias.',
                 'imagen.image' => 'El archivo del logo debe ser una imagen.',
             ]
         );
 
-        // 3. Actualizar campos de texto, numéricos y booleanos (sin imágenes)
-        $data = $request->except(['imagen', 'fondo', '_token', '_method']);
-        $tipoPago->fill($data);
+        // 3. Actualizar campos explícitamente
+        $tipoPago->nombre = $request->nombre;
+        $tipoPago->enlace = $request->enlace;
+        $tipoPago->cuenta_sap = $request->cuenta_sap;
+        $tipoPago->client_id = $request->client_id;
+        $tipoPago->key_id = $request->key_id;
+        $tipoPago->bussines_id = $request->bussines_id;
+        $tipoPago->url_retorno = $request->url_retorno;
+        $tipoPago->identity_token = $request->identity_token;
+        $tipoPago->key_reservada = $request->key_reservada;
+        $tipoPago->account_id = $request->account_id;
+        $tipoPago->color = $request->color;
+        $tipoPago->unica_moneda_id = $request->unica_moneda_id;
+        $tipoPago->porcentaje_tax1 = $request->porcentaje_tax1;
+        $tipoPago->porcentaje_tax2 = $request->porcentaje_tax2;
+        $tipoPago->transaccion_minima = $request->transaccion_minima;
+        $tipoPago->transaccion_maxima = $request->transaccion_maxima;
+        $tipoPago->incremento_pdp = $request->incremento_pdp;
+        $tipoPago->label_destinatario = $request->label_destinatario;
+        $tipoPago->observaciones = $request->observaciones;
+
+        // Booleanos
+        $tipoPago->activo = $request->activo ?? 0;
+        $tipoPago->habilitado_punto_pago = $request->habilitado_punto_pago ?? 0;
+        $tipoPago->subir_archivo_pagos = $request->subir_archivo_pagos ?? 0;
+        $tipoPago->botones_valores_moneda = $request->botones_valores_moneda ?? 0;
+        $tipoPago->habilitado_donacion = $request->habilitado_donacion ?? 0;
+        $tipoPago->tiene_limite_dinero_acumulado = $request->tiene_limite_dinero_acumulado ?? 0;
+        $tipoPago->punto_de_pago = $request->punto_de_pago ?? 0;
+        $tipoPago->permite_personas_externas = $request->permite_personas_externas ?? 0;
+        $tipoPago->codigo_datafono = $request->codigo_datafono ?? 0;
         $tipoPago->save();
 
         // 4. Procesar Logo si se envió uno nuevo
@@ -231,12 +278,12 @@ class TipoPagosController extends Controller
      * @param  \Illuminate\Http\UploadedFile  $file  El archivo subido
      * @param  string  $rutaAlmacenamiento  El identificador del tenant (ej: 'iglesia1')
      * @param  string  $carpeta  Subcarpeta destino (ej: 'logos', 'fondos')
-     * @param  int  $tipoPagoId  ID del tipo de pago para generar nombre único
+     * @param  string  $identifier  Identificador único para el archivo
      */
-    private function guardarImagen($file, string $rutaAlmacenamiento, string $carpeta, int $tipoPagoId): string
+    private function guardarImagen($file, string $rutaAlmacenamiento, string $carpeta, string $identifier): string
     {
         $extension = $file->getClientOriginalExtension();
-        $nombreArchivo = $carpeta.'-'.$tipoPagoId.'.'.$extension;
+        $nombreArchivo = $carpeta.'-'.$identifier.'.'.$extension;
 
         $destinationDir = public_path('storage/'.$rutaAlmacenamiento.'/'.$carpeta);
 

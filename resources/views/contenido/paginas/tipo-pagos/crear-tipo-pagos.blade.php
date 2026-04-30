@@ -7,53 +7,12 @@
 @vite([
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
 ])
-<style>
-  .preview-container {
-    min-height: 100px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #f8f9fa;
-    border: 1px dashed #d9dee3;
-    border-radius: 0.375rem;
-    margin-bottom: 10px;
-    overflow: hidden;
-  }
-
-  .preview-container img {
-    max-height: 100px;
-    max-width: 100%;
-    object-fit: contain;
-  }
-</style>
 @endsection
 
 @section('vendor-script')
 @vite([
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
 ])
-@endsection
-
-@section('page-script')
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Previsualizar imagen al seleccionar archivo
-    document.querySelectorAll('.preview-input').forEach(function(input) {
-      input.addEventListener('change', function(e) {
-        if (e.target.files.length) {
-          var previewId = input.dataset.preview;
-          var previewImg = document.getElementById(previewId);
-          var reader = new FileReader();
-          reader.onload = function(ev) {
-            previewImg.src = ev.target.result;
-            previewImg.style.display = 'block';
-          };
-          reader.readAsDataURL(e.target.files[0]);
-        }
-      });
-    });
-  });
-</script>
 @endsection
 
 @section('content')
@@ -96,12 +55,18 @@
             <div class="col-md-4">
               <label class="form-label">Enlace </label>
               <input type="text" class="form-control" name="enlace" value="{{ old('enlace') }}" maxlength="100">
+              @error('enlace')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
             </div>
 
             {{-- Cuenta SAP --}}
             <div class="col-md-4">
               <label class="form-label">Cuenta SAP </label>
-              <input type="text" class="form-control" name="cuenta_sap" value="{{ old('cuenta_sap') }}"maxlength="30">
+              <input type="text" class="form-control" name="cuenta_sap" value="{{ old('cuenta_sap') }}" maxlength="30">
+              @error('cuenta_sap')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
             </div>
 
             {{-- Campos Opcionales Strings --}}
@@ -144,37 +109,42 @@
             <div class="col-md-6">
               <label class="form-label">Label Destinatario</label>
               <textarea class="form-control" name="label_destinatario" rows="2">{{ old('label_destinatario') }}</textarea>
+              @error('label_destinatario')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label">Observaciones </label>
               <textarea class="form-control" name="observaciones" rows="2" >{{ old('observaciones') }}</textarea>
+              @error('observaciones')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
             </div>
 
             {{-- CAMPO: IMAGEN (LOGO) --}}
-            <div class="col-md-6">
-              <label class="form-label">Imagen (obligatorio)</label>
-              <div class="preview-container">
-                <img id="preview_imagen_logo" src="" alt="Previsualización" style="display:none;">
+            <div class="col-md-6 mb-3">
+              <label for="imagen" class="form-label">Imagen (obligatorio)</label>
+              <div id="contenedor-input-imagen">
+                <div class="input-group">
+                  <input type="file" id="imagen" name="imagen" class="form-control" accept="image/*">
+                </div>
+                @error('imagen')
+                <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+                @enderror
               </div>
-              <input type="file" class="form-control preview-input"
-                name="imagen"
-                id="input_imagen_logo"
-                accept="image/*"
-                data-preview="preview_imagen_logo"
-                required>
             </div>
 
             {{-- CAMPO: FONDO (IMAGEN) --}}
-            <div class="col-md-6">
-              <label class="form-label">Fondo (Imagen)</label>
-              <div class="preview-container">
-                <img id="preview_imagen_fondo" src="" alt="Previsualización" style="display:none;">
+            <div class="col-md-6 mb-3">
+              <label for="fondo" class="form-label">Fondo (Imagen)</label>
+              <div id="contenedor-input-fondo">
+                <div class="input-group">
+                  <input type="file" id="fondo" name="fondo" class="form-control" accept="image/*">
+                </div>
+                @error('fondo')
+                <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+                @enderror
               </div>
-              <input type="file" class="form-control preview-input"
-                name="fondo"
-                id="input_imagen_fondo"
-                accept="image/*"
-                data-preview="preview_imagen_fondo">
             </div>
 
           </div>

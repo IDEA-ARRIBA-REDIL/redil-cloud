@@ -81,8 +81,7 @@ class GestionarTipoDeGruposController extends Controller
     {
         $configuracion = Configuracion::find(1);
 
-        // 🔹 1. Validación
-        $validatedData = $request->validate([
+        $request->validate([
             'nombre' => 'required|string|max:50',
             'nombre_plural' => 'nullable|string|max:35',
             'imagen' => 'nullable|image|mimes:png',
@@ -105,8 +104,9 @@ class GestionarTipoDeGruposController extends Controller
             'portada' => 'nullable|image|max:2048',
         ]);
 
-        // 🔹 2. Crear el registro base (sin imagen)
-        $tipoGrupo = new TipoGrupo($validatedData);
+        // 🔹 2. Crear el registro base (sin imagen ni portada)
+        $data = $request->except(['imagen', 'portada', '_token', '_method']);
+        $tipoGrupo = new TipoGrupo($data);
 
         // 🔹 3. Checkboxes (valores booleanos)
         $tipoGrupo->seguimiento_actividad = $request->has('seguimiento_actividad');

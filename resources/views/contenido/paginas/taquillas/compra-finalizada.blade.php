@@ -59,7 +59,7 @@
 
                         @if ($compra->estado == 3 || $esAbono)
                          <img style="width: 240px; height: 240px;"
-                            src="{{ Storage::disk('global_media')->url('Reserva_exitosa.png') }}"
+                            src="{{ Storage::disk('global_media')->url('Reserva-exitosa.png') }}"
                             class="p-0">
                             {{-- 3 = Pagada --}}
                             <h2 class="text-black fw-bold mb-0 lh-sm mt-3">{{ $titulo }}</h2>
