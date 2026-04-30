@@ -62,7 +62,7 @@
 
             {{-- Cuenta SAP --}}
             <div class="col-md-4">
-              <label class="form-label">Cuenta SAP </label>
+              <label class="form-label">Cuenta SAP (obligatorio)</label>
               <input type="text" class="form-control" name="cuenta_sap" value="{{ old('cuenta_sap') }}" maxlength="30">
               @error('cuenta_sap')
               <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>

@@ -209,7 +209,7 @@
                                                             wire:model="tipoPagoSeleccionado"
                                                             :checked="activeTab === '{{ $tipo->id }}'">
                                                         <span class="custom-option-body">
-                                                           
+                                                            <img style="    width: 50px !important;" src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/fondos/' . $tipo->fondo) }}?v={{ time() }}" alt="">
                                                             <span
                                                                 class="ms-4 fw-medium text-heading">{{ $tipo->nombre }}</span>
                                                         </span>
