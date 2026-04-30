@@ -355,7 +355,7 @@ class ProcesarMatriculaEscuela extends Component
                 'periodo_id' => $periodo->id,
                 'horario_materia_periodo_id' => $horario->id,
                 'referencia_pago' => $compra->id,
-                'estado_pago_id' => 3, // 3 = Pagado
+                'estado_pago_matricula' => 'pagado',
                 'fecha_matricula' => now()->toDateString(),
                 'valor_a_pagar' => $this->precioTotal,
                 'valor_pagado' => $this->precioTotal,

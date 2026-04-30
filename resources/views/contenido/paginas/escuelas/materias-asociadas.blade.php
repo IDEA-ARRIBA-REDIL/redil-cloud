@@ -48,7 +48,7 @@
                     <div class="col equal-height-col  col-12 col-xl-4 col-md-6 mb-4">
                         <div class="h-100 card">
                             <img id="preview-foto" style="height: 100px;" class="card-img-top object-fit-cover"
-                                src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/materias/' . $materia->portada) }}"
+                                src="{{ $materia->portada ? Storage::url($configuracion->ruta_almacenamiento . '/img/materias/' . $materia->portada) : Storage::disk('global_media')->url('Banner-escuelas.png') }}"
                                 alt="Portada {{ $materia->nombre }}">
                             <div class="card-header">
                                 <div class="d-flex align-items-start justify-content-between">
