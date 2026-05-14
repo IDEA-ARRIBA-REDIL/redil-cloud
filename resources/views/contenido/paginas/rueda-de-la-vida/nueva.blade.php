@@ -28,8 +28,24 @@ $configData = Helper::appClasses();
       font-size: 14px;
       font-family: 'Poppins' !important;
   }
-  body {
+  /* Bloquear scroll horizontal en toda la página */
+  html, body {
     overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  /* Ajuste de la barra fija inferior en móvil */
+  @media (max-width: 576px) {
+    .barra-inferior-fija {
+      padding-top: 0.6rem !important;
+      padding-bottom: 0.6rem !important;
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+    .contenido-principal {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
   }
 
   .promedio-seccion
@@ -190,29 +206,7 @@ $configData = Helper::appClasses();
     });
   </script>
 
-  <script>
-    // Aquí se ejecutan las acciones para los botones de mas y menos
-      const inputNumbers = document.querySelectorAll('.input-number');
 
-      inputNumbers.forEach(inputNumber => {
-          const minusButton = inputNumber.querySelector('.minus');
-          const plusButton = inputNumber.querySelector('.plus');
-          const inputField = inputNumber.querySelector('input[type="number"]');
-
-          if (!inputField) return;
-
-          const minVal = parseInt(inputField.min) || 0;
-          const maxVal = parseInt(inputField.max) || 10;
-
-          minusButton.addEventListener('click', () => {
-              inputField.value = Math.max(minVal, parseInt(inputField.value) - 1);
-          });
-
-          plusButton.addEventListener('click', () => {
-              inputField.value = Math.min(maxVal, parseInt(inputField.value) + 1);
-          });
-      });
-  </script>
 
   <script>
     $(document).ready(function ()
@@ -403,8 +397,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 breakpoint: 780,
                 options: {
                     chart: {
-                        width: 320,
-                        height: 500
+                        width: '100%',
+                        height: 300
                     },
                     legend: {
                         position: 'bottom'
@@ -494,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
           let sumaTotal = 0; // Variable para acumular la suma
 
           inputs.forEach(input => {
-              const value = Math.max(parseFloat(input.value) || 1, 1);
+              const value = parseFloat(input.value) || 0;
               data.push(value);
               sumaTotal += value; // Sumamos cada valor
 
@@ -583,11 +577,36 @@ document.addEventListener('DOMContentLoaded', function() {
         // Inicializar gráfico al cargar
         actualizarGrafico();
 
+        // Evaluar visibilidad inicial del gráfico
+        const inputsIniciales = document.querySelectorAll('.promedioGeneral');
+        const valsIniciales = Array.from(inputsIniciales).map(i => parseFloat(i.value) || 0);
+        toggleGraficoPromedios(valsIniciales);
+
+        // Función para mostrar u ocultar el gráfico según si todos los promedios son 0
+        function toggleGraficoPromedios(data) {
+            const todosEnCero = data.every(v => v === 0);
+            const contenedorGrafico = document.querySelector('#polarPromedioGeneral');
+            const avisoSinDatos = document.querySelector('#avisoPromediosCero');
+
+            if (todosEnCero) {
+                contenedorGrafico.classList.add('d-none');
+                avisoSinDatos.classList.remove('d-none');
+            } else {
+                contenedorGrafico.classList.remove('d-none');
+                avisoSinDatos.classList.add('d-none');
+            }
+        }
+
         // Eventos para los botones "Continuar"
         document.querySelectorAll('.next-step').forEach(button => {
             button.addEventListener('click', function() {
                 // Forzar actualización
                 actualizarGrafico();
+
+                // Evaluar visibilidad del gráfico
+                const currentData = document.querySelectorAll('.promedioGeneral');
+                const vals = Array.from(currentData).map(i => parseFloat(i.value) || 0);
+                toggleGraficoPromedios(vals);
 
                 // Opcional: Obtener ID de la sección
                 const seccionId = this.dataset.seccion;
@@ -603,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
 @section('content')
 
 <div class="col-12 min-vh-100">
-  <nav class="navbar navbar-expand-lg navbar-light bg-menu-theme p-3 row justify-content-md-center">
+  <nav class="navbar navbar-expand-lg navbar-light bg-menu-theme p-3 row justify-content-md-center mx-0">
     <div class="col-3 text-start">
       <button type="button" class="btn rounded-pill waves-effect waves-light text-white prev-step d-none">
         <span class="ti-xs ti ti-arrow-left me-2"></span>
@@ -621,7 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </nav>
 
-  <div class="pt-5 px-7 px-sm-0" style="padding-bottom: 100px;">
+  <div class="pt-5 px-3 px-sm-0 contenido-principal" style="padding-bottom: 120px;">
     <div class="col-12 col-sm-8 offset-sm-2 col-lg-8  offset-lg-2">
       <form id="formulario" role="form" class="forms-sample" method="POST" action="/rueda-vida/crear" enctype="multipart/form-data">
         @csrf
@@ -669,7 +688,7 @@ document.addEventListener('DOMContentLoaded', function() {
                      <!-- bloque derecha -->
                     <div class="col-lg-5 col-md-4 col-sm-12">
                         @foreach ($seccion->campos as $campo)
-                       <div class="row py-2">
+                       <div class="row p-2">
                           <div class="input-number d-sm-flex col-lg-4 p-0 col-md-8 col-5">
                               <button type="button" class="minus rounded-pill"><span>-</span></button>
                               <input data-promedio="{{$seccion->promedio_minimo}}" min="0" max="{{$seccion->max}}" id="campo-{{$campo->id}}-seccion-{{$seccion->id}}" name="campo-{{$campo->id}}-seccion-{{$seccion->id}}" type="number" value="0" step="1" data-seccion="{{ $seccion->id }}">
@@ -701,7 +720,6 @@ document.addEventListener('DOMContentLoaded', function() {
             @if($seccion->tipoSeccion->nombre == 'promedios')
               <div class="row mt-10 m-0 p-0">
                     <h4 class="fw-semibold">{{$seccion->nombre_seccion}}</h4>
-                    <p>{{$seccion->subtitulo_seccion}}</p>
 
                     <div class="col-lg-7 col-md-6 col-sm-12">
                         <!-- Radar Chart -->
@@ -710,6 +728,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="">
                                 <div id="polarPromedioGeneral"></div>
+                                {{-- Aviso cuando todos los promedios son 0 --}}
+                                <div id="avisoPromediosCero" class="d-none text-center py-5 px-4">
+                                    <div class="mb-3">
+                                        <i class="ti ti-chart-pie-off" style="font-size: 3rem; color: #c0c0c0;"></i>
+                                    </div>
+                                    <h6 class="fw-semibold text-muted">Sin datos para mostrar</h6>
+                                    <p class="text-muted" style="font-size: 0.85rem;">
+                                        Debes diligenciar correctamente tus áreas de vida para ver el gráfico de promedios.
+                                    </p>
+                                </div>
                             </div>
                             </div>
                         <!-- /Radar Chart -->
@@ -736,30 +764,219 @@ document.addEventListener('DOMContentLoaded', function() {
             @endif
 
             @if($seccion->tipoSeccion->nombre == 'encuesta')
-              <div class="row mt-10 m-0 p-0">
-                    <h4 class="fw-semibold">{{$seccion->nombre_seccion}}</h4>
-                    <p>{{$seccion->subtitulo_seccion}}</p>
-                    <div class="col-lg-12 col-md-12 col-sm-12">
-                        @foreach($seccion->metas as $meta)
-                        <div class="form-group mb-4">
-                          <h4> {{$meta->nombre}}</h4>
-                          <input @if($meta->requerida == true) required @else  @endif name="inputMeta-{{$meta->id}}" id="inputMeta-{{$meta->id}}"  class="form-control" placeholder="Ingresa tu {{$meta->nombre}}">
-                        </div>
-                        <div class="row">
-                          <h4> {{$configuracionRv->nombre_habitos}}</h4>
-                          @foreach($meta->habitos as $habito)
-                          <div class="col-lg-6 col-md-6 col-sm-12 mb-4 ">
-                            <input @if($habito->requerida == true) required @else  @endif name="inputHabitoMeta-{{$habito->id}}" id="inputHabitoMeta-{{$habito->id}}"   class="form-control" placeholder="Ingresa tu {{$habito->nombre}}">
-                          </div>
-                          @endforeach
-                        </div>
-                        <hr>
-                        @endforeach
+              <div class="row mt-10 m-0 p-0" id="seccionEncuesta">
+                <div class="col-12 mb-4">
+                  <h4 class="fw-semibold">{{$seccion->nombre_seccion}}</h4>
+                  <p>{{$seccion->subtitulo_seccion}}</p>
+                </div>
+
+                {{-- Contenedor donde se inyectan las tarjetas de meta dinámicamente --}}
+                <div id="contenedorMetas" class="col-12"></div>
+
+                {{-- Botón para agregar meta --}}
+                <div class="col-12 mt-3 d-flex justify-content-end align-items-center">
+                  <small id="textoLimiteMetas" class="text-muted me-3 d-none">
+                    Alcanzaste el máximo de <strong>{{ $configuracionRv->max_metas }}</strong> metas.
+                  </small>
+                  <button
+                    type="button"
+                    id="btnAgregarMeta"
+                    onclick="agregarMeta()"
+                    class="btn btn-primary w-100 rounded-pill px-5 py-2 waves-effect">
+                    <i class="ti ti-plus me-1"></i> Crear meta
+                  </button>
+                </div>
+
+                {{-- Template oculto para tarjeta de meta (clonado por JS) --}}
+                <template id="templateMeta">
+                  <div class="meta-card col-12 mt-4 p-4" style="border: 1px solid #e0e0e0; border-radius: 12px; background: #fafafa;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h6 class="mb-0 fw-semibold text-primary meta-titulo">Meta #<span class="meta-numero"></span></h6>
+                      <button type="button" class="btn btn-sm btn-label-danger rounded-pill" onclick="eliminarMeta(this)">
+                        <i class="ti ti-trash me-1"></i> 
+                      </button>
                     </div>
+
+                    {{-- Nombre de la meta --}}
+                    <div class="mb-3">
+                      <label class="form-label fw-semibold">Nombre de la meta <span class="text-danger">*</span></label>
+                      <input
+                        type="text"
+                        class="form-control input-nombre-meta"
+                        placeholder="Ej: Ahorrar dinero, Leer más..."
+                        required>
+                    </div>
+
+                    {{-- Sección asociada --}}
+                    <div class="mb-3">
+                      <label class="form-label fw-semibold">¿A qué área de tu vida pertenece? <span class="text-danger">*</span></label>
+                      <select class="form-select select-seccion-meta" required>
+                        <option value="">Selecciona un área...</option>
+                        @foreach($seccionesContador as $seccionOpc)
+                          <option value="{{ $seccionOpc->id }}">{{ $seccionOpc->nombre_seccion }}</option>
+                        @endforeach
+                      </select>
+                    </div>
+
+                    {{-- Hábitos de esta meta --}}
+                    <div class="mb-2">
+                      <label class="form-label fw-semibold">{{ $configuracionRv->nombre_habitos }}</label>
+                      <div class="contenedor-habitos row g-2"></div>
+                      <div class="d-flex justify-content-end align-items-center mt-2">
+                        <small class="texto-limite-habitos text-muted me-2 d-none">
+                          Máximo {{ $configuracionRv->max_habitos_por_meta }} hábitos por meta.
+                        </small>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary rounded-pill btn-agregar-habito"
+                          onclick="agregarHabito(this)" disabled>
+                          <i class="ti ti-plus me-1"></i> Agregar hábito
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                {{-- Template oculto para fila de hábito (clonado por JS) --}}
+                <template id="templateHabito">
+                  <div class="habito-item col-lg-6 col-md-6 col-sm-12">
+                    <div class="input-group mb-2">
+                      <input type="text" class="form-control" placeholder="Ej: Disminuir gastos hormiga...">
+                      <button type="button" class="btn btn-outline-danger" onclick="eliminarHabito(this)">
+                        <i class="ti ti-x"></i>
+                      </button>
+                    </div>
+                  </div>
+                </template>
               </div>
+
+              {{-- JavaScript para la sección encuesta --}}
+              <script>
+                (function () {
+                  const MAX_METAS        = {{ $configuracionRv->max_metas }};
+                  const MAX_HABITOS_META = {{ $configuracionRv->max_habitos_por_meta }};
+
+                  let contadorMetas = 0;
+
+                  // Escuchar cambios en el select de sección para habilitar/deshabilitar botón de hábitos
+                  document.getElementById('contenedorMetas').addEventListener('change', function(e) {
+                    if (e.target.classList.contains('select-seccion-meta')) {
+                      const tarjeta = e.target.closest('.meta-card');
+                      actualizarEstadoBotonHabito(tarjeta);
+                    }
+                  });
+
+                  /**
+                   * Reasigna los atributos name de todos los inputs de metas y hábitos
+                   * tras agregar o eliminar tarjetas, garantizando índices consecutivos.
+                   */
+                  function reasignarNombres() {
+                    const tarjetas = document.querySelectorAll('#contenedorMetas .meta-card');
+
+                    tarjetas.forEach((tarjeta, indiceMeta) => {
+                      // Número visible
+                      tarjeta.querySelector('.meta-numero').textContent = indiceMeta + 1;
+
+                      // Input nombre
+                      const inputNombre = tarjeta.querySelector('.input-nombre-meta');
+                      inputNombre.name = `metas[${indiceMeta}][nombre]`;
+
+                      // Select sección
+                      const selectSeccion = tarjeta.querySelector('.select-seccion-meta');
+                      selectSeccion.name = `metas[${indiceMeta}][seccion_rv_id]`;
+
+                      // Inputs hábitos
+                      const inputsHabito = tarjeta.querySelectorAll('.contenedor-habitos input[type="text"]');
+                      inputsHabito.forEach((inputHabito, indiceHabito) => {
+                        inputHabito.name = `metas[${indiceMeta}][habitos][${indiceHabito}]`;
+                      });
+                    });
+                  }
+
+                  /**
+                   * Actualiza el estado (habilitado/deshabilitado) del botón principal
+                   * y muestra el texto de límite cuando se alcanza max_metas.
+                   */
+                  function actualizarEstadoBotonMeta() {
+                    const total   = document.querySelectorAll('#contenedorMetas .meta-card').length;
+                    const btn     = document.getElementById('btnAgregarMeta');
+                    const aviso   = document.getElementById('textoLimiteMetas');
+
+                    btn.disabled = total >= MAX_METAS;
+                    aviso.classList.toggle('d-none', total < MAX_METAS);
+                  }
+
+                  /**
+                   * Actualiza el estado del botón "Agregar Hábito" dentro de una tarjeta.
+                   */
+                  function actualizarEstadoBotonHabito(tarjeta) {
+                    const total = tarjeta.querySelectorAll('.contenedor-habitos .habito-item').length;
+                    const btn   = tarjeta.querySelector('.btn-agregar-habito');
+                    const aviso = tarjeta.querySelector('.texto-limite-habitos');
+                    const selectArea = tarjeta.querySelector('.select-seccion-meta');
+
+                    btn.disabled = total >= MAX_HABITOS_META || selectArea.value === "";
+                    aviso.classList.toggle('d-none', total < MAX_HABITOS_META);
+                  }
+
+                  /** Agrega una nueva tarjeta de meta al contenedor. */
+                  window.agregarMeta = function () {
+                    const total = document.querySelectorAll('#contenedorMetas .meta-card').length;
+
+                    if (total >= MAX_METAS) {
+                      return;
+                    }
+
+                    const template = document.getElementById('templateMeta');
+                    const clon     = template.content.cloneNode(true);
+                    document.getElementById('contenedorMetas').appendChild(clon);
+
+                    contadorMetas++;
+                    reasignarNombres();
+                    actualizarEstadoBotonMeta();
+                  };
+
+                  /** Elimina la tarjeta de meta que contiene el botón pulsado. */
+                  window.eliminarMeta = function (btn) {
+                    const tarjeta = btn.closest('.meta-card');
+                    tarjeta.remove();
+
+                    reasignarNombres();
+                    actualizarEstadoBotonMeta();
+                  };
+
+                  /** Agrega un input de hábito dentro de la tarjeta correspondiente. */
+                  window.agregarHabito = function (btn) {
+                    const tarjeta   = btn.closest('.meta-card');
+                    const contenedor = tarjeta.querySelector('.contenedor-habitos');
+                    const total     = contenedor.querySelectorAll('.habito-item').length;
+
+                    if (total >= MAX_HABITOS_META) {
+                      return;
+                    }
+
+                    const template = document.getElementById('templateHabito');
+                    const clon     = template.content.cloneNode(true);
+                    contenedor.appendChild(clon);
+
+                    reasignarNombres();
+                    actualizarEstadoBotonHabito(tarjeta);
+                  };
+
+                  /** Elimina el input de hábito pulsado y reasigna los nombres. */
+                  window.eliminarHabito = function (btn) {
+                    const item    = btn.closest('.habito-item');
+                    const tarjeta = btn.closest('.meta-card');
+                    item.remove();
+
+                    reasignarNombres();
+                    actualizarEstadoBotonHabito(tarjeta);
+                  };
+                })();
+              </script>
             @endif
 
-            <div class="w-100 fixed-bottom py-5 px-6 px-sm-0 border-top" style="background-color: #f8f7fa">
+            <div class="w-100 fixed-bottom barra-inferior-fija py-3 px-4 px-sm-0 border-top" style="background-color: #f8f7fa">
                 <div class="col-12 col-sm-8 offset-sm-2 col-lg-6 offset-lg-3 d-grid gap-2 d-sm-flex  {{ $contador == 1 ? 'justify-content-sm-end' : 'justify-content-sm-between' }} ">
                   <button type="button" class="btn btn-label-secondary  rounded-pill btn-outline-secondary px-7 py-2 prev-step d-none" >
                     <span class="align-middle">Volver</span>

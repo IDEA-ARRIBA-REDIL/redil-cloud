@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RuedaDeLaVidaUser extends Model
 {
     use HasFactory;
+
     protected $table = 'rueda_de_la_vida_user';
+
     protected $guarded = [];
 
     public function campos(): BelongsToMany
@@ -33,5 +33,10 @@ class RuedaDeLaVidaUser extends Model
         return $this->belongsToMany(HabitosRv::class, 'habitos_rueda_de_la_vida', 'rueda_de_la_vida_id', 'habitos_rueda_vida_id')
             ->withPivot('valor')
             ->withTimestamps();
+    }
+
+    public function metasUsuario(): HasMany
+    {
+        return $this->hasMany(MetaUsuarioRv::class, 'rueda_de_la_vida_id');
     }
 }
