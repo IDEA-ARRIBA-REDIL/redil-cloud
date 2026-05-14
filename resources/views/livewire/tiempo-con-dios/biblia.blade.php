@@ -19,7 +19,7 @@
                 <span class="align-middle"><i class="ti ti-bookmark"></i> {{ $resaltado['cita'] }}</span>
               </button>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="javascript:void(0);" wire:click="verVersiculoResaltado( {{ $index }} )"><i class="ti ti-book"></i> Ver</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0);" wire:click="previsualizarVersiculo( {{ $index }} )"><i class="ti ti-book"></i> Ver</a></li>
                 <li><a class="dropdown-item" href="javascript:void(0);" wire:click="desmarcar( {{ $index }} )"><i class="ti ti-bookmark-off"></i> Desmarcar</a></li>
 
               </ul>
@@ -29,6 +29,33 @@
       @endif
       <!-- /Versiculos favoritos -->
     </div>
+
+    <!-- Modal Versiculo Rápido -->
+    @teleport('body')
+    <div class="modal fade" id="modalVersiculoResaltado_{{ $name_id }}" tabindex="-1" wire:ignore.self aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-black" id="modalVersiculoTitle">
+               {{ $versiculoViendo['cita_larga'] ?? 'Cargando...' }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body fs-5 text-black">
+            @if($versiculoViendo && isset($versiculoViendo['versiculos']))
+                @foreach ($versiculoViendo['versiculos'] as $versiculo)
+                    <p class="mb-2"><strong><sup>{{ $versiculo['numero'] }}</sup></strong> {{ $versiculo['texto'] }}</p>
+                @endforeach
+            @endif
+          </div>
+          <div class="modal-footer d-flex justify-content-between">
+             <button type="button" class="btn btn-label-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+             <button type="button" class="btn btn-primary rounded-pill" wire:click="verVersiculoResaltado({{ $indexVersiculoViendo }})" data-bs-dismiss="modal">Ver capítulo completo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    @endteleport
 
     <!-- modalBiblia -->
     @teleport('body')
@@ -182,7 +209,7 @@
   <script>
     $wire.on('abrirModal', (event) => {
       // Solo actuar si el modal corresponde a ESTA instancia
-      if (event.nombreModal === 'modalBiblia_{{ $name_id }}') {
+      if (event.nombreModal === 'modalBiblia_{{ $name_id }}' || event.nombreModal === 'modalVersiculoResaltado_{{ $name_id }}') {
         const modalEl = document.getElementById(event.nombreModal);
         const modalBus = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
         modalBus.show();

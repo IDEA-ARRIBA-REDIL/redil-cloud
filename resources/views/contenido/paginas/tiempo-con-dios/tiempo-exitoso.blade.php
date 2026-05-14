@@ -25,7 +25,8 @@ $configData = Helper::appClasses();
         <div class="row">
             <div class="col-12 col-lg-12 d-flex align-items-center">
                 <div class=" mx-auto my-auto text-center">
-                    <img src="{{ Storage::url('generales/img/otros/tiempo_con_Dios_respuesta.png') }}" class="img-fluid w-50 p-0">
+                  
+                     <img style="width: 240px; height: 240px; object-fit: contain;" src="{{ Storage::disk('global_media')->url('Inscipcion-exitosa.png') }}" alt="Inscripción exitosa" class="p-0">
                     <h2 class="text-black fw-bold mb-0 lh-sm mt-3">{{ $cantidadRachaSemanal > 1 ? '¡Felicidades!' : '¡Felicidades andas en racha!'}}</h2>
                     <p class="text-black mt-1 mb-5">
                       {{ $cantidadRachaSemanal > 1 ? 'Completaste tu tiempo con Dios, sigue así, y entra en racha.' : 'Completaste tu tiempo con Dios'}}

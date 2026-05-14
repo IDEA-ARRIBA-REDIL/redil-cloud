@@ -1,32 +1,35 @@
 <div class="{{ $class }}">
     <div class="card shadow text-white" style="background-color: #1C1C1E !important; border-radius: 25px">
         <div class="card-body">
-            <div class="row mx-3 mt-4">
-                <div class="col-4 col-md-3 col-xl-4 d-flex align-items-center">
+            <div class="row">
+                
+                <div class="order-2 order-md-1 col-4 col-md-3 text-center py-auto">
                   <img class="card-img img-fluid" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$imgAlbumActual) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$imgAlbumActual) }}"  alt="album">
                 </div>
-                <div class="col-8 col-md-9 col-xl-8 my-2 text-md-start">
+                <div class="order-2 order-md-1 col-8 col-md-6 text-md-start">
                   <h4 class="text-white text-truncate mb-0">{{ $cancionActual->nombre }} </h4>
-                  <p class="text-muted  mb-0">{{ $cancionActual->album ? $cancionActual->album->nombre : 'Álbum
+                  <p class="text-muted text-truncate  mb-0">{{ $cancionActual->album ? $cancionActual->album->nombre : 'Álbum
                       desconocido'}}</p>
-                  <p class="mb-0">{{ $cancionActual->artista ? $cancionActual->artista : 'Artista desconocido'}}</p>
+                  <p class="mb-0 text-truncate ">{{ $cancionActual->artista ? $cancionActual->artista : 'Artista desconocido'}}</p>
                 </div>
+                <div class="order-0 order-md-3 col-12 col-md-3 px-1 text-end mb-2">
+                  <button id="playlist" type="button" class="btn rounded-pill text-white btn-xs px-3 py-2" wire:click="abrirPlaylist" wire:loading.attr="disabled">
+                    <i class="ti ti-playlist ti-md"></i> Playlist
+                  </button>
+                </div>
+                
             </div>
             <div class="row mt-5">
 
-              <div  class="col-8 col-lg-9 d-flex justify-content-center">
-                  <audio class="d-none" id="cancion">
+              <div  class="col-12 col-lg-12 d-flex justify-content-center">
+                  <audio class="d-none" id="cancion" wire:ignore>
                       <source src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/audios/'.$cancionActual->archivo) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/audios/'.$cancionActual->archivo) }}" type="audio/mp3">
                   </audio>
-                  <div class="d-flex flex-grow-1">
+                  <div class="d-flex flex-grow-1" wire:ignore>
                       <span id="duracion" class="my-auto mx-3 fs-6">{{ $duracionCancionActual }}</span>
                       <input id="progreso" type="range" value="0" class="flex-grow-1 my-auto " style="accent-color: #f5365c;">
                       <span id="tiempoRestante" class="my-auto mx-3">0:00</span>
                   </div>
-              </div>
-              <div class="col-4 col-lg-3 d-flex justify-content-center">
-                <i class="ti ti-volume ti-lg my-auto me-1"></i>
-                <input id="volumen-control" type="range" min="0" max="1" step="0.01" value="1" class="my-auto" style="width: 100%; accent-color: #f5365c;">
               </div>
 
             </div>
@@ -40,21 +43,24 @@
                   @endif
                 </button>
               </div>
-              <div class="col-8 col-lg-8 d-flex justify-content-center">
+              <div class="col-2 col-lg-2 d-flex justify-content-center">
                 <button id="anteriorCancion" type="button" class="btn rounded-pill text-white btn-md my-auto" wire:click="anteriorCancion" wire:loading.attr="disabled">
                   <i class="ti ti-player-track-prev ti-md"></i>
                 </button>
-                <button id="btnReproducirPausar" type="button" class="btn rounded-pill text-white btn-lg mx-3" >
+              </div>
+              <div class="col-2 col-lg-3 d-flex justify-content-center">
+                <button id="btnReproducirPausar" type="button" class="btn rounded-pill text-white btn-lg mx-3" wire:ignore>
                     <i id="iconoControl" class="ti ti-player-{{ $iconoPlayPause ? $iconoPlayPause : 'play'}}" style="font-size: 50px !important;"></i>
                 </button>
+              </div>
+              <div class="col-2 col-lg-2 d-flex justify-content-center">
                 <button id="anteriorSiguiente" type="button" class="btn rounded-pill text-white btn-md  my-auto" wire:click="siguienteCancion" wire:loading.attr="disabled">
                   <i class="ti ti-player-track-next ti-md"></i>
                 </button>
               </div>
-                <div class="col-2 col-lg-2 d-flex justify-content-center">
-                <button id="playlist" type="button" class="btn rounded-pill text-white btn-md my-auto" wire:click="abrirPlaylist" wire:loading.attr="disabled">
-                  <i class="ti ti-playlist ti-md"></i>
-                </button>
+              <div class="col-4 col-lg-3 d-flex justify-content-center" wire:ignore>
+                <i class="ti ti-volume ti-lg my-auto me-1"></i>
+                <input id="volumen-control" type="range" min="0" max="1" step="0.01" value="1" class="my-auto" style="width: 100%; accent-color: #f5365c;">
               </div>
 
             </div>

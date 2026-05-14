@@ -17,6 +17,7 @@ class TiempoConDiosController extends Controller
 {
     public function historial(Request $request)
     {
+        
         $usuario = auth()->user();
         $existeTiemposConDios = $usuario->tiemposConDios()->first();
 
@@ -30,14 +31,23 @@ class TiempoConDiosController extends Controller
                 : Carbon::now()->format('Y-m-d');
 
             $tiemposConDios = $usuario->tiemposConDios()
+                ->where('estado', 'completado')
                 ->whereBetween('fecha', [$filtroFechaIni, $filtroFechaFin])
                 ->orderBy('fecha', 'desc')
                 ->get();
+                        
+                /*foreach ($tiemposConDios as $tiempoConDios) {
+                    $tiempoConDios->fecha = Carbon::parse($tiempoConDios->fecha)->subDay()->format('Y-m-d');
+                    $tiempoConDios->save();
+                }*/
+                
+
 
             $meses = Helpers::meses('largo');
 
             $fechaHoy = Carbon::now()->format('Y-m-d');
-            $tiempoConDiosHoy = $usuario->tiemposConDios()->where('fecha', $fechaHoy)->select('id')->count();
+            $tiempoConDiosHoy = $usuario->tiemposConDios()->where('fecha', $fechaHoy)->first();
+            $estadoHoy = $tiempoConDiosHoy ? $tiempoConDiosHoy->estado : null;
 
             return view('contenido.paginas.tiempo-con-dios.historial', [
                 'usuario' => $usuario,
@@ -45,7 +55,7 @@ class TiempoConDiosController extends Controller
                 'filtroFechaIni' => $filtroFechaIni,
                 'filtroFechaFin' => $filtroFechaFin,
                 'meses' => $meses,
-                'tiempoConDiosHoy' => $tiempoConDiosHoy,
+                'estadoHoy' => $estadoHoy,
             ]);
         } else {
             return redirect()->route('tiempoConDios.bienvenida');
@@ -59,14 +69,67 @@ class TiempoConDiosController extends Controller
         return view('contenido.paginas.tiempo-con-dios.bienvenida', ['configuracion' => $configuracion]);
     }
 
-    public function nuevo()
+    public function modoLectura()
     {
         $usuario = auth()->user();
 
         $fechaHoy = Carbon::now()->format('Y-m-d');
-        $tiempoConDiosHoy = $usuario->tiemposConDios()->where('fecha', $fechaHoy)->select('id')->count();
-        if ($tiempoConDiosHoy > 0) {
-            return Redirect::to('pagina-no-encontrada');
+        $tiempoConDiosHoy = $usuario->tiemposConDios()->where('fecha', $fechaHoy)->first();
+        
+        if ($tiempoConDiosHoy) {
+            if ($tiempoConDiosHoy->estado === 'completado') {
+                return Redirect::to('pagina-no-encontrada');
+            } else {
+                return Redirect::route('tiempoConDios.nuevo');
+            }
+        }
+
+        return view('contenido.paginas.tiempo-con-dios.modo-lectura');
+    }
+
+    public function nuevo(Request $request)
+    {
+        $usuario = auth()->user();
+
+        $fechaHoy = Carbon::now()->format('Y-m-d');
+        $tiempoConDiosHoy = $usuario->tiemposConDios()->where('fecha', $fechaHoy)->first();
+        
+        $pasoActual = 1;
+        $respuestasPrevias = [];
+        
+        // Si no hay borrador, crearlo inmediatamente
+        if (!$tiempoConDiosHoy) {
+            $modo = $request->query('modo', 'propia');
+            $tiempoConDiosHoy = TiempoConDios::create([
+                'user_id' => $usuario->id,
+                'fecha' => $fechaHoy,
+                'estado' => 'en_progreso',
+                'paso_actual' => 1,
+                'modo' => $modo
+            ]);
+        }
+
+        $modoLectura = $tiempoConDiosHoy->modo;
+
+        if ($tiempoConDiosHoy) {
+            if ($tiempoConDiosHoy->estado === 'completado') {
+                return Redirect::to('pagina-no-encontrada');
+            } else {
+                // Está en progreso
+                $pasoActual = $tiempoConDiosHoy->paso_actual;
+                // Si el borrador ya tiene plan_lector_id, forzamos modo plan, si no usamos el modo de la DB.
+                $modoLectura = $tiempoConDiosHoy->plan_lector_id ? 'plan' : $tiempoConDiosHoy->modo;
+                
+                // Cargar las respuestas desde la tabla pivote
+                $camposGuardados = $tiempoConDiosHoy->campos;
+                foreach ($camposGuardados as $campo) {
+                    try {
+                        $respuestasPrevias[$campo->name_id] = Crypt::decryptString($campo->pivot->valor);
+                    } catch (DecryptException $e) {
+                        $respuestasPrevias[$campo->name_id] = '';
+                    }
+                }
+            }
         }
 
         $secciones = SeccionTiempoConDios::orderBy('orden', 'asc')->get();
@@ -78,6 +141,9 @@ class TiempoConDiosController extends Controller
             'secciones' => $secciones,
             'cantidadTotalSecciones' => $cantidadTotalSecciones,
             'configuracion' => $configuracion,
+            'pasoActual' => $pasoActual,
+            'respuestasPrevias' => $respuestasPrevias,
+            'modoLectura' => $modoLectura,
         ]);
     }
 
@@ -85,8 +151,9 @@ class TiempoConDiosController extends Controller
     {
         $user = auth()->user();
         $fechaHoy = Carbon::now()->format('Y-m-d');
-        $tiempoConDiosHoy = $user->tiemposConDios()->where('fecha', $fechaHoy)->select('id')->count();
-        if ($tiempoConDiosHoy > 0) {
+        
+        $tiempoConDiosHoy = $user->tiemposConDios()->where('fecha', $fechaHoy)->first();
+        if ($tiempoConDiosHoy && $tiempoConDiosHoy->estado === 'completado') {
             return Redirect::to('pagina-no-encontrada');
         }
 
@@ -94,22 +161,52 @@ class TiempoConDiosController extends Controller
             $query->where('es_input', true);
         })->get();
 
-        $tiempoConDios = TiempoConDios::create([
-            'fecha' => Carbon::now()->format('Y-m-d'),
-            'user_id' => auth()->user()->id,
-        ]);
+        if (!$tiempoConDiosHoy) {
+            $tiempoConDiosHoy = TiempoConDios::create([
+                'fecha' => Carbon::now()->format('Y-m-d'),
+                'user_id' => auth()->user()->id,
+                'estado' => 'en_progreso',
+                'paso_actual' => 1
+            ]);
+        }
 
-        if ($tiempoConDios) {
-            $dataToAttach = [];
-            foreach ($camposTiempoConDios as $campo) {
-                if (isset($request[$campo->name_id])) {
-                    //  $dataToAttach[$campo->id] = ['valor' => json_encode($request[$campo->name_id])];
-                    // Encriptar el valor antes de guardar
-                    $valorEncriptado = Crypt::encryptString($request[$campo->name_id]);
-                    $tiempoConDios->campos()->attach($campo->id, ['valor' => $valorEncriptado]);
-                }
+        foreach ($camposTiempoConDios as $campo) {
+            if (isset($request[$campo->name_id])) {
+                $valorEncriptado = Crypt::encryptString($request[$campo->name_id]);
+                $tiempoConDiosHoy->campos()->detach($campo->id);
+                $tiempoConDiosHoy->campos()->attach($campo->id, ['valor' => $valorEncriptado]);
             }
-            // $tiempoConDios->campos()->attach($dataToAttach);
+        }
+        $tiempoConDiosHoy->update(['estado' => 'completado']);
+
+        // Marcar día del plan lector como completado
+        if ($tiempoConDiosHoy->plan_lector_id && $tiempoConDiosHoy->plan_lector_dia_id) {
+            $plan = \App\Models\PlanLector::find($tiempoConDiosHoy->plan_lector_id);
+            if ($plan) {
+                \Illuminate\Support\Facades\DB::table('plan_lector_dia_users')->updateOrInsert(
+                    ['user_id' => $user->id, 'plan_lector_dia_id' => $tiempoConDiosHoy->plan_lector_dia_id],
+                    ['fecha_completado' => Carbon::now(), 'created_at' => Carbon::now(), 'updated_at' => Carbon::now()]
+                );
+
+                // Actualizar progreso total del usuario en el plan
+                $totalDias = $plan->dias()->count();
+                $completadosCount = \Illuminate\Support\Facades\DB::table('plan_lector_dia_users')
+                    ->where('user_id', $user->id)
+                    ->whereIn('plan_lector_dia_id', $plan->dias()->pluck('id'))
+                    ->count();
+                
+                $porcentaje = ($totalDias > 0) ? round(($completadosCount / $totalDias) * 100) : 100;
+
+                \Illuminate\Support\Facades\DB::table('plan_lector_users')
+                    ->where('plan_lector_id', $plan->id)
+                    ->where('user_id', $user->id)
+                    ->update([
+                        'porcentaje_progreso' => $porcentaje,
+                        'estado' => ($porcentaje >= 100) ? 'completado' : 'inscrito'
+                    ]);
+
+                $plan->recalcularPromedio();
+            }
         }
 
         $cantidadRachaSemanal = $user->cantidadRachaSemanal();

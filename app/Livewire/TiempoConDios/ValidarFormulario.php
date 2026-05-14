@@ -5,6 +5,9 @@ namespace App\Livewire\TiempoConDios;
 use App\Models\CampoTiempoConDios;
 use App\Models\TipoCampoTiempoConDios;
 use Livewire\Component;
+use App\Models\TiempoConDios;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Crypt;
 
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\On;
@@ -16,7 +19,7 @@ class ValidarFormulario extends Component
 
 
    #[On('validar')]
-    public function validar($seccionId, $dataSeccion)
+    public function validar($seccionId, $dataSeccion, $pasoActual = 1)
     {
 
       $validacion = [];
@@ -46,6 +49,32 @@ class ValidarFormulario extends Component
         $this->dispatch('validacionFormulario', resultado: false, errores:$this->errores, data: $dataSeccion );
       } else {
         $this->errores = "";
+
+        // Autoguardado del borrador
+        $user = auth()->user();
+        $fechaHoy = Carbon::now()->format('Y-m-d');
+
+        // Buscar o crear el registro en progreso para hoy
+        $tiempoConDios = TiempoConDios::firstOrCreate(
+            ['user_id' => $user->id, 'fecha' => $fechaHoy, 'estado' => 'en_progreso'],
+            ['paso_actual' => 1]
+        );
+
+        // Guardar las respuestas del paso actual
+        foreach ($campos as $campo) {
+            if (isset($dataSeccion[$campo->name_id])) {
+                $valorEncriptado = Crypt::encryptString($dataSeccion[$campo->name_id]);
+                // Remover el valor anterior si existe, para no duplicar en pivot
+                $tiempoConDios->campos()->detach($campo->id);
+                $tiempoConDios->campos()->attach($campo->id, ['valor' => $valorEncriptado]);
+            }
+        }
+
+        // Actualizar el paso actual en BD si el usuario está avanzando
+        if ($pasoActual >= $tiempoConDios->paso_actual) {
+            $tiempoConDios->update(['paso_actual' => $pasoActual + 1]);
+        }
+
         $this->dispatch('validacionFormulario', resultado: true, errores:$this->errores, data: $dataSeccion,  seccionId: $seccionId);
       }
     }

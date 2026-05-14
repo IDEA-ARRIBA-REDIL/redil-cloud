@@ -55,7 +55,7 @@ $configData = Helper::appClasses();
   <script>
     $(document).ready(function ()
     {
-      let actualStep = 1;
+      let actualStep = {{ $pasoActual ?? 1 }};
       let maximoStep = @json($cantidadTotalSecciones);
 
       $(".next-step").click(function ()
@@ -72,7 +72,7 @@ $configData = Helper::appClasses();
           data[nameInput] = this.value;
         });
         // Llamar al método validar del componente Livewire
-        Livewire.dispatch('validar', { seccionId: seccionId, dataSeccion: data });
+        Livewire.dispatch('validar', { seccionId: seccionId, dataSeccion: data, pasoActual: actualStep });
         Livewire.dispatch('pausarExterno');
       });
 
@@ -110,11 +110,26 @@ $configData = Helper::appClasses();
           // La validación falló, mostrar los errores al usuario
 
           // Mostrar los errores debajo de cada campo
+          let primerCampoConError = null;
+          
           $.each(e.errores, function(campo, mensajes) {
+            if (!primerCampoConError) {
+              primerCampoConError = campo;
+            }
             var input = $("body input[name="+campo+"]");
             var divError = $('<div class="text-danger ti-12px mt-2"> <i class="ti ti-circle-x"></i> ' + mensajes + '</div>');
             $('#error'+campo).html(divError);
           });
+
+          // Desplazar la pantalla hacia el primer error encontrado
+          if (primerCampoConError) {
+            var targetError = $('#error' + primerCampoConError);
+            if (targetError.length) {
+              $('html, body').animate({
+                scrollTop: targetError.parent().offset().top - 120
+              }, 500);
+            }
+          }
         }
       });
 
@@ -142,7 +157,7 @@ $configData = Helper::appClasses();
   <div class="col-12 min-vh-100">
     <nav class="navbar navbar-expand-lg navbar-light bg-menu-theme p-3 row justify-content-md-center">
       <div class="col-3 text-start">
-        <button type="button" class="btn rounded-pill waves-effect waves-light text-white prev-step d-none">
+        <button type="button" class="btn rounded-pill waves-effect waves-light text-white prev-step {{ ($pasoActual ?? 1) > 1 ? '' : 'd-none' }}">
           <span class="ti-xs ti ti-arrow-left me-2"></span>
           <span class="d-none d-md-block fw-normal">Volver</span>
         </button>
@@ -158,7 +173,7 @@ $configData = Helper::appClasses();
       </div>
     </nav>
 
-    <div class="pt-5 px-7 px-sm-0" style="padding-bottom: 100px;">
+    <div class="pt-5 px-7 px-sm-0" style="padding-bottom: 150px;">
       <div class="col-12 col-sm-8 offset-sm-2 col-lg-8  offset-lg-2">
         <form id="formulario" role="form" class="forms-sample" method="POST" action="{{ route('tiempoConDios.crear') }}" enctype="multipart/form-data">
           @csrf
@@ -167,7 +182,7 @@ $configData = Helper::appClasses();
           @endphp
           @foreach ($secciones as $seccion)
               <!-- Secciones -->
-              <div class="step row {{$contador == 1 ? '' : 'd-none'}}" id="step-{{$contador}}" >
+              <div class="step row {{$contador == ($pasoActual ?? 1) ? '' : 'd-none'}}" id="step-{{$contador}}" >
                 <div class="p-2 col-12">
                   <div class="d-flex align-items-start p-2 mt-1">
                     <div class="badge rounded rounded-circle bg-label-primary p-3 me-1 rounded">
@@ -201,7 +216,7 @@ $configData = Helper::appClasses();
                         {!! $campo->html !!}
                       @endif
 
-                      <textarea id="{{$campo->name_id}}" placeholder="{{ $campo->placeholder }}" name="{{$campo->name_id}}" class="form-control"></textarea>
+                      <textarea id="{{$campo->name_id}}" placeholder="{{ $campo->placeholder }}" name="{{$campo->name_id}}" class="form-control">{{ $respuestasPrevias[$campo->name_id] ?? '' }}</textarea>
 
                       @if($campo->informacion_de_apoyo)
                       <div class="ti-12px mt-2"> <i class="text-info ti ti-info-circle me-1"></i>{{ $campo->informacion_de_apoyo }}</div>
@@ -215,26 +230,35 @@ $configData = Helper::appClasses();
                     </div>
                     @elseif($campo->tipo->id == 3)
                     <div class="{{ $campo->class }}">
-                      <img class="img-responsive" src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/mi-tiempo-con-dios/'.$campo->url_imagen) : Storage::url($configuracion->ruta_almacenamiento.'/img/mi-tiempo-con-dios/'.$campo->url_imagen)}}" alt="{{ $campo->nombre }}" />
+                       <img class="img-responsive" src="{{ tenant_asset($configuracion->ruta_almacenamiento . '/img/tiempo-con-dios/' . $campo->url_imagen) }}" alt="{{ $campo->nombre }}" />
                     </div>
                     @elseif($campo->tipo->id == 4)
                       @livewire('TiempoConDios.reproductor', [
                         'class' => $campo->class
                       ])
                     @elseif($campo->tipo->id == 5)
-                      @livewire('TiempoConDios.biblia', [
-                        'class' => $campo->class,
-                        'name_id' => $campo->name_id
-                      ])
+                      @if(isset($modoLectura) && $modoLectura === 'plan')
+                        @livewire('TiempoConDios.bibliaPlanLector', [
+                          'class' => $campo->class,
+                          'name_id' => $campo->name_id,
+                          'respuestasPrevias' => $respuestasPrevias[$campo->name_id] ?? null
+                        ])
+                      @else
+                        @livewire('TiempoConDios.biblia', [
+                          'class' => $campo->class,
+                          'name_id' => $campo->name_id,
+                          'respuestasPrevias' => $respuestasPrevias[$campo->name_id] ?? null
+                        ])
+                      @endif
 
                     @endif
 
                   @endforeach
                 </div>
 
-               <div class="w-100 fixed-bottom py-5 px-6 px-sm-0 border-top" style="background-color: #f8f7fa">
+                <div class="w-100 fixed-bottom py-5 px-6 px-sm-0 border-top" style="background-color: #f8f7fa">
                   <div class="col-12 col-sm-8 offset-sm-2 col-lg-6 offset-lg-3 d-grid gap-2 d-sm-flex  {{ $contador == 1 ? 'justify-content-sm-end' : 'justify-content-sm-between' }} ">
-                    <button type="button" class="btn btn-label-secondary  rounded-pill btn-outline-secondary px-7 py-2 prev-step d-none" >
+                    <button type="button" class="btn btn-label-secondary  rounded-pill btn-outline-secondary px-7 py-2 prev-step {{ ($pasoActual ?? 1) > 1 ? '' : 'd-none' }}" >
                       <span class="align-middle">Volver</span>
                     </button>
                     <button type="{{$contador == $cantidadTotalSecciones ? 'submit': 'button' }}" class="btn  {{$contador == $cantidadTotalSecciones ? 'btnGuardar': '' }} btn-primary rounded-pill  {{$contador != $cantidadTotalSecciones ? 'next-step': '' }} px-7 py-2" data-seccion="{{$seccion->id}}">

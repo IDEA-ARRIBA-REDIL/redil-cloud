@@ -17,7 +17,7 @@ class CampoTiempoConDiosSeeder extends Seeder
             'seccion_tiempo_con_dios_id' => '1',
             'tipo_campo_tiempo_con_dios_id' => '3',
             'nombre' => 'Imagen 1',
-            'url_imagen' => 'adoracion_y_oracion.png',
+            'url_imagen' => 'Adoracion---Mi-tiempo-con-Dios-.png',
             'class' => 'mb-3 col-12 col-lg-6 text-center d-none d-sm-block',
             'orden' => 1,
         ]);
@@ -40,7 +40,7 @@ class CampoTiempoConDiosSeeder extends Seeder
             'orden' => 1,
         ]);
 
-        CampoTiempoConDios::firstOrCreate([
+        /*CampoTiempoConDios::firstOrCreate([
             'seccion_tiempo_con_dios_id' => '2',
             'tipo_campo_tiempo_con_dios_id' => '2',
             'nombre' => 'Subtitulo 1',
@@ -48,81 +48,137 @@ class CampoTiempoConDiosSeeder extends Seeder
             'html' => '<hr>
             <p class="text-black my-6 fs-6">Diligencia la siguiente información</p>',
             'orden' => 2,
+        ]);*/
+
+        // campos de la seccion 3 "PAMPE"
+
+        CampoTiempoConDios::firstOrCreate([
+            'seccion_tiempo_con_dios_id' => '3',
+            'tipo_campo_tiempo_con_dios_id' => '3',
+            'nombre' => 'Imagen Pecados',
+            'url_imagen' => 'P.png',
+            'class' => 'mb-3 col-12 col-lg-5 text-center',
+            'orden' => 1,
         ]);
 
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '2',
+            'seccion_tiempo_con_dios_id' => '3',
             'tipo_campo_tiempo_con_dios_id' => '1',
             'nombre' => 'Pecados',
             'titulo' => '',
-            'html' => '<h5 class="mb-1"><span style="color:#421EB7" class="text-secundary fw-bold fs-4">P</span>  <span class="my-auto fw-normal ms-3">Pecados y errores que debo confesar</span></h5>',
+            'html' => '<h5 class="mb-1"><span class="my-auto fw-normal ms-3">Pecados y errores que debo confesar</span></h5>',
             'name_id' => 'pecados',
             'placeholder' => 'Ingrese la información',
             'requerido' => true,
-            'class' => 'mb-3 col-12',
+            'class' => 'mb-3 col-12 col-md-7 d-flex justify-content-center flex-column align-items-start',
             'informacion_de_apoyo' => '',
-            'orden' => 3,
+            'orden' => 2,
+        ]);
+
+        // campos de la seccion 4 "PAMPE"
+
+        CampoTiempoConDios::firstOrCreate([
+            'seccion_tiempo_con_dios_id' => '4',
+            'tipo_campo_tiempo_con_dios_id' => '3',
+            'nombre' => 'Imagen PAMPE Actitudes',
+            'url_imagen' => 'A.png',
+            'class' => 'mb-3 col-12 col-lg-5 text-center',
+            'orden' => 1,
         ]);
 
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '2',
+            'seccion_tiempo_con_dios_id' => '4',
             'tipo_campo_tiempo_con_dios_id' => '1',
             'nombre' => 'Actitudes',
             'titulo' => '',
-            'html' => '<h5 class="mb-1"><span style="color:#421EB7" class="text-secundary fw-bold fs-4">A</span>  <span class="my-auto fw-normal ms-3">Actitudes que debo adoptar</span></h5>',
+            'html' => '<h5 class="mb-1"><span class="my-auto fw-normal ms-3">Actitudes que debo adoptar</span></h5>',
             'name_id' => 'actitudes',
             'placeholder' => 'Ingrese la información',
             'requerido' => true,
-            'class' => 'mb-3 col-12',
+            'class' => 'mb-3 col-12 col-md-7 d-flex justify-content-center flex-column align-items-start',
             'informacion_de_apoyo' => '',
-            'orden' => 4,
+            'orden' => 2,
         ]);
 
+        // campos de la seccion 5 "PAMPE"
+
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '2',
+            'seccion_tiempo_con_dios_id' => '5',
+            'tipo_campo_tiempo_con_dios_id' => '3',
+            'nombre' => 'Imagen PAMPE Mandamientos',
+            'url_imagen' => 'M.png',
+            'class' => 'mb-3 col-12 col-lg-5 text-center',
+            'orden' => 1,
+        ]);        
+
+        CampoTiempoConDios::firstOrCreate([
+            'seccion_tiempo_con_dios_id' => '5',
             'tipo_campo_tiempo_con_dios_id' => '1',
             'nombre' => 'Mandamientos',
             'titulo' => '',
-            'html' => '<h5 class="mb-1"><span style="color:#421EB7" class="text-secundary fw-bold fs-4">M</span>  <span class="my-auto fw-normal ms-3">Mandamientos que debo obedecer</span></h5>',
+            'html' => '<h5 class="mb-1"><span class="my-auto fw-normal ms-3">Mandamientos que debo obedecer</span></h5>',
             'name_id' => 'mandamientos',
             'placeholder' => 'Ingrese la información',
             'requerido' => true,
-            'class' => 'mb-3 col-12',
+            'class' => 'mb-3 col-12 col-md-7 d-flex justify-content-center flex-column align-items-start',
             'informacion_de_apoyo' => '',
-            'orden' => 5,
+            'orden' =>  2,
         ]);
 
+        // campos de la seccion 6 "PAMPE"
+
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '2',
+            'seccion_tiempo_con_dios_id' => '6',
+            'tipo_campo_tiempo_con_dios_id' => '3',
+            'nombre' => 'Imagen PAMPE Promesas',
+            'url_imagen' => 'P_1.png',
+            'class' => 'mb-3 col-12 col-lg-5 text-center',
+            'orden' => 1,
+        ]);
+        
+
+        CampoTiempoConDios::firstOrCreate([
+            'seccion_tiempo_con_dios_id' => '6',
             'tipo_campo_tiempo_con_dios_id' => '1',
             'nombre' => 'Promesas',
             'titulo' => '',
-            'html' => '<h5 class="mb-1"><span style="color:#421EB7" class="text-secundary fw-bold fs-4">P</span>  <span class="my-auto fw-normal ms-3">Promesas que debo declarar</span></h5>',
+            'html' => '<h5 class="mb-1"><span class="my-auto fw-normal ms-3">Promesas que debo declarar</span></h5>',
             'name_id' => 'promesas',
             'placeholder' => 'Ingrese la información',
             'requerido' => true,
-            'class' => 'mb-3 col-12',
+            'class' => 'mb-3 col-12 col-md-7 d-flex justify-content-center flex-column align-items-start',
             'informacion_de_apoyo' => '',
-            'orden' => 6,
+            'orden' => 2,
+        ]);
+
+        // campos de la seccion 7 "PAMPE"
+
+        CampoTiempoConDios::firstOrCreate([
+            'seccion_tiempo_con_dios_id' => '7',
+            'tipo_campo_tiempo_con_dios_id' => '3',
+            'nombre' => 'Imagen PAMPE Promesas',
+            'url_imagen' => 'E.png',
+            'class' => 'mb-3 col-12 col-lg-5 text-center',
+            'orden' => 1,
         ]);
 
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '2',
+            'seccion_tiempo_con_dios_id' => '7',
             'tipo_campo_tiempo_con_dios_id' => '1',
             'nombre' => 'Ejemplos',
             'titulo' => '',
-            'html' => '<h5 class="mb-1"><span style="color:#421EB7" class="text-secundary fw-bold fs-4">E</span>  <span class="my-auto fw-normal ms-3">Ejemplos que quiero seguir o imitar</span></h5>',
+            'html' => '<h5 class="mb-1"><span class="my-auto fw-normal ms-3">Ejemplos que quiero seguir o imitar</span></h5>',
             'name_id' => 'ejemplos',
             'placeholder' => 'Ingrese la información',
             'requerido' => true,
-            'class' => 'mb-3 col-12',
+            'class' => 'mb-3 col-12 col-md-7 d-flex justify-content-center flex-column align-items-start',
             'informacion_de_apoyo' => '',
-            'orden' => 7,
+            'orden' => 2,
         ]);
 
-        // campos de la seccion 3
+        // campos de la seccion 8
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '3',
+            'seccion_tiempo_con_dios_id' => '8',
             'tipo_campo_tiempo_con_dios_id' => '2',
             'nombre' => 'Pasos para hablar con Dios',
             'class' => 'mb-3 mt-3 col-12 col-md-12',
@@ -134,17 +190,17 @@ class CampoTiempoConDiosSeeder extends Seeder
         ]);
 
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '3',
+            'seccion_tiempo_con_dios_id' => '8',
             'tipo_campo_tiempo_con_dios_id' => '3',
             'nombre' => 'Imagen 1',
-            'url_imagen' => 'hablar_con_Dios.png',
+            'url_imagen' => 'Oracion---Mi-tiempo-con-Dios-.png',
             'class' => 'mb-3 col-12 col-md-12',
             'orden' => 2,
         ]);
 
-        // campos de la seccion 4
+        // campos de la seccion 9
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '4',
+            'seccion_tiempo_con_dios_id' => '9',
             'tipo_campo_tiempo_con_dios_id' => '1',
             'nombre' => '¿Qué te habló Dios?',
             'html' => '<h5 class="mb-1"><span class="my-auto fw-normal">¿Qué te habló Dios?</span></h5>',
@@ -157,7 +213,7 @@ class CampoTiempoConDiosSeeder extends Seeder
         ]);
 
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '4',
+            'seccion_tiempo_con_dios_id' => '9',
             'tipo_campo_tiempo_con_dios_id' => '1',
             'nombre' => '¿Cómo cambia esto tus perspectivas?',
             'html' => '<h5 class="mb-1"><span class="my-auto fw-normal">¿Cómo cambia esto tus perspectivas?</span></h5>',
@@ -170,7 +226,7 @@ class CampoTiempoConDiosSeeder extends Seeder
         ]);
 
         CampoTiempoConDios::firstOrCreate([
-            'seccion_tiempo_con_dios_id' => '4',
+            'seccion_tiempo_con_dios_id' => '9',
             'tipo_campo_tiempo_con_dios_id' => '1',
             'nombre' => '¿Cómo aplicas esto a tu vida diaria?',
             'html' => '<h5 class="mb-1"><span class="my-auto fw-normal">¿Cómo aplicas esto a tu vida diaria?</span></h5>',

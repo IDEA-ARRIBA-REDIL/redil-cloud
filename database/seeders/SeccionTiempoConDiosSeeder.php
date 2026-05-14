@@ -32,19 +32,64 @@ class SeccionTiempoConDiosSeeder extends Seeder
 
         SeccionTiempoConDios::firstOrCreate([
             'nombre' => 'Sección 3',
-            'titulo_step' => 'Habla con Dios',
-            'titulo' => 'Ahora es tiempo para que hables con Dios',
-            'subtitulo' => 'Sigue los siguientes pasos para aprovechar este tiempo:',
+            'titulo_step' => 'PAMPE',
+            'titulo' => 'Diligencia la siguiente información',
+            'subtitulo' => '',
             'orden' => 3,
-            'icono' => 'ti ti-speakerphone',
+            'icono' => 'ti ti-writing',
         ]);
 
         SeccionTiempoConDios::firstOrCreate([
             'nombre' => 'Sección 4',
+            'titulo_step' => 'PAMPE',
+            'titulo' => 'Diligencia la siguiente información',
+            'subtitulo' => '',
+            'orden' => 4,
+            'icono' => 'ti ti-writing',
+        ]);
+
+        SeccionTiempoConDios::firstOrCreate([
+            'nombre' => 'Sección 5',
+            'titulo_step' => 'PAMPE',
+            'titulo' => 'Diligencia la siguiente información',
+            'subtitulo' => '',
+            'orden' => 5,
+            'icono' => 'ti ti-writing',
+        ]);
+
+        SeccionTiempoConDios::firstOrCreate([
+            'nombre' => 'Sección 6',
+            'titulo_step' => 'PAMPE',
+            'titulo' => 'Diligencia la siguiente información',
+            'subtitulo' => '',
+            'orden' => 6,
+            'icono' => 'ti ti-writing',
+        ]);
+
+        SeccionTiempoConDios::firstOrCreate([
+            'nombre' => 'Sección 7',
+            'titulo_step' => 'PAMPE',
+            'titulo' => 'Diligencia la siguiente información',
+            'subtitulo' => '',
+            'orden' => 7,
+            'icono' => 'ti ti-writing',
+        ]);
+
+        SeccionTiempoConDios::firstOrCreate([
+            'nombre' => 'Sección 8',
+            'titulo_step' => 'Habla con Dios',
+            'titulo' => 'Ahora es tiempo para que hables con Dios',
+            'subtitulo' => 'Sigue los siguientes pasos para aprovechar este tiempo:',
+            'orden' => 8,
+            'icono' => 'ti ti-speakerphone',
+        ]);
+
+        SeccionTiempoConDios::firstOrCreate([
+            'nombre' => 'Sección 9',
             'titulo_step' => 'Toma nota',
             'titulo' => 'Toma nota y reflexiona',
             'subtitulo' => '',
-            'orden' => 4,
+            'orden' => 9,
             'icono' => 'ti ti-writing',
         ]);
     }

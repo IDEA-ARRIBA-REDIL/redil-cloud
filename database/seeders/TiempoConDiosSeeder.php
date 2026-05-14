@@ -12,16 +12,16 @@ class TiempoConDiosSeeder extends Seeder
      */
     public function run(): void
     {
-
+/* 
         TiempoConDios::firstOrCreate([
             'user_id' => 1,
             'fecha' => '2025-03-17',
         ]);
 
-        /*     TiempoConDios::firstOrCreate([
+            TiempoConDios::firstOrCreate([
              'user_id' => 1,
              'fecha' => '2025-03-19',
-           ]);*/
+           ]);
 
         TiempoConDios::firstOrCreate([
             'user_id' => 1,
@@ -36,7 +36,7 @@ class TiempoConDiosSeeder extends Seeder
         TiempoConDios::firstOrCreate([
           'user_id' => 1,
           'fecha' => '2025-03-12',
-        ]);*/
+        ]);
 
         TiempoConDios::firstOrCreate([
             'user_id' => 1,
@@ -63,6 +63,6 @@ class TiempoConDiosSeeder extends Seeder
                 'fecha' => '2025-01-'.$i,
             ]);
         }
-
+*/
     }
 }

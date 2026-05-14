@@ -133,12 +133,18 @@ use Carbon\Carbon;
    <div class="d-flex flex-column flex-md-row justify-content-md-between ">
      <!-- boton nuevo -->
      <div class="pt-3 px-7 px-sm-0 mt-10 pb-5 pb-mb-9 d-flex justify-content-center ">
-      @if($tiempoConDiosHoy > 0)
+      @if($estadoHoy === 'completado')
         <button disabled style="border: solid 1px #CFD1D3 !important" type="button" class="btn btn-sm border py-2 border-2 rounded-3 shadow-sm box-waves-effect">
          <i class="ti ti-pray ti-xl"></i>
          <h6 style="color:#333" class="mb-0 p-2 fw-semibold">  Realizar mi tiempo con Dios</h6>
          <i class="ms-3 ti ti-chevron-right"></i>
        </button>
+      @elseif($estadoHoy === 'en_progreso')
+       <a href="{{route('tiempoConDios.modoLectura')}}" style="border: solid 1px #CFD1D3 !important" type="button" class="btn btn-sm border py-2 border-2 rounded-3 shadow-sm box-waves-effect">
+         <i class="ti ti-pray ti-xl"></i>
+         <h6 style="color:#333" class="mb-0 p-2 fw-semibold">  Continuar tiempo con Dios</h6>
+         <i class="ms-3 ti ti-chevron-right"></i>
+       </a>
       @else
        <a href="{{route('tiempoConDios.bienvenida')}}" style="border: solid 1px #CFD1D3 !important" type="button" class="btn btn-sm border py-2 border-2 rounded-3 shadow-sm box-waves-effect">
          <i class="ti ti-pray ti-xl"></i>

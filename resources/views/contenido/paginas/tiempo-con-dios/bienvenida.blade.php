@@ -76,7 +76,7 @@ $configData = Helper::appClasses();
           <p class="m-0"> La información que suministres solo podrás acceder tú</p>
         </div>
 
-        <a href="{{route('tiempoConDios.nuevo')}}">
+        <a href="{{route('tiempoConDios.modoLectura')}}">
             <button type="button" class="btn btn-primary rounded-pill px-7 py-2">
                 <span class="align-middle me-sm-1 me-0 px-7 ">Comenzar</span>
             </button>
@@ -86,7 +86,7 @@ $configData = Helper::appClasses();
     <!-- /texto -->
 
     <!-- imagen -->
-    <div id="imagen" class="col-lg-6 col-md-6 col-sm-12 d-none d-md-block" style="background-image: url('{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/mi-tiempo-con-dios/bienvenida.png') : Storage::url($configuracion->ruta_almacenamiento.'/img/mi-tiempo-con-dios/bienvenida.png') }}'); background-size: cover;  background-position: center;" >
+    <div id="imagen" class="col-lg-6 col-md-6 col-sm-12 d-none d-md-block" style="background-image: url('{{ Storage::disk('global_media')->url('Banner-mi-tiempo-con-Dios.png')}}'); background-size: cover;  background-position: center;" >
     </div>
      <!-- /imagen -->
   </div>

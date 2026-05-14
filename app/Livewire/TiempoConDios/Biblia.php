@@ -26,10 +26,18 @@ class Biblia extends Component
     public $versiculosResaltados = [];
     public $despacharEvento = false;
 
+    public $respuestasPrevias;
+    public $versiculoViendo = null;
+    public $indexVersiculoViendo = null;
+
 
 
     public function mount()
     {
+      if ($this->respuestasPrevias) {
+          $this->versiculosResaltados = json_decode($this->respuestasPrevias, true) ?? [];
+      }
+
       $this->libros = Collection::make(Helpers::libros2());
       $this->librosAt = $this->libros->where('testament','Antiguo Testamento');
       $this->librosNt = $this->libros->where('testament','Nuevo Testamento');
@@ -213,6 +221,15 @@ class Biblia extends Component
     {
       $this->versiculosResaltados[] =  $this->subrayadosData;
       $this->subrayados = [];
+    }
+
+    public function previsualizarVersiculo($index)
+    {
+        if (isset($this->versiculosResaltados[$index])) {
+            $this->versiculoViendo = $this->versiculosResaltados[$index];
+            $this->indexVersiculoViendo = $index;
+            $this->dispatch('abrirModal', nombreModal: 'modalVersiculoResaltado_'.$this->name_id);
+        }
     }
 
     public function verVersiculoResaltado($index)
