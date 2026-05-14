@@ -26,11 +26,8 @@ class GestionarTipoDeGruposController extends Controller
             ->orderby('orden')
             ->paginate(12);
 
-        $configuracion = Configuracion::find(1);
-
         return view('contenido.paginas.gestionar-tipos-de-grupos.gestionar-tipos-de-grupos', [
             'tiposGrupos' => $tiposGrupos,
-            'configuracion' => $configuracion,
             'buscar' => $buscar,
         ]);
     }
@@ -79,7 +76,6 @@ class GestionarTipoDeGruposController extends Controller
 
     public function crearTipoDeGrupo(Request $request)
     {
-        $configuracion = Configuracion::find(1);
 
         $request->validate([
             'nombre' => 'required|string|max:50',
@@ -131,18 +127,12 @@ class GestionarTipoDeGruposController extends Controller
         if ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
             $nombreImagen = 'imagen-'.$tipoGrupo->id.'.png';
-
-            $destinationDir = public_path('storage/'.$configuracion->ruta_almacenamiento.'/tipos-grupos');
-
-            if (! is_dir($destinationDir)) {
-                mkdir($destinationDir, 0755, true);
-            }
+            $directorio = 'img/tipos-grupos/';
 
             // --- Auto-crop a 100x100 usando GD nativo ---
             $sourceImage = imagecreatefrompng($file->getPathname());
             $targetImage = imagecreatetruecolor(100, 100);
 
-            // Preservar transparencia del PNG
             imagealphablending($targetImage, false);
             imagesavealpha($targetImage, true);
             $transparent = imagecolorallocatealpha($targetImage, 255, 255, 255, 127);
@@ -150,20 +140,22 @@ class GestionarTipoDeGruposController extends Controller
 
             $sourceWidth = imagesx($sourceImage);
             $sourceHeight = imagesy($sourceImage);
-
-            // Calcular para hacer un recorte centrado (Crop 1:1)
             $side = min($sourceWidth, $sourceHeight);
             $x = ($sourceWidth - $side) / 2;
             $y = ($sourceHeight - $side) / 2;
 
             imagecopyresampled($targetImage, $sourceImage, 0, 0, $x, $y, 100, 100, $side, $side);
 
-            // Generar y guardar la imagen redimensionada
-            imagepng($targetImage, $destinationDir.'/'.$nombreImagen);
+            // Capturar el output de GD en un buffer
+            ob_start();
+            imagepng($targetImage);
+            $imageData = ob_get_clean();
+
+            // Guardar transparente en el disco por defecto
+            Storage::disk()->put($directorio.$nombreImagen, $imageData);
 
             imagedestroy($sourceImage);
             imagedestroy($targetImage);
-            // ------------------------------------------
 
             $tipoGrupo->imagen = $nombreImagen;
         }
@@ -173,14 +165,9 @@ class GestionarTipoDeGruposController extends Controller
             $file = $request->file('portada');
             $extension = $file->getClientOriginalExtension();
             $nombrePortada = 'portada-'.$tipoGrupo->id.'.'.$extension;
+            $directorio = 'img/tipos-grupos/';
 
-            $destinationDir = public_path('storage/'.$configuracion->ruta_almacenamiento.'/tipos-grupos');
-
-            if (! is_dir($destinationDir)) {
-                mkdir($destinationDir, 0755, true);
-            }
-
-            $file->move($destinationDir, $nombrePortada);
+            Storage::disk()->putFileAs($directorio, $file, $nombrePortada);
             $tipoGrupo->portada = $nombrePortada;
         }
 
@@ -201,7 +188,6 @@ class GestionarTipoDeGruposController extends Controller
      */
     public function actualizarTipoDeGrupo(Request $request, TipoGrupo $tipoGrupo)
     {
-        $configuracion = Configuracion::find(1);
 
         $request->validate([
             'nombre' => 'required|string|max:50',
@@ -260,29 +246,21 @@ class GestionarTipoDeGruposController extends Controller
         $tipoGrupo->registrar_inasistencia = $request->has('registrar_inasistencia');
         $tipoGrupo->inasistencia_obligatoria = $request->has('inasistencia_obligatoria');
 
-        // 🔹 Manejo de archivos (guardar en la ruta directa de public_path)
+        // 🔹 Manejo de archivos
         if ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
             $nombreImagen = 'imagen-'.$tipoGrupo->id.'.png';
+            $directorio = 'img/tipos-grupos/';
 
-            $destinationDir = public_path('storage/'.$configuracion->ruta_almacenamiento.'/tipos-grupos');
-
+            // Borrar anterior si existe
             if ($tipoGrupo->imagen && $tipoGrupo->imagen !== 'icono_indicador.png') {
-                $oldFile = $destinationDir.'/'.$tipoGrupo->imagen;
-                if (file_exists($oldFile)) {
-                    unlink($oldFile);
-                }
-            }
-
-            if (! is_dir($destinationDir)) {
-                mkdir($destinationDir, 0755, true);
+                Storage::disk()->delete($directorio.$tipoGrupo->imagen);
             }
 
             // --- Auto-crop a 100x100 usando GD nativo ---
             $sourceImage = imagecreatefrompng($file->getPathname());
             $targetImage = imagecreatetruecolor(100, 100);
 
-            // Preservar transparencia del PNG
             imagealphablending($targetImage, false);
             imagesavealpha($targetImage, true);
             $transparent = imagecolorallocatealpha($targetImage, 255, 255, 255, 127);
@@ -290,20 +268,20 @@ class GestionarTipoDeGruposController extends Controller
 
             $sourceWidth = imagesx($sourceImage);
             $sourceHeight = imagesy($sourceImage);
-
-            // Calcular para hacer un recorte centrado (Crop 1:1)
             $side = min($sourceWidth, $sourceHeight);
             $x = ($sourceWidth - $side) / 2;
             $y = ($sourceHeight - $side) / 2;
 
             imagecopyresampled($targetImage, $sourceImage, 0, 0, $x, $y, 100, 100, $side, $side);
 
-            // Generar y guardar la imagen redimensionada
-            imagepng($targetImage, $destinationDir.'/'.$nombreImagen);
+            ob_start();
+            imagepng($targetImage);
+            $imageData = ob_get_clean();
+
+            Storage::disk()->put($directorio.$nombreImagen, $imageData);
 
             imagedestroy($sourceImage);
             imagedestroy($targetImage);
-            // ------------------------------------------
 
             $tipoGrupo->imagen = $nombreImagen;
         }
@@ -312,28 +290,20 @@ class GestionarTipoDeGruposController extends Controller
             $file = $request->file('portada');
             $extension = $file->getClientOriginalExtension();
             $nombrePortada = 'portada-'.$tipoGrupo->id.'.'.$extension;
-
-            $destinationDir = public_path('storage/'.$configuracion->ruta_almacenamiento.'/tipos-grupos');
+            $directorio = 'img/tipos-grupos/';
 
             if ($tipoGrupo->portada) {
-                $oldFile = $destinationDir.'/'.$tipoGrupo->portada;
-                if (file_exists($oldFile)) {
-                    unlink($oldFile);
-                }
+                Storage::disk()->delete($directorio.$tipoGrupo->portada);
             }
 
-            if (! is_dir($destinationDir)) {
-                mkdir($destinationDir, 0755, true);
-            }
-
-            $file->move($destinationDir, $nombrePortada);
+            Storage::disk()->putFileAs($directorio, $file, $nombrePortada);
             $tipoGrupo->portada = $nombrePortada;
         }
 
         // 🔹 Actualizar el registro
         $tipoGrupo->save();
 
-        return redirect()->route('gestionar-tipos-de-grupos.listar')
+        return redirect()->route('gestionar-tipos-de-grupos.editarTipoDeGrupo', $tipoGrupo->id)
             ->with('success', 'El tipo de grupo "'.$tipoGrupo->nombre.'" fue actualizado correctamente.');
     }
 }

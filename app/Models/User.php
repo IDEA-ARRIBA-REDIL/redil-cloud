@@ -18,8 +18,9 @@ use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use NotificationChannels\WebPush\HasPushSubscriptions;
+use Illuminate\Support\Facades\Storage;
 
-
+// darwin 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, HasPushSubscriptions;
@@ -50,6 +51,70 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'fecha_nacimiento' => 'datetime',
     ];
+
+    protected $appends = [
+        'foto_url',
+        'banner_url',
+    ];
+
+    /**
+     * Get the user's photo URL.
+     */
+    public function getFotoUrlAttribute(): string
+    {
+        if ($this->foto && $this->foto !== '' && $this->foto !== 'default-m.png' && $this->foto !== 'default-f.png') {
+            return tenant_asset('img/usuario/fotos/'.$this->foto);
+        }
+
+        return $this->genero == 1
+            ? Storage::disk('global_media')->url('placeholders/default-f.png')
+            : Storage::disk('global_media')->url('placeholders/default-m.png');
+    } 
+
+    /**
+     * Get the user's banner URL.
+     */
+    public function getBannerUrlAttribute(): string
+    {
+        if ($this->portada && $this->portada !== '' && $this->portada !== 'profile-banner.png') {
+            return tenant_asset('img/usuario/banners/'.$this->portada);
+        }
+
+        return Storage::disk('global_media')->url('profile-banner.png');
+    }
+
+    /**
+     * Get the user's file A URL.
+     */
+    public function getArchivoAUrlAttribute(): ?string
+    {
+        return $this->archivo_a ? tenant_asset('archivos/usuario/'.$this->archivo_a) : null;
+    }
+
+    /**
+     * Get the user's file B URL.
+     */
+    public function getArchivoBUrlAttribute(): ?string
+    {
+        return $this->archivo_b ? tenant_asset('archivos/usuario/'.$this->archivo_b) : null;
+    }
+
+    /**
+     * Get the user's file C URL.
+     */
+    public function getArchivoCUrlAttribute(): ?string
+    {
+        return $this->archivo_c ? tenant_asset('archivos/usuario/'.$this->archivo_c) : null;
+    }
+
+    /**
+     * Get the user's file D URL.
+     */
+    public function getArchivoDUrlAttribute(): ?string
+    {
+        return $this->archivo_d ? tenant_asset('archivos/usuario/'.$this->archivo_d) : null;
+    }
+
 
     protected static function booted()
     {
@@ -1623,6 +1688,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $domingo = $hoy->copy()->endOfWeek(); // Carbon::SUNDAY_END para Laravel 11
 
         $tiempos = $this->tiemposConDios()
+            ->where('estado', 'completado')
             ->whereBetween('fecha', [$lunes, $domingo])
             ->orderBy('fecha')
             ->get();
@@ -1659,6 +1725,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $domingo = $hoy->copy()->endOfWeek(); // Carbon::SUNDAY_END para Laravel 11
 
         $tiempos = $this->tiemposConDios()
+            ->where('estado', 'completado')
             ->whereBetween('fecha', [$lunes, $domingo])
             ->orderBy('fecha')
             ->get();
@@ -1692,7 +1759,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         // 1. Verificamos si existe un registro para HOY.
         // La consulta ->exists() es muy rápida y devuelve solo true/false.
-        $tieneRegistroHoy = $this->tiemposConDios()->whereDate('fecha', $hoy)->exists();
+        $tieneRegistroHoy = $this->tiemposConDios()->where('estado', 'completado')->whereDate('fecha', $hoy)->exists();
 
         // --- LÓGICA DE RACHA POSITIVA (OPTIMIZADA) ---
         if ($tieneRegistroHoy) {
@@ -1701,7 +1768,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
             // 2. Iteramos hacia atrás, haciendo una consulta ->exists() por día.
             // El bucle se detiene en cuanto un día no tenga registro.
-            while ($this->tiemposConDios()->whereDate('fecha', $fechaAnterior)->exists()) {
+            while ($this->tiemposConDios()->where('estado', 'completado')->whereDate('fecha', $fechaAnterior)->exists()) {
                 $diasDeRacha++;
                 $fechaAnterior->subDay();
             }
@@ -1710,7 +1777,7 @@ class User extends Authenticatable implements MustVerifyEmail
         } else {
             // 3. Buscamos la fecha del último registro.
             // La consulta ->max() también es muy eficiente.
-            $ultimaFechaStr = $this->tiemposConDios()->max('fecha');
+            $ultimaFechaStr = $this->tiemposConDios()->where('estado', 'completado')->max('fecha');
 
             // Si el usuario nunca ha tenido un registro, su racha es 0.
             if (! $ultimaFechaStr) {

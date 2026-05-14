@@ -1,288 +1,245 @@
+@php
+$configData = Helper::appClasses();
+@endphp
+
 @extends('layouts.layoutMaster')
 
 @section('title', 'Editar Tipo de Usuario')
 
-<!-- Page -->
 @section('page-style')
 @vite([
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
-'resources/assets/vendor/libs/select2/select2.scss',
-
+  'resources/assets/vendor/libs/select2/select2.scss',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+  'resources/assets/vendor/libs/@form-validation/umd/styles/index.min.css'
 ])
 @endsection
 
 @section('vendor-script')
 @vite([
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
-'resources/assets/vendor/libs/select2/select2.js',
-
+  'resources/assets/vendor/libs/select2/select2.js',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+  'resources/assets/vendor/libs/@form-validation/umd/bundle/popular.min.js'
 ])
 @endsection
 
-@push('scripts')
-<script>
-  $(document).ready(function() {
+@section('page-script')
+<script type="module">
+  $(function() {
+    // Inicializar Select2
     $('#id_rol_dependiente').select2({
       placeholder: 'Seleccione un rol dependiente',
-      allowClear: true,
-      width: '100%'
+      allowClear: true
     });
 
-  });
+    // Lógica para reemplazar la imagen
+    $('#btn-reemplazar').on('click', function() {
+      $('#info-imagen-actual').addClass('d-none');
+      $('#contenedor-input-imagen').removeClass('d-none');
+    });
 
-  // Lógica para reemplazar la imagen
-  $('#btn-reemplazar').on('click', function() {
-    // Oculta el mensaje de la imagen actual
-    $('#info-imagen-actual').addClass('d-none');
+    // Manejador del formulario
+    $('#formulario').submit(function(){
+      $('.btnGuardar').attr('disabled','disabled');
 
-    // Muestra el input para subir una nueva
-    $('#contenedor-input-imagen').removeClass('d-none');
-  });
-
-  // Mostrar el input file cuando se presiona el botón "Adjuntar imagen/archivo"
-  $(".botonSubirArchivo").click(function() {
-    var input = $(this).data('input');
-    $('#' + input).click();
-  });
-
-  // Mostrar el nombre del archivo seleccionado en el input de texto
-  $('.inputFile').on('change', function() {
-    var fileName = $(this).val().split('\\').pop();
-    var input = $(this).data('input');
-    $('#nombre_' + input).val(fileName);
-  });
-
-  // Lógica para mostrar el botón de reemplazo
-  $(".btn-remplazar-archivo").click(function() {
-    var archivoR = $(this).data('input');
-    $("#mensaje_remplazar_" + archivoR).addClass('d-none');
-    $("#div_input_" + archivoR).removeClass('d-none');
+      Swal.fire({
+        title: "Espera un momento",
+        text: "Ya estamos guardando...",
+        icon: "info",
+        showCancelButton: false,
+        showConfirmButton: false,
+        showDenyButton: false
+      });
+    });
   });
 </script>
-@endpush
-
+@endsection
 
 @section('content')
-<div class="container mt-4">
-  <div class="card shadow-lg rounded-3">
-    <div class="card-header text-dark">
-      <h5 class="mb-0">Editar Tipo de Usuario</h5>
-    </div>
-    <div class="card-body">
-      {{-- Formulario de edición --}}
-      <form action="{{ route('tipo-usuario.actualizar', $tipoUsuario) }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        @method('PUT')
+<h4 class="fw-semibold text-primary mb-1">Editar Tipo de Usuario: {{ $tipoUsuario->nombre }}</h4>
+<p class="mb-4 text-black">Actualiza los parámetros de configuración para este tipo de usuario.</p>
 
-        {{-- === FILA 1 === --}}
-        <div class="row">
-          {{-- Nombre --}}
-          <div class="col-md-4 mb-3">
-            <label for="nombre" class="form-label">Nombre *</label>
-            <input type="text" name="nombre" id="nombre" class="form-control"
-              value="{{ old('nombre', $tipoUsuario->nombre) }}" required>
-            @error('nombre')
-            <small class="text-danger">{{ $message }}</small>
-            @enderror
-          </div>
+@include('layouts.status-msn')
 
-          {{-- Nombre plural --}}
-          <div class="col-md-4 mb-3">
-            <label for="nombre_plural" class="form-label">Nombre plural</label>
-            <input type="text" name="nombre_plural" id="nombre_plural" class="form-control"
-              value="{{ old('nombre_plural', $tipoUsuario->nombre_plural) }}">
-          </div>
+<form id="formulario" action="{{ route('tipo-usuario.actualizar', $tipoUsuario) }}" method="POST" enctype="multipart/form-data">
+  @csrf
+  @method('PUT')
 
-          {{-- Descripción --}}
-          <div class="col-md-4 mb-3">
-            <label for="descripcion" class="form-label">Descripción</label>
-            <textarea name="descripcion" id="descripcion" class="form-control" rows="1">{{ old('descripcion', $tipoUsuario->descripcion) }}</textarea>
-          </div>
-        </div>
-
-        {{-- === FILA 2 === --}}
-        <div class="row">
-          {{-- Color --}}
-          <div class="col-md-4 mb-3">
-            <label for="color" class="form-label">Color</label>
-            <input type="color" name="color" id="color" class="form-control form-control-color"
-              value="{{ old('color', $tipoUsuario->color) }}">
-          </div>
-
-          {{-- Ícono --}}
-          <div class="col-md-4 mb-3">
-            <label for="icono" class="form-label">Ícono</label>
-            <input type="text" name="icono" id="icono" class="form-control"
-              value="{{ old('icono', $tipoUsuario->icono) }}">
-            <small class="text-muted">Puedes usar clases de íconos como <code>ti ti-user</code>.</small>
-          </div>
-
-          {{-- Imagen --}}
-          <div class="col-md-4 mb-3">
-            <label for="imagen" class="form-label">Imagen (100x100 PNG)</label>
-
-            @if ($tipoUsuario->imagen)
-            {{-- Muestra la info de la imagen actual y el botón para reemplazar --}}
-            <div id="info-imagen-actual">
-              <div class="alert alert-info d-flex justify-content-between align-items-center p-2">
-                <span class="text-truncate" style="font-size: 0.85rem;">
-                  <i class="ti ti-photo ti-sm me-1"></i>
-                  {{ $tipoUsuario->imagen }}
-                </span>
-                <button type="button" id="btn-reemplazar" class="btn btn-sm btn-outline-danger p-1">
-                  <i class="ti ti-replace"></i>
-                </button>
-              </div>
+  <div class="row">
+    <!-- Columna Izquierda -->
+    <div class="col-12">
+      <!-- Card: Información básica -->
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Información básica</h5>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="nombre" class="form-label">Nombre *</label>
+              <input type="text" name="nombre" id="nombre" class="form-control" value="{{ old('nombre', $tipoUsuario->nombre) }}" placeholder="Ej: Líder" required>
+              @error('nombre')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
             </div>
-            @endif
+            <div class="col-md-6 mb-3">
+              <label for="nombre_plural" class="form-label">Nombre plural</label>
+              <input type="text" name="nombre_plural" id="nombre_plural" class="form-control" value="{{ old('nombre_plural', $tipoUsuario->nombre_plural) }}" placeholder="Ej: Líderes">
+            </div>
+            <div class="col-12 mb-3">
+              <label for="descripcion" class="form-label">Descripción</label>
+              <textarea name="descripcion" id="descripcion" class="form-control" rows="2" placeholder="Breve descripción del rol...">{{ old('descripcion', $tipoUsuario->descripcion) }}</textarea>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="color" class="form-label">Color representativo</label>
+              <input type="color" name="color" id="color" class="form-control form-control-color w-100" value="{{ old('color', $tipoUsuario->color ?? '#666CE8') }}">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="icono" class="form-label">Clase del ícono</label>
+              <input type="text" name="icono" id="icono" class="form-control" value="{{ old('icono', $tipoUsuario->icono) }}" placeholder="ti ti-user">
+            </div>
+            <div class="col-md-5 mb-3">
+              <label for="imagen" class="form-label">Imagen (100x100 PNG)</label>
+              
+              @if ($tipoUsuario->imagen)
+              <div id="info-imagen-actual">
+                <div class="alert alert-info d-flex justify-content-between align-items-center p-2 mb-0">
+                  <span class="text-truncate" style="font-size: 0.85rem;">
+                    <i class="ti ti-photo ti-sm me-1"></i> {{ $tipoUsuario->imagen }}
+                  </span>
+                  <button type="button" id="btn-reemplazar" class="btn btn-sm btn-outline-danger p-1">
+                    <i class="ti ti-replace"></i>
+                  </button>
+                </div>
+              </div>
+              @endif
 
-            {{-- Contenedor del input para subir una nueva imagen --}}
-            {{-- Estará oculto por defecto si ya existe una imagen --}}
-            <div id="contenedor-input-imagen" class="{{ $tipoUsuario->imagen ? 'd-none' : '' }}">
-              <div class="input-group">
-                <input type="file" id="imagen" name="imagen" class="form-control" accept="image/png">
+              <div id="contenedor-input-imagen" class="{{ $tipoUsuario->imagen ? 'd-none' : '' }}">
+                <input class="form-control" type="file" name="imagen" id="imagen" accept="image/png">
               </div>
+              
               @error('imagen')
-              <div class="text-danger ti-12px mt-2">
-                <i class="ti ti-circle-x"></i> {{ $message }}
-              </div>
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
               @enderror
             </div>
           </div>
-          {{-- /Imagen --}}
-
         </div>
+      </div>
 
-        {{-- === FILA 3 === --}}
-        <div class="row">
-          {{-- Orden --}}
-          <div class="col-md-4 mb-3">
-            <label for="orden" class="form-label">Orden</label>
-            <input type="number" name="orden" id="orden" class="form-control"
-              value="{{ old('orden', $tipoUsuario->orden) }}">
-          </div>
-
-          {{-- Puntaje --}}
-          <div class="col-md-4 mb-3">
-            <label for="puntaje" class="form-label">Puntaje</label>
-            <input type="number" name="puntaje" id="puntaje" class="form-control"
-              value="{{ old('puntaje', $tipoUsuario->puntaje) }}">
-          </div>
-
-          {{-- Rol dependiente --}}
-          <div class="col-md-4 mb-3">
-            <label for="id_rol_dependiente" class="form-label">Rol dependiente</label>
-            <select name="id_rol_dependiente" id="id_rol_dependiente" class="form-select select2">
-              <option value="">-- Sin dependencia --</option>
-              @foreach ($tiposUsuarios as $rol)
-              <option value="{{ $rol->id }}"
-                {{ old('id_rol_dependiente', $tipoUsuario->id_rol_dependiente) == $rol->id ? 'selected' : '' }}>
-                {{ $rol->nombre }}
-              </option>
-              @endforeach
-            </select>
-          </div>
-
-        </div>
-
-        {{-- === FILA 4 === --}}
-        <div class="row">
-          {{-- Tipo pastor --}}
-          <div class="col-md-4 mb-3">
-            <div class="form-check form-switch">
-              <input type="checkbox" class="form-check-input" id="tipo_pastor" name="tipo_pastor"
-                {{ old('tipo_pastor', $tipoUsuario->tipo_pastor) ? 'checked' : '' }}>
-              <label for="tipo_pastor" class="form-check-label">Es tipo pastor</label>
+      <!-- Card: Parámetros de configuración -->
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Parámetros de configuración</h5>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="orden" class="form-label">Orden de jerarquía</label>
+              <input type="number" name="orden" id="orden" class="form-control" value="{{ old('orden', $tipoUsuario->orden) }}">
             </div>
-          </div>
-
-          {{-- Tipo pastor principal --}}
-          <div class="col-md-4 mb-3">
-            <div class="form-check form-switch">
-              <input type="checkbox" class="form-check-input" id="tipo_pastor_principal" name="tipo_pastor_principal"
-                {{ old('tipo_pastor_principal', $tipoUsuario->tipo_pastor_principal) ? 'checked' : '' }}>
-              <label for="tipo_pastor_principal" class="form-check-label">Es pastor principal</label>
+            <div class="col-md-4 mb-3">
+              <label for="puntaje" class="form-label">Puntaje acumulable</label>
+              <input type="number" name="puntaje" id="puntaje" class="form-control" value="{{ old('puntaje', $tipoUsuario->puntaje) }}">
             </div>
-          </div>
-
-          {{-- Visible --}}
-          <div class="col-md-4 mb-3">
-            <div class="form-check form-switch">
-              <input type="checkbox" class="form-check-input" id="visible" name="visible"
-                {{ old('visible', $tipoUsuario->visible) ? 'checked' : '' }}>
-              <label for="visible" class="form-check-label">Mostrar en búsquedas</label>
-            </div>
-          </div>
-
-         
-        </div>
-
-        {{-- === FILA 5 === --}}
-        <div class="row">
-          {{-- Seguimiento grupo --}}
-          <div class="col-md-4 mb-3">
-            <div class="form-check form-switch">
-              <input type="checkbox" class="form-check-input" id="seguimiento_actividad_grupo" name="seguimiento_actividad_grupo"
-                {{ old('seguimiento_actividad_grupo', $tipoUsuario->seguimiento_actividad_grupo) ? 'checked' : '' }}>
-              <label for="seguimiento_actividad_grupo" class="form-check-label">Activar seguimiento</label>
-            </div>
-          </div>
-
-          {{-- Seguimiento reunión --}}
-          <div class="col-md-4 mb-3">
-            <div class="form-check form-switch">
-              <input type="checkbox" class="form-check-input" id="seguimiento_actividad_reunion" name="seguimiento_actividad_reunion"
-                {{ old('seguimiento_actividad_reunion', $tipoUsuario->seguimiento_actividad_reunion) ? 'checked' : '' }}>
-              <label for="seguimiento_actividad_reunion" class="form-check-label">Activar seguimiento</label>
-            </div>
-          </div>
-
-          {{-- Consolidación --}}
-          <div class="col-md-4 mb-3">
-            <div class="form-check form-switch">
-              <input type="checkbox" class="form-check-input" id="habilitado_para_consolidacion" name="habilitado_para_consolidacion"
-                {{ old('habilitado_para_consolidacion', $tipoUsuario->habilitado_para_consolidacion) ? 'checked' : '' }}>
-              <label for="habilitado_para_consolidacion" class="form-check-label">Listar en consolidación</label>
+            <div class="col-md-4 mb-3">
+              <label for="id_rol_dependiente" class="form-label">Rol dependiente</label>
+              <select name="id_rol_dependiente" id="id_rol_dependiente" class="form-select select2">
+                <option value="">Sin dependencia</option>
+                @foreach ($tiposUsuarios as $rol)
+                <option value="{{ $rol->id }}" {{ old('id_rol_dependiente', $tipoUsuario->id_rol_dependiente) == $rol->id ? 'selected' : '' }}>
+                  {{ $rol->nombre }}
+                </option>
+                @endforeach
+              </select>
             </div>
           </div>
         </div>
+      </div>
+    </div>
 
-        {{-- === FILA 6 (Inactividad) === --}}
-        <div class="row">
-          <div class="col-md-4 mb-3">
-            <label for="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion" class="form-label">Días de inactividad para baja</label>
-            <input type="number" name="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion"
-              id="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion" class="form-control"
-              value="{{ old('dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion', $tipoUsuario->dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion) }}">
-            <small class="text-muted">0 para deshabilitar por días.</small>
-          </div>
-
-          <div class="col-md-4 mb-3 d-flex align-items-end">
-            <div class="form-check form-switch mb-2">
-              <input type="checkbox" class="form-check-input" id="seguimiento_para_dar_de_baja_automaticamente"
-                name="seguimiento_para_dar_de_baja_automaticamente"
-                {{ old('seguimiento_para_dar_de_baja_automaticamente', $tipoUsuario->seguimiento_para_dar_de_baja_automaticamente) ? 'checked' : '' }}>
-              <label for="seguimiento_para_dar_de_baja_automaticamente" class="form-check-label">Habilitar baja automática</label>
+    <!-- Columna Derecha -->
+    <div class="col-12">
+      <!-- Card: Atributos y visibilidad -->
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Atributos y visibilidad</h5>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-4 mt-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="tipo_pastor" name="tipo_pastor" value="1" {{ old('tipo_pastor', $tipoUsuario->tipo_pastor) ? 'checked' : '' }}>
+                <label for="tipo_pastor" class="form-check-label fw-medium text-black">Es tipo pastor</label>
+              </div>
             </div>
-          </div>
-
-          {{-- Tipo usuario por defecto --}}
-          <div class="col-md-4 mb-3">
-            <div class="form-check form-switch">
-              <input type="checkbox" class="form-check-input" id="default" name="default"
-                {{ old('default', $tipoUsuario->default) ? 'checked' : '' }}>
-              <label for="default" class="form-check-label">Establecer como predeterminado</label>
+            <div class="col-12 col-md-4 mt-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="tipo_pastor_principal" name="tipo_pastor_principal" value="1" {{ old('tipo_pastor_principal', $tipoUsuario->tipo_pastor_principal) ? 'checked' : '' }}>
+                <label for="tipo_pastor_principal" class="form-check-label fw-medium text-black">Es pastor principal</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-4 mt-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="visible" name="visible" value="1" {{ old('visible', $tipoUsuario->visible) ? 'checked' : '' }}>
+                <label for="visible" class="form-check-label fw-medium text-black">Mostrar en búsquedas</label>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {{-- === BOTONES === --}}
-        <div class="mt-4">
-          <button type="submit" class="btn btn-primary rounded-pill waves-effect waves-light">Actualizar</button>
-          <a href="{{ route('tipo-usuario.listar') }}" class="btn btn-outline-secondary rounded-pill waves-effect waves-light">Cancelar</a>
+      <!-- Card: Seguimiento y consolidación -->
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Seguimiento y consolidación</h5>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-4 mt-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="seguimiento_actividad_grupo" name="seguimiento_actividad_grupo" value="1" {{ old('seguimiento_actividad_grupo', $tipoUsuario->seguimiento_actividad_grupo) ? 'checked' : '' }}>
+                <label for="seguimiento_actividad_grupo" class="form-check-label fw-medium text-black">Seguimiento de grupo</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-4 mt-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="seguimiento_actividad_reunion" name="seguimiento_actividad_reunion" value="1" {{ old('seguimiento_actividad_reunion', $tipoUsuario->seguimiento_actividad_reunion) ? 'checked' : '' }}>
+                <label for="seguimiento_actividad_reunion" class="form-check-label fw-medium text-black">Seguimiento de reunión</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-4 mt-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="habilitado_para_consolidacion" name="habilitado_para_consolidacion" value="1" {{ old('habilitado_para_consolidacion', $tipoUsuario->habilitado_para_consolidacion) ? 'checked' : '' }}>
+                <label for="habilitado_para_consolidacion" class="form-check-label fw-medium text-black">Listar en consolidación</label>
+              </div>
+            </div>
+          </div>
         </div>
-      </form>
+      </div>
+
+      <!-- Card: Inactividad y automatización -->
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Inactividad y automatización</h5>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12 col-md-4 mt-3  ">
+              <label for="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion" class="form-label">Días de inactividad para baja</label>
+              <input type="number" name="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion" id="dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion" class="form-control" value="{{ old('dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion', $tipoUsuario->dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion) }}">
+              <small class="text-muted">0 para deshabilitar.</small>
+            </div>
+            <div class="col-12 col-md-4 mt-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="seguimiento_para_dar_de_baja_automaticamente" name="seguimiento_para_dar_de_baja_automaticamente" value="1" {{ old('seguimiento_para_dar_de_baja_automaticamente', $tipoUsuario->seguimiento_para_dar_de_baja_automaticamente) ? 'checked' : '' }}>
+                <label for="seguimiento_para_dar_de_baja_automaticamente" class="form-check-label fw-medium text-black">Habilitar baja automática</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-4 mt-3">
+              <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="default" name="default" value="1" {{ old('default', $tipoUsuario->default) ? 'checked' : '' }}>
+                <label for="default" class="form-check-label fw-medium text-black">Rol predeterminado</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
+
+  <div class="d-flex mb-1 mt-3">
+    <div class="me-auto">
+      <button type="submit" class="btn btnGuardar btn-primary rounded-pill px-12 py-2">Actualizar</button>
+    </div>
+  </div>
+</form>
 @endsection

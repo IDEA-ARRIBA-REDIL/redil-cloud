@@ -7,6 +7,7 @@ use App\Models\Moneda;
 use App\Models\TipoPago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TipoPagosController extends Controller
 {
@@ -21,18 +22,15 @@ class TipoPagosController extends Controller
 
     public function creacionTipoPagos()
     {
-        $configuracion = Configuracion::find(1);
         $monedas = Moneda::all();
 
         return view('contenido.paginas.tipo-pagos.crear-tipo-pagos', [
-            'configuracion' => $configuracion,
             'monedas' => $monedas,
         ]);
     }
 
     public function crearTipoPagos(Request $request)
     {
-        $configuracion = Configuracion::find(1);
 
         // 1. Validaciones
         $request->validate([
@@ -76,16 +74,15 @@ class TipoPagosController extends Controller
         $tipoPago->botones_valores_moneda = $request->botones_valores_moneda ?? 0;
         $tipoPago->habilitado_donacion = $request->habilitado_donacion ?? 0;
         $tipoPago->tiene_limite_dinero_acumulado = $request->tiene_limite_dinero_acumulado ?? 0;
-        $tipoPago->punto_de_pago = $request->punto_de_pago ?? 0;
         $tipoPago->permite_personas_externas = $request->permite_personas_externas ?? 0;
         $tipoPago->codigo_datafono = $request->codigo_datafono ?? 0;
+
         // 4. Procesar Logo (Obligatorio) ANTES de guardar
         $identificadorUnico = time() . '_' . uniqid();
 
         if ($request->hasFile('imagen')) {
             $nombreLogo = $this->guardarImagen(
                 $request->file('imagen'),
-                $configuracion->ruta_almacenamiento,
                 'logos',
                 $identificadorUnico
             );
@@ -96,7 +93,6 @@ class TipoPagosController extends Controller
         if ($request->hasFile('fondo')) {
             $nombreFondo = $this->guardarImagen(
                 $request->file('fondo'),
-                $configuracion->ruta_almacenamiento,
                 'fondos',
                 $identificadorUnico
             );
@@ -119,19 +115,16 @@ class TipoPagosController extends Controller
     public function actualizacionTipoPagos($id)
     {
         $tipoPago = TipoPago::findOrFail($id);
-        $configuracion = Configuracion::find(1);
         $monedas = Moneda::all();
 
         return view('contenido.paginas.tipo-pagos.editar-tipo-pagos', [
             'tipoPago' => $tipoPago,
-            'configuracion' => $configuracion,
             'monedas' => $monedas,
         ]);
     }
 
     public function actualizarTipoPagos(Request $request, $id)
     {
-        $configuracion = Configuracion::find(1);
 
         // 1. Buscar el registro
         $tipoPago = TipoPago::findOrFail($id);
@@ -162,7 +155,6 @@ class TipoPagosController extends Controller
                 'botones_valores_moneda' => 'required|in:0,1',
                 'habilitado_donacion' => 'required|in:0,1',
                 'tiene_limite_dinero_acumulado' => 'required|in:0,1',
-                'punto_de_pago' => 'required|in:0,1',
                 'permite_personas_externas' => 'required|in:0,1',
                 'codigo_datafono' => 'required|in:0,1',
                 'label_destinatario' => 'nullable|string',
@@ -207,18 +199,16 @@ class TipoPagosController extends Controller
         $tipoPago->botones_valores_moneda = $request->botones_valores_moneda ?? 0;
         $tipoPago->habilitado_donacion = $request->habilitado_donacion ?? 0;
         $tipoPago->tiene_limite_dinero_acumulado = $request->tiene_limite_dinero_acumulado ?? 0;
-        $tipoPago->punto_de_pago = $request->punto_de_pago ?? 0;
         $tipoPago->permite_personas_externas = $request->permite_personas_externas ?? 0;
         $tipoPago->codigo_datafono = $request->codigo_datafono ?? 0;
         $tipoPago->save();
 
         // 4. Procesar Logo si se envió uno nuevo
         if ($request->hasFile('imagen')) {
-            $this->eliminarImagenAnterior($tipoPago->imagen, $configuracion->ruta_almacenamiento, 'logos');
+            $this->eliminarImagenAnterior($tipoPago->imagen, 'logos');
 
             $nombreLogo = $this->guardarImagen(
                 $request->file('imagen'),
-                $configuracion->ruta_almacenamiento,
                 'logos',
                 $tipoPago->id
             );
@@ -227,11 +217,10 @@ class TipoPagosController extends Controller
 
         // 5. Procesar Fondo si se envió uno nuevo
         if ($request->hasFile('fondo')) {
-            $this->eliminarImagenAnterior($tipoPago->fondo, $configuracion->ruta_almacenamiento, 'fondos');
+            $this->eliminarImagenAnterior($tipoPago->fondo, 'fondos');
 
             $nombreFondo = $this->guardarImagen(
                 $request->file('fondo'),
-                $configuracion->ruta_almacenamiento,
                 'fondos',
                 $tipoPago->id
             );
@@ -280,20 +269,17 @@ class TipoPagosController extends Controller
      * @param  string  $carpeta  Subcarpeta destino (ej: 'logos', 'fondos')
      * @param  string  $identifier  Identificador único para el archivo
      */
-    private function guardarImagen($file, string $rutaAlmacenamiento, string $carpeta, string $identifier): string
+    private function guardarImagen($file, string $carpeta, string $identifier): string
     {
         $extension = $file->getClientOriginalExtension();
         $nombreArchivo = $carpeta.'-'.$identifier.'.'.$extension;
 
-        $destinationDir = public_path('storage/'.$rutaAlmacenamiento.'/'.$carpeta);
+        $directorio = 'img/tipos-pagos/'.$carpeta;
 
-        if (! is_dir($destinationDir)) {
-            mkdir($destinationDir, 0755, true);
-        }
+        // Almacenar en el disco 'public' y lo guarda en su respectivo tenant.
+        Storage::disk()->putFileAs($directorio, $file, $nombreArchivo);
 
-        $file->move($destinationDir, $nombreArchivo);
-
-        Log::info("TipoPago: Imagen guardada en {$rutaAlmacenamiento}/{$carpeta}/{$nombreArchivo}");
+        Log::info("TipoPago: Imagen guardada en el disco public: {$directorio}/{$nombreArchivo}");
 
         return $nombreArchivo;
     }
@@ -301,16 +287,16 @@ class TipoPagosController extends Controller
     /**
      * Elimina una imagen anterior del filesystem si existe.
      */
-    private function eliminarImagenAnterior(?string $nombreArchivo, string $rutaAlmacenamiento, string $carpeta): void
+    private function eliminarImagenAnterior(?string $nombreArchivo, string $carpeta): void
     {
         if (! $nombreArchivo) {
             return;
         }
 
-        $rutaCompleta = public_path('storage/'.$rutaAlmacenamiento.'/'.$carpeta.'/'.$nombreArchivo);
+        $rutaRelativa = 'img/tipos-pagos/'.$carpeta.'/'.$nombreArchivo;
 
-        if (file_exists($rutaCompleta)) {
-            unlink($rutaCompleta);
+        if (Storage::disk()->exists($rutaRelativa)) {
+            Storage::disk()->delete($rutaRelativa);
         }
     }
 
@@ -326,7 +312,6 @@ class TipoPagosController extends Controller
             'botones_valores_moneda',
             'habilitado_donacion',
             'tiene_limite_dinero_acumulado',
-            'punto_de_pago',
             'permite_personas_externas',
             'codigo_datafono',
         ];

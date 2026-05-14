@@ -61,7 +61,7 @@ class TipoActividadGestionController extends Controller
         $tipoActividad->save();
 
         return redirect()
-            ->route('gestionar-tipos-de-actividad.index')
+            ->route('gestionar-tipos-de-actividad.editar', $tipoActividad->id)
             ->with('success', 'Tipo de actividad "' . $tipoActividad->nombre . '" creado correctamente.');
     }
 
@@ -99,7 +99,7 @@ class TipoActividadGestionController extends Controller
         $tipoActividad->save();
 
         return redirect()
-            ->route('gestionar-tipos-de-actividad.index')
+            ->route('gestionar-tipos-de-actividad.editar', $tipoActividad->id)
             ->with('success', 'Tipo de actividad "' . $tipoActividad->nombre . '" actualizado correctamente.');
     }
 }

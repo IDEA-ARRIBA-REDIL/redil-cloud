@@ -110,4 +110,19 @@ class TipoGrupo extends Model
             'tipo_ofrenda_id'
         )->withPivot('created_at', 'updated_at');
     }
+  public function getImagenUrlAttribute(): ?string
+  {
+      if (!$this->imagen) {
+          return null;
+      }
+      return tenant_asset('img/tipos-grupos/' . $this->imagen);
+  }
+
+  public function getPortadaUrlAttribute(): ?string
+  {
+      if (!$this->portada) {
+          return null;
+      }
+      return tenant_asset('img/tipos-grupos/' . $this->portada);
+  }
 }

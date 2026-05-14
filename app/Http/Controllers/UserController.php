@@ -1807,11 +1807,7 @@ class UserController extends Controller
     {
         $configuracion = Configuracion::find(1);
 
-        $foto = url('').Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario'.'/'.$usuario->foto);
-
-        if ($configuracion->version == 2) {
-            $foto = $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario'.'/'.$usuario->foto;
-        }
+        $foto = $usuario->foto_url;
 
         $dataQr = [
             'id' => $usuario->id,
@@ -2398,14 +2394,11 @@ class UserController extends Controller
             if ($campoFoto) {
                 if ($request[$campoFoto->name_id]) {
                     if ($configuracion->version == 1) {
-                        $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/');
-                        ! is_dir($path) && mkdir($path, 0777, true);
-
                         $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
                         $imagenBase64 = base64_decode($imagenPartes[1]);
                         $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
-                        $imagenPath = $path.$nombreFoto;
-                        file_put_contents($imagenPath, $imagenBase64);
+                        
+                        Storage::put('usuario/fotos/'.$nombreFoto, $imagenBase64);
                         $usuario->foto = $nombreFoto;
                     } else {
                         /*
@@ -2428,8 +2421,7 @@ class UserController extends Controller
             $usuario->email = $email;
 
             // documentos adjuntos
-            $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/archivos'.'/');
-            ! is_dir($path) && mkdir($path, 0777, true);
+                    // El directorio se crea automáticamente al usar storeAs con el disco tenant si no existe.
 
             // archivo_a
             $campoArchivo = $campos->where('nombre_bd', 'archivo_a')->first();
@@ -2439,14 +2431,14 @@ class UserController extends Controller
                   ? $formulario->label_archivo_a.$usuario->id.'.'.$extension
                   : 'archivo-a'.$usuario->id.'.'.$extension;
                 if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_a);
+                    // elimino el archivo actual si existe
+                    if ($usuario->archivo_a && Storage::exists('usuario/archivos/'.$usuario->archivo_a)) {
+                        Storage::delete('usuario/archivos/'.$usuario->archivo_a);
+                    }
 
                     $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoA,
-                        'public'
-                    );
+                        'usuario/archivos',
+                        $nombreArchivoA);
                 } elseif ($configuracion->version == 2) {
                     /*
                         $s3 = AWS::get('s3');
@@ -2468,14 +2460,14 @@ class UserController extends Controller
                   ? $formulario->label_archivo_b.$usuario->id.'.'.$extension
                   : 'archivo-b'.$usuario->id.'.'.$extension;
                 if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_b);
+                    // elimino el archivo actual si existe
+                    if ($usuario->archivo_b && Storage::exists('usuario/archivos/'.$usuario->archivo_b)) {
+                        Storage::delete('usuario/archivos/'.$usuario->archivo_b);
+                    }
 
                     $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoB,
-                        'public'
-                    );
+                        'usuario/archivos',
+                        $nombreArchivoB);
                 } elseif ($configuracion->version == 2) {
                     /*
                         $s3 = AWS::get('s3');
@@ -2498,14 +2490,14 @@ class UserController extends Controller
                   ? $formulario->label_archivo_c.$usuario->id.'.'.$extension
                   : 'archivo-c'.$usuario->id.'.'.$extension;
                 if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_c);
+                    // elimino el archivo actual si existe
+                    if ($usuario->archivo_c && Storage::exists('usuario/archivos/'.$usuario->archivo_c)) {
+                        Storage::delete('usuario/archivos/'.$usuario->archivo_c);
+                    }
 
                     $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoC,
-                        'public'
-                    );
+                        'usuario/archivos',
+                        $nombreArchivoC);
                 } elseif ($configuracion->version == 2) {
                     /*
                         $s3 = AWS::get('s3');
@@ -2527,14 +2519,14 @@ class UserController extends Controller
                   ? $formulario->label_archivo_d.$usuario->id.'.'.$extension
                   : 'archivo-d'.$usuario->id.'.'.$extension;
                 if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_d);
+                    // elimino el archivo actual si existe
+                    if ($usuario->archivo_d && Storage::exists('usuario/archivos/'.$usuario->archivo_d)) {
+                        Storage::delete('usuario/archivos/'.$usuario->archivo_d);
+                    }
 
                     $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoD,
-                        'public'
-                    );
+                        'usuario/archivos',
+                        $nombreArchivoD);
                 } elseif ($configuracion->version == 2) {
                     /*
                         $s3 = AWS::get('s3');
@@ -3247,60 +3239,34 @@ class UserController extends Controller
 
             // Foto
             $campoFoto = $campos->where('nombre_bd', 'foto')->first();
-            if ($campoFoto) {
-                if ($request[$campoFoto->name_id]) {
-                    if ($configuracion->version == 1) {
-                        $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/');
-                        ! is_dir($path) && mkdir($path, 0777, true);
-
-                        $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
-                        $imagenBase64 = base64_decode($imagenPartes[1]);
-                        $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
-                        $imagenPath = $path.$nombreFoto;
-                        file_put_contents($imagenPath, $imagenBase64);
-                        $usuario->foto = $nombreFoto;
-                    } else {
-                        /*
-                          $s3 = AWS::get('s3');
-                          $s3->putObject(array(
-                            'Bucket'     => $_ENV['aws_bucket'],
-                            'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                            'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                          ));*/
-                    }
+            if ($campoFoto && $request[$campoFoto->name_id]) {
+                // Eliminar foto anterior si existe
+                if ($usuario->foto && Storage::exists('usuario/fotos/'.$usuario->foto)) {
+                    Storage::delete('usuario/fotos/'.$usuario->foto);
                 }
+
+                $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
+                $imagenBase64 = base64_decode($imagenPartes[1]);
+                $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
+                
+                Storage::put('usuario/fotos/'.$nombreFoto, $imagenBase64);
+                $usuario->foto = $nombreFoto;
             }
             // fin Foto
-
-            // documentos adjuntos
-            $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/archivos'.'/');
-            ! is_dir($path) && mkdir($path, 0777, true);
 
             // archivo_a
             $campoArchivo = $campos->where('nombre_bd', 'archivo_a')->first();
             if ($campoArchivo && $request->hasFile($campoArchivo->name_id)) {
                 $extension = $request[$campoArchivo->name_id]->extension();
                 $nombreArchivoA = $formulario->label_archivo_a
-                  ? $formulario->label_archivo_a.$usuario->id.'.'.$extension
-                  : 'archivo-a'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_a);
+                  ? str($formulario->label_archivo_a)->slug().'-'.$usuario->id.'.'.$extension
+                  : 'archivo-a-'.$usuario->id.'.'.$extension;
 
-                    $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoA,
-                        'public'
-                    );
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoA,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                if ($usuario->archivo_a && Storage::exists('usuario/archivos/'.$usuario->archivo_a)) {
+                    Storage::delete('usuario/archivos/'.$usuario->archivo_a);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoA);
                 $usuario->archivo_a = $nombreArchivoA;
                 $usuario->save();
             }
@@ -3310,26 +3276,14 @@ class UserController extends Controller
             if ($campoArchivo && $request->hasFile($campoArchivo->name_id)) {
                 $extension = $request[$campoArchivo->name_id]->extension();
                 $nombreArchivoB = $formulario->label_archivo_b
-                  ? $formulario->label_archivo_b.$usuario->id.'.'.$extension
-                  : 'archivo-b'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_b);
+                  ? str($formulario->label_archivo_b)->slug().'-'.$usuario->id.'.'.$extension
+                  : 'archivo-b-'.$usuario->id.'.'.$extension;
 
-                    $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoB,
-                        'public'
-                    );
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoB,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                if ($usuario->archivo_b && Storage::exists('usuario/archivos/'.$usuario->archivo_b)) {
+                    Storage::delete('usuario/archivos/'.$usuario->archivo_b);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoB);
                 $usuario->archivo_b = $nombreArchivoB;
                 $usuario->save();
             }
@@ -3338,28 +3292,15 @@ class UserController extends Controller
             $campoArchivo = $campos->where('nombre_bd', 'archivo_c')->first();
             if ($campoArchivo && $request->hasFile($campoArchivo->name_id)) {
                 $extension = $request[$campoArchivo->name_id]->extension();
-                $nombreArchivoC = 'archivo-c'.$usuario->id.'.'.$extension;
                 $nombreArchivoC = $formulario->label_archivo_c
-                  ? $formulario->label_archivo_c.$usuario->id.'.'.$extension
-                  : 'archivo-c'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_c);
+                  ? str($formulario->label_archivo_c)->slug().'-'.$usuario->id.'.'.$extension
+                  : 'archivo-c-'.$usuario->id.'.'.$extension;
 
-                    $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoC,
-                        'public'
-                    );
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoC,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                if ($usuario->archivo_c && Storage::exists('usuario/archivos/'.$usuario->archivo_c)) {
+                    Storage::delete('usuario/archivos/'.$usuario->archivo_c);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoC);
                 $usuario->archivo_c = $nombreArchivoC;
                 $usuario->save();
             }
@@ -3369,29 +3310,19 @@ class UserController extends Controller
             if ($campoArchivo && $request->hasFile($campoArchivo->name_id)) {
                 $extension = $request[$campoArchivo->name_id]->extension();
                 $nombreArchivoD = $formulario->label_archivo_d
-                  ? $formulario->label_archivo_d.$usuario->id.'.'.$extension
-                  : 'archivo-d'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_d);
+                  ? str($formulario->label_archivo_d)->slug().'-'.$usuario->id.'.'.$extension
+                  : 'archivo-d-'.$usuario->id.'.'.$extension;
 
-                    $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoD,
-                        'public'
-                    );
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoD,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                if ($usuario->archivo_d && Storage::exists('usuario/archivos/'.$usuario->archivo_d)) {
+                    Storage::delete('usuario/archivos/'.$usuario->archivo_d);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoD);
                 $usuario->archivo_d = $nombreArchivoD;
                 $usuario->save();
             }
+            // fin documentos adjuntos
+
             // fin documentos adjuntos
 
             // ubicacion localida o barrio
@@ -3829,60 +3760,34 @@ class UserController extends Controller
 
             // Foto
             $campoFoto = $campos->where('nombre_bd', 'foto')->first();
-            if ($campoFoto) {
-                if ($request[$campoFoto->name_id]) {
-                    if ($configuracion->version == 1) {
-                        $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/');
-                        ! is_dir($path) && mkdir($path, 0777, true);
-
-                        $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
-                        $imagenBase64 = base64_decode($imagenPartes[1]);
-                        $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
-                        $imagenPath = $path.$nombreFoto;
-                        file_put_contents($imagenPath, $imagenBase64);
-                        $usuario->foto = $nombreFoto;
-                    } else {
-                        /*
-                          $s3 = AWS::get('s3');
-                          $s3->putObject(array(
-                            'Bucket'     => $_ENV['aws_bucket'],
-                            'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                            'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                          ));*/
-                    }
+            if ($campoFoto && $request[$campoFoto->name_id]) {
+                // Eliminar foto anterior si existe
+                if ($usuario->foto && Storage::exists('usuario/fotos/'.$usuario->foto)) {
+                    Storage::delete('usuario/fotos/'.$usuario->foto);
                 }
+
+                $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
+                $imagenBase64 = base64_decode($imagenPartes[1]);
+                $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
+                
+                Storage::put('usuario/fotos/'.$nombreFoto, $imagenBase64);
+                $usuario->foto = $nombreFoto;
             }
             // fin Foto
-
-            // documentos adjuntos
-            $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/archivos'.'/');
-            ! is_dir($path) && mkdir($path, 0777, true);
 
             // archivo_a
             $campoArchivo = $campos->where('nombre_bd', 'archivo_a')->first();
             if ($campoArchivo && $request->hasFile($campoArchivo->name_id)) {
                 $extension = $request[$campoArchivo->name_id]->extension();
                 $nombreArchivoA = $formulario->label_archivo_a
-                  ? $formulario->label_archivo_a.$usuario->id.'.'.$extension
-                  : 'archivo-a'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_a);
+                  ? str($formulario->label_archivo_a)->slug().'-'.$usuario->id.'.'.$extension
+                  : 'archivo-a-'.$usuario->id.'.'.$extension;
 
-                    $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoA,
-                        'public'
-                    );
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoA,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                if ($usuario->archivo_a && Storage::exists('usuario/archivos/'.$usuario->archivo_a)) {
+                    Storage::delete('usuario/archivos/'.$usuario->archivo_a);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoA);
                 $usuario->archivo_a = $nombreArchivoA;
                 $usuario->save();
             }
@@ -3892,26 +3797,14 @@ class UserController extends Controller
             if ($campoArchivo && $request->hasFile($campoArchivo->name_id)) {
                 $extension = $request[$campoArchivo->name_id]->extension();
                 $nombreArchivoB = $formulario->label_archivo_b
-                  ? $formulario->label_archivo_b.$usuario->id.'.'.$extension
-                  : 'archivo-b'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_b);
+                  ? str($formulario->label_archivo_b)->slug().'-'.$usuario->id.'.'.$extension
+                  : 'archivo-b-'.$usuario->id.'.'.$extension;
 
-                    $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoB,
-                        'public'
-                    );
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoB,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                if ($usuario->archivo_b && Storage::exists('usuario/archivos/'.$usuario->archivo_b)) {
+                    Storage::delete('usuario/archivos/'.$usuario->archivo_b);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoB);
                 $usuario->archivo_b = $nombreArchivoB;
                 $usuario->save();
             }
@@ -3920,28 +3813,15 @@ class UserController extends Controller
             $campoArchivo = $campos->where('nombre_bd', 'archivo_c')->first();
             if ($campoArchivo && $request->hasFile($campoArchivo->name_id)) {
                 $extension = $request[$campoArchivo->name_id]->extension();
-                $nombreArchivoC = 'archivo-c'.$usuario->id.'.'.$extension;
                 $nombreArchivoC = $formulario->label_archivo_c
-                  ? $formulario->label_archivo_c.$usuario->id.'.'.$extension
-                  : 'archivo-c'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_c);
+                  ? str($formulario->label_archivo_c)->slug().'-'.$usuario->id.'.'.$extension
+                  : 'archivo-c-'.$usuario->id.'.'.$extension;
 
-                    $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoC,
-                        'public'
-                    );
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoC,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                if ($usuario->archivo_c && Storage::exists('usuario/archivos/'.$usuario->archivo_c)) {
+                    Storage::delete('usuario/archivos/'.$usuario->archivo_c);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoC);
                 $usuario->archivo_c = $nombreArchivoC;
                 $usuario->save();
             }
@@ -3951,29 +3831,19 @@ class UserController extends Controller
             if ($campoArchivo && $request->hasFile($campoArchivo->name_id)) {
                 $extension = $request[$campoArchivo->name_id]->extension();
                 $nombreArchivoD = $formulario->label_archivo_d
-                  ? $formulario->label_archivo_d.$usuario->id.'.'.$extension
-                  : 'archivo-d'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual
-                    Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/archivos'.'/'.$usuario->archivo_d);
+                  ? str($formulario->label_archivo_d)->slug().'-'.$usuario->id.'.'.$extension
+                  : 'archivo-d-'.$usuario->id.'.'.$extension;
 
-                    $request[$campoArchivo->name_id]->storeAs(
-                        $configuracion->ruta_almacenamiento.'/archivos'.'/',
-                        $nombreArchivoD,
-                        'public'
-                    );
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoD,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                if ($usuario->archivo_d && Storage::exists('usuario/archivos/'.$usuario->archivo_d)) {
+                    Storage::delete('usuario/archivos/'.$usuario->archivo_d);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoD);
                 $usuario->archivo_d = $nombreArchivoD;
                 $usuario->save();
             }
+            // fin documentos adjuntos
+
             // fin documentos adjuntos
 
             // ubicacion localida o barrio
@@ -4047,62 +3917,47 @@ class UserController extends Controller
 
     public function cambiarFoto(Request $request, User $usuario)
     {
-        $configuracion = Configuracion::find(1);
-
         if ($request->foto) {
-            if ($configuracion->version == 1) {
-                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/');
-                ! is_dir($path) && mkdir($path, 0777, true);
-
-                $imagenPartes = explode(';base64,', $request->foto);
-                $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
-                $imagenPath = $path.$nombreFoto;
-                file_put_contents($imagenPath, $imagenBase64);
-                $usuario->foto = $nombreFoto;
-            } else {
-                /*
-                  $s3 = AWS::get('s3');
-                  $s3->putObject(array(
-                    'Bucket'     => $_ENV['aws_bucket'],
-                    'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                    'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                  ));*/
+            // Eliminar foto anterior si existe
+            if ($usuario->foto && Storage::exists('usuario/fotos/'.$usuario->foto)) {
+                Storage::delete('usuario/fotos/'.$usuario->foto);
             }
+
+            $imagenPartes = explode(';base64,', $request->foto);
+            $imagenBase64 = base64_decode($imagenPartes[1]);
+            $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
+            
+            Storage::put('usuario/fotos/'.$nombreFoto, $imagenBase64);
+            
+            $usuario->foto = $nombreFoto;
             $usuario->save();
         }
 
         return back()->with('success', 'La foto de perfil de <b>'.$usuario->nombre(3).'</b> fue actualizada con éxito.');
     }
+
 
     public function cambiarPortada(Request $request, User $usuario)
     {
-        $configuracion = Configuracion::find(1);
         if ($request->foto) {
-            if ($configuracion->version == 1) {
-                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img//usuarios/banner-usuario/');
-                ! is_dir($path) && mkdir($path, 0777, true);
-
-                $imagenPartes = explode(';base64,', $request->foto);
-                $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'banner-'.$usuario->id.'.jpg';
-                $imagenPath = $path.$nombreFoto;
-                file_put_contents($imagenPath, $imagenBase64);
-                $usuario->portada = $nombreFoto;
-            } else {
-                /*
-                  $s3 = AWS::get('s3');
-                  $s3->putObject(array(
-                    'Bucket'     => $_ENV['aws_bucket'],
-                    'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                    'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                  ));*/
+            // Eliminar portada anterior si existe y no es la por defecto
+            if ($usuario->portada && $usuario->portada !== 'profile-banner.png' && Storage::exists('usuario/banners/'.$usuario->portada)) {
+                Storage::delete('usuario/banners/'.$usuario->portada);
             }
+
+            $imagenPartes = explode(';base64,', $request->foto);
+            $imagenBase64 = base64_decode($imagenPartes[1]);
+            $nombreFoto = 'banner-'.$usuario->id.'.jpg';
+            
+            Storage::put('usuario/banners/'.$nombreFoto, $imagenBase64);
+            
+            $usuario->portada = $nombreFoto;
             $usuario->save();
         }
 
-        return back()->with('success', 'La foto de perfil de <b>'.$usuario->nombre(3).'</b> fue actualizada con éxito.');
+        return back()->with('success', 'La foto de portada de <b>'.$usuario->nombre(3).'</b> fue actualizada con éxito.');
     }
+
 
     public function informacionCongregacional(?int $formulario, User $usuario, int $tipoUsuarioSugeridoId = 0)
     {

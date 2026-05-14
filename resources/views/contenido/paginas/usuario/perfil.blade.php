@@ -351,7 +351,7 @@
     <div class="col-12">
       <div class="card mb-5">
         <div class="user-profile-header-banner ">
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img//usuarios/banner-usuario/'.$usuario->portada)  : $configuracion->ruta_almacenamiento.'/img//usuarios/banner-usuario/'.$usuario->portada }}" alt="Banner image" class="rounded-top">
+          <img src="{{ $usuario->banner_url }}" alt="Banner image" class="rounded-top">
           @if( $usuario->id == auth()->user()->id )
           <button type="button" style="background-color: rgba(255, 255, 255, 0.5);" class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2" data-bs-toggle="modal" data-bs-target="#modalPortada">Cambiar portada <i style="padding-left: 5px;" class="ti ti-camera"></i></button>
           @endif
@@ -367,7 +367,7 @@
             </div>
             @else
             <div class="avatar avatar-xxl">
-              <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto }}" alt="{{ $usuario->foto }}" class="avatar-initial rounded-circle border border-5 border-white bg-info">
+              <img src="{{ $usuario->foto_url }}" alt="{{ $usuario->foto }}" class="avatar-initial rounded-circle border border-5 border-white bg-info">
               @if( $usuario->id == auth()->user()->id )
                 <button class="btn btn-sm rounded-pill btn-icon btn-secondary waves-effect waves-light position-absolute bottom-0 end-0 mb-2 mr-2" data-bs-toggle="modal" data-bs-target="#modalFoto"><i class="ti ti-camera"></i></button>
               @endif
@@ -717,7 +717,7 @@
               @elseif($campo->nombre_bd=='archivo_a')
                 @if($usuario->archivo_a)
                 <div class="{{ $campo->pivot->class }}">
-                  <a download="{{$usuario[$campo->nombre_bd]}}" href="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/archivos/'.$usuario[$campo->nombre_bd]) : $configuracion->ruta_almacenamiento.'/archivos/'.$usuario[$campo->nombre_bd] }}">
+                  <a download="{{$usuario[$campo->nombre_bd]}}" href="{{ $usuario->archivo_a_url }}">
                     <div class="d-flex align-items-start border rounded-3 p-2 mt-1">
                       <div class="avatar  my-auto">
                         <i class="ti ti-file-download ti-xl"></i>
@@ -747,7 +747,7 @@
               @elseif($campo->nombre_bd=='archivo_b')
                 @if($usuario->archivo_b)
                 <div class="{{ $campo->pivot->class }}">
-                  <a download="{{$usuario[$campo->nombre_bd]}}" href="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/archivos/'.$usuario[$campo->nombre_bd]) : $configuracion->ruta_almacenamiento.'/archivos/'.$usuario[$campo->nombre_bd] }}">
+                  <a download="{{$usuario[$campo->nombre_bd]}}" href="{{ $usuario->archivo_b_url }}">
                     <div class="d-flex align-items-start border rounded-3 p-2 mt-1">
                       <div class="avatar  my-auto">
                         <i class="ti ti-file-download ti-xl"></i>
@@ -777,7 +777,7 @@
               @elseif($campo->nombre_bd=='archivo_c')
                 @if($usuario->archivo_c)
                 <div class="{{ $campo->pivot->class }}">
-                  <a download="{{$usuario[$campo->nombre_bd]}}" href="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/archivos/'.$usuario[$campo->nombre_bd]) : $configuracion->ruta_almacenamiento.'/archivos/'.$usuario[$campo->nombre_bd] }}">
+                  <a download="{{$usuario[$campo->nombre_bd]}}" href="{{ $usuario->archivo_c_url }}">
                     <div class="d-flex align-items-start border rounded-3 p-2 mt-1">
                       <div class="avatar  my-auto">
                         <i class="ti ti-file-download ti-xl"></i>
@@ -807,7 +807,7 @@
               @elseif($campo->nombre_bd=='archivo_d')
                 @if($usuario->archivo_d)
                 <div class="{{ $campo->pivot->class }}">
-                  <a download="{{$usuario[$campo->nombre_bd]}}" href="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/archivos/'.$usuario[$campo->nombre_bd]) : $configuracion->ruta_almacenamiento.'/archivos/'.$usuario[$campo->nombre_bd] }}">
+                  <a download="{{$usuario[$campo->nombre_bd]}}" href="{{ $usuario->archivo_d_url }}">
                     <div class="d-flex align-items-start border rounded-3 p-2 mt-1">
                       <div class="avatar  my-auto">
                         <i class="ti ti-file-download ti-xl"></i>
@@ -848,7 +848,7 @@
                     <p class="fs-6 text-black m-0">{{$campo->nombre}}</p>
                     <div class="d-flex align-items-start border rounded-3 p-2 mt-1">
                       <div class="avatar me-2">
-                        <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->usuarioCreacion->foto) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->usuarioCreacion->foto) }}" alt="foto {{$usuario->usuarioCreacion->nombre(3)}}" class="rounded-circle">
+                        <img src="{{ $usuario->usuarioCreacion->foto_url }}" alt="foto {{$usuario->usuarioCreacion->nombre(3)}}" class="rounded-circle">
                       </div>
                       <div class="me-2 ms-1 ">
                         <h6 class="mb-0">{{ $usuario->usuarioCreacion->nombre(3) }}</h6>
@@ -1736,7 +1736,7 @@
                   <div class="mb-2">
                     <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
                     <center>
-                      <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100" id="croppingImage" alt="cropper">
+                      <img src="{{ asset('global_media/placeholders/placeholder.jpg') }}" class="w-100" id="croppingImage" alt="cropper">
                     </center>
                     <input class="form-control d-none" type="text" value="" id="imagen-recortada" name="foto">
                   </div>
@@ -1778,7 +1778,7 @@
                   <div class="mb-2">
                     <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la portada</label><br>
                     <center>
-                      <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
+                      <img src="{{ asset('global_media/placeholders/placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
                     </center>
                     <input class="form-control d-none" type="text" value="" id="imagen-recortada-portada" name="foto">
                   </div>

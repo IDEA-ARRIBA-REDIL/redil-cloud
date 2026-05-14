@@ -104,7 +104,7 @@ class UsuarioConfiguracionController extends Controller
             $tipoUsuario->save();
         }
 
-        return redirect()->route('tipo-usuario.listar')
+        return redirect()->route('tipo-usuario.editar', $tipoUsuario->id)
             ->with('success', 'Tipo de Usuario creado correctamente.');
     }
 
@@ -188,7 +188,7 @@ class UsuarioConfiguracionController extends Controller
         $tipoUsuario->save();
 
         // 7. Redirigir con un mensaje de éxito
-        return redirect()->route('tipo-usuario.listar')
+        return redirect()->route('tipo-usuario.editar', $tipoUsuario->id)
             ->with('success', 'Tipo de Usuario actualizado correctamente.');
     }
 

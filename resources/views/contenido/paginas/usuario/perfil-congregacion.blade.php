@@ -244,11 +244,11 @@
     <div class="col-12">
       <div class="card mb-5">
         <div class="user-profile-header-banner ">
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img//usuarios/banner-usuario/profile-banner.png') : $configuracion->ruta_almacenamiento.'/img//usuarios/banner-usuario/profile-banner.png' }}" alt="Banner image" class="rounded-top">
+          <img src="{{ asset('global_media/placeholders/profile-banner.png') }}" alt="Banner image" class="rounded-top">
         </div>
         <div class="user-profile-header d-flex flex-column flex-md-row text-md-start text-center mb-8 mx-5">
           <div class="flex-shrink-0 mt-n5 mx-md-0 mx-auto">
-            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto }}" alt="{{ $usuario->foto }}" class="d-block h-auto ms-0 ms-md-4 rounded-circle user-profile-img">
+            <img src="{{ $usuario->foto_url }}" alt="{{ $usuario->foto }}" class="d-block h-auto ms-0 ms-md-4 rounded-circle user-profile-img">
           </div>
           <div class="flex-grow-1 mt-3 mt-md-5">
             <div class="d-flex align-items-md-end align-items-start align-items-center justify-content-md-between justify-content-start mx-4 flex-md-row flex-column gap-4">
@@ -507,7 +507,7 @@
               <div class="d-flex align-items-start">
                 <div class="d-flex align-items-start">
                   <div class="avatar me-2">
-                    <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$encargado->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$encargado->foto }}" alt="Avatar" class="rounded-circle" />
+                    <img src="{{ $encargado->foto_url }}" alt="Avatar" class="rounded-circle" />
                   </div>
                   <div class="me-2 ms-1">
                     <h6 class="mb-0">{{ $encargado->nombre }}</h6>
@@ -533,7 +533,7 @@
               <div class="d-flex align-items-start">
                 <div class="d-flex align-items-start">
                   <div class="avatar me-2">
-                    <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$encargado->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$encargado->foto }}" alt="Avatar" class="rounded-circle" />
+                    <img src="{{ $encargado->foto_url }}" alt="Avatar" class="rounded-circle" />
                   </div>
                   <div class="me-2 ms-1">
                     <h6 class="mb-0">{{ $encargado->nombre(3) }}</h6>

@@ -147,9 +147,9 @@ $configData = Helper::appClasses();
   $('.selectorGenero').on('change', function(event) {
     if ($("#imagen-recortada").val() == "") {
       if ($(this).val() == 1) {
-        $("#preview-foto").attr("src", "{{$configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-f.png') : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-f.png' }}");
+        $("#preview-foto").attr("src", "{{ asset('global_media/placeholders/default-f.png') }}");
       } else {
-        $("#preview-foto").attr("src", "{{$configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-m.png') : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-m.png' }}");
+        $("#preview-foto").attr("src", "{{ asset('global_media/placeholders/default-m.png') }}");
       }
     }
   });
@@ -314,7 +314,7 @@ $configData = Helper::appClasses();
     <div class="card mb-4">
       <h5 class="card-header text-black fw-semibold">
         @if($seccion->logo)
-        <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/secciones-formulario/'.$seccion->logo) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$seccion->logo }}?v={{ time() }}" alt="react-logo" class="me-2" width="30">
+        <img src="{{ asset('global_media/img/secciones-formulario/'.$seccion->logo) }}" alt="react-logo" class="me-2" width="30">
         @endif
         {{ $seccion->titulo }}
       </h5>
@@ -370,7 +370,7 @@ $configData = Helper::appClasses();
               @if($campo->nombre_bd == "foto")
               <div class="col-12 mb-3">
                   <div class="avatar avatar-xxl">
-                    <img id="preview-foto"  src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-m.png') : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-m.png') }}" alt="Foto de perfil" class="cropped-img  avatar-initial rounded-circle border border-5 border-white bg-info">
+                    <img id="preview-foto"  src="{{ asset('global_media/placeholders/default-m.png') }}" alt="Foto de perfil" class="cropped-img  avatar-initial rounded-circle border border-5 border-white bg-info">
                     <button class="btn btn-sm rounded-pill btn-icon btn-primary waves-effect waves-light position-absolute bottom-0 end-0 mb-2 mr-2" data-bs-toggle="modal" data-bs-target="#modalFoto"><i class="ti ti-camera"></i></button>
                   </div>
                   <input class="form-control d-none" type="text" value="{{ old('foto') }}" id="imagen-recortada" name="{{ $campo->name_id }}">
@@ -1213,7 +1213,7 @@ $configData = Helper::appClasses();
             <div class="mb-2">
               <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
               <center>
-                <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100" id="croppingImage" alt="cropper">
+                <img src="{{ asset('global_media/placeholders/placeholder.jpg') }}" class="w-100" id="croppingImage" alt="cropper">
               </center>
             </div>
           </div>

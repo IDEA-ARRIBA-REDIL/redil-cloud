@@ -1,18 +1,50 @@
 @php
 $configData = Helper::appClasses();
-// Determina si estamos en modo edición o creación
-$modoEdicion = isset($tipoGrupo);
 $configuracion = \App\Models\Configuracion::find(1);
 @endphp
 
 @extends('layouts/layoutMaster')
 
-@section('title', $modoEdicion ? 'Editar Tipo de Grupo' : 'Crear Tipo de Grupo')
+@section('title', 'Editar Tipo de Grupo')
 
-{{-- (Las secciones de page-style, vendor-script y page-script se mantienen igual) --}}
-@section('page-style') ... @endsection
-@section('vendor-script') ... @endsection
-@section('page-script') ... @endsection
+@section('page-style')
+@vite([
+'resources/assets/vendor/libs/select2/select2.scss',
+'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
+'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+'resources/assets/vendor/libs/@form-validation/umd/styles/index.min.css'
+])
+@endsection
+
+@section('vendor-script')
+@vite([
+'resources/js/app.js',
+'resources/assets/vendor/libs/select2/select2.js',
+'resources/assets/vendor/libs/flatpickr/flatpickr.js',
+'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+'resources/assets/vendor/libs/@form-validation/umd/bundle/popular.min.js'
+])
+@endsection
+
+@section('page-script')
+<script type="module">
+  $(function() {
+    $('#formulario').submit(function(){
+      $('.btnGuardar').attr('disabled','disabled');
+
+      Swal.fire({
+        title: "Espera un momento",
+        text: "Ya estamos guardando...",
+        icon: "info",
+        showCancelButton: false,
+        showConfirmButton: false,
+        showDenyButton: false
+      });
+    });
+
+  });
+</script>
+@endsection
 
 @push('scripts')
 <script>
@@ -54,223 +86,332 @@ $configuracion = \App\Models\Configuracion::find(1);
 
 @section('content')
 
-{{-- Título dinámico --}}
-<h4 class="mb-1">{{ $modoEdicion ? 'Editar Tipo de Grupo: ' . $tipoGrupo->nombre : 'Crear Tipo de Grupo' }}</h4>
-<p class="mb-4">{{ $modoEdicion ? 'Actualiza los datos del tipo de grupo.' : 'Registra un nuevo tipo de grupo en el sistema.' }}</p>
+<h4 class=" mb-1 fw-semibold text-primary">Editar tipo de grupo: {{ $tipoGrupo->nombre }}</h4>
+<p class="mb-4 text-black">Actualiza los datos del tipo de grupo.</p>
 
 @include('layouts.status-msn')
 
-<form role="form" method="POST"
-  action="{{ $modoEdicion ? route('gestionar-tipos-de-grupos.actualizarTipoDeGrupo', $tipoGrupo->id) : route('gestionar-tipos-de-grupos.crearTipoDeGrupo') }}"
+<form id="formulario" role="form" method="POST"
+  action="{{ route('gestionar-tipos-de-grupos.actualizarTipoDeGrupo', $tipoGrupo->id) }}"
   enctype="multipart/form-data">
   @csrf
-  @if($modoEdicion)
   @method('PATCH')
-  @endif
 
-  <div class="card p-4 w-100">
-    <div class="row g-3">
+  <div class="row">
+    <div class="col-md-12 mt-10">
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">
+           Información principal
+        </h5>
+        <div class="card-body">
+          <div class="row">
+            <!-- nombre --> 
+            <div class="mb-3 col-12 col-md-6 col-md-3">
+              <label class="form-label">Nombre</label>
+              <input type="text" name="nombre" class="form-control" placeholder="Nombre del tipo de grupo" value="{{ old('nombre', $tipoGrupo->nombre ?? '') }}">
+              @error('nombre')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <!-- nombre -->
 
-      <div class="col-12">
-        <h5 class="mt-4 border-bottom pb-2">Información General</h5>
-      </div>
+            <!-- nombre_plural --> 
+            <div class="mb-3 col-12 col-md-6 col-md-3">
+              <label class="form-label">Nombre plural</label>
+              <input type="text" name="nombre_plural" class="form-control" placeholder="Nombre del tipo de grupo" value="{{ old('nombre_plural', $tipoGrupo->nombre_plural ?? '') }}">
+              @error('nombre_plural')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <!-- nombre_plural -->
 
-      <div class="col-md-4">
-        <label class="form-label">Nombre</label>
-        <input type="text" name="nombre" class="form-control" placeholder="Nombre del tipo de grupo" value="{{ old('nombre', $tipoGrupo->nombre ?? '') }}">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Nombre plural</label>
-        <input type="text" name="nombre_plural" class="form-control" placeholder="Ej: Grupos de Amistad" value="{{ old('nombre_plural', $tipoGrupo->nombre_plural ?? '') }}">
-      </div>
+            <!-- descripcion -->
+            <div class="mb-3 col-12">
+              <label class="form-label">Descripción</label>
+              <input type="text" name="descripcion" class="form-control" placeholder="Descripción breve" value="{{ old('descripcion', $tipoGrupo->descripcion ?? '') }}">
+              @error('descripcion')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <!-- descripcion -->
 
-      {{-- Imagen --}}
-      <div class="col-md-4 mb-3">
-        <label for="imagen" class="form-label">Imagen (Icono)</label>
+            <!-- imagen -->
+            <div class="mb-3 col-12 col-md-6">
+              <label for="imagen" class="form-label">Icono</label>
 
-        @if ($tipoGrupo->imagen)
-        {{-- Muestra la info de la imagen actual y el botón para reemplazar --}}
-        <div id="info-imagen-actual" class="mb-2">
-          <div class="border rounded p-2 d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-              <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->imagen) }}" alt="Imagen actual" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
-              <div class="d-flex flex-column">
-                <span style="font-size: 0.75rem;" class="text-muted">Imagen actual</span>
-                <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ basename($tipoGrupo->imagen) }}</span>
+              @if ($tipoGrupo->imagen)
+              {{-- Muestra la info de la imagen actual y el botón para reemplazar --}}
+              <div id="info-imagen-actual" class="mb-2">
+                <div class="border rounded p-2 d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->imagen) }}" alt="Imagen actual" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
+                    <div class="d-flex flex-column">
+                      <span style="font-size: 0.75rem;" class="text-muted">Imagen actual</span>
+                      <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ basename($tipoGrupo->imagen) }}</span>
+                    </div>
+                  </div>
+                  <button type="button" id="btn-reemplazar" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
+                    <i class="ti ti-trash"></i>
+                  </button>
+                </div>
+              </div>
+              @endif
+
+              <div id="contenedor-input-imagen" class="{{ $tipoGrupo->imagen ? 'd-none' : '' }}">
+                <div class="input-group">
+                  <input type="file" id="imagen" name="imagen" class="form-control" accept="image/png">
+                </div>
+                @error('imagen')
+                <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+                @enderror
               </div>
             </div>
-            <button type="button" id="btn-reemplazar" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
-              <i class="ti ti-trash"></i>
-            </button>
-          </div>
-        </div>
-        @endif
+            <!-- imagen -->
 
-        {{-- Contenedor del input para subir una nueva imagen --}}
-        {{-- Estará oculto por defecto si ya existe una imagen --}}
-        <div id="contenedor-input-imagen" class="{{ $tipoGrupo->imagen ? 'd-none' : '' }}">
-          <div class="input-group">
-            <input type="file" id="imagen" name="imagen" class="form-control" accept="image/png">
-          </div>
-          @error('imagen')
-          <div class="text-danger ti-12px mt-2">
-            <i class="ti ti-circle-x"></i> {{ $message }}
-          </div>
-          @enderror
-        </div>
-      </div>
-      {{-- /Imagen --}}
+            <!-- portada -->
+            <div class="mb-3 col-12 col-md-6">
+              <label for="portada" class="form-label">Portada</label>
 
-      {{-- Portada --}}
-      <div class="col-md-4 mb-3">
-        <label for="portada" class="form-label">Portada / Banner (Fallback)</label>
+              @if ($tipoGrupo->portada)
+              <div id="info-portada-actual" class="mb-2">
+                <div class="border rounded p-2 d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center">
+                    <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->portada) }}" alt="Portada actual" class="rounded me-3 border" style="width: 80px; height: 50px; object-fit: cover;">
+                    <div class="d-flex flex-column">
+                      <span style="font-size: 0.75rem;" class="text-muted">Portada actual</span>
+                      <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ basename($tipoGrupo->portada) }}</span>
+                    </div>
+                  </div>
+                  <button type="button" id="btn-reemplazar-portada" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
+                    <i class="ti ti-trash"></i>
+                  </button>
+                </div>
+              </div>
+              @endif
 
-        @if ($tipoGrupo->portada)
-        <div id="info-portada-actual" class="mb-2">
-          <div class="border rounded p-2 d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-              <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->portada) }}" alt="Portada actual" class="rounded me-3 border" style="width: 80px; height: 50px; object-fit: cover;">
-              <div class="d-flex flex-column">
-                <span style="font-size: 0.75rem;" class="text-muted">Portada actual</span>
-                <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ basename($tipoGrupo->portada) }}</span>
+              <div id="contenedor-input-portada" class="{{ $tipoGrupo->portada ? 'd-none' : '' }}">
+                <div class="input-group">
+                  <input type="file" id="portada" name="portada" class="form-control" accept="image/*">
+                </div>
+                @error('portada')
+                <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+                @enderror
               </div>
             </div>
-            <button type="button" id="btn-reemplazar-portada" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
-              <i class="ti ti-trash"></i>
-            </button>
+            <!-- portada -->      
+
+            <!-- geo_icono -->
+            <div class="mb-3 col-12 col-md-3">
+              <label class="form-label">Icono del mapa</label>
+              <input type="text" name="geo_icono" class="form-control" value="{{ old('geo_icono', $tipoGrupo->geo_icono ?? '') }}">
+              @error('geo_icono')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <!-- geo_icono -->
+
+            <!-- color -->
+            <div class="mb-3 col-12 col-md-3">
+              <label class="form-label">Color principal</label>
+              <input type="color" name="color" id="color" class="form-control form-control-color" value="{{ old('color', $tipoGrupo->color ?? '#00A3FF') }}">
+              @error('color')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <!-- color -->
+            
           </div>
         </div>
-        @endif
-
-        <div id="contenedor-input-portada" class="{{ $tipoGrupo->portada ? 'd-none' : '' }}">
-          <div class="input-group">
-            <input type="file" id="portada" name="portada" class="form-control" accept="image/*">
-          </div>
-          @error('portada')
-          <div class="text-danger ti-12px mt-2">
-            <i class="ti ti-circle-x"></i> {{ $message }}
-          </div>
-          @enderror
-        </div>
       </div>
-      {{-- /Portada --}}
-
-      <div class="col-md-8">
-        <label class="form-label">Descripción</label>
-        <input type="text" name="descripcion" class="form-control" placeholder="Descripción breve" value="{{ old('descripcion', $tipoGrupo->descripcion ?? '') }}">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Icono</label>
-        <input type="text" name="geo_icono" class="form-control" id="geoIconoInput">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Color principal</label>
-        <div class="pickr-wrapper">
-          <div id="pickr-container"></div>
-          <input type="hidden" id="color_hex" name="color" value="{{ old('color', $tipoGrupo->color ?? '#00A3FF') }}">
-        </div>
-      </div>
-
-      <div class="col-12">
-        <h5 class="mt-4 border-bottom pb-2">Textos para Finalizar Reporte</h5>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Título principal</label>
-        <input type="text" name="titulo1_finalizar_reporte" class="form-control" value="{{ old('titulo1_finalizar_reporte', $tipoGrupo->titulo1_finalizar_reporte ?? 'Confirmar asistencia') }}">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Subtítulo encargados</label>
-        <input type="text" name="subtitulo_encargados_finalizar_reporte" class="form-control" value="{{ old('subtitulo_encargados_finalizar_reporte', $tipoGrupo->subtitulo_encargados_finalizar_reporte ?? 'Encargados') }}">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Subtítulo personas nuevas</label>
-        <input type="text" name="subtitulo_sumatorias_adiccionales_finalizar_reporte" class="form-control" value="{{ old('subtitulo_sumatorias_adiccionales_finalizar_reporte', $tipoGrupo->subtitulo_sumatorias_adiccionales_finalizar_reporte ?? 'Personas nuevas') }}">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Subtítulo miembros</label>
-        <input type="text" name="subtitulo_miembros_finalizar_reporte" class="form-control" value="{{ old('subtitulo_miebros_finalizar_reporte', $tipoGrupo->subtitulo_miebros_finalizar_reporte ?? 'Miembros del grupo') }}">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Subtítulo ofrendas</label>
-        <input type="text" name="subtitulo_ofrendas_finalizar_reporte" class="form-control" value="{{ old('subtitulo_ofrendas_finalizar_reporte', $tipoGrupo->subtitulo_ofrendas_finalizar_reporte ?? 'Ofrendas') }}">
-      </div>
-
-
-      <div class="col-12">
-        <h5 class="mt-4 border-bottom pb-2">Configuraciones Numéricas</h5>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Orden</label>
-        <input type="number" name="orden" class="form-control" value="{{ old('orden', $tipoGrupo->orden ?? '0') }}">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Metros de cobertura</label>
-        <input type="number" name="metros_cobertura" class="form-control" value="{{ old('metros_cobertura', $tipoGrupo->metros_cobertura ?? '500') }}">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Máx. reportes/semana</label>
-        <input type="number" name="cantidad_maxima_reportes_semana" class="form-control" value="{{ old('cantidad_maxima_reportes_semana', $tipoGrupo->cantidad_maxima_reportes_semana ?? '1') }}">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Días para inactividad</label>
-        <input type="number" name="tiempo_para_definir_inactivo_grupo" class="form-control" value="{{ old('tiempo_para_definir_inactivo_grupo', $tipoGrupo->tiempo_para_definir_inactivo_grupo ?? '30') }}">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Horas link asistencia</label>
-        <input type="number" name="horas_disponiblidad_link_asistencia" class="form-control" value="{{ old('horas_disponiblidad_link_asistencia', $tipoGrupo->horas_disponiblidad_link_asistencia ?? '0') }}">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">ID Tipo Usuario (Autom.)</label>
-        <input type="number" name="automatizacion_tipo_usuario_id" class="form-control" value="{{ old('automatizacion_tipo_usuario_id', $tipoGrupo->automatizacion_tipo_usuario_id ?? '') }}">
-      </div>
-
-      <div class="col-12">
-        <h5 class="mt-4 border-bottom pb-2">Opciones y Permisos</h5>
-      </div>
-      @php
-      $checkboxes = [
-      'seguimiento_actividad' => 'Seguimiento actividad', 'contiene_servidores' => 'Contiene servidores',
-      'posible_grupo_sede' => 'Posible grupo sede', 'ingresos_individuales_discipulos' => 'Ingresos individuales discípulos',
-      'ingresos_individuales_lideres' => 'Ingresos individuales líderes', 'registra_datos_planeacion' => 'Registra datos planeación',
-      'servidores_solo_discipulos' => 'Servidores solo discípulos', 'visible_mapa_asignacion' => 'Visible en mapa',
-      'tipo_evangelistico' => 'Tipo evangelístico', 'enviar_mensaje_bienvenida' => 'Enviar mensaje bienvenida',
-      'sumar_encargado_asistencia_grupo' => 'Sumar encargado a la asistencia', 'registrar_inasistencia' => 'Registrar inasistencia',
-      'inasistencia_obligatoria' => 'Inasistencia obligatoria'
-      ];
-      @endphp
-
-      @foreach($checkboxes as $name => $label)
-      <div class="col-md-3">
-        <div class="form-check mt-3">
-          <input class="form-check-input" type="checkbox" name="{{ $name }}" value="1" @checked(old($name, $tipoGrupo->$name ?? false))>
-          <label class="form-check-label">{{ $label }}</label>
-        </div>
-      </div>
-      @endforeach
-
-
-      <div class="col-12">
-        <h5 class="mt-4 border-bottom pb-2">Descripciones Adicionales</h5>
-      </div>
-      <div class="col-12">
-        <label class="form-label">Mensaje de bienvenida</label>
-        <textarea class="form-control" name="mensaje_bienvenida" rows="3">{{ old('mensaje_bienvenida', $tipoGrupo->mensaje_bienvenida ?? '') }}</textarea>
-      </div>
-      <div class="col-12">
-        <label class="form-label">Descripción principal (Finalizar reporte)</label>
-        <textarea class="form-control" name="descripcion1_finalizar_reporte" rows="3">{{ old('descripcion1_finalizar_reporte', $tipoGrupo->descripcion1_finalizar_reporte ?? 'Gestiona aquí las asistencias de los miembros del grupo.') }}</textarea>
-      </div>
-      <div class="col-12">
-        <label class="form-label">Descripción de ofrendas (Finalizar reporte)</label>
-        <textarea class="form-control" name="descripcion_ofrendas_finalizar_reporte" rows="3">{{ old('descripcion_ofrendas_finalizar_reporte', $tipoGrupo->descripcion_ofrendas_finalizar_reporte ?? 'Ingresa el valor de las ofrendas recolectadas en el grupo.') }}</textarea>
-      </div>
-
     </div>
 
-    <div class="mt-4 pt-4 border-top text-center">
-      <button type="submit" class="btn btn-primary rounded-pill px-4">{{ $modoEdicion ? 'Actualizar' : 'Guardar' }}</button>
-      <a href="{{ route('gestionar-tipos-de-grupos.modificarTipoDeGrupo') }}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+    <div class="col-md-12">
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">
+           Texto para los reportes
+        </h5>
+        <div class="card-body">
+          <div class="row">
+             
+            <div class="col-12 mb-3 col-md-6">
+              <label class="form-label">Título principal</label>
+              <input type="text" name="titulo1_finalizar_reporte" class="form-control" value="{{ old('titulo1_finalizar_reporte', $tipoGrupo->titulo1_finalizar_reporte ?? 'Confirmar asistencia') }}">
+              @error('titulo1_finalizar_reporte')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="col-12 mb-3 col-md-6">
+              <label class="form-label">Subtítulo encargados</label>
+              <input type="text" name="subtitulo_encargados_finalizar_reporte" class="form-control" value="{{ old('subtitulo_encargados_finalizar_reporte', $tipoGrupo->subtitulo_encargados_finalizar_reporte ?? 'Encargados') }}">
+              @error('subtitulo_encargados_finalizar_reporte')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="col-12 mb-3 col-md-6">
+              <label class="form-label">Subtítulo personas nuevas</label>
+              <input type="text" name="subtitulo_sumatorias_adiccionales_finalizar_reporte" class="form-control" value="{{ old('subtitulo_sumatorias_adiccionales_finalizar_reporte', $tipoGrupo->subtitulo_sumatorias_adiccionales_finalizar_reporte ?? 'Personas nuevas') }}">
+              @error('subtitulo_sumatorias_adiccionales_finalizar_reporte')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="col-12 mb-3 col-md-6">
+              <label class="form-label">Subtítulo miembros</label>
+              <input type="text" name="subtitulo_miembros_finalizar_reporte" class="form-control" value="{{ old('subtitulo_miembros_finalizar_reporte', $tipoGrupo->subtitulo_miebros_finalizar_reporte ?? 'Miembros del grupo') }}">
+              @error('subtitulo_miembros_finalizar_reporte')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="col-12 mb-3 col-md-6">
+              <label class="form-label">Subtítulo ofrendas</label>
+              <input type="text" name="subtitulo_ofrendas_finalizar_reporte" class="form-control" value="{{ old('subtitulo_ofrendas_finalizar_reporte', $tipoGrupo->subtitulo_ofrendas_finalizar_reporte ?? 'Ofrendas') }}">
+              @error('subtitulo_ofrendas_finalizar_reporte')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-12">
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">
+           Configuraciones numéricas
+        </h5>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3 col-12 mb-3">
+              <label class="form-label">Orden</label>
+              <input type="number" name="orden" class="form-control" value="{{ old('orden', $tipoGrupo->orden ?? 0) }}">
+              @error('orden')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <div class="col-md-3 col-12 mb-3">
+              <label class="form-label">Metros de cobertura</label>
+              <input type="number" name="metros_cobertura" class="form-control" value="{{ old('metros_cobertura', $tipoGrupo->metros_cobertura ?? 500) }}">
+              @error('metros_cobertura')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <div class="col-md-3 col-12 mb-3">
+              <label class="form-label">Máx. reportes/semana</label>
+              <input type="number" name="cantidad_maxima_reportes_semana" class="form-control" value="{{ old('cantidad_maxima_reportes_semana', $tipoGrupo->cantidad_maxima_reportes_semana ?? 1) }}">
+              @error('cantidad_maxima_reportes_semana')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <div class="col-md-3 col-12 mb-3">
+              <label class="form-label">Días para inactividad</label>
+              <input type="number" name="tiempo_para_definir_inactivo_grupo" class="form-control" value="{{ old('tiempo_para_definir_inactivo_grupo', $tipoGrupo->tiempo_para_definir_inactivo_grupo ?? 30) }}">
+              @error('tiempo_para_definir_inactivo_grupo')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <div class="col-md-3 col-12 mb-3">
+              <label class="form-label">Horas link asistencia</label>
+              <input type="number" name="horas_disponiblidad_link_asistencia" class="form-control" value="{{ old('horas_disponiblidad_link_asistencia', $tipoGrupo->horas_disponiblidad_link_asistencia ?? 0) }}">
+              @error('horas_disponiblidad_link_asistencia')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>            
+            <div class="col-md-3 col-12 mb-3">
+              <label class="form-label">ID Tipo Usuario (Autom.)</label>
+              <input type="number" name="automatizacion_tipo_usuario_id" class="form-control" value="{{ old('automatizacion_tipo_usuario_id', $tipoGrupo->automatizacion_tipo_usuario_id ?? '') }}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-12">
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">
+           Opciones y permisos 
+        </h5>
+        <div class="card-body">
+          <div class="row">
+            @php
+            $checkboxes = [
+              'seguimiento_actividad' => 'Seguimiento actividad', 
+              'contiene_servidores' => 'Contiene servidores',
+              'posible_grupo_sede' => 'Posible grupo sede', 
+              'ingresos_individuales_discipulos' => 'Ingresos individuales discípulos',
+              'ingresos_individuales_lideres' => 'Ingresos individuales líderes', 
+              'registra_datos_planeacion' => 'Registra datos planeación',
+              'servidores_solo_discipulos' => 'Servidores solo discípulos', 
+              'visible_mapa_asignacion' => 'Visible en mapa',
+              'tipo_evangelistico' => 'Tipo evangelístico', 
+              'enviar_mensaje_bienvenida' => 'Enviar mensaje bienvenida',
+              'sumar_encargado_asistencia_grupo' => 'Sumar encargado a la asistencia', 
+              'registrar_inasistencia' => 'Registrar inasistencia',
+              'inasistencia_obligatoria' => 'Inasistencia obligatoria'
+            ];
+            @endphp
+
+            @foreach($checkboxes as $name => $label)
+            <div class="col-md-3 col-12 mb-3">
+              <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" name="{{ $name }}" value="1" @checked(old($name, $tipoGrupo->$name ?? false))>
+                <label class="form-check-label">{{ $label }}</label>
+              </div>
+            </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-12">
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">
+           Descripciones adicionales
+        </h5>
+        <div class="card-body">
+          <div class="row">           
+
+            <div class="col-12 mb-3">
+              <label class="form-label">Mensaje de bienvenida</label>
+              <textarea class="form-control" name="mensaje_bienvenida" rows="3">{{ old('mensaje_bienvenida', $tipoGrupo->mensaje_bienvenida ?? '') }}</textarea>
+              @error('mensaje_bienvenida')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="col-12 mb-3">
+              <label class="form-label">Descripción principal (Finalizar reporte)</label>
+              <textarea class="form-control" name="descripcion1_finalizar_reporte" rows="3">{{ old('descripcion1_finalizar_reporte', $tipoGrupo->descripcion1_finalizar_reporte ?? 'Gestiona aquí las asistencias de los miembros del grupo.') }}</textarea>
+              @error('descripcion1_finalizar_reporte')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+
+            <div class="col-12 mb-3">
+              <label class="form-label">Descripción de ofrendas (Finalizar reporte)</label>
+              <textarea class="form-control" name="descripcion_ofrendas_finalizar_reporte" rows="3">{{ old('descripcion_ofrendas_finalizar_reporte', $tipoGrupo->descripcion_ofrendas_finalizar_reporte ?? 'Ingresa el valor de las ofrendas recolectadas en el grupo.') }}</textarea>
+              @error('descripcion_ofrendas_finalizar_reporte')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- botonera -->
+  <div class="d-flex mb-1 mt-5">
+    <div class="me-auto">
+      <button type="submit" class="btn btnGuardar btn-primary rounded-pill px-12 py-2" >Actualizar</button>
     </div>
   </div>
+  <!-- /botonera -->
 </form>
 @endsection

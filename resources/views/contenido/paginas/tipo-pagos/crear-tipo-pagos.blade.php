@@ -1,283 +1,267 @@
+@php
+$configData = Helper::appClasses();
+@endphp
+
 @extends('layouts.layoutMaster')
 
-@section('title', 'Crear Tipo de Pago')
+@section('title', 'Nuevo tipo de pago')
 
-{{-- 1. ESTILOS --}}
 @section('page-style')
 @vite([
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+  'resources/assets/vendor/libs/select2/select2.scss',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+  'resources/assets/vendor/libs/@form-validation/umd/styles/index.min.css'
 ])
 @endsection
 
 @section('vendor-script')
 @vite([
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+  'resources/assets/vendor/libs/select2/select2.js',
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+  'resources/assets/vendor/libs/@form-validation/umd/bundle/popular.min.js'
 ])
 @endsection
 
+@section('page-script')
+<script type="module">
+  $(function() {
+    // Inicializar Select2
+    $('.select2').select2();
+
+    // Manejador del formulario
+    $('#formulario').submit(function(){
+      $('.btnGuardar').attr('disabled','disabled');
+
+      Swal.fire({
+        title: "Espera un momento",
+        text: "Ya estamos guardando...",
+        icon: "info",
+        showCancelButton: false,
+        showConfirmButton: false,
+        showDenyButton: false
+      });
+    });
+  });
+</script> 
+@endsection
+
 @section('content')
-<!-- PORTADA -->
-<div class="col-md-12">
-  <div class="card mb-4 rounded rounded-3">
-    <img id="preview-foto" class="cropped-img card-img-top mb-2" src="{{ Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/default.png') }}" alt="Portada">
-    <button type="button" style="background-color: rgba(255, 255, 255, 0.5);" class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2" data-bs-toggle="modal" data-bs-target="#modalFoto">Cambiar portada <i style="padding-left: 5px;" class="ti ti-camera"></i></button>
-    <input class="form-control d-none" type="text" value="{{ old('foto') }}" id="imagen-recortada" name="foto">
+<h4 class="fw-semibold text-primary mb-1">Nuevo tipo de pago</h4>
+<p class="mb-4 text-black">Registra un nuevo tipo de pago y define sus parámetros de configuración.</p>
 
-    <div class="row p-4 m-0 d-flex card-body">
-      <h5 class="mb-1 fw-semibold text-black">Crear tipo de pago</h5>
-      <p class="mb-4 text-black">Aquí podras modificar un tipo de pago, por favor llena los campos que son requeridos.</p>
-    </div>
-  </div>
-</div>
-<!-- PORTADA -->
+@include('layouts.status-msn')
 
-<div class="row">
-  <div class="col-xl">
-    <div class="card mb-4">
-      <div class="card-body">
+<form id="formulario" action="{{ route('tipo-pagos.crearTipoPagos') }}" method="POST" enctype="multipart/form-data">
+  @csrf
 
-        {{-- Formulario --}}
-        {{-- CAMBIO IMPORTANTE: Apunta a la ruta de crear y usa POST --}}
-        <form action="{{ route('tipo-pagos.crearTipoPagos') }}" method="POST" enctype="multipart/form-data">
-          @csrf
-
-          {{-- 1. CADENAS DE TEXTO E IMÁGENES --}}
-          <h6 class="mt-2 text-primary text-black">Información General</h6>
-          <div class="row g-3">
-
-            {{-- Nombre --}}
-            <div class="col-md-4">
-              <label class="form-label">Nombre (obligatorio)</label>
-              <input type="text" class="form-control" name="nombre" value="{{ old('nombre') }}" required maxlength="30">
+  <div class="row">
+    <!-- Columna Izquierda -->
+    <div class="col-12">
+      <!-- Card: Información básica -->
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Información básica</h5>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="nombre" class="form-label">Nombre *</label>
+              <input type="text" name="nombre" id="nombre" class="form-control" value="{{ old('nombre') }}" placeholder="Ej: PSE" required maxlength="30">
+              @error('nombre')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
             </div>
-
-            {{-- Enlace --}}
-            <div class="col-md-4">
-              <label class="form-label">Enlace </label>
-              <input type="text" class="form-control" name="enlace" value="{{ old('enlace') }}" maxlength="100">
+            <div class="col-md-6 mb-3">
+              <label for="enlace" class="form-label">Enlace</label>
+              <input type="text" name="enlace" id="enlace" class="form-control" value="{{ old('enlace') }}" placeholder="https://..." maxlength="100">
               @error('enlace')
               <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
               @enderror
             </div>
-
-            {{-- Cuenta SAP --}}
-            <div class="col-md-4">
-              <label class="form-label">Cuenta SAP (obligatorio)</label>
-              <input type="text" class="form-control" name="cuenta_sap" value="{{ old('cuenta_sap') }}" maxlength="30">
+            <div class="col-md-6 mb-3">
+              <label for="cuenta_sap" class="form-label">Cuenta SAP *</label>
+              <input type="text" name="cuenta_sap" id="cuenta_sap" class="form-control" value="{{ old('cuenta_sap') }}" placeholder="Código SAP" maxlength="30">
               @error('cuenta_sap')
               <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
               @enderror
             </div>
-
-            {{-- Campos Opcionales Strings --}}
-            <div class="col-md-4">
-              <label class="form-label">Client ID</label>
-              <input type="text" class="form-control" name="client_id" value="{{ old('client_id') }}" maxlength="500">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Key ID</label>
-              <input type="text" class="form-control" name="key_id" value="{{ old('key_id') }}" maxlength="500">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Business ID</label>
-              <input type="text" class="form-control" name="bussines_id" value="{{ old('bussines_id') }}" maxlength="500">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">URL Retorno</label>
-              <input type="text" class="form-control" name="url_retorno" value="{{ old('url_retorno') }}" maxlength="500">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Identity Token</label>
-              <input type="text" class="form-control" name="identity_token" value="{{ old('identity_token') }}" maxlength="500">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Key Reservada</label>
-              <input type="text" class="form-control" name="key_reservada" value="{{ old('key_reservada') }}" maxlength="50">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Account ID</label>
-              <input type="text" class="form-control" name="account_id" value="{{ old('account_id') }}" maxlength="50">
-            </div>
-
-            {{-- Color --}}
-            <div class="col-md-4">
-              <label class="form-label">Color</label>
-              <input type="color" class="form-control form-control-color" name="color" value="{{ old('color', '#ffffff') }}">
-            </div>
-
-            {{-- Textareas --}}
-            <div class="col-md-6">
-              <label class="form-label">Label Destinatario</label>
-              <textarea class="form-control" name="label_destinatario" rows="2">{{ old('label_destinatario') }}</textarea>
-              @error('label_destinatario')
-              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
-              @enderror
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Observaciones </label>
-              <textarea class="form-control" name="observaciones" rows="2" >{{ old('observaciones') }}</textarea>
-              @error('observaciones')
-              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
-              @enderror
-            </div>
-
-            {{-- CAMPO: IMAGEN (LOGO) --}}
             <div class="col-md-6 mb-3">
-              <label for="imagen" class="form-label">Imagen (obligatorio)</label>
-              <div id="contenedor-input-imagen">
-                <div class="input-group">
-                  <input type="file" id="imagen" name="imagen" class="form-control" accept="image/*">
-                </div>
-                @error('imagen')
-                <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
-                @enderror
-              </div>
+              <label for="color" class="form-label">Color representativo</label>
+              <input type="color" name="color" id="color" class="form-control form-control-color w-100" value="{{ old('color', '#666CE8') }}">
             </div>
-
-            {{-- CAMPO: FONDO (IMAGEN) --}}
+            <div class="col-md-6 mb-3">
+              <label for="imagen" class="form-label">Logo (Imagen) *</label>
+              <input class="form-control" type="file" name="imagen" id="imagen" accept="image/*">
+              @error('imagen')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
             <div class="col-md-6 mb-3">
               <label for="fondo" class="form-label">Fondo (Imagen)</label>
-              <div id="contenedor-input-fondo">
-                <div class="input-group">
-                  <input type="file" id="fondo" name="fondo" class="form-control" accept="image/*">
-                </div>
-                @error('fondo')
-                <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
-                @enderror
-              </div>
+              <input class="form-control" type="file" name="fondo" id="fondo" accept="image/*">
+              @error('fondo')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
             </div>
 
-          </div>
-
-          <hr class="my-4">
-
-          {{-- 2. CONFIGURACIÓN NUMÉRICA --}}
-          <h6 class="text-primary text-black">Configuración Numérica</h6>
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label" for="unica_moneda_id">Moneda Única (obligatorio)</label>
-
-              <select class="form-select @error('unica_moneda_id') is-invalid @enderror"
-                name="unica_moneda_id"
-                id="unica_moneda_id" required>
-
+            <div class="col-12 col-md-4 mb-3">
+              <label for="unica_moneda_id" class="form-label">Moneda única *</label>
+              <select name="unica_moneda_id" id="unica_moneda_id" class="form-select select2" required>
                 <option value="">Seleccione una moneda...</option>
-
                 @foreach ($monedas as $moneda)
-                <option value="{{ $moneda->id }}"
-                  {{ old('unica_moneda_id') == $moneda->id ? 'selected' : '' }}>
+                <option value="{{ $moneda->id }}" {{ old('unica_moneda_id') == $moneda->id ? 'selected' : '' }}>
                   {{ $moneda->nombre }} ({{ $moneda->nombre_corto }})
                 </option>
                 @endforeach
-
               </select>
-
               @error('unica_moneda_id')
-              <div class="invalid-feedback">{{ $message }}</div>
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
               @enderror
             </div>
-            <div class="col-md-4">
-              <label class="form-label">% Tax 1</label>
-              <input type="number" class="form-control" name="porcentaje_tax1" value="{{ old('porcentaje_tax1') }}">
+            <div class="col-12 col-md-4 mb-3">
+              <label for="porcentaje_tax1" class="form-label">% Tax 1</label>
+              <input type="number" step="0.01" name="porcentaje_tax1" id="porcentaje_tax1" class="form-control" value="{{ old('porcentaje_tax1') }}">
             </div>
-            <div class="col-md-4">
-              <label class="form-label">% Tax 2</label>
-              <input type="number" class="form-control" name="porcentaje_tax2" value="{{ old('porcentaje_tax2') }}">
+            <div class="col-12 col-md-4 mb-3">
+              <label for="porcentaje_tax2" class="form-label">% Tax 2</label>
+              <input type="number" step="0.01" name="porcentaje_tax2" id="porcentaje_tax2" class="form-control" value="{{ old('porcentaje_tax2') }}">
             </div>
-            <div class="col-md-4">
-              <label class="form-label">Transacción Mínima</label>
-              <input type="number" class="form-control" name="transaccion_minima" value="{{ old('transaccion_minima') }}">
+            <div class="col-12 col-md-4 mb-3">
+              <label for="transaccion_minima" class="form-label">Transacción mínima</label>
+              <input type="number" step="0.01" name="transaccion_minima" id="transaccion_minima" class="form-control" value="{{ old('transaccion_minima') }}">
             </div>
-            <div class="col-md-4">
-              <label class="form-label">Transacción Máxima</label>
-              <input type="number" class="form-control" name="transaccion_maxima" value="{{ old('transaccion_maxima') }}">
+            <div class="col-12 col-md-4 mb-3">
+              <label for="transaccion_maxima" class="form-label">Transacción máxima</label>
+              <input type="number" step="0.01" name="transaccion_maxima" id="transaccion_maxima" class="form-control" value="{{ old('transaccion_maxima') }}">
             </div>
-            <div class="col-md-4">
-              <label class="form-label">Incremento PDP</label>
-              <input type="number" class="form-control" name="incremento_pdp" value="{{ old('incremento_pdp') }}">
+            <div class="col-12 col-md-4 mb-3">
+              <label for="incremento_pdp" class="form-label">Incremento PDP</label>
+              <input type="number" step="0.01" name="incremento_pdp" id="incremento_pdp" class="form-control" value="{{ old('incremento_pdp') }}">
             </div>
           </div>
+        </div>
+      </div>
 
-          <hr class="my-4">
+      <!-- Card: Configuración de Pasarela -->
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Pasarela</h5>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-12 col-md-6 mb-3">
+              <label for="client_id" class="form-label">Client ID</label>
+              <input type="text" name="client_id" id="client_id" class="form-control" value="{{ old('client_id') }}" maxlength="500">
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label for="key_id" class="form-label">Key ID</label>
+              <input type="text" name="key_id" id="key_id" class="form-control" value="{{ old('key_id') }}" maxlength="500">
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label for="bussines_id" class="form-label">Business ID</label>
+              <input type="text" name="bussines_id" id="bussines_id" class="form-control" value="{{ old('bussines_id') }}" maxlength="500">
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label for="account_id" class="form-label">Account ID</label>
+              <input type="text" name="account_id" id="account_id" class="form-control" value="{{ old('account_id') }}" maxlength="50">
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label for="url_retorno" class="form-label">URL Retorno</label>
+              <input type="text" name="url_retorno" id="url_retorno" class="form-control" value="{{ old('url_retorno') }}" maxlength="500">
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label for="identity_token" class="form-label">Identity Token</label>
+              <input type="text" name="identity_token" id="identity_token" class="form-control" value="{{ old('identity_token') }}" maxlength="500">
+            </div>
+            <div class="col-12 col-md-6 mb-3">
+              <label for="key_reservada" class="form-label">Key Reservada</label>
+              <input type="text" name="key_reservada" id="key_reservada" class="form-control" value="{{ old('key_reservada') }}" maxlength="50">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          {{-- 3. OPCIONES BOOLEANAS --}}
-          <h6 class="text-primary text-black">Opciones y Permisos</h6>
+    <!-- Columna Derecha -->
+    <div class="col-12">
+      <!-- Card: Opciones y Permisos -->
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Opciones y permisos</h5>
+        <div class="card-body">
           <div class="row g-3">
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
               <div class="form-check form-switch">
-                <input type="hidden" name="activo" value="0">
-                {{-- Por defecto CHECKED para crear nuevo (según migración default true) --}}
-                <input class="form-check-input" type="checkbox" name="activo" value="1" id="activo" {{ old('activo', 1) ? 'checked' : '' }}>
-                <label class="form-check-label" for="activo">Activo</label>
+                <input type="checkbox" class="form-check-input" id="activo" name="activo" value="1" {{ old('activo', true) ? 'checked' : '' }}>
+                <label for="activo" class="form-check-label fw-medium text-black">Activo</label>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
               <div class="form-check form-switch">
-                <input type="hidden" name="habilitado_punto_pago" value="0">
-                <input class="form-check-input" type="checkbox" name="habilitado_punto_pago" value="1" id="hab_pp" {{ old('habilitado_punto_pago') ? 'checked' : '' }}>
-                <label class="form-check-label" for="hab_pp">Hab. Punto Pago</label>
+                <input type="checkbox" class="form-check-input" id="habilitado_punto_pago" name="habilitado_punto_pago" value="1" {{ old('habilitado_punto_pago') ? 'checked' : '' }}>
+                <label for="habilitado_punto_pago" class="form-check-label fw-medium text-black">Hab. Punto pago</label>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
               <div class="form-check form-switch">
-                <input type="hidden" name="subir_archivo_pagos" value="0">
-                <input class="form-check-input" type="checkbox" name="subir_archivo_pagos" value="1" id="subir_arch" {{ old('subir_archivo_pagos') ? 'checked' : '' }}>
-                <label class="form-check-label" for="subir_arch">Subir Archivos</label>
+                <input type="checkbox" class="form-check-input" id="subir_archivo_pagos" name="subir_archivo_pagos" value="1" {{ old('subir_archivo_pagos') ? 'checked' : '' }}>
+                <label for="subir_archivo_pagos" class="form-check-label fw-medium text-black">Subir archivos</label>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
               <div class="form-check form-switch">
-                <input type="hidden" name="botones_valores_moneda" value="0">
-                <input class="form-check-input" type="checkbox" name="botones_valores_moneda" value="1" id="btn_mon" {{ old('botones_valores_moneda') ? 'checked' : '' }}>
-                <label class="form-check-label" for="btn_mon">Botones Valores</label>
+                <input type="checkbox" class="form-check-input" id="botones_valores_moneda" name="botones_valores_moneda" value="1" {{ old('botones_valores_moneda') ? 'checked' : '' }}>
+                <label for="botones_valores_moneda" class="form-check-label fw-medium text-black">Botones valores</label>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
               <div class="form-check form-switch">
-                <input type="hidden" name="habilitado_donacion" value="0">
-                <input class="form-check-input" type="checkbox" name="habilitado_donacion" value="1" id="hab_don" {{ old('habilitado_donacion') ? 'checked' : '' }}>
-                <label class="form-check-label" for="hab_don">Hab. Donación</label>
+                <input type="checkbox" class="form-check-input" id="habilitado_donacion" name="habilitado_donacion" value="1" {{ old('habilitado_donacion') ? 'checked' : '' }}>
+                <label for="habilitado_donacion" class="form-check-label fw-medium text-black">Hab. Donación</label>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
               <div class="form-check form-switch">
-                <input type="hidden" name="tiene_limite_dinero_acumulado" value="0">
-                <input class="form-check-input" type="checkbox" name="tiene_limite_dinero_acumulado" value="1" id="lim_din" {{ old('tiene_limite_dinero_acumulado') ? 'checked' : '' }}>
-                <label class="form-check-label" for="lim_din">Límite Acumulado</label>
+                <input type="checkbox" class="form-check-input" id="tiene_limite_dinero_acumulado" name="tiene_limite_dinero_acumulado" value="1" {{ old('tiene_limite_dinero_acumulado') ? 'checked' : '' }}>
+                <label for="tiene_limite_dinero_acumulado" class="form-check-label fw-medium text-black">Límite acumulado</label>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
               <div class="form-check form-switch">
-                <input type="hidden" name="punto_de_pago" value="0">
-                <input class="form-check-input" type="checkbox" name="punto_de_pago" value="1" id="is_pdp" {{ old('punto_de_pago') ? 'checked' : '' }}>
-                <label class="form-check-label" for="is_pdp">Es Punto de Pago</label>
+                <input type="checkbox" class="form-check-input" id="permite_personas_externas" name="permite_personas_externas" value="1" {{ old('permite_personas_externas') ? 'checked' : '' }}>
+                <label for="permite_personas_externas" class="form-check-label fw-medium text-black">Permite externos</label>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-3">
               <div class="form-check form-switch">
-                <input type="hidden" name="permite_personas_externas" value="0">
-                <input class="form-check-input" type="checkbox" name="permite_personas_externas" value="1" id="ext_pers" {{ old('permite_personas_externas') ? 'checked' : '' }}>
-                <label class="form-check-label" for="ext_pers">Permite Externos</label>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="form-check form-switch">
-                <input type="hidden" name="codigo_datafono" value="0">
-                <input class="form-check-input" type="checkbox" name="codigo_datafono" value="1" id="cod_data" {{ old('codigo_datafono') ? 'checked' : '' }}>
-                <label class="form-check-label" for="cod_data">Código Datáfono</label>
+                <input type="checkbox" class="form-check-input" id="codigo_datafono" name="codigo_datafono" value="1" {{ old('codigo_datafono') ? 'checked' : '' }}>
+                <label for="codigo_datafono" class="form-check-label fw-medium text-black">Código datáfono</label>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <div class="mt-4">
-            <button type="submit" class="btn btn-primary">Guardar</button>
-            <a href="{{ route('tipo-pagos.listarTipoPagos') }}" class="btn btn-outline-secondary">Cancelar</a>
+    <!-- Detalles adicionales (ancho completo abajo) -->
+    <div class="col-12">
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Detalles adicionales</h5>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="label_destinatario" class="form-label">Label destinatario</label>
+              <textarea name="label_destinatario" id="label_destinatario" class="form-control" rows="2" placeholder="Ej: ¿A quién va dirigida esta donación?">{{ old('label_destinatario') }}</textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="observaciones" class="form-label">Observaciones</label>
+              <textarea name="observaciones" id="observaciones" class="form-control" rows="2" placeholder="Notas internas...">{{ old('observaciones') }}</textarea>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-{{-- MODAL DE RECORTE --}}
+  <div class="d-flex mb-1 mt-3">
+    <div class="me-auto">
+      <button type="submit" class="btn btnGuardar btn-primary rounded-pill px-12 py-2">Guardar</button>
+    </div>
+  </div>
+</form>
 @endsection

@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('tipos_pago', function (Blueprint $table) {
+            if (Schema::hasColumn('tipos_pago', 'punto_de_pago')) {
+                $table->dropColumn('punto_de_pago');
+            }
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('tipos_pago', function (Blueprint $table) {
+            $table->boolean('punto_de_pago')->default(false)->nullable();
+        });
+    }
+};

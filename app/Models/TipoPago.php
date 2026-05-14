@@ -39,7 +39,6 @@ class TipoPago extends Model
     'botones_valores_moneda',
     'habilitado_donacion',
     'tiene_limite_dinero_acumulado',
-    'punto_de_pago',
     'permite_personas_externas',
     'codigo_datafono',
     'label_destinatario',
@@ -60,4 +59,19 @@ class TipoPago extends Model
     return $this->hasMany(EstadoPago::class, 'tipo_pago_id');
   }
 
+  public function getLogoUrlAttribute(): ?string
+  {
+      if (!$this->imagen) {
+          return null;
+      }
+      return tenant_asset('img/tipos-pagos/logos/' . $this->imagen);
+  }
+
+  public function getFondoUrlAttribute(): ?string
+  {
+      if (!$this->fondo) {
+          return null;
+      }
+      return tenant_asset('img/tipos-pagos/fondos/' . $this->fondo);
+  }
 }

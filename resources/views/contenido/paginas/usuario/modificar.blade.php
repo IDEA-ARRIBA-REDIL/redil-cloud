@@ -134,13 +134,9 @@ $configData = Helper::appClasses();
     if ($("#imagen-recortada").val() == "") {
       @if($usuario->foto == 'default-m.png' || $usuario->foto == 'default-f.png')
       if ($(this).val() == 1) {
-        $("#preview-foto").attr("src",
-          "{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/default-f.png') : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/default-f.png' }}"
-        );
+        $("#preview-foto").attr("src", "{{ asset('global_media/placeholders/default-f.png') }}");
       } else {
-        $("#preview-foto").attr("src",
-          "{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/default-m.png') : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/default-m.png' }}"
-        );
+        $("#preview-foto").attr("src", "{{ asset('global_media/placeholders/default-m.png') }}");
       }
       @endif
     }
@@ -362,7 +358,7 @@ $configData = Helper::appClasses();
     <div class="card mb-4">
       <h5 class="card-header text-black fw-semibold">
         @if ($seccion->logo)
-        <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/secciones-formulario/' . $seccion->logo) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $seccion->logo }}?v={{ time() }}"
+        <img src="{{ asset('global_media/img/secciones-formulario/' . $seccion->logo) }}"
           alt="react-logo" class="me-2" width="30">
         @endif
         {{ $seccion->titulo }}
@@ -446,7 +442,7 @@ $configData = Helper::appClasses();
           <div class="col-12 mb-3">
             <div class="avatar avatar-xxl">
               <img id="preview-foto"
-                src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario->foto }}"
+                src="{{ $usuario->foto_url }}"
                 alt="{{ $usuario->foto }}"
                 class="cropped-img  avatar-initial rounded-circle border border-5 border-white bg-info">
               <button
@@ -1109,7 +1105,7 @@ $configData = Helper::appClasses();
             <label id="label_archivo_a" class="form-label" for="archivo_a">
               {{ $campo->nombre }}
               @if ($campo->tiene_descargable)
-              (<a href="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/archivos/descargable_archivo_a.pdf') : $configuracion->ruta_almacenamiento . '/archivos/descargable_archivo_a.pdf' }} "
+              (<a href="{{ tenant_asset('archivos/descargable_archivo_a.pdf') }}"
                 target="_blank">Descargar formato</a>)
               @endif
             </label>
@@ -1157,7 +1153,7 @@ $configData = Helper::appClasses();
             <label id="label_archivo_b" class="form-label" for="archivo_b">
               {{ $campo->nombre }}
               @if ($campo->tiene_descargable)
-              (<a href="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/archivos/descargable_archivo_b.pdf') : $configuracion->ruta_almacenamiento . '/archivos/descargable_archivo_b.pdf' }} "
+              (<a href="{{ tenant_asset('archivos/descargable_archivo_b.pdf') }}"
                 target="_blank">Descargar formato</a>)
               @endif
             </label>
@@ -1205,7 +1201,7 @@ $configData = Helper::appClasses();
             <label id="label_archivo_c" class="form-label" for="archivo_c">
               {{ $campo->nombre }}
               @if ($campo->tiene_descargable)
-              (<a href="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/archivos/descargable_archivo_c.pdf') : $configuracion->ruta_almacenamiento . '/archivos/descargable_archivo_c.pdf' }} "
+              (<a href="{{ tenant_asset('archivos/descargable_archivo_c.pdf') }}"
                 target="_blank">Descargar formato</a>)
               @endif
             </label>
@@ -1253,7 +1249,7 @@ $configData = Helper::appClasses();
             <label id="label_archivo_d" class="form-label" for="archivo_d">
               {{ $campo->nombre }}
               @if ($campo->tiene_descargable)
-              (<a href="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/archivos/descargable_archivo_d.pdf') : $configuracion->ruta_almacenamiento . '/archivos/descargable_archivo_d.pdf' }} "
+              (<a href="{{ tenant_asset('archivos/descargable_archivo_d.pdf') }}"
                 target="_blank">Descargar formato</a>)
               @endif
             </label>
@@ -1460,7 +1456,7 @@ $configData = Helper::appClasses();
             <div class="mb-2">
               <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
               <center>
-                <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100"
+                <img src="{{ asset('global_media/placeholders/placeholder.jpg') }}" class="w-100"
                   id="croppingImage" alt="cropper">
               </center>
             </div>

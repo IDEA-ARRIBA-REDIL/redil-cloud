@@ -280,7 +280,7 @@ $configData = Helper::appClasses();
                     @if($indicador->es_global)
                       <img src="{{ Storage::disk('global_media')->url($indicador->imagen) }}" alt="icono" class="me-2" width="50">
                     @else
-                      <img src="{{ Storage::url($configuracion->ruta_almacenamiento.'/tipos-usuarios/'. $indicador->imagen) }}" alt="icono" class="me-2" width="50">
+                      <img src="{{ tenant_asset('tipos-usuarios/'. $indicador->imagen) }}" alt="icono" class="me-2" width="50">
                     @endif
                     </div>
 
@@ -350,7 +350,7 @@ $configData = Helper::appClasses();
     <div class="col equal-height-col col-lg-4 col-md-4 col-sm-6 col-12">
         <!-- esta linea es para igualar en altura todas las col e igualar la altura de las cards -->
       <div  class="h-100 card border rounded">
-        <img class="card-img-top object-fit-cover" style="height: 100px;" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/banner-usuario/'.$persona->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/banner-usuario/'.$persona->portada)  }}" alt="portada {{$persona->primer_nombre}}" />
+        <img class="card-img-top object-fit-cover" style="height: 100px;" src="{{ $persona->banner_url }}" alt="portada {{$persona->primer_nombre}}" />
 
         <div class="card-body">
 
@@ -362,7 +362,7 @@ $configData = Helper::appClasses();
               </div>
               @else
               <div class="avatar avatar-xl">
-                <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto }}" alt="{{ $persona->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
+                <img src="{{ $persona->foto_url }}" alt="{{ $persona->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
               </div>
               @endif
             </div>

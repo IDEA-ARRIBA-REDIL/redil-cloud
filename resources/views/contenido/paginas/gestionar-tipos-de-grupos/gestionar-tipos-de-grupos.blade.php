@@ -54,8 +54,8 @@ $configData = Helper::appClasses();
     @foreach($tiposGrupos as $tipoGrupo)
     <div class="col-md-6 col-lg-4" id="tipoGrupo-{{$tipoGrupo->id}}">
       <div class="card h-100 {{ !$tipoGrupo->estado ? 'border-danger' : '' }}">
-        @if($tipoGrupo->portada)
-          <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->portada) }}" alt="Banner {{ $tipoGrupo->nombre }}" class="card-img-top" style="height: 120px; object-fit: cover;">
+        @if($tipoGrupo->portada_url)
+          <img src="{{ $tipoGrupo->portada_url }}" alt="Banner {{ $tipoGrupo->nombre }}" class="card-img-top" style="height: 120px; object-fit: cover;">
         @else
           <div class="card-img-top bg-label-primary d-flex align-items-center justify-content-center" style="height: 120px;">
             <i class="ti ti-photo ti-xl text-primary opacity-25"></i>
