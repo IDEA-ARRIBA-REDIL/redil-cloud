@@ -51,7 +51,7 @@ class ConsolidacionController extends Controller
         return view('contenido.paginas.consolidacion.bloques');
     }
 
-    public function listar(Request $request, $tipo = 'todos')
+    public function listar(Request $request, $tipo = 'sin-tareas')
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('consolidacion.subitem_lista_consolidacion');
@@ -157,14 +157,6 @@ class ConsolidacionController extends Controller
         $indicadoresGenerales = [];
 
         $item = new stdClass;
-        $item->nombre = 'Todas';
-        $item->url = 'todos';
-        $item->cantidad = (clone $indicadoresQuery)->count(); // Usamos clone para no alterar la consulta
-        $item->color = '#fff';
-        $item->icono = 'ti ti-asterisk';
-        $indicadoresGenerales[] = $item;
-
-        $item = new stdClass;
         $item->nombre = 'Sin tareas';
         $item->url = 'sin-tareas';
         $item->cantidad = (clone $indicadoresQuery)->doesntHave('tareasConsolidacion')->count();
@@ -211,6 +203,14 @@ class ConsolidacionController extends Controller
             $item->icono = $filtro->icono ?? 'ti ti-filter';
             $indicadoresGenerales[] = $item;
         }
+
+        $item = new stdClass;
+        $item->nombre = 'Todas';
+        $item->url = 'todos';
+        $item->cantidad = (clone $indicadoresQuery)->count(); // Usamos clone para no alterar la consulta
+        $item->color = '#fff';
+        $item->icono = 'ti ti-asterisk';
+        $indicadoresGenerales[] = $item; 
 
         //  APLICAMOS LOS FILTROS DE TIPO
         if ($tipo == 'sin-tareas') {

@@ -61,7 +61,9 @@
                                         <div class="card-body p-2" 
                                              x-data="{ 
                                                  tipoContenido: '{{ $item->tipo->codigo === 'lectura' ? 'texto' : ($item->tipo->codigo === 'recurso' ? 'archivo' : $item->tipo->codigo) }}',
-                                                 modo: '{{ $item->itemable->video_url || $item->itemable->contenido_html || $item->itemable->archivo_path || $item->itemable->iframe_code ? 'visualizar' : 'editar' }}'
+                                                 modo: '{{ $item->itemable->video_url || $item->itemable->contenido_html || $item->itemable->archivo_path || $item->itemable->iframe_code ? 'visualizar' : 'editar' }}',
+                                                 archivoPath: null,
+                                                 subiendoArchivo: false
                                              }"
                                              @cerrar-visualizacion-{{ $item->itemable->id }}.window="modo = 'editar'">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -171,24 +173,21 @@
                                                                 <p class="mb-2 fw-semibold">Sube un archivo PDF, imagen o PowerPoint</p>
                                                                 <small class="text-muted d-block mb-3">Máximo 10MB</small>
                                                                 
-                                                                <input type="file" wire:model="archivo" class="form-control mt-2" id="file{{ $item->id }}">
+                                                                <input type="file" class="form-control mt-2" id="file{{ $item->id }}" 
+                                                                       @change="subirArchivoCurso($event, {{ $curso->id }}, (path) => { archivoPath = path })">
                                                                 
-                                                                <div wire:loading wire:target="archivo" class="mt-2">
+                                                                <div x-show="subiendoArchivo" class="mt-2" style="display: none;">
                                                                     <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                                                                    <span class="ms-1">Cargando...</span>
+                                                                    <span class="ms-1">Subiendo...</span>
                                                                 </div>
 
-                                                                @if($archivo)
-                                                                    <div class="mt-3">
-                                                                        <div class="alert alert-info d-flex align-items-center mb-0">
-                                                                            <i class="ti ti-info-circle me-2"></i>
-                                                                            <div>Archivo listo. Use el botón <strong>Guardar</strong> de abajo para finalizar.</div>
-                                                                        </div>
+                                                                <div x-show="archivoPath" class="mt-3" style="display: none;">
+                                                                    <div class="alert alert-info d-flex align-items-center mb-0">
+                                                                        <i class="ti ti-info-circle me-2"></i>
+                                                                        <div>Archivo listo. Use el botón <strong>Guardar</strong> de abajo para finalizar.</div>
                                                                     </div>
-                                                                @endif
+                                                                </div>
                                                             </div>
-                                                            
-
                                                         </div>
                                                     </div>
 
@@ -259,7 +258,7 @@
                                                                 @elseif($item->tipo->codigo === 'recurso')
                                                                     <!-- Botón para Recurso/Archivo (Archivo + Texto) -->
                                                                     <button class="btn btn-sm btn-outline-primary rounded-pill" 
-                                                                            @click="$wire.guardarArchivoYTextoLeccion({{ $item->itemable->id }}, document.querySelector('#editor{{ $item->id }} .ql-editor').innerHTML).then(() => { modo = 'visualizar' })">
+                                                                            @click="$wire.guardarArchivoYTextoLeccion({{ $item->itemable->id }}, document.querySelector('#editor{{ $item->id }} .ql-editor').innerHTML, archivoPath).then(() => { modo = 'visualizar'; archivoPath = null; })">
                                                                         <i class="ti ti-device-floppy me-1"></i> Guardar
                                                                     </button>
                                                                 @elseif($item->tipo->codigo === 'video')
@@ -835,6 +834,53 @@
                 }
             }, 300);
         });
+
+        window.subirArchivoCurso = async function(event, cursoId, callback) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const alpineData = Alpine.$data(event.target);
+            if (alpineData) alpineData.subiendoArchivo = true;
+
+            const formData = new FormData();
+            formData.append('archivo', file);
+            formData.append('curso_id', cursoId);
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            try {
+                const response = await fetch('{{ route('cursos.uploadArchivoContenido') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    callback(result.path);
+                    if (alpineData) alpineData.archivoPath = result.path;
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: result.message || 'Error al subir el archivo.',
+                        icon: 'error'
+                    });
+                }
+            } catch (error) {
+                console.error('Upload Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error de conexión al subir el archivo.',
+                    icon: 'error'
+                });
+            } finally {
+                if (alpineData) alpineData.subiendoArchivo = false;
+            }
+        };
     </script>
     @endscript
     <style>

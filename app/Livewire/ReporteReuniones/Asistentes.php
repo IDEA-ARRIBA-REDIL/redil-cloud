@@ -542,7 +542,7 @@ class Asistentes extends Component
       ->format('Y-m-d');
 
     $fechaHoy = Carbon::now()->format("Y-m-d");
-    $horaMaxima = Carbon::createFromFormat('h:i:s', $this->reporteReunion->reunion->hora_maxima_reportar_asistencia);
+    $horaMaxima = Carbon::createFromFormat('H:i:s', $this->reporteReunion->reunion->hora_maxima_reportar_asistencia);
 
     $fechaReporte = Carbon::parse($this->reporteReunion->fecha)->format('Y-m-d');
 
@@ -554,7 +554,7 @@ class Asistentes extends Component
 
     if ($fechaHoy >= $this->reporteReunion->fecha && $fechaHoy <= $fechaMaxima) {
       if (
-        $fechaHoy < $fechaMaxima || ($fechaHoy == $fechaMaxima && $horaActual->format('h:i A') <= $horaMaxima->format('h:i A')) ||
+        $fechaHoy < $fechaMaxima || ($fechaHoy == $fechaMaxima && $horaActual->format('H:i:s') <= $horaMaxima->format('H:i:s')) ||
         $this->rolActivo->hasPermissionTo('reporte_reuniones.privilegio_anadir_asistente_reporte_reunion_cualquier_fecha')
       ) {
         if ($asistio_reunion) {
@@ -717,7 +717,7 @@ class Asistentes extends Component
       ->format('Y-m-d');
 
     $fechaHoy = Carbon::now()->format("Y-m-d");
-    $horaMaxima = Carbon::createFromFormat('h:i:s', $this->reporteReunion->reunion->hora_maxima_reportar_asistencia);
+    $horaMaxima = Carbon::createFromFormat('H:i:s', $this->reporteReunion->reunion->hora_maxima_reportar_asistencia);
 
     $fechaReporte = Carbon::parse($this->reporteReunion->fecha)->format('Y-m-d');
 
@@ -729,7 +729,7 @@ class Asistentes extends Component
 
     if ($fechaHoy >= $this->reporteReunion->fecha && $fechaHoy <= $fechaMaxima) {
       if (
-        $fechaHoy < $fechaMaxima || ($fechaHoy == $fechaMaxima && $horaActual->format('h:i A') <= $horaMaxima->format('h:i A')) ||
+        $fechaHoy < $fechaMaxima || ($fechaHoy == $fechaMaxima && $horaActual->format('H:i:s') <= $horaMaxima->format('H:i:s')) ||
         $this->rolActivo->hasPermissionTo('reporte_reuniones.privilegio_anadir_asistente_reporte_reunion_cualquier_fecha')
       ) {
 
@@ -932,13 +932,13 @@ class Asistentes extends Component
       ->addDays($this->reporteReunion->reunion->dias_plazo_reporte)
       ->format('Y-m-d');
     $fechaHoy = Carbon::now()->format("Y-m-d");
-    $horaMaxima = Carbon::createFromFormat('h:i:s', $this->reporteReunion->reunion->hora_maxima_reportar_asistencia);
+    $horaMaxima = Carbon::createFromFormat('H:i:s', $this->reporteReunion->reunion->hora_maxima_reportar_asistencia);
 
     $reserva = ReservaReunion::find($reservaId);
 
     if ($fechaHoy >= $this->reporteReunion->fecha && $fechaHoy <= $fechaMaxima) {
       if (
-        $fechaHoy < $fechaMaxima || ($fechaHoy == $fechaMaxima && $horaActual->format('h:i A') <= $horaMaxima->format('h:i A')) ||
+        $fechaHoy < $fechaMaxima || ($fechaHoy == $fechaMaxima && $horaActual->format('H:i:s') <= $horaMaxima->format('H:i:s')) ||
         $this->rolActivo->hasPermissionTo('reporte_reuniones.privilegio_anadir_asistente_reporte_reunion_cualquier_fecha')
       ) {
         if ($reserva->registrada) {
@@ -991,13 +991,13 @@ class Asistentes extends Component
     $horaActual = Carbon::now();
     $fechaMaxima = Carbon::parse($this->reporteReunion->fecha)->addDays($this->reporteReunion->reunion->dias_plazo_reporte)->format('Y-m-d');
     $fechaHoy = Carbon::now()->format("Y-m-d");
-    $horaMaxima = Carbon::createFromFormat('h:i:s', $this->reporteReunion->reunion->hora_maxima_reportar_asistencia);
+    $horaMaxima = Carbon::createFromFormat('H:i:s', $this->reporteReunion->reunion->hora_maxima_reportar_asistencia);
 
     $reserva = ReservaReunion::find($reservaId);
 
     if ($fechaHoy >= $this->reporteReunion->fecha && $fechaHoy <= $fechaMaxima) {
       if (
-        $fechaHoy < $fechaMaxima || ($fechaHoy == $fechaMaxima && $horaActual->format('h:i A') <= $horaMaxima->format('h:i A')) ||
+        $fechaHoy < $fechaMaxima || ($fechaHoy == $fechaMaxima && $horaActual->format('H:i:s') <= $horaMaxima->format('H:i:s')) ||
         $this->rolActivo->hasPermissionTo('reporte_reuniones.privilegio_anadir_asistente_reporte_reunion_cualquier_fecha')
       ) {
           if ($reserva->registrada) {

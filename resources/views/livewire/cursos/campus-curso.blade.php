@@ -216,6 +216,7 @@
                                     <p>Recurso no disponible</p>
                                 </div>
                             @endif
+                        </div>
                     @elseif(in_array($itemActivo->tipo->codigo, ['evaluacion', 'quiz', 'final']))
                             <!-- TIPO EVALUACION (Examen) -->
                             <div class="bg-white position-relative rounded-top"

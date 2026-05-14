@@ -3,26 +3,25 @@
 namespace App\Livewire\Cursos;
 
 use App\Models\Curso;
-use Livewire\Component;
 use App\Models\CursoModulo;
-use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\On;
-
-use Livewire\WithFileUploads;
-
+use Livewire\Component;
 
 class GestionarContenidoDelCurso extends Component
 {
-     use WithFileUploads;
     public $curso;
+
     public $nombre;
+
     public $descripcion;
-    public $archivo; // Propiedad para subida de archivos
+
     public $modoEdicion = false;
+
     public $moduloEditando;
 
     // Propiedades para Ítems
     public $itemEditandoId = null;
+
     public $nuevoTituloItem = '';
 
     protected $rules = [
@@ -71,7 +70,7 @@ class GestionarContenidoDelCurso extends Component
         }
 
         $this->dispatch('cerrarModal', nombreModal: 'offcanvasModulo');
-        if($this->modoEdicion) {
+        if ($this->modoEdicion) {
             $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Hecho!', msnTexto: $msn);
         }
         $this->dispatch('refreshSortable');
@@ -96,7 +95,9 @@ class GestionarContenidoDelCurso extends Component
         $modulo = CursoModulo::find($moduloId);
         $tipo = \App\Models\CursoItemTipo::where('codigo', $codigo)->first();
 
-        if (!$modulo || !$tipo) return;
+        if (! $modulo || ! $tipo) {
+            return;
+        }
 
         $itemable = null;
         if ($tipo->categoria === 'leccion') {
@@ -104,12 +105,13 @@ class GestionarContenidoDelCurso extends Component
         } elseif ($tipo->categoria === 'evaluacion') {
             // Verificar unicidad de Evaluación Final a nivel de curso
             if ($codigo === 'evaluacion_final') {
-                $existeFinal = \App\Models\CursoItem::whereHas('modulo', function($q) {
+                $existeFinal = \App\Models\CursoItem::whereHas('modulo', function ($q) {
                     $q->where('curso_id', $this->curso->id);
                 })->where('curso_item_tipo_id', $tipo->id)->exists();
 
                 if ($existeFinal) {
                     $this->dispatch('msn', msnIcono: 'warning', msnTitulo: 'Acción no permitida', msnTexto: 'El curso ya contiene una Evaluación Final.');
+
                     return;
                 }
             }
@@ -121,7 +123,7 @@ class GestionarContenidoDelCurso extends Component
             $prefijo = in_array($codigo, ['video', 'recurso', 'iframe']) ? 'Nuevo ' : 'Nueva ';
             $item = $modulo->items()->create([
                 'curso_item_tipo_id' => $tipo->id,
-                'titulo' => $prefijo . strtolower($tipo->nombre),
+                'titulo' => $prefijo.strtolower($tipo->nombre),
                 'orden' => $modulo->items()->count() + 1,
                 'itemable_id' => $itemable->id,
                 'itemable_type' => get_class($itemable),
@@ -132,14 +134,15 @@ class GestionarContenidoDelCurso extends Component
         }
     }
 
-
     public function eliminarItem($itemId)
     {
         $item = \App\Models\CursoItem::find($itemId);
         if ($item) {
             $this->eliminarArchivosAsociadosAItem($item);
             $itemable = $item->itemable;
-            if ($itemable) $itemable->delete();
+            if ($itemable) {
+                $itemable->delete();
+            }
             $moduloId = $item->curso_modulo_id;
             $item->delete();
             $this->reordenarItems($moduloId);
@@ -183,7 +186,6 @@ class GestionarContenidoDelCurso extends Component
         $this->nuevoTituloItem = '';
     }
 
-
     public function guardarVideoLeccion($leccionId, $url)
     {
         // This is kept for compatibility if needed elsewhere, but we add the unified one below
@@ -196,26 +198,29 @@ class GestionarContenidoDelCurso extends Component
             if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $url, $match)) {
                 $plataforma = 'youtube';
                 $videoId = $match[1];
-            } 
+            }
             // Validación de Vimeo
             elseif (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/i', $url, $match)) {
                 $plataforma = 'vimeo';
                 $videoId = $match[1];
             }
 
-            if (!$plataforma) {
+            if (! $plataforma) {
                 $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'URL no válida', msnTexto: 'El link es incorrecto, por favor ingresa un link válido de YouTube o Vimeo.');
+
                 return false;
             }
 
             $leccion->update([
                 'video_url' => $url,
                 'video_plataforma' => $plataforma,
-                'video_id' => $videoId
+                'video_id' => $videoId,
             ]);
             $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Guardado!', msnTexto: 'Video actualizado correctamente.');
+
             return true;
         }
+
         return false;
     }
 
@@ -228,6 +233,7 @@ class GestionarContenidoDelCurso extends Component
 
             if (empty($url)) {
                 $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'URL requerida', msnTexto: 'Por favor ingresa la URL del video.');
+
                 return false;
             }
 
@@ -235,15 +241,16 @@ class GestionarContenidoDelCurso extends Component
             if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $url, $match)) {
                 $plataforma = 'youtube';
                 $videoId = $match[1];
-            } 
+            }
             // Validación de Vimeo
             elseif (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)(?:$|\/|\?)/i', $url, $match)) {
                 $plataforma = 'vimeo';
                 $videoId = $match[1];
             }
 
-            if (!$plataforma) {
+            if (! $plataforma) {
                 $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'URL no válida', msnTexto: 'El link es incorrecto, por favor ingresa un link válido de YouTube o Vimeo.');
+
                 return false;
             }
 
@@ -251,11 +258,13 @@ class GestionarContenidoDelCurso extends Component
                 'video_url' => $url,
                 'video_plataforma' => $plataforma,
                 'video_id' => $videoId,
-                'contenido_html' => $html
+                'contenido_html' => $html,
             ]);
             $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Guardado!', msnTexto: 'Contenido actualizado correctamente.');
+
             return true;
         }
+
         return false;
     }
 
@@ -265,61 +274,39 @@ class GestionarContenidoDelCurso extends Component
         if ($leccion) {
             $leccion->update([
                 'iframe_code' => $iframeCode,
-                'contenido_html' => $html
+                'contenido_html' => $html,
             ]);
             $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Guardado!', msnTexto: 'Contenido actualizado correctamente.');
+
             return true;
         }
+
         return false;
     }
 
-    public function guardarArchivoYTextoLeccion($leccionId, $html)
+    public function guardarArchivoYTextoLeccion($leccionId, $html, $archivoPath = null)
     {
         $leccion = \App\Models\CursoLeccion::find($leccionId);
-        if (!$leccion) return false;
+        if (! $leccion) {
+            return false;
+        }
 
-        // Si hay un archivo nuevo cargado, procesarlo primero
-        if ($this->archivo) {
-            try {
-                $this->validate([
-                    'archivo' => 'required|mimes:pdf,pptx,ppt,jpg,jpeg,png,gif,webp|max:10240', // 10MB max
-                ], [
-                    'archivo.mimes' => 'El archivo debe ser un PDF, imagen (jpg, png, webp) o PowerPoint (pptx, ppt).',
-                    'archivo.max' => 'El archivo no debe pesar más de 10MB.'
-                ]);
-
-                $configuracion = \App\Models\Configuracion::find(1);
-                if ($configuracion) {
-                    $path = null;
-                    if ($configuracion->version == 1) {
-                        $originalName = $this->archivo->getClientOriginalName();
-                        $extension = $this->archivo->getClientOriginalExtension();
-                        $filename = pathinfo($originalName, PATHINFO_FILENAME);
-                        $nombreArchivo = $filename . '-' . $leccion->id . '.' . $extension;
-                        $rutaDestino = $configuracion->ruta_almacenamiento . '/archivos/cursos/' . $this->curso->id;
-                        $path = $this->archivo->storeAs($rutaDestino, $nombreArchivo, 'public');
-                    }
-                    
-                    if ($path) {
-                        if ($leccion->archivo_path) {
-                            \Illuminate\Support\Facades\Storage::disk('public')->delete($leccion->archivo_path);
-                        }
-                        $leccion->update(['archivo_path' => $path]);
-                        $this->reset('archivo');
-                    }
-                }
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'Archivo no permitido', msnTexto: $e->getMessage());
-                return false;
+        // Si se recibió una ruta de archivo (subido vía Alpine)
+        if ($archivoPath) {
+            // Eliminar archivo anterior si existe
+            if ($leccion->archivo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($leccion->archivo_path);
             }
+            $leccion->update(['archivo_path' => $archivoPath]);
         }
 
         // Guardar siempre el HTML
         $leccion->update([
-            'contenido_html' => $html
+            'contenido_html' => $html,
         ]);
 
         $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Guardado!', msnTexto: 'Contenido actualizado correctamente.');
+
         return true;
     }
 
@@ -349,7 +336,7 @@ class GestionarContenidoDelCurso extends Component
                 'archivo' => 'required|mimes:pdf,pptx,ppt,jpg,jpeg,png,gif,webp|max:10240',
             ], [
                 'archivo.mimes' => 'El archivo debe ser un PDF, imagen (jpg, png, webp) o PowerPoint (pptx, ppt).',
-                'archivo.max' => 'El archivo no debe pesar más de 10MB.'
+                'archivo.max' => 'El archivo no debe pesar más de 10MB.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->reset('archivo');
@@ -357,70 +344,20 @@ class GestionarContenidoDelCurso extends Component
         }
     }
 
-    public function guardarArchivoLeccion($leccionId)
+    public function guardarArchivoLeccion($leccionId, $archivoPath)
     {
-        try {
-            $this->validate([
-                'archivo' => 'required|mimes:pdf,pptx,ppt,jpg,jpeg,png,gif,webp|max:10240', // 10MB max
-            ], [
-                'archivo.mimes' => 'El archivo debe ser un PDF, imagen (jpg, png, webp) o PowerPoint (pptx, ppt).',
-                'archivo.max' => 'El archivo no debe pesar más de 10MB.'
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'Archivo no permitido', msnTexto: $e->getMessage());
-            return;
-        }
-
         $leccion = \App\Models\CursoLeccion::find($leccionId);
-        $configuracion = \App\Models\Configuracion::find(1);
 
-        if ($leccion && $this->archivo && $configuracion) {
-            $path = null;
-
-            if ($configuracion->version == 1) {
-                // Versión Local - Asegurar nombre único usando el ID de la lección
-                $originalName = $this->archivo->getClientOriginalName();
-                $extension = $this->archivo->getClientOriginalExtension();
-                $filename = pathinfo($originalName, PATHINFO_FILENAME);
-                
-                // Formato: nombre-original-ID.extension
-                $nombreArchivo = $filename . '-' . $leccion->id . '.' . $extension;
-                
-                $rutaDestino = $configuracion->ruta_almacenamiento . '/archivos/cursos/' . $this->curso->id;
-                
-                $path = $this->archivo->storeAs($rutaDestino, $nombreArchivo, 'public');
-
-            } elseif ($configuracion->version == 2) {
-                // Versión S3 (Estructura preparada)
-                /*
-                $nombreArchivo = $this->archivo->getClientOriginalName();
-                $rutaDestino = $_ENV['aws_carpeta'] . "/archivos/cursos/" . $this->curso->id . "/" . $nombreArchivo;
-                
-                $s3 = AWS::get('s3');
-                $s3->putObject(array(
-                    'Bucket'     => $_ENV['aws_bucket'],
-                    'Key'        => $rutaDestino,
-                    'SourceFile' => $this->archivo->getRealPath(),
-                ));
-                
-                $path = $rutaDestino; // O la URL completa si es necesario
-                */
+        if ($leccion && $archivoPath) {
+            // Eliminar archivo anterior si existe
+            if ($leccion->archivo_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($leccion->archivo_path);
             }
 
-            if ($path) {
-                // Eliminar archivo anterior si existe
-                if ($leccion->archivo_path) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($leccion->archivo_path);
-                }
-
-                $leccion->update(['archivo_path' => $path]);
-                $this->reset('archivo');
-                $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Subido!', msnTexto: 'El recurso ha sido guardado.');
-            }
+            $leccion->update(['archivo_path' => $archivoPath]);
+            $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Subido!', msnTexto: 'El recurso ha sido guardado.');
         }
     }
-
-
 
     // --- Lógica de Evaluaciones ---
 
@@ -429,12 +366,12 @@ class GestionarContenidoDelCurso extends Component
         $evaluacion = \App\Models\CursoEvaluacion::with('item')->find($evaluacionId);
         if ($evaluacion) {
             $evaluacion->update([
-                'minimo_aprobacion' => isset($data['minimo_aprobacion']) ? (int)$data['minimo_aprobacion'] : $evaluacion->minimo_aprobacion,
-                'limite_tiempo' => isset($data['limite_tiempo']) ? (int)$data['limite_tiempo'] : $evaluacion->limite_tiempo,
-                'cantidad_repeticiones' => isset($data['cantidad_repeticiones']) ? (int)$data['cantidad_repeticiones'] : $evaluacion->cantidad_repeticiones,
-                'tiempo_dilatacion' => isset($data['tiempo_dilatacion']) ? (int)$data['tiempo_dilatacion'] : $evaluacion->tiempo_dilatacion,
-                'mostrar_respuestas_si_aprueba' => isset($data['mostrar_respuestas_si_aprueba']) ? (bool)$data['mostrar_respuestas_si_aprueba'] : $evaluacion->mostrar_respuestas_si_aprueba,
-                'mostrar_respuestas_si_pierde' => isset($data['mostrar_respuestas_si_pierde']) ? (bool)$data['mostrar_respuestas_si_pierde'] : $evaluacion->mostrar_respuestas_si_pierde,
+                'minimo_aprobacion' => isset($data['minimo_aprobacion']) ? (int) $data['minimo_aprobacion'] : $evaluacion->minimo_aprobacion,
+                'limite_tiempo' => isset($data['limite_tiempo']) ? (int) $data['limite_tiempo'] : $evaluacion->limite_tiempo,
+                'cantidad_repeticiones' => isset($data['cantidad_repeticiones']) ? (int) $data['cantidad_repeticiones'] : $evaluacion->cantidad_repeticiones,
+                'tiempo_dilatacion' => isset($data['tiempo_dilatacion']) ? (int) $data['tiempo_dilatacion'] : $evaluacion->tiempo_dilatacion,
+                'mostrar_respuestas_si_aprueba' => isset($data['mostrar_respuestas_si_aprueba']) ? (bool) $data['mostrar_respuestas_si_aprueba'] : $evaluacion->mostrar_respuestas_si_aprueba,
+                'mostrar_respuestas_si_pierde' => isset($data['mostrar_respuestas_si_pierde']) ? (bool) $data['mostrar_respuestas_si_pierde'] : $evaluacion->mostrar_respuestas_si_pierde,
             ]);
             $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Hecho!', msnTexto: 'Configuración guardada exitosamente.');
         }
@@ -447,13 +384,13 @@ class GestionarContenidoDelCurso extends Component
             $pregunta = $evaluacion->preguntas()->create([
                 'pregunta' => 'Nueva pregunta',
                 'tipo_respuesta' => 'unica',
-                'orden' => $evaluacion->preguntas()->count() + 1
+                'orden' => $evaluacion->preguntas()->count() + 1,
             ]);
 
             // Agregar una opción por defecto
             $pregunta->opciones()->create([
                 'opcion' => 'Opción 1',
-                'es_correcta' => true
+                'es_correcta' => true,
             ]);
         }
     }
@@ -464,13 +401,13 @@ class GestionarContenidoDelCurso extends Component
         if ($pregunta) {
             $evaluacionId = $pregunta->curso_evaluacion_id;
             $pregunta->delete();
-            
+
             // Reordenar
             $preguntas = \App\Models\CursoPregunta::where('curso_evaluacion_id', $evaluacionId)->orderBy('orden')->get();
             foreach ($preguntas as $index => $p) {
                 $p->update(['orden' => $index + 1]);
             }
-            
+
             $this->dispatch('msn', msnIcono: 'success', msnTitulo: '¡Eliminada!', msnTexto: 'La pregunta ha sido eliminada.');
         }
     }
@@ -481,7 +418,7 @@ class GestionarContenidoDelCurso extends Component
         if ($pregunta) {
             $pregunta->update([
                 'pregunta' => $texto,
-                'tipo_respuesta' => $tipo
+                'tipo_respuesta' => $tipo,
             ]);
 
             // Si es Verdadero/Falso, asegurar que solo haya 2 opciones
@@ -499,7 +436,7 @@ class GestionarContenidoDelCurso extends Component
         if ($pregunta && $pregunta->tipo_respuesta !== 'verdadero_falso') {
             $pregunta->opciones()->create([
                 'opcion' => 'Nueva opción',
-                'es_correcta' => false
+                'es_correcta' => false,
             ]);
         }
     }
@@ -530,14 +467,14 @@ class GestionarContenidoDelCurso extends Component
         $opcion = \App\Models\CursoPreguntaOpcion::with('pregunta.evaluacion.item')->find($opcionId);
         if ($opcion && $opcion->pregunta) {
             $pregunta = $opcion->pregunta;
-            
+
             if ($pregunta->tipo_respuesta === 'unica' || $pregunta->tipo_respuesta === 'verdadero_falso') {
                 // Desmarcar todas y marcar solo esta
                 $pregunta->opciones()->update(['es_correcta' => false]);
                 $opcion->update(['es_correcta' => true]);
             } else {
                 // Toggle para múltiple
-                $opcion->update(['es_correcta' => !$opcion->es_correcta]);
+                $opcion->update(['es_correcta' => ! $opcion->es_correcta]);
             }
         }
     }
@@ -553,7 +490,6 @@ class GestionarContenidoDelCurso extends Component
             }
         }
     }
-
 
     private function reordenarItems($moduloId)
     {
@@ -602,9 +538,9 @@ class GestionarContenidoDelCurso extends Component
             ])
             ->orderBy('orden')
             ->get();
-            
-        return view('livewire.cursos.gestionar-contenido-del-curso',[
-            'modulos' => $modulos
+
+        return view('livewire.cursos.gestionar-contenido-del-curso', [
+            'modulos' => $modulos,
         ]);
     }
 }

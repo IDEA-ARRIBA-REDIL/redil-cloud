@@ -330,7 +330,7 @@ class ProcesarMatriculaEscuela extends Component
                 'moneda_id' => $this->moneda->id,
                 'fecha' => now(),
                 'valor' => $this->precioTotal,
-                'estado' => 1,
+                'estado' => 3,
                 'nombre_completo_comprador' => $this->comprador->nombre(3),
                 'identificacion_comprador' => $this->comprador->identificacion,
                 'telefono_comprador' => $this->comprador->telefono_movil,

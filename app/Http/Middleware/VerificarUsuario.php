@@ -40,6 +40,20 @@ class VerificarUsuario
         $validado = true;
       }
 
+      // Validar también por permisos de consolidación
+      if (!$validado && $rolActivo->hasPermissionTo('consolidacion.lista_consolidacion_solo_ministerio')) {
+          $personasConsolidacion = auth()->user()->consolidacion();
+          if ($idUsuario == auth()->id()) {
+              $validado = true;
+          } else {
+              $validado = $personasConsolidacion->where('id', $idUsuario)->count() >= 1 ? true : false;
+          }
+      }
+
+      if (!$validado && $rolActivo->hasPermissionTo('consolidacion.lista_toda_consolidacion')) {
+          $validado = true;
+      }
+
       // Nueva validación para autogestión de perfil
       if ($rolActivo->hasPermissionTo('personas.perfil.principal_autogestion') && $idUsuario == auth()->id()) {
           $validado = true;

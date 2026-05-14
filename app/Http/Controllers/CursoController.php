@@ -488,4 +488,40 @@ class CursoController extends Controller
             $nombreArchivo
         );
     }
+
+    /**
+     * Recibe un archivo del contenido del curso vía Alpine.js fetch (POST).
+     * Evita usar Livewire WithFileUploads para prevenir problemas de multi-tenancy.
+     */
+    public function uploadArchivoContenido(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $request->validate([
+                'archivo' => 'required|file|mimes:pdf,pptx,ppt,jpg,jpeg,png,gif,webp|max:10240', // 10MB max
+                'curso_id' => 'required|exists:cursos,id',
+            ]);
+
+            $configuracion = \App\Models\Configuracion::first();
+            $file = $request->file('archivo');
+            $cursoId = $request->input('curso_id');
+
+            $nombreLimpio = preg_replace('/[^A-Za-z0-9.\-\_]/', '', $file->getClientOriginalName());
+            $nombre = time().'_'.$nombreLimpio;
+            $directorio = $configuracion->ruta_almacenamiento.'/archivos/cursos/'.$cursoId;
+
+            // Almacenar en el disco 'public' respetando la estructura del tenant
+            $path = \Illuminate\Support\Facades\Storage::disk('public')->putFileAs($directorio, $file, $nombre);
+
+            return response()->json([
+                'success' => true,
+                'nombre' => $nombre,
+                'path' => $path,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al subir el archivo: '.$e->getMessage(),
+            ], 500);
+        }
+    }
 }

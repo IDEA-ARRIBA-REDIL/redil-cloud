@@ -9,6 +9,7 @@ use App\Http\Controllers\BannerGeneralController;
 use App\Http\Controllers\BloqueClasificacionController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CarritoController;
+use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\ConfiguracionGeneralController;
 use App\Http\Controllers\ConsejeriaController;
 use App\Http\Controllers\ConsolidacionController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\MaestroController;
 use App\Http\Controllers\MateriaController;
 use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\NivelesEscuelasController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\ParienteUsuarioController;
 use App\Http\Controllers\PasosDeCrecimientoController;
 use App\Http\Controllers\PeriodoController;
@@ -43,9 +45,8 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PuntoDePagoController;
-use App\Http\Controllers\PwaController;
 use App\Http\Controllers\PushSubscriptionController;
-
+use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RangoEdadController;
 use App\Http\Controllers\RecursoGeneralEscuelaController;
 use App\Http\Controllers\ReporteEscuelaController;
@@ -73,8 +74,6 @@ use App\Http\Controllers\VersiculoDiarioController;
 use App\Http\Controllers\ZonaController;
 use App\Http\Controllers\ZonaPagosController;
 use App\Livewire\Escuelas\AdminDashboard;
-use App\Http\Controllers\NotificacionController;
-use App\Livewire\Notificaciones\ListaNotificaciones;
 use App\Models\Actividad;
 use App\Models\BannerGeneral;
 use App\Models\Configuracion;
@@ -110,7 +109,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 });
 
-
 // RUTA TEMPORAL DE PRUEBA
 Route::get('/test-notificacion', function () {
     $user = auth()->user();
@@ -120,11 +118,13 @@ Route::get('/test-notificacion', function () {
             'mensaje' => 'Esta notificación se generó para probar el ícono de la app.',
             'url' => '/dashboard',
             'icono' => 'ti-message-circle',
-            'color' => 'success'
+            'color' => 'success',
         ]));
-        return "Notificación de prueba creada. Vuelve a la app y revisa el globo de notificaciones.";
+
+        return 'Notificación de prueba creada. Vuelve a la app y revisa el globo de notificaciones.';
     }
-    return "Inicia sesión primero.";
+
+    return 'Inicia sesión primero.';
 });
 
 Route::get('/dashboard', function () {
@@ -225,6 +225,9 @@ Route::get('/carrito/{actividad}/carrito', [CarritoController::class, 'carrito']
 Route::get('/carrito/{compra?}/{actividad}/{primeraVez}/abono', [CarritoController::class, 'abonoCarrito'])->name('carrito.abonoCarrito');
 Route::get('/carrito/{compra?}/{actividad}/{primeraVez}/escuelas', [CarritoController::class, 'escuelasCarrito'])->name('carrito.escuelasCarrito');
 
+// Upload de archivos del formulario de actividades (sin wire:model, sin WithFileUploads)
+Route::post('/carrito/formulario/upload-archivo', [CarritoController::class, 'uploadArchivoFormulario'])->name('carrito.uploadArchivoFormulario');
+
 // Flujo de PAGO
 Route::get('/carrito/{compra}/{actividad}/formulario', [CarritoController::class, 'formulario'])->name('carrito.formulario');
 Route::post('/carrito/{compra}/guardar-formulario', [CarritoController::class, 'guardarFormulario'])->name('carrito.guardarFormulario');
@@ -285,7 +288,6 @@ Route::get('/reportes-grupo/{reporte}/mi-asistencia', [ReporteGrupoController::c
 Route::post('/reportes-grupo/{reporte}/reportar-mi-asistencia', [ReporteGrupoController::class, 'reportarMiAsistancia'])->name('reporteGrupo.reportarMiAsistancia');
 
 Route::get('/reporteReunion/{reporteReunion}/compartir-link-reserva', [ReporteReunionController::class, 'compartirLinkReserva'])->name('reporteReunion.compartirLinkReserva');
-
 
 // Peticiones públicas
 Route::get('/peticion/publica', [PeticionController::class, 'publicaNueva'])->name('peticion.publica.nueva');
@@ -668,6 +670,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // / cursos (LMS)
     Route::get('/cursos/dashboard', [CursoController::class, 'dashboard'])->name('cursos.dashboard');
     Route::get('/cursos/exportar-inscritos/{curso?}', [CursoController::class, 'exportarInscritos'])->name('cursos.exportar-inscritos');
+    Route::post('/cursos/contenido/upload-archivo', [CursoController::class, 'uploadArchivoContenido'])->name('cursos.uploadArchivoContenido');
     Route::get('/cursos/gestionar', [CursoController::class, 'index'])->name('cursos.gestionar');
     Route::get('/cursos/crear', [CursoController::class, 'crear'])->name('cursos.crear');
     Route::get('/cursos/{curso}/editar', [CursoController::class, 'editar'])->name('cursos.editar');
@@ -819,6 +822,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/rueda-vida/finalizada', [RuedaDeLaVidaController::class, 'finalizada'])->name('ruedaDeLaVida.finalizada');
     Route::get('/rueda-vida/{rueda}/resumen', [RuedaDeLaVidaController::class, 'resumen'])->name('ruedaDeLaVida.resumen');
     Route::patch('/rueda-vida/crear', [RuedaDeLaVidaController::class, 'crear'])->name('ruedaDeLaVida.crear');
+    Route::get('/rueda-vida/meta/{meta}/avances', [RuedaDeLaVidaController::class, 'avancesHabitos'])->name('ruedaDeLaVida.avancesHabitos');
+    Route::post('/rueda-vida/meta/{meta}/avance', [RuedaDeLaVidaController::class, 'guardarAvanceHabitos'])->name('ruedaDeLaVida.guardarAvanceHabitos');
+    Route::get('/rueda-vida/habito/{habito}/avances', [RuedaDeLaVidaController::class, 'avancesHabito'])->name('ruedaDeLaVida.avancesHabito');
+    Route::post('/rueda-vida/habito/{habito}/avance', [RuedaDeLaVidaController::class, 'guardarAvanceHabito'])->name('ruedaDeLaVida.guardarAvanceHabito');
 
     // Consejerias o Calendario de citas
 
@@ -855,6 +862,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/tiempo-con-Dios/nuevo', [TiempoConDiosController::class, 'nuevo'])->name('tiempoConDios.nuevo');
     Route::get('/tiempo-con-Dios/historial', [TiempoConDiosController::class, 'historial'])->name('tiempoConDios.historial');
     Route::get('/tiempo-con-Dios/bienvenida', [TiempoConDiosController::class, 'bienvenida'])->name('tiempoConDios.bienvenida');
+    Route::get('/tiempo-con-Dios/modo-lectura', [TiempoConDiosController::class, 'modoLectura'])->name('tiempoConDios.modoLectura');
     Route::get('/tiempo-con-Dios/{tiempoConDios}/resumen', [TiempoConDiosController::class, 'resumen'])->name('tiempoConDios.resumen');
     Route::post('/tiempo-con-Dios/crear', [TiempoConDiosController::class, 'crear'])->name('tiempoConDios.crear');
 
@@ -919,6 +927,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/formulario/crear', [FormularioUsuarioController::class, 'crear'])->name('formularioUsuario.crear');
     Route::patch('/formulario/{formulario}/editar', [FormularioUsuarioController::class, 'editar'])->name('formularioUsuario.editar');
+
+    // Dashboard de Configuración
+    Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
 
     // gestionar lista de reproducción
     Route::get('/gestionar-lista-de-reproduccion', [ListaReproducionController::class, 'listar'])->name('configuracion.gestionar-lista-reproduccion');

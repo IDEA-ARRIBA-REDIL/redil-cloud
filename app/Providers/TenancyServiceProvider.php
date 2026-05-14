@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Configuracion;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
-use App\Models\Configuracion;
-use Illuminate\Support\Facades\Schema;
 
 class TenancyServiceProvider extends ServiceProvider
 {
@@ -108,14 +108,42 @@ class TenancyServiceProvider extends ServiceProvider
 
         // Sobreescribir las variables globales con la config del tenant
         Event::listen(Events\TenancyBootstrapped::class, function () {
+            // Crear directorios de storage necesarios para el tenant si no existen.
+            // Esto previene el error "tempnam(): file created in the system's temporary directory"
+            // que ocurre cuando Livewire WithFileUploads intenta subir archivos temporales
+            // al disco 'local' aislado del tenant y el directorio no existe todavía.
+            $directorios = [
+                storage_path('app/livewire-tmp'),
+                storage_path('app/public'),
+            ];
+
+            foreach ($directorios as $dir) {
+                if (! is_dir($dir)) {
+                    mkdir($dir, 0775, true);
+                }
+            }
+
             if (Schema::hasTable('configuraciones')) {
                 $configuracion = Configuracion::first();
                 if ($configuracion) {
-                    
+                    // Crear directorios de archivos de actividades si hay configuracion
+                    $rutaBase = $configuracion->ruta_almacenamiento;
+                    if ($rutaBase) {
+                        $directoriosActividad = [
+                            storage_path('app/public/'.$rutaBase.'/archivos/actividades'),
+                            storage_path('app/public/'.$rutaBase.'/img/respuestas-formulario'),
+                        ];
+                        foreach ($directoriosActividad as $dir) {
+                            if (! is_dir($dir)) {
+                                mkdir($dir, 0775, true);
+                            }
+                        }
+                    }
+
                     // Fallbacks globales por defecto
                     $logoUrl = asset('storage/global/img/logo_crecer.png');
                     $faviconUrl = asset('assets/img/favicon/logo_crecer.ico');
-                    
+
                     $branding = [
                         'templateName' => $configuracion->nombre_app_personalizado ?: config('variables.templateName'),
                         'templateNameColor' => $configuracion->color_nombre_app ?: config('variables.templateNameColor'),
@@ -128,13 +156,13 @@ class TenancyServiceProvider extends ServiceProvider
 
                     // Si tiene Marca Blanca activa, intentamos cargar sus archivos personalizados
                     if ($configuracion->marca_blanca) {
-                        $rutaBase = $configuracion->ruta_almacenamiento ? $configuracion->ruta_almacenamiento . '/' : '';
-                        
+                        $rutaBase = $configuracion->ruta_almacenamiento ? $configuracion->ruta_almacenamiento.'/' : '';
+
                         if ($configuracion->logo_app) {
-                            $logoUrl = tenant_asset($rutaBase . 'img/branding/' . $configuracion->logo_app);
+                            $logoUrl = tenant_asset($rutaBase.'img/branding/'.$configuracion->logo_app);
                         }
                         if ($configuracion->favicon_app) {
-                            $faviconUrl = tenant_asset($rutaBase . 'img/branding/' . $configuracion->favicon_app);
+                            $faviconUrl = tenant_asset($rutaBase.'img/branding/'.$configuracion->favicon_app);
                         }
                     }
 

@@ -1,5 +1,5 @@
 @extends('layouts/contentNavbarLayout')
-
+solo unna prueba
 @section('title', 'Contenido del Curso')
 
 @section('content')
