@@ -2,32 +2,31 @@
 
 namespace App\Livewire\Actividades;
 
-use Livewire\Component;
+use App\Exports\FormularioRespuestasExport;
+use App\Mail\DefaultMail;
+use App\Mail\RecordatorioFormularioMail;
 use App\Models\Actividad;
+use App\Models\ActividadCampoAdicionalCompra;
+use App\Models\ActividadCarritoCompra;
 use App\Models\Compra;
 use App\Models\Configuracion;
-use App\Models\User;
 use App\Models\Iglesia;
-use App\Models\ActividadCarritoCompra;
-use App\Models\RespuestaElementoFormulario;
 use App\Models\Inscripcion;
 use App\Models\Pago;
-use App\Models\ActividadCampoAdicionalCompra;
+use App\Models\RespuestaElementoFormulario;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Exports\FormularioRespuestasExport;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail; // Necesario para enviar correos
-use App\Mail\DefaultMail;           // El Mailable genérico que ya tienes
-use App\Mail\RecordatorioFormularioMail;
-use Barryvdh\DomPDF\Facade\Pdf;       // Para generar el PDF
+use Illuminate\Support\Str;           // El Mailable genérico que ya tienes
+use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;       // Para generar el PDF
 use stdClass;
-
 
 class DashboardFormularios extends Component
 {
     public Actividad $actividad;
+
     // --- NUEVA PROPIEDAD ---
     // Almacena la cantidad de invitados que el administrador aprueba para cada inscripción.
     // Se vincula con el input de la vista usando wire:model.
@@ -39,49 +38,24 @@ class DashboardFormularios extends Component
         $compradores = Compra::where('actividad_id', $this->actividad->id)->get();
 
         $elementosFormulario = $this->actividad->elementos()
-        ->where('tipo_elemento_id', '!=', 1)
-        ->orderBy('orden', 'asc')
-        ->get();
-
+            ->where('tipo_elemento_id', '!=', 1)
+            ->orderBy('orden', 'asc')
+            ->get();
 
         $comprasIds = $compradores->pluck('id')->toArray();
         $todasLasRespuestas = RespuestaElementoFormulario::whereIn(
             'compra_id',
             $comprasIds
         )
-        ->with('elemento.tipoElemento')
-        ->get();
+            ->with(['elemento.tipoElemento', 'elemento.opciones'])
+            ->get();
 
         $mapaRespuestas = [];
         $mapaInscripciones = [];
         $todasLasInscripciones = Inscripcion::whereIn('compra_id', $comprasIds)->with('categoriaActividad')->get();
 
-        // --- INICIO DEL CAMBIO 1: PRECARGAR LOS VALORES GUARDADOS ---
-        // Se itera sobre las inscripciones para llenar el array que usa la vista.
-        // Esto asegura que si ya hay un valor guardado, el input lo mostrará.
-        foreach ($todasLasInscripciones as $inscripcion) {
-            // Solo se asigna si no ha sido seteado por el usuario en la vista aún.
-            if (!isset($this->cantidadInvitadosAprobados[$inscripcion->id])) {
-                $this->cantidadInvitadosAprobados[$inscripcion->id] = $inscripcion->limite_invitados ?? 0;
-            }
-        }
-        // --- FIN DEL CAMBIO 1 ---
-
-        foreach ($todasLasRespuestas as $respuesta) {
-            if ($respuesta->compra_id) {
-                $mapaRespuestas[$respuesta->compra_id][$respuesta->elemento_formulario_actividad_id] = $respuesta;
-            }
-        }
-        foreach ($todasLasInscripciones as $inscripcion) {
-            $mapaInscripciones[$inscripcion->compra_id] = $inscripcion;
-        }
-
         // --- INICIO DE LA NUEVA LÓGICA ---
-        // Se crean los mapas existentes de respuestas e inscripciones principales
-        $mapaRespuestas = [];
-        $mapaInscripciones = [];
-
-        // Separamos las inscripciones principales (con user_id) de las de invitados
+        // Separamos las inscripciones principales (con compra_id) de las de invitados (con inscripcion_asociada)
         $inscripcionesPrincipales = $todasLasInscripciones->whereNotNull('compra_id');
         $inscripcionesInvitados = $todasLasInscripciones->whereNotNull('inscripcion_asociada');
 
@@ -90,8 +64,14 @@ class DashboardFormularios extends Component
                 $mapaRespuestas[$respuesta->compra_id][$respuesta->elemento_formulario_actividad_id] = $respuesta;
             }
         }
+
         foreach ($inscripcionesPrincipales as $inscripcion) {
             $mapaInscripciones[$inscripcion->compra_id] = $inscripcion;
+
+            // --- INICIO DEL CAMBIO 1: PRECARGAR LOS VALORES GUARDADOS ---
+            if (! isset($this->cantidadInvitadosAprobados[$inscripcion->id])) {
+                $this->cantidadInvitadosAprobados[$inscripcion->id] = $inscripcion->limite_invitados ?? 0;
+            }
         }
 
         // Se crea un nuevo mapa para los invitados, agrupados por el ID de la inscripción principal.
@@ -107,7 +87,7 @@ class DashboardFormularios extends Component
                 'mapaRespuestas' => $mapaRespuestas,
                 'mapaInscripciones' => $mapaInscripciones,
                 'mapaInvitados' => $mapaInvitados, // Se pasa el nuevo mapa a la vista
-                'todasLasRespuestas' => $todasLasRespuestas
+                'todasLasRespuestas' => $todasLasRespuestas,
             ]
         );
     }
@@ -122,9 +102,10 @@ class DashboardFormularios extends Component
         if ($preguntasObligatorias == 0) {
             $this->dispatch('msn', [
                 'msnTitulo' => 'Sin formulario',
-                'msnTexto'  => 'Esta actividad no tiene preguntas configuradas para completar.',
-                'msnIcono'  => 'warning'
+                'msnTexto' => 'Esta actividad no tiene preguntas configuradas para completar.',
+                'msnIcono' => 'warning',
             ]);
+
             return;
         }
 
@@ -137,9 +118,10 @@ class DashboardFormularios extends Component
         if ($comprasPendientes->isEmpty()) {
             $this->dispatch('msn', [
                 'msnTitulo' => 'Todo al día',
-                'msnTexto'  => 'Todos los participantes ya han completado el formulario o no hay registros.',
-                'msnIcono'  => 'info'
+                'msnTexto' => 'Todos los participantes ya han completado el formulario o no hay registros.',
+                'msnIcono' => 'info',
             ]);
+
             return;
         }
 
@@ -149,47 +131,48 @@ class DashboardFormularios extends Component
         foreach ($comprasPendientes as $compra) {
             // Intentamos obtener el email: 1. De la compra, 2. Del usuario logueado
             $emailDestino = strtolower($compra->email_comprador ?: $compra->user?->email);
-            
+
             // Intentamos obtener el nombre: 1. De la compra, 2. Del usuario, 3. Genérico
             $nombreDestino = $compra->nombre_completo_comprador ?: ($compra->user ? $compra->user->nombre(3) : 'Participante');
-            
-            if (!$emailDestino) {
+
+            if (! $emailDestino) {
                 Log::warning("No se pudo enviar recordatorio para Compra ID {$compra->id} porque no tiene email.");
+
                 continue;
             }
 
-            $mailData = new stdClass();
+            $mailData = new stdClass;
             $mailData->subject = 'COMPLETA LAS PREGUNTAS DE TU FORMULARIO';
             $mailData->nombre = $nombreDestino;
             $mailData->saludo = 'si';
-            
+
             $urlFormulario = route('carrito.formulario', ['compra' => $compra->id, 'actividad' => $this->actividad->id]);
-            
+
             $mensaje = "<p>Hemos notado que tu inscripción para la actividad <strong>{$this->actividad->nombre}</strong> aún no cuenta con las respuestas del formulario obligatorio.</p>";
             $mensaje .= "<p style='color: #d9534f; font-weight: bold;'>Es indispensable completar estos campos para validar tu participación. De lo contrario, tu inscripción podría ser anulada en las próximas horas.</p>";
-            
+
             $mensaje .= "<div style='text-align: center; margin-top: 30px; margin-bottom: 30px;'>
                             <a href='{$urlFormulario}' style='background-color: #3b71fe; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;'>
                                 COMPLETAR MI FORMULARIO AHORA
                             </a>
                         </div>";
-            
-            $mensaje .= "<p>Si ya enviaste tus respuestas o crees que esto es un error, por favor haz caso omiso a este mensaje o contáctanos.</p>";
-            
+
+            $mensaje .= '<p>Si ya enviaste tus respuestas o crees que esto es un error, por favor haz caso omiso a este mensaje o contáctanos.</p>';
+
             $mailData->mensaje = $mensaje;
 
             try {
                 Mail::to($emailDestino)->queue(new RecordatorioFormularioMail($mailData, $this->actividad));
                 $conteo++;
             } catch (\Exception $e) {
-                Log::error("Error enviando recordatorio a {$emailDestino}: " . $e->getMessage());
+                Log::error("Error enviando recordatorio a {$emailDestino}: ".$e->getMessage());
             }
         }
 
         $this->dispatch('msn', [
             'msnTitulo' => 'Notificaciones enviadas',
-            'msnTexto'  => "Se han enviado {$conteo} correos de recordatorio de forma exitosa.",
-            'msnIcono'  => 'success'
+            'msnTexto' => "Se han enviado {$conteo} correos de recordatorio de forma exitosa.",
+            'msnIcono' => 'success',
         ]);
     }
 
@@ -215,7 +198,7 @@ class DashboardFormularios extends Component
             ActividadCarritoCompra::where('compra_id', $compraId)->delete();
             RespuestaElementoFormulario::where('compra_id', $compraId)->delete();
             ActividadCampoAdicionalCompra::where('compra_id', $compraId)->delete();
-            
+
             // 3. Eliminar inscripciones y finalmente la compra
             $compra->inscripciones()->delete();
             $compra->delete();
@@ -224,19 +207,20 @@ class DashboardFormularios extends Component
 
             $this->dispatch('msn', [
                 'msnTitulo' => 'Registro eliminado',
-                'msnTexto'  => 'La compra y sus registros han sido eliminados. Se han liberado los cupos en la categoría.',
-                'msnIcono'  => 'success'
+                'msnTexto' => 'La compra y sus registros han sido eliminados. Se han liberado los cupos en la categoría.',
+                'msnIcono' => 'success',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error eliminando compra desde dashboard: ' . $e->getMessage());
+            Log::error('Error eliminando compra desde dashboard: '.$e->getMessage());
             $this->dispatch('msn', [
                 'msnTitulo' => 'Error',
-                'msnTexto'  => 'Ocurrió un error al intentar eliminar el registro: ' . $e->getMessage(),
-                'msnIcono'  => 'error'
+                'msnTexto' => 'Ocurrió un error al intentar eliminar el registro: '.$e->getMessage(),
+                'msnIcono' => 'error',
             ]);
         }
     }
+
     /**
      * MÉTODO RECONSTRUIDO:
      * Ahora guarda el límite de invitados y la lógica está ordenada correctamente.
@@ -248,13 +232,13 @@ class DashboardFormularios extends Component
         try {
             // 1. Obtener los datos necesarios.
             $inscripcion = Inscripcion::with('categoriaActividad', 'user')->findOrFail($inscripcionId);
-            $cantidadInvitados = (int)($this->cantidadInvitadosAprobados[$inscripcionId] ?? 0);
+            $cantidadInvitados = (int) ($this->cantidadInvitadosAprobados[$inscripcionId] ?? 0);
             $totalCuposADescontar = 1 + $cantidadInvitados; // 1 (principal) + N (invitados)
 
             // 1. Obtener los datos necesarios para la validación.
             $inscripcion = Inscripcion::with('categoriaActividad')->findOrFail($inscripcionId);
             $categoria = $inscripcion->categoriaActividad;
-            $cantidadInvitadosAprobados = (int)($this->cantidadInvitadosAprobados[$inscripcionId] ?? 0);
+            $cantidadInvitadosAprobados = (int) ($this->cantidadInvitadosAprobados[$inscripcionId] ?? 0);
 
             // ===================== INICIO DEL BLOQUE DE VALIDACIÓN =====================
 
@@ -262,9 +246,10 @@ class DashboardFormularios extends Component
             if (isset($categoria->limite_invitados) && $cantidadInvitadosAprobados > $categoria->limite_invitados) {
                 $this->dispatch('msn', [
                     'msnTitulo' => 'Límite de Invitados Superado',
-                    'msnTexto'  => "Error: Se están aprobando <strong>{$cantidadInvitadosAprobados}</strong> invitados, pero el límite para la categoría '{$categoria->nombre}' es de <strong>{$categoria->limite_invitados}</strong>.",
-                    'msnIcono'  => 'error'
+                    'msnTexto' => "Error: Se están aprobando <strong>{$cantidadInvitadosAprobados}</strong> invitados, pero el límite para la categoría '{$categoria->nombre}' es de <strong>{$categoria->limite_invitados}</strong>.",
+                    'msnIcono' => 'error',
                 ]);
+
                 return; // Detenemos la ejecución
             }
 
@@ -274,13 +259,13 @@ class DashboardFormularios extends Component
             if ($totalCuposRequeridos > $aforoDisponible) {
                 $this->dispatch('msn', [
                     'msnTitulo' => 'Aforo insuficiente',
-                    'msnTexto'  => "Error: Se requieren <strong>{$totalCuposRequeridos}</strong> cupos (1 principal + {$cantidadInvitadosAprobados} invitados), pero solo hay <strong>{$aforoDisponible}</strong> cupos disponibles en la categoría.",
-                    'msnIcono'  => 'error'
+                    'msnTexto' => "Error: Se requieren <strong>{$totalCuposRequeridos}</strong> cupos (1 principal + {$cantidadInvitadosAprobados} invitados), pero solo hay <strong>{$aforoDisponible}</strong> cupos disponibles en la categoría.",
+                    'msnIcono' => 'error',
                 ]);
+
                 return; // Detenemos la ejecución
             }
             // ====================== FIN DEL BLOQUE DE VALIDACIÓN ======================
-
 
             // 2. Verificar el aforo ANTES de hacer cualquier cambio.
             $categoria = $inscripcion->categoriaActividad;
@@ -310,16 +295,16 @@ class DashboardFormularios extends Component
             // Livewire se encargará de refrescar la vista automáticamente después de esto.
             $this->dispatch('msn', [
                 'msnTitulo' => '¡Éxito!',
-                'msnTexto'  => 'La inscripción ha sido aprobada y el correo de notificación se está enviando.',
-                'msnIcono'  => 'success'
+                'msnTexto' => 'La inscripción ha sido aprobada y el correo de notificación se está enviando.',
+                'msnIcono' => 'success',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al aprobar inscripción: ' . $e->getMessage());
+            Log::error('Error al aprobar inscripción: '.$e->getMessage());
             $this->dispatch('msn', [
                 'msnTitulo' => 'Error',
-                'msnTexto'  => 'No se pudo aprobar la inscripción: ' . $e->getMessage(),
-                'msnIcono'  => 'error'
+                'msnTexto' => 'No se pudo aprobar la inscripción: '.$e->getMessage(),
+                'msnIcono' => 'error',
             ]);
         }
     }
@@ -329,42 +314,50 @@ class DashboardFormularios extends Component
     {
         // Se obtiene la información de la iglesia (sin cambios).
 
-
         $iglesia = Iglesia::find(1);
         try {
-            $usuarioPrincipal = $inscripcion->user;
-            if (!$usuarioPrincipal) return;
+            // Buscamos el email en orden de prioridad: 1. Inscripción, 2. Usuario, 3. Compra
+            $emailDestino = $inscripcion->email ?? ($inscripcion->user?->email ?? $inscripcion->compra?->email_comprador);
 
-            $mailData = new stdClass();
-            $mailData->subject = '¡Tu inscripción para ' . $this->actividad->nombre . ' ha sido aprobada!';
+            // Buscamos el nombre en orden de prioridad: 1. Inscripción, 2. Usuario, 3. Genérico
+            $nombreDestino = $inscripcion->nombre_inscrito ?? ($inscripcion->user ? $inscripcion->user->nombre(3) : 'Participante');
+
+            if (! $emailDestino) {
+                Log::warning('No se pudo enviar correo de aprobación para Inscripción ID '.$inscripcion->id.' porque no se encontró una dirección de correo.');
+
+                return;
+            }
+
+            $mailData = new stdClass;
+            $mailData->subject = '¡Tu inscripción para '.$this->actividad->nombre.' ha sido aprobada!';
             $mailData->saludo = 'si';
-            $mailData->nombre = $usuarioPrincipal->nombre(3);
+            $mailData->nombre = $nombreDestino;
 
-            $mensaje = "<p>Tu inscripción ha sido aprobada con éxito.</p>";
+            $mensaje = "<p>Hola <strong>{$nombreDestino}</strong>, tu inscripción ha sido aprobada con éxito.</p>";
             if ($cantidadInvitados > 0) {
                 $mensaje .= "<p>Además, se han confirmado <strong>{$cantidadInvitados} cupos para tus invitados</strong>.</p>";
             }
 
             // --- INICIO DE LA CORRECCIÓN ---
-            // 1. Se construye la URL completa y válida.
-            $urlGestion = "https://" . $iglesia->url_subdominio . "/actividades/" . $inscripcion->id . "/gestionar-inscripciones";
+            // 1. Se construye la URL completa y válida usando el helper route() para el dominio del tenant.
+            $urlGestion = route('actividades.gestionarInscripciones', ['inscripcion' => $inscripcion->id]);
 
             // 2. Se inserta la URL correcta en el mensaje del correo.
-            $mensaje .= "<p>Adjunto encontrarás tu ticket personal con el código QR para el registro. Podrás gestionar los datos de tus invitados y descargar sus tickets desde el siguiente enlace: <a href='" . $urlGestion . "'>click aquí</a>.</p>";
+            $mensaje .= "<p>Adjunto encontrarás tu ticket personal con el código QR para el registro. Podrás gestionar los datos de tus invitados y descargar sus tickets desde el siguiente enlace: <a href='".$urlGestion."'>click aquí</a>.</p>";
             // --- FIN DE LA CORRECCIÓN ---
 
             $mailData->mensaje = $mensaje;
 
             $pdfData = $this->_generarPdfParaInscripcion($inscripcion);
-            $pdfFilename = 'Ticket-Inscripcion-' . $inscripcion->id . '.pdf';
+            $pdfFilename = 'Ticket-Inscripcion-'.$inscripcion->id.'.pdf';
 
-            Mail::to($usuarioPrincipal->email)->send(new DefaultMail($mailData, $pdfData, $pdfFilename));
+            Mail::to($emailDestino)->send(new DefaultMail($mailData, $pdfData, $pdfFilename));
         } catch (\Exception $e) {
-            Log::error('Error al enviar correo de aprobación para Inscripción ID ' . $inscripcion->id . ': ' . $e->getMessage());
+            Log::error('Error al enviar correo de aprobación para Inscripción ID '.$inscripcion->id.': '.$e->getMessage());
             $this->dispatch('msn', [
                 'msnTitulo' => 'Aprobado con advertencia',
-                'msnTexto'  => 'La inscripción fue aprobada, pero ocurrió un error al enviar el correo de notificación.',
-                'msnIcono'  => 'warning'
+                'msnTexto' => 'La inscripción fue aprobada, pero ocurrió un error al enviar el correo de notificación.',
+                'msnIcono' => 'warning',
             ]);
         }
     }
@@ -397,13 +390,13 @@ class DashboardFormularios extends Component
 
             $this->dispatch('msn', [
                 'msnTitulo' => 'Acción completada',
-                'msnTexto'  => 'La aprobación de la inscripción ha sido revertida.',
-                'msnIcono'  => 'info'
+                'msnTexto' => 'La aprobación de la inscripción ha sido revertida.',
+                'msnIcono' => 'info',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al desaprobar inscripción: ' . $e->getMessage());
-            $this->dispatch('msn', ['msnTitulo' => 'Error', 'msnTexto' => 'No se pudo revertir la aprobación.' . $e->getMessage(), 'msnIcono' => 'error']);
+            Log::error('Error al desaprobar inscripción: '.$e->getMessage());
+            $this->dispatch('msn', ['msnTitulo' => 'Error', 'msnTexto' => 'No se pudo revertir la aprobación.'.$e->getMessage(), 'msnIcono' => 'error']);
         }
     }
 
@@ -414,13 +407,11 @@ class DashboardFormularios extends Component
     {
         $nombreAsistente = $inscripcion->user?->nombre(3) ?? $inscripcion->nombre_inscrito;
 
-
-
         // Preparamos los datos que irán dentro del código QR.
         $dataQr = json_encode([
             'id' => $inscripcion->id,
             'nombre' => $nombreAsistente,
-            'tipo' => 'reserva_principal_aprobada' // La etiqueta que solicitaste
+            'tipo' => 'reserva_principal_aprobada', // La etiqueta que solicitaste
         ]);
 
         // Renderizamos la vista Blade del ticket en un objeto PDF.
@@ -428,7 +419,7 @@ class DashboardFormularios extends Component
         $pdf = PDF::loadView('contenido.paginas.actividades.inscripcion-ticket', [
             'inscripcion' => $inscripcion,
             'datosParaQr' => $dataQr,
-            'actividad' => $this->actividad
+            'actividad' => $this->actividad,
         ]);
 
         // Devolvemos el contenido del PDF como un string.
@@ -439,13 +430,12 @@ class DashboardFormularios extends Component
      * Helper para obtener el valor legible de una respuesta.
      * AJUSTADO SEGÚN TU ARCHIVO SEEDER.
      *
-     * @param mixed $respuesta Objeto del modelo RespuestaFormularioElementoCompra
-     * @return string
+     * @param  mixed  $respuesta  Objeto del modelo RespuestaFormularioElementoCompra
      */
     public function getValorRespuesta($respuesta): string
     {
         $configuracion = Configuracion::find(1);
-        if (!$respuesta || !$respuesta->elemento) {
+        if (! $respuesta || ! $respuesta->elemento) {
             return '<span class="text-muted fst-italic">Sin respuesta</span>';
         }
 
@@ -463,12 +453,17 @@ class DashboardFormularios extends Component
                 return $respuesta->respuesta_si_no == 1 ? 'Sí' : 'No';
 
             case 'unica_respuesta': // ID: 5
-                // Idealmente aquí se buscaría el texto de la opción. Por ahora, mostramos el ID.
-                return 'ID de opción seleccionada: ' . e($respuesta->respuesta_unica);
+                // Buscamos el texto de la opción usando el 'id' que es lo que se guarda ahora en la BD.
+                $opcion = $respuesta->elemento->opciones->firstWhere('id', $respuesta->respuesta_unica);
+
+                return $opcion ? e($opcion->valor_texto) : '<span class="text-muted">Valor ID: '.e($respuesta->respuesta_unica).'</span>';
 
             case 'multiple_respuesta': // ID: 6
-                // Idealmente aquí se buscarían los textos de las opciones.
-                return 'IDs de opciones: ' . e($respuesta->respuesta_multiple);
+                // Procesamos múltiples IDs si están separados por comas.
+                $ids = explode(',', $respuesta->respuesta_multiple);
+                $nombres = $respuesta->elemento->opciones->whereIn('id', $ids)->pluck('valor_texto')->toArray();
+
+                return count($nombres) > 0 ? implode(', ', $nombres) : '<span class="text-muted">Valores ID: '.e($respuesta->respuesta_multiple).'</span>';
 
             case 'fecha': // ID: 7
                 return e($respuesta->respuesta_fecha);
@@ -477,17 +472,37 @@ class DashboardFormularios extends Component
                 return e($respuesta->respuesta_numero);
 
             case 'moneda': // ID: 9
-                return '$' . number_format($respuesta->respuesta_moneda ?? 0, 2);
+                return '$'.number_format($respuesta->respuesta_moneda ?? 0, 2);
 
             case 'archivo': // ID: 10
-                return $respuesta->url_archivo
-                    ? '<a href="' . asset('storage/' . $configuracion->ruta_almacenamiento . '/archivos/actividades/' . $respuesta->url_archivo) . '" class="btn btn-sm btn-outline-primary" target="_blank"><i class="mdi mdi-download me-1"></i> Descargar Archivo</a>'
-                    : '<span class="text-muted fst-italic">No se subió archivo</span>';
+                if (! $respuesta->url_archivo) {
+                    return '<span class="text-muted fst-italic">No se subió archivo</span>';
+                }
+
+                $urlArchivo = tenant_asset($configuracion->ruta_almacenamiento.'/archivos/actividades/'.$respuesta->url_archivo);
+                $esImagen = preg_match('/\.(jpg|jpeg|png|webp|gif)$/i', $respuesta->url_archivo);
+
+                if ($esImagen) {
+                    return '<a href="'.$urlArchivo.'" target="_blank">
+                                <img src="'.$urlArchivo.'" class="img-fluid rounded border mb-2" style="max-height: 120px; display: block;">
+                                <span class="btn btn-xs btn-outline-primary"><i class="mdi mdi-download me-1"></i> Descargar</span>
+                            </a>';
+                }
+
+                return '<a href="'.$urlArchivo.'" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="mdi mdi-file-document-outline me-1"></i> Ver/Descargar Documento
+                        </a>';
 
             case 'imagen': // ID: 11
-                return $respuesta->url_foto
-                    ? '<a href="' . asset('storage/' . $respuesta->url_foto) . '" target="_blank"><img src="' . asset('storage/' . $respuesta->url_foto) . '" class="img-fluid rounded" style="max-height: 100px; cursor: pointer;" alt="Imagen respuesta"></a>'
-                    : '<span class="text-muted fst-italic">No se subió imagen</span>';
+                if (! $respuesta->url_foto) {
+                    return '<span class="text-muted fst-italic">No se subió imagen</span>';
+                }
+
+                $urlFoto = tenant_asset($configuracion->ruta_almacenamiento.'/img/respuestas-formulario/'.$respuesta->url_foto);
+
+                return '<a href="'.$urlFoto.'" target="_blank">
+                            <img src="'.$urlFoto.'" class="img-fluid rounded border" style="max-height: 150px; cursor: pointer;" alt="Imagen respuesta">
+                        </a>';
 
             default:
                 return '<span class="text-muted fst-italic">Tipo de dato no reconocido</span>';
@@ -497,7 +512,7 @@ class DashboardFormularios extends Component
     public function exportarExcel()
     {
         // Creamos un nombre de archivo amigable
-        $fileName = 'respuestas-' . Str::slug($this->actividad->nombre) . '.xlsx';
+        $fileName = 'respuestas-'.Str::slug($this->actividad->nombre).'.xlsx';
 
         // Usamos el Facade de Excel para descargar el archivo, pasándole nuestra clase de exportación.
         return Excel::download(new FormularioRespuestasExport($this->actividad), $fileName);

@@ -105,6 +105,61 @@ $configData = Helper::appClasses();
 
     });
 
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('uploadArchivoForm', (elementoId, tipo) => ({
+            subiendo: false,
+            errorMsg: null,
+            successMsg: null,
+            init() {},
+            async subirArchivo(event) {
+                const file = event.target.files[0];
+                if (!file) {
+                    this.successMsg = null;
+                    return;
+                }
+
+                this.subiendo = true;
+                this.errorMsg = null;
+                this.successMsg = null;
+
+                const formData = new FormData();
+                formData.append('archivo', file);
+                formData.append('tipo', tipo);
+                
+                // Obtenemos el token CSRF desde el input oculto o meta tag
+                const csrfToken = document.querySelector('input[name="_token"]').value;
+
+                try {
+                    const response = await fetch('{{ route("carrito.uploadArchivoFormulario") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        // Guardamos el nombre del archivo en el input real que se enviará con el form
+                        document.getElementById('input-elemento-' + elementoId).value = result.nombre;
+                        this.successMsg = '¡Archivo subido correctamente!';
+                    } else {
+                        this.errorMsg = result.message || 'Error al subir el archivo.';
+                        event.target.value = ''; // Limpiar el input si hay error
+                    }
+                } catch (error) {
+                    console.error('Upload Error:', error);
+                    this.errorMsg = 'Error de conexión al subir el archivo.';
+                    event.target.value = '';
+                } finally {
+                    this.subiendo = false;
+                }
+            }
+        }));
+    });
+
 </script>
 
 @endsection
@@ -198,10 +253,35 @@ $configData = Helper::appClasses();
                     @break
 
                     @case(4) {{-- Si/No --}}
-                    @case(5) {{-- Selección Única --}}
-                    <select class="form-select @error('elemento-' . $elemento->id) is-invalid @enderror" id="elemento-{{ $elemento->id }}" name="elemento-{{ $elemento->id }}" {{ $disabledAttr }}>
+                    @php $respuestaSiNo = old('elemento-'.$elemento->id, $respuestaElemento?->respuesta_si_no); @endphp
+                    <div class="d-flex gap-4 mt-1">
+                        <div class="form-check">
+                            <input class="form-check-input @error('elemento-' . $elemento->id) is-invalid @enderror"
+                                type="radio"
+                                name="elemento-{{ $elemento->id }}"
+                                id="elemento-{{ $elemento->id }}-si"
+                                value="1"
+                                {{ $respuestaSiNo == '1' ? 'checked' : '' }}
+                                {{ $disabledAttr }}>
+                            <label class="form-check-label" for="elemento-{{ $elemento->id }}-si">Sí</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input @error('elemento-' . $elemento->id) is-invalid @enderror"
+                                type="radio"
+                                name="elemento-{{ $elemento->id }}"
+                                id="elemento-{{ $elemento->id }}-no"
+                                value="0"
+                                {{ ($respuestaSiNo !== null && $respuestaSiNo !== '') && $respuestaSiNo == '0' ? 'checked' : '' }}
+                                {{ $disabledAttr }}>
+                            <label class="form-check-label" for="elemento-{{ $elemento->id }}-no">No</label>
+                        </div>
+                    </div>
+                    @break
+
+                    <select class="form-select @error('elemento-'.$elemento->id) is-invalid @enderror" id="elemento-{{ $elemento->id }}" name="elemento-{{ $elemento->id }}" {{ $disabledAttr }}>
+                        <option value="">Seleccione una opción</option>
                         @foreach ($elemento->opciones as $opcion)
-                        <option value="{{ $opcion->valor_entero }}" {{ old('elemento-'.$elemento->id, $respuestaElemento?->respuesta_unica) == $opcion->valor_entero ? 'selected' : '' }}>
+                        <option value="{{ $opcion->id }}" {{ old('elemento-'.$elemento->id, $respuestaElemento?->respuesta_unica) == $opcion->id ? 'selected' : '' }}>
                             {{ $opcion->valor_texto }}
                         </option>
                         @endforeach
@@ -212,9 +292,9 @@ $configData = Helper::appClasses();
                     @php
                     $opcionesGuardadas = old('elemento-'.$elemento->id, $respuestaElemento ? explode(',', $respuestaElemento->respuesta_multiple) : []);
                     @endphp
-                    <select class="form-select select2 @error('elemento-' . $elemento->id) is-invalid @enderror" id="elemento-{{ $elemento->id }}" name="elemento-{{ $elemento->id }}[]" multiple {{ $disabledAttr }}>
+                    <select class="form-select select2 @error('elemento-'.$elemento->id) is-invalid @enderror" id="elemento-{{ $elemento->id }}" name="elemento-{{ $elemento->id }}[]" multiple {{ $disabledAttr }}>
                         @foreach ($elemento->opciones as $opcion)
-                        <option value="{{ $opcion->valor_entero }}" {{ in_array($opcion->valor_entero, $opcionesGuardadas) ? 'selected' : '' }}>
+                        <option value="{{ $opcion->id }}" {{ in_array($opcion->id, $opcionesGuardadas) ? 'selected' : '' }}>
                             {{ $opcion->valor_texto }}
                         </option>
                         @endforeach
@@ -241,7 +321,24 @@ $configData = Helper::appClasses();
                         @endif
                     </div>
                     @else
-                    <input type="file" class="form-control @error('elemento-' . $elemento->id) is-invalid @enderror" id="elemento-{{ $elemento->id }}" name="elemento-{{ $elemento->id }}" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" {{ $disabledAttr }}>
+                    {{-- Alpine.js para subida manual --}}
+                    <div x-data="uploadArchivoForm({{ $elemento->id }}, 'archivo')">
+                        <input type="hidden" name="elemento-{{ $elemento->id }}" id="input-elemento-{{ $elemento->id }}" value="{{ old('elemento-'.$elemento->id) }}">
+                        <input type="file" 
+                               class="form-control @error('elemento-' . $elemento->id) is-invalid @enderror" 
+                               id="file-elemento-{{ $elemento->id }}" 
+                               accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+                               {{ $disabledAttr }}
+                               @change="subirArchivo($event)">
+                        
+                        <div x-show="subiendo" style="display: none;" class="mt-1 text-primary small">
+                            <span class="spinner-border spinner-border-sm me-1"></span> Subiendo documento...
+                        </div>
+                        <div x-show="errorMsg" style="display: none;" x-text="errorMsg" class="mt-1 text-danger small fw-bold"></div>
+                        <div x-show="successMsg" x-transition style="display: none;" class="mt-2 alert alert-success p-2 small d-flex align-items-center">
+                            <i class="ti ti-check fs-5 me-2"></i> <span x-text="successMsg"></span>
+                        </div>
+                    </div>
                     @endif
                     @break
 
@@ -249,20 +346,30 @@ $configData = Helper::appClasses();
                     @if ($respuestaElemento && $respuestaElemento->url_foto)
                     <div class="mb-2">
                         <p class="mb-1">Imagen actual:</p>
-                        <img src="{{ Storage::url($respuestaElemento->url_foto) }}" class="img-fluid rounded border" style="max-height: 200px;">
+                        <img src="{{ Storage::disk('public')->url($respuestaElemento->url_foto) }}" class="img-fluid rounded border" style="max-height: 200px;">
                     </div>
                     @if($puedeEditar)
                     <a href="{{ route('carrito.eliminarRespuesta', ['compra' => $compra, 'respuesta' => $respuestaElemento]) }}" class="btn btn-danger"><i class="ti ti-trash me-1"></i>Eliminar para subir una nueva</a>
                     @endif
                     @else
                     @if($puedeEditar)
-                    <button class="btn btn-primary btn-open-modal" type="button" data-bs-toggle="modal" data-bs-target="#modalFoto" data-elemento_imagen="{{ $elemento->id }}" data-max-width="{{ $elemento->ancho ?? 0 }}" data-max-height="{{ $elemento->largo ?? 0 }}">
-                        <i class="ti ti-upload me-1"></i> Subir una imagen
-                    </button>
-                    <input class="form-control cropperImageUpload" type="file" id="cropperImageUpload" accept="image/png, image/jpeg">
-                    <div class="mt-3 preview-container_{{ $elemento->id }}" style="display:none;">
-                        <p>Vista previa:</p>
-                        <img id="preview-img_{{ $elemento->id }}" src="" class="img-fluid rounded border" style="max-height: 200px;">
+                    {{-- Alpine.js para subida manual de imagen --}}
+                    <div x-data="uploadArchivoForm({{ $elemento->id }}, 'imagen')">
+                        <input type="hidden" name="elemento-{{ $elemento->id }}" id="input-elemento-{{ $elemento->id }}" value="{{ old('elemento-'.$elemento->id) }}">
+                        <input type="file" 
+                               class="form-control @error('elemento-' . $elemento->id) is-invalid @enderror" 
+                               id="file-elemento-{{ $elemento->id }}" 
+                               accept="image/png, image/jpeg, image/jpg, image/webp" 
+                               {{ $disabledAttr }}
+                               @change="subirArchivo($event)">
+                        
+                        <div x-show="subiendo" style="display: none;" class="mt-1 text-primary small">
+                            <span class="spinner-border spinner-border-sm me-1"></span> Subiendo imagen...
+                        </div>
+                        <div x-show="errorMsg" style="display: none;" x-text="errorMsg" class="mt-1 text-danger small fw-bold"></div>
+                        <div x-show="successMsg" x-transition style="display: none;" class="mt-2 alert alert-success p-2 small d-flex align-items-center">
+                            <i class="ti ti-check fs-5 me-2"></i> <span x-text="successMsg"></span>
+                        </div>
                     </div>
                     @else
                     <div class="text-muted fst-italic">No se subió ninguna imagen.</div>

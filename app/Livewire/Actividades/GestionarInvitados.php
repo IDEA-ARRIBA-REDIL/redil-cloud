@@ -2,16 +2,15 @@
 
 namespace App\Livewire\Actividades;
 
-use Livewire\Component;
-use App\Models\Inscripcion;
+use App\Mail\DefaultMail;
 use App\Models\Iglesia;
-use Illuminate\Support\Facades\DB;
+use App\Models\Inscripcion;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
-use App\Mail\DefaultMail;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
+use Livewire\Component;
+use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 use stdClass;
 
 class GestionarInvitados extends Component
@@ -29,6 +28,7 @@ class GestionarInvitados extends Component
 
     // Propiedades para el formulario del modal (vinculadas con wire:model)
     public $nombreNuevoInvitado = '';
+
     public $emailNuevoInvitado = '';
 
     /**
@@ -46,8 +46,8 @@ class GestionarInvitados extends Component
      */
     public function cargarInvitados()
     {
-        // Precargamos la relación 'invitados' para eficiencia.
-        $this->inscripcionPrincipal->load('invitados');
+        // Precargamos las relaciones necesarias para eficiencia y seguridad.
+        $this->inscripcionPrincipal->load(['invitados', 'user', 'compra']);
         $this->invitados = $this->inscripcionPrincipal->invitados;
 
         // Calculamos cuántos cupos le quedan al usuario.
@@ -68,6 +68,7 @@ class GestionarInvitados extends Component
         // PASO 2: Volver a verificar los cupos como medida de seguridad.
         if ($this->cuposDisponibles <= 0) {
             $this->dispatch('mostrarAlerta', ['titulo' => 'Límite Alcanzado', 'texto' => 'Ya has registrado el máximo de invitados permitidos.', 'icono' => 'warning']);
+
             return;
         }
 
@@ -78,12 +79,12 @@ class GestionarInvitados extends Component
             $inscripcionInvitado = Inscripcion::create([
                 'user_id' => null, // Es un invitado, no un usuario del sistema.
                 'actividad_categoria_id' => $this->inscripcionPrincipal->actividad_categoria_id,
-                'compra_id'              => $this->inscripcionPrincipal->compra_id,
-                'fecha'                  => now()->toDateString(),
-                'estado'                 => 3, // Se crea directamente como Aprobada/Finalizada.
-                'nombre_inscrito'        => $this->nombreNuevoInvitado,
-                'email'                  => $this->emailNuevoInvitado,
-                'inscripcion_asociada'   => $this->inscripcionPrincipal->id,
+                'compra_id' => $this->inscripcionPrincipal->compra_id,
+                'fecha' => now()->toDateString(),
+                'estado' => 3, // Se crea directamente como Aprobada/Finalizada.
+                'nombre_inscrito' => $this->nombreNuevoInvitado,
+                'email' => $this->emailNuevoInvitado,
+                'inscripcion_asociada' => $this->inscripcionPrincipal->id,
             ]);
 
             // PASO 4: Refrescar la lista de invitados y limpiar el formulario.
@@ -98,8 +99,8 @@ class GestionarInvitados extends Component
 
             $this->dispatch('mostrarAlerta', ['titulo' => '¡Éxito!', 'texto' => 'El invitado ha sido registrado y notificado por correo.', 'icono' => 'success']);
         } catch (\Exception $e) {
-            Log::error('Error al guardar invitado: ' . $e->getMessage());
-            $this->dispatch('mostrarAlerta', ['titulo' => 'Error', 'texto' => 'Ocurrió un error al registrar al invitado.' . $e->getMessage(), 'icono' => 'error']);
+            Log::error('Error al guardar invitado: '.$e->getMessage());
+            $this->dispatch('mostrarAlerta', ['titulo' => 'Error', 'texto' => 'Ocurrió un error al registrar al invitado.'.$e->getMessage(), 'icono' => 'error']);
         }
     }
 
@@ -120,32 +121,31 @@ class GestionarInvitados extends Component
             $datosParaQr = json_encode([
                 'id' => $invitado->id,
                 'nombre' => $invitado->nombre_inscrito,
-                'tipo' => 'inscripcion_invitado_aprobada'
+                'tipo' => 'inscripcion_invitado_aprobada',
             ]);
 
             // 3. Generar el contenido binario de la imagen PNG del código QR.
             $qrCodeImage = DNS2D::getBarcodePNG($datosParaQr, 'QRCODE', 10, 10); // Aumentamos el tamaño para mejor calidad
 
             // 4. Preparar un nombre de archivo amigable.
-            $fileName = 'qr-invitado-' . Str::slug($invitado->nombre_inscrito) . '-' . $invitado->id . '.png';
+            $fileName = 'qr-invitado-'.Str::slug($invitado->nombre_inscrito).'-'.$invitado->id.'.png';
 
             // 5. Enviar la imagen al navegador como una descarga.
             return response()->streamDownload(
-                fn() => print($qrCodeImage),
+                fn () => print ($qrCodeImage),
                 $fileName,
                 ['Content-Type' => 'image/png']
             );
         } catch (\Exception $e) {
-            Log::error("Error al descargar QR para invitado: " . $e->getMessage());
+            Log::error('Error al descargar QR para invitado: '.$e->getMessage());
             // Notificar al usuario que algo salió mal.
             $this->dispatch('mostrarAlerta', [
                 'titulo' => 'Error',
                 'texto' => 'No se pudo generar el código QR para la descarga.',
-                'icono' => 'error'
+                'icono' => 'error',
             ]);
         }
     }
-
 
     /**
      * Elimina la inscripción de un invitado.
@@ -160,7 +160,7 @@ class GestionarInvitados extends Component
                 $this->dispatch('mostrarAlerta', ['titulo' => 'Eliminado', 'texto' => 'El invitado ha sido eliminado.', 'icono' => 'success']);
             }
         } catch (\Exception $e) {
-            Log::error('Error al eliminar invitado: ' . $e->getMessage());
+            Log::error('Error al eliminar invitado: '.$e->getMessage());
             $this->dispatch('mostrarAlerta', ['titulo' => 'Error', 'texto' => 'No se pudo eliminar al invitado.', 'icono' => 'error']);
         }
     }
@@ -170,19 +170,20 @@ class GestionarInvitados extends Component
      */
     private function _enviarCorreoInvitadoAprobado(Inscripcion $inscripcionInvitado)
     {
-        $inscripcionInvitado->load('inscripcionPrincipal.user', 'categoriaActividad');
-        $participantePrincipal = $inscripcionInvitado->inscripcionPrincipal->user;
+        $inscripcionInvitado->load('inscripcionPrincipal.user', 'inscripcionPrincipal.compra', 'categoriaActividad');
+        $principal = $inscripcionInvitado->inscripcionPrincipal;
+        $nombrePrincipal = $principal->user ? $principal->user->nombre(3) : ($principal->nombre_inscrito ?? ($principal->compra->nombre_completo_comprador ?? 'Participante Principal'));
 
-        $mailData = new stdClass();
-        $mailData->subject = '¡Han confirmado tu inscripción para ' . $inscripcionInvitado->categoriaActividad->actividad->nombre . '!';
+        $mailData = new stdClass;
+        $mailData->subject = '¡Han confirmado tu inscripción para '.$inscripcionInvitado->categoriaActividad->actividad->nombre.'!';
         $mailData->saludo = 'si';
         $mailData->nombre = $inscripcionInvitado->nombre_inscrito;
 
-        $mailData->mensaje = "<p>Te informamos que <strong>" . $participantePrincipal->nombre(3) . "</strong> ha confirmado tu inscripción como su invitado a esta actividad.</p>";
-        $mailData->mensaje .= "<p>Adjunto encontrarás tu ticket personal con el código QR, el cual deberás presentar para registrar tu asistencia.</p>";
+        $mailData->mensaje = '<p>Te informamos que <strong>'.$nombrePrincipal.'</strong> ha confirmado tu inscripción como su invitado a esta actividad.</p>';
+        $mailData->mensaje .= '<p>Adjunto encontrarás tu ticket personal con el código QR, el cual deberás presentar para registrar tu asistencia.</p>';
 
         $pdfData = $this->_generarPdfParaInscripcion($inscripcionInvitado);
-        $pdfFilename = 'Ticket-Invitado-' . $inscripcionInvitado->id . '.pdf';
+        $pdfFilename = 'Ticket-Invitado-'.$inscripcionInvitado->id.'.pdf';
 
         Mail::to($inscripcionInvitado->email)->send(new DefaultMail($mailData, $pdfData, $pdfFilename));
     }

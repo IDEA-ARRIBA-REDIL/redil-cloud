@@ -50,7 +50,7 @@ $configData = Helper::appClasses();
         .banner-img{
             background-position: center !important;
             background-size: contain !important;
-               min-height: 600px;
+               min-height: 500px;
                background-repeat: no-repeat;
         }
 
@@ -86,7 +86,7 @@ $configData = Helper::appClasses();
 @section('content')
 @include('layouts.status-msn')
 
-<div @auth style="margin-top:100px" @else style="margin-top:100px" @endif class="row p-0 mb-3">
+<div  class="row p-0 mb-3">
     <div class="col-12">
         @if (isset($actividad->banner->id))
         <div style="background-image: url('{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre) : $configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre }}') !important" class="text-center banner-img">
@@ -186,9 +186,9 @@ $configData = Helper::appClasses();
                                                 <div class="card-header d-flex justify-content-between align-items-center">
                                                     <b>{{ isset($item->categoria) ? $item->categoria->nombre : 'Requisitos Generales' }}</b>
                                                     @if($item->estado == 'DISPONIBLE')
-                                                        <span class="badge bg-success">Disponible</span>
+                                                        <span class="btn bg-success text-white">Disponible </span>
                                                     @else
-                                                        <span class="badge bg-danger">No disponible</span>
+                                                        <span class="btn bg-danger text-white">No disponible </span>
                                                     @endif
                                                 </div>
                                                 <div class="card-body">

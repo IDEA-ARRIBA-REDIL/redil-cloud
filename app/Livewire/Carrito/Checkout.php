@@ -228,10 +228,10 @@ class Checkout extends Component
 
         // Actualizar datos comprador
         if (auth()->check()) {
-            $this->nombreComprador = $this->usuarioCompra->nombre(3);
-            $this->identificacionComprador = $this->usuarioCompra->identificacion;
-            $this->EmailComprador = $this->usuarioCompra->email;
-            $this->telefonoComprador = $this->usuarioCompra->telefono_movil;
+            $this->nombreComprador = $this->usuarioCompra->nombre(3) ?: 'Usuario Redil';
+            $this->identificacionComprador = $this->usuarioCompra->identificacion ?: '000000000';
+            $this->EmailComprador = $this->usuarioCompra->email ?: 'sin-email@redil.com';
+            $this->telefonoComprador = $this->usuarioCompra->telefono_movil ?: '111111111';
         }
 
         $this->compra->update([
@@ -287,10 +287,10 @@ class Checkout extends Component
 
         // Se actualizan los datos del comprador en la compra
         if (auth()->check()) {
-            $this->nombreComprador = $this->usuarioCompra->nombre(3);
-            $this->identificacionComprador = $this->usuarioCompra->identificacion;
-            $this->EmailComprador = $this->usuarioCompra->email;
-            $this->telefonoComprador = $this->usuarioCompra->telefono_movil;
+            $this->nombreComprador = $this->usuarioCompra->nombre(3) ?: 'Usuario Redil';
+            $this->identificacionComprador = $this->usuarioCompra->identificacion ?: '000000000';
+            $this->EmailComprador = $this->usuarioCompra->email ?: 'sin-email@redil.com';
+            $this->telefonoComprador = $this->usuarioCompra->telefono_movil ?: '111111111';
         }
         $this->compra->update([
             'nombre_completo_comprador' => $this->nombreComprador,

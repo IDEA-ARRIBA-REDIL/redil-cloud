@@ -5,7 +5,7 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <h4 class="card-title text-primary">{{ $inscripcionPrincipal->categoriaActividad->actividad->nombre }}</h4>
-                <p class="text-black"><strong>Participante Principal:</strong> {{ $inscripcionPrincipal->user->nombre(3) }}</p>
+                <p class="text-black"><strong>Participante Principal:</strong> {{ $inscripcionPrincipal->user ? $inscripcionPrincipal->user->nombre(3) : ($inscripcionPrincipal->nombre_inscrito ?? ($inscripcionPrincipal->compra->nombre_completo_comprador ?? 'Participante')) }}</p>
                 <p class="mb-0 text-black"><strong>Cupos de Invitados Aprobados:</strong> {{ $inscripcionPrincipal->limite_invitados }} | <strong>Disponibles:</strong> {{ $cuposDisponibles }}</p>
             </div>
         </div>

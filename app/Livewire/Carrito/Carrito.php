@@ -2,80 +2,98 @@
 
 namespace App\Livewire\Carrito;
 
-use App\Models\Actividad;
-use App\Models\ActividadCategoria;
-use App\Models\ActividadCarritoCompra;
-use Illuminate\Support\Facades\Mail;
 use App\Mail\InscripcionConfirmacionMail;
+use App\Models\Actividad;
 use App\Models\ActividadCampoAdicionalCompra;
-use App\Models\Inscripcion;
+use App\Models\ActividadCarritoCompra;
+use App\Models\ActividadCategoria;
 use App\Models\Compra;
 use App\Models\Configuracion;
+use App\Models\Inscripcion;
 use App\Models\Moneda;
 use App\Models\Pago;
-use App\Models\User;
 use App\Models\RespuestaElementoFormulario;
-use App\Models\ElementoFormularioActividad;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
-use Livewire\WithFileUploads; // Importamos para manejar archivos e imágenes
 
 class Carrito extends Component
 {
-    use WithFileUploads;
-
     // Propiedades del componente
     public Actividad $actividad;
+
     public ?Compra $compraActual = null;
 
     // --- PROPIEDADES DE NAVEGACIÓN ENTRE PASOS ---
     public $pasoActual = 1;
+
     public $totalPasos = 1;
+
     public $elementosFormulario = []; // Almacenará los elementos del formulario de la actividad
 
     // --- PROPIEDADES PARA INVITADOS ---
     public $invitados = [];
+
     public $limiteInvitados = 0;
+
     public $cantidadInvitados = 0;
 
     // --- PROPIEDADES DEL CARRITO ---
     public $carrito = [];
+
     public $categoriasCompraPermitidas = [];
+
     public $cantidades = [];
+
     public $monedaSeleccionada;
+
     public ?Moneda $monedaActual = null;
 
     // --- PROPIEDADES DEL FORMULARIO INTEGRADO ---
     public $respuestas = []; // Almacenará las respuestas: [elemento_id => valor]
+
     public $archivosBorrados = []; // Para trackear archivos que el usuario decida eliminar
+
+    public $archivosSubidos = []; // Archivos/imágenes cargados via wire:model (TemporaryUploadedFile)
 
     // --- PROPIEDADES ADICIONALES Y DE USUARIO ---
     public ?User $usuario = null;
+
     public $configuracion;
+
     public $fechaHoy;
+
     public $relacionesFamiliares = [];
+
     public $parienteSeleccionado;
+
     public $destinatario;
+
     public $camposAdicionales = [];
+
     public $camposAdicionalesActividad = [];
+
     public $camposAdicionalesHtml;
 
     // Datos para inscripción de invitados/no logueados
     public $nombreComprador;
-    public $identificacionComprador;
-    public $EmailComprador;
-    public $telefonoComprador;
 
+    public $identificacionComprador;
+
+    public $EmailComprador;
+
+    public $telefonoComprador;
 
     public function rules()
     {
         $rules = [];
 
         // Aplica estas reglas SOLO si el usuario no ha iniciado sesión Y la actividad lo permite.
-        if (!Auth::check() && !$this->actividad->tipo->requiere_inicio_sesion) {
+        if (! Auth::check() && ! $this->actividad->tipo->requiere_inicio_sesion) {
             $rules['nombreComprador'] = 'required|string|min:3';
             $rules['identificacionComprador'] = 'required|string|min:5';
             $rules['EmailComprador'] = 'required|email';
@@ -84,6 +102,7 @@ class Carrito extends Component
 
         return $rules;
     }
+
     public function messages()
     {
         return [
@@ -96,6 +115,7 @@ class Carrito extends Component
             'telefonoComprador.digits_between' => 'El teléfono debe tener entre 7 y 15 dígitos.',
         ];
     }
+
     /**
      * MÉTODO EDITADO
      * Ahora establece el 'parienteSeleccionado' por defecto al usuario autenticado.
@@ -145,9 +165,9 @@ class Carrito extends Component
         // FLUJO 1: Actividades GRATUITAS (No requieren pago ni necesariamente sesión)
         // Si es única compra, única inscripción, gratuita Y solo hay una categoría, agregamos automáticamente.
         if (
-            $this->actividad->tipo->unica_compra && 
-            $this->actividad->tipo->unica_inscripcion && 
-            $this->actividad->tipo->es_gratuita && 
+            $this->actividad->tipo->unica_compra &&
+            $this->actividad->tipo->unica_inscripcion &&
+            $this->actividad->tipo->es_gratuita &&
             $this->categoriasCompraPermitidas->count() === 1 && // Solo si hay una opción clara
             empty($this->carrito)
         ) {
@@ -158,24 +178,24 @@ class Carrito extends Component
         }
 
         // FLUJO 2: Actividades de PAGO con SESIÓN REQUERIDA (NUEVO)
-        // Si la actividad requiere inicio de sesión, es de pago, el usuario está logueado 
+        // Si la actividad requiere inicio de sesión, es de pago, el usuario está logueado
         // y es de compra/inscripción única, cargamos automáticamente la categoría con sus datos.
         if (
             Auth::check() &&                                   // Usuario logueado
             $this->actividad->tipo->requiere_inicio_sesion &&  // Requiere sesión
-            !$this->actividad->tipo->es_gratuita &&            // NO es gratuita (es de pago)
+            ! $this->actividad->tipo->es_gratuita &&            // NO es gratuita (es de pago)
             $this->actividad->tipo->unica_compra &&            // Es compra única
             $this->actividad->tipo->unica_inscripcion &&       // Es inscripción única
             $this->categoriasCompraPermitidas->count() === 1 && // NUEVO: Solo si hay UNA categoría disponible
             empty($this->carrito)                             // El carrito está actualmente vacío
         ) {
-            // Obtenemos la primera categoría que el usuario tenga permitido comprar (validada académicamente) 
+            // Obtenemos la primera categoría que el usuario tenga permitido comprar (validada académicamente)
             $categoriaParaCargar = $this->categoriasCompraPermitidas->first();
-            
+
             if ($categoriaParaCargar) {
                 // Seleccionamos automáticamente al mismo usuario logueado como pariente/destinatario por defecto
                 $this->parienteSeleccionado = $this->usuario->id;
-                
+
                 // Agregamos al carrito para que ya aparezca con el valor de la categoría moneda
                 $this->agregarAlCarrito($categoriaParaCargar->id);
             }
@@ -187,22 +207,34 @@ class Carrito extends Component
      */
     private function cargarRespuestasExistentes()
     {
-        if (!$this->compraActual) return;
+        if (! $this->compraActual) {
+            return;
+        }
 
         $respuestasGuardadas = RespuestaElementoFormulario::where('compra_id', $this->compraActual->id)->get();
         foreach ($respuestasGuardadas as $resp) {
             $tipoClase = $resp->elemento->tipoElemento->clase;
             switch ($tipoClase) {
-                case 'corta': $valor = $resp->respuesta_texto_corto; break;
-                case 'larga': $valor = $resp->respuesta_texto_largo; break;
-                case 'si_no': $valor = $resp->respuesta_si_no; break;
-                case 'unica_respuesta': $valor = $resp->respuesta_unica; break;
-                case 'multiple_respuesta': $valor = explode(',', $resp->respuesta_multiple); break;
-                case 'fecha': $valor = $resp->respuesta_fecha; break;
-                case 'numero': $valor = $resp->respuesta_numero; break;
-                case 'moneda': $valor = $resp->respuesta_moneda; break;
-                case 'archivo': $valor = $resp->url_archivo; break;
-                case 'imagen': $valor = $resp->url_foto; break;
+                case 'corta': $valor = $resp->respuesta_texto_corto;
+                    break;
+                case 'larga': $valor = $resp->respuesta_texto_largo;
+                    break;
+                case 'si_no': $valor = $resp->respuesta_si_no;
+                    break;
+                case 'unica_respuesta': $valor = $resp->respuesta_unica;
+                    break;
+                case 'multiple_respuesta': $valor = explode(',', $resp->respuesta_multiple);
+                    break;
+                case 'fecha': $valor = $resp->respuesta_fecha;
+                    break;
+                case 'numero': $valor = $resp->respuesta_numero;
+                    break;
+                case 'moneda': $valor = $resp->respuesta_moneda;
+                    break;
+                case 'archivo': $valor = $resp->url_archivo;
+                    break;
+                case 'imagen': $valor = $resp->url_foto;
+                    break;
                 default: $valor = null;
             }
             $this->respuestas[$resp->elemento_formulario_actividad_id] = $valor;
@@ -218,15 +250,17 @@ class Carrito extends Component
             // Validaciones básicas de Step 1
             if (empty($this->carrito)) {
                 $this->dispatch('mostrarMensaje', ['titulo' => 'Carrito vacío', 'mensaje' => 'Debes agregar al menos un ítem.', 'tipo' => 'error']);
+
                 return;
             }
 
-            if (!Auth::check()) {
+            if (! Auth::check()) {
                 $this->validate(); // Valida datos del comprador si es invitado
             }
 
             if ($this->totalPasos > 1) {
                 $this->pasoActual = 2;
+
                 return;
             }
         }
@@ -241,7 +275,6 @@ class Carrito extends Component
             $this->pasoActual--;
         }
     }
-
 
     /**
      * Carga el array $carrito desde los registros de la base de datos.
@@ -276,18 +309,18 @@ class Carrito extends Component
         if ($this->actividad->tipo->requiere_inicio_sesion && $this->usuario) {
             // Unificamos categorías permitidas: las del usuario + las de sus parientes relacionados
             $categoriasUsuario = $this->actividad->categoriasDisponiblesParaUsuario($this->usuario->id);
-            
+
             // También revisamos qué categorías están disponibles para sus parientes
             $parientes = $this->usuario->parientesDelUsuario()->get();
             $categoriasParientesIds = collect();
-            
-            foreach($parientes as $pariente) {
+
+            foreach ($parientes as $pariente) {
                 $disponibles = $this->actividad->categoriasDisponiblesParaUsuario($pariente->id);
                 $categoriasParientesIds = $categoriasParientesIds->merge($disponibles->pluck('id'));
             }
 
             $todosLosIds = $categoriasUsuario->pluck('id')->merge($categoriasParientesIds)->unique();
-            
+
             $this->categoriasCompraPermitidas = $this->actividad->categorias()
                 ->whereIn('id', $todosLosIds)
                 ->get();
@@ -335,8 +368,8 @@ class Carrito extends Component
         foreach ($this->camposAdicionalesActividad as $campo) {
             $respuestaCampo = $this->compraActual?->camposAdicionales->firstWhere('campo_adicional_id', $campo->id)?->respuesta ?? '';
             $html .= '<div class="form-group col-sm-12 col-md-6 mb-2">';
-            $html .= '<label class="form-label">' . $campo->nombre . '</label>';
-            $html .= '<input placeholder="Ingresa la información" wire:model="camposAdicionales.' . $campo->id . '" type="text" class="form-control" value="' . $respuestaCampo . '">';
+            $html .= '<label class="form-label">'.$campo->nombre.'</label>';
+            $html .= '<input placeholder="Ingresa la información" wire:model="camposAdicionales.'.$campo->id.'" type="text" class="form-control" value="'.$respuestaCampo.'">';
             $html .= '</div>';
         }
 
@@ -352,11 +385,12 @@ class Carrito extends Component
         // Si la actividad es de única compra o única inscripción, bloqueamos el incremento a 1.
         if ($this->actividad->tipo->unica_compra || $this->actividad->tipo->unica_inscripcion) {
             $this->cantidades[$categoriaId] = 1;
+
             return;
         }
 
         $categoria = ActividadCategoria::find($categoriaId);
-        if (!isset($this->cantidades[$categoriaId])) {
+        if (! isset($this->cantidades[$categoriaId])) {
             $this->cantidades[$categoriaId] = 1;
         }
         if ($categoria && $this->cantidades[$categoriaId] < $categoria->limite_compras) {
@@ -372,6 +406,7 @@ class Carrito extends Component
         // Si la actividad es de única compra o única inscripción, bloqueamos en 1.
         if ($this->actividad->tipo->unica_compra || $this->actividad->tipo->unica_inscripcion) {
             $this->cantidades[$categoriaId] = 1;
+
             return;
         }
 
@@ -387,7 +422,9 @@ class Carrito extends Component
     {
 
         $categoria = ActividadCategoria::find($categoriaId);
-        if (!$categoria) return;
+        if (! $categoria) {
+            return;
+        }
 
         // --- INICIO DE LA LÓGICA EDITADA ---
         $cantidadDeseada = $this->cantidades[$categoriaId] ?? 1;
@@ -402,11 +439,12 @@ class Carrito extends Component
             // CASO 1: Compra única CON invitados
             $this->cantidadInvitados = max(0, intval($this->cantidadInvitados));
             $cantidadDeseada = 1 + $this->cantidadInvitados;
-        } elseif (!$this->actividad->tipo->unica_compra) {
+        } elseif (! $this->actividad->tipo->unica_compra) {
             // CASO 2: Compra MÚLTIPLE (con botones +/-)
             $cantidadDeseada = $this->cantidades[$categoriaId] ?? 1;
             if ($cantidadDeseada > $categoria->limite_compras) {
                 $this->dispatch('mostrarMensaje', ['mensaje' => "No puedes agregar más de {$categoria->limite_compras} items de la categoría '{$categoria->nombre}'.", 'tipo' => 'error']);
+
                 return;
             }
         }
@@ -423,13 +461,14 @@ class Carrito extends Component
             'precio' => $precio,
         ];
     }
+
     public function updatedCantidadInvitados($value)
     {
         // Nos aseguramos de que el valor sea un entero no negativo.
         $this->cantidadInvitados = max(0, intval($value));
 
         // Si la actividad permite invitados y ya hay un item en el carrito (modo unica_compra)
-        if ($this->actividad->tiene_invitados && !empty($this->carrito)) {
+        if ($this->actividad->tiene_invitados && ! empty($this->carrito)) {
             // Obtenemos la clave de la primera (y única) categoría en el carrito.
             $categoriaId = array_key_first($this->carrito);
 
@@ -446,11 +485,12 @@ class Carrito extends Component
      */
     public function eliminarDelCarrito($categoriaId)
     {
-        if (!$this->compraActual) {
+        if (! $this->compraActual) {
             // Si no hay compra, solo se quita del carrito visual
             if (isset($this->carrito[$categoriaId])) {
                 unset($this->carrito[$categoriaId]);
             }
+
             return;
         }
 
@@ -473,13 +513,14 @@ class Carrito extends Component
 
             DB::commit();
 
-            $this->dispatch('mostrarMensaje', ['mensaje' => "La compra ha sido cancelada. Puedes empezar de nuevo.", 'tipo' => 'success']);
+            $this->dispatch('mostrarMensaje', ['mensaje' => 'La compra ha sido cancelada. Puedes empezar de nuevo.', 'tipo' => 'success']);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al eliminar compra completa: ' . $e->getMessage());
+            Log::error('Error al eliminar compra completa: '.$e->getMessage());
             $this->dispatch('mostrarMensaje', ['titulo' => 'Error', 'mensaje' => 'No se pudo cancelar la compra.', 'tipo' => 'error']);
         }
     }
+
     /**
      * MÉTODO RECONSTRUIDO: Lógica unificada con Transacción.
      * Procesa la compra, la inscripción y las respuestas del formulario.
@@ -487,12 +528,14 @@ class Carrito extends Component
     public function procesarRegistro()
     {
         // 1. VALIDACIONES INICIALES
-        if (empty($this->carrito)) return;
+        if (empty($this->carrito)) {
+            return;
+        }
 
         $this->resetErrorBag();
 
         // Validar campos de contacto si no está logueado
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             $this->validate();
         }
 
@@ -500,15 +543,19 @@ class Carrito extends Component
         $erroresEncontrados = false;
         foreach ($this->elementosFormulario as $elemento) {
             if ($elemento->required && $elemento->tipo_elemento_id != 1) {
-                if (!isset($this->respuestas[$elemento->id]) || empty($this->respuestas[$elemento->id])) {
-                    $this->addError('respuestas.' . $elemento->id, "El campo '{$elemento->titulo}' es obligatorio.");
+                $valorRespuesta = $this->respuestas[$elemento->id] ?? null;
+
+                // Evitamos usar empty() porque empty("0") es true y falla cuando el usuario responde "No" o "0".
+                if ($valorRespuesta === null || $valorRespuesta === '' || $valorRespuesta === []) {
+                    $this->addError('respuestas.'.$elemento->id, "El campo '{$elemento->titulo}' es obligatorio.");
                     $erroresEncontrados = true;
                 }
             }
         }
 
         if ($erroresEncontrados) {
-            $this->dispatch('mostrarMensaje', ['titulo' => 'Campos Pendientes', 'mensaje' => "Por favor, completa los campos obligatorios del formulario.", 'tipo' => 'error']);
+            $this->dispatch('mostrarMensaje', ['titulo' => 'Campos Pendientes', 'mensaje' => 'Por favor, completa los campos obligatorios del formulario.', 'tipo' => 'error']);
+
             return;
         }
 
@@ -575,10 +622,10 @@ class Carrito extends Component
                     'precio' => $item['precio'],
                     'user_id' => $this->usuario?->id,
                     'pago_id' => $pago?->id,
-                    'fecha' => $this->fechaHoy
+                    'fecha' => $this->fechaHoy,
                 ]);
 
-                if (!$inscripcionPrincipal) {
+                if (! $inscripcionPrincipal) {
                     $inscripcionPrincipal = Inscripcion::create([
                         'user_id' => $this->parienteSeleccionado,
                         'actividad_categoria_id' => $item['id'],
@@ -587,60 +634,76 @@ class Carrito extends Component
                         'estado' => $this->actividad->estado_inscripcion_defecto,
                         'nombre_inscrito' => $datosCompra['nombre_completo_comprador'],
                         'email' => $datosCompra['email_comprador'],
-                        'limite_invitados' => $this->cantidadInvitados
+                        'limite_invitados' => $this->cantidadInvitados,
                     ]);
                 }
             }
 
             // 6. GUARDADO DE RESPUESTAS DEL FORMULARIO
-            foreach ($this->respuestas as $elementoId => $valor) {
-                $elemento = ElementoFormularioActividad::find($elementoId);
-                if (!$elemento) continue;
+            foreach ($this->elementosFormulario as $elemento) {
+                $elementoId = $elemento->id;
+                $valor = $this->respuestas[$elementoId] ?? null;
+                $archivoSubido = $this->archivosSubidos[$elementoId] ?? null;
+
+                // Si no hay respuesta ni archivo subido, saltamos al siguiente
+                if ($valor === null && $archivoSubido === null) {
+                    continue;
+                }
 
                 $respuesta = RespuestaElementoFormulario::updateOrCreate([
                     'compra_id' => $compra->id,
                     'elemento_formulario_actividad_id' => $elementoId,
                 ], [
                     'inscripcion_id' => $inscripcionPrincipal->id,
-                    'user_id' => $this->parienteSeleccionado ?: ($this->usuario->id ?? null)
+                    'user_id' => $this->parienteSeleccionado ?: ($this->usuario->id ?? null),
                 ]);
 
                 switch ($elemento->tipoElemento->clase) {
-                    case 'corta': $respuesta->respuesta_texto_corto = $valor; break;
-                    case 'larga': $respuesta->respuesta_texto_largo = $valor; break;
-                    case 'si_no': $respuesta->respuesta_si_no = $valor; break;
-                    case 'unica_respuesta': $respuesta->respuesta_unica = $valor; break;
-                    case 'multiple_respuesta': $respuesta->respuesta_multiple = is_array($valor) ? implode(",", $valor) : $valor; break;
-                    case 'fecha': $respuesta->respuesta_fecha = $valor; break;
-                    case 'numero': $respuesta->respuesta_numero = $valor; break;
-                    case 'moneda': $respuesta->respuesta_moneda = $valor; break;
+                    case 'corta': $respuesta->respuesta_texto_corto = $valor;
+                        break;
+                    case 'larga': $respuesta->respuesta_texto_largo = $valor;
+                        break;
+                    case 'si_no': $respuesta->respuesta_si_no = $valor;
+                        break;
+                    case 'unica_respuesta': $respuesta->respuesta_unica = $valor;
+                        break;
+                    case 'multiple_respuesta': $respuesta->respuesta_multiple = is_array($valor) ? implode(',', $valor) : $valor;
+                        break;
+                    case 'fecha': $respuesta->respuesta_fecha = $valor;
+                        break;
+                    case 'numero': $respuesta->respuesta_numero = $valor;
+                        break;
+                    case 'moneda': $respuesta->respuesta_moneda = $valor;
+                        break;
                     case 'archivo':
-                        if ($valor instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
-                            $directorio = $this->configuracion->ruta_almacenamiento . '/archivos/actividades/';
-                            $nombreArchivo = time() . '_' . preg_replace('/[^A-Za-z0-9.\-\_]/', '', $valor->getClientOriginalName());
-                            $valor->storeAs($directorio, $nombreArchivo, 'public');
-                            $respuesta->url_archivo = $nombreArchivo;
+                        if (is_string($archivoSubido) && ! empty($archivoSubido)) {
+                            $respuesta->url_archivo = $archivoSubido;
+                        } elseif (is_string($valor) && ! empty($valor)) {
+                            $respuesta->url_archivo = $valor;
                         }
                         break;
                     case 'imagen':
-                        if ($valor instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
-                            $directorio = $this->configuracion->ruta_almacenamiento . '/img/respuestas-formulario/';
-                            $nombreFoto = 'img_' . time() . '_' . $valor->getClientOriginalName();
-                            $valor->storeAs($directorio, $nombreFoto, 'public');
-                            $respuesta->url_foto = $nombreFoto;
+                        if (is_string($archivoSubido) && ! empty($archivoSubido)) {
+                            $respuesta->url_foto = $archivoSubido;
+                        } elseif (is_string($valor) && ! empty($valor)) {
+                            $respuesta->url_foto = $valor;
                         }
                         break;
                 }
                 $respuesta->save();
             }
 
+            // NOTA: Se eliminó el loop extra de "archivosSubidos" porque
+            // ya no usamos Livewire WithFileUploads ni TemporaryUploadedFile.
+            // Todos los archivos se suben antes vía fetch y se guardan como strings en $this->archivosSubidos.
+
             // 7. CAMPOS ADICIONALES (Sistema antiguo)
             foreach ($this->camposAdicionales as $campoId => $respuestaTexto) {
-                if (!empty($respuestaTexto)) {
+                if (! empty($respuestaTexto)) {
                     ActividadCampoAdicionalCompra::create([
                         'compra_id' => $compra->id,
                         'campo_adicional_id' => $campoId,
-                        'respuesta' => $respuestaTexto
+                        'respuesta' => $respuestaTexto,
                     ]);
                 }
             }
@@ -661,18 +724,21 @@ class Carrito extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error en procesarRegistro: ' . $e->getMessage());
-            $this->dispatch('mostrarMensaje', ['titulo' => 'Error', 'mensaje' => 'No se pudo completar el registro: ' . $e->getMessage(), 'tipo' => 'error']);
+            Log::error('Error en procesarRegistro: '.$e->getMessage());
+            $this->dispatch('mostrarMensaje', ['titulo' => 'Error', 'mensaje' => 'No se pudo completar el registro: '.$e->getMessage(), 'tipo' => 'error']);
         }
     }
 
     /**
      * Elimina una respuesta de archivo/imagen del componente (y futuro de BD si aplica).
      */
-    public function eliminarRespuesta($elementoId)
+    public function eliminarRespuesta($elementoId): void
     {
         if (isset($this->respuestas[$elementoId])) {
             unset($this->respuestas[$elementoId]);
+        }
+        if (isset($this->archivosSubidos[$elementoId])) {
+            unset($this->archivosSubidos[$elementoId]);
         }
     }
 
@@ -680,7 +746,7 @@ class Carrito extends Component
      * Prepara y envía el correo de confirmación de inscripción con el ticket PDF adjunto.
      * Se envuelve en un try-catch para no interrumpir el flujo del usuario si el envío falla.
      *
-     * @param Inscripcion $inscripcion La inscripción recién creada.
+     * @param  Inscripcion  $inscripcion  La inscripción recién creada.
      */
     private function _enviarCorreoDeConfirmacion(Inscripcion $inscripcion)
     {
@@ -696,18 +762,15 @@ class Carrito extends Component
             if (filter_var($emailDestinatario, FILTER_VALIDATE_EMAIL)) {
                 Mail::to($emailDestinatario)->send(new InscripcionConfirmacionMail($inscripcion, $actividad));
             } else {
-                Log::warning("No se pudo enviar correo para inscripción #{$inscripcion->id} por email inválido: " . $emailDestinatario);
+                Log::warning("No se pudo enviar correo para inscripción #{$inscripcion->id} por email inválido: ".$emailDestinatario);
             }
         } catch (\Exception $e) {
             // Si el envío de correo falla por cualquier motivo (ej. config del servidor),
             // lo registramos en el log pero no detenemos la ejecución.
             // El usuario completará su inscripción igualmente.
-            Log::error("Fallo al enviar correo de confirmación para inscripción #{$inscripcion->id}: " . $e->getMessage());
+            Log::error("Fallo al enviar correo de confirmación para inscripción #{$inscripcion->id}: ".$e->getMessage());
         }
     }
-
-
-
 
     public function updatedMonedaSeleccionada($value)
     {
@@ -716,7 +779,7 @@ class Carrito extends Component
         $this->dispatch('mostrarMensaje', [
             'titulo' => 'Moneda actualizada',
             'mensaje' => "El carrito se ha vaciado. Por favor, agrega los items de nuevo con los precios en {$this->monedaActual->nombre}.",
-            'tipo' => 'info'
+            'tipo' => 'info',
         ]);
     }
 
@@ -739,6 +802,7 @@ class Carrito extends Component
     public function render()
     {
         $this->generarCamposAdicionalesHtml();
+
         return view('livewire.carrito.carrito', [
             'total' => $this->calcularTotal(),
         ]);

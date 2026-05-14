@@ -98,7 +98,7 @@
                                             <label class="form-label"> Nombre completo </label>
                                             <div style="min-height: 38px;" type="text" wire:model="nombreComprador"
                                                 id='nombreComprador' name='nombreComprador' class="form-control">
-                                                {{ $usuarioCompra->nombre(3) }}
+                                                {{ $usuarioCompra->nombre(3) ?: 'Usuario Redil' }}
                                             </div>
                                         </div>
                                         <div class="col-lg-6 col-md-6 mt-2 col-sm-12">
@@ -106,20 +106,20 @@
                                             <div style="min-height: 38px;" type="text"
                                                 wire:model="identificacionComprador" id='identificacionComprador'
                                                 name='identificacionComprador' class="form-control">
-                                                {{ $usuarioCompra->identificacion }}</div>
+                                                {{ $usuarioCompra->identificacion ?: '000000000' }}</div>
                                         </div>
                                         <div class="col-lg-6 col-md-6 mt-2 col-sm-12">
                                             <label class="form-label"> Email </label>
                                             <div style="min-height: 38px;" type="text" id='EmailComprador'
                                                 wire:model="EmailComprador" name='EmailComprador' class="form-control">
-                                                {{ $usuarioCompra->email }}</div>
+                                                {{ $usuarioCompra->email ?: 'sin-email@redil.com' }}</div>
                                         </div>
                                         <div class="col-lg-6 col-md-6 mt-2 col-sm-12">
                                             <label class="form-label"> Teléfono / Celular </label>
                                             <div style="min-height: 38px;" type="text" id='telefonoComprador'
                                                 wire:model="telefonoComprador" name='telefonoComprador'
                                                 class="form-control">
-                                                {{ $usuarioCompra->telefono_movil }}
+                                                {{ $usuarioCompra->telefono_movil ?: '111111111' }}
                                             </div>
                                         </div>
                                     </div>
@@ -209,7 +209,7 @@
                                                             wire:model="tipoPagoSeleccionado"
                                                             :checked="activeTab === '{{ $tipo->id }}'">
                                                         <span class="custom-option-body">
-                                                            <img style="    width: 50px !important;" src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/fondos/' . $tipo->fondo) }}?v={{ time() }}" alt="">
+                                                            <img style="    width: 50px !important;" src="{{ tenant_asset($configuracion->ruta_almacenamiento . '/tipos-pagos/fondos/' . $tipo->fondo) }}?v={{ time() }}" alt="">
                                                             <span
                                                                 class="ms-4 fw-medium text-heading">{{ $tipo->nombre }}</span>
                                                         </span>

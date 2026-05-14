@@ -276,11 +276,30 @@
                                     <textarea wire:model.defer="respuestas.{{ $elemento->id }}" class="form-control {{ $errorClass }}" rows="3"></textarea>
                                     @break
                                 @case('si_no')
+                                    <div class="d-flex gap-4 mt-1">
+                                        <div class="form-check">
+                                            <input class="form-check-input {{ $errorClass }}"
+                                                type="radio"
+                                                wire:model.defer="respuestas.{{ $elemento->id }}"
+                                                id="elemento-{{ $elemento->id }}-si"
+                                                value="1">
+                                            <label class="form-check-label" for="elemento-{{ $elemento->id }}-si">Sí</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input {{ $errorClass }}"
+                                                type="radio"
+                                                wire:model.defer="respuestas.{{ $elemento->id }}"
+                                                id="elemento-{{ $elemento->id }}-no"
+                                                value="0">
+                                            <label class="form-check-label" for="elemento-{{ $elemento->id }}-no">No</label>
+                                        </div>
+                                    </div>
+                                    @break
                                 @case('unica_respuesta')
                                     <select wire:model.defer="respuestas.{{ $elemento->id }}" class="form-select {{ $errorClass }}">
                                         <option value="">Seleccione una opción</option>
                                         @foreach ($elemento->opciones as $opcion)
-                                            <option value="{{ $opcion->valor_entero }}">{{ $opcion->valor_texto }}</option>
+                                            <option value="{{ $opcion->id }}">{{ $opcion->valor_texto }}</option>
                                         @endforeach
                                     </select>
                                     @break
@@ -289,7 +308,7 @@
                                         @foreach ($elemento->opciones as $opcion)
                                             <div class="col-md-4 mb-2">
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" value="{{ $opcion->valor_entero }}" wire:model.defer="respuestas.{{ $elemento->id }}" id="opt-{{ $opcion->id }}">
+                                                    <input class="form-check-input" type="checkbox" value="{{ $opcion->id }}" wire:model.defer="respuestas.{{ $elemento->id }}" id="opt-{{ $opcion->id }}">
                                                     <label class="form-check-label" for="opt-{{ $opcion->id }}">{{ $opcion->valor_texto }}</label>
                                                 </div>
                                             </div>
@@ -304,21 +323,66 @@
                                     <input type="number" wire:model.defer="respuestas.{{ $elemento->id }}" class="form-control {{ $errorClass }}">
                                     @break
                                 @case('archivo')
-                                @case('imagen')
                                     @if(isset($respuestas[$elemento->id]) && is_string($respuestas[$elemento->id]))
-                                        {{-- Mostrar archivo ya subido --}}
                                         <div class="alert alert-secondary d-flex justify-content-between align-items-center">
                                             <span>
-                                                <i class="ti {{ $clase == 'archivo' ? 'ti-file' : 'ti-photo' }} fs-4 me-2"></i>
+                                                <i class="ti ti-file fs-4 me-2"></i>
                                                 {{ $respuestas[$elemento->id] }}
                                             </span>
-                                            <button type="button" class="btn btn-sm btn-danger" wire:click="eliminarRespuesta({{ $elemento->id }})">Cambiar</button>
+                                            <button type="button" class="btn btn-sm btn-danger"
+                                                wire:click="eliminarRespuesta({{ $elemento->id }})">Cambiar</button>
                                         </div>
                                     @else
-                                        {{-- Input para subir nuevo --}}
-                                        <input type="file" wire:model="respuestas.{{ $elemento->id }}" class="form-control {{ $errorClass }}" accept="{{ $clase == 'archivo' ? '.pdf,.doc,.docx' : 'image/*' }}">
-                                        <div wire:loading wire:target="respuestas.{{ $elemento->id }}" class="mt-2 text-primary small">
-                                            <span class="spinner-border spinner-border-sm"></span> Subiendo...
+                                        {{-- Alpine.js hace el fetch al controlador directamente, sin wire:model ni WithFileUploads --}}
+                                        <div x-data="uploadArchivo({{ $elemento->id }}, 'archivo', $wire)"
+                                            x-init="init()">
+                                            <input type="file"
+                                                id="archivo_elemento_{{ $elemento->id }}"
+                                                class="form-control {{ $errorClass }}"
+                                                accept=".pdf,.doc,.docx"
+                                                @change="subirArchivo($event)">
+                                            <div x-show="subiendo" style="display: none;" class="mt-1 text-primary small">
+                                                <span class="spinner-border spinner-border-sm"></span>
+                                                Subiendo archivo...
+                                            </div>
+                                            <div x-show="errorMsg" style="display: none;" x-text="errorMsg" class="mt-1 text-danger small"></div>
+                                            <div x-show="successMsg" x-transition style="display: none;" class="mt-2 alert alert-success p-2 small d-flex align-items-center">
+                                                <i class="ti ti-check fs-5 me-2"></i> <span x-text="successMsg"></span>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">Formatos permitidos: PDF, DOC, DOCX (máx. 10 MB)</small>
+                                        </div>
+                                    @endif
+                                    @break
+
+                                @case('imagen')
+                                    @if(isset($respuestas[$elemento->id]) && is_string($respuestas[$elemento->id]))
+                                        <div class="mb-2">
+                                            <img src="{{ Storage::disk('public')->url($respuestas[$elemento->id]) }}"
+                                                class="img-fluid rounded border" style="max-height: 200px;">
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-sm btn-danger"
+                                                    wire:click="eliminarRespuesta({{ $elemento->id }})">
+                                                    <i class="ti ti-trash me-1"></i> Cambiar imagen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div x-data="uploadArchivo({{ $elemento->id }}, 'imagen', $wire)"
+                                            x-init="init()">
+                                            <input type="file"
+                                                id="imagen_elemento_{{ $elemento->id }}"
+                                                class="form-control {{ $errorClass }}"
+                                                accept="image/png,image/jpeg,image/jpg,image/webp"
+                                                @change="subirArchivo($event)">
+                                            <div x-show="subiendo" style="display: none;" class="mt-1 text-primary small">
+                                                <span class="spinner-border spinner-border-sm"></span>
+                                                Subiendo imagen...
+                                            </div>
+                                            <div x-show="errorMsg" style="display: none;" x-text="errorMsg" class="mt-1 text-danger small"></div>
+                                            <div x-show="successMsg" x-transition style="display: none;" class="mt-2 alert alert-success p-2 small d-flex align-items-center">
+                                                <i class="ti ti-check fs-5 me-2"></i> <span x-text="successMsg"></span>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">Formatos permitidos: PNG, JPG, WEBP (máx. 5 MB)</small>
                                         </div>
                                     @endif
                                     @break
@@ -416,6 +480,59 @@
     </style>
 
     <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('uploadArchivo', (elementoId, tipo, wire) => ({
+                subiendo: false,
+                errorMsg: null,
+                successMsg: null,
+                init() {},
+                async subirArchivo(event) {
+                    const file = event.target.files[0];
+                    if (!file) {
+                        this.successMsg = null;
+                        return;
+                    }
+
+                    this.subiendo = true;
+                    this.errorMsg = null;
+                    this.successMsg = null;
+
+                    const formData = new FormData();
+                    formData.append('archivo', file);
+                    formData.append('tipo', tipo);
+                    // Agregamos el token CSRF para peticiones POST de Laravel
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    try {
+                        const response = await fetch('{{ route('carrito.uploadArchivoFormulario') }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.success) {
+                            // Si se subió con éxito, pasamos solo el nombre del archivo de vuelta a Livewire
+                            // en lugar de mandar todo el archivo en base64 y sobrecargar Livewire.
+                            wire.set('archivosSubidos.' + elementoId, result.nombre);
+                            this.successMsg = '¡Archivo subido correctamente!';
+                        } else {
+                            this.errorMsg = result.message || 'Error al subir el archivo.';
+                        }
+                    } catch (error) {
+                        console.error('Upload Error:', error);
+                        this.errorMsg = 'Error de conexión al subir el archivo.';
+                    } finally {
+                        this.subiendo = false;
+                    }
+                }
+            }));
+        });
+
         document.addEventListener('livewire:initialized', () => {
             Livewire.on('mostrarMensaje', (data) => {
                 Swal.fire({
