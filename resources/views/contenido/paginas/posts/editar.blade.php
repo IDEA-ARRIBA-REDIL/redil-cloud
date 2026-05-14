@@ -248,7 +248,7 @@
                             <div class="mb-3 col-md-12 d-flex justify-content-center align-items-center flex-column">
                                 <div class="position-relative d-inline-block">
                                     <img id="preview-foto"
-                                        src="{{ $post->image_path ? asset('storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path) : asset('assets/img/illustrations/page-pricing-enterprise.png') }}"
+                                        src="{{ $post->image_url ?? asset('assets/img/illustrations/page-pricing-enterprise.png') }}"
                                         alt="Preview" class="rounded border shadow-sm"
                                         style="width: 200px; aspect-ratio: 9/16; object-fit: cover;">
                                     <button type="button"
@@ -615,8 +615,8 @@
                 <div class="modal-body p-0">
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     <div class="text-center mb-4 p-4">
-                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir Nueva Foto</h3>
-                        <p class="text-muted">Selecciona y recorta la foto para la publicación</p>
+                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir nueva foto</h3>
+                        <p class="text-black">Selecciona y recorta la foto para la publicación</p>
                     </div>
 
                     <div class="row px-4">
@@ -626,10 +626,10 @@
                                 <input class="form-control" type="file" id="cropperImageUpload" accept="image/*">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-bold d-block text-center mt-4 mb-2">2. Recorta la foto
+                                <label class="form-label fw-bold d-block mt-4 mb-2">2. Recorta la foto
                                     (9:16)</label>
                                 <div class="cropper-container" style="max-height: 400px; overflow: hidden;">
-                                    <img src="{{ $post->image_path ? asset('storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path) : Storage::url('generales/img/others/placeholder.jpg') }}"
+                                    <img src="{{ $post->image_url ?? Storage::disk('global_media')->url('placeholder.jpg') }}"
                                         class="w-100" id="croppingImage" alt="cropper">
                                 </div>
                             </div>
@@ -638,10 +638,10 @@
                 </div>
                 <div class="modal-footer border-0 p-4">
                     <div class="col-12 text-center">
-                        <button type="button" class="btn btn-primary crop me-sm-3 me-1 px-5"
-                            data-bs-dismiss="modal">Recortar y Guardar</button>
-                        <button type="button" class="btn btn-label-secondary px-5" data-bs-dismiss="modal"
+                        <button type="button" class="btn btn-outline-secondary px-5 rounded-pill" data-bs-dismiss="modal"
                             aria-label="Close">Cerrar</button>
+                        <button type="button" class="btn btn-primary rounded-pill crop me-sm-3 me-1 px-5"
+                            data-bs-dismiss="modal">Guardar</button>
                     </div>
                 </div>
             </div>

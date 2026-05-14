@@ -150,4 +150,19 @@ class Post extends Model
               });
         });
     }
+    
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image_path) {
+            return null;
+        }
+
+        $path = 'img/publicaciones/' . $this->image_path;
+
+        if (\Illuminate\Support\Facades\Storage::disk()->exists($path)) {
+            return tenant_asset($path);
+        }
+
+        return null;
+    }
 }

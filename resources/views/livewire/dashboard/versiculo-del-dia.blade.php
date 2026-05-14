@@ -6,7 +6,7 @@
                 style="width: 100%; height: 0; padding-bottom: 100%; background-color: #f8f9fa;">
                 @if ($versiculo->ruta_imagen)
                     <div id="capture-container-{{ $versiculo->id }}" class="position-absolute top-0 start-0 w-100 h-100">
-                        <img src="{{ $relativeUrl }}" alt="{{ $versiculo->cita_referencia }}"
+                        <img src="{{ $versiculo->imagen_url }}" alt="{{ $versiculo->cita_referencia }}"
                             class="w-100 h-100"
                             style="object-fit: cover; object-position: center;"
                             crossorigin="anonymous">
@@ -93,11 +93,11 @@
                             <div id="containerAccionVersiculo" wire:ignore>
                                 <i class="ti ti-share ti-sm cursor-pointer text-black d-none" id="btnShareMobile"
                                     title="Compartir versículo"
-                                    onclick="handleShareClick(event, {{ Js::from($versiculo->cita_referencia) }}, {{ Js::from($imageUrl) }}, {{ Js::from($plainText) }}, 'capture-container-{{ $versiculo->id }}')"></i>
+                                    onclick="handleShareClick(event, {{ Js::from($versiculo->cita_referencia) }}, {{ Js::from($versiculo->imagen_url) }}, {{ Js::from($plainText) }}, 'capture-container-{{ $versiculo->id }}')"></i>
 
                                 <i class="ti ti-download ti-sm cursor-pointer text-black d-none" id="btnDownloadPC"
                                     title="Descargar imagen"
-                                    onclick="downloadImage({{ Js::from($imageUrl) }}, {{ Js::from($versiculo->cita_referencia) }}, 'capture-container-{{ $versiculo->id }}')"></i>
+                                    onclick="downloadImage({{ Js::from($versiculo->imagen_url) }}, {{ Js::from($versiculo->cita_referencia) }}, 'capture-container-{{ $versiculo->id }}')"></i>
                             </div>
                         </div>
                     </div>
@@ -195,8 +195,7 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <script>
-            // ... (handleShareClick y downloadImage se mantienen igual)
-            async function handleShareClick(e, cita, urlImagen, texto, captureId) {
+            window.handleShareClick = async function(e, cita, urlImagen, texto, captureId) {
                 const fullText = '\"' + texto + '\" - ' + cita;
                 const shareData = {
                     title: 'Versículo del Día: ' + cita,
@@ -208,7 +207,7 @@
                         let file;
                         
                         // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
-                        if (urlImagen && urlImagen !== window.location.href) {
+                        if (urlImagen) {
                             try {
                                 const response = await fetch(urlImagen, { mode: 'cors' });
                                 const blob = await response.blob();
@@ -255,21 +254,19 @@
                 }
             }
 
-            async function downloadImage(url, cita, captureId) {
+            window.downloadImage = async function(url, cita, captureId) {
                 Swal.fire({
                     title: 'Preparando descarga...',
                     text: 'Estamos procesando tu imagen',
                     icon: 'info',
                     showConfirmButton: false,
-                    showCancelButton: false,
-                    showDenyButton: false,
                     timer: 3000
                 });
 
                 const fileName = 'Versiculo_' + cita.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
 
-                // PRIORIDAD 1: Si hay URL, descargar el archivo original vía Blob (preserva proporción y calidad)
-                if (url && url !== window.location.href) {
+                // PRIORIDAD 1: Descargar el archivo original vía Blob (preserva proporción y calidad)
+                if (url) {
                     try {
                         const response = await fetch(url, { mode: 'cors' });
                         const blob = await response.blob();
@@ -281,15 +278,13 @@
                         link.click();
                         document.body.removeChild(link);
                         window.URL.revokeObjectURL(blobUrl);
-                        if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen original descargada!');
                         return;
                     } catch (err) {
                         console.error("Error al descargar URL original:", err);
-                        // Si falla el fetch (CORS), continuamos a la Prioridad 2 (Captura)
                     }
                 }
 
-                // PRIORIDAD 2: Si no hay URL o falló el fetch, usar html2canvas (captura lo que se ve en pantalla)
+                // PRIORIDAD 2: Captura si no hay URL o falló el fetch
                 const captureEl = document.getElementById(captureId);
                 if (captureId && captureEl) {
                     try {
@@ -305,16 +300,9 @@
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
-                        if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen capturada!');
-                        return;
                     } catch (err) {
                         console.error("Error al generar captura:", err);
                     }
-                }
-
-                // FALLBACK FINAL: Abrir en pestaña nueva si todo lo anterior falla
-                if (url) {
-                    window.open(url, '_blank');
                 }
             }
 

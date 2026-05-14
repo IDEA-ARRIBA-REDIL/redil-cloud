@@ -166,12 +166,8 @@
                             <div class="mb-3 col-md-12 d-flex justify-content-center align-items-center flex-column">
                                 <div class="position-relative d-inline-block">
                                     @php
-                                        $imgUrl = $versiculo->ruta_imagen
-                                            ? Storage::url(
-                                                $configuracion->ruta_almacenamiento .
-                                                    '/img/versiculo-diario/' .
-                                                    $versiculo->ruta_imagen,
-                                            )
+                                        $imgUrl = $versiculo->imagen_url
+                                            ? $versiculo->imagen_url
                                             : asset('assets/img/illustrations/page-pricing-enterprise.png');
                                     @endphp
                                     <img id="preview-foto" src="{{ $imgUrl }}" alt="Preview" class="rounded border"
@@ -264,8 +260,8 @@
                 <div class="modal-body">
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     <div class="text-center mb-4">
-                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir Foto</h3>
-                        <p class="text-muted">Selecciona y recorta la foto (9:16)</p>
+                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir foto</h3>
+                        <p class="text-black">Selecciona y recorta la foto (9:16)</p>
                     </div>
 
                     <div class="row">
@@ -277,7 +273,7 @@
                             <div class="mb-2">
                                 <label class="form-label fw-bold">Paso #2 Recorta la foto</label>
                                 <center>
-                                    <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100"
+                                    <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100"
                                         id="croppingImage" alt="cropper">
                                 </center>
                             </div>
@@ -286,10 +282,10 @@
                 </div>
                 <div class="modal-footer">
                     <div class="col-12 text-center">
-                        <button type="button" class="btn btn-primary crop me-sm-3 me-1"
-                            data-bs-dismiss="modal">Guardar</button>
-                        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal"
-                            aria-label="Close">Cancelar</button>
+                        <button type="button" class="btn btn-outline-secondary rounded-pill  me-sm-3 me-1 px-5"
+                            data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary rounded-pill crop me-sm-3 me-1 px-5"
+                            data-bs-dismiss="modal">Guardar</button>    
                     </div>
                 </div>
             </div>

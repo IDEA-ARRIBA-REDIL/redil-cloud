@@ -14,7 +14,6 @@ class VersiculoDiarioController extends Controller
      */
     public function index(Request $request)
     {
-        $configuracion = \App\Models\Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('versiculos.subitem_gestionar_versiculos');
@@ -26,7 +25,7 @@ class VersiculoDiarioController extends Controller
             ->orderBy('fecha_publicacion', 'desc')
             ->paginate(15);
 
-        return view('contenido.paginas.versiculos.gestionar', compact('versiculos', 'configuracion', 'fechaInicio', 'fechaFin', 'rolActivo'));
+        return view('contenido.paginas.versiculos.gestionar', compact('versiculos', 'fechaInicio', 'fechaFin', 'rolActivo'));
     }
 
     /**
@@ -34,7 +33,6 @@ class VersiculoDiarioController extends Controller
      */
     public function create()
     {
-        $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('versiculos.subitem_nuevo_versiculo');
@@ -43,7 +41,7 @@ class VersiculoDiarioController extends Controller
             return $date->format('Y-m-d');
         })->toArray();
 
-        return view('contenido.paginas.versiculos.crear', compact('configuracion', 'fechasOcupadas', 'rolActivo'));
+        return view('contenido.paginas.versiculos.crear', compact('fechasOcupadas', 'rolActivo'));
     }
 
     /**
@@ -74,19 +72,12 @@ class VersiculoDiarioController extends Controller
 
         // Manejo de la imagen
         if ($request->imagen_base64) {
-            $configuracion = Configuracion::find(1);
-            $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/versiculo-diario/');
-
-            if (!is_dir($path)) {
-                mkdir($path, 0777, true);
-            }
-
             $imagenPartes = explode(';base64,', $request->imagen_base64);
             $imagenBase64 = base64_decode($imagenPartes[1]);
             $nombreFoto = 'versiculo-' . time() . '.jpg';
-            $imagenPath = $path . $nombreFoto;
+            $directorio = 'img/versiculo-diario/';
 
-            file_put_contents($imagenPath, $imagenBase64);
+            \Illuminate\Support\Facades\Storage::disk()->put($directorio.$nombreFoto, $imagenBase64);
             $versiculo->ruta_imagen = $nombreFoto;
         }
 
@@ -108,7 +99,6 @@ class VersiculoDiarioController extends Controller
      */
     public function edit(VersiculoDiario $versiculo)
     {
-        $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('versiculos.opcion_modificar_versiculo');
@@ -119,7 +109,7 @@ class VersiculoDiarioController extends Controller
                 return $date->format('Y-m-d');
             })->toArray();
 
-        return view('contenido.paginas.versiculos.editar', compact('versiculo', 'configuracion', 'fechasOcupadas', 'rolActivo'));
+        return view('contenido.paginas.versiculos.editar', compact('versiculo', 'fechasOcupadas', 'rolActivo'));
     }
 
     /**
@@ -149,27 +139,18 @@ class VersiculoDiarioController extends Controller
 
         // Manejo de la imagen
         if ($request->imagen_base64) {
-            $configuracion = Configuracion::find(1);
-            $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/versiculo-diario/');
-
-            if (!is_dir($path)) {
-                mkdir($path, 0777, true);
-            }
+            $nombreFoto = 'versiculo-' . time() . '.jpg';
+            $directorio = 'img/versiculo-diario/';
 
             // Borrar imagen anterior si existe
             if ($versiculo->ruta_imagen) {
-                $oldPath = $path . $versiculo->ruta_imagen;
-                if (file_exists($oldPath)) {
-                    unlink($oldPath);
-                }
+                \Illuminate\Support\Facades\Storage::disk()->delete($directorio.$versiculo->ruta_imagen);
             }
 
             $imagenPartes = explode(';base64,', $request->imagen_base64);
             $imagenBase64 = base64_decode($imagenPartes[1]);
-            $nombreFoto = 'versiculo-' . time() . '.jpg';
-            $imagenPath = $path . $nombreFoto;
 
-            file_put_contents($imagenPath, $imagenBase64);
+            \Illuminate\Support\Facades\Storage::disk()->put($directorio.$nombreFoto, $imagenBase64);
             $versiculo->ruta_imagen = $nombreFoto;
         }
 
@@ -183,19 +164,13 @@ class VersiculoDiarioController extends Controller
      */
     public function destroy(VersiculoDiario $versiculo)
     {
-        $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('versiculos.opcion_eliminar_versiculo');
 
         // Borrado físico de la imagen si existe
         if ($versiculo->ruta_imagen) {
-            $configuracion = Configuracion::find(1);
-            $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/versiculo-diario/' . $versiculo->ruta_imagen);
-
-            if (file_exists($path)) {
-                unlink($path);
-            }
+            \Illuminate\Support\Facades\Storage::disk()->delete('img/versiculo-diario/' . $versiculo->ruta_imagen);
         }
 
         $versiculo->delete();

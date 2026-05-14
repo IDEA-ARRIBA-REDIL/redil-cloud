@@ -51,4 +51,34 @@ class VersiculoDiario extends Model
         return $this->belongsToMany(User::class, 'versiculo_usuario_like', 'versiculo_diario_id', 'usuario_id')
                     ->withTimestamps();
     }
+    
+    public function getImagenUrlAttribute(): ?string
+    {
+        if (!$this->ruta_imagen) {
+            return null;
+        }
+
+        $path = 'img/versiculo-diario/' . $this->ruta_imagen;
+
+        // 1. Prioridad: Tenant Storage
+        if (\Illuminate\Support\Facades\Storage::disk()->exists($path)) {
+            return tenant_asset($path);
+        }
+
+        // 2. Fallback: Global Media
+        if (\Illuminate\Support\Facades\Storage::disk('global_media')->exists($this->ruta_imagen)) {
+            return \Illuminate\Support\Facades\Storage::disk('global_media')->url($this->ruta_imagen);
+        }
+
+        // 3. Fallback: Global Media con extensiones alternativas
+        $baseName = pathinfo($this->ruta_imagen, PATHINFO_FILENAME);
+        foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
+            $altPath = $baseName . '.' . $ext;
+            if (\Illuminate\Support\Facades\Storage::disk('global_media')->exists($altPath)) {
+                return \Illuminate\Support\Facades\Storage::disk('global_media')->url($altPath);
+            }
+        }
+
+        return null;
+    }
 }

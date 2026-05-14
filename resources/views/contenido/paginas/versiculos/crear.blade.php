@@ -252,8 +252,8 @@
                 <div class="modal-body">
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     <div class="text-center mb-4">
-                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir Foto</h3>
-                        <p class="text-muted">Selecciona y recorta la foto</p>
+                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir foto</h3>
+                        <p class="text-black">Selecciona y recorta la foto</p>
                     </div>
 
                     <div class="row">
@@ -265,17 +265,19 @@
                             <div class="mb-2">
                                 <label class="form-label fw-bold">Paso #2 Recorta la foto</label>
                                 <center>
-                                    <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100"
-                                        id="croppingImage" alt="cropper">
+                                    <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}"
+                                        class="w-100" id="croppingImage" alt="cropper">
                                 </center>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer">  
                     <div class="col-12 text-center">
-                        <button type="button" class="btn btn-primary crop me-sm-3 me-1 px-5"
-                            data-bs-dismiss="modal">Recortar y guardar</button>
+                        <button type="button" class="btn btn-outline-secondary rounded-pill  me-sm-3 me-1 px-5"
+                            data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary rounded-pill crop me-sm-3 me-1 px-5"
+                            data-bs-dismiss="modal">Guardar</button>
                     </div>
                 </div>
             </div>

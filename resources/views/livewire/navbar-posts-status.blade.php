@@ -8,11 +8,10 @@
                     style="border-color: #28c76f !important; padding: 2px;">
                     @php
                         $latestPost = $posts->first();
-                        $hasImage = !empty($latestPost->image_path);
                     @endphp
 
-                    @if ($hasImage)
-                        <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $latestPost->image_path) }}"
+                    @if ($latestPost->image_url)
+                        <img src="{{ $latestPost->image_url }}"
                             alt="Estado" class="rounded-circle w-100 h-100 object-fit-cover">
                     @else
                         @php
@@ -75,11 +74,11 @@
                                                                     {{ $post->user->inicialesNombre() }}
                                                                 </div>
                                                             @else
-                                                                <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $post->user->foto) }}"
-                                                                    alt="{{ $post->user->nombre(3) }}"
-                                                                    class="rounded-circle me-3 border border-white shadow"
-                                                                    width="45" height="45"
-                                                                    style="object-fit: cover;">
+                                                            <img src="{{ $post->user->foto_url }}"
+                                                                alt="{{ $post->user->nombre(3) }}"
+                                                                class="rounded-circle me-3 border border-white shadow"
+                                                                width="45" height="45"
+                                                                style="object-fit: cover;">
                                                             @endif
                                                             <h6 class="text-white mb-0 fw-bold"
                                                                 style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
@@ -99,9 +98,9 @@
                                                             class="ti ti-x"></i></button>
                                                 </div>
 
-                                                @if ($post->image_path)
+                                                @if ($post->image_url)
                                                     <div id="nav-modal-capture-{{ $post->id }}" class="w-100 h-100">
-                                                        <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path) }}"
+                                                        <img src="{{ $post->image_url }}"
                                                             alt="Publicación" class="w-100 h-100"
                                                             style="object-fit: cover; object-position: center;"
                                                             crossorigin="anonymous">
@@ -173,25 +172,14 @@
 
                                                     <!-- Botón Compartir / Descargar -->
                                                     @php
-                                                        $postImageUrl = $post->image_path
-                                                            ? Storage::url($configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path)
-                                                            : '';
-                                                        
-                                                        if ($postImageUrl) {
-                                                            $postImageUrl = str_starts_with($postImageUrl, 'http') 
-                                                                ? $postImageUrl 
-                                                                : request()->getSchemeAndHttpHost() . $postImageUrl;
-                                                        } else {
-                                                            $postImageUrl = url()->current();
-                                                        }
-
+                                                        $postImageUrl = $post->image_url;
                                                         $postText = trim(strip_tags($post->descripcion));
                                                     @endphp
                                                     <div class="d-flex flex-column align-items-center">
                                                         <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-share-post d-none mb-1 shadow"
                                                             style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
                                                             title="Compartir"
-                                                            onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'nav-modal-capture-{{ $post->id }}')">
+                                                            onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($postImageUrl) }}, 'nav-modal-capture-{{ $post->id }}')">
                                                             <i class="ti ti-share text-white"
                                                                 style="font-size: 1.8rem;"></i>
                                                         </div>
@@ -199,7 +187,7 @@
                                                         <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-download-post d-none mb-1 shadow"
                                                             style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
                                                             title="Descargar imagen"
-                                                            onclick="downloadPostImage(event, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'nav-modal-capture-{{ $post->id }}')">
+                                                            onclick="downloadPostImage(event, {{ Js::from($postImageUrl) }}, 'nav-modal-capture-{{ $post->id }}')">
                                                             <i class="ti ti-download text-white"
                                                                 style="font-size: 1.8rem;"></i>
                                                         </div>
@@ -268,7 +256,7 @@
                             let file;
 
                             // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
-                            if (urlImagen && urlImagen !== window.location.href) {
+                            if (urlImagen) {
                                 try {
                                     const response = await fetch(urlImagen, { mode: 'cors' });
                                     const blob = await response.blob();
@@ -326,15 +314,13 @@
                         text: 'Estamos procesando tu imagen',
                         icon: 'info',
                         showConfirmButton: false,
-                        showCancelButton: false,
-                        showDenyButton: false,
                         timer: 3000
                     });
 
                     const fileName = 'Publicacion_' + new Date().getTime() + '.jpg';
 
                     // PRIORIDAD 1: Si hay URL, descargar el archivo original vía Blob (preserva proporción y calidad)
-                    if (url && url !== window.location.href) {
+                    if (url) {
                         try {
                             const response = await fetch(url, { mode: 'cors' });
                             const blob = await response.blob();
@@ -346,11 +332,9 @@
                             link.click();
                             document.body.removeChild(link);
                             window.URL.revokeObjectURL(blobUrl);
-                            if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen original descargada!');
                             return;
                         } catch (err) {
                             console.error("Error al descargar URL original:", err);
-                            // Si falla el fetch (CORS), continuamos a la Prioridad 2 (Captura)
                         }
                     }
 

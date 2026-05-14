@@ -2,24 +2,20 @@
 
 namespace App\Livewire\Dashboard;
 
-use App\Models\Configuracion;
 use App\Models\VersiculoDiario;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 
 class VersiculoDelDia extends Component
 {
     public $versiculoId;
 
-    public $configuracion;
 
     public $claseColumnas;
 
     public function mount($claseColumnas = 'col-12 col-md-4')
     {
         $this->claseColumnas = $claseColumnas;
-        $this->configuracion = Configuracion::first();
 
         $versiculo = VersiculoDiario::whereDate('fecha_publicacion', Carbon::today())->first();
         $this->versiculoId = $versiculo ? $versiculo->id : null;
@@ -69,52 +65,11 @@ class VersiculoDelDia extends Component
             $plainText = trim(strip_tags($plainText));
         }
 
-        $imageUrl = url()->current();
-        $relativeUrl = '';
-
-        if ($versiculo && $versiculo->ruta_imagen) {
-            $tenantPath = $this->configuracion->ruta_almacenamiento.'/img/versiculo-diario/'.$versiculo->ruta_imagen;
-
-            // 1. Prioridad: Archivo físico en public/storage (donde lo guarda el controller con public_path)
-            if (file_exists(public_path('storage/'.$tenantPath))) {
-                $relativeUrl = Storage::url($tenantPath);
-            }
-            // 2. Fallback: Disco Global
-            else {
-                $possibleGlobalPaths = [
-                    $versiculo->ruta_imagen,
-                ];
-
-                // Intentar con extensiones alternativas (.jpg vs .jpeg)
-                if (preg_match('/\.(jpe?g|png|webp)$/i', $versiculo->ruta_imagen)) {
-                    $baseName = pathinfo($versiculo->ruta_imagen, PATHINFO_FILENAME);
-                    foreach (['jpg', 'jpeg', 'png', 'webp'] as $targetExt) {
-                        $possibleGlobalPaths[] = $baseName.'.'.$targetExt;
-                    }
-                }
-
-                foreach ($possibleGlobalPaths as $path) {
-                    if (Storage::disk('global_media')->exists($path)) {
-                        $relativeUrl = Storage::disk('global_media')->url($path);
-                        break;
-                    }
-                }
-            }
-
-            if ($relativeUrl) {
-                // Asegurar URL absoluta
-                $imageUrl = str_starts_with($relativeUrl, 'http')
-                    ? $relativeUrl
-                    : request()->getSchemeAndHttpHost().$relativeUrl;
-            }
-        }
 
         return view('livewire.dashboard.versiculo-del-dia', [
             'versiculo' => $versiculo,
             'plainText' => $plainText,
             'fullTextModal' => $fullTextModal,
-            'imageUrl' => $imageUrl,
-            'relativeUrl' => $relativeUrl,
         ]);
     }
 }

@@ -23,21 +23,20 @@ class BannerGeneral extends Model
     'visible' => 'boolean',
   ];
 
-  public function getImagenVinculadaAttribute()
+  public function getImagenVinculadaAttribute(): string
   {
-      $configuracion = \App\Models\Configuracion::first();
-
       if (!$this->imagen) {
           return \Illuminate\Support\Facades\Storage::disk('global_media')->url('banner-default.jpg');
       }
 
-      $relPath = 'storage/' . $configuracion->ruta_almacenamiento . '/img/banners/' . $this->imagen;
-      $fullPath = public_path($relPath);
-      
-      if (file_exists($fullPath)) {
-          return asset($relPath);
+      $rutaRelativa = 'img/banners/' . $this->imagen;
+
+      // tenant_asset() es el helper oficial para archivos del tenant en local
+      if (\Illuminate\Support\Facades\Storage::disk()->exists($rutaRelativa)) {
+          return tenant_asset($rutaRelativa);
       }
 
+      // Fallback a global_media
       if (\Illuminate\Support\Facades\Storage::disk('global_media')->exists($this->imagen)) {
           return \Illuminate\Support\Facades\Storage::disk('global_media')->url($this->imagen);
       }

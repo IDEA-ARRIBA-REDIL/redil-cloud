@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BannerGeneral;
 use App\Models\Configuracion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class BannerGeneralController extends Controller
 {
@@ -17,9 +18,8 @@ class BannerGeneralController extends Controller
         }
 
         $banners = $query->orderBy('created_at', 'desc')->paginate(12);
-        $configuracion = Configuracion::first();
 
-        return view('contenido.paginas.banner-general.listar-banner-general', compact('banners', 'configuracion'));
+        return view('contenido.paginas.banner-general.listar-banner-general', compact('banners'));
     }
 
     public function crearBanner(Request $request)
@@ -57,12 +57,7 @@ class BannerGeneralController extends Controller
 
         // 3. Lógica de Imagen
         $nombreArchivo = null;
-        $configuracion = Configuracion::find(1);
-        $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/banners/');
-
-        if (! is_dir($path)) {
-            mkdir($path, 0755, true);
-        }
+        $directorio = 'img/banners/';
 
         if ($request->filled('imagen_recortada')) {
             $image_64 = $request->imagen_recortada;
@@ -72,12 +67,16 @@ class BannerGeneralController extends Controller
                 $image = str_replace($replace, '', $image_64);
                 $image = str_replace(' ', '+', $image);
                 $nombreArchivo = 'banner_'.time().'.'.$extension;
-                file_put_contents($path.$nombreArchivo, base64_decode($image));
+
+                // Almacenar en el disco public (aislado por tenant)
+                Storage::disk()->put($directorio.$nombreArchivo, base64_decode($image));
             }
         } elseif ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
             $nombreArchivo = 'banner_'.time().'.'.$file->getClientOriginalExtension();
-            $file->move($path, $nombreArchivo);
+
+            // Almacenar en el disco public (aislado por tenant)
+            Storage::disk()->putFileAs($directorio, $file, $nombreArchivo);
         }
 
         BannerGeneral::create([
@@ -122,17 +121,12 @@ class BannerGeneralController extends Controller
 
         // Lógica de Imagen
         $nombreArchivo = $banner->imagen;
-        $configuracion = Configuracion::find(1);
-        $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/banners/');
-
-        if (! is_dir($path)) {
-            mkdir($path, 0755, true);
-        }
+        $directorio = 'img/banners/';
 
         if ($request->filled('imagen_recortada')) {
-            // Borrar imagen anterior si existe en la NvA ubicación y no es una global
-            if ($banner->imagen && file_exists($path.$banner->imagen)) {
-                unlink($path.$banner->imagen);
+            // Borrar imagen anterior si existe
+            if ($banner->imagen) {
+                Storage::disk()->delete($directorio.$banner->imagen);
             }
 
             $image_64 = $request->imagen_recortada;
@@ -142,15 +136,16 @@ class BannerGeneralController extends Controller
             $image = str_replace(' ', '+', $image);
             $nombreArchivo = 'banner_'.time().'.'.$extension;
 
-            file_put_contents($path.$nombreArchivo, base64_decode($image));
+            Storage::disk()->put($directorio.$nombreArchivo, base64_decode($image));
 
         } elseif ($request->hasFile('imagen')) {
-            if ($banner->imagen && file_exists($path.$banner->imagen)) {
-                unlink($path.$banner->imagen);
+            if ($banner->imagen) {
+                Storage::disk()->delete($directorio.$banner->imagen);
             }
             $file = $request->file('imagen');
             $nombreArchivo = 'banner_'.time().'.'.$file->getClientOriginalExtension();
-            $file->move($path, $nombreArchivo);
+
+            Storage::disk()->putFileAs($directorio, $file, $nombreArchivo);
         }
 
         $banner->update([
@@ -168,12 +163,10 @@ class BannerGeneralController extends Controller
     public function eliminarBanner($id)
     {
         $banner = BannerGeneral::findOrFail($id);
-        $configuracion = Configuracion::find(1);
-        $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/banners/');
+        $directorio = 'img/banners/';
 
-        // Borrar el archivo local del tenant, sin afectar global
-        if ($banner->imagen && file_exists($path.$banner->imagen)) {
-            unlink($path.$banner->imagen);
+        if ($banner->imagen) {
+            Storage::disk()->delete($directorio.$banner->imagen);
         }
         $banner->delete();
 

@@ -64,6 +64,42 @@
       });
     });
   });
+
+  window.downloadImage = async function(url, id) {
+      Swal.fire({
+          title: 'Preparando descarga...',
+          text: 'Estamos procesando tu imagen',
+          icon: 'info',
+          showConfirmButton: false,
+          timer: 3000
+      });
+
+      const fileName = 'Post_' + id + '.jpg';
+
+      if (url) {
+          try {
+              const response = await fetch(url, { mode: 'cors' });
+              const blob = await response.blob();
+              const blobUrl = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              link.download = fileName;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(blobUrl);
+              return;
+          } catch (err) {
+              console.error("Error al descargar URL original:", err);
+              // Fallback simple si fetch falla
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = fileName;
+              link.target = '_blank';
+              link.click();
+          }
+      }
+  }
 </script>
 @endsection
 
@@ -101,8 +137,8 @@
       
       <!-- Imagen -->
       <div class="card-img-top position-relative overflow-hidden" style="width: 100%; height: 0; padding-bottom: 100%; background-color: #f8f9fa;">
-        @if($post->image_path)
-          <img src="{{ asset('storage/'.$configuracion->ruta_almacenamiento.'/img/publicaciones/'.$post->image_path) }}" 
+        @if($post->image_url)
+          <img src="{{ $post->image_url }}" 
                alt="Imagen de publicación" 
                class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: cover; object-position: center;">
         @else
@@ -157,8 +193,9 @@
           <div class="dropdown zindex-2 p-1">
             <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i> </button>
             <ul class="dropdown-menu dropdown-menu-end">
-              @if($post->image_path)
-                <a class="dropdown-item" href="{{ asset('storage/'.$configuracion->ruta_almacenamiento.'/img/publicaciones/'.$post->image_path) }}" download="post-{{ $post->id }}.png">
+              @if($post->image_url)
+                <a class="dropdown-item cursor-pointer" href="javascript:void(0)"
+                    onclick="downloadImage({{ Js::from($post->image_url) }}, {{ Js::from($post->id) }})">
                   <i class="ti ti-download me-1"></i> Descargar imagen
                 </a>
               @endif

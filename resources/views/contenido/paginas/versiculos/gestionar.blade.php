@@ -156,33 +156,56 @@
             });
         });
 
-        async function downloadImage(url, cita, captureId) {
-            if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('info', 'Preparando descarga...');
+        window.downloadImage = async function(url, cita, captureId) {
+            Swal.fire({
+                title: 'Preparando descarga...',
+                text: 'Estamos procesando tu imagen',
+                icon: 'info',
+                showConfirmButton: false,
+                timer: 3000
+            });
 
-            if (url) {
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'Versiculo_' + cita.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } else if (captureId) {
+            const fileName = 'Versiculo_' + cita.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
+
+            // PRIORIDAD 1: Descargar el archivo original vía Blob (preserva proporción y calidad)
+            if (url && url !== window.location.href) {
                 try {
-                    const canvas = await html2canvas(document.getElementById(captureId), {
-                        scale: 3
+                    const response = await fetch(url, { mode: 'cors' });
+                    const blob = await response.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(blobUrl);
+                    return;
+                } catch (err) {
+                    console.error("Error al descargar URL original:", err);
+                }
+            }
+
+            // PRIORIDAD 2: Captura si no hay URL o falló el fetch
+            const captureEl = document.getElementById(captureId);
+            if (captureId && captureEl) {
+                try {
+                    const canvas = await html2canvas(captureEl, {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: null
                     });
                     const link = document.createElement('a');
-                    link.href = canvas.toDataURL('image/jpeg', 1.0);
-                    link.download = 'Versiculo_' + cita.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
+                    link.href = canvas.toDataURL('image/jpeg', 0.9);
+                    link.download = fileName;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                 } catch (err) {
-                    console.error("Error al generar imagen:", err);
+                    console.error("Error al generar captura:", err);
                 }
             }
-
-            if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen lista!');
         }
     </script>
 @endsection
@@ -226,7 +249,8 @@
                     <div class="card-img-top position-relative overflow-hidden"
                         style="width: 100%; height: 0; padding-bottom: 100%; background-color: #f8f9fa;">
                         @if ($versiculo->ruta_imagen)
-                            <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/versiculo-diario/' . $versiculo->ruta_imagen) }}"
+                        
+                            <img src="{{ $versiculo->imagen_url }}"
                                 alt="{{ $versiculo->cita_larga }}" class="position-absolute top-0 start-0 w-100 h-100"
                                 style="object-fit: cover; object-position: center;">
                         @else
@@ -276,7 +300,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-3">
                             <div class="d-flex flex-column ">
                                 <h5 class="card-title mb-0 fw-semibold text-black text-black" style="font-size: 1.1rem;">
-                                    {{ $versiculo->cita_larga }}</h5>
+                                    {{ $versiculo->cita_referencia }}</h5>
                                 <small class="text-black"><i class="ti ti-calendar me-1 "></i>
                                     {{ $versiculo->fecha_publicacion->format('d M, Y') }}</small>
                             </div>
@@ -288,8 +312,8 @@
                                     data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <a class="dropdown-item cursor-pointer"
-                                        onclick="downloadImage('{{ $versiculo->ruta_imagen ? Storage::url($configuracion->ruta_almacenamiento . '/img/versiculo-diario/' . $versiculo->ruta_imagen) : '' }}', '{{ $versiculo->cita_larga }}', 'capture-container-{{ $versiculo->id }}')">
+                                    <a class="dropdown-item cursor-pointer" href="javascript:void(0)"
+                                        onclick="downloadImage({{ Js::from($versiculo->imagen_url) }}, {{ Js::from($versiculo->cita_larga) }}, 'capture-container-{{ $versiculo->id }}')">
                                         <i class="ti ti-download me-1"></i> Descargar imagen
                                     </a>
                                     @if ($rolActivo->hasPermissionTo('versiculos.opcion_modificar_versiculo'))

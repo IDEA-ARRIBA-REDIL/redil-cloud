@@ -22,7 +22,6 @@ class PostController extends Controller
      */
     public function gestionar(Request $request)
     {
-        $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('posts.subitem_gestionar_publicaciones');
@@ -50,7 +49,7 @@ class PostController extends Controller
         $posts = $postsQuery->orderBy('fecha_inicio', 'desc')
             ->paginate(15);
 
-        return view('contenido.paginas.posts.gestionar', compact('posts', 'configuracion', 'fechaInicio', 'fechaFin', 'rolActivo'));
+        return view('contenido.paginas.posts.gestionar', compact('posts', 'fechaInicio', 'fechaFin', 'rolActivo'));
     }
 
     /**
@@ -58,7 +57,6 @@ class PostController extends Controller
      */
     public function crear()
     {
-        $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('posts.subitem_nueva_publicacion');
@@ -73,7 +71,6 @@ class PostController extends Controller
         $estadosTareas = EstadoTareaConsolidacion::all();
 
         return view('contenido.paginas.posts.crear', compact(
-            'configuracion',
             'rolActivo',
             'sedes',
             'estadosCiviles',
@@ -118,19 +115,12 @@ class PostController extends Controller
 
             // Manejo de la imagen base64 (recortada)
             if ($request->imagen_base64) {
-                $configuracion = Configuracion::find(1);
-                $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/');
-
-                if (!is_dir($path)) {
-                    mkdir($path, 0777, true);
-                }
-
                 $imagenPartes = explode(';base64,', $request->imagen_base64);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
                 $nombreFoto = 'post-' . time() . '.jpg';
-                $imagenPath = $path . $nombreFoto;
+                $path = 'img/publicaciones/' . $nombreFoto;
 
-                file_put_contents($imagenPath, $imagenBase64);
+                \Illuminate\Support\Facades\Storage::disk()->put($path, $imagenBase64);
                 $post->image_path = $nombreFoto;
             }
 
@@ -184,7 +174,6 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('posts.opcion_modificar_publicacion');
@@ -208,7 +197,6 @@ class PostController extends Controller
 
         return view('contenido.paginas.posts.editar', compact(
             'post',
-            'configuracion',
             'rolActivo',
             'sedes',
             'estadosCiviles',
@@ -256,27 +244,20 @@ class PostController extends Controller
 
             // Manejo de la imagen base64 (recortada)
             if ($request->imagen_base64) {
-                $configuracion = Configuracion::find(1);
-                $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/');
-
-                if (!is_dir($path)) {
-                    mkdir($path, 0777, true);
-                }
-
                 // Borrar imagen anterior si existe
                 if ($post->image_path) {
-                    $oldPath = $path . $post->image_path;
-                    if (file_exists($oldPath)) {
-                        unlink($oldPath);
+                    $oldPath = 'img/publicaciones/' . $post->image_path;
+                    if (\Illuminate\Support\Facades\Storage::disk()->exists($oldPath)) {
+                        \Illuminate\Support\Facades\Storage::disk()->delete($oldPath);
                     }
                 }
 
                 $imagenPartes = explode(';base64,', $request->imagen_base64);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
                 $nombreFoto = 'post-' . time() . '.jpg';
-                $imagenPath = $path . $nombreFoto;
+                $path = 'img/publicaciones/' . $nombreFoto;
 
-                file_put_contents($imagenPath, $imagenBase64);
+                \Illuminate\Support\Facades\Storage::disk()->put($path, $imagenBase64);
                 $post->image_path = $nombreFoto;
             }
 
@@ -339,16 +320,14 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $rolActivo->verificacionDelPermiso('posts.opcion_eliminar_publicacion');
 
         if ($post->image_path) {
-            $configuracion = Configuracion::find(1);
-            $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/' . $post->image_path);
-            if (file_exists($path)) {
-                unlink($path);
+            $path = 'img/publicaciones/' . $post->image_path;
+            if (\Illuminate\Support\Facades\Storage::disk()->exists($path)) {
+                \Illuminate\Support\Facades\Storage::disk()->delete($path);
             }
         }
 

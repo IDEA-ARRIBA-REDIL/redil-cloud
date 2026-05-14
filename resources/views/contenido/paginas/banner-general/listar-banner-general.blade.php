@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Banner General')
+@section('title', 'Banners')
 
 @section('page-style')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
@@ -82,7 +82,7 @@ $configData = Helper::appClasses();
     }
 
     window.editarBanner = function(id, nombre, fecha, visible, imagenUrl, link) {
-        document.getElementById('modalTitle').innerText = 'Editar Banner';
+        document.getElementById('modalTitle').innerText = 'Editar banner';
         let form = document.getElementById('formBanner');
         form.action = "/banner-general/actualizar/" + id;
 
@@ -279,7 +279,7 @@ $configData = Helper::appClasses();
             cropper = new Cropper(croppingImage, {
                 zoomable: false,
                 viewMode: 1,
-                aspectRatio: 1200 / 800,
+                aspectRatio: 1700 / 500,
                 autoCropArea: 1,
                 responsive: true,
                 restore: false,
@@ -300,8 +300,8 @@ $configData = Helper::appClasses();
         cropBtn.addEventListener('click', function() {
             if(!cropper) return;
             var canvas = cropper.getCroppedCanvas({
-                width: 1200,
-                height: 800,
+                width: 1700,
+                height: 500,
                 fillColor: '#fff',
             });
             var imgSrc = canvas.toDataURL('image/jpeg');
@@ -359,12 +359,10 @@ $configData = Helper::appClasses();
                 </div>
 
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="card-title mb-0 text-truncate" title="{{ $banner->nombre }}">
-                            {{ $banner->nombre ?? 'Sin nombre' }}
-                        </h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">                       
+                        <h5 class="mb-1 fw-semibold text-black lh-sm"> {{ $banner->nombre ?? 'Sin nombre' }} </h5>
                         <div class="dropdown zindex-2">
-                            <button type="button" class="btn dropdown-toggle hide-arrow btn-sm p-0" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="ti ti-dots-vertical fs-4"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -375,11 +373,13 @@ $configData = Helper::appClasses();
                                             '{{$banner->nombre}}',
                                             '{{ ($banner->fecha_inicio && $banner->fecha_fin) ? $banner->fecha_inicio->format('Y-m-d') . ' a ' . $banner->fecha_fin->format('Y-m-d') : '' }}',
                                             '{{$banner->visible}}',
-                                            '{{ $banner->imagen_vinculada }}'
+                                            '{{ $banner->imagen_vinculada }}',
+                                            '{{$banner->link}}'
                                         )">
                                         <i class="ti ti-pencil me-1"></i> Editar
                                     </a>
                                 </li>
+                                 <hr class="dropdown-divider">
                                 <li>
                                      <a class="dropdown-item text-danger" href="javascript:void(0);" onclick="confirmarEliminacion('{{$banner->id}}')">
                                         <i class="ti ti-trash me-1"></i> Eliminar
@@ -493,7 +493,7 @@ $configData = Helper::appClasses();
                         </div>
 
                         <input class="form-control @error('imagen') is-invalid @enderror" type="file" id="imagen" name="imagen" accept="image/*">
-                        <div class="form-text">La imagen se recortará a 1200x800 px.</div>
+                        <div class="form-text">La imagen se recortará a 1700x500 px.</div>
                         <input type="hidden" id="imagen_recortada" name="imagen_recortada" value="{{ old('imagen_recortada') }}">
 
                         @error('imagen')
@@ -502,8 +502,8 @@ $configData = Helper::appClasses();
                     </div>
 
                     <div class="modal-footer px-0 pb-0">
-                        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn rounded-pill waves-effect btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary rounded-pill">Guardar</button>
                     </div>
                 </form>
             </div>

@@ -30,20 +30,7 @@
                             <div class="card-img-top position-relative overflow-hidden"
                                 style="width: 100%; height: 0; padding-bottom: 177.77%;">
                                 @php
-                                    $imageName = $post->image_path;
-                                    $imgUrl = '';
-                                    
-                                    if ($imageName) {
-                                        // 1. Intentar por ruta física pública (como lo hace el controlador)
-                                        $relativePublicPath = 'storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/' . $imageName;
-                                        if (file_exists(public_path($relativePublicPath))) {
-                                            $imgUrl = asset($relativePublicPath);
-                                        } 
-                                        // 2. Fallback a global_media
-                                        elseif (Storage::disk('global_media')->exists($imageName)) {
-                                            $imgUrl = Storage::disk('global_media')->url($imageName);
-                                        }
-                                    }
+                                    $imgUrl = $post->image_url;
                                 @endphp
 
                                 @if ($imgUrl)
@@ -113,14 +100,7 @@
 
                                     <!-- Compartir / Descargar -->
                                     @php
-                                        if ($imgUrl) {
-                                            $postImageUrl = str_starts_with($imgUrl, 'http') 
-                                                ? $imgUrl 
-                                                : request()->getSchemeAndHttpHost() . $imgUrl;
-                                        } else {
-                                            $postImageUrl = url()->current();
-                                        }
-
+                                        $postImageUrl = $imgUrl;
                                         $postText = trim(strip_tags($post->descripcion));
                                     @endphp
                                     <i class="ti ti-share text-white cursor-pointer btn-share-post d-none"
@@ -182,7 +162,7 @@
                                                                 {{ $post->user->inicialesNombre() }}
                                                             </div>
                                                         @else
-                                                            <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $post->user->foto) }}"
+                                                            <img src="{{ $post->user->foto_url }}"
                                                                 alt="{{ $post->user->nombre(3) }}"
                                                                 class="rounded-circle me-3 border border-white shadow"
                                                                 width="45" height="45"
@@ -207,20 +187,7 @@
                                             </div>
 
                                             @php
-                                                $imageNameModal = $post->image_path;
-                                                $imgUrlModal = '';
-                                                
-                                                if ($imageNameModal) {
-                                                    // 1. Intentar por ruta física pública
-                                                    $relativePublicPathModal = 'storage/' . $configuracion->ruta_almacenamiento . '/img/publicaciones/' . $imageNameModal;
-                                                    if (file_exists(public_path($relativePublicPathModal))) {
-                                                        $imgUrlModal = asset($relativePublicPathModal);
-                                                    } 
-                                                    // 2. Fallback a global_media
-                                                    elseif (Storage::disk('global_media')->exists($imageNameModal)) {
-                                                        $imgUrlModal = Storage::disk('global_media')->url($imageNameModal);
-                                                    }
-                                                }
+                                                $imgUrlModal = $post->image_url;
                                             @endphp
 
                                             <!-- Fondo: Imagen o Gradiente -->
@@ -309,14 +276,7 @@
 
                                                 <!-- Botón Compartir / Descargar -->
                                                 @php
-                                                    if ($imgUrlModal) {
-                                                        $postImageUrl = str_starts_with($imgUrlModal, 'http') 
-                                                            ? $imgUrlModal 
-                                                            : request()->getSchemeAndHttpHost() . $imgUrlModal;
-                                                    } else {
-                                                        $postImageUrl = url()->current();
-                                                    }
-
+                                                    $postImageUrl = $imgUrlModal;
                                                     $postText = trim(strip_tags($post->descripcion));
                                                 @endphp
                                                 <div class="d-flex flex-column align-items-center">
@@ -420,7 +380,7 @@
                             let file;
 
                             // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
-                            if (urlImagen && urlImagen !== window.location.href) {
+                            if (urlImagen) {
                                 try {
                                     const response = await fetch(urlImagen, { mode: 'cors' });
                                     const blob = await response.blob();
@@ -475,15 +435,13 @@
                         text: 'Estamos procesando tu imagen',
                         icon: 'info',
                         showConfirmButton: false,
-                        showCancelButton: false,
-                        showDenyButton: false,
                         timer: 3000
                     });
 
                     const fileName = 'Publicacion_' + new Date().getTime() + '.jpg';
 
                     // PRIORIDAD 1: Si hay URL, descargar el archivo original vía Blob (preserva proporción y calidad)
-                    if (url && url !== window.location.href) {
+                    if (url) {
                         try {
                             const response = await fetch(url, { mode: 'cors' });
                             const blob = await response.blob();
@@ -495,11 +453,9 @@
                             link.click();
                             document.body.removeChild(link);
                             window.URL.revokeObjectURL(blobUrl);
-                            if (window.Helpers && window.Helpers.openToast) window.Helpers.openToast('success', '¡Imagen original descargada!');
                             return;
                         } catch (err) {
                             console.error("Error al descargar URL original mediante blob:", err);
-                            // Si falla el fetch (CORS), continuamos a la Prioridad 2 (Captura)
                         }
                     }
 
