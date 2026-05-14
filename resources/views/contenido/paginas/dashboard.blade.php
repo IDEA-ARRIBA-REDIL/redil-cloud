@@ -6,7 +6,7 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Inicio')
+@section('title', 'Inicio daar')
 
 
 @section('page-style')
@@ -28,16 +28,44 @@
                 border: none !important;
                 background-color: transparent !important;
             }
+            /* Eapps Instagram Feed - Ajustes  */
+
+            .eapps-instagram-feed-title
+ {
+    font-size: 24px;
+    font-weight: 700 !important;
+    text-align: start !important;
+    line-height: 32px;
+    padding: 24px 10px;
+    color: #000;
+    font-family: 'Poppins';
+}
+
+#container-instagram{
+    background: #fff;
+    margin-top: 10px;
+    padding: 20px;
+    width: 97%;
+    margin-left: 12px;
+    border-radius: 10px;
+}
+.eapps-instagram-feed-posts-item-template-classic {
+    border: 2px solid rgb(255 255 255);
+}
+
+            #rueda-vida-card {
+                margin-top: -140px !important;
+            }
 
             /* El degradado/difuminado superior también solo debería quitarse en el tope */
             .layout-navbar-fixed .layout-page.navbar-at-top:before {
                 background: none !important;
                 backdrop-filter: none !important;
             }
+
+            
             @media (min-width: 1200px) {
                 .dashboard-header {
-                    margin-left: -2rem;
-                    margin-right: -2rem;
                     padding-left: 2rem;
                     padding-right: 2rem;
                 }
@@ -46,14 +74,20 @@
             @media (min-width: 1400px) {
                 .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
                     max-width: 100% !important;
-                    padding-left: 2rem !important;
-                    padding-right: 2rem !important;
+                }
+
+                .ajuste{
+                    padding-left: 10rem !important;
+                    padding-right: 10rem  !important;
                 }
             }
 
             @media (max-width: 767px) {
                 .dashboard-header {
                     padding: 100px 1.5rem 50px 1.5rem !important;
+                }
+                #rueda-vida-card {
+                    margin-top: 0px !important;
                 }
             }
         /* fin de estilos para el header y navbar */
@@ -73,8 +107,8 @@
             }
 
             .action-card {
-                min-width: 140px;
-                height: 140px;
+                min-width: 110px;
+                height: 110px;
                 background: #fff;
                 border-radius: 16px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.08);
@@ -85,7 +119,7 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                padding: 15px;
+                padding: 5px;
             }
 
             .action-card:hover {
@@ -94,9 +128,9 @@
             }
 
             .action-icon-container {
-                width: 60px;
-                height: 60px;
-                margin-bottom: 10px;
+                width: 50px;
+                height: 50px;
+                margin-bottom: 5px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -358,47 +392,77 @@
 
     <div class="">
         
-        <div class="dashboard-header " style="background: #2F5D50 !important;">
+        <div class="dashboard-header ajuste " style="background: #2F5D50 !important;">
             <h5 class="text-white fw-normal">¿Qué deseas hacer hoy?</h5>
         </div>    
         
-        <div class="action-buttons-container pt-5">
-            <!-- Botón 1 -->
-            <div class="action-card">
-                <div class="action-icon-container">
-                    <a href="{{ route('escuelas.dashboard') }}">
-                    <img src="{{ Storage::disk('global_media')->url('Funcionalidad-escuelas.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
-                    </a>
-                </div>
-                <p class="action-title">Academia</p>
-            </div>
-    
-            <!-- Botón 2 --> 
-            <div class="action-card">
-                <div class="action-icon-container">
-                    <a href="{{ request()->routeIs('grupo.lista') ? 'active' : '' }}">
-                    <img src="{{ Storage::disk('global_media')->url('Funcionalidad-grupos.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
-                    </a>
-                </div>
-                <p class="action-title">Grupos</p>
-            </div>
-    
-            <!-- Botón 3: Cumpleaños -->
-            <div class="d-none d-md-block">
-                <div class="action-card" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBirthday">
-                    <div class="action-icon-container">
-                        <img src="{{ Storage::disk('global_media')->url('Funcionalidad-cumpleaños.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
+        <div class="row ajuste">
+            
+            <div class="col-12 col-md-6">
+                <div class="action-buttons-container pt-5">
+                    <!-- Botón 1 -->
+                    <div class="action-card">
+                        <div class="action-icon-container">
+                            <a href="{{ route('escuelas.dashboard') }}">
+                            <img src="{{ Storage::disk('global_media')->url('Funcionalidad-escuelas.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
+                            </a>
+                        </div>
+                        <p class="action-title">Academia</p>
                     </div>
-                    <p class="action-title">Cumpleaños</p>
+            
+                    <!-- Botón 2 --> 
+                    <div class="action-card">
+                        <div class="action-icon-container">
+                            <a href="{{ request()->routeIs('grupo.lista') ? 'active' : '' }}">
+                            <img src="{{ Storage::disk('global_media')->url('Funcionalidad-grupos.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
+                            </a>
+                        </div>
+                        <p class="action-title">Grupos</p>
+                    </div>
+            
+                    <!-- Botón 3: Cumpleaños -->
+                    <div>
+                        <div class="action-card" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBirthday">
+                            <div class="action-icon-container">
+                                <img src="{{ Storage::disk('global_media')->url('Funcionalidad-cumpleaños.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
+                            </div>
+                            <p class="action-title">Cumpleaños</p>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <div class="col-12 col-md-6">
+                
+                @if ($rolActivo->hasPermissionTo('rueda_de_la_vida.item_rueda_de_la_vida'))
+                 <div id="rueda-vida-card" class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+                    <a href="{{ route('ruedaDeLaVida.gestor') }}" class="text-decoration-none"> 
+                    <div class="row g-0">
+                        <div class="col-3 col-lg-3 col-xxl-2 bg-warning bg-opacity-25">
+                            <img class="card-img card-img-start object-fit-cover h-100 " src="{{Storage::disk('global_media')->url('Rueda-d-la-vida---dashboard.png')  }}" alt="Card image">
+                        </div>
+                        <div class="col-8 col-lg-8 col-xxl-9 bg-warning bg-opacity-25 card-body d-flex align-items-start flex-column justify-content-center">
+                      
+                            <h5 class="card-title text-black mb-0 fw-semibold">Rueda de la vida</h5>
+                            <p class="card-text text-black text-decoration-none fs-6" style="font-size: 0.8rem !important;">Establece tus metas y mejora tu promedio con Dios.</p>
+                       
+                        </div>
+                        <div class="col-1 d-flex align-items-center bg-warning bg-opacity-25">
+                            <button class="btn btn-icon rounded-pill btn-text-dark waves-effect">
+                                <i class="ti ti-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                   </a>
+                </div> 
+                @endif
+            </div>
+            
         </div>
         
-        <div id="row-contenido-general" class="row">
+        <div id="row-contenido-general" class="row ajuste">
     
-    
-    
-            {{-- Banner habilitar notificaciones (solo móvil, solo si no están activas) --}}
+            {{--  habilitar notificaciones (solo móvil, solo si no están activas) --}}
             <div id="banner-notif-permiso" class="col-12 mb-2 " style="display:none;">
                 <div style="
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -438,7 +502,7 @@
                 </div>
             </div>
     
-            {{-- Banner notificaciones bloqueadas (denied) --}}
+            {{-- notificaciones bloqueadas (denied) --}}
             <div id="banner-notif-bloqueado" class="col-12 mb-2" style="display:none;">
                 <div style="
                     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -471,9 +535,68 @@
                     ">&times;</button>
                 </div>
             </div>
-            {{-- Fin banners --}}
+            {{-- Fin notificaciones instalación --}}
     
-            <div id="col-novedades" class="col-12 col-lg-6 mt-3 order-2 order-md-1">
+            @livewire('dashboard.versiculo-del-dia', ['claseColumnas' => 'col-12  col-lg-6 mt-3'])
+
+            <div id="col-racha-tiempo-con-dios" class="col-12  col-lg-6 mt-3" >
+    
+                <h5 class="text-black fw-bold">Racha</h5>
+    
+                <div class="card shadow" style="border-radius: 15px;">
+                    <div class="card-body">
+                       <div class="border-bottom">
+                       @livewire('TiempoConDios.racha-semanal', [
+                            'tamaño' => '70px',
+                            'formato' => 'compacto',
+                        ])
+                       </div>
+
+                       <div>
+                        @livewire('TiempoConDios.racha-diaria', [
+                            'largoLinea' => '40px',
+                            'ocultarDispositivosMoviles' => false,
+                            'mostrarRacha' => true,
+                            'mostrar-animacion' => 'false'
+                        ])
+                       </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm overflow-hidden mt-3" style="border-radius: 15px;">
+                    <div class="d-flex flex-column flex-sm-row">
+                        <!-- Contenedor de Texto: Crece para ocupar el espacio disponible -->
+                        <div class="flex-grow-1 px-8 py-10 d-flex flex-column justify-content-center text-white" style="background-color: #2D5046;">
+                            <div class="mb-4">
+                                <h5 class="text-white mb-2">Mi tiempo con Dios</h5>
+                                <p class="opacity-75 fw-light mb-0" style="font-size: 0.9rem;">
+                                    Dedica tiempo diario a tu relación íntima con Él.
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <a href="{{ route('tiempoConDios.historial') }}" class="btn btn-outline-light rounded-pill px-4 py-2 mt-5" style="border-width: 1.5px; font-weight: 500;">
+                                    Comenzar
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Contenedor de Animación: Ajuste flexible -->
+                        <div class="d-flex align-items-center justify-content-center bg-white p-3" style="min-width: 180px;">
+                            @livewire('TiempoConDios.racha-animacion', [
+                                'ancho' => '160px', 
+                                'alto' => '160px'
+                            ])
+                        </div>
+                    </div>
+                </div>
+
+              
+    
+    
+            </div>
+    
+            <div id="col-novedades" class="col-12 col-lg-12 mt-3">
                 <h5 class="text-black fw-bold">Novedades</h5>
     
                 @if ($banners->count() > 0)
@@ -517,137 +640,9 @@
                     </div>
                 @endif
     
-            </div>
-
-             @livewire('dashboard.versiculo-del-dia', ['claseColumnas' => 'col-12 col-md-6 mt-3 order-3'])
+            </div>                
     
-     
-            <div id="col-racha-tiempo-con-dios" class="col-12 col-lg-6 mt-3 order-1 order-md-2">
-    
-                <h5 class="text-black fw-bold">Racha</h5>
-    
-                <div class="card shadow">
-                    <div class="card-body">
-                       <div class="border rounded-3">
-                       @livewire('TiempoConDios.racha-semanal', [
-                            'tamaño' => '70px',
-                            'formato' => 'compacto',
-                        ])
-                       </div>
-
-                       <div>
-                        @livewire('TiempoConDios.racha-diaria', [
-                            'largoLinea' => '40px',
-                            'ocultarDispositivosMoviles' => false,
-                        ])
-                       </div>
-                    </div>
-                </div>
-       
-    
-                @if ($rolActivo->hasPermissionTo('rueda_de_la_vida.item_rueda_de_la_vida'))
-                    <div class="card rounded shadow mt-3 overflow-hidden">
-                        <div class="row g-0">
-                            <div class="col-3" style="height: 110px;">
-                                <img class="img-fluid w-100 h-100 object-fit-cover rounded-start"
-                                    src="{{Storage::disk('global_media')->url('Rueda-d-la-vida---dashboard.png')  }}"
-                                    alt="Card image">
-                            </div>
-                            <div class="col-9 bg-warning bg-opacity-25">
-                                <div class="card-body">
-    
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="card-title text-black mb-0 fw-semibold">Rueda de la vida</h5>
-    
-                                        <a href="{{ route('ruedaDeLaVida.gestor') }}"
-                                            class="btn btn-icon rounded-pill btn-text-dark waves-effect">
-                                            <i class="ti ti-chevron-right"></i>
-                                        </a>
-                                    </div>
-    
-                                    <small class="card-text text-black">Establece tus metas y mejora tu promedio con
-                                        Dios.</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-    
-            </div>
-    
-           
-            @if ($rolActivo->hasPermissionTo('tiempo_con_dios.item_tiempo_con_dios'))
-                <div class="col-12 col-md-6 mb-3 order-3">
-                    <div class="card h-100 rounded-3 shadow mt-3 overflow-hidden border-0" style="border-radius: 15px;">
-                        <div class="card-img-top-wrapper position-relative overflow-hidden"
-                            style="width: 100%; height: 0; padding-bottom: 100%; background-color: #f8f9fa;">
-                            <img src="{{Storage::disk('global_media')->url('Banner-mi-tiempo-con-Dios.png')  }}"
-                                class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover" alt="Árbol de engranajes">
-                        </div>
-    
-                        <div class="card-body bg-white px-5 py-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h6 class="card-title fw-semibold mb-0 text-black">
-                                    Mi tiempo con DIOS
-                                </h6>
-    
-                                <a href="{{ route('tiempoConDios.historial') }}"
-                                    class="btn btn-outline-dark rounded-pill px-4 text-decoration-none"
-                                    style="font-size: 0.85rem;">
-                                    Comenzar
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-    
-            @livewire('dashboard.posts-widget', ['claseColumnas' => 'col-12 col-lg-12 mt-3 order-4'])
-    
-            <div class="col-12 col-lg-12 mt-5 order-4 d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="text-black fw-bold mb-0">Temas para ti</h5>
-                    <a href="{{ route('tema.lista') }}" class="btn btn-sm btn-outline-primary rounded-pill">Ver todos los
-                        temas</a>
-                </div>
-    
-                @if ($temas->isNotEmpty())
-                    <div class="swiper-container swiper-container-horizontal swiper swiper-multiple-slides mb-3"
-                        id="swiper-temas">
-                        <div class="swiper-wrapper">
-                            @foreach ($temas as $tema)
-                                <div class="swiper-slide h-auto">
-                                    <div class="card h-100 shadow-sm border-0 rounded-3 overflow-hidden">
-                                        <div class="position-relative">
-                                            <a href="{{ route('tema.ver', $tema) }}">
-                                                <img class="card-img-top object-fit-cover" style="height: 160px;"
-                                                    src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/temas/' . $tema->portada) : Storage::url($configuracion->ruta_almacenamiento . '/img/temas/default.png') }}"
-                                                    alt="{{ $tema->titulo }}">
-                                            </a>
-                                        </div>
-                                        <div class="card-body p-3">
-                                            <a href="{{ route('tema.ver', $tema) }}">
-                                                <h6 class="card-title fw-bold text-black mb-0 text-truncate"
-                                                    title="{{ $tema->titulo }}">
-                                                    {{ $tema->titulo }}</h6>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="swiper-pagination mt-4"></div>
-                    </div>
-                @else
-                    <div class="col-12">
-                        <div class="card border rounded-3 py-4 text-center bg-light">
-                            <p class="text-muted mb-0">No hay temas disponibles en este momento.</p>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        
-            <div class="col-12 col-lg-12 mt-3 order-5">
+            <div class="col-12 col-lg-12 mt-3">
                 <h5 class="text-black fw-bold">Proximas actividades</h5>
                 @if ($actividades->isNotEmpty())
                     <div class="swiper-container swiper-container-horizontal swiper swiper-card-advance-bg"
@@ -700,6 +695,62 @@
                     </div>
                 @endif
             </div>
+            <!-- Elfsight Instagram Feed | Iglesia Manantial de Vida Eterna -->
+            <h5 class="text-black fw-bold  mt-3">Siguenos en Instagram</h5>
+            
+            <div id="container-instagram" class="col-12 col-lg-12">
+                 
+                <script src="https://elfsightcdn.com/platform.js" async></script>
+                <div class="elfsight-app-867b00f3-dd5b-4505-9098-befd1df883a8" data-elfsight-app-lazy></div>
+            </div>
+            
+            @livewire('dashboard.posts-widget', ['claseColumnas' => 'col-12 col-lg-12 mt-3 d-nonex'])
+    
+
+            <div class="col-12 col-lg-12 mt-5 d-none">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-black fw-bold mb-0">Temas para ti</h5>
+                    <a href="{{ route('tema.lista') }}" class="btn btn-sm btn-outline-primary rounded-pill">Ver todos los
+                        temas</a>
+                </div>
+    
+                @if ($temas->isNotEmpty())
+                    <div class="swiper-container swiper-container-horizontal swiper swiper-multiple-slides mb-3"
+                        id="swiper-temas">
+                        <div class="swiper-wrapper">
+                            @foreach ($temas as $tema)
+                                <div class="swiper-slide h-auto">
+                                    <div class="card h-100 shadow-sm border-0 rounded-3 overflow-hidden">
+                                        <div class="position-relative">
+                                            <a href="{{ route('tema.ver', $tema) }}">
+                                                <img class="card-img-top object-fit-cover" style="height: 160px;"
+                                                    src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/temas/' . $tema->portada) : Storage::url($configuracion->ruta_almacenamiento . '/img/temas/default.png') }}"
+                                                    alt="{{ $tema->titulo }}">
+                                            </a>
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <a href="{{ route('tema.ver', $tema) }}">
+                                                <h6 class="card-title fw-bold text-black mb-0 text-truncate"
+                                                    title="{{ $tema->titulo }}">
+                                                    {{ $tema->titulo }}</h6>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="swiper-pagination mt-4"></div>
+                    </div>
+                @else
+                    <div class="col-12">
+                        <div class="card border rounded-3 py-4 text-center bg-light">
+                            <p class="text-muted mb-0">No hay temas disponibles en este momento.</p>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        
+            
         </div>
     </div>
 

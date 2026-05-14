@@ -52,7 +52,9 @@
     <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
 
         <!-- Estado (Publicaciones Recientes) -->
+        @if(2==2)
         @livewire('navbar-posts-status')
+        @endif
         <!--/ Estado -->
 
         @if(Route::is('dashboard'))
