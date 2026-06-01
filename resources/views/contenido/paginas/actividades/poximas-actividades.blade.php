@@ -125,7 +125,7 @@
         
         <div class="card-body">
             @if(isset($actividad->banner->id))
-            <div style="background-position: center !important;background-size: cover !important;min-height: 165px;background-image: url('{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/banner-actividad/'.$actividad->banner->nombre)  : $configuracion->ruta_almacenamiento.'/img/banner-actividad/'.$actividad->banner->nombre }}') !important" class="bg-label-primary rounded text-center">
+            <div style="background-position: center !important;background-size: cover !important;min-height: 165px;background-image: url('{{ tenant_asset('img/banner-actividad/'.$actividad->banner->nombre) }}') !important" class="bg-label-primary rounded text-center">
         
             </div>
             @else

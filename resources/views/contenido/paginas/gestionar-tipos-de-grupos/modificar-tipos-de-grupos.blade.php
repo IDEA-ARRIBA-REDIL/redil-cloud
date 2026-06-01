@@ -144,7 +144,7 @@ $configuracion = \App\Models\Configuracion::find(1);
               <div id="info-imagen-actual" class="mb-2">
                 <div class="border rounded p-2 d-flex justify-content-between align-items-center">
                   <div class="d-flex align-items-center">
-                    <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->imagen) }}" alt="Imagen actual" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
+                    <img src="{{ $tipoGrupo->imagen_url }}" alt="Imagen actual" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
                     <div class="d-flex flex-column">
                       <span style="font-size: 0.75rem;" class="text-muted">Imagen actual</span>
                       <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ basename($tipoGrupo->imagen) }}</span>
@@ -176,7 +176,7 @@ $configuracion = \App\Models\Configuracion::find(1);
               <div id="info-portada-actual" class="mb-2">
                 <div class="border rounded p-2 d-flex justify-content-between align-items-center">
                   <div class="d-flex align-items-center">
-                    <img src="{{ asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $tipoGrupo->portada) }}" alt="Portada actual" class="rounded me-3 border" style="width: 80px; height: 50px; object-fit: cover;">
+                    <img src="{{ $tipoGrupo->portada_url }}" alt="Portada actual" class="rounded me-3 border" style="width: 80px; height: 50px; object-fit: cover;">
                     <div class="d-flex flex-column">
                       <span style="font-size: 0.75rem;" class="text-muted">Portada actual</span>
                       <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ basename($tipoGrupo->portada) }}</span>

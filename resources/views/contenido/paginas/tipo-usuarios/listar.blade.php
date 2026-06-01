@@ -48,6 +48,9 @@
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center">
+            <div class="me-2">
+              <img src="{{ $tipoUsuario->imagen_url }}" alt="Icono {{ $tipoUsuario->nombre }}" class="rounded" width="40">
+            </div>
             @if($tipoUsuario->icono)
               <div class="me-2">
                 <i class="{{ $tipoUsuario->icono }} ti-md text-black"></i>

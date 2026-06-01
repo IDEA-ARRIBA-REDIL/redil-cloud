@@ -2,18 +2,17 @@
 
 namespace App\Mail;
 
-use App\Models\Inscripcion;
 use App\Models\Actividad;
-use App\Models\Iglesia; // <-- AÑADIR: Necesario para los datos en el PDF.
 use App\Models\Configuracion;
+use App\Models\Iglesia; // <-- AÑADIR: Necesario para los datos en el PDF.
+use App\Models\Inscripcion;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Attachment; // <-- 1. Importa la clase Attachment
-use Barryvdh\DomPDF\Facade\Pdf;           // <-- 2. Importa la clase PDF
+use Illuminate\Mail\Mailables\Envelope; // <-- 1. Importa la clase Attachment
+use Illuminate\Queue\SerializesModels;           // <-- 2. Importa la clase PDF
 use Illuminate\Support\Facades\Storage; // <-- AÑADIR: Para construir la URL del banner.
 use stdClass; // <-- AÑADIR: Para crear el objeto $mailData.
 
@@ -22,10 +21,12 @@ class InscripcionConfirmacionMail extends Mailable
     use Queueable, SerializesModels;
 
     public Inscripcion $inscripcion;
+
     public Actividad $actividad;
+
     public $mailData;
+
     public $iglesia;
-    public $version;
 
     /**
      * MÉTODO CONSTRUCTOR MODIFICADO
@@ -39,29 +40,27 @@ class InscripcionConfirmacionMail extends Mailable
         // 1. Cargamos los modelos de configuración e iglesia
         $configuracion = Configuracion::find(1);
         $this->iglesia = Iglesia::find(1);
-        $this->version = $configuracion->version;
 
         // 2. Creamos y poblamos el objeto $mailData
-        $this->mailData = new stdClass();
+        $this->mailData = new stdClass;
 
         // Obtenemos el nombre del participante de forma segura
         $this->mailData->nombre = $inscripcion->user?->nombre(3) ?? $inscripcion->compra->nombre_completo_comprador;
-        $this->mailData->saludo = "si"; // Puedes cambiar esto a "no" si en algún caso no quieres el saludo.
+        $this->mailData->saludo = 'si'; // Puedes cambiar esto a "no" si en algún caso no quieres el saludo.
 
         // Construimos el mensaje principal en formato HTML
-        $this->mailData->mensaje = "<p> Nos alegra que vayas a ser parte de nuestro <strong>" . $actividad->nombre . "</strong></p>"
-            . "<p>Adjunto encontrarás el código QR que debes presentar previo a tu ingreso..</p>";
-
+        $this->mailData->mensaje = '<p> Nos alegra que vayas a ser parte de nuestro <strong>'.$actividad->nombre.'</strong></p>'
+            .'<p>Adjunto encontrarás el código QR que debes presentar previo a tu ingreso..</p>';
 
         // Obtenemos la URL completa del banner de la actividad, si existe.
 
-        $this->mailData->banner = $actividad->banner ? Storage::url($configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre) : Storage::url($configuracion->ruta_almacenamiento . '/img/email/bannercorreo.png');
+        $this->mailData->banner = $actividad->portada_url;
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Confirmación de Inscripción: ' . $this->actividad->nombre,
+            subject: 'Confirmación de Inscripción: '.$this->actividad->nombre,
         );
     }
 
@@ -86,12 +85,12 @@ class InscripcionConfirmacionMail extends Mailable
         // y la convertimos en un objeto PDF en memoria.
         $pdf = Pdf::loadView('contenido.paginas.actividades.inscripcion-ticket', [
             'inscripcion' => $this->inscripcion,
-            'actividad' => $this->actividad
+            'actividad' => $this->actividad,
         ]);
 
         // 2. Adjuntamos el PDF generado al correo electrónico.
         return [
-            Attachment::fromData(fn() => $pdf->output(), 'Ticket-Inscripcion-' . $this->inscripcion->id . '.pdf')
+            Attachment::fromData(fn () => $pdf->output(), 'Ticket-Inscripcion-'.$this->inscripcion->id.'.pdf')
                 ->withMime('application/pdf'),
         ];
     }
@@ -100,10 +99,6 @@ class InscripcionConfirmacionMail extends Mailable
      * --- MÉTODO AUXILIAR AÑADIDO ---
      * Encapsula la lógica de generación del PDF para mantener el código más limpio.
      * Carga los datos adicionales que la vista del PDF necesita.
-     *
-     * @param Inscripcion $inscripcion
-     * @param Actividad $actividad
-     * @return string
      */
     private function _generarPdfTicket(Inscripcion $inscripcion, Actividad $actividad): string
     {

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 class TipoGrupo extends Model
 {
@@ -112,10 +113,11 @@ class TipoGrupo extends Model
     }
   public function getImagenUrlAttribute(): ?string
   {
-      if (!$this->imagen) {
-          return null;
+      if ($this->imagen && $this->imagen !== '' && $this->imagen !== 'indicador_general.png') {
+          return tenant_asset('img/tipos-grupos/iconos/' . $this->imagen);
       }
-      return tenant_asset('img/tipos-grupos/' . $this->imagen);
+
+      return Storage::disk('global_media')->url('tipo-grupo/indicador_general.png');
   }
 
   public function getPortadaUrlAttribute(): ?string
@@ -123,6 +125,6 @@ class TipoGrupo extends Model
       if (!$this->portada) {
           return null;
       }
-      return tenant_asset('img/tipos-grupos/' . $this->portada);
+      return tenant_asset('img/tipos-grupos/banners/' . $this->portada);
   }
 }

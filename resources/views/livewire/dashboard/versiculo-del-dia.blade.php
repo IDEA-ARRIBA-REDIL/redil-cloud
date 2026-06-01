@@ -205,7 +205,7 @@
                 if (navigator.share) {
                     try {
                         let file;
-                        
+
                         // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
                         if (urlImagen) {
                             try {

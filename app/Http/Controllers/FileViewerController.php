@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\CursoLeccion;
-use Illuminate\Http\Request;
-use Vish4395\LaravelFileViewer\LaravelFileViewer;
 use Illuminate\Support\Facades\Storage;
+use Vish4395\LaravelFileViewer\LaravelFileViewer;
 
 class FileViewerController extends Controller
 {
@@ -13,7 +12,7 @@ class FileViewerController extends Controller
     {
         $leccion = CursoLeccion::findOrFail($leccionId);
 
-        if (!$leccion->archivo_path) {
+        if (! $leccion->archivo_path) {
             abort(404, 'Archivo no encontrado');
         }
 
@@ -34,9 +33,10 @@ class FileViewerController extends Controller
 
         if ($mimeType === 'application/pdf') {
             $disposition = request()->has('download') ? 'attachment' : 'inline';
-            return response()->file(storage_path('app/public/' . $leccion->archivo_path), [
+
+            return response()->file(storage_path('app/public/'.basename($leccion->archivo_path)), [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => $disposition . '; filename="' . $fileName . '"'
+                'Content-Disposition' => $disposition.'; filename="'.$fileName.'"',
             ]);
         }
 
@@ -47,14 +47,15 @@ class FileViewerController extends Controller
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
             'application/msword', // doc
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
-            'application/vnd.ms-excel' // xls
+            'application/vnd.ms-excel', // xls
         ];
 
         if (in_array($mimeType, $officeMimes)) {
-            return redirect('https://docs.google.com/viewer?url=' . urlencode($fileUrl) . '&embedded=true');
+            return redirect('https://docs.google.com/viewer?url='.urlencode($fileUrl).'&embedded=true');
         }
 
-        $file_viewer = new LaravelFileViewer();
+        $file_viewer = new LaravelFileViewer;
+
         return $file_viewer->show($fileName, $filePath, $fileUrl);
     }
 }

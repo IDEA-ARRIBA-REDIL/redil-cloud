@@ -157,7 +157,7 @@
                                                     <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-2"
                                                         wire:click="seleccionarConsejero({{ $consejero->id }})">
                                                         <div class="avatar avatar-sm">
-                                                            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $consejero->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $consejero->foto }}" alt="Avatar" class="rounded-circle">
+                                                            <img src="{{ tenant_asset('img/usuarios/foto-usuario/' . $consejero->foto) }}" alt="Avatar" class="rounded-circle">
                                                         </div>
                                                         <div>
                                                             <h6 class="mb-0">{{ $consejero->nombre(3) }}</h6>
@@ -191,7 +191,7 @@
                                     {{-- ... contenido tarjeta consejero ... --}}
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="avatar avatar-md">
-                                            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $consejeroSeleccionado->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $consejeroSeleccionado->foto }}"  alt="Avatar" class="rounded-circle">
+                                            <img src="{{ tenant_asset('img/usuarios/foto-usuario/' . $consejeroSeleccionado->foto) }}"  alt="Avatar" class="rounded-circle">
                                         </div>
                                         <div>
                                             <h6 class="mb-0 fw-bold">{{ $consejeroSeleccionado->nombre(3) }}</h6>

@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Mail\CuentaCreadaMail;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -11,12 +10,17 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class ConfigurarNuevoTenantJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $tries = 3;
+
+    public array $backoff = [60, 300, 600];
 
     public $tenant;
 
@@ -38,17 +42,41 @@ class ConfigurarNuevoTenantJob implements ShouldQueue
             // 1. Ejecutar el seeder del tenant
             Artisan::call('db:seed', ['--class' => 'TenantDatabaseSeeder']);
 
-          
+            // 2. Crear el usuario administrador del tenant
+            $user = User::firstOrCreate(
+                ['email' => $this->admin_email],
+                [
+                    'name' => $this->tenant->pastor_name,
+                    'password' => Hash::make($this->admin_password),
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            // Asignar el rol más alto (generalmente Super Admin o Administrador en el seeder)
+            if (class_exists(\Spatie\Permission\Models\Role::class)) {
+                $adminRole = \Spatie\Permission\Models\Role::first();
+                if ($adminRole) {
+                    $user->assignRole($adminRole);
+                }
+            }
         });
 
         Log::info('Tenant configurado exitosamente: '.$this->tenant->id);
 
-        // 3. Enviar el correo final de confirmación (Comentado temporalmente por error SMTP en local)
-        /*
-        $domain = $this->tenant->domains->first()->domain ?? null;
-        if ($domain) {
-            Mail::to($this->admin_email)->send(new CuentaCreadaMail($this->tenant, $domain));
-        }
-        */
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        $this->tenant->update(['status' => 'setup_failed']);
+
+        DB::table('admin_notifications')->insert([
+            'tenant_id' => $this->tenant->id,
+            'tipo' => 'setup_failed',
+            'mensaje' => "Error crítico al configurar la base de datos de {$this->tenant->church_name}.",
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Log::critical('ConfigurarNuevoTenantJob falló para tenant: '.$this->tenant->id, ['error' => $e->getMessage()]);
     }
 }

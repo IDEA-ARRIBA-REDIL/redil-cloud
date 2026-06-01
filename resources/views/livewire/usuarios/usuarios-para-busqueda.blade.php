@@ -41,7 +41,7 @@
       @foreach ($usuarios as $usuario)
       <div class="row mb-3 p-3 border-bottom border-2 align-items-center cursor-pointer">
         <div class="col-lg-2 col-sm-12 align-items-start justify-content-start mx-auto me-3">
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario->foto }}"
+          <img src="{{ $usuario->foto_url }}"
             alt="foto {{ $usuario->primer_nombre }}" class="rounded-circle w-px-75" />
         </div>
         <div class="col-sm-12 col-lg-6  me-2">
@@ -123,7 +123,7 @@
         @if ($tipoBuscador=='multiple' ) wire:click="seleccionarUsuarios({{ $usuario->id }})" @elseif($tipoBuscador=='unico' ) wire:click="seleccionarUsuario({{ $usuario->id }})" @endif
         class="dropdown-item d-flex align-items-center p-2 m-1 border">
         <div class="d-flex align-items-center justify-content-center mx-auto me-3">
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario->foto }}"
+          <img src="{{ $usuario->foto_url }}"
             alt="foto {{ $usuario->primer_nombre }}" class="rounded-circle w-px-75" />
         </div>
         <div class="flex-grow-1 me-2">
@@ -170,7 +170,7 @@
         class="dropdown-item w-100 mx-0 d-flex p-2 border flex-grow-1  ">
         <div class="flex-fill d-flex align-items-center">
           <div class="d-flex align-items-center justify-content-center mx-auto me-3">
-            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuarioSel->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuarioSel->foto }}"
+            <img src="{{ $usuarioSel->foto_url }}"
               alt="foto {{ $usuarioSel->primer_nombre }}" class="rounded-circle w-px-75" />
           </div>
           <div class="flex-grow-1 me-2">
@@ -227,7 +227,7 @@
       class="dropdown-item w-100 m-0 d-flex p-1 border flex-grow-1">
       <div class="flex-fill d-flex align-items-center">
         <div class="avatar avatar-xs me-2">
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuarioSeleccionado->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuarioSeleccionado->foto }}"
+          <img src="{{ $usuarioSeleccionado->foto_url }}"
             alt="foto {{ $usuarioSeleccionado->primer_nombre }}"
             class="rounded-circle" />
         </div>
@@ -253,7 +253,7 @@
       class="dropdown-item w-100 mx-0 d-flex p-2 border flex-grow-1 mt-2 ">
       <div class="flex-fill d-flex align-items-center">
         <div class="d-flex align-items-center justify-content-center mx-auto me-3">
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuarioSeleccionado->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuarioSeleccionado->foto }}"
+          <img src="{{ $usuarioSeleccionado->foto_url }}"
             alt="foto {{ $usuarioSeleccionado->primer_nombre }}"
             class="rounded-circle w-px-75" />
         </div>

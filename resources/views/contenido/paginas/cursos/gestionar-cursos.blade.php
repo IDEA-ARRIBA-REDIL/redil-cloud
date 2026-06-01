@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Gestionar Cursos')
+@section('title', 'Gestionar cursos')
 
 @section('page-style')
 @vite(['resources/assets/vendor/libs/quill/editor.scss', 'resources/assets/vendor/libs/select2/select2.scss', 'resources/assets/vendor/libs/quill/typography.scss', 'resources/assets/vendor/libs/pickr/pickr-themes.scss', 'resources/assets/vendor/scss/pages/page-profile.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss', 'resources/assets/vendor/libs/@form-validation/umd/styles/index.min.css'])
@@ -28,7 +28,7 @@
 
 @section('content')
 <h4 class="fw-semibold text-primary py-3 mb-4">
-   Gestionar Cursos
+   Gestionar cursos
 </h4>
 
 <div class="row">

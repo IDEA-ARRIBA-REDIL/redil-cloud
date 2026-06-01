@@ -192,11 +192,11 @@
                                                             aria-labelledby="tab-corte-{{ $userIdActual }}-{{ $cortePeriodoId }}"
                                                             wire:key="tab-pane-{{ $userIdActual }}-{{ $cortePeriodoId }}">
 
-                                                            
-                                                                
+
+
                                                                 <div class="row g-3">
                                                                    @if (!empty($dataCorte['itemInstancias']))
-    
+
                                                                             {{-- Muestra la nota calculada para el corte --}}
                                                                             <div>
                                                                             {{-- =============================================== --}}
@@ -206,12 +206,12 @@
                                                                                 // Obtenemos la información del corte actual que ya cargamos en el componente
                                                                                 $infoCorte = $cortesPeriodoInfo[$cortePeriodoId] ?? null;
                                                                                 $fechaFin = ($infoCorte && $infoCorte['fecha_fin']) ? $infoCorte['fecha_fin'] : null;
-                                                                                
+
                                                                                 // Obtenemos la fecha y hora actual
                                                                                 $ahora = \Carbon\Carbon::now();
                                                                             @endphp
 
-                                                                            {{-- 
+                                                                            {{--
                                                                                 Condiciones para mostrar la alerta:
                                                                                 1. Debe existir una fecha de fin ($fechaFin).
                                                                                 2. La fecha actual ($ahora) debe ser ANTERIOR a la fecha de fin (el plazo no debe estar vencido).
@@ -222,15 +222,15 @@
                                                                                     // Calculamos la diferencia exacta
                                                                                     $diff = $ahora->diff($fechaFin);
                                                                                 @endphp
-                                                                                
+
                                                                                 {{-- Esta es la alerta que verá el maestro --}}
                                                                                 <div class="alert alert-warning py-2 px-3 small mb-3" role="alert">
                                                                                     <i class="mdi mdi-clock-alert-outline me-1 align-middle"></i>
                                                                                     <strong class="align-middle">¡Plazo por vencer!</strong> Quedan:
-                                                                                    
+
                                                                                     {{-- Usamos %a para los días totales restantes --}}
-                                                                                    <strong class="align-middle">{{ $diff->format('%a') }}</strong> días, 
-                                                                                    <strong class="align-middle">{{ $diff->h }}</strong> horas y 
+                                                                                    <strong class="align-middle">{{ $diff->format('%a') }}</strong> días,
+                                                                                    <strong class="align-middle">{{ $diff->h }}</strong> horas y
                                                                                     <strong class="align-middle">{{ $diff->i }}</strong> minutos.
                                                                                 </div>
                                                                             @endif
@@ -245,7 +245,7 @@
 
                                                                             {{-- Contenedor para las tarjetas de los ítems --}}
                                                                             <div class="row g-3 mt-1">
-                                                                                
+
                                                                                 {{-- Bucle que recorre cada ítem de calificación del corte --}}
                                                                                 @foreach ($dataCorte['itemInstancias'] as $item)
                                                                                 @php
@@ -259,7 +259,7 @@
                                                                                     <div class="col-12 col-sm-6 col-md-4 col-lg-3" wire:key="item-calif-{{ $userIdActual }}-{{ $item->id }}">
                                                                                         <div class="border rounded card h-100">
                                                                                             <div class="card-body small d-flex flex-column">
-                                                                                                
+
                                                                                                 {{-- Parte superior: Nombre y porcentaje del ítem --}}
                                                                                                 <div class="flex-grow-1">
                                                                                                     <p class="fw-semibold text-truncate mb-1" title="{{ $item->nombre }}">
@@ -269,7 +269,7 @@
                                                                                                         ({{ number_format($item->porcentaje, 1) }}%)
                                                                                                     </p>
                                                                                                 </div>
-                                                                                                
+
                                                                                                 {{-- Parte media: Input para la nota y el indicador de carga --}}
                                                                                                 <div class="d-flex align-items-center mb-2">
                                                                                                     <input type="number" step="0.01" min="{{ $configuracion->nota_minima ?? 0 }}" max="{{ $configuracion->nota_maxima ?? 5 }}"
@@ -284,7 +284,7 @@
                                                                                                         <div class="invalid-feedback d-block x-small text-center">{{ $message }}</div>
                                                                                                     @enderror
 
-                                                                                                  
+
                                                                                                 </div>
 
                                                                                                 {{-- Muestra errores de validación para este input específico --}}
@@ -293,7 +293,7 @@
                                                                                                         {{ $errors->first("notas.{$userIdActual}.{$item->id}") }}
                                                                                                     </div>
                                                                                                 @endif
-                                                                                                
+
                                                                                                 {{-- Parte inferior: Botones de acción --}}
                                                                                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                                                                                     {{-- Botón "Ver Respuesta": Solo aparece si el alumno ha enviado una respuesta --}}
@@ -301,7 +301,7 @@
                                                                                                     @if(!$plazoVencidoParaItem || $puedeCalificarSinFecha)
                                                                                                     <div>
                                                                                                         @if ($item->respuestaDelAlumno)
-                                                                                                            <button 
+                                                                                                            <button
                                                                                                                 wire:click="verRespuesta({{ $userIdActual }}, {{ $item->id }})"
                                                                                                                 class="btn btn-sm btn-outline-secondary waves-effect waves-light">
                                                                                                                 <i class="mdi mdi-eye-outline me-1"></i>
@@ -309,7 +309,7 @@
                                                                                                             </button>
                                                                                                         @endif
                                                                                                     </div>
-                                                                                                    
+
                                                                                                     {{-- Botón "Calificar": Para guardar la nota manualmente (útil si se desactiva el autoguardado) --}}
                                                                                                     <div>
                                                                                                         <button type="button"
@@ -319,16 +319,16 @@
                                                                                                             wire:target="guardarCalificacionCompleta({{ $userIdActual }}, {{ $item->id }})">
                                                                                                             {{-- El spinner reemplaza el ícono y texto mientras se guarda --}}
                                                                                                             <span wire:loading.remove wire:target="guardarCalificacionCompleta({{ $userIdActual }}, {{ $item->id }})">
-                                                                                                              
-                                                                                                                Calificar 
+
+                                                                                                                Calificar
                                                                                                             </span>
-                                                                                                           
+
                                                                                                         </button>
                                                                                                     </div>
                                                                                                     @else
                                                                                                     <div class="text-center">
                                                                                                         {{-- Botón Ver/Añadir Observación --}}
-                                                                                                        <button type="button" wire:click="verRespuesta({{ $userIdActual }}, {{ $itemId }})"
+                                                                                                        <button type="button" wire:click="verRespuesta({{ $userIdActual }}, {{ $item->id }})"
                                                                                                                 class="btn btn-xs @if($item->respuestaDelAlumno && $item->respuestaDelAlumno->observaciones_maestro) btn-info @else btn-outline-secondary @endif"
                                                                                                                 title="{{ $item->respuestaDelAlumno && $item->respuestaDelAlumno->observaciones_maestro ? 'Ver/Editar Observación' : 'Añadir Observación' }}">
                                                                                                             <i class="ti @if($item->respuestaDelAlumno && ($item->respuestaDelAlumno->respuesta_alumno || $item->respuestaDelAlumno->enlace_documento_alumno)) ti-eye @else ti-message-plus @endif"></i>
@@ -348,7 +348,7 @@
                                                                             <p class="text-muted text-center fst-italic py-3">No hay ítems calificables definidos para este corte.</p>
                                                                         @endif
                                                                 </div>
-                                                          
+
                                                         </div>
                                                     @empty
                                                         {{-- Este bloque no debería alcanzarse si el bucle de pestañas ya maneja la lista vacía --}}
@@ -393,7 +393,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            Respuesta de: 
+                            Respuesta de:
                             <span class="text-primary">{{ $respuestaSeleccionada->alumno->nombre(3) }}</span>
                         </h5>
                         <button wire:click="$set('showRespuestaModal', false)" type="button" class="btn-close"></button>
@@ -401,7 +401,7 @@
                     <div class="modal-body">
                         <h6>Actividad: <span class="fw-normal">{{ $respuestaSeleccionada->itemCalificado->nombre }}</span></h6>
                         <hr>
-                        
+
                         {{-- Sección de la respuesta del alumno (sin cambios) --}}
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Respuesta Escrita del Alumno:</label>
@@ -412,6 +412,7 @@
 
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Archivo Adjunto del Alumno:</label>
+
                             @if ($respuestaSeleccionada->enlace_documento_alumno)
                                 <a href="{{ $respuestaSeleccionada->archivo_url }}" target="_blank" class="btn-sm btn-outline-secondary">
                                     <i class="mdi mdi-download-outline me-1"></i> Descargar Archivo
@@ -425,11 +426,11 @@
                         {{-- --- INICIO: SECCIÓN NUEVA PARA EL MAESTRO --- --}}
                         <div class="mb-3">
                             <label for="observacionMaestroText" class="form-label fw-semibold">Feedback u Observaciones (Maestro):</label>
-                            <textarea 
+                            <textarea
                                 id="observacionMaestroText"
-                                wire:model="observacionMaestro" 
-                                class="form-control" 
-                                rows="4" 
+                                wire:model="observacionMaestro"
+                                class="form-control"
+                                rows="4"
                                 placeholder="Escribe aquí tu retroalimentación para el alumno..."></textarea>
                             @error('observacionMaestro') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
@@ -438,7 +439,7 @@
                     </div>
                     <div class="modal-footer">
                         <button wire:click="$set('showRespuestaModal', false)" type="button" class="btn btn-outline-secondary rounded-pill">Cerrar</button>
-                        
+
                         {{-- --- BOTÓN NUEVO PARA GUARDAR LA OBSERVACIÓN --- --}}
                         <button wire:click.prevent="guardarObservacion" type="button" class="btn btn-primary rounded-pill">
                             <span wire:loading wire:target="guardarObservacion" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>

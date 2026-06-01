@@ -113,15 +113,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/test-notificacion', function () {
     $user = auth()->user();
     if ($user) {
-        $user->notify(new \App\Notifications\NotificacionGeneral([
-            'titulo' => '¡Prueba de Badging! 🚀',
-            'mensaje' => 'Esta notificación se generó para probar el ícono de la app.',
+        \Illuminate\Support\Facades\Notification::sendNow($user, new \App\Notifications\NotificacionGeneral([
+            'titulo' => '¡Prueba Push!',
+            'mensaje' => 'Si ves esto, las notificaciones push funcionan correctamente.',
             'url' => '/dashboard',
             'icono' => 'ti-message-circle',
             'color' => 'success',
         ]));
 
-        return 'Notificación de prueba creada. Vuelve a la app y revisa el globo de notificaciones.';
+        return 'Push enviada directamente al navegador. Revisa tu centro de notificaciones.';
     }
 
     return 'Inicia sesión primero.';
@@ -297,12 +297,13 @@ Route::get('/peticion/{peticion}/exito', [PeticionController::class, 'exito'])->
 Route::middleware(['auth', 'verified'])->group(function () {
 
     // Reuniones
-    Route::get('/reuniones/nueva', [ReunionesController::class, 'nueva'])->name('reuniones.nueva');
-    Route::post('/reuniones/crear', [ReunionesController::class, 'crear'])->name('reuniones.crear');
+    Route::get('/reunion/nueva', [ReunionesController::class, 'nueva'])->name('reuniones.nueva');
+    Route::post('/reunion/crear', [ReunionesController::class, 'crear'])->name('reuniones.crear');
     Route::get('/reuniones/lista/{tipo?}', [ReunionesController::class, 'lista'])->name('reuniones.lista');
-    Route::get('/reuniones/{reunion}/editar', [ReunionesController::class, 'editar'])->name('reuniones.editar');
-    Route::delete('/reuniones/{reunion}/dar-baja', [ReunionesController::class, 'darBaja'])->name('reuniones.darBaja');
-    Route::delete('/reuniones/{reunion}/eliminar', [ReunionesController::class, 'eliminar'])->name('reuniones.eliminar');
+    Route::get('/reunion/{reunion}/editar', [ReunionesController::class, 'editar'])->middleware('verificarReunion')->name('reuniones.editar');
+    Route::delete('/reunion/{reunion}/dar-baja', [ReunionesController::class, 'darBaja'])->name('reuniones.darBaja');
+    Route::delete('/reunion/{reunion}/eliminar', [ReunionesController::class, 'eliminar'])->name('reuniones.eliminar');
+    Route::patch('/reunion/{reunion}/actualizar', [ReunionesController::class, 'actualizar'])->name('reuniones.actualizar');
 
     // Iglesia Infantil
     Route::prefix('iglesia-infantil')->name('iglesiaInfantil.')->group(function () {
@@ -324,29 +325,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/registro/{registro}/ticket', [IglesiaInfantilController::class, 'imprimirTicket'])->name('registro.ticket');
         Route::get('/exportar', [IglesiaInfantilController::class, 'exportarExcel'])->name('exportar');
     });
-    Route::patch('/reuniones/{reunion}/actualizar', [ReunionesController::class, 'actualizar'])->name('reuniones.actualizar');
 
     // Reporte Reuniones
     Route::get('/iglesia-virtual', [ReporteReunionController::class, 'iglesiaVirtual'])->name('reporteReunion.iglesiaVirtual');
     Route::post('/reporteReunion/crear/{reunion}', [ReporteReunionController::class, 'crear'])->name('reporteReunion.crear');
-    Route::get('/reporteReunion/perfil', [ReporteReunionController::class, 'perfil'])->name('reporteReunion.perfil');
     Route::get('/reporteReunion/nuevo/{reunion}', [ReporteReunionController::class, 'reporte'])->name('reporteReunion.nuevo');
     Route::get('/reporteReuniones/lista/{tipo?}', [ReporteReunionController::class, 'lista'])->name('reporteReunion.lista');
-    Route::get('/reporteReunion/{reporteReunion}/editar', [ReporteReunionController::class, 'editar'])->name('reporteReunion.editar');
-    Route::delete('/reporteReunion/{reporteReunion}/eliminar', [ReporteReunionController::class, 'eliminar'])->name('reporteReunion.eliminar');
-    Route::patch('/reporteReunion/{reporteReunion}/actualizar', [ReporteReunionController::class, 'actualizar'])->name('reporteReunion.actualizar');
-    Route::get('/reporteReunion/{reporteReunion}/anadir-servidores', [ReporteReunionController::class, 'añadirServidores'])->name('reporteReunion.añadirServidores');
-    Route::get('/reporteReunion/{reporteReunion}/anadir-asistentes', [ReporteReunionController::class, 'añadirAsistentes'])->name('reporteReunion.añadirAsistentes');
-    Route::get('/reporteReunion/{reporteReunion}/anadir-reservas', [ReporteReunionController::class, 'añadirReservas'])->name('reporteReunion.añadirReservas');
-    Route::get('/reporteReunion/{reporteReunion}/anadir-ingresos', [ReporteReunionController::class, 'añadirIngresos'])->name('reporteReunion.añadirIngresos');
+    Route::middleware('verificarReporteReunion')->group(function () {
+        Route::get('/reporteReunion/{reporteReunion}/perfil', [ReporteReunionController::class, 'perfil'])->name('reporteReunion.perfil');
+        Route::get('/reporteReunion/{reporteReunion}/editar', [ReporteReunionController::class, 'editar'])->name('reporteReunion.editar');
+        Route::delete('/reporteReunion/{reporteReunion}/eliminar', [ReporteReunionController::class, 'eliminar'])->name('reporteReunion.eliminar');
+        Route::patch('/reporteReunion/{reporteReunion}/actualizar', [ReporteReunionController::class, 'actualizar'])->name('reporteReunion.actualizar');
+        Route::get('/reporteReunion/{reporteReunion}/anadir-servidores', [ReporteReunionController::class, 'añadirServidores'])->name('reporteReunion.añadirServidores');
+        Route::get('/reporteReunion/{reporteReunion}/anadir-asistentes', [ReporteReunionController::class, 'añadirAsistentes'])->name('reporteReunion.añadirAsistentes');
+        Route::get('/reporteReunion/{reporteReunion}/anadir-reservas', [ReporteReunionController::class, 'añadirReservas'])->name('reporteReunion.añadirReservas');
+        Route::get('/reporteReunion/{reporteReunion}/anadir-ingresos', [ReporteReunionController::class, 'añadirIngresos'])->name('reporteReunion.añadirIngresos');
+        Route::get('/reportes-reunion/{reporte}/mi-reserva/{user?}', [ReporteReunionController::class, 'miReserva'])->name('reporteReunion.miReserva');
+        Route::get('/reporteReunion/{reporteReunion}/{user}/resumen-de-la-reserva', [ReporteReunionController::class, 'resumenReserva'])->name('reporteReunion.resumenReserva');
 
-    Route::get('/reportes-reunion/{reporte}/mi-reserva/{user?}', [ReporteReunionController::class, 'miReserva'])->name('reporteReunion.miReserva');
-    Route::get('/reporteReunion/{reporteReunion}/{user}/resumen-de-la-reserva', [ReporteReunionController::class, 'resumenReserva'])->name('reporteReunion.resumenReserva');
-
-    Route::get('/reportes-reunion/{reporteReunionId}/exportar-reservas', [ReporteReunionController::class, 'exportarReservasExcel'])->name('reporteReunion.exportarReservasExcel');
-    Route::get('/reportes-reunion/{reporteReunionId}/exportar-asistencias', [ReporteReunionController::class, 'exportarAsistenciasExcel'])->name('reporteReunion.exportarAsistenciasExcel');
-
-    Route::post('/reporteReunion/{reporteReunion}/hacer-mi-reserva/{user?}', [ReporteReunionController::class, 'hacerMiReserva'])->name('reporteReunion.hacerMiReserva');
+        Route::get('/reportes-reunion/{reporteReunionId}/exportar-reservas', [ReporteReunionController::class, 'exportarReservasExcel'])->name('reporteReunion.exportarReservasExcel');
+        Route::get('/reportes-reunion/{reporteReunionId}/exportar-asistencias', [ReporteReunionController::class, 'exportarAsistenciasExcel'])->name('reporteReunion.exportarAsistenciasExcel');
+        Route::post('/reporteReunion/{reporteReunion}/hacer-mi-reserva/{user?}', [ReporteReunionController::class, 'hacerMiReserva'])->name('reporteReunion.hacerMiReserva');
+    });
 
     // Finanzas
     Route::get('/finanzas/ingreso', [FinanzaController::class, 'ingreso'])->name('finanzas.ingreso');
@@ -568,14 +568,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/actividades/{actividad}/checkout', [ActividadController::class, 'checkout'])->name('actividades.checkout');
     Route::post('/actividades/crear', [ActividadController::class, 'crear'])->name('actividades.crear');
-    Route::post('/actividades/{banner}/eliminar-banner', [ActividadController::class, 'eliminarBanner'])->name('actividades.eliminarBanner');
+    Route::post('/actividades/{actividad}/eliminar-portada', [ActividadController::class, 'eliminarPortada'])->name('actividades.eliminarPortada');
     Route::post('/actividades/{banner}/eliminar-video', [ActividadController::class, 'eliminarVideo'])->name('actividades.eliminarVideo');
     Route::patch('/actividades/{actividad}/update', [ActividadController::class, 'update'])->name('actividades.update');
     Route::patch('/actividades/{actividad}/update-escuelas', [ActividadController::class, 'updateEscuelas'])->name('actividades.updateEscuelas');
     Route::post('/actividades/{actividad}/cancelar', [ActividadController::class, 'cancelar'])->name('actividades.cancelar');
     Route::post('/actividades/{actividad}/activar', [ActividadController::class, 'activar'])->name('actividades.activar');
     Route::post('/actividades/{categoria}/eliminar-categoria', [ActividadController::class, 'eliminarCategoria'])->name('actividades.eliminarCategoria');
-    Route::patch('/actividades/{actividad}/upload-banner', [ActividadController::class, 'uploadBanner'])->name('actividades.uploadBanner');
+    Route::post('/actividades/upload-portada', [ActividadController::class, 'uploadPortada'])->name('actividades.uploadPortada');
+    Route::patch('/actividades/{actividad}/update-portada', [ActividadController::class, 'updatePortada'])->name('actividades.updatePortada');
     Route::patch('/actividades/{actividad}/new-video', [ActividadController::class, 'newVideo'])->name('actividades.newVideo');
 
     Route::post('/actividades/{actividad}/categorias', [ActividadController::class, 'storeCategoria'])->name('actividades.storeCategoria');
@@ -642,6 +643,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/escuelas/{escuela}/materias', [EscuelaController::class, 'materias'])->name('escuelas.materias');
     Route::get('/escuelas/{escuela}/niveles', [EscuelaController::class, 'niveles'])->name('escuelas.niveles');
     Route::get('/escuela/recursos-generales', [RecursoGeneralEscuelaController::class, 'index'])->name('escuela.recursos-generales');
+    Route::post('/escuela/recursos-generales/upload', [RecursoGeneralEscuelaController::class, 'uploadArchivoRecursoGeneral'])->name('escuela.recursos-generales.upload');
     Route::get('/escuelas/dashboard-administrativo', AdminDashboard::class)->name('escuelas.adminDashboard');
     Route::get('/escuelas/historial/boletin/{materiaAprobadaUsuario}', [HistorialCalificacionesController::class, 'exportarBoletin'])
         ->name('escuelas.historial.exportar-boletin');
@@ -649,6 +651,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Cambiamos 'mis-recursos' por 'misRecursos'
     Route::get('/escuela/mis-recursos', [RecursoGeneralEscuelaController::class, 'misRecursos'])->name('escuela.mis-recursos');
     Route::post('/escuelas/guardar', [EscuelaController::class, 'guardar'])->name('escuelas.guardar');
+    Route::post('/escuelas/upload-portada', [EscuelaController::class, 'uploadPortada'])->name('escuelas.uploadPortada');
     Route::post('/escuelas/{escuela}/update', [EscuelaController::class, 'update'])->name('escuelas.update');
     Route::post('/escuelas/{user}/gestionar-horarios', [EscuelaController::class, 'gestionarHorarios'])->name('escuelas.gestionarHorarios');
     Route::get('/escuelas/{escuela}/exportar-matriculas-activas', [EscuelaController::class, 'exportarMatriculasActivas'])
@@ -656,10 +659,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // / Banners escuelas
     Route::get('/banner-escuelas/gestionar', [BannerEscuelaController::class, 'gestionar'])->name('banner-escuela.gestionar');
+    Route::post('/banner-escuelas/upload', [BannerEscuelaController::class, 'uploadBannerEscuela'])->name('banner-escuela.upload');
 
     // // alumnos
     Route::get('/alumnos/{horario}/mi-materia', [AlumnoEscuelasController::class, 'perfilMateria'])->name('alumnos.perfilMateria');
     Route::get('/alumnos/{user}/dashboard', [AlumnoEscuelasController::class, 'dashboard'])->name('alumnos.dashboard');
+    Route::post('/alumnos/upload-respuesta', [AlumnoEscuelasController::class, 'uploadArchivoRespuesta'])->name('alumnos.uploadArchivoRespuesta');
 
     // Ruta para mostrar/editar/eliminar una escuela específica
 
@@ -716,6 +721,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/materias/{materia}/gestionar', [MateriaController::class, 'gestionar'])->name('materias.gestionar');
     Route::get('/materias/{materia}/horarios', [MateriaController::class, 'horarios'])->name('materias.horarios');
     Route::get('/materias/{materia}/modelo', [MateriaController::class, 'modelo'])->name('materias.modelo');
+    Route::post('/materias/upload-portada', [MateriaController::class, 'uploadPortada'])->name('materias.uploadPortada');
     Route::post('/materias/{escuela}/guardar', [MateriaController::class, 'guardar'])->name('materias.guardar');
     Route::post('/materias/{materia}/actualizar', [MateriaController::class, 'actualizar'])->name('materias.actualizar');
     Route::post('/materias/{materia}', [MateriaController::class, 'eliminar'])->name('materias.eliminar');
@@ -725,6 +731,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/niveles-escuelas/{escuela}/guardar', [NivelesEscuelasController::class, 'guardar'])->name('niveles-escuelas.guardar');
     Route::get('/niveles-escuelas/{escuela}/{nivel}/editar', [NivelesEscuelasController::class, 'editar'])->name('niveles-escuelas.editar');
     Route::put('/niveles-escuelas/{escuela}/{nivel}/actualizar', [NivelesEscuelasController::class, 'actualizar'])->name('niveles-escuelas.actualizar');
+    Route::post('/niveles-escuelas/upload-portada', [NivelesEscuelasController::class, 'uploadPortada'])->name('niveles-escuelas.uploadPortada');
 
     // Gestión de materias por nivel
     Route::get('/niveles-escuelas/{escuela}/{nivel}/materias', [NivelesEscuelasController::class, 'gestionarMaterias'])->name('niveles-escuelas.gestionar-materias');
@@ -800,6 +807,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/maestros/guardar', [MaestroController::class, 'guardar'])->name('maestros.guardar');
     Route::post('/maestros/eliminar', [MaestroController::class, 'eliminar'])->name('maestros.eliminar');
     Route::get('/maestros/{horarioAsignado}/{maestro}/recursos', [MaestroController::class, 'recursosAlumnos'])->name('maestros.recursosAlumnos');
+    Route::post('/maestros/upload-recurso', [MaestroController::class, 'uploadArchivoRecurso'])->name('maestros.uploadArchivoRecurso');
     Route::post('/maestros/{maestro}/activar', [MaestroController::class, 'activar'])->name('maestros.activar');
     Route::post('/maestros/{maestro}/desactivar', [MaestroController::class, 'desactivar'])->name('maestros.desactivar');
 
@@ -810,7 +818,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/maestros/{maestro}/horarios-asignados', [MaestroController::class, 'guardarHorarioAsignado'])->name('maestros.guardarHorarioAsignado');
 
     // Nueva ruta para gestionar ítems de evaluación
-    Route::get('/maestros/{horarioAsignado}/gestionar-items', [MaestroController::class, 'gestionarItems'])->name('maestros.gestionarItems');
+    Route::get('/maestros/{maestro}/{horarioAsignado}/gestionar-items', [MaestroController::class, 'gestionarItems'])->name('maestros.gestionarItems');
 
     Route::delete('/maestros/{maestro}/horarios-asignados/{horarioMateriaPeriodo}', [MaestroController::class, 'eliminarHorarioAsignado'])->name('maestros.eliminarHorarioAsignado'); // Usando Route Model Binding para ambos
 

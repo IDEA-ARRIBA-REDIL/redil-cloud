@@ -734,7 +734,7 @@ use Carbon\Carbon;
     <div class="col-12">
       <div class="card mb-6">
         <div class="user-profile-header-banner">
-          <img src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/'.$grupo->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/default.png')}}" alt="Banner image" class="rounded-top">
+          <img src="{{ tenant_asset('img/grupos/'.$grupo->portada) }}" alt="Banner image" class="rounded-top">
         </div>
         <div class="user-profile-header d-flex flex-column flex-md-row text-sm-start text-center mb-5">
           <div class="flex-shrink-0 mt-n2 mx-0 mx-auto">
@@ -939,7 +939,7 @@ use Carbon\Carbon;
                         <div class="d-flex align-items-start">
                           <div class="d-flex align-items-start">
                             <div class="avatar me-2">
-                              <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto }}" alt="Avatar" class="rounded-circle" />
+                              <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$persona->foto) }}" alt="Avatar" class="rounded-circle" />
                             </div>
                             <div class="me-2 ms-1">
                               <h6 class="mb-0">{{ $persona->nombre(3) }}</h6>
@@ -977,7 +977,7 @@ use Carbon\Carbon;
                       <div class="d-flex align-items-start">
                         <div class="d-flex align-items-start">
                           <div class="avatar me-2">
-                            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto }}" alt="Avatar" class="rounded-circle" />
+                            <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$persona->foto) }}" alt="Avatar" class="rounded-circle" />
                           </div>
                           <div class="me-2 ms-1">
                             <h6 class="mb-0">{{ $persona->nombre(3) }}</h6>

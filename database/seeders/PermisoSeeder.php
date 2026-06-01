@@ -866,6 +866,18 @@ class PermisoSeeder extends Seeder
         ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
+            'titulo' => 'opcion_anadir_ingresos_reporte_reunion',
+            'descripcion' => '',
+            'name' => 'reporte_reuniones.opcion_anadir_ingresos_reporte_reunion',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'opcion_anadir_servidores_reporte_reunion',
+            'descripcion' => '',
+            'name' => 'reporte_reuniones.opcion_anadir_servidores_reporte_reunion',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
             'titulo' => 'opcion_eliminar_reporte_reunion',
             'descripcion' => '',
             'name' => 'reporte_reuniones.opcion_eliminar_reporte_reunion',
@@ -2190,6 +2202,12 @@ class PermisoSeeder extends Seeder
             'titulo' => 'tab_calificacion_grilla',
             'descripcion' => 'Acceso al tab Calificación Grilla',
             'name' => 'escuelas.tab_calificacion_grilla',
+        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'tab_gestionar_items',
+            'descripcion' => 'Acceso al tab Gestionar Items',
+            'name' => 'escuelas.tab_gestionar_items',
         ])->syncRoles([$administrador, $superAdmin, $maestro]);
 
         // / FIN ESCUELAS

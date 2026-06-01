@@ -9,6 +9,7 @@ $configData = Helper::appClasses();
 
 @section('vendor-style')
 <link rel="stylesheet" href="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.css') }}" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 @vite([
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
 'resources/assets/vendor/libs/quill/typography.scss',
@@ -25,6 +26,7 @@ $configData = Helper::appClasses();
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
 'resources/assets/vendor/libs/quill/quill.js'
 ])
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 @endsection
 
 @push('scripts')
@@ -122,11 +124,11 @@ $configData = Helper::appClasses();
     const switchHabCampo1 = document.getElementById('habilitarCampo1InformeEvidenciasGrupo');
     const switchHabCampo2 = document.getElementById('habilitarCampo2InformeEvidenciasGrupo');
     const switchHabCampo3 = document.getElementById('habilitarCampo3InformeEvidenciasGrupo');
-    
+
     // Branding
     const switchMarcaBlanca = document.getElementById('marca_blanca');
     const contBranding = document.getElementById('contenedor_detalles_branding');
-    
+
     // Contenedores a ocultar/mostrar
     // Campo 1
     const contLabel1 = document.getElementById('contenedor_labelCampo1InformeEvidenciasGrupo');
@@ -231,6 +233,86 @@ $configData = Helper::appClasses();
     switchMarcaBlanca?.addEventListener('change', actualizarVisibilidadCampos);
 
     actualizarVisibilidadCampos();
+
+    // Lógica de Cropper para el Logo
+    var croppingLogo = document.querySelector('#croppingLogo'),
+        cropLogoBtn = document.querySelector('.cropLogo'),
+        croppedLogoImg = document.querySelector('#preview-logo'),
+        uploadLogo = document.querySelector('#cropperLogoUpload'),
+        inputLogoResultado = document.querySelector('#logo-recortado'),
+        cropperLogo = '';
+
+    setTimeout(() => {
+        if (croppingLogo) {
+            cropperLogo = new Cropper(croppingLogo, {
+                zoomable: true,
+                aspectRatio: 300 / 150,
+                cropBoxResizable: true,
+                viewMode: 1
+            });
+        }
+    }, 1000);
+
+    if (uploadLogo) {
+        uploadLogo.addEventListener('change', function(e) {
+            if (e.target.files.length) {
+                var fileType = e.target.files[0].type;
+                if (fileType.includes('image/')) {
+                    if (cropperLogo && typeof cropperLogo.destroy === 'function') {
+                        cropperLogo.destroy();
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (e.target.result) {
+                            croppingLogo.src = e.target.result;
+                            cropperLogo = new Cropper(croppingLogo, {
+                                zoomable: true,
+                                aspectRatio: 300 / 150,
+                                cropBoxResizable: true,
+                                viewMode: 1
+                            });
+                        }
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                } else {
+                    alert('El tipo de archivo seleccionado no es compatible.');
+                }
+            }
+        });
+    }
+
+    if (cropLogoBtn) {
+        cropLogoBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (cropperLogo) {
+                let imgSrc = cropperLogo.getCroppedCanvas({
+                    width: 300,
+                    height: 150
+                }).toDataURL('image/png');
+                croppedLogoImg.src = imgSrc;
+                inputLogoResultado.value = imgSrc;
+            }
+        });
+    }
+
+    const formConfig = document.getElementById('formulario');
+    if (formConfig) {
+        formConfig.addEventListener('submit', function() {
+            const btnGuardar = document.querySelector('.btnGuardar');
+            if (btnGuardar) {
+                btnGuardar.setAttribute('disabled', 'disabled');
+            }
+
+            Swal.fire({
+                title: "Espera un momento",
+                text: "Ya estamos guardando las configuraciones...",
+                icon: "info",
+                showCancelButton: false,
+                showConfirmButton: false,
+                showDenyButton: false
+            });
+        });
+    }
   });
 </script>
 @endpush
@@ -267,10 +349,6 @@ $configData = Helper::appClasses();
             <div class="col-md-6 col-sm-6 col-12 mb-3">
               <label for="html5-time-input" class="form-label">Nombre app personalizada</label>
               <input class="form-control" name="nombreAppPersonalizada" type="text" value="{{$configuracion->nombre_app_personalizado}}" id="html5-time-input" />
-            </div>
-            <div class="col-md-6 col-sm-6 col-12 mb-3">
-              <label for="html5-time-input" class="form-label">Ruta almacenamiento</label>
-              <input class="form-control" name="rutaAlmacenamiento" type="text" value="{{$configuracion->ruta_almacenamiento}}" id="html5-time-input" />
             </div>
 
             <div class="col-md-6 col-sm-6 col-12 mb-3">
@@ -391,27 +469,41 @@ $configData = Helper::appClasses();
                 </div>
 
                 <div class="col-md-4 col-sm-6 col-12 mb-3">
-                  <label class="form-label">Logo de la App (PNG sugerido)</label>
-                  <input class="form-control" name="logoAppFile" type="file" accept="image/*" />
-                  @if($configuracion->logo_app)
-                    <div class="mt-2">
-                       <span class="badge bg-label-secondary">Actual: {{ $configuracion->logo_app }}</span>
+                  <label class="form-label">Logo de la App (300 x 150 px)</label>
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="position-relative d-inline-block">
+                      <img id="preview-logo"
+                           src="{{ $configuracion->logo_app ? tenant_asset('img/branding/'.$configuracion->logo_app) : asset('assets/img/illustrations/page-pricing-enterprise.png') }}"
+                           alt="Logo actual"
+                           style="max-width: 150px; max-height: 75px; object-fit: contain; background: #2d2d2d; padding: 4px; border-radius: 4px;" class="rounded border shadow-sm">
+                      <button type="button"
+                              class="btn btn-sm btn-icon btn-primary rounded-circle position-absolute bottom-0 end-0 mb-n1 me-n1 shadow"
+                              data-bs-toggle="modal" data-bs-target="#modalLogo">
+                        <i class="ti ti-camera"></i>
+                      </button>
                     </div>
-                  @endif
+                    @if($configuracion->logo_app)
+                      <span class="badge bg-label-secondary">{{ basename($configuracion->logo_app) }}</span>
+                    @endif
+                  </div>
+                  <input type="hidden" id="logo-recortado" name="logo_base64">
                 </div>
 
                 <div class="col-md-4 col-sm-6 col-12 mb-3">
                   <label class="form-label">Favicon (.ico)</label>
                   <input class="form-control" name="faviconAppFile" type="file" accept=".ico,image/png" />
-                   @if($configuracion->favicon_app)
-                    <div class="mt-2">
-                      <span class="badge bg-label-secondary">Actual: {{ $configuracion->favicon_app }}</span>
+                  <div class="mt-1">
+                  </div>
+                  @if($configuracion->favicon_app)
+                    <div class="mt-2 d-flex align-items-center gap-2">
+                      <img src="{{ tenant_asset($configuracion->favicon_app) }}" alt="Favicon actual" style="width: 32px; height: 32px; object-fit: contain; background: #2d2d2d; padding: 3px; border-radius: 4px;">
+                      <span class="badge bg-label-secondary">{{ basename($configuracion->favicon_app) }}</span>
                     </div>
                   @endif
                 </div>
               </div>
             </div>
-            
+
           </div>
         </div>
       </div>
@@ -481,8 +573,8 @@ $configData = Helper::appClasses();
                 <option value="">Seleccione una hora</option>
                 @for($h = 0; $h < 24; $h++)
                   @foreach(['00', '30'] as $m)
-                    @php 
-                      $hora = str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . $m; 
+                    @php
+                      $hora = str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . $m;
                       // Formato para comparar con el valor de la BD (que puede venir como HH:MM:SS)
                       $valorDb = $configuracion->hora_recordatorio_para_reporte_grupos ? substr($configuracion->hora_recordatorio_para_reporte_grupos, 0, 5) : '';
                     @endphp
@@ -767,15 +859,15 @@ $configData = Helper::appClasses();
 
         <div class="card-body">
           <div class="row">
-            
+
             {{-- Switch: Habilitar Campo 1 --}}
             <div class="col-md-4 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Habilitar campo 1?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" 
-                       @checked($configuracion->habilitar_campo_1_informe_evidencias_grupo) 
-                       class="switch-input" 
-                       id="habilitarCampo1InformeEvidenciasGrupo" 
+                <input type="checkbox"
+                       @checked($configuracion->habilitar_campo_1_informe_evidencias_grupo)
+                       class="switch-input"
+                       id="habilitarCampo1InformeEvidenciasGrupo"
                        name="habilitarCampo1InformeEvidenciasGrupo" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Sí</span>
@@ -787,11 +879,11 @@ $configData = Helper::appClasses();
             {{-- Input: Label Campo 1 --}}
             <div class="col-md-4 col-sm-6 col-12 mb-3" id="contenedor_labelCampo1InformeEvidenciasGrupo">
               <label for="labelCampo1InformeEvidenciasGrupo" class="form-label">Label del campo 1</label>
-              <input class="form-control" 
-                     name="labelCampo1InformeEvidenciasGrupo" 
-                     type="text" 
-                     value="{{ old('labelCampo1InformeEvidenciasGrupo', $configuracion->label_campo_1_informe_evidencias_grupo) }}" 
-                     id="labelCampo1InformeEvidenciasGrupo" 
+              <input class="form-control"
+                     name="labelCampo1InformeEvidenciasGrupo"
+                     type="text"
+                     value="{{ old('labelCampo1InformeEvidenciasGrupo', $configuracion->label_campo_1_informe_evidencias_grupo) }}"
+                     id="labelCampo1InformeEvidenciasGrupo"
                      placeholder="Ej: Testimonio" />
               @error('labelCampo1InformeEvidenciasGrupo')
                 <span class="text-danger">{{ $message }}</span>
@@ -802,29 +894,29 @@ $configData = Helper::appClasses();
             <div class="col-md-4 col-sm-6 col-12 mb-3" id="contenedor_campo1InformeEvidenciasGrupoObligatorio">
               <div class="form-label">¿El campo 1 es obligatorio?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" 
-                       @checked($configuracion->campo_1_informe_evidencias_grupo_obligatorio) 
-                       class="switch-input" 
-                       id="campo1InformeEvidenciasGrupoObligatorio" 
+                <input type="checkbox"
+                       @checked($configuracion->campo_1_informe_evidencias_grupo_obligatorio)
+                       class="switch-input"
+                       id="campo1InformeEvidenciasGrupoObligatorio"
                        name="campo1InformeEvidenciasGrupoObligatorio" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Sí</span>
                   <span class="switch-off">No</span>
                 </span>
               </label>
-            </div>  
+            </div>
           </div>
 
-          <div class="row">                        
+          <div class="row">
 
             {{-- Switch: Habilitar Campo 2 --}}
             <div class="col-md-4 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Habilitar campo 2?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" 
-                       @checked($configuracion->habilitar_campo_2_informe_evidencias_grupo) 
-                       class="switch-input" 
-                       id="habilitarCampo2InformeEvidenciasGrupo" 
+                <input type="checkbox"
+                       @checked($configuracion->habilitar_campo_2_informe_evidencias_grupo)
+                       class="switch-input"
+                       id="habilitarCampo2InformeEvidenciasGrupo"
                        name="habilitarCampo2InformeEvidenciasGrupo" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Sí</span>
@@ -836,11 +928,11 @@ $configData = Helper::appClasses();
             {{-- Input: Label Campo 2 --}}
             <div class="col-md-4 col-sm-6 col-12 mb-3" id="contenedor_labelCampo2InformeEvidenciasGrupo">
               <label for="labelCampo2InformeEvidenciasGrupo" class="form-label">Label del campo 2</label>
-              <input class="form-control" 
-                     name="labelCampo2InformeEvidenciasGrupo" 
-                     type="text" 
-                     value="{{ old('labelCampo2InformeEvidenciasGrupo', $configuracion->label_campo_2_informe_evidencias_grupo) }}" 
-                     id="labelCampo2InformeEvidenciasGrupo" 
+              <input class="form-control"
+                     name="labelCampo2InformeEvidenciasGrupo"
+                     type="text"
+                     value="{{ old('labelCampo2InformeEvidenciasGrupo', $configuracion->label_campo_2_informe_evidencias_grupo) }}"
+                     id="labelCampo2InformeEvidenciasGrupo"
                      placeholder="Ej: Petición" />
               @error('labelCampo2InformeEvidenciasGrupo')
                 <span class="text-danger">{{ $message }}</span>
@@ -851,10 +943,10 @@ $configData = Helper::appClasses();
             <div class="col-md-4 col-sm-6 col-12 mb-3" id="contenedor_campo2InformeEvidenciasGrupoObligatorio">
               <div class="form-label">¿El campo 2 es obligatorio?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" 
-                       @checked($configuracion->campo_2_informe_evidencias_grupo_obligatorio) 
-                       class="switch-input" 
-                       id="campo2InformeEvidenciasGrupoObligatorio" 
+                <input type="checkbox"
+                       @checked($configuracion->campo_2_informe_evidencias_grupo_obligatorio)
+                       class="switch-input"
+                       id="campo2InformeEvidenciasGrupoObligatorio"
                        name="campo2InformeEvidenciasGrupoObligatorio" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Sí</span>
@@ -865,15 +957,15 @@ $configData = Helper::appClasses();
 
           </div>
 
-          <div class="row">       
+          <div class="row">
             {{-- Switch: Habilitar Campo 3 --}}
             <div class="col-md-4 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Habilitar campo 3?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" 
-                       @checked($configuracion->habilitar_campo_3_informe_evidencias_grupo) 
-                       class="switch-input" 
-                       id="habilitarCampo3InformeEvidenciasGrupo" 
+                <input type="checkbox"
+                       @checked($configuracion->habilitar_campo_3_informe_evidencias_grupo)
+                       class="switch-input"
+                       id="habilitarCampo3InformeEvidenciasGrupo"
                        name="habilitarCampo3InformeEvidenciasGrupo" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Sí</span>
@@ -885,11 +977,11 @@ $configData = Helper::appClasses();
             {{-- Input: Label Campo 3 --}}
             <div class="col-md-4 col-sm-6 col-12 mb-3" id="contenedor_labelCampo3InformeEvidenciasGrupo">
               <label for="labelCampo3InformeEvidenciasGrupo" class="form-label">Label del campo 3</label>
-              <input class="form-control" 
-                     name="labelCampo3InformeEvidenciasGrupo" 
-                     type="text" 
-                     value="{{ old('labelCampo3InformeEvidenciasGrupo', $configuracion->label_campo_3_informe_evidencias_grupo) }}" 
-                     id="labelCampo3InformeEvidenciasGrupo" 
+              <input class="form-control"
+                     name="labelCampo3InformeEvidenciasGrupo"
+                     type="text"
+                     value="{{ old('labelCampo3InformeEvidenciasGrupo', $configuracion->label_campo_3_informe_evidencias_grupo) }}"
+                     id="labelCampo3InformeEvidenciasGrupo"
                      placeholder="Ej: Observación" />
               @error('labelCampo3InformeEvidenciasGrupo')
                 <span class="text-danger">{{ $message }}</span>
@@ -900,10 +992,10 @@ $configData = Helper::appClasses();
             <div class="col-md-4 col-sm-6 col-12 mb-3" id="contenedor_campo3InformeEvidenciasGrupoObligatorio">
               <div class="form-label">¿El campo 3 es obligatorio?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" 
-                       @checked($configuracion->campo_3_informe_evidencias_grupo_obligatorio) 
-                       class="switch-input" 
-                       id="campo3InformeEvidenciasGrupoObligatorio" 
+                <input type="checkbox"
+                       @checked($configuracion->campo_3_informe_evidencias_grupo_obligatorio)
+                       class="switch-input"
+                       id="campo3InformeEvidenciasGrupoObligatorio"
                        name="campo3InformeEvidenciasGrupoObligatorio" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Sí</span>
@@ -922,7 +1014,7 @@ $configData = Helper::appClasses();
       <div class="card mb-4">
         <h5 class="card-header text-black fw-semibold">Usuario</h5>
         <div class="card-body">
-          <div class="row"> 
+          <div class="row">
             {{-- Correo por defecto --}}
             <div class="col-md-4 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Correo por defecto?</div>
@@ -934,7 +1026,7 @@ $configData = Helper::appClasses();
                 </span>
               </label>
             </div>
-    
+
             {{-- Identificación obligatoria --}}
             <div class="col-md-4 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Identificación obligatoria?</div>
@@ -1183,7 +1275,7 @@ $configData = Helper::appClasses();
               <span class="text-danger">{{ $message }}</span>
               @enderror
             </div>
-          </div>  
+          </div>
         </div>
       </div>
     </div>
@@ -1279,7 +1371,7 @@ $configData = Helper::appClasses();
               <span class="text-danger">{{ $message }}</span>
               @enderror
             </div>
-            
+
           </div>
         </div>
       </div>
@@ -1291,7 +1383,46 @@ $configData = Helper::appClasses();
           <button type="reset" class="btn rounded-pill btn-label-secondary">Cancelar</button>
         </div>
       </div>
-    </div> 
+    </div>
 </form>
+
+    <!-- Modal Logo -->
+    <div class="modal fade modal-img" id="modalLogo" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-simple">
+            <div class="modal-content">
+                <div class="modal-body p-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="text-center mb-4 p-4">
+                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir logo</h3>
+                        <p class="text-black">Selecciona y recorta el logo para la aplicación (300x150 px)</p>
+                    </div>
+
+                    <div class="row px-4">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Paso #1 Selecciona el logo</label>
+                                <input class="form-control" type="file" id="cropperLogoUpload" accept="image/*">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label fw-bold">Paso #2 Recorta el logo</label>
+                                <center style="background: #2d2d2d; padding: 10px; border-radius: 4px;">
+                                    <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100"
+                                        id="croppingLogo" alt="cropper" style="max-height: 300px; object-fit: contain;">
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <div class="col-12 text-center">
+                        <button type="button" class="btn btn-outline-secondary px-5 rounded-pill" data-bs-dismiss="modal"
+                            aria-label="Close">Cerrar</button>
+                        <button type="button" class="btn btn-primary rounded-pill cropLogo me-sm-3 me-1 px-5"
+                            data-bs-dismiss="modal">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 @endsection

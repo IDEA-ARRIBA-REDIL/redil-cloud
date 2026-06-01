@@ -30,7 +30,6 @@
 
                         <div>
                             <h5 class="card-title text-black mb-0 fw-bold">{{ $pago->nombre }}</h5>
-                            <small class="text-muted">ID: {{ $pago->id }}</small>
                         </div>
                       </div>
 
@@ -53,8 +52,7 @@
                   </div>
 
                   <div class="mb-3">
-                       <p class="mb-0 fw-semibold text-dark small"><b>Cuenta SAP:</b> {{ $pago->cuenta_sap }}</p>
-                       <p class="mb-0 text-muted small mt-1">{{ Str::limit($pago->observaciones, 80) }}</p>
+                       <p class="mb-0 fw-semibold text-black small"><b>Cuenta SAP:</b> {{ $pago->cuenta_sap }}</p>                      
                   </div>
 
                   <div class="d-flex flex-wrap gap-2 mt-3">
@@ -68,7 +66,7 @@
                        </button>
 
                        @if($pago->habilitado_punto_pago)
-                           <span class="badge bg-label-info">Punto de Pago</span>
+                           <span class="badge bg-label-info">Punto de pago</span>
                        @endif
                        @if($pago->habilitado_donacion)
                            <span class="badge bg-label-success">Donaciones</span>

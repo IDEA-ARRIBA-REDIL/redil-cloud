@@ -66,7 +66,7 @@ $configData = Helper::appClasses();
         <p class="fs-6 text-black"> Comienza a disfrutar de este tiempo con Dios</p>
         <ul class="fs-6 text-black pb-4">
             <li class="mt-2"> Adora y ora </li>
-            <li class="mt-2"> Lee la biblia y reflexiona </li>
+            <li class="mt-2"> Lee la Biblia y reflexiona </li>
             <li class="mt-2"> Habla con Dios </li>
             <li class="mt-2"> Toma nota de tu tiempo con Dios </li>
         </ul>
@@ -86,7 +86,7 @@ $configData = Helper::appClasses();
     <!-- /texto -->
 
     <!-- imagen -->
-    <div id="imagen" class="col-lg-6 col-md-6 col-sm-12 d-none d-md-block" style="background-image: url('{{ Storage::disk('global_media')->url('Banner-mi-tiempo-con-Dios.png')}}'); background-size: cover;  background-position: center;" >
+    <div id="imagen" class="col-lg-6 col-md-6 col-sm-12 d-none d-md-block" style="background-image: url('{{ Storage::exists('img/tiempo-con-dios/banner-bienvenida.png') ? tenant_asset('img/tiempo-con-dios/banner-bienvenida.png') : Storage::disk('global_media')->url('/tiempo-con-dios/banner-bienvenida.png')}}'); background-size: cover;  background-position: center;" >
     </div>
      <!-- /imagen -->
   </div>

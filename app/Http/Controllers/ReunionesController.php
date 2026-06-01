@@ -11,7 +11,7 @@ use App\Models\TipoOfrenda;
 use App\Models\Sede;
 use App\Models\TipoUsuario;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 use stdClass;
 
 class ReunionesController extends Controller
@@ -92,29 +92,15 @@ class ReunionesController extends Controller
     $reunion->clasificacionesAsistentes()->attach($request->clasificacionAsistentes);
 
     if ($reunion->save()) {
-
       // AÑADO LA PORTADA
       if ($request->foto) {
-        if ($configuracion->version == 1) {
-          $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/reuniones/');
-          !is_dir($path) && mkdir($path, 0777, true);
-
-          $imagenPartes = explode(';base64,', $request->foto);
-          $imagenBase64 = base64_decode($imagenPartes[1]);
-          $nombreFoto = 'reunion' . $reunion->id . '.png';
-          $imagenPath = $path . $nombreFoto;
-          file_put_contents($imagenPath, $imagenBase64);
-          $reunion->portada = $nombreFoto;
-          $reunion->save();
-        } else {
-          /*
-          $s3 = AWS::get('s3');
-          $s3->putObject(array(
-            'Bucket'     => $_ENV['aws_bucket'],
-            'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-            'SourceFile' => "img/temp/".Input::get('foto-hide'),
-          ));*/
-        }
+        $path = 'img/reuniones/';
+        $imagenPartes = explode(';base64,', $request->foto);
+        $imagenBase64 = base64_decode($imagenPartes[1]);
+        $nombreFoto = 'reunion' . $reunion->id . '.png';
+        Storage::put($path . $nombreFoto, $imagenBase64);
+        $reunion->portada = $nombreFoto;
+        $reunion->save();
       }
     }
 
@@ -361,29 +347,15 @@ class ReunionesController extends Controller
     $reunion->save();
 
     if ($reunion->save()) {
-
       // AÑADO LA PORTADA
       if ($request->foto) {
-        if ($configuracion->version == 1) {
-          $path = public_path('storage/' . $configuracion->ruta_almacenamiento . '/img/reuniones/');
-          !is_dir($path) && mkdir($path, 0777, true);
-
-          $imagenPartes = explode(';base64,', $request->foto);
-          $imagenBase64 = base64_decode($imagenPartes[1]);
-          $nombreFoto = 'reunion' . $reunion->id . '.png';
-          $imagenPath = $path . $nombreFoto;
-          file_put_contents($imagenPath, $imagenBase64);
-          $reunion->portada = $nombreFoto;
-          $reunion->save();
-        } else {
-          /*
-          $s3 = AWS::get('s3');
-          $s3->putObject(array(
-            'Bucket'     => $_ENV['aws_bucket'],
-            'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-            'SourceFile' => "img/temp/".Input::get('foto-hide'),
-          ));*/
-        }
+        $path = 'img/reuniones/';
+        $imagenPartes = explode(';base64,', $request->foto);
+        $imagenBase64 = base64_decode($imagenPartes[1]);
+        $nombreFoto = 'reunion' . $reunion->id . '.png';
+        Storage::put($path . $nombreFoto, $imagenBase64);
+        $reunion->portada = $nombreFoto;
+        $reunion->save();
       }
     }
 
@@ -402,6 +374,9 @@ class ReunionesController extends Controller
     if (count($reunion->reportes) > 0) {
       return redirect()->route('reuniones.lista')->with('danger', 'No se puede eliminar la reunión porque tiene registros asociados. Utilizar opción dar de baja.');
     } else {
+      if ($reunion->portada && $reunion->portada != 'default.png') {
+        Storage::delete('img/reuniones/' . $reunion->portada);
+      }
       $reunion->forceDelete();
       return redirect()->route('reuniones.lista')->with('success', 'Reunión eliminada exitosamente.');
     }

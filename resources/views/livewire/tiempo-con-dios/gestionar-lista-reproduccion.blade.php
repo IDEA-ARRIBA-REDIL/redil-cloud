@@ -32,21 +32,17 @@
           </div>
           <div class="row mt-3">
             <div class="col-6 offset-3 offset-md-0 col-md-3 col-xl-4 d-flex align-items-center">
-              @if($cancion->album && $cancion->album->imagen)
-                <img class="card-img img-fluid" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$cancion->album->imagen) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$cancion->album->imagen) }}"  alt="album">
-              @else
-                <img class="card-img img-fluid" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/album-default.png') : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/album-default.png') }}"  alt="album">
-              @endif
+              <img class="card-img img-fluid" src="{{ $cancion->album ? $cancion->album->portada_url : Storage::disk('global_media')->url('reproductor/album-default.png') }}" alt="album">
             </div>
             <div class="col-12 col-md-9 col-xl-8 my-2 text-center text-md-start">
-              <h4 class="text-truncate mb-0">{{ $cancion->nombre }}</h4>
-              <p class="text-muted  mb-0">{{ $cancion->album ? $cancion->album->nombre : 'Álbum desconocido'}}</p>
-              <p class="mb-0">{{ $cancion->artista ? $cancion->artista : 'Artista desconocido'}}</p>
-              <p class="mb-0"><i class="ti ti-number ti-sm"></i><span class="fw-medium mx-1">Orden:</span><span>{{ $cancion->orden }}</span></p>
+              <h4 class="text-truncate mb-0 text-black">{{ $cancion->nombre }}</h4>
+              <p class="text-black  mb-0">{{ $cancion->album ? $cancion->album->nombre : 'Álbum desconocido'}}</p>
+              <p class="text-black mb-0">{{ $cancion->artista ? $cancion->artista : 'Artista desconocido'}}</p>
+              <p class="mb-0 text-black"><i class="ti ti-number ti-sm"></i><span class="fw-medium mx-1">Orden:</span><span>{{ $cancion->orden }}</span></p>
             </div>
             <div class="col-12 mt-3" >
               <audio controls id="cancion" class="w-100" preload="none">
-                <source src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/audios/'.$cancion->archivo) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/audios/'.$cancion->archivo) }}?v={{ time() }}" type="audio/mp3">
+                <source src="{{ $cancion->ruta_audio }}?v={{ time() }}" type="audio/mp3">
               </audio>
             </div>
           </div>
@@ -57,8 +53,8 @@
   </div>
 
   <!-- crear y editar canción  -->
-  <form id="nuevaEditarCancion" role="form" class="forms-sample" wire:submit.prevent="guardarCancion" enctype="multipart/form-data">
-    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar"  tabindex="-1" id="modalNuevaEditarCancion" aria-labelledby="modalNuevaEditarCancionLabel">
+  <form id="nuevaEditarCancion" role="form" class="forms-sample" x-on:submit="guardando = true" wire:submit.prevent="guardarCancion" enctype="multipart/form-data">
+    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" x-data="{ guardando: false }" tabindex="-1" id="modalNuevaEditarCancion" aria-labelledby="modalNuevaEditarCancionLabel">
         <div class="offcanvas-header my-1 px-8">
             <h4 class="offcanvas-title fw-bold text-primary" id="modalNuevaEditarCancionLabel">
               @if($modoEdicionCancion) Editar canción @else Nueva canción @endif
@@ -81,7 +77,7 @@
                 <label id="label_archivo" class="form-label" for="archivo">
                 {{ $cancionEditando && $cancionEditando->archivo ? 'Reemplazar canción'  : 'Subir canción' }}
                 </label>
-                <input type="file" id="archivo" name="archivo" wire:model="archivo"  data-input="archivo" class="form-control inputFile " accept=".mp3">
+                <input type="file" id="archivo" name="archivo" data-input="archivo" class="form-control inputFile" accept=".mp3">
                 @if($errors->has('archivo'))
                 <div class="text-danger ti-12px mt-2">
                   <i class="ti ti-circle-x"></i> {{ $errors->first('archivo') }}
@@ -115,19 +111,31 @@
             </div>
         </div>
         <div class="offcanvas-footer p-5 border-top border-2 px-8">
+            <!-- Spinner al procesar en servidor (Alpine class binding) -->
+            <button class="d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" 
+                    x-bind:class="guardando ? '' : 'd-none'" 
+                    type="button" 
+                    disabled="">
+              <span class="spinner-border" role="status" aria-hidden="true"></span>
+              <span class="ms-1">Guardando...</span>
+            </button>
+
+            <!-- Spinner al leer archivo en cliente (JS) -->
             <button class="btnGuardarLoader d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" type="button" disabled="">
               <span class="spinner-border" role="status" aria-hidden="true"></span>
-              <span class="ms-1">Cargando archivo...</span>
+              <span class="ms-1">Procesando archivo...</span>
             </button>
-            <button type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
-            <button type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
+
+            <!-- Botones normales (se ocultan si está guardando) -->
+            <button x-bind:class="guardando ? 'd-none' : ''" type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
+            <button x-bind:class="guardando ? 'd-none' : ''" type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
         </div>
     </div>
   </form>
 
   <!-- crear y editar álbum  -->
-  <form id="nuevaEditarAlbum" role="form" class="forms-sample" wire:submit.prevent="guardarAlbum" enctype="multipart/form-data">
-    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar"  tabindex="-1" id="modalNuevaEditarAlbum" aria-labelledby="modalNuevaEditarAlbumLabel">
+  <form id="nuevaEditarAlbum" role="form" class="forms-sample" x-on:submit="guardando = true" wire:submit.prevent="guardarAlbum" enctype="multipart/form-data">
+    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" x-data="{ guardando: false }" tabindex="-1" id="modalNuevaEditarAlbum" aria-labelledby="modalNuevaEditarAlbumLabel">
         <div class="offcanvas-header my-1 px-8">
             <h4 class="offcanvas-title fw-bold text-primary" id="modalNuevaEditarAlbumLabel">
               @if($modoEdicionAlbum) Editar álbum @else Nuevo álbum @endif
@@ -146,7 +154,7 @@
             <div class="pt-3">
 
               @if($albumEditando && $albumEditando->imagen)
-               <img class="card-img img-fluid mb-3 rounded " src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$albumEditando->imagen) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$albumEditando->imagen) }}"  alt="album">
+               <img class="card-img img-fluid mb-3 rounded " src="{{ $albumEditando->portada_url }}" alt="album">
               @endif
 
               <div class="mb-3 col-12">
@@ -164,7 +172,7 @@
                 <label id="label_imagen" class="form-label" for="imagen">
                 {{ $albumEditando && $albumEditando->imagen ? 'Reemplazar imagen'  : 'Subir imagen' }}
                 </label>
-                <input type="file" id="imagen" name="imagen" wire:model="imagen"  data-input="imagen" class="form-control inputFile " accept=".jpg, .png, .jpeg">
+                <input type="file" id="imagen" name="imagen" data-input="imagen" class="form-control inputFile" accept=".jpg, .png, .jpeg">
                 @if($errors->has('imagen'))
                 <div class="text-danger ti-12px mt-2">
                   <i class="ti ti-circle-x"></i> {{ $errors->first('imagen') }}
@@ -177,12 +185,24 @@
             </div>
         </div>
         <div class="offcanvas-footer p-5 border-top border-2 px-8">
+            <!-- Spinner al procesar en servidor (Alpine class binding) -->
+            <button class="d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" 
+                    x-bind:class="guardando ? '' : 'd-none'" 
+                    type="button" 
+                    disabled="">
+              <span class="spinner-border" role="status" aria-hidden="true"></span>
+              <span class="ms-1">Guardando...</span>
+            </button>
+
+            <!-- Spinner al leer archivo en cliente (JS) -->
             <button class="btnGuardarLoader d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" type="button" disabled="">
               <span class="spinner-border" role="status" aria-hidden="true"></span>
-              <span class="ms-1">Cargando archivo...</span>
+              <span class="ms-1">Procesando archivo...</span>
             </button>
-            <button type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
-            <button type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
+
+            <!-- Botones normales (se ocultan si está guardando) -->
+            <button x-bind:class="guardando ? 'd-none' : ''" type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
+            <button x-bind:class="guardando ? 'd-none' : ''" type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
         </div>
     </div>
   </form>
@@ -214,11 +234,7 @@
             <div class="card-body p-1">
               <div class="row">
                 <div class="col-3 d-flex align-items-center">
-                  @if($album->imagen)
-                    <img class="card-img img-fluid" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$album->imagen) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$album->imagen) }}?v={{ time() }}"  alt="album">
-                  @else
-                    <img class="card-img img-fluid" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/album-default.png') : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/album-default.png') }}?v={{ time() }}"  alt="album">
-                  @endif
+                  <img class="card-img img-fluid" src="{{ $album->portada_url }}?v={{ time() }}" alt="album">
                 </div>
                 <div class="col-7 my-2 text-start">
                   <h6 class="text-truncate mb-0">{{ $album->nombre }}</h6>
@@ -287,32 +303,72 @@
       const btnLoader = document.querySelector('#nuevaEditarAlbum .btnGuardarLoader');
 
       if (inputImagen && btnGuardar) {
-        inputImagen.addEventListener('change', () => {
-            btnGuardar.classList.add('d-none');
-            btnLoader.classList.remove('d-none');
+        inputImagen.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                return;
+            }
 
-            setTimeout(() => {
-                btnGuardar.classList.remove('d-none');
-                btnLoader.classList.add('d-none');
-            }, 1000);
+            // Validar dimensiones en el cliente antes de procesar
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = function() {
+                    if (this.width > 300 || this.height > 300) {
+                        Swal.fire({
+                            title: 'Dimensiones incorrectas',
+                            text: 'La imagen de portada del álbum debe ser como máximo de 300px de ancho y 300px de alto. Su imagen actual es de ' + this.width + 'x' + this.height + 'px.',
+                            icon: 'error',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            },
+                            buttonsStyling: false
+                        });
+                        inputImagen.value = ''; // Limpiar input
+                        return;
+                    }
+                    
+                    // Si pasa, mostrar cargador y asignar a Livewire
+                    btnGuardar.classList.add('d-none');
+                    btnLoader.classList.remove('d-none');
+
+                    $wire.set('imagenBase64', event.target.result);
+                    $wire.set('imagenNombre', file.name);
+
+                    btnGuardar.classList.remove('d-none');
+                    btnLoader.classList.add('d-none');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
         });
       }
   });
 
   document.addEventListener('livewire:initialized', () => {
-    const inputImagen = document.getElementById('archivo');
+    const inputArchivo = document.getElementById('archivo');
     const btnGuardar = document.querySelector('#nuevaEditarCancion .btnGuardar');
     const btnLoader = document.querySelector('#nuevaEditarCancion .btnGuardarLoader');
 
-    if (inputImagen && btnGuardar) {
-      inputImagen.addEventListener('change', () => {
+    if (inputArchivo && btnGuardar) {
+      inputArchivo.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) {
+              return;
+          }
+
           btnGuardar.classList.add('d-none');
           btnLoader.classList.remove('d-none');
 
-          setTimeout(() => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+              $wire.set('archivoBase64', event.target.result);
+              $wire.set('archivoNombre', file.name);
+              
               btnGuardar.classList.remove('d-none');
               btnLoader.classList.add('d-none');
-          }, 1000);
+          };
+          reader.readAsDataURL(file);
       });
     }
   });
@@ -339,7 +395,7 @@
 
         Swal.fire({
           title: '¡Eliminado!',
-          text: 'La canción '+nombreSeccion+' fue eliminada correctamente.',
+          text: 'La canción "'+nombreCancion+'" fue eliminada correctamente.',
           icon:'success',
           showCancelButton: false,
           focusConfirm: false,
@@ -374,7 +430,7 @@
 
         Swal.fire({
           title: '¡Eliminado!',
-          text: 'El álbum "'+nombreSeccion+'" fue eliminado correctamente.',
+          text: 'El álbum "'+nombreAlbum+'" fue eliminado correctamente.',
           icon:'success',
           showCancelButton: false,
           focusConfirm: false,
@@ -406,12 +462,31 @@
   });
 
   $wire.on('abrirModal', data => {
+    // Limpiar inputs de archivo locales al abrir cualquier modal
+    const archivoInput = document.getElementById('archivo');
+    if (archivoInput) {
+        archivoInput.value = '';
+    }
+    const imagenInput = document.getElementById('imagen');
+    if (imagenInput) {
+        imagenInput.value = '';
+    }
+
+    var offcanvasElement = document.getElementById(event.detail.nombreModal);
+
+    // Resetear el estado guardando de Alpine al abrir si está inicializado
+    if (window.Alpine && offcanvasElement) {
+        const alpineData = Alpine.$data(offcanvasElement);
+        if (alpineData) {
+            alpineData.guardando = false;
+        }
+    }
+
     // Agregar backdrop
     const backdrop = document.createElement('div');
     backdrop.className = 'offcanvas-backdrop fade show';
     document.body.appendChild(backdrop);
 
-    var offcanvasElement = document.getElementById(event.detail.nombreModal);
     var offcanvas = new bootstrap.Offcanvas(offcanvasElement, {
       backdrop: true
     });

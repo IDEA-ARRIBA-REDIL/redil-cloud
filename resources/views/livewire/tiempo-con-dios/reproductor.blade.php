@@ -4,7 +4,7 @@
             <div class="row">
                 
                 <div class="order-2 order-md-1 col-4 col-md-3 text-center py-auto">
-                  <img class="card-img img-fluid" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$imgAlbumActual) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$imgAlbumActual) }}"  alt="album">
+                  <img class="card-img img-fluid" src="{{ $imgAlbumActual }}" alt="album">
                 </div>
                 <div class="order-2 order-md-1 col-8 col-md-6 text-md-start">
                   <h4 class="text-white text-truncate mb-0">{{ $cancionActual->nombre }} </h4>
@@ -23,7 +23,7 @@
 
               <div  class="col-12 col-lg-12 d-flex justify-content-center">
                   <audio class="d-none" id="cancion" wire:ignore>
-                      <source src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/audios/'.$cancionActual->archivo) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/audios/'.$cancionActual->archivo) }}" type="audio/mp3">
+                      <source src="{{ $cancionActual->ruta_audio }}" type="audio/mp3">
                   </audio>
                   <div class="d-flex flex-grow-1" wire:ignore>
                       <span id="duracion" class="my-auto mx-3 fs-6">{{ $duracionCancionActual }}</span>

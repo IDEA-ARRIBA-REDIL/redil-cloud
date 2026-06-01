@@ -188,10 +188,10 @@ class RespuestasSheet implements FromCollection, WithHeadings, WithMapping, With
 
         // 9. Archivos / Fotos
         if (!is_null($respuesta->url_foto)) {
-            return asset($respuesta->url_foto);
+            return tenant_asset('img/actividades/respuesta-formularios/' . $respuesta->url_foto);
         }
         if (!is_null($respuesta->url_archivo)) {
-            return asset($respuesta->url_archivo);
+            return tenant_asset('archivos/actividades/' . $respuesta->url_archivo);
         }
 
         return '';

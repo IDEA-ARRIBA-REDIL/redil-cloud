@@ -1,56 +1,6 @@
 <div style="margin: 2% 2%;" class="row align-items-center">
     <div class="p-4 col-lg-12 col-md-10 col-sm-12">
-        <!-- Stepper (Paso a Paso) - Versión Mejorada -->
-        @if ($configuracion->version == 2)
-            <div class="m-lg-auto border-0 mb-4">
-                <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 gap-md-2">
-                    <!-- Paso 1 - Carrito -->
-                    <div class="step {{ $pasoActual == 1 ? 'active' : '' }} d-flex align-items-center">
-                        <button type="button" class="step-trigger bg-transparent border-0 p-0" wire:click="volverPaso">
-                            <span class="bs-stepper-icon {{ $pasoActual == 1 ? 'btn-primary' : 'bg-light' }}">
-                                <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                    <use xlink:href="{{ asset('assets/svg/icons/wizard-checkout-cart.svg#wizardCart') }}"></use>
-                                </svg>
-                            </span>
-                            <span class="bs-stepper-label d-none d-md-block mt-2 {{ $pasoActual == 1 ? '' : 'text-muted' }}">Configuración Académica</span>
-                        </button>
-                    </div>
 
-                    <div class="line d-none d-md-block">
-                        <i class="ti ti-chevron-right fs-5 text-muted"></i>
-                    </div>
-
-                    <!-- Paso 2 - Formulario -->
-                    <div class="step {{ $pasoActual == 2 ? 'active' : '' }} d-flex align-items-center">
-                        <button type="button" class="step-trigger bg-transparent border-0 p-0" @if($pasoActual == 1) wire:click="siguientePaso" @endif>
-                            <span class="bs-stepper-icon {{ $pasoActual == 2 ? 'btn-primary' : 'bg-light' }}">
-                                <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                    <use xlink:href="{{ asset('assets/svg/icons/wizard-checkout-address.svg#wizardCheckoutAddress') }}"></use>
-                                </svg>
-                            </span>
-                            <span class="bs-stepper-label d-none d-md-block mt-2 {{ $pasoActual == 2 ? '' : 'text-muted' }}">Información Adicional</span>
-                        </button>
-                    </div>
-
-                    <div class="line d-none d-md-block">
-                        <i class="ti ti-chevron-right fs-5 text-muted"></i>
-                    </div>
-
-                    <!-- Paso 3 - Checkout -->
-                    <div class="step d-flex align-items-center">
-                        <div class="step-trigger bg-transparent border-0 p-0 opacity-50">
-                            <span class="bs-stepper-icon bg-light">
-                                <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                    <use xlink:href="{{ asset('assets/svg/icons/wizard-checkout-payment.svg#wizardPayment') }}"></use>
-                                </svg>
-                            </span>
-                            <span class="bs-stepper-label d-none d-md-block mt-2 text-muted">Checkout</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-        <!-- Fin del Stepper Mejorado -->
 
         <div style="margin-bottom: 100px;" class="row">
             @if($pasoActual == 1)

@@ -133,7 +133,7 @@ $configData = Helper::appClasses();
                       <img src="{{ Storage::url('generales/img/otros/dibujo_respuesta.png') }}" class="img-fluid w-50 p-0">
                       <h2 class="text-black fw-bold mb-0 lh-sm">Link de asistencia</h2>
                       <p class="text-black mt-2 mb-5">
-                        Comparte este link de asistencia para tu grupo, el link expira en 1 hora.
+                        Comparte este link de asistencia para tu grupo, el link expira en 1 hour.
                       </p>
 
                       <div class="row text-start m-0">

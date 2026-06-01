@@ -224,12 +224,9 @@
       <!-- Imagen -->
       <div class="card-img-top position-relative overflow-hidden" style="width: 100%; height: 0; padding-bottom: 75%; background-color: #f8f9fa;">
         @php
-          $tieneImagen = $configuracion->version == 1 && $plan->imagen_url;
-          $urlImagen = $tieneImagen 
-              ? Storage::url($configuracion->ruta_almacenamiento.'/img/planes_lectores/'.basename($plan->imagen_url)) 
-              : null;
+          $urlImagen = $plan->portada_url;
         @endphp
-        @if($tieneImagen)
+        @if($urlImagen)
           <img src="{{ $urlImagen }}" 
                alt="Imagen del plan lector" 
                class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: cover; object-position: center;">

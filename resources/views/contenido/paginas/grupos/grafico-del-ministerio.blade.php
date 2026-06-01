@@ -266,7 +266,7 @@ the@php
                             <div class="d-flex align-items-start">
                                 <div class="d-flex align-items-start">
                                     <div class="avatar me-2 my-auto">
-                                        <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario_seleccionado->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario_seleccionado->foto }}"
+                                        <img src="{{ tenant_asset('img/usuarios/foto-usuario/' . $usuario_seleccionado->foto) }}"
                                             alt="Avatar" class="rounded-circle" />
                                     </div>
                                     <div class="me-2 ms-1">
@@ -357,7 +357,7 @@ the@php
                                         <td>
                                             <div class="d-flex align-items-start">
                                                 <div class="avatar me-2 my-auto">
-                                                    <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuariNoDibujado->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuariNoDibujado->foto }}"
+                                                    <img src="{{ tenant_asset('img/usuarios/foto-usuario/' . $usuariNoDibujado->foto) }}"
                                                         alt="Avatar" class="rounded-circle" />
                                                 </div>
                                                 <div class="me-2 ms-1">

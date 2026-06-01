@@ -76,6 +76,9 @@
                                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">
                                         {{ ucwords(strtolower($item->nombre)) }}
                                     </div>
+                                    <div style="font-size: 9px; color: #777; margin-top: 3px; font-weight: normal; text-transform: none;">
+                                        {{ $item->fecha_inicio ? $item->fecha_inicio->format('d/m/Y') : '-' }} - {{ $item->fecha_fin ? $item->fecha_fin->format('d/m/Y') : '-' }}
+                                    </div>
 
                                 </th>
                             @endforeach
@@ -92,15 +95,21 @@
 
                             {{-- FILA DE ALUMNO --}}
                             <tr>
-                                <td style="background:#fff; padding: 5px;" class="pinnedtd letra">
+                                 <td style="background:#fff; padding: 5px;" class="pinnedtd letra">
                                     <div class="d-flex align-items-center">
-                                        @if($user->foto)
-                                            <img style="border-radius:50%; width: 35px; height: 35px; object-fit:cover; margin-right: 10px;"
-                                                 src="{{ asset('storage/fotos/' . $user->foto) }}" alt="Avatar"
-                                                 onerror="this.src='{{ asset('assets/img/avatars/1.png') }}'">
+                                        @if(!$user->foto || $user->foto == "default-m.png" || $user->foto == "default-f.png")
+                                            <div class="avatar avatar-md me-2" style="margin-right: 10px;">
+                                                <span class="avatar-initial rounded-circle border border-2 border-white bg-info text-white letra fw-bold" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-size: 11px;">
+                                                    {{ $user->inicialesNombre() }}
+                                                </span>
+                                            </div>
                                         @else
-                                             <img style="border-radius:50%; width: 35px; height: 35px; object-fit:cover; margin-right: 10px;"
-                                                 src="{{ asset('assets/img/avatars/1.png') }}" alt="Avatar">
+                                            <div class="avatar avatar-md me-2" style="margin-right: 10px;">
+                                                <img style="border-radius:50%; width: 35px; height: 35px; object-fit:cover;"
+                                                     src="{{ $user->foto_url }}" alt="{{ $user->foto }}"
+                                                     class="avatar-initial rounded-circle border border-2 border-white"
+                                                     onerror="this.src='{{ asset('assets/img/avatars/1.png') }}'">
+                                            </div>
                                         @endif
                                         <div>
                                             <p style="font-size:13px; margin:0;" class="letra text-dark fw-semibold">

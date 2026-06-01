@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException; // <-- Importa la clase Mail
 use Maatwebsite\Excel\Facades\Excel;           // <-- Importa tu Mailable
+use Illuminate\Support\Facades\Storage;
 use stdClass;
 
 class ReporteReunionController extends Controller
@@ -227,29 +228,15 @@ class ReporteReunionController extends Controller
         }
 
         if ($reporteReunion->save()) {
-
             // AÑADO LA PORTADA
             if ($request->foto) {
-                if ($configuracion->version == 1) {
-                    $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/reportes-reuniones/');
-                    ! is_dir($path) && mkdir($path, 0777, true);
-
-                    $imagenPartes = explode(';base64,', $request->foto);
-                    $imagenBase64 = base64_decode($imagenPartes[1]);
-                    $nombreFoto = 'reporte_reunion'.$reporteReunion->id.'.png';
-                    $imagenPath = $path.$nombreFoto;
-                    file_put_contents($imagenPath, $imagenBase64);
-                    $reporteReunion->portada = $nombreFoto;
-                    $reporteReunion->save();
-                } else {
-                    /*
-                    $s3 = AWS::get('s3');
-                    $s3->putObject(array(
-                      'Bucket'     => $_ENV['aws_bucket'],
-                      'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                      'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                    ));*/
-                }
+                $path = 'img/reportes-reuniones/';
+                $imagenPartes = explode(';base64,', $request->foto);
+                $imagenBase64 = base64_decode($imagenPartes[1]);
+                $nombreFoto = 'reporte_reunion'.$reporteReunion->id.'.png';
+                Storage::put($path.$nombreFoto, $imagenBase64);
+                $reporteReunion->portada = $nombreFoto;
+                $reporteReunion->save();
             }
         }
 
@@ -265,7 +252,7 @@ class ReporteReunionController extends Controller
         return redirect()->route('reporteReunion.editar', $reporteReunion)->with('success', 'El reporte de reunión fue creado con éxito.');
     }
 
-    public function perfil()
+    public function perfil(ReporteReunion $reporteReunion)
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('reporte_reuniones.opcion_ver_perfil_reporte_reunion');
@@ -276,6 +263,7 @@ class ReporteReunionController extends Controller
     public function editar(ReporteReunion $reporteReunion)
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        return "sdfsd";
         $rolActivo->verificacionDelPermiso('reporte_reuniones.opcion_modificar_reporte_reunion');
 
         $configuracion = Configuracion::first();
@@ -335,29 +323,15 @@ class ReporteReunionController extends Controller
         $reporteReunion->save();
 
         if ($reporteReunion->save()) {
-
             // AÑADO LA PORTADA
             if ($request->foto) {
-                if ($configuracion->version == 1) {
-                    $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/reportes-reuniones/');
-                    ! is_dir($path) && mkdir($path, 0777, true);
-
-                    $imagenPartes = explode(';base64,', $request->foto);
-                    $imagenBase64 = base64_decode($imagenPartes[1]);
-                    $nombreFoto = 'reporteReunion'.$reporteReunion->id.'.png';
-                    $imagenPath = $path.$nombreFoto;
-                    file_put_contents($imagenPath, $imagenBase64);
-                    $reporteReunion->portada = $nombreFoto;
-                    $reporteReunion->save();
-                } else {
-                    /*
-                    $s3 = AWS::get('s3');
-                    $s3->putObject(array(
-                      'Bucket'     => $_ENV['aws_bucket'],
-                      'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                      'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                    ));*/
-                }
+                $path = 'img/reportes-reuniones/';
+                $imagenPartes = explode(';base64,', $request->foto);
+                $imagenBase64 = base64_decode($imagenPartes[1]);
+                $nombreFoto = 'reporteReunion'.$reporteReunion->id.'.png';
+                Storage::put($path.$nombreFoto, $imagenBase64);
+                $reporteReunion->portada = $nombreFoto;
+                $reporteReunion->save();
             }
         }
 
@@ -370,6 +344,9 @@ class ReporteReunionController extends Controller
         $reporteReunion->ofrendas()->detach();
         $reporteReunion->clasificacionesAsistentes()->detach();
         Ofrenda::destroy($ofrendasIds);
+        if ($reporteReunion->portada && $reporteReunion->portada != 'default.png') {
+            Storage::delete('img/reportes-reuniones/' . $reporteReunion->portada);
+        }
         $reporteReunion->delete();
 
         return redirect()
@@ -380,7 +357,7 @@ class ReporteReunionController extends Controller
     public function añadirServidores(ReporteReunion $reporteReunion)
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-        $rolActivo->verificacionDelPermiso('reporte_reuniones.opcion_subitem_anadir_servidores_reporte_reunion');
+        $rolActivo->verificacionDelPermiso('reporte_reuniones.opcion_anadir_servidores_reporte_reunion');
 
         return view('contenido.paginas.reporte-reuniones.anadir-servidores', [
             'reporteReunion' => $reporteReunion,

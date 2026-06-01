@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="col-12 col-xl-4 col-md-6">
 
           <div class="card ">
-            <img class="card-img-top object-fit-cover" style="height: 130px;"  src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/reportes-reuniones/'.$reporte->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/reportes-reuniones/'.$reporte->portada)}}" alt="Card imagen " />
+            <img class="card-img-top object-fit-cover" style="height: 130px;"  src="{{ $reporte->portada_url }}" alt="Card imagen " />
             <div class="card-header pb-2">
               <div class="d-flex justify-content-between">
                 <div class="d-flex align-items-start">

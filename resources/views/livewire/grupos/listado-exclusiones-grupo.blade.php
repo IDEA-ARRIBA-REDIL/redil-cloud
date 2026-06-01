@@ -35,7 +35,7 @@
                     </div>
                     @else
                     <div class="avatar avatar-xl">
-                      <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$exclusion->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$exclusion->foto }}" alt="{{ $exclusion->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
+                      <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$exclusion->foto) }}" alt="{{ $exclusion->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
                     </div>
                     @endif
                   </div>

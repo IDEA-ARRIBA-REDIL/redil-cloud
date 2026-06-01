@@ -23,12 +23,9 @@ class RecordatorioFormularioMail extends Mailable
         $this->actividad = $actividad;
         $this->iglesia = Iglesia::find(1);
         $configuracion = Configuracion::find(1);
-        $this->version = $configuracion->version;
 
         if (!isset($this->mailData->banner)) {
-            $this->mailData->banner = $actividad->banner 
-                ? Storage::url($configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre) 
-                : Storage::url($configuracion->ruta_almacenamiento . '/img/email/bannercorreo.png');
+            $this->mailData->banner = $actividad->portada_url;
         }
     }
 

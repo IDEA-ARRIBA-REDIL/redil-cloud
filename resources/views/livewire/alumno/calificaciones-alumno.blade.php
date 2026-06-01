@@ -78,11 +78,29 @@
                                 <textarea wire:model="respuestaTexto" class="form-control" rows="8" placeholder="Escribe tu respuesta aquí..."></textarea>
                                 @error('respuestaTexto') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
-                            <div class="mb-3">
-                                <label for="adjuntarArchivo" class="form-label">Adjuntar archivo (opcional):</label>
-                                <input wire:model="archivo" type="file" class="form-control">
-                                <div wire:loading wire:target="archivo" class="small text-muted mt-1">Subiendo...</div>
-                                @error('archivo') <span class="text-danger small">{{ $message }}</span> @enderror
+                            <div class="mb-3" x-data="uploadRespuestaForm({{ $selectedItem->id }}, {{ $horario->materiaPeriodo->periodo_id }})">
+                                <label class="form-label">Adjuntar archivo (opcional):</label>
+
+                                <template x-if="!archivoSubido">
+                                    <div>
+                                        <input type="file" class="form-control" x-ref="archivoInput" @change="subirArchivo">
+                                        <div x-show="subiendo" class="small text-muted mt-2 d-flex align-items-center">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Subiendo archivo...
+                                        </div>
+                                        <div x-show="errorMsg" class="small text-danger mt-1" x-text="errorMsg"></div>
+                                    </div>
+                                </template>
+
+                                <template x-if="archivoSubido">
+                                    <div class="alert alert-success d-flex align-items-center p-2 mb-0">
+                                        <i class="mdi mdi-check-circle-outline me-2 fs-4"></i>
+                                        <div class="flex-grow-1 text-truncate">
+                                            <strong>Archivo adjunto:</strong> <span x-text="archivoSubido"></span>
+                                        </div>
+                                        <button type="button" class="btn-close ms-auto" @click="eliminarArchivoLocal" aria-label="Close"></button>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -101,4 +119,57 @@
 
     {{-- El Modal para ver respuesta se queda en la vista principal 'perfil-materia.blade.php' --}}
     {{-- ya que no necesita interactividad con Livewire. --}}
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('uploadRespuestaForm', (itemId, periodoId) => ({
+                subiendo: false,
+                errorMsg: '',
+                archivoSubido: @entangle('nombreArchivoSubido'),
+
+                subirArchivo(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    this.subiendo = true;
+                    this.errorMsg = '';
+
+                    const formData = new FormData();
+                    formData.append('archivo', file);
+                    formData.append('item_id', itemId);
+                    formData.append('periodo_id', periodoId);
+
+                    fetch('{{ route("alumnos.uploadArchivoRespuesta") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.subiendo = false;
+                        if (data.success) {
+                            this.archivoSubido = data.nombre;
+                            @this.set('nombreArchivoSubido', data.nombre); // Asegurar que se actualice de inmediato en Livewire
+                        } else {
+                            this.errorMsg = data.message || 'Error al subir el archivo.';
+                            this.$refs.archivoInput.value = '';
+                        }
+                    })
+                    .catch(error => {
+                        this.subiendo = false;
+                        this.errorMsg = 'Error de conexión al subir el archivo.';
+                        this.$refs.archivoInput.value = '';
+                    });
+                },
+
+                eliminarArchivoLocal() {
+                    this.archivoSubido = null;
+                    @this.call('eliminarArchivo');
+                }
+            }));
+        });
+    </script>
 </div>

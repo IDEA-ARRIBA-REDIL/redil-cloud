@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class BannerGeneral extends Model
 {
@@ -26,21 +27,16 @@ class BannerGeneral extends Model
   public function getImagenVinculadaAttribute(): string
   {
       if (!$this->imagen) {
-          return \Illuminate\Support\Facades\Storage::disk('global_media')->url('banner-default.jpg');
+          return Storage::disk('global_media')->url('banner-default.jpg');
       }
 
       $rutaRelativa = 'img/banners/' . $this->imagen;
 
       // tenant_asset() es el helper oficial para archivos del tenant en local
-      if (\Illuminate\Support\Facades\Storage::disk()->exists($rutaRelativa)) {
+      if (Storage::disk()->exists($rutaRelativa)) {
           return tenant_asset($rutaRelativa);
       }
 
-      // Fallback a global_media
-      if (\Illuminate\Support\Facades\Storage::disk('global_media')->exists($this->imagen)) {
-          return \Illuminate\Support\Facades\Storage::disk('global_media')->url($this->imagen);
-      }
-
-      return \Illuminate\Support\Facades\Storage::disk('global_media')->url('banner-default.jpg');
+      return Storage::disk('global_media')->url('banner-default.jpg');
   }
 }

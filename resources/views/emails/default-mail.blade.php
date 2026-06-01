@@ -112,15 +112,9 @@
                       <tbody>
                         <tr>
                           <td valign="top" style="padding-top:9px">
-                            @if($version==1)
                               <a href="https://{{$iglesia->url_subdominio}}" style="text-decoration:none; " valign="top" align="center" >
-                                <p style="font:15px/2.25em 'Century Gothic',Arial,Helvetica;color:#939393; line-height: normal; text-transform: uppercase;"><b>{{$iglesia->url_subdominio}}</b> <BR> SOFTWARE REDIL</p>
+                                <p style="font:15px/2.25em 'Century Gothic',Arial,Helvetica;color:#939393; line-height: normal; text-transform: uppercase;"><b>{{$iglesia->url_subdominio}}</b> <BR> <span class="text-uppercase">{{ config('app.name')}}</span></p>
                               </a>
-                            @elseif($version==2)
-                              <a href="https://{{$iglesia->url_subdominio}}" style="text-decoration:none; " valign="top" align="center" >
-                                <p style="font:15px/2.25em 'Century Gothic',Arial,Helvetica;color:#939393; line-height: normal; text-transform: uppercase;"> SOFTWARE VISION - SOFTWARE DE GRUPOS FAMILIARES <BR>  <b> {{$iglesia->url_subdominio}} </b></p>
-                              </a>
-                            @endif
                           </td>
                         </tr>
                       </tbody>

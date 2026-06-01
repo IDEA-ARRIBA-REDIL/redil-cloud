@@ -177,10 +177,10 @@
                       <div class="row g-2">
                         <div class="col-12 col-md-4 d-flex flex-row">
                           <div class="avatar me-4">
-                            @if($persona->foto == "default-m.png" || $persona->foto == "default-f.png")
+                            @if(!$persona->foto || $persona->foto == "default-m.png" || $persona->foto == "default-f.png")
                             <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $persona->iniciales_nombre }} </span>
                             @else
-                            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) }}" alt="{{ $persona->foto }}" alt="avatar" class="rounded-circle">
+                            <img src="{{ $persona->foto_url }}" alt="{{ $persona->nombre }}" class="rounded-circle">
                             @endif
                           </div>
                           <div class="">
@@ -271,10 +271,10 @@
                       <div class="row g-2">
                         <div class="col-12 col-md-4 d-flex flex-row">
                           <div class="avatar me-4">
-                            @if($persona->foto == "default-m.png" || $persona->foto == "default-f.png")
+                            @if(!$persona->foto || $persona->foto == "default-m.png" || $persona->foto == "default-f.png")
                             <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $persona->iniciales_nombre }} </span>
                             @else
-                            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) }}" alt="{{ $persona->foto }}" alt="avatar" class="rounded-circle">
+                            <img src="{{ $persona->foto_url }}" alt="{{ $persona->nombre }}" class="rounded-circle">
                             @endif
                           </div>
                           <div class="">

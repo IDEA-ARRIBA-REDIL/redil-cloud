@@ -13,7 +13,7 @@
             <div class="card p-4 rounded-4 border-0 ">
                 <div class="d-flex align-items-center">
                     <div class="avatar avatar-xl me-4">
-                        <img src="{{ $curso->imagen_portada ? Storage::url($configuracion->ruta_almacenamiento.'/img/cursos/portadas/'.$curso->imagen_portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/default.png') }}" alt="{{ $curso->nombre }}" class="rounded-3 object-fit-cover w-100 h-100 border shadow-sm">
+                        <img src="{{ $curso->portada_url }}" alt="{{ $curso->nombre }}" class="rounded-3 object-fit-cover w-100 h-100 border shadow-sm">
                     </div>
                     <div>
                         <h4 class="mb-1 fw-bold text-primary">{{ $curso->nombre }}</h4>

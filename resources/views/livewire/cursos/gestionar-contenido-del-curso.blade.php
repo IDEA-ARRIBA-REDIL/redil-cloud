@@ -1,5 +1,5 @@
 <div>
-    
+
     <h4 class=" mb-1 fw-semibold text-primary mb-10">{{ $curso->nombre }}</h4>
 
     @if($modulos->isEmpty())
@@ -8,7 +8,7 @@
                 <div class="mb-3">
                     <i class="ti ti-circle-plus display-3 text-black"></i>
                 </div>
-                <h5 class="text-black">Comienza creando tu primer módulo</h5>                
+                <h5 class="text-black">Comienza creando tu primer módulo</h5>
             </div>
         </div>
     @else
@@ -17,11 +17,11 @@
                 <div wire:key="modulo-{{ $modulo->id }}" wire:ignore.self class="accordion-item card shadow-none border mb-3" data-modulo-id="{{ $modulo->id }}">
                     <h2 class="accordion-header d-flex align-items-center" id="heading{{ $modulo->id }}">
                         <i class="ti ti-grip-vertical drag-handle ms-5 cursor-move text-black" style="font-size: 1.2rem;"></i>
-                        <button class="accordion-button collapsed border-0 shadow-none bg-transparent py-3" 
-                                type="button" 
-                                data-bs-toggle="collapse" 
-                                data-bs-target="#collapse{{ $modulo->id }}" 
-                                aria-expanded="false" 
+                        <button class="accordion-button collapsed border-0 shadow-none bg-transparent py-3"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapse{{ $modulo->id }}"
+                                aria-expanded="false"
                                 aria-controls="collapse{{ $modulo->id }}"
                                 wire:ignore.self
                                 style="padding-right: 0;">
@@ -45,21 +45,21 @@
                             </div>
                         </div>
                     </h2>
-                    <div id="collapse{{ $modulo->id }}" 
-                         class="accordion-collapse collapse" 
-                         aria-labelledby="heading{{ $modulo->id }}" 
+                    <div id="collapse{{ $modulo->id }}"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="heading{{ $modulo->id }}"
                          data-bs-parent="#accordionModulos"
                          wire:ignore.self>
                         <div class="accordion-body bg-lighter pt-2">
                             <div class="p-2 mb-2">
                                 <small class="text-black d-block">{{ $modulo->descripcion ?: 'Sin descripción' }}</small>
-                            </div> 
+                            </div>
                             <!-- Listado de Ítems (Lecciones/Evaluaciones) -->
                             <div class="listadoItems mt-3 pt-3" data-modulo-id="{{ $modulo->id }}" id="accordionItems{{ $modulo->id }}">
                                 @forelse($modulo->items as $item)
                                     <div wire:key="item-{{ $item->id }}" class="card mb-3 border shadow-none" data-item-id="{{ $item->id }}">
-                                        <div class="card-body p-2" 
-                                             x-data="{ 
+                                        <div class="card-body p-2"
+                                             x-data="{
                                                  tipoContenido: '{{ $item->tipo->codigo === 'lectura' ? 'texto' : ($item->tipo->codigo === 'recurso' ? 'archivo' : $item->tipo->codigo) }}',
                                                  modo: '{{ $item->itemable->video_url || $item->itemable->contenido_html || $item->itemable->archivo_path || $item->itemable->iframe_code ? 'visualizar' : 'editar' }}',
                                                  archivoPath: null,
@@ -70,7 +70,7 @@
                                                 <div class="d-flex align-items-center flex-grow-1">
                                                     <i class="ti ti-grip-vertical drag-handle-item me-2 text-muted cursor-move"></i>
                                                     <i class="{{ $item->tipo->icono }} me-2 text-secondary"></i>
-                                                    
+
                                                     @if($itemEditandoId === $item->id)
                                                         <div class="d-flex align-items-center flex-grow-1">
                                                             <input type="text" wire:model="nuevoTituloItem" class="form-control form-control-sm me-2" autofocus wire:keydown.enter="guardarNombreItem" wire:keydown.escape="cancelarEdicionItem">
@@ -87,17 +87,17 @@
                                                     @endif
                                                 </div>
                                                 <div class="d-flex align-items-center">
-                                                    
+
                                                     <button class="btn btn-sm btn-icon text-muted me-1" data-bs-toggle="collapse" data-bs-target="#itemContent{{ $item->id }}" aria-expanded="false" wire:ignore.self>
                                                         <i class="ti ti-chevron-down"></i>
                                                     </button>
                                                     @if($item->tipo->categoria === 'leccion')
-                                                        <button x-show="modo === 'visualizar'" 
-                                                                @click="modo = 'editar'; 
+                                                        <button x-show="modo === 'visualizar'"
+                                                                @click="modo = 'editar';
                                                                         const collEl = document.getElementById('itemContent{{ $item->id }}');
                                                                         const bsColl = bootstrap.Collapse.getInstance(collEl) || new bootstrap.Collapse(collEl, {toggle: false});
-                                                                        bsColl.show();" 
-                                                                class="btn btn-sm btn-icon btn-text-primary rounded-pill me-1" 
+                                                                        bsColl.show();"
+                                                                class="btn btn-sm btn-icon btn-text-primary rounded-pill me-1"
                                                                 title="Editar contenido">
                                                             <i class="ti ti-edit"></i>
                                                         </button>
@@ -109,7 +109,7 @@
                                             </div>
 
                                             <!-- Contenido del Ítem (Lección) -->
-                                            <div id="itemContent{{ $item->id }}" class="accordion-collapse collapse mt-3  pt-3" 
+                                            <div id="itemContent{{ $item->id }}" class="accordion-collapse collapse mt-3  pt-3"
                                                  data-bs-parent="#accordionItems{{ $modulo->id }}"
                                                  wire:ignore.self>
                                                 @if($item->tipo->categoria === 'leccion')
@@ -126,13 +126,11 @@
                                                                     <iframe src="https://player.vimeo.com/video/{{ $item->itemable->video_id }}" allowfullscreen></iframe>
                                                                 @else
                                                                     <div class="d-flex align-items-center justify-content-center text-white h-100">
-                                                                        <a href="{{ $item->itemable->video_url }}" target="_blank" class="text-white text-decoration-none">
-                                                                            <i class="ti ti-external-link me-2"></i> Ver video externo
-                                                                        </a>
+                                                                        <iframe src="https://www.youtube.com/embed/{{ $item->itemable->video_id }}" allowfullscreen></iframe>
                                                                     </div>
                                                                 @endif
                                                             </div>
-                                                            
+
                                                         </div>
 
                                                         <!-- Edición Video -->
@@ -159,11 +157,11 @@
                                                          <div x-show="modo === 'visualizar'" class="mb-3">
                                                                 <div class="ratio ratio-16x9 border rounded overflow-hidden">
                                                                     @if($item->itemable->archivo_path)
-                                                                        <iframe src="{{ route('cursos.recurso.preview', $item->itemable->id) }}?t={{ $item->itemable->updated_at?->timestamp }}" 
+                                                                        <iframe src="{{ route('cursos.recurso.preview', $item->itemable->id) }}?t={{ $item->itemable->updated_at?->timestamp }}"
                                                                                 class="w-100 h-100" style="border: none;" allowfullscreen title="Visor de Recursos"></iframe>
                                                                     @endif
                                                                 </div>
-                                                           
+
                                                          </div>
 
                                                         <!-- Edición Archivo -->
@@ -172,10 +170,10 @@
                                                                 <i class="ti ti-cloud-upload text-primary mb-2" style="font-size: 3.5rem;"></i>
                                                                 <p class="mb-2 fw-semibold">Sube un archivo PDF, imagen o PowerPoint</p>
                                                                 <small class="text-muted d-block mb-3">Máximo 10MB</small>
-                                                                
-                                                                <input type="file" class="form-control mt-2" id="file{{ $item->id }}" 
+
+                                                                <input type="file" class="form-control mt-2" id="file{{ $item->id }}"
                                                                        @change="subirArchivoCurso($event, {{ $curso->id }}, (path) => { archivoPath = path })">
-                                                                
+
                                                                 <div x-show="subiendoArchivo" class="mt-2" style="display: none;">
                                                                     <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                                                                     <span class="ms-1">Subiendo...</span>
@@ -206,14 +204,14 @@
                                                                     </div>
                                                                 </div>
                                                             @endif
-                                                            
+
                                                         </div>
 
                                                         <!-- Edición Iframe -->
                                                         <div x-show="modo === 'editar'">
                                                             <div class="mb-3">
                                                                 <label class="form-label fw-bold"><i class="ti ti-code me-1"></i> Código Embebido (Iframe)</label>
-                                                                <textarea class="form-control font-monospace" rows="6" 
+                                                                <textarea class="form-control font-monospace" rows="6"
                                                                           placeholder="Pegue aquí el código <iframe> proporcionado por Canva, Genially, etc."
                                                                           x-ref="iframeCode{{ $item->id }}">{{ $item->itemable->iframe_code }}</textarea>
                                                                 <div class="form-text mt-2">
@@ -248,28 +246,28 @@
                                                                     <i class="ti ti-info-circle me-1"></i> Opcional: Puede agregar texto para complementar el recurso multimedia.
                                                                 </div>
                                                             </div>
-                                                            <div class="d-flex justify-content-start gap-2">                                                        
+                                                            <div class="d-flex justify-content-start gap-2">
                                                                 @if($item->tipo->codigo === 'lectura')
                                                                     <!-- Botón para Lectura (Solo texto) -->
-                                                                    <button class="btn btn-sm btn-outline-primary rounded-pill" 
+                                                                    <button class="btn btn-sm btn-outline-primary rounded-pill"
                                                                             @click="$wire.guardarTextoLeccion({{ $item->itemable->id }}, document.querySelector('#editor{{ $item->id }} .ql-editor').innerHTML).then(() => { modo = 'visualizar' })">
                                                                         <i class="ti ti-device-floppy me-1"></i> Guardar
                                                                     </button>
                                                                 @elseif($item->tipo->codigo === 'recurso')
                                                                     <!-- Botón para Recurso/Archivo (Archivo + Texto) -->
-                                                                    <button class="btn btn-sm btn-outline-primary rounded-pill" 
+                                                                    <button class="btn btn-sm btn-outline-primary rounded-pill"
                                                                             @click="$wire.guardarArchivoYTextoLeccion({{ $item->itemable->id }}, document.querySelector('#editor{{ $item->id }} .ql-editor').innerHTML, archivoPath).then(() => { modo = 'visualizar'; archivoPath = null; })">
                                                                         <i class="ti ti-device-floppy me-1"></i> Guardar
                                                                     </button>
                                                                 @elseif($item->tipo->codigo === 'video')
                                                                     <!-- Botón para Video (Link + Texto) -->
-                                                                    <button class="btn btn-sm btn-outline-primary rounded-pill" 
+                                                                    <button class="btn btn-sm btn-outline-primary rounded-pill"
                                                                             @click="$wire.guardarVideoYTextoLeccion({{ $item->itemable->id }}, $refs.videoUrl{{ $item->id }}.value, document.querySelector('#editor{{ $item->id }} .ql-editor').innerHTML).then((res) => { if(res !== false) modo = 'visualizar' })">
                                                                         <i class="ti ti-device-floppy me-1"></i> Guardar
                                                                     </button>
                                                                 @elseif($item->tipo->codigo === 'iframe')
                                                                     <!-- Botón para Iframe (Código + Texto) -->
-                                                                    <button class="btn btn-sm btn-outline-primary rounded-pill" 
+                                                                    <button class="btn btn-sm btn-outline-primary rounded-pill"
                                                                             @click="$wire.guardarIframeYTextoLeccion({{ $item->itemable->id }}, $refs.iframeCode{{ $item->id }}.value, document.querySelector('#editor{{ $item->id }} .ql-editor').innerHTML).then((res) => { if(res !== false) modo = 'visualizar' })">
                                                                         <i class="ti ti-device-floppy me-1"></i> Guardar
                                                                     </button>
@@ -280,7 +278,7 @@
                                                 @else
                                                     <!-- Configuración de Evaluación -->
                                                     <div x-data="{ configurando: false }">
-                                                        <div class="d-flex justify-content-between align-items-center mb-3">                                                            
+                                                        <div class="d-flex justify-content-between align-items-center mb-3">
                                                             <button @click="configurando = !configurando" class="btn btn-sm btn-label-secondary rounded-pill">
                                                                 <i class="ti" :class="configurando ? 'ti-chevron-up' : 'ti-adjustments'"></i>
                                                                 <span x-text="configurando ? 'Cerrar ajustes' : 'Ajustes de la evaluación'"></span>
@@ -289,7 +287,7 @@
 
                                                         <!-- Ajustes Generales -->
                                                         <div x-show="configurando" class="p-3 border rounded bg-light mb-4 shadow-sm" x-transition
-                                                             x-data="{ 
+                                                             x-data="{
                                                                  config: {
                                                                      minimo_aprobacion: {{ $item->itemable->minimo_aprobacion ?? 50 }},
                                                                      mostrar_respuestas_si_aprueba: {{ ($item->itemable->mostrar_respuestas_si_aprueba ?? false) ? 'true' : 'false' }},
@@ -374,13 +372,13 @@
                                                                             @foreach($pregunta->opciones as $opcion)
                                                                                 <div wire:key="opcion-{{ $opcion->id }}" class="d-flex align-items-center mb-2 gap-2 group-option">
                                                                                     <div class="form-check mb-0">
-                                                                                        <input class="{{ $pregunta->tipo_respuesta == 'multiple' ? 'form-check-input' : 'form-check-input rounded-circle' }}" 
-                                                                                               type="{{ $pregunta->tipo_respuesta == 'multiple' ? 'checkbox' : 'radio' }}" 
+                                                                                        <input class="{{ $pregunta->tipo_respuesta == 'multiple' ? 'form-check-input' : 'form-check-input rounded-circle' }}"
+                                                                                               type="{{ $pregunta->tipo_respuesta == 'multiple' ? 'checkbox' : 'radio' }}"
                                                                                                name="pregunta{{ $pregunta->id }}"
                                                                                                {{ $opcion->es_correcta ? 'checked' : '' }}
                                                                                                wire:click="marcarCorrecta({{ $opcion->id }})">
                                                                                     </div>
-                                                                                    <input type="text" class="form-control form-control-sm border-0 bg-transparent edit-on-focus" 
+                                                                                    <input type="text" class="form-control form-control-sm border-0 bg-transparent edit-on-focus"
                                                                                            value="{{ $opcion->opcion }}"
                                                                                            @blur="$wire.guardarOpcion({{ $opcion->id }}, $event.target.value)"
                                                                                            {{ $pregunta->tipo_respuesta == 'verdadero_falso' ? 'readonly' : '' }}>
@@ -405,7 +403,7 @@
 
                                                         <div class="text-center mt-3">
                                                             <button wire:click="agregarPregunta({{ $item->itemable->id }})" class="btn btn-sm btn-icon btn-outline-secondary rounded-pill">
-                                                                <i class="ti ti-plus"></i> 
+                                                                <i class="ti ti-plus"></i>
                                                             </button>
                                                         </div>
                                                     </div>
@@ -453,7 +451,7 @@
                                         <li>
                                             @if($existeFinal)
                                                 <div class="dropdown-item text-muted" style="cursor: not-allowed;" title="Ya existe una Evaluación Final en este curso">
-                                                    <i class="ti ti-clipboard-check me-2"></i> Evaluación Final 
+                                                    <i class="ti ti-clipboard-check me-2"></i> Evaluación Final
                                                     <span class="badge bg-label-secondary ms-2 p-1" style="font-size: 0.6rem;">Agregada</span>
                                                 </div>
                                             @else
@@ -498,7 +496,7 @@
                     <textarea id="descripcion" class="form-control" wire:model.defer="descripcion" rows="4" placeholder="¿Qué aprenderán en este módulo?"></textarea>
                     @error('descripcion') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-                
+
                 <div class="mt-4 pt-2 border-top">
                     <button type="submit" class="btn btn-primary d-grid w-100 mb-2 rounded-pill">Aceptar</button>
                     <button type="button" class="btn btn-label-secondary d-grid w-100 rounded-pill" data-bs-dismiss="offcanvas">Cancelar</button>
@@ -714,8 +712,8 @@
 
         window.confirmarEliminacion = (tipo, id) => {
             const titulo = tipo === 'modulo' ? '¿Eliminar módulo?' : '¿Eliminar ítem?';
-            const texto = tipo === 'modulo' 
-                ? 'Se eliminarán todos los ítems y archivos asociados a este módulo. Esta acción no se puede deshacer.' 
+            const texto = tipo === 'modulo'
+                ? 'Se eliminarán todos los ítems y archivos asociados a este módulo. Esta acción no se puede deshacer.'
                 : 'Se eliminará permanentemente este contenido y sus archivos asociados.';
 
             Swal.fire({
@@ -759,7 +757,7 @@
             // Livewire 3 dispatch compatibility
             const data = (event.detail && event.detail.length > 0) ? event.detail[0] : event.detail;
             if (!data) return;
-            
+
             setTimeout(() => {
                 const moduloId = data.moduloId;
                 const itemId = data.itemId;
@@ -773,7 +771,7 @@
                         const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });
                         bsCollapse.show();
                     }
-                    
+
                     const btnAccordion = document.querySelector(`button[data-bs-target="#collapse${moduloId}"]`);
                     if (btnAccordion) {
                         btnAccordion.classList.remove('collapsed');
@@ -787,7 +785,7 @@
                     if (coll.id !== `itemContent${itemId}`) {
                         const bsColl = bootstrap.Collapse.getInstance(coll) || new bootstrap.Collapse(coll, { toggle: false });
                         bsColl.hide();
-                        
+
                         // Ajustar botón del ítem antiguo
                         const btnOld = document.querySelector(`button[data-bs-target="#${coll.id}"]`);
                         if(btnOld){
@@ -807,7 +805,7 @@
                     if (itemContent) {
                          const bsCollapseItem = bootstrap.Collapse.getInstance(itemContent) || new bootstrap.Collapse(itemContent, { toggle: false });
                          bsCollapseItem.show();
-                         
+
                          const btnNew = document.querySelector(`button[data-bs-target="#itemContent${itemId}"]`);
                          if(btnNew){
                              btnNew.setAttribute('aria-expanded', 'true');
@@ -817,7 +815,7 @@
                 }
             }, 400); // Dar suficiente tiempo para que Livewire termine de inyectar el DOM
         });
-        
+
         // Auto-scroll al crear módulo
         window.addEventListener('moduloCreado', event => {
             setTimeout(() => {
@@ -825,7 +823,7 @@
                 const element = document.querySelector(`[data-modulo-id="${moduloId}"]`);
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
+
                     const collapseElement = document.getElementById(`collapse${moduloId}`);
                     if (collapseElement) {
                         const bsCollapse = new bootstrap.Collapse(collapseElement, { toggle: false });

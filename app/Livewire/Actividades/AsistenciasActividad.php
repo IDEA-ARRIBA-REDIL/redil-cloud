@@ -477,11 +477,11 @@ class AsistenciasActividad extends Component
                 return '$' . number_format($respuesta->respuesta_moneda ?? 0, 2);
             case 'archivo': 
                 return $respuesta->url_archivo
-                    ? '<a href="' . asset('storage/' . $configuracion->ruta_almacenamiento . '/archivos/actividades/' . $respuesta->url_archivo) . '" target="_blank"><i class="fas fa-paperclip"></i> Ver Archivo</a>'
+                    ? '<a href="' . tenant_asset('archivos/actividades/' . $respuesta->url_archivo) . '" target="_blank"><i class="fas fa-paperclip"></i> Ver Archivo</a>'
                     : 'Sin archivo';
             case 'imagen': 
                 return $respuesta->url_foto
-                    ? '<a href="' . asset('storage/' . $respuesta->url_foto) . '" target="_blank"><i class="fas fa-image"></i> Ver Imagen</a>'
+                    ? '<a href="' . tenant_asset('img/actividades/respuesta-formularios/' . $respuesta->url_foto) . '" target="_blank"><i class="fas fa-image"></i> Ver Imagen</a>'
                     : 'Sin imagen';
             default:
                 return 'Dato registrado';

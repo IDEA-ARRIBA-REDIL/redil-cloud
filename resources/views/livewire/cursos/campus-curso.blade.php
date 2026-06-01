@@ -113,14 +113,11 @@
                                         src="https://player.vimeo.com/video/{{ $itemActivo->itemable->video_id }}"
                                         allowfullscreen></iframe>
                                 @else
-                                    <div
-                                        class="d-flex align-items-center justify-content-center text-white h-100 flex-column">
-                                        <a href="{{ $itemActivo->itemable->video_url }}" target="_blank"
-                                            class="text-white text-decoration-none">
-                                            <i class="ti ti-external-link me-2 mb-2" style="font-size: 3rem;"></i><br>
-                                            Ver video externo
-                                        </a>
-                                    </div>
+
+                                        <iframe  src="https://www.youtube.com/embed/{{ $itemActivo->itemable->video_url  }}"
+                                           title="YouTube video player"
+                                            frameborder="0"
+                                            allowfullscreen></iframe>
                                 @endif
                             @else
                                 <div
@@ -245,7 +242,7 @@
                                 @else
                                     x-data="{ isTimeUp: false }" @endif>
 
-                                
+
 
                                 <div class="p-4 p-md-5 pt-0">
                                     @if ($evaluacionBloqueada)
@@ -335,10 +332,10 @@
                                                 @php
                                                     $respondida = !empty($respuestasEvaluacion[$pregunta->id]);
                                                     $esActiva = $index === $preguntaActualIndex;
-                                                    
+
                                                     // Estilos para el círculo
                                                     $circuloEstilo = "width: 35px; height: 35px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid; cursor: pointer; transition: all 0.3s;";
-                                                    
+
                                                     if ($respondida || $esActiva) {
                                                         $circuloEstilo .= " background-color: #198754; border-color: #198754; color: white;";
                                                     } else {
@@ -351,7 +348,7 @@
 
                                                 <div class="d-flex align-items-center {{ $mostrarLinea ? 'flex-grow-1' : '' }}">
                                                     <!-- Círculo -->
-                                                    <div wire:click="irAPregunta({{ $index }})" 
+                                                    <div wire:click="irAPregunta({{ $index }})"
                                                          style="{{ $circuloEstilo }}"
                                                          class="{{ $esActiva ? 'shadow-sm fw-bold' : '' }}">
                                                         {{ $index + 1 }}
@@ -406,7 +403,7 @@
                                                         class="d-flex align-items-center justify-content-between p-3 border rounded cursor-pointer shadow-sm transition-all {{ $isChecked ? 'border-primary' : 'bg-transparent border-light' }}"
                                                         wire:click.prevent="seleccionarRespuesta({{ $preguntaEnPantalla->id }}, {{ $opcion->id }}, '{{ $preguntaEnPantalla->tipo_respuesta }}')"
                                                         style="background: white;">
-                                                        
+
                                                         <span class="fs-6 {{ $isChecked ? 'text-black' : 'text-dark' }}">
                                                             {{ $opcion->opcion }}
                                                         </span>
@@ -464,7 +461,7 @@
 
                                             <!-- Botón Finalizar -->
                                             <div class="ms-auto">
-                                                <button wire:click="validarYEnviarEvaluacion" 
+                                                <button wire:click="validarYEnviarEvaluacion"
                                                     :disabled="isTimeUp || @js(!$this->evaluacionEstaCompleta)"
                                                     wire:loading.attr="disabled"
                                                     class="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm"
@@ -484,7 +481,7 @@
                                     @endif
                                 </div>
                             </div>
-                           
+
                     @else
                             <!-- OTRO CONTENIDO -->
                             <div class="p-5 text-center bg-light border-bottom">
@@ -548,7 +545,7 @@
                                 <span class="fw-bold text-white">Completado</span>
                             </span>
                         </div>
-                    
+
                     @endif
                 </div>
             </div>
@@ -703,7 +700,7 @@
                                             $esCorrecta = $opcion->es_correcta;
                                             $claseBorde = '';
                                             $icon = '';
-                                            
+
                                             if ($esCorrecta) {
                                                 $claseBorde = 'border-success bg-label-success';
                                                 $icon = '<i class="ti ti-circle-check-filled text-success ms-2"></i>';
@@ -762,7 +759,8 @@
                         <div class="row g-0 align-items-center">
                             <!-- Banner Image -->
                             <div class="col-4 col-sm-3 col-md-2 h-100">
-                                <img src="{{ asset('img/forum_banner.png') }}" alt="Foro de dudas"
+                                <img src="{{ Storage::exists('img/cursos/forum_banner.png') ? tenant_asset('img/cursos/forum_banner.png') : Storage::disk('global_media')->url('cursos/forum_banner.png') }}"
+                                 alt="Foro de dudas"
                                     class="img-fluid h-100" style="object-fit: cover; min-height: 160px; max-height: 190px;">
                             </div>
                             <!-- Content -->
@@ -1007,7 +1005,7 @@
                 function habilitarBotonesHecho() {
                     let botones = document.querySelectorAll('.btn-marcar-hecho-class');
                     botones.forEach(btn => btn.removeAttribute('disabled'));
-                    
+
                     // Compatibilidad con el ID original por si queda algo
                     let btnOriginal = document.getElementById('btn-marcar-hecho');
                     if(btnOriginal) btnOriginal.removeAttribute('disabled');
@@ -1215,7 +1213,7 @@
                     } else {
                         text += 'Podrás reintentar en ' + data.horas + ' horas.';
                     }
-                    
+
                     if (data.puedeVerRespuestas) {
                         text += ' Antes de salir, puedes revisar las respuestas correctas.';
                     }

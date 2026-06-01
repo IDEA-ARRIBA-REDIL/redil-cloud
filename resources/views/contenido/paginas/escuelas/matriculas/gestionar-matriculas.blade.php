@@ -232,10 +232,7 @@
                             @php
                                 $item = $row->item;
                                 $esNivel = $row->tipo === 'NIVEL';
-                                $defaultImg = asset('storage/global/img/escuelas/default.png');
-                                $imgRuta = $item->portada
-                                    ? ($esNivel ? '/img/niveles/' : '/img/materias/') . $item->portada
-                                    : null;
+                                $portadaUrl = $item->portada_url ?? asset('storage/global/img/escuelas/default.png');
                             @endphp
 
                             <div class="col-md-6 col-lg-4">
@@ -243,7 +240,7 @@
                                     <div class="position-relative">
                                         {{-- Imagen de portada (Nivel o Materia) --}}
                                         <img class="card-img-top"
-                                            src="{{ $imgRuta ? Storage::url($configuracion->ruta_almacenamiento . $imgRuta) : $defaultImg }}"
+                                            src="{{ $portadaUrl }}"
                                             alt="Portada"
                                             style="height: 120px; object-fit: cover; {{ $row->estado == 'BLOQUEADA' ? 'filter: grayscale(1); opacity: 0.5;' : '' }}">
 

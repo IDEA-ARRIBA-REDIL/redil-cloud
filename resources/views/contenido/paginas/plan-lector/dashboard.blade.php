@@ -405,7 +405,7 @@ $configData = Helper::appClasses();
                         {{ strtoupper(substr($autor->primer_nombre, 0, 1) . substr($autor->primer_apellido, 0, 1)) }}
                       </span>
                     @else
-                      <img src="{{ Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$autor->foto) }}" alt="{{ $autor->foto }}" class="rounded-circle">
+                      <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$autor->foto) }}" alt="{{ $autor->foto }}" class="rounded-circle">
                     @endif
                   </div>
                   <span class="fw-normal text-dark fs-6">{{ $autor->name }}</span>

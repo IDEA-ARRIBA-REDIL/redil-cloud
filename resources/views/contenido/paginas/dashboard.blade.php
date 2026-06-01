@@ -6,7 +6,7 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Inicio daar')
+@section('title', 'Inicio')
 
 
 @section('page-style')
@@ -63,14 +63,14 @@
                 backdrop-filter: none !important;
             }
 
-            
+
             @media (min-width: 1200px) {
                 .dashboard-header {
                     padding-left: 2rem;
                     padding-right: 2rem;
                 }
             }
-        
+
             @media (min-width: 1400px) {
                 .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
                     max-width: 100% !important;
@@ -170,7 +170,7 @@
                     margin-bottom: 12px !important;
                     border: 1px solid #eee;
                 }
-                
+
                 .action-icon-container img {
                     width: 55px !important;
                     height: 55px !important;
@@ -371,7 +371,7 @@
 
 @section('content')
 
-    
+
 
     <!-- Offcanvas de Cumpleaños -->
     <div style="" class="offcanvas offcanvas-end theme-bg-secondary" tabindex="-1" id="offcanvasBirthday"
@@ -391,13 +391,13 @@
     </div>
 
     <div class="">
-        
+
         <div class="dashboard-header ajuste " style="background: #2F5D50 !important;">
             <h5 class="text-white fw-normal">¿Qué deseas hacer hoy?</h5>
-        </div>    
-        
+        </div>
+
         <div class="row ajuste">
-            
+
             <div class="col-12 col-md-6">
                 <div class="action-buttons-container pt-5">
                     <!-- Botón 1 -->
@@ -409,8 +409,8 @@
                         </div>
                         <p class="action-title">Academia</p>
                     </div>
-            
-                    <!-- Botón 2 --> 
+
+                    <!-- Botón 2 -->
                     <div class="action-card">
                         <div class="action-icon-container">
                             <a href="{{ request()->routeIs('grupo.lista') ? 'active' : '' }}">
@@ -419,7 +419,7 @@
                         </div>
                         <p class="action-title">Grupos</p>
                     </div>
-            
+
                     <!-- Botón 3: Cumpleaños -->
                     <div>
                         <div class="action-card" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBirthday">
@@ -433,19 +433,19 @@
             </div>
 
             <div class="col-12 col-md-6">
-                
+
                 @if ($rolActivo->hasPermissionTo('rueda_de_la_vida.item_rueda_de_la_vida'))
                  <div id="rueda-vida-card" class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
-                    <a href="{{ route('ruedaDeLaVida.gestor') }}" class="text-decoration-none"> 
+                    <a href="{{ route('ruedaDeLaVida.gestor') }}" class="text-decoration-none">
                     <div class="row g-0">
                         <div class="col-3 col-lg-3 col-xxl-2 bg-warning bg-opacity-25">
-                            <img class="card-img card-img-start object-fit-cover h-100 " src="{{Storage::disk('global_media')->url('Rueda-d-la-vida---dashboard.png')  }}" alt="Card image">
+                            <img class="card-img card-img-start object-fit-cover h-100 " src="{{Storage::disk('global_media')->url('/rueda-de-la-vida/img-card-dashboard.png')  }}" alt="Card image">
                         </div>
                         <div class="col-8 col-lg-8 col-xxl-9 bg-warning bg-opacity-25 card-body d-flex align-items-start flex-column justify-content-center">
-                      
+
                             <h5 class="card-title text-black mb-0 fw-semibold">Rueda de la vida</h5>
                             <p class="card-text text-black text-decoration-none fs-6" style="font-size: 0.8rem !important;">Establece tus metas y mejora tu promedio con Dios.</p>
-                       
+
                         </div>
                         <div class="col-1 d-flex align-items-center bg-warning bg-opacity-25">
                             <button class="btn btn-icon rounded-pill btn-text-dark waves-effect">
@@ -454,16 +454,16 @@
                         </div>
                     </div>
                    </a>
-                </div> 
+                </div>
                 @endif
             </div>
-            
+
         </div>
-        
+
         <div id="row-contenido-general" class="row ajuste">
-    
+
             {{--  habilitar notificaciones (solo móvil, solo si no están activas) --}}
-            <div id="banner-notif-permiso" class="col-12 mb-2 " style="display:none;">
+            <div id="banner-notif-permiso" class="col-12 my-2 " style="display:none;">
                 <div style="
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     border-radius: 16px;
@@ -501,7 +501,7 @@
                     ">&times;</button>
                 </div>
             </div>
-    
+
             {{-- notificaciones bloqueadas (denied) --}}
             <div id="banner-notif-bloqueado" class="col-12 mb-2" style="display:none;">
                 <div style="
@@ -536,13 +536,13 @@
                 </div>
             </div>
             {{-- Fin notificaciones instalación --}}
-    
+
             @livewire('dashboard.versiculo-del-dia', ['claseColumnas' => 'col-12  col-lg-6 mt-3'])
 
             <div id="col-racha-tiempo-con-dios" class="col-12  col-lg-6 mt-3" >
-    
+
                 <h5 class="text-black fw-bold">Racha</h5>
-    
+
                 <div class="card shadow" style="border-radius: 15px;">
                     <div class="card-body">
                        <div class="border-bottom">
@@ -573,7 +573,7 @@
                                     Dedica tiempo diario a tu relación íntima con Él.
                                 </p>
                             </div>
-                            
+
                             <div>
                                 <a href="{{ route('tiempoConDios.historial') }}" class="btn btn-outline-light rounded-pill px-4 py-2 mt-5" style="border-width: 1.5px; font-weight: 500;">
                                     Comenzar
@@ -584,21 +584,21 @@
                         <!-- Contenedor de Animación: Ajuste flexible -->
                         <div class="d-flex align-items-center justify-content-center bg-white p-3" style="min-width: 180px;">
                             @livewire('TiempoConDios.racha-animacion', [
-                                'ancho' => '160px', 
+                                'ancho' => '160px',
                                 'alto' => '160px'
                             ])
                         </div>
                     </div>
                 </div>
 
-              
-    
-    
+
+
+
             </div>
-    
+
             <div id="col-novedades" class="col-12 col-lg-12 mt-3">
                 <h5 class="text-black fw-bold">Novedades</h5>
-    
+
                 @if ($banners->count() > 0)
                     <div class="swiper-container swiper" id="swiper-banners">
                         <div class="swiper-wrapper">
@@ -639,9 +639,9 @@
                         </div>
                     </div>
                 @endif
-    
-            </div>                
-    
+
+            </div>
+
             <div class="col-12 col-lg-12 mt-3">
                 <h5 class="text-black fw-bold">Proximas actividades</h5>
                 @if ($actividades->isNotEmpty())
@@ -649,7 +649,7 @@
                         id="swiper-with-pagination-cards">
                         <div class="swiper-wrapper">
                             <!-- Cards with few info -->
-    
+
                             @foreach ($actividades as $actividad)
                                 <div class="swiper-slide" style="height: auto;">
                                     <div class="card border rounded-3 shadow-sm h-100">
@@ -675,7 +675,7 @@
                                     </div>
                                 </div>
                             @endforeach
-    
+
                             <!--/ Cards with few info -->
                         </div>
                         <div class="d-flex mt-10">
@@ -696,16 +696,17 @@
                 @endif
             </div>
             <!-- Elfsight Instagram Feed | Iglesia Manantial de Vida Eterna -->
+            @if(1==2)
             <h5 class="text-black fw-bold  mt-3">Siguenos en Instagram</h5>
-            
+
             <div id="container-instagram" class="col-12 col-lg-12">
-                 
+
                 <script src="https://elfsightcdn.com/platform.js" async></script>
                 <div class="elfsight-app-867b00f3-dd5b-4505-9098-befd1df883a8" data-elfsight-app-lazy></div>
             </div>
-            
+            @endif
             @livewire('dashboard.posts-widget', ['claseColumnas' => 'col-12 col-lg-12 mt-3 d-nonex'])
-    
+
 
             <div class="col-12 col-lg-12 mt-5 d-none">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -713,7 +714,7 @@
                     <a href="{{ route('tema.lista') }}" class="btn btn-sm btn-outline-primary rounded-pill">Ver todos los
                         temas</a>
                 </div>
-    
+
                 @if ($temas->isNotEmpty())
                     <div class="swiper-container swiper-container-horizontal swiper swiper-multiple-slides mb-3"
                         id="swiper-temas">
@@ -724,7 +725,7 @@
                                         <div class="position-relative">
                                             <a href="{{ route('tema.ver', $tema) }}">
                                                 <img class="card-img-top object-fit-cover" style="height: 160px;"
-                                                    src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/temas/' . $tema->portada) : Storage::url($configuracion->ruta_almacenamiento . '/img/temas/default.png') }}"
+                                                    src="{{ $tema->portada_url }}"
                                                     alt="{{ $tema->titulo }}">
                                             </a>
                                         </div>
@@ -749,8 +750,8 @@
                     </div>
                 @endif
             </div>
-        
-            
+
+
         </div>
     </div>
 

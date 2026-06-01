@@ -36,7 +36,7 @@ class ConfiguracionSeeder extends Seeder
             'direccion_obligatoria' => 1,
             'limite_menor_edad' => 18,
             'enviar_correo_bienvenida_nuevo_asistente' => 1,
-            'logo_personalizado' => 1,
+            'logo_personalizado' => 0,
             // 'label_invitados_reporte_grupo' => '',
             // 'label_campo_opcional1'         => '',
             'campo_opcional1_obligatorio' => 1,
@@ -110,8 +110,8 @@ class ConfiguracionSeeder extends Seeder
             'logo_app' => null,
             'favicon_app' => null,
             'tiene_sistema_aprobacion_de_reporte' => true,
-             'marca_blanca' => true,
-             'logo_app'=>'logo_1776201784.png'
+            'marca_blanca' => false,
+            'logo_app' => '',
         ]);
 
         /*

@@ -52,15 +52,12 @@
 
           @foreach($planesInscritos as $planInscrito)
           @php
-            $tieneImagenInscrito = $configuracion->version == 1 && $planInscrito->imagen_url;
-            $urlImagenInscrito = $tieneImagenInscrito 
-                ? Storage::url($configuracion->ruta_almacenamiento.'/img/planes_lectores/'.basename($planInscrito->imagen_url)) 
-                : null;
+            $urlImagenInscrito = $planInscrito->portada_url;
             $selectedGradientInscrito = $gradients[$planInscrito->id % count($gradients)];
           @endphp
           <div class="col-12 col-md-4">
             <div class="card shadow-none border h-100">
-              @if($tieneImagenInscrito)
+              @if($urlImagenInscrito)
                 <img src="{{ $urlImagenInscrito }}" class="card-img-top" alt="Imagen del plan" style="height: 150px; object-fit: cover;">
               @else
                 <div class="card-img-top d-flex align-items-center justify-content-center text-white" style="height: 150px; background: {{ $selectedGradientInscrito }};">
@@ -210,15 +207,12 @@
 
         @forelse($planesDisponibles as $plan)
         @php
-          $tieneImagenExplorar = $configuracion->version == 1 && $plan->imagen_url;
-          $urlImagenExplorar = $tieneImagenExplorar 
-              ? Storage::url($configuracion->ruta_almacenamiento.'/img/planes_lectores/'.basename($plan->imagen_url)) 
-              : null;
+          $urlImagenExplorar = $plan->portada_url;
           $selectedGradientExplorar = $gradients[$plan->id % count($gradients)];
         @endphp
         <div class="col-12 col-md-4">
           <div class="card shadow-sm border-0 h-100 position-relative overflow-hidden card-plan-explorar">
-            @if($tieneImagenExplorar)
+            @if($urlImagenExplorar)
               <img src="{{ $urlImagenExplorar }}" class="card-img-top" alt="Imagen del plan" style="height: 180px; object-fit: cover;">
             @else
               <div class="card-img-top d-flex align-items-center justify-content-center text-white" style="height: 180px; background: {{ $selectedGradientExplorar }};">

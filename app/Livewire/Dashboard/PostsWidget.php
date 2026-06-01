@@ -23,7 +23,7 @@ class PostsWidget extends Component
         $this->claseColumnas = $claseColumnas;
         $this->configuracion = Configuracion::first();
         $this->loadInitialPosts();
-        $this->titulo = $this->configuracion->version == 2 ? 'Vive Manantial' : 'Feed';
+        $this->titulo = 'Publicaciones';
     }
 
     public function loadInitialPosts()

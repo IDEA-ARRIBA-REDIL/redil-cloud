@@ -138,15 +138,9 @@
                             <!-- Dummy Video Player Image for mockup -->
                             <div
                                 class="ratio ratio-16x9 rounded-3 overflow-hidden shadow bg-dark position-relative d-flex align-items-center justify-content-center group">
-                                @if ($curso->imagen_portada)
-                                    <img src="{{ \Storage::url($configuracion->ruta_almacenamiento . '/img/cursos/' . $curso->imagen_portada) }}"
-                                        alt="{{ $curso->nombre }}" class="img-fluid w-100 h-100"
-                                        style="object-fit: cover; opacity: 0.85;">
-                                @else
-                                    <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2070&auto=format&fit=crop"
-                                        alt="Teacher" class="img-fluid w-100 h-100"
-                                        style="object-fit: cover; opacity: 0.85;">
-                                @endif
+                                <img src="{{ $curso->portada_url }}"
+                                    alt="{{ $curso->nombre }}" class="img-fluid w-100 h-100"
+                                    style="object-fit: cover; opacity: 0.85;">
                                 <div class="position-absolute d-flex align-items-center justify-content-center play-btn-mobile"
                                     style="width: 80px; height: 80px; background-color: #ef4444; border-radius: 50%; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
                                     <i class="ti ti-player-play-filled text-white ms-1" style="font-size: 2.5rem;"></i>
@@ -186,7 +180,7 @@
                                                 {{-- ESTILO PARA VIDEOS --}}
                                                 <div class="position-relative me-3 rounded overflow-hidden flex-shrink-0"
                                                     style="width: 90px; height: 50px;">
-                                                    <img src="{{ $curso->imagen_portada ? \Storage::url($configuracion->ruta_almacenamiento . '/img/cursos/' . $curso->imagen_portada) : 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2070&auto=format&fit=crop' }}"
+                                                    <img src="{{ $curso->portada_url }}"
                                                         alt="Thumb" class="img-fluid w-100 h-100"
                                                         style="object-fit: cover; filter: {{ $isFirstItem ? 'none' : 'grayscale(50%)' }}; opacity: 0.8;">
 

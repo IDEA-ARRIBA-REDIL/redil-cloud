@@ -86,10 +86,10 @@
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
                   <div class="avatar avatar-online">
-                    @if($usuario->foto == "default-m.png" || $usuario->foto == "default-f.png")
+                    @if(!$usuario->foto || $usuario->foto == "default-m.png" || $usuario->foto == "default-f.png")
                       <span class="avatar-initial h-auto rounded-circle border border-3 border-white bg-info"> {{ $usuario->inicialesNombre() }} </span>
                     @else
-                      <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto }}" alt="{{ $usuario->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
+                      <img src="{{ $usuario->foto_url }}" alt="{{ $usuario->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
                     @endif
                   </div>
                 </a>

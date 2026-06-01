@@ -54,7 +54,7 @@
                             {{-- Avatar del usuario --}}
                             <div class="avatar avatar-sm me-3">
                                 @if ($h->user->foto && !in_array($h->user->foto, ['default-m.png', 'default-f.png']))
-                                    <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $h->user->foto) }}"
+                                    <img src="{{ $h->user->foto_url }}"
                                         alt="{{ $h->user->nombre(3) }}"
                                         class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
                                 @else
@@ -218,7 +218,7 @@
                                 <div class="d-flex align-items-center">
                                     <div class="avatar avatar-xs me-2">
                                         @if ($respuesta->user->foto && !in_array($respuesta->user->foto, ['default-m.png', 'default-f.png']))
-                                            <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $respuesta->user->foto) }}"
+                                            <img src="{{ tenant_asset('img/usuarios/foto-usuario/' . $respuesta->user->foto) }}"
                                                 alt="{{ $respuesta->user->nombre(3) }}"
                                                 class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
                                         @else

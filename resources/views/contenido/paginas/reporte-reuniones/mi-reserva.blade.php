@@ -230,7 +230,7 @@ $configData = Helper::appClasses();
                                       {{ substr($persona->primer_nombre, 0, 1) . substr($persona->primer_apellido, 0, 1) }}
                                   </span>
                               @elseif($persona->foto)
-                                  <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $persona->foto) }}"
+                                  <img src="{{ $persona->foto_url }}"
                                       alt="avatar" class="rounded-circle">
                               @endif
                           </div>

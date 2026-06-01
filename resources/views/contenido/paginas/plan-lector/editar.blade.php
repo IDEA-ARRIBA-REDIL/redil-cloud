@@ -203,7 +203,7 @@
                             <div class="mb-3 col-md-12 d-flex justify-content-center align-items-center flex-column">
                                 <div class="position-relative d-inline-block">
                                     <img id="preview-foto"
-                                        src="{{ $plan->imagen_url ? asset($plan->imagen_url) : asset('assets/img/illustrations/page-pricing-enterprise.png') }}"
+                                        src="{{ $plan->portada_url ? $plan->portada_url : asset('assets/img/illustrations/page-pricing-enterprise.png') }}"
                                         alt="Preview" class="rounded border shadow-sm"
                                         style="width: 100%; max-width: 250px; aspect-ratio: 4/3; object-fit: cover;">
                                     <button type="button"
@@ -521,7 +521,7 @@
                             <div class="mb-2">
                                 <label class="form-label fw-bold">2. Recorta la foto</label>
                                 <center>
-                                    <img src="{{ $plan->imagen_url ? asset($plan->imagen_url) : Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100"
+                                    <img src="{{ $plan->portada_url ? $plan->portada_url : Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100"
                                         id="croppingImage" alt="cropper">
                                 </center>
                             </div>

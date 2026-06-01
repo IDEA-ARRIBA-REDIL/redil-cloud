@@ -129,9 +129,11 @@
             const bannerPermisos = document.getElementById('banner-permiso-notificaciones');
             const btnPedirPermisos = document.getElementById('btn-pedir-permisos');
 
-            // Mostrar el banner solo si el navegador soporta Notificaciones y el usuario no ha respondido ('default')
-            if ('Notification' in window && Notification.permission === 'default' && 'setAppBadge' in navigator && bannerPermisos) {
+            // Mostrar el banner si el navegador soporta Notificaciones y el usuario no ha respondido ('default')
+            // NOTA: Ya NO exigimos 'setAppBadge' in navigator; ese chequeo se hace aparte en triggerBadge()
+            if ('Notification' in window && Notification.permission === 'default' && bannerPermisos) {
                 bannerPermisos.classList.remove('d-none');
+                console.log('Banner de permisos mostrado. Notification.permission:', Notification.permission);
             }
 
             if(btnPedirPermisos) {

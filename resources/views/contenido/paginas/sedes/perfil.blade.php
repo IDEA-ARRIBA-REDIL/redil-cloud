@@ -825,7 +825,7 @@
       <div class="col-12">
         <div class="card mb-6">
           <div class="user-profile-header-banner">
-            <img src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento. '/img/sedes/banners/' . $sede->foto) : Storage::url($configuracion->ruta_almacenamiento. '/img/sedes/banners/' . $sede->foto)}}" alt="Banner image" class="rounded-top">
+            <img src="{{ $sede->foto_url }}" alt="Banner image" class="rounded-top">
           </div>
           <div class="user-profile-header d-flex flex-column flex-md-row text-sm-start text-center mb-5">
             <div class="flex-shrink-0 mt-n2 mx-0 mx-auto">
@@ -976,7 +976,7 @@
                                     <div class="d-flex align-items-start">
                                         <div class="d-flex align-items-start">
                                             <div class="avatar me-2">
-                                                <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $encargado->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $encargado->foto }}"
+                                                <img src="{{ $encargado->foto_url }}"
                                                     alt="Avatar" class="rounded-circle" />
                                             </div>
                                             <div class="me-2 ms-1">

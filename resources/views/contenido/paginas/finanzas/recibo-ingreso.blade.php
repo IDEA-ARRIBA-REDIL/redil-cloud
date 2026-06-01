@@ -62,7 +62,7 @@
 
 <div class="container">
     <div class="header">
-        <img src="{{ public_path('/storage/'.$configuracion->ruta_almacenamiento . '/img/iglesia/'.$iglesia->logo) }}" style="width: 100px; height: auto; margin-bottom: 10px;">
+        <img src="{{ public_path('storage/tenant' . tenant('id') . '/img/iglesia/' . $iglesia->logo) }}" style="width: 100px; height: auto; margin-bottom: 10px;">
         <h1>Recibo de Ingreso</h1>
         <p>ID del Ingreso: {{ $ingreso->id }}</p>
     </div>

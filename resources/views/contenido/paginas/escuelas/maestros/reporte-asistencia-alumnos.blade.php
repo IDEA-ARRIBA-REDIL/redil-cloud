@@ -9,6 +9,25 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 @section('page-style')
     @vite(['resources/assets/vendor/scss/pages/page-profile.scss', 'resources/assets/vendor/libs/select2/select2.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss', 'resources/assets/vendor/libs/bootstrap-select/bootstrap-select.scss'])
+    <style>
+        .module-nav-link {
+            font-size: 12px !important;
+            padding: 0.6rem 0.8rem !important;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+        }
+
+        .module-nav-link.active {
+            background-color: var(--bs-primary) !important;
+            color: var(--bs-white) !important;
+            border-color: var(--bs-primary) !important;
+        }
+
+        .module-nav-link:not(.active):hover {
+            background-color: var(--bs-gray-200);
+        }
+    </style>
 @endsection
 
 @section('vendor-script')
@@ -37,16 +56,15 @@
                         @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_dashboard_general'))
                         <li class="nav-item">
                             <a href="{{ route('maestros.dashboardClase', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link p-3 waves-effect waves-light  "> {{-- Marcado como activo --}}
+                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.dashboardClase') ? 'active' : '' }}">
                                 <i class="mdi mdi-view-dashboard-outline me-1"></i> Dashboard general
                             </a>
                         </li>
                         @endif
-
                         @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_calificacion_detallada'))
                         <li class="nav-item">
                             <a href="{{ route('maestros.calificacionMultiple', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link p-3 waves-effect waves-light ">
+                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.calificacionMultiple') ? 'active' : '' }}">
                                 <i class="mdi mdi-table-edit me-1"></i> Calificación detallada
                             </a>
                         </li>
@@ -54,24 +72,33 @@
                         @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_reportes_asistencia'))
                         <li class="nav-item">
                             <a href="{{ route('maestros.reporteAsistencia', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link p-3 waves-effect waves-light active">
+                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.reporteAsistencia') ? 'active' : '' }}">
                                 <i class="mdi mdi-calendar-check-outline me-1"></i> Reportes de asistencia
+                            </a>
+                        </li>
+                        @endif
+                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_recursos_alumnos'))
+                        <li class="nav-item">
+                            <a href="{{ route('maestros.recursosAlumnos', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
+                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.recursosAlumnos') ? 'active' : '' }}">
+                                <i class="mdi mdi-folder-multiple-outline me-1"></i> Recursos alumnos
+                            </a>
+                        </li>
+                        @endif
+                        @if(isset($rolActivo))
+                        <li class="nav-item">
+                            <a href="{{ route('maestros.gestionarItems', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
+                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.gestionarItems') ? 'active' : '' }}">
+                                <i class="mdi mdi-list-box-outline me-1"></i> Gestionar Items
                             </a>
                         </li>
                         @endif
                         @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_calificacion_grilla'))
                         <li class="nav-item">
                             <a href="{{ route('maestros.calificacionGrilla', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link p-3 waves-effect waves-light">
+                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.calificacionGrilla') ? 'active' : '' }}">
                                 <i class="mdi mdi-grid me-1"></i> Calificación Grilla
                             </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_recursos_alumnos'))
-                        <li class="nav-item">
-                             <a href="{{ route('maestros.recursosAlumnos', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}" class="nav-link module-nav-link p-3 waves-effect waves-light ">
-                            <i class="mdi mdi-folder-multiple-outline me-1"></i> Recursos alumnos
-                        </a>
                         </li>
                         @endif
                     </ul>

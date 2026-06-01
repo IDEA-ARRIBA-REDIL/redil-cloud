@@ -14,7 +14,7 @@
                 <div class="card shadow-sm h-100">
                     <img src="{{ $banner->imagen_url }}" class="card-img-top" alt="Imagen del banner" style="height: 180px; object-fit: cover;">
                     <div class="card-body d-flex flex-column">
-                   
+
                         <p class="card-text flex-grow-1 fw-semibold">{{ $banner->descripcion ?: 'Sin descripción.' }}</p>
                         <div class="d-flex justify-content-between align-items-center">
                             @if ($banner->activo)
@@ -51,10 +51,81 @@
                     <form wire:submit.prevent="guardar">
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="imagen" class="form-label">Imagen del banner (Máx 5MB)</label>
-                                <input wire:model="imagen" type="file" class="form-control" id="imagen">
-                                <div wire:loading wire:target="imagen" class="small text-muted mt-1">Subiendo...</div>
-                                @error('imagen') <span class="text-danger small">{{ $message }}</span> @enderror
+                                <label class="form-label">Imagen del banner (Máx 5MB)</label>
+
+                                {{-- Cargador con Alpine.js --}}
+                                <div x-data="{
+                                    subiendo: false,
+                                    errorMsg: '',
+                                    subirArchivo(event) {
+                                        const file = event.target.files[0];
+                                        if (!file) return;
+
+                                        this.subiendo = true;
+                                        this.errorMsg = '';
+
+                                        const formData = new FormData();
+                                        formData.append('archivo', file);
+
+                                        fetch('{{ route("banner-escuela.upload") }}', {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                                                'Accept': 'application/json'
+                                            },
+                                            body: formData
+                                        })
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            this.subiendo = false;
+                                            if (data.success) {
+                                                $wire.set('nombreArchivoSubido', data.nombre);
+                                                $wire.set('rutaArchivoSubida', data.ruta_relativa);
+                                            } else {
+                                                this.errorMsg = data.message || 'Error al subir la imagen.';
+                                                this.$refs.archivoInput.value = '';
+                                            }
+                                        })
+                                        .catch(error => {
+                                            this.subiendo = false;
+                                            this.errorMsg = 'Error de conexión al subir la imagen.';
+                                            this.$refs.archivoInput.value = '';
+                                        });
+                                    },
+                                    eliminarArchivoLocal() {
+                                        $wire.call('eliminarArchivoLocal');
+                                    }
+                                }">
+                                    {{-- Si no hay archivo nuevo subido --}}
+                                    <template x-if="!$wire.nombreArchivoSubido">
+                                        <div>
+                                            {{-- Si estamos editando y existe banner, podemos indicar que ya hay una imagen cargada --}}
+                                            @if ($bannerId)
+                                                <div class="mb-2 small text-muted">
+                                                    <i class="ti ti-info-circle me-1"></i> Ya existe una imagen cargada. Sube una nueva para reemplazarla.
+                                                </div>
+                                            @endif
+                                            <input type="file" class="form-control" x-ref="archivoInput" @change="subirArchivo" accept="image/*">
+                                            @error('rutaArchivoSubida') <span class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
+                                            <div x-show="subiendo" class="small text-muted mt-2 d-flex align-items-center">
+                                                <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                                                Subiendo imagen...
+                                            </div>
+                                            <div x-show="errorMsg" class="small text-danger mt-1" x-text="errorMsg"></div>
+                                        </div>
+                                    </template>
+
+                                    {{-- Si ya se subió un archivo nuevo --}}
+                                    <template x-if="$wire.nombreArchivoSubido">
+                                        <div class="alert alert-success d-flex align-items-center p-2 mb-0 mt-2">
+                                            <i class="ti ti-circle-check me-2 fs-4"></i>
+                                            <div class="flex-grow-1 text-truncate">
+                                                <strong>Imagen cargada:</strong> <span x-text="$wire.nombreArchivoSubido"></span>
+                                            </div>
+                                            <button type="button" class="btn-close ms-auto" @click="eliminarArchivoLocal" aria-label="Close"></button>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label for="descripcion" class="form-label">Descripción (opcional):</label>
@@ -70,7 +141,7 @@
                             <button wire:click="$set('modalVisible', false)" type="button" class="btn btn-outline-secondary rounded-pill">Cancelar</button>
                             <button type="submit" class="btn btn-primary rounded-pill">
                                 <span wire:loading wire:target="guardar" class="spinner-border  spinner-border-sm" role="status" aria-hidden="true"></span>
-                                Guardar 
+                                Guardar
                             </button>
                         </div>
                     </form>

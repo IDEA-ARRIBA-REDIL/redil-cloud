@@ -88,7 +88,7 @@ $configData = Helper::appClasses();
     <!-- /texto -->
 
     <!-- imagen -->
-    <div id="imagen" class="col-lg-6 col-md-6 col-sm-12 d-none d-md-block px-0" style="background-image: url('{{ Storage::disk('global_media')->url('Rueda-de-la-vida.jpg')  }}');" >
+    <div id="imagen" class="col-lg-6 col-md-6 col-sm-12 d-none d-md-block px-0" style="background-image: url('{{ Storage::exists('img/rueda-de-la-vida/banner-bienvenida.png') ? tenant_asset('img/rueda-de-la-vida/banner-bienvenida.png') : Storage::disk('global_media')->url('/rueda-de-la-vida/banner-bienvenida.png')}}'); background-size: cover;  background-position: center;" >
     </div>
      <!-- /imagen -->
   </div>

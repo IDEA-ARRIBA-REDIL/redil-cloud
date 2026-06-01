@@ -1,5 +1,39 @@
 <div>
+    <style>
+        #editor-descripcion-corta {
+            height: auto !important;
+        }
+        #editor-descripcion-corta .ql-editor {
+            min-height: 120px !important;
+            height: auto !important;
+        }
+        #editor-descripcion {
+            height: auto !important;
+        }
+        #editor-descripcion .ql-editor {
+            min-height: 200px !important;
+            height: auto !important;
+        }
+    </style>
     <form wire:submit.prevent="save">
+        <!-- PORTADA -->
+        <div class="col-md-12">
+             <div class="card mb-4 rounded rounded-3">          
+            
+                <img id="preview-foto" class="cropped-img card-img-top mb-2" src="{{ Storage::disk('global_media')->url('cursos/default.png') }}" alt="Portada Curso" style="width: 100%; height: auto; max-height: 300px; object-fit: cover;">
+                <button type="button" style="background-color: rgba(255, 255, 255, 0.5);" class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2" data-bs-toggle="modal" data-bs-target="#modalFoto">Cambiar portada <i style="padding-left: 5px;" class="ti ti-camera"></i></button>
+
+                @error('imagen_portada') <div class="alert alert-danger mt-2 mx-4 py-2 small">{{ $message }}</div> @enderror
+                @error('cropped_imagen_portada') <div class="alert alert-danger mt-2 mx-4 py-2 small">{{ $message }}</div> @enderror
+
+                <div class="row p-4 m-0 d-flex card-body">
+                    <h5 class="mb-1 fw-semibold text-black">Crear nuevo curso</h5>
+                    <p class="mb-2 text-black">Completa la información, configuración y carga la imagen de portada de este curso.</p>
+                </div>
+            </div>
+        </div>        
+        <!-- PORTADA -->
+
         {{-- Card 1: Información Básica --}}
         <div class="card mb-4">
             <div class="card-header">
@@ -9,7 +43,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Nombre del curso</label>
-                        <input type="text" class="form-control" wire:model.live="nombre" placeholder="Ej: Introducción a la Fe">
+                        <input type="text" class="form-control" wire:model.live.debounce.250ms="nombre" placeholder="Ej: Introducción a la Fe">
                         @error('nombre') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-md-6" wire:ignore>
@@ -38,17 +72,21 @@
                         @error('categorias_seleccionadas') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="col-12">
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Descripción corta</label>
+                         <div wire:ignore>
+                            <div id="editor-descripcion-corta">{!! $descripcion_corta !!}</div>
+                        </div>
+                        <input type="hidden" wire:model="descripcion_corta" id="descripcion_corta_input">
+                        @error('descripcion_corta') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="col-12 mb-3">
                         <label class="form-label">Descripción larga</label>
                          <div wire:ignore>
-                            <div id="editor-descripcion" style="height: 150px;">{!! $descripcion_larga !!}</div>
+                            <div id="editor-descripcion">{!! $descripcion_larga !!}</div>
                         </div>
                         <input type="hidden" wire:model="descripcion_larga" id="descripcion_larga_input">
                         @error('descripcion_larga') <span class="text-danger small">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Descripción corta</label>
-                        <textarea class="form-control" wire:model="descripcion_corta" rows="2"></textarea>
                     </div>
                          <div class="col-md-4">
                             <label class="form-label">Nivel de dificultad</label>
@@ -163,24 +201,13 @@
                 <h5 class="mb-0 fw-semibold">3. Multimedia</h5>
             </div>
             <div class="card-body">
-                 <div class="row g-3">
-                     <div class="col-md-6">
-                        <label class="form-label">Imagen de portada (Opcional)</label>
-                        <input type="file" class="form-control" wire:model.live="imagen_portada" accept="image/*">
-                        @error('imagen_portada') <span class="text-danger small">{{ $message }}</span> @enderror
-
-                        @if ($imagen_portada && !is_string($imagen_portada))
-                            <div class="mt-2">
-                                <img src="{{ $imagen_portada->temporaryUrl() }}" alt="Preview" class="img-fluid rounded" style="max-height: 200px;">
-                            </div>
-                        @endif
-                    </div>
-                     <div class="col-md-6">
+                <div class="row g-3">
+                    <div class="col-12">
                         <label class="form-label">URL video preview (YouTube/Vimeo)</label>
                         <input type="url" class="form-control" wire:model="video_preview_url" placeholder="https://youtube.com/watch?v=...">
                         @error('video_preview_url') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
-                 </div>
+                </div>
             </div>
         </div>
 
@@ -207,9 +234,8 @@
             </div>
         </div>
 
-        <div class="d-flex justify-content-end mb-4">
-            <a href="{{ route('cursos.gestionar') }}" class="btn btn-outline-secondary rounded-pill me-2">Cancelar</a>
-            <button type="submit" class="btn btn-primary rounded-pill">Guardar curso</button>
+        <div class="d-flex justify-content-start mb-4">
+            <button type="submit" class="btn btn-primary rounded-pill">Guardar</button>
         </div>
     </form>
 
@@ -217,6 +243,22 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script>
         document.addEventListener('livewire:initialized', () => {
+             var quillCorta = new Quill('#editor-descripcion-corta', {
+                theme: 'snow',
+                placeholder: 'Escribe la descripción corta del curso aquí...',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        ['clean']
+                    ]
+                }
+            });
+
+            quillCorta.on('text-change', function() {
+                @this.set('descripcion_corta', quillCorta.root.innerHTML);
+            });
+
              var quill = new Quill('#editor-descripcion', {
                 theme: 'snow',
                 placeholder: 'Escribe la descripción del curso aquí...',
@@ -294,6 +336,110 @@
             Livewire.hook('morph.updated', ({ el, component }) => {
                 initSelect2();
             });
+
+            // Cropper.js Integration
+            var croppingImage = document.querySelector('#croppingImage'),
+                cropBtn = document.querySelector('.crop'),
+                croppedImg = document.querySelector('.cropped-img'),
+                upload = document.querySelector('#cropperImageUpload'),
+                cropper = '';
+
+            var modalFoto = document.getElementById('modalFoto');
+            modalFoto.addEventListener('shown.bs.modal', function () {
+                if (cropper) {
+                    cropper.destroy();
+                }
+                cropper = new Cropper(croppingImage, {
+                    zoomable: false,
+                    aspectRatio: 1693 / 376,
+                    cropBoxResizable: true
+                });
+            });
+
+            modalFoto.addEventListener('hidden.bs.modal', function () {
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+                upload.value = '';
+            });
+
+            // on change show image with crop options
+            upload.addEventListener('change', function(e) {
+                if (e.target.files.length) {
+                    var fileType = e.target.files[0].type;
+                    if (fileType === 'image/gif' || fileType === 'image/jpeg' || fileType === 'image/png') {
+                        if (cropper) {
+                            cropper.destroy();
+                        }
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            if (e.target.result) {
+                                croppingImage.src = e.target.result;
+                                cropper = new Cropper(croppingImage, {
+                                    zoomable: false,
+                                    aspectRatio: 1693 / 376,
+                                    cropBoxResizable: true
+                                });
+                            }
+                        };
+                        reader.readAsDataURL(e.target.files[0]);
+                    } else {
+                        alert('Selected file type is not supported. Please try again');
+                    }
+                }
+            });
+
+            // crop on click
+            cropBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                let imgSrc = cropper
+                    .getCroppedCanvas({
+                        height: 376,
+                        width: 1693
+                    })
+                    .toDataURL();
+                croppedImg.src = imgSrc;
+                @this.set('cropped_imagen_portada', imgSrc);
+            });
         });
     </script>
+
+    <!-- modal foto-->
+    <div class="modal fade modal-img" id="modalFoto" tabindex="-1" aria-hidden="true" wire:ignore>
+      <div class="modal-dialog modal-md modal-simple modal-edit-user">
+        <div class="modal-content">
+          <div class="modal-body">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="text-center mb-4">
+              <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir foto</h3>
+              <p class="text-black">Selecciona y recorta la foto</p>
+            </div>
+
+            <div class="row">
+              <div class="col-12">
+                <div class="mb-2">
+                  <label class="mb-2 text-black"><span class="fw-bold">Paso #1</span> Selecciona la foto</label><br>
+                  <input class="form-control" type="file" id="cropperImageUpload">
+                </div>
+                <div class="mb-2">
+                  <label class="mb-2 text-black"><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
+                  <center>
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100" id="croppingImage" alt="cropper">
+                  </center>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer text-center">
+            <div class="col-12 text-center">
+              <button type="reset" class="btn rounded-pill btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+              <button type="button" class="btn btn-primary rounded-pill crop me-sm-3 me-1" data-bs-dismiss="modal">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--/ modal foto -->
 </div>

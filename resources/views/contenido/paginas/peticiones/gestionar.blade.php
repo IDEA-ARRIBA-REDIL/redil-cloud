@@ -320,7 +320,7 @@ $configData = Helper::appClasses();
                     <div class="card-body d-flex flex-row p-3">
 
                       <div class="card-icon me-1">
-                      <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/peticiones/'. $indicador->imagen) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/'. $indicador->imagen) }}" alt="icono" class="me-2" width="50">
+                      <img src="{{ tenant_asset('img/peticiones/'. $indicador->imagen) }}" alt="icono" class="me-2" width="50">
                       </div>
 
                       <div class="card-title mb-0">
@@ -434,7 +434,7 @@ $configData = Helper::appClasses();
                 <small class="text-black">Creada por</small>
                 <div class="d-flex align-items-center mt-1">
                   <div class="avatar avatar-sm me-2">
-                     <img class="rounded-circle" src="{{ $peticion->fotoUsuario ? ($configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : asset('assets/img/avatars/1.png') }}" alt="foto">
+                     <img class="rounded-circle" src="{{ $peticion->fotoUsuario ? tenant_asset('img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : asset('assets/img/avatars/1.png') }}" alt="foto">
                   </div>
                   <small class="fw-semibold text-black ">{{ $peticion->usuarioCreacion ?? 'No especificado'}}</small>
                 </div>

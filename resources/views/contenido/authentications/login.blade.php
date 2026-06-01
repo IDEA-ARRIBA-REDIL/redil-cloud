@@ -2,6 +2,7 @@
 @php
 $customizerHidden = 'customizer-hide';
 $configData = Helper::appClasses();
+
 @endphp
 
 @extends('layouts/blankLayout')
@@ -39,94 +40,106 @@ $configData = Helper::appClasses();
 
 
     <!-- Login -->
-    <div class="d-flex col-12 col-lg-5 align-items-center p-sm-12 p-6 ">
-      <div class="w-px-400 mx-auto mt-2 mt-lg-3 pt-5">
+    <div class="d-flex col-12 col-lg-5 align-items-center p-sm-5 my-8 p-6">
+      <div class="w-100 mx-auto" style="max-width: 360px;">
 
         <!-- Logo -->
-        <div class="app-brand demo d-flex mb-3">
-          <a href="{{url('/')}}" class="app-brand-link gap-0 d-flex align-items-center">
-            <img style="width:90%" class="app-brand-logo me-2" src="{{ config('variables.logoApp') }}">
-            
+        <div class="text-center mb-2">
+          <a href="{{url('/')}}" class="d-inline-block">        
+            @include('_partials.macros', [
+              'width' => '200px'
+            ])
           </a>
-        </div>
-        <div>
-          <span class=" menu-text fw-bold h1 titulo-login m-0">{{config('variables.templateName')}}</span>
         </div>
         <!-- /Logo -->
 
-        <h3 class=" mb-1 d-none">{{config('variables.templateName')}}</h3>
-        <p class="text-muted  fw-light p-0 titulo-descripcion" >{{config('variables.templateDescriptionLogin')}}</p>
+        <p class="text-center text-muted fw-light mt-1 mb-8 titulo-descripcion">{{config('variables.templateDescriptionLogin')}}</p>
 
         <form id="" class="mb-3" action="{{ route('login') }}" method="POST">
           @csrf
 
           @include('layouts.status-msn')
 
-          <div class="mb-2">
-            <label for="email" class="form-label d-none">Email or Username</label>
-            <input  type="text" class="form-control input-login" id="email" name="email" value="{{ old('email',$emailDefault) }}" placeholder="Email" autofocus>
-          </div>
-          <div class="mb-2 form-password-toggle">
-            <div class="d-flex justify-content-between">
-              <label class="form-label d-none" for="password">Password</label>
-            </div>
+          {{-- Email con ícono --}}
+          <div class="mb-3">
             <div class="input-group input-group-merge">
-              <input type="password" id="password" class=" input-login form-control" name="password" placeholder="Contraseña" aria-describedby="password" />
-              <span style=""  class="input-group-text input-login  cursor-pointer"><i class="ti ti-eye-off"></i></span>
+              <span style="color: white;" class="input-group-text input-login">
+                <i class="ti ti-mail"></i>
+              </span>
+              <input
+                type="text"
+                class="form-control input-login"
+                id="email"
+                name="email"
+                value="{{ old('email', $emailDefault) }}"
+                placeholder="lider_d@redil.com"
+                autofocus
+              >
             </div>
           </div>
-          <div class="">
 
-          <div class="mt-4">
-            <a href="{{ route('password.request') }}">
-              <p class="mb-1 text-muted p-0 titulo-descripcion"> ¿Olvidaste tu contraseña? </p>
-            </a>
-            </div>
-            <div class="form-check d-none">
-              <input class="form-check-input" type="checkbox" id="remember-me">
-              <label class="form-check-label  text-muted titulo-descripcion " for="remember-me">
-                Recordarme
-              </label>
+          {{-- Contraseña con ícono --}}
+          <div class="mb-2 form-password-toggle">
+            <div class="input-group input-group-merge">
+              <span style="color: white;" class="input-group-text input-login">
+                <i class="ti ti-lock"></i>
+              </span>
+              <input
+                type="password"
+                id="password"
+                class="form-control input-login"
+                name="password"
+                placeholder="Contraseña"
+                aria-describedby="password"
+              />
+              <span class="input-group-text input-login cursor-pointer">
+                <i class="ti ti-eye-off"></i>
+              </span>
             </div>
           </div>
-          <div class="mt-5">
+
+          {{-- Olvidaste contraseña --}}
+          <div class="text-center my-8">
+            <a href="{{ route('password.request') }}" class="titulo-descripcion primary" style="text-decoration: none;">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+
+          {{-- Botón Ingresar --}}
+          <div class="my-8">
             <button class="btn rounded-pill btn-primary d-grid w-100 titulo-descripcion">
               Ingresar
             </button>
           </div>
         </form>
 
-        <div id="container-redes" class="container mt-4">
-          <div class="divider m-1">
-            <div class="divider-text text-muted titulo-descripcion">Siguenos en redes</div>
+        {{-- Síguenos en redes --}}
+        <div id="container-redes" class="mt-3">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <hr class="flex-grow-1 m-0" style="border-color: rgba(255,255,255,0.15);">
+            <span class="text-muted titulo-descripcion" style="white-space: nowrap; font-size: 0.85rem;">Síguenos en redes</span>
+            <hr class="flex-grow-1 m-0" style="border-color: rgba(255,255,255,0.15);">
           </div>
-
-          <div class="d-flex justify-content-center">
-
-            <a href="javascript:;" class="btn fs-5 ">
-              <i style="font-size: 30px;
-    color: #fff;" class="ti ti-brand-facebook"></i>
+          <div class="d-flex justify-content-center gap-2">
+            <a href="javascript:;" class="btn fs-5 p-1">
+              <i class="ti ti-brand-facebook" style="font-size: 28px; color: #fff;"></i>
             </a>
-
-            <a href="javascript:;" class="btn fs-5">
-              <i style="font-size: 30px;
-    color: #fff;"  class="ti ti-brand-instagram"></i>
+            <a href="javascript:;" class="btn fs-5 p-1">
+              <i class="ti ti-brand-instagram" style="font-size: 28px; color: #fff;"></i>
             </a>
-
-            <a href="javascript:;" class="btn fs-5">
-              <i style="font-size: 30px;
-    color: #fff;"  class="ti ti-brand-youtube"></i>
+            <a href="javascript:;" class="btn fs-5 p-1">
+              <i class="ti ti-brand-youtube" style="font-size: 28px; color: #fff;"></i>
             </a>
-
           </div>
         </div>
 
-        <div id="container-footer" class="mt-10">
-          <p id="footer" class="text-algin-start">
+        {{-- Footer registro --}}
+        <div id="container-footer" class="text-center mt-8">
+          <p id="footer" class="mb-0">
             <span class="titulo-descripcion">¿No tienes cuenta ?</span>
             @foreach($formularios as $formulario)
-            <a href="{{ route('usuario.nuevoExterior', $formulario) }}">
-              <span>{{ $formulario->label }} </span>
+            <a href="{{ route('usuario.nuevoExterior', $formulario) }}" style="color: var(--bs-primary); text-decoration: none;">
+              {{ $formulario->label }}
             </a>
             @endforeach
           </p>

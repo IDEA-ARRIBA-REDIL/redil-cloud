@@ -81,7 +81,7 @@
                 cropBtn = document.querySelector('.crop'),
                 croppedImg = document.querySelector('.cropped-img'),
                 upload = document.querySelector('#cropperImageUpload'),
-                inputResultado = document.querySelector('#imagen-recortada'),
+                inputNombreArchivo = document.querySelector('#portada-nombre'),
                 cropper = '';
 
             setTimeout(() => {
@@ -130,14 +130,44 @@
             cropBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 if (cropper) {
-                    let imgSrc = cropper
-                        .getCroppedCanvas({
-                            height: 376,
-                            width: 1693
+                    // Mostrar indicador de carga
+                    const statusEl = document.querySelector('#upload-status');
+                    statusEl.classList.remove('d-none');
+
+                    cropper.getCroppedCanvas({
+                        height: 376,
+                        width: 1693
+                    }).toBlob(function(blob) {
+                        // Crear FormData con el archivo
+                        const formData = new FormData();
+                        formData.append('portada', blob, 'portada.png');
+
+                        // Subir via fetch
+                        fetch('{{ route("materias.uploadPortada") }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: formData
                         })
-                        .toDataURL();
-                    croppedImg.src = imgSrc;
-                    inputResultado.value = imgSrc;
+                        .then(response => response.json())
+                        .then(data => {
+                            statusEl.classList.add('d-none');
+                            if (data.success) {
+                                // Mostrar preview
+                                croppedImg.src = cropper.getCroppedCanvas({ height: 376, width: 1693 }).toDataURL();
+                                // Guardar nombre del archivo en input hidden
+                                inputNombreArchivo.value = data.nombre;
+                            } else {
+                                alert(data.message || 'Error al subir la imagen.');
+                            }
+                        })
+                        .catch(error => {
+                            statusEl.classList.add('d-none');
+                            alert('Error de conexión al subir la imagen.');
+                        });
+                    }, 'image/png');
                 } else {
                     console.error("Cropper no está inicializado.");
                     alert('Por favor, selecciona una imagen primero y espera a que cargue el recortador.');
@@ -313,14 +343,20 @@
         <div class="col-md-12">
             <div class="card mb-4 rounded rounded-3">
                 <img id="preview-foto" class="cropped-img card-img-top mb-2"
-                    src="{{ old('foto') ? old('foto') : Storage::url($configuracion->ruta_almacenamiento . '/img/materias/default.png') }}"
+                    src="{{ tenant_asset('img/materias/default.png') }}"
                     alt="Portada {{ $escuela->nombre }}">
                 <button type="button" style="background-color: rgba(255, 255, 255, 0.5);"
                     class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2"
                     data-bs-toggle="modal" data-bs-target="#modalFoto">Cambiar portada <i style="padding-left: 5px;"
                         class="ti ti-camera"></i></button>
-                <input class="form-control d-none" type="text" value="{{ old('foto', '') }}" id="imagen-recortada"
-                    name="foto">
+                {{-- Input hidden para guardar solo el nombre del archivo --}}
+                <input class="form-control d-none" type="text" value="" id="portada-nombre"
+                    name="portada_nombre">
+                {{-- Indicador de carga --}}
+                <div id="upload-status" class="d-none small text-muted p-2">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Subiendo imagen...
+                </div>
 
                 <div class="row p-4 m-0 d-flex card-body">
                     <h5 class="mb-1 fw-semibold text-black">Crear materia </h5>

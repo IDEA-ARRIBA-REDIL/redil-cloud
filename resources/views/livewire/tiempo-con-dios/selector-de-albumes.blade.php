@@ -15,11 +15,7 @@
           @foreach($albumes as $album)
           <a href="javascript:;" wire:click="seleccionarAlbum({{$album->id}})" class="dropdown-item d-flex align-items-center p-2 mb-1 border">
             <div class="avatar me-2" >
-              @if($album->imagen)
-              <img class="img-fluid rounded"  src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$album->imagen) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$album->imagen) }}"  alt="album">
-              @else
-                <img class="img-fluid" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/album-default.png') : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/album-default.png') }}"  alt="album">
-              @endif
+              <img class="img-fluid rounded" src="{{ $album->portada_url }}" alt="album">
             </div>
             <div class="flex-grow-1 me-2">
               <p class="fs-7 text-wrap m-0">{{ $album->nombre }}</p>
@@ -43,11 +39,7 @@
         <div class="dropdown-item w-100 m-0 d-flex p-1 border flex-grow-1">
           <div class="flex-fill d-flex align-items-center">
             <div class="avatar me-2" >
-              @if($albumSeleccionado->imagen)
-              <img class="img-fluid rounded"  src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$albumSeleccionado->imagen) : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/'.$albumSeleccionado->imagen) }}"  alt="album">
-              @else
-              <img class="img-fluid" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/album-default.png') : Storage::url($configuracion->ruta_almacenamiento.'/reproductor-audio/imagenes/album-default.png') }}"  alt="album">
-              @endif
+              <img class="img-fluid rounded" src="{{ $albumSeleccionado->portada_url }}" alt="album">
             </div>
             <div class="flex-grow-1 me-2">
               <p class="fs-6 text-wrap m-0 mt-1 fw-bold">{{ $albumSeleccionado->nombre }}</p>

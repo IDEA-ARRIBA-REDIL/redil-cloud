@@ -12,7 +12,7 @@
     <div class="d-flex align-items-center mb-4">
       <div class="me-3">
         @if($usuario->foto && $usuario->foto != "default-m.png" && $usuario->foto != "default-f.png")
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto }}" 
+          <img src="{{ $usuario->foto_url }}" 
                alt="{{ $usuario->nombre(3) }}" 
                class="rounded-3" 
                style="width: 55px; height: 55px; object-fit: cover;">

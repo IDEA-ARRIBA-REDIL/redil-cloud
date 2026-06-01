@@ -2,34 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Maestro;
+use App\Models\AlumnoRespuestaItem;
+use App\Models\BannerEscuela;
 use App\Models\Configuracion;
-use App\Models\User;
-use App\Models\Role;
-use App\Models\Matricula;
+use App\Models\CortePeriodo;
+use App\Models\Escuela;
 use App\Models\HorarioMateriaPeriodo;
-use App\Models\Sede; // Para el filtro de Sede
-
-use App\Models\Escuela; // Para el filtro de Escuela
-
-use App\Models\CortePeriodo; // No se usa directamente aquí, pero lo tenías importado
+use App\Models\ItemCorteMateriaPeriodo;
+use App\Models\Maestro; // Para el filtro de Sede
+use App\Models\Matricula; // Para el filtro de Escuela
+use App\Models\MatriculaHorarioMateriaPeriodo; // No se usa directamente aquí, pero lo tenías importado
 use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
-use App\Models\ItemCorteMateriaPeriodo; // No se usa directamente aquí
-use App\Models\AlumnoRespuestaItem;    // No se usa directamente aquí
+use App\Models\Periodo; // No se usa directamente aquí
+use App\Models\ReporteAsistenciaAlumnos;    // No se usa directamente aquí
 use App\Models\ReporteAsistenciaClase; // <--- IMPORTANTE
-use App\Models\Periodo; // <--- IMPORTANTE
-use App\Models\MatriculaHorarioMateriaPeriodo; // <--- IMPORTANTE
-use App\Models\ReporteAsistenciaAlumnos; // <--- IMPORTANTE
-use App\Models\TipoUsuario;
+use App\Models\Role; // <--- IMPORTANTE
+use App\Models\Sede; // <--- IMPORTANTE
+use App\Models\User; // <--- IMPORTANTE
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; // Para transacciones si fuera necesario
-use Illuminate\Support\Facades\Auth; // Para obtener el usuario autenticado
-use Carbon\Carbon; // Para manejo de fechas
+use Illuminate\Support\Facades\Log; // Para obtener el usuario autenticado
+use Illuminate\Validation\Rule; // Para manejo de fechas
 
-use stdClass; // Para los tags
-
+// Para los tags
 
 class MaestroController extends Controller
 {
@@ -54,7 +51,7 @@ class MaestroController extends Controller
             'filtro_estado_maestro',
             'filtro_sede',
             'filtro_periodo',
-            'filtro_escuela'
+            'filtro_escuela',
         ]);
 
         // 3. CONSTRUCCIÓN DE LA CONSULTA BASE
@@ -64,63 +61,63 @@ class MaestroController extends Controller
         // 4. APLICACIÓN DE FILTROS Y CREACIÓN DE TAGS
 
         // Filtro de Búsqueda General
-        if (!empty($filtros['filtro_busqueda_general'])) {
+        if (! empty($filtros['filtro_busqueda_general'])) {
             $termino = strtolower($filtros['filtro_busqueda_general']);
             $queryMaestros->whereHas('user', function ($qUser) use ($termino) {
                 $qUser->where(
-                    fn($q) => $q->whereRaw('LOWER(primer_nombre) LIKE ?', ["%{$termino}%"])
+                    fn ($q) => $q->whereRaw('LOWER(primer_nombre) LIKE ?', ["%{$termino}%"])
                         ->orWhereRaw('LOWER(primer_apellido) LIKE ?', ["%{$termino}%"])
                         ->orWhereRaw('LOWER(identificacion) LIKE ?', ["%{$termino}%"])
                         ->orWhereRaw('LOWER(email) LIKE ?', ["%{$termino}%"])
                 );
             });
-            $tagsBusqueda[] = (object)['label' => $filtros['filtro_busqueda_general'], 'field' => 'filtro_busqueda_general'];
+            $tagsBusqueda[] = (object) ['label' => $filtros['filtro_busqueda_general'], 'field' => 'filtro_busqueda_general'];
             $banderaFiltros = true;
         }
 
         // Filtro por Estado
         if (isset($filtros['filtro_estado_maestro']) && $filtros['filtro_estado_maestro'] !== '') {
-            $queryMaestros->where('activo', (bool)$filtros['filtro_estado_maestro']);
-            $label = 'Estado: ' . ((bool)$filtros['filtro_estado_maestro'] ? 'Activo' : 'Inactivo');
-            $tagsBusqueda[] = (object)['label' => $label, 'field' => 'filtro_estado_maestro'];
+            $queryMaestros->where('activo', (bool) $filtros['filtro_estado_maestro']);
+            $label = 'Estado: '.((bool) $filtros['filtro_estado_maestro'] ? 'Activo' : 'Inactivo');
+            $tagsBusqueda[] = (object) ['label' => $label, 'field' => 'filtro_estado_maestro'];
             $banderaFiltros = true;
         }
 
         // Filtro por Sede
-        if (!empty($filtros['filtro_sede'])) {
+        if (! empty($filtros['filtro_sede'])) {
             $queryMaestros->whereHas('horariosMateriaPeriodo.horarioBase.aula.sede', function ($qSede) use ($filtros) {
                 $qSede->where('sedes.id', $filtros['filtro_sede']);
             });
             // ✅ OPTIMIZACIÓN: Buscamos en la colección ya cargada, no en la BD.
             $sedeModel = $sedesParaFiltro->firstWhere('id', $filtros['filtro_sede']);
             if ($sedeModel) {
-                $tagsBusqueda[] = (object)['label' => 'Sede: ' . $sedeModel->nombre, 'field' => 'filtro_sede'];
+                $tagsBusqueda[] = (object) ['label' => 'Sede: '.$sedeModel->nombre, 'field' => 'filtro_sede'];
                 $banderaFiltros = true;
             }
         }
 
         // Filtro por Periodo
-        if (!empty($filtros['filtro_periodo'])) {
+        if (! empty($filtros['filtro_periodo'])) {
             $queryMaestros->whereHas('horariosMateriaPeriodo.materiaPeriodo.periodo', function ($qPeriodo) use ($filtros) {
                 $qPeriodo->where('periodos.id', $filtros['filtro_periodo']);
             });
             // ✅ OPTIMIZACIÓN: Buscamos en la colección ya cargada.
             $periodoModel = $periodosParaFiltro->firstWhere('id', $filtros['filtro_periodo']);
             if ($periodoModel) {
-                $tagsBusqueda[] = (object)['label' => 'Periodo: ' . $periodoModel->nombre, 'field' => 'filtro_periodo'];
+                $tagsBusqueda[] = (object) ['label' => 'Periodo: '.$periodoModel->nombre, 'field' => 'filtro_periodo'];
                 $banderaFiltros = true;
             }
         }
 
         // Filtro por Escuela
-        if (!empty($filtros['filtro_escuela'])) {
+        if (! empty($filtros['filtro_escuela'])) {
             $queryMaestros->whereHas('horariosMateriaPeriodo.materiaPeriodo.periodo.escuela', function ($qEscuela) use ($filtros) {
                 $qEscuela->where('escuelas.id', $filtros['filtro_escuela']);
             });
             // ✅ OPTIMIZACIÓN: Buscamos en la colección ya cargada.
             $escuelaModel = $escuelasParaFiltro->firstWhere('id', $filtros['filtro_escuela']);
             if ($escuelaModel) {
-                $tagsBusqueda[] = (object)['label' => 'Escuela: ' . $escuelaModel->nombre, 'field' => 'filtro_escuela'];
+                $tagsBusqueda[] = (object) ['label' => 'Escuela: '.$escuelaModel->nombre, 'field' => 'filtro_escuela'];
                 $banderaFiltros = true;
             }
         }
@@ -130,10 +127,8 @@ class MaestroController extends Controller
 
         // --- CAMBIO SOLICITADO: Filtrar roles que tengan el permiso 'escuelas.es_maestro' ---
 
-
         // Usamos el scope de Spatie 'permission' para filtrar los roles que tienen ese permiso asignado.
         $rolesMaestro = Role::permission('escuelas.es_maestro')->get();
-
 
         // 6. DEVOLVER LA VISTA CON TODOS LOS DATOS
         return view('contenido.paginas.escuelas.maestros.gestionar-maestros', [
@@ -168,8 +163,6 @@ class MaestroController extends Controller
 
         ]);
 
-
-
         try {
             DB::beginTransaction(); // Usar transacción para asegurar integridad
 
@@ -191,7 +184,7 @@ class MaestroController extends Controller
                 $usuario->roles()->attach($request->role_id, [
                     'activo' => 1,
                     'dependiente' => 0,
-                    'model_type' => 'App\Models\User' // NECESARIO porque la tabla pivote lo requiere y es parte de la PK
+                    'model_type' => 'App\Models\User', // NECESARIO porque la tabla pivote lo requiere y es parte de la PK
                 ]);
             }
 
@@ -208,7 +201,8 @@ class MaestroController extends Controller
                 ->with('mensaje_exito', 'Maestro creado y rol asignado correctamente.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al crear maestro: " . $e->getMessage());
+            Log::error('Error al crear maestro: '.$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al crear el maestro. Inténtalo de nuevo.')
                 ->withInput();
         }
@@ -218,7 +212,6 @@ class MaestroController extends Controller
      * Elimina un maestro específico y desvincula su rol de maestro asociado al usuario.
      * NO elimina el registro del usuario.
      *
-     * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function eliminar(Request $request)
@@ -235,7 +228,7 @@ class MaestroController extends Controller
             $usuario = $maestro->user; // Accede al usuario
 
             // Guarda el nombre para el mensaje antes de cualquier eliminación
-            $nombreUsuario = optional($usuario)->nombre(3) ?? 'Maestro ID ' . $maestro->id;
+            $nombreUsuario = optional($usuario)->nombre(3) ?? 'Maestro ID '.$maestro->id;
 
             // 2. Verifica si el usuario existe antes de intentar quitar roles
             if ($usuario) {
@@ -267,7 +260,8 @@ class MaestroController extends Controller
         } catch (\Exception $e) {
             // 5. Si algo falla, revierte la transacción
             DB::rollBack();
-            Log::error("Error al eliminar maestro ID {$maestroId}: " . $e->getMessage());
+            Log::error("Error al eliminar maestro ID {$maestroId}: ".$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al eliminar el maestro.');
         }
     }
@@ -282,14 +276,14 @@ class MaestroController extends Controller
                 'materiaPeriodo.materia:id,nombre',
                 'materiaPeriodo.periodo:id,nombre',
                 'horarioBase.aula:id,nombre,sede_id',
-                'horarioBase.aula.sede:id,nombre'
+                'horarioBase.aula.sede:id,nombre',
             ])
             ->orderByPivot('created_at', 'desc')
             ->paginate(10);
 
         return view('contenido.paginas.escuelas.maestros.horarios-maestro', [
             'maestro' => $maestro,
-            'horariosAsignados' => $horariosAsignados
+            'horariosAsignados' => $horariosAsignados,
         ]);
     }
 
@@ -300,10 +294,12 @@ class MaestroController extends Controller
     {
         try {
             $maestro->horariosMateriaPeriodo()->detach($horarioMateriaPeriodo->id);
+
             return redirect()->route('maestros.horariosAsignados', $maestro)
                 ->with('mensaje_exito', 'Asignación de horario eliminada correctamente.');
         } catch (\Exception $e) {
-            Log::error("Error al eliminar asignación del horario {$horarioMateriaPeriodo->id} para el maestro {$maestro->id}: " . $e->getMessage());
+            Log::error("Error al eliminar asignación del horario {$horarioMateriaPeriodo->id} para el maestro {$maestro->id}: ".$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al eliminar la asignación del horario.');
         }
     }
@@ -314,7 +310,6 @@ class MaestroController extends Controller
     public function misHorarios(Request $request, User $user) // <-- 1. Añadimos Request
     {
         $maestro = Maestro::where('user_id', $user->id)->first();
-
 
         // 2. Obtenemos los parámetros de ordenamiento de la URL.
         // Por defecto (carga inicial), ordena por 'materia_nombre' en 'asc'.
@@ -327,13 +322,11 @@ class MaestroController extends Controller
                     'materiaPeriodo.materia:id,nombre',
                     'materiaPeriodo.periodo:id,nombre',
                     'horarioBase.aula:id,nombre,sede_id',
-                    'horarioBase.aula.sede:id,nombre'
+                    'horarioBase.aula.sede:id,nombre',
                 ]);
         } else {
             abort(403, 'No tienes ningun horario asignado.');
         }
-
-
 
         // 3. Unimos las tablas necesarias para poder ordenar por el nombre de la materia.
         // Esto es necesario porque 'nombre' está en la tabla 'materias', no en la tabla pivote.
@@ -353,20 +346,24 @@ class MaestroController extends Controller
             // 4. ¡MUY IMPORTANTE! Esto añade los parámetros de orden a los links de paginación.
             ->appends($request->query());
 
+        // 6. Obtenemos los banners activos para el dashboard
+        $banners = BannerEscuela::where('activo', true)->latest()->get();
+
         return view('contenido.paginas.escuelas.maestros.mis-horarios', [
             'maestro' => $maestro,
             'horariosAsignados' => $horariosAsignados,
             // 5. Pasamos las variables de ordenamiento a la vista para los estilos de las flechas.
             'sortField' => $sortField,
-            'sortDirection' => $sortDirection
+            'sortDirection' => $sortDirection,
+            'banners' => $banners,
         ]);
     }
 
     /**
      * Muestra el panel de control detallado para una clase específica asignada a un maestro.
      *
-     * @param Maestro $maestro El maestro que gestiona la clase.
-     * @param HorarioMateriaPeriodo $horarioAsignado La clase específica que se está visualizando.
+     * @param  Maestro  $maestro  El maestro que gestiona la clase.
+     * @param  HorarioMateriaPeriodo  $horarioAsignado  La clase específica que se está visualizando.
      * @return \Illuminate\View\View
      */
     // En el archivo: app/Http/Controllers/MaestroController.php
@@ -378,16 +375,16 @@ class MaestroController extends Controller
         // --- 1. CONFIGURACIÓN INICIAL Y CARGA DE DATOS PRINCIPALES ---
         $usuarioActivo = Auth::user();
         $configuracion = Configuracion::find(1);
-        $notaMinimaAprobatoria = (float)($configuracion->nota_aprobatoria ?? 3.0);
+        $notaMinimaAprobatoria = (float) ($configuracion->nota_aprobatoria ?? 3.0);
 
         $horarioAsignado->load([
             'materiaPeriodo.materia:id,nombre',
             'materiaPeriodo.periodo:id,nombre,fecha_inicio,fecha_fin',
-            'horarioBase.aula.sede'
+            'horarioBase.aula.sede',
         ]);
         $horarioId = $horarioAsignado->id;
         $periodoId = $horarioAsignado->materiaPeriodo?->periodo_id;
-        if (!$periodoId) {
+        if (! $periodoId) {
             return back()->with('mensaje_error', 'No se pudo determinar el periodo para esta clase.');
         }
 
@@ -402,7 +399,7 @@ class MaestroController extends Controller
         $cortesDefinidosParaVista = $cortesDelPeriodo->map(function ($cp) {
             return [
                 'id_db' => $cp->id,
-                'id_html' => 'corte_cp_' . $cp->id,
+                'id_html' => 'corte_cp_'.$cp->id,
                 'nombre' => $cp->corteEscuela?->nombre ?? 'Corte',
                 'porcentaje_materia' => (float) $cp->porcentaje,
             ];
@@ -412,7 +409,7 @@ class MaestroController extends Controller
         $estadosAcademicos = EstadoAcademico::where('horario_materia_periodo_id', $horarioAsignado->id)
             ->with([
                 'user:id,email,genero,telefono_movil,sede_id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,identificacion,fecha_nacimiento',
-                'matricula.trasladosLog' // Carga la matrícula y sus traslados
+                'matricula.trasladosLog', // Carga la matrícula y sus traslados
             ])
             ->join('users', 'matricula_horario_materia_periodo.user_id', '=', 'users.id')
             ->orderBy('users.primer_apellido', 'asc')
@@ -436,10 +433,11 @@ class MaestroController extends Controller
         $reprobadosCount = 0;
         $cursandoCount = 0; // Contará solo los que están cursando y NO están bloqueados
 
-
         foreach ($estadosAcademicos as $estado) {
             // Aseguramos que el usuario y la matrícula existen
-            if (!$estado->user || !$estado->matricula) continue;
+            if (! $estado->user || ! $estado->matricula) {
+                continue;
+            }
 
             // Verificamos si la matrícula de este estado académico está bloqueada
             $estaBloqueado = $estado->matricula->bloqueado;
@@ -459,7 +457,7 @@ class MaestroController extends Controller
                     foreach ($itemsDelCorte as $item) {
                         $notaItem = $calificacionesDelAlumno->get($item->id);
                         if ($notaItem !== null && is_numeric($item->porcentaje)) {
-                            $notaAcumuladaDelCorte += (float)$notaItem * ((float)$item->porcentaje / 100);
+                            $notaAcumuladaDelCorte += (float) $notaItem * ((float) $item->porcentaje / 100);
                         }
                     }
                 }
@@ -472,10 +470,10 @@ class MaestroController extends Controller
             $promedioGeneralMateriaCalculado = round($promedioGeneralMateriaCalculado, 2);
 
             $asistenciasContadas = ReporteAsistenciaAlumnos::where('user_id', $estado->user->id)
-                ->whereHas('reporteClase', fn($query) => $query->where('horario_materia_periodo_id', $horarioId))
+                ->whereHas('reporteClase', fn ($query) => $query->where('horario_materia_periodo_id', $horarioId))
                 ->where('asistio', true)->count();
             $inasistenciasContadas = ReporteAsistenciaAlumnos::where('user_id', $estado->user->id)
-                ->whereHas('reporteClase', fn($query) => $query->where('horario_materia_periodo_id', $horarioId))
+                ->whereHas('reporteClase', fn ($query) => $query->where('horario_materia_periodo_id', $horarioId))
                 ->where('asistio', false)->count();
             // --- Fin Cálculos ---
 
@@ -499,7 +497,7 @@ class MaestroController extends Controller
 
             // --- Actualización de Contadores para el Gráfico ---
             // Solo contamos para Aprobados/Reprobados/Cursando si NO está bloqueado
-            if (!$estaBloqueado) {
+            if (! $estaBloqueado) {
                 if ($estadoMateria === 'Aprobado' || $estadoMateria === 'Aprobando') {
                     $aprobadosCount++;
                 } elseif ($estadoMateria === 'Reprobado') {
@@ -530,9 +528,13 @@ class MaestroController extends Controller
 
             // Contamos género
             if (isset($estado->user->genero)) {
-                if ($estado->user->genero === 0) $conteoGenero['hombres']++;
-                elseif ($estado->user->genero === 1) $conteoGenero['mujeres']++;
-                else $conteoGenero['otros']++;
+                if ($estado->user->genero === 0) {
+                    $conteoGenero['hombres']++;
+                } elseif ($estado->user->genero === 1) {
+                    $conteoGenero['mujeres']++;
+                } else {
+                    $conteoGenero['otros']++;
+                }
             }
         } // Fin del bucle foreach $estadosAcademicos
 
@@ -554,8 +556,8 @@ class MaestroController extends Controller
                     $reprobadosCount,
                     $cursandoCount,         // Cursando (NO bloqueados)
                     $matriculasBloqueadasCount, // El conteo directo de bloqueados
-                ]
-            ]]
+                ],
+            ]],
         ];
 
         $nombreMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no disponible';
@@ -610,7 +612,6 @@ class MaestroController extends Controller
         ]);
     }
 
-
     public function gestionarAlumno(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado, User $alumno)
     {
         $configuracion = Configuracion::find(1);
@@ -630,18 +631,17 @@ class MaestroController extends Controller
     /**
      * Gestión de ítems de evaluación para un horario específico.
      */
-    public function gestionarItems(HorarioMateriaPeriodo $horarioAsignado)
+    public function gestionarItems(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado): \Illuminate\Contracts\View\View
     {
         $usuario = Auth::user();
-        $maestro = Maestro::where('user_id', $usuario->id)->firstOrFail();
 
         // Validar que el maestro tenga asignado este horario (seguridad básica)
         // Opcional: Podríamos usar un Policy, pero por ahora validamos relación directa
-        if (!$maestro->horariosMateriaPeriodo()->where('horario_materia_periodo_id', $horarioAsignado->id)->exists()) {
-             // Permitir acceso también si es admin o tiene permiso especial, pero por ahora restringimos al maestro dueño
-             if (!$usuario->hasRole('Admin') && !$usuario->can('escuelas.gestionar_cualquier_item')) {
+        if (! $maestro->horariosMateriaPeriodo()->where('horario_materia_periodo_id', $horarioAsignado->id)->exists()) {
+            // Permitir acceso también si es admin o tiene permiso especial, pero por ahora restringimos al maestro dueño
+            if (! $usuario->hasRole('Admin') && ! $usuario->can('escuelas.tab_gestionar_items')) {
                 abort(403, 'No tienes permiso para gestionar ítems de este horario.');
-             }
+            }
         }
 
         $configuracion = Configuracion::find(1);
@@ -684,8 +684,6 @@ class MaestroController extends Controller
         // Asumimos que $maestro (el que está logueado o gestionando) es el relevante aquí.
         $nombreDocente = $maestro->user?->name ?? 'Docente no asignado';
         $infoClase = "Periodo: {$nombrePeriodo} | Docente: {$nombreDocente}";
-
-
 
         return view('contenido.paginas.escuelas.maestros.calificacion-multiple', [
             'maestro' => $maestro,
@@ -756,14 +754,14 @@ class MaestroController extends Controller
             'materiaPeriodo.materia',
             'materiaPeriodo.periodo',
             'horarioBase',
-            'reportesAsistencia' // Necesario para el count()
+            'reportesAsistencia', // Necesario para el count()
         ]);
 
         // Usamos $horarioAsignado para obtener la información
         $nombreDeLaMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no disponible';
         $nombreDelDocente = $maestro->user?->nombre(3) ?? ($maestro->user?->name ?? 'Docente no asignado');
-        $informacionDeLaClase = "Periodo: " . ($horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo N/A') .
-            " | Docente: " . $nombreDelDocente;
+        $informacionDeLaClase = 'Periodo: '.($horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo N/A').
+            ' | Docente: '.$nombreDelDocente;
 
         $datosMateria = $horarioAsignado->materiaPeriodo?->materia;
         $periodo = $horarioAsignado->materiaPeriodo?->periodo;
@@ -789,8 +787,6 @@ class MaestroController extends Controller
             $inputFechaEsSoloLectura = false;
             $botonNuevoReporteHabilitado = true;
 
-
-
             if ($datosMateria && $datosMateria->tiene_dia_limite == true && $numeroDiaDeLaClase !== null) {
                 $aplicarFiltroPorDiaSemana = true;
                 $diaSemanaAVisualizarEnCalendario = $numeroDiaDeLaClase;
@@ -803,6 +799,7 @@ class MaestroController extends Controller
                 // }
 
             }
+
             return view('contenido.paginas.escuelas.maestros.reporte-asistencia-alumnos', [
                 'maestro' => $maestro,
                 'materiaAEvaluar' => $datosMateria,
@@ -833,7 +830,6 @@ class MaestroController extends Controller
                     $fechaPorDefectoParaInput = $fechaCalculadaParaInputCarbon->format('Y-m-d');
                     $fechaActualSoloFecha = $fechaActualSoloFecha->format('Y-m-d');
 
-
                     if ($fechaCalculadaParaInputCarbon->lt($fechaActualSoloFecha)) {
                         $botonNuevoReporteHabilitado = false;
                     } else {
@@ -842,9 +838,9 @@ class MaestroController extends Controller
                 } else {
                     $botonNuevoReporteHabilitado = false;
                 }
-            } else if ($datosMateria && $datosMateria->tiene_dia_limite == false && isset($datosMateria->cantidad_limite_reportes_semana) && $datosMateria->cantidad_limite_reportes_semana == 1) {
-                //// aqui por ahora es solo para calcular las fechas minimas del periodo, para que no tenga la posibilidad de hacer un reporte extraño
-                ///// con fechas anteriores o futuras al periodo
+            } elseif ($datosMateria && $datosMateria->tiene_dia_limite == false && isset($datosMateria->cantidad_limite_reportes_semana) && $datosMateria->cantidad_limite_reportes_semana == 1) {
+                // // aqui por ahora es solo para calcular las fechas minimas del periodo, para que no tenga la posibilidad de hacer un reporte extraño
+                // /// con fechas anteriores o futuras al periodo
                 $inputFechaEsSoloLectura = false;
                 $botonNuevoReporteHabilitado = true;
                 $aplicarFiltroPorDiaSemana = false;
@@ -894,7 +890,6 @@ class MaestroController extends Controller
         }
     }
 
-
     private function verificarCondicionesParaCrearReporte(
         Request $peticionHttp,
         HorarioMateriaPeriodo $horarioAsignado, // Asegúrate que 'reportesAsistencia' esté cargado o se cargue aquí
@@ -916,7 +911,7 @@ class MaestroController extends Controller
             if ($cantidadReportesExistentesTotal >= $datosMateria->limite_reporte_asistencias) {
                 return [
                     'puedeCrear' => false,
-                    'mensajeError' => "Se ha alcanzado el límite total de {$datosMateria->limite_reporte_asistencias} reportes de asistencia permitidos para este curso."
+                    'mensajeError' => "Se ha alcanzado el límite total de {$datosMateria->limite_reporte_asistencias} reportes de asistencia permitidos para este curso.",
                 ];
             }
         }
@@ -941,7 +936,7 @@ class MaestroController extends Controller
                 if ($cantidadReportesEnLaSemanaDelReporte >= $datosMateria->cantidad_limite_reportes_semana) {
                     return [
                         'puedeCrear' => false,
-                        'mensajeError' => "Se ha alcanzado el límite de {$datosMateria->cantidad_limite_reportes_semana} reportes permitidos para la semana del {$inicioSemanaDelReporte->format('d/m/Y')} al {$finSemanaDelReporte->format('d/m/Y')}."
+                        'mensajeError' => "Se ha alcanzado el límite de {$datosMateria->cantidad_limite_reportes_semana} reportes permitidos para la semana del {$inicioSemanaDelReporte->format('d/m/Y')} al {$finSemanaDelReporte->format('d/m/Y')}.",
                     ];
                 }
             }
@@ -973,7 +968,7 @@ class MaestroController extends Controller
                 if ($fechaActualSoloFecha->gt($fechaCalculadaLimiteReporteSemanal)) { // Si hoy > fecha límite de reporte de la semana
                     return [
                         'puedeCrear' => false,
-                        'mensajeError' => 'El plazo para registrar asistencias (según el día límite de la materia para la semana actual) ha vencido.'
+                        'mensajeError' => 'El plazo para registrar asistencias (según el día límite de la materia para la semana actual) ha vencido.',
                     ];
                 }
             } else {
@@ -1012,7 +1007,7 @@ class MaestroController extends Controller
                         if ($cantidadReportesEnSemanaDeFechaSeleccionada >= $datosMateria->cantidad_limite_reportes_semana) {
                             return [
                                 'puedeCrear' => false,
-                                'mensajeError' => "Se ha alcanzado el límite de {$datosMateria->cantidad_limite_reportes_semana} reportes permitidos para la semana del {$inicioSemanaDeFechaSeleccionada->format('d/m/Y')} al {$finSemanaDeFechaSeleccionada->format('d/m/Y')}."
+                                'mensajeError' => "Se ha alcanzado el límite de {$datosMateria->cantidad_limite_reportes_semana} reportes permitidos para la semana del {$inicioSemanaDeFechaSeleccionada->format('d/m/Y')} al {$finSemanaDeFechaSeleccionada->format('d/m/Y')}.",
                             ];
                         }
                     }
@@ -1030,10 +1025,10 @@ class MaestroController extends Controller
                         $fechaTopeParaReportar = $fechaCorrectaDeReporte->copy()->addDays($diasPlazo)->startOfDay();
 
                         // 2.C.1: ¿La fecha seleccionada es la "Fecha Correcta de Reporte"?
-                        if (!$fechaClaseReportadaCarbon->eq($fechaCorrectaDeReporte)) {
+                        if (! $fechaClaseReportadaCarbon->eq($fechaCorrectaDeReporte)) {
                             return [
                                 'puedeCrear' => false,
-                                'mensajeError' => "La fecha del reporte para esta clase y semana debería ser el " . $fechaCorrectaDeReporte->isoFormat('dddd D [de] MMMM') . ". Por favor, seleccione la fecha correcta."
+                                'mensajeError' => 'La fecha del reporte para esta clase y semana debería ser el '.$fechaCorrectaDeReporte->isoFormat('dddd D [de] MMMM').'. Por favor, seleccione la fecha correcta.',
                             ];
                         }
 
@@ -1042,7 +1037,7 @@ class MaestroController extends Controller
                         if ($fechaActualSoloFecha->gt($fechaTopeParaReportar)) {
                             return [
                                 'puedeCrear' => false,
-                                'mensajeError' => "El plazo para registrar la asistencia del " . $fechaCorrectaDeReporte->isoFormat('dddd D [de] MMMM') . " (fecha tope para reportar: " . $fechaTopeParaReportar->isoFormat('dddd D') . ") ha vencido."
+                                'mensajeError' => 'El plazo para registrar la asistencia del '.$fechaCorrectaDeReporte->isoFormat('dddd D [de] MMMM').' (fecha tope para reportar: '.$fechaTopeParaReportar->isoFormat('dddd D').') ha vencido.',
                             ];
                         }
                     } elseif ($datosMateria->cantidad_limite_reportes_semana > 1 && isset($datosMateria->dias_plazo_reporte)) {
@@ -1056,7 +1051,7 @@ class MaestroController extends Controller
                         if ($fechaActualSoloFecha->gt($fechaTopeParaReportarClaseSeleccionada)) {
                             return [
                                 'puedeCrear' => false,
-                                'mensajeError' => "El plazo para registrar la asistencia de la clase del " . $fechaClaseReportadaCarbon->isoFormat('dddd D [de] MMMM') . " (fecha tope para reportar: " . $fechaTopeParaReportarClaseSeleccionada->isoFormat('D/MMM') . ") ha vencido."
+                                'mensajeError' => 'El plazo para registrar la asistencia de la clase del '.$fechaClaseReportadaCarbon->isoFormat('dddd D [de] MMMM').' (fecha tope para reportar: '.$fechaTopeParaReportarClaseSeleccionada->isoFormat('D/MMM').') ha vencido.',
                             ];
                         }
 
@@ -1064,7 +1059,7 @@ class MaestroController extends Controller
                         if ($fechaClaseReportadaCarbon->gt($fechaActualSoloFecha)) {
                             return [
                                 'puedeCrear' => false,
-                                'mensajeError' => "No se pueden crear reportes para fechas futuras. Por favor, seleccione una fecha válida."
+                                'mensajeError' => 'No se pueden crear reportes para fechas futuras. Por favor, seleccione una fecha válida.',
                             ];
                         }
                         // --- FIN NUEVA LÓGICA ---
@@ -1089,9 +1084,9 @@ class MaestroController extends Controller
                     return $query->where('horario_materia_periodo_id', $horarioAsignado->id);
                 }),
                 // ... (tus otras reglas de validación de Laravel existentes) ...
-                function ($attribute, $value, $fail) use ($horarioAsignado) { /* ... validación de rango de período ... */
+                function ($attribute, $value, $fail) { /* ... validación de rango de período ... */
                 },
-                function ($attribute, $value, $fail) use ($horarioAsignado) { /* ... validación de no semanas anteriores y día límite de materia (ISO) ... */
+                function ($attribute, $value, $fail) { /* ... validación de no semanas anteriores y día límite de materia (ISO) ... */
                 },
             ],
             'observaciones_generales' => 'nullable|string|max:2000',
@@ -1107,8 +1102,6 @@ class MaestroController extends Controller
         $datosMateria = $horarioAsignado->materiaPeriodo?->materia;
         $periodo = $horarioAsignado->materiaPeriodo?->periodo;
 
-
-
         // 3. Llamar a la nueva función de validación personalizada
         $resultadoValidacion = $this->verificarCondicionesParaCrearReporte($request, $horarioAsignado, $usuarioActivo, $datosMateria, $periodo);
 
@@ -1118,7 +1111,7 @@ class MaestroController extends Controller
         }
 
         // 4. Si todo pasa, crear el reporte
-        $reporte = new ReporteAsistenciaClase();
+        $reporte = new ReporteAsistenciaClase;
         $reporte->horario_materia_periodo_id = $horarioAsignado->id;
         $reporte->fecha_clase_reportada = $datosValidados['fecha_clase_reportada']; // Usar dato validado
         $reporte->observaciones_generales = $datosValidados['observaciones_generales']; // Usar dato validado
@@ -1148,7 +1141,7 @@ class MaestroController extends Controller
                 // Combinar la fecha de la clase con la hora de finalización de la clase
                 $fechaHoraFinClase = Carbon::createFromFormat(
                     'Y-m-d H:i:s', // Asume que hora_fin es H:i:s, ajusta si es necesario
-                    $fechaClase->toDateString() . ' ' . $horaFinClaseStr,
+                    $fechaClase->toDateString().' '.$horaFinClaseStr,
                     config('app.timezone') // Usar la zona horaria de la aplicación
                 );
 
@@ -1167,9 +1160,9 @@ class MaestroController extends Controller
                 Log::warning("HorarioBase o hora_fin no definidos para HorarioMateriaPeriodo ID: {$horarioAsignado->id}");
             }
         } catch (\Exception $e) {
-            Log::error("Error al determinar si se puede reportar auto-asistencia: " . $e->getMessage(), [
+            Log::error('Error al determinar si se puede reportar auto-asistencia: '.$e->getMessage(), [
                 'horario_id' => $horarioAsignado->id,
-                'reporte_id' => $reporte->id
+                'reporte_id' => $reporte->id,
             ]);
             // Mantener $puedeReportar como false en caso de error
         }
@@ -1177,7 +1170,7 @@ class MaestroController extends Controller
         return view('contenido.paginas.escuelas.maestros.reportar-auto-asistencia', [
             'horarioAsignado' => $horarioAsignado,
             'reporte' => $reporte,
-            'puedeReportar' => $puedeReportar
+            'puedeReportar' => $puedeReportar,
         ]);
     }
 
@@ -1190,7 +1183,7 @@ class MaestroController extends Controller
         if ($horarioAsignado->horarioBase && $horarioAsignado->horarioBase->hora_fin) {
             $horaFinClaseStr = $horarioAsignado->horarioBase->hora_fin;
             $fechaClase = Carbon::parse($reporte->fecha_clase_reportada);
-            $fechaHoraFinClase = Carbon::createFromFormat('Y-m-d H:i:s', $fechaClase->toDateString() . ' ' . $horaFinClaseStr, config('app.timezone'));
+            $fechaHoraFinClase = Carbon::createFromFormat('Y-m-d H:i:s', $fechaClase->toDateString().' '.$horaFinClaseStr, config('app.timezone'));
             $linkExpiraEn = $fechaHoraFinClase->copy()->addHours($horasDisponibilidad);
             $ahora = Carbon::now(config('app.timezone'));
             if ($ahora->isSameDay($fechaHoraFinClase) && $ahora->gte($fechaHoraFinClase) && $ahora->lt($linkExpiraEn)) {
@@ -1198,7 +1191,7 @@ class MaestroController extends Controller
             }
         }
 
-        if (!$puedeReportarAhora) {
+        if (! $puedeReportarAhora) {
             return redirect()->back()->withErrors(['error' => 'El link de asistencia ha caducado o no está disponible.'])->withInput();
         }
 
@@ -1219,7 +1212,7 @@ class MaestroController extends Controller
                 ->orWhereRaw("CONCAT_WS(' ', primer_nombre, primer_apellido) ILIKE ?", ["%{$terminoBusqueda}%"]);
         })->first();
 
-        if (!$usuario) {
+        if (! $usuario) {
             return redirect()->back()->withErrors(['error' => 'Usuario no encontrado con los datos proporcionados.'])->withInput();
         }
 
@@ -1228,7 +1221,7 @@ class MaestroController extends Controller
             ->where('horario_materia_periodo_id', $horarioAsignado->id)
             ->exists();
 
-        if (!$estaMatriculado) {
+        if (! $estaMatriculado) {
             return redirect()->back()->withErrors(['error' => 'No te encuentras matriculado en esta clase.'])->withInput();
         }
 
@@ -1241,7 +1234,8 @@ class MaestroController extends Controller
             // Si ya existe y asistió, mensaje de éxito. Si no asistió, se podría debatir si permitir cambiarlo.
             // Por ahora, si existe, simplemente informamos.
             $mensaje = $asistenciaExistente->asistio ? 'Tu asistencia ya había sido registrada como PRESENTE.' : 'Tu asistencia ya había sido registrada como AUSENTE por el maestro.';
-            return redirect()->back()->withErrors(['success' => $mensaje . ' No se realizaron cambios.'])->withInput();
+
+            return redirect()->back()->withErrors(['success' => $mensaje.' No se realizaron cambios.'])->withInput();
         }
 
         // 6. Registrar la asistencia
@@ -1251,7 +1245,7 @@ class MaestroController extends Controller
             'asistio' => true, // El estudiante se marca como presente
             'motivo_inasistencia_id' => null,
             'observaciones_alumno' => 'Auto-reportado por el estudiante.',
-            'auto_asistencia' => true
+            'auto_asistencia' => true,
         ]);
 
         return redirect()->back()->withErrors(['success' => '¡Asistencia registrada exitosamente!'])->withInput();
@@ -1281,7 +1275,8 @@ class MaestroController extends Controller
             return redirect()->route('maestros.gestionar')
                 ->with('mensaje_exito', "El maestro '{$maestro->user->nombre(3)}' ha sido activado.");
         } catch (\Exception $e) {
-            Log::error("Error al activar maestro ID {$maestro->id}: " . $e->getMessage());
+            Log::error("Error al activar maestro ID {$maestro->id}: ".$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al activar el maestro.');
         }
     }
@@ -1298,8 +1293,63 @@ class MaestroController extends Controller
             return redirect()->route('maestros.gestionar')
                 ->with('mensaje_exito', "El maestro '{$maestro->user->nombre(3)}' ha sido desactivado.");
         } catch (\Exception $e) {
-            Log::error("Error al desactivar maestro ID {$maestro->id}: " . $e->getMessage());
+            Log::error("Error al desactivar maestro ID {$maestro->id}: ".$e->getMessage());
+
             return back()->with('mensaje_error', 'Ocurrió un error al desactivar el maestro.');
+        }
+    }
+
+    /**
+     * Sube un archivo de recurso mediante fetch/Alpine.js
+     */
+    public function uploadArchivoRecurso(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'archivo' => 'required|file|mimes:pdf,docx,xlsx,pptx,jpg,jpeg,png|max:10240',
+            'horario_id' => 'required|integer',
+        ]);
+
+        $horarioId = $request->input('horario_id');
+        $archivo = $request->file('archivo');
+        $extension = $archivo->getClientOriginalExtension();
+        $nombreArchivo = "recurso-{$horarioId}-".uniqid().".{$extension}";
+
+        $directorio = "archivos/escuelas/recursos-horario/horario-{$horarioId}";
+
+        try {
+            // Aseguramos que cada carpeta intermedia tenga permisos 0755
+            $currentPath = storage_path('app/public');
+            $relativeParts = explode('/', trim($directorio, '/'));
+            foreach ($relativeParts as $part) {
+                if (empty($part)) {
+                    continue;
+                }
+                $currentPath .= '/'.$part;
+                if (! file_exists($currentPath)) {
+                    @mkdir($currentPath, 0755, true);
+                }
+                @chmod($currentPath, 0755);
+            }
+
+            // Almacenamos el archivo en el disco 'public'
+            $archivo->storeAs($directorio, $nombreArchivo, 'public');
+
+            // Aseguramos que el archivo recién creado tenga permisos 0755
+            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivo}");
+            @chmod($filePath, 0755);
+
+            return response()->json([
+                'success' => true,
+                'nombre' => $nombreArchivo,
+                'ruta_relativa' => "{$directorio}/{$nombreArchivo}",
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error uploading resource file: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el archivo.',
+            ], 500);
         }
     }
 }

@@ -216,7 +216,7 @@
         <div class="col-md-12">
             <div class="card mb-4 rounded rounded-3">
                 <img id="preview-foto" class="cropped-img card-img-top mb-1"
-                    src="{{ $nivel->portada ? Storage::url($configuracion->ruta_almacenamiento . '/img/niveles/' . $nivel->portada) : asset('storage/global/img/temas/default.png') }}"
+                    src="{{ $nivel->portada ? tenant_asset('img/niveles/' . $nivel->portada) : asset('storage/global/img/temas/default.png') }}"
                     alt="Portada {{ $nivel->nombre }}">
                 <button type="button" style="background-color: rgba(255, 255, 255, 0.5);"
                     class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2"

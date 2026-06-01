@@ -10,12 +10,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
+use Illuminate\Support\Facades\Storage;
+
 class Reunion extends Model
 {
   use HasFactory;
   use SoftDeletes;
 
   protected $table = 'reuniones';
+
+  protected $appends = ['portada_url'];
+
+  public function getPortadaUrlAttribute(): string
+  {
+    if ($this->portada && $this->portada !== '' && $this->portada !== 'default.png') {
+      return tenant_asset('img/reuniones/' . $this->portada);
+    }
+    return Storage::disk('global_media')->url('reuniones/default.png');
+  }
 
   protected $fillable = [
     'hora',

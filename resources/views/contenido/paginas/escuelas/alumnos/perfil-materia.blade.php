@@ -62,8 +62,44 @@
 
 
 @section('content')
-<h4 class="mb-4 text-primary">Perfil de la materia: <span class="text-black fw-normal">{{ $materia->nombre }}</span>
-</h4>
+<!-- ========================================== -->
+<!-- HERO HEADER -->
+<!-- ========================================== -->
+<div class="card mb-4 bg-primary text-white" style="background: linear-gradient(135deg, var(--bs-primary) 0%, #2b3a67 100%);">
+    <div class="card-body p-4 p-md-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+            <div class="mb-3 mb-md-0">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-white text-primary me-2 fw-bold px-3 py-2 rounded-pill">{{ $materia->periodo }}</span>
+                    <span class="badge bg-white text-primary fw-bold px-3 py-2 rounded-pill"><i class="mdi mdi-school-outline me-1"></i> {{ $materia->escuela }}</span>
+                </div>
+                <h2 class="text-white fw-bold mb-1">{{ $materia->nombre }}</h2>
+                <p class="mb-1 fs-5 text-white-50"><i class="mdi mdi-calendar-clock-outline me-1"></i> {{ $materia->horario }}</p>
+                <p class="mb-0 fs-6 text-white-50"><i class="mdi mdi-map-marker-outline me-1"></i> Sede: {{ $materia->sede }} &nbsp;|&nbsp; <i class="mdi mdi-door-open me-1"></i> Tipo: {{ $materia->tipo_aula }}</p>
+            </div>
+
+            <div class="text-md-end">
+                @foreach ($materia->maestros as $maestro)
+                    <div class="d-flex align-items-center bg-white bg-opacity-10 rounded p-2 {{ !$loop->last ? 'mb-2' : '' }}">
+                        @if($maestro->imagen == "default-m.png" || $maestro->imagen == "default-f.png")
+                        <div class="avatar avatar-md me-2">
+                            <span class="avatar-initial rounded-circle bg-info">{{$maestro->iniciales}}</span>
+                        </div>
+                        @else
+                        <div class="avatar avatar-md me-2">
+                            <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$maestro->imagen) }}" alt="{{ $maestro->imagen }}" class="rounded-circle">
+                        </div>
+                        @endif
+                        <div class="text-start">
+                            <span class="d-block fw-semibold text-black">{{ $maestro->nombre }}</span>
+                            <small class="text-black-50">Maestro</small>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</div>
 
 @include('layouts.status-msn')
 
@@ -82,105 +118,133 @@
         </ul>
         <div class="tab-content" id="pills-tabContent">
             <div class="tab-pane fade show active" id="pills-resumen" role="tabpanel" aria-labelledby="pills-resumen-tab">
-                <div class="row g-4">
-                    <div class="col-lg-7 col-12">
-                        <div class="card h-100">
+
+                <!-- ========================================== -->
+                <!-- KPI CARDS -->
+                <!-- ========================================== -->
+                <div class="row g-4 mb-4">
+                    <!-- Promedio -->
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm border-start border-4 {{ $materia->promedio_actual >= $notaMinimaAprobacion ? 'border-success' : 'border-danger' }}">
                             <div class="card-body">
-                                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-                                    <h5 class="card-title mb-0"><i class="mdi mdi-information-outline me-2"></i>
-                                        Información General</h5>
-                                   {{-- CÓDIGO CORREGIDO --}}
-                                    <div class="text-end">
-                                        <h6 class="mb-0">Promedio Actual</h6>
-                                        {{--
-                                        Aquí está la magia: Usamos un operador ternario para decidir la clase.
-                                        Si el promedio es mayor o igual a la nota mínima, usa 'text-success' (verde).
-                                        Si no, usa 'text-danger' (rojo).
-                                        --}}
-                                        <h4 class="{{ $materia->promedio_actual >= $notaMinimaAprobacion ? 'text-success' : 'text-danger' }} mb-0 fw-bold">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="mb-0 text-muted fw-semibold">Promedio Actual</p>
+                                        <h2 class="mb-0 fw-bold {{ $materia->promedio_actual >= $notaMinimaAprobacion ? 'text-success' : 'text-danger' }}">
                                             {{ $materia->promedio_actual }}
-                                        </h4>
+                                        </h2>
+                                    </div>
+                                    <div class="avatar avatar-md">
+                                        <span class="avatar-initial rounded bg-label-{{ $materia->promedio_actual >= $notaMinimaAprobacion ? 'success' : 'danger' }}">
+                                            <i class="mdi {{ $materia->promedio_actual >= $notaMinimaAprobacion ? 'mdi-check-circle-outline' : 'mdi-alert-circle-outline' }} mdi-24px"></i>
+                                        </span>
                                     </div>
                                 </div>
-
-                                <ul class="list-unstyled">
-                                    <li class="mb-3 d-flex align-items-center">
-                                        <i class="mdi mdi-account-tie-outline mdi-24px text-primary me-3"></i>
-                                        <div>
-                                            <h6 class="mb-0">Maestro</h6>
-                                             @foreach ($materia->maestros as $maestro)
-
-                                                <div class="d-flex align-items-center {{ !$loop->last ? 'mb-2' : '' }}">
-                                                    {{-- UX: Las imágenes de perfil humanizan la interfaz y crean una conexión visual. --}}
-                                                    @if($maestro->imagen == "default-m.png" || $maestro->imagen == "default-f.png")
-                                                    <div class="avatar avatar-xl">
-                                                        <span class="avatar-initial rounded-circle border border-3 border-white bg-info">{{$maestro->iniciales}} </span>
-                                                    </div>
-                                                    @else
-                                                    <div class="avatar avatar-xl">
-                                                        <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$maestro->imagen) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$maestro->imagen }}" alt="{{ $maestro->imagen }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
-                                                    </div>
-                                                    @endif
-                                                    <span>{{ $maestro->nombre }}</span>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </li>
-                                    <li class="d-flex align-items-center">
-                                        <i class="mdi mdi-calendar-clock-outline mdi-24px text-primary me-3"></i>
-                                        <div>
-                                            <h6 class="mb-0">Horario</h6>
-                                            <span>{{ $materia->horario }}</span>
-                                        </div>
-                                    </li>
-                                </ul>
-
-                                <hr>
-                                <h6 class="mt-4 mb-3">Actividades Calificables del Semestre</h6>
-                               <div class="table-responsive text-nowrap">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Actividad</th>
-                                                <th>Corte</th>
-                                                <th>Nota</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="table-border-bottom-0">
-                                            @foreach ($materia->items_tabla_resumen as $item)
-                                                <tr>
-                                                    <td><strong>{{ $item->nombre }}</strong></td>
-                                                    <td><small class="text-muted">{{ $item->corte }}</small></td>
-                                                    <td>
-                                                        @if (is_numeric($item->nota))
-                                                            <span class="badge {{ $item->nota >= 3.0 ? 'bg-label-success' : 'bg-label-danger' }}">{{ $item->nota }}</span>
-                                                        @else
-                                                            <span class="badge bg-label-secondary">Pendiente</span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
+                                <div class="mt-2 text-muted small">
+                                    Mínimo aprobatorio: <strong>{{ $notaMinimaAprobacion }}</strong>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-5 col-12">
-                        <div class="card h-100">
+                    <!-- Asistencia -->
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm border-start border-4 border-info">
                             <div class="card-body">
-                                {{-- Parte del gráfico (sin cambios) --}}
-                                <div class="text-center">
-                                    <h5 class="card-title mb-2"><i class="mdi mdi-calendar-check me-2"></i> Asistencia</h5>
-                                    <div id="asistenciaChart"></div>
-                                    <p class="mt-3 mb-0 fs-5">
-                                        <span class="fw-bold">{{ $asistencia->asistencias_alumno }}</span> de
-                                        <span class="fw-bold">{{ $asistencia->total_clases }}</span> clases
-                                    </p>
-                                    <small class="text-muted">Progreso de asistencia</small>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="mb-0 text-muted fw-semibold">Asistencia</p>
+                                        <h2 class="mb-0 fw-bold text-info">{{ $asistencia->porcentaje }}%</h2>
+                                    </div>
+                                    <div class="avatar avatar-md">
+                                        <span class="avatar-initial rounded bg-label-info">
+                                            <i class="mdi mdi-calendar-check mdi-24px"></i>
+                                        </span>
+                                    </div>
                                 </div>
-                                <hr>
+                                <div class="mt-2 text-muted small">
+                                    <strong>{{ $asistencia->asistencias_alumno }}</strong> de <strong>{{ $asistencia->total_clases }}</strong> clases
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pendientes -->
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm border-start border-4 border-warning">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="mb-0 text-muted fw-semibold">Actividades Pendientes</p>
+                                        <h2 class="mb-0 fw-bold text-warning">{{ $materia->pendientes_count }}</h2>
+                                    </div>
+                                    <div class="avatar avatar-md">
+                                        <span class="avatar-initial rounded bg-label-warning">
+                                            <i class="mdi mdi-clipboard-text-clock-outline mdi-24px"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-muted small">
+                                    Sin calificación o por entregar
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-6 col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title mb-4"><i class="mdi mdi-clipboard-list-outline me-2 text-primary"></i>Actividades Recientes y Pendientes</h5>
+                                <div class="table-responsive text-nowrap">
+                                    <table class="table table-hover table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Actividad</th>
+                                                <th>Corte</th>
+                                                <th>Estado/Nota</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="table-border-bottom-0">
+                                            {{-- Mostrar solo hasta 5 actividades, priorizando pendientes --}}
+                                            @php
+                                                $actividadesMostradas = 0;
+                                            @endphp
+                                            @foreach ($materia->items_tabla_resumen as $item)
+                                                @if ($actividadesMostradas < 5 && ($item->nota === null || $actividadesMostradas < 3))
+                                                    <tr>
+                                                        <td><strong>{{ $item->nombre }}</strong></td>
+                                                        <td><small class="text-muted">{{ $item->corte }}</small></td>
+                                                        <td>
+                                                            @if (is_numeric($item->nota))
+                                                                <span class="badge {{ $item->nota >= 3.0 ? 'bg-label-success' : 'bg-label-danger' }}">{{ $item->nota }}</span>
+                                                            @else
+                                                                <span class="badge bg-label-warning">Pendiente</span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                    @php $actividadesMostradas++; @endphp
+                                                @endif
+                                            @endforeach
+                                            @if($actividadesMostradas == 0)
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted py-4">No hay actividades recientes</td>
+                                                </tr>
+                                            @endif
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="document.getElementById('pills-calificaciones-tab').click();">Ver todas las calificaciones</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 col-12">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
 
                                 {{-- ========================================================== --}}
                                 {{-- === INICIO DE LA SECCIÓN MODIFICADA CON ALPINE.JS       === --}}
@@ -215,7 +279,16 @@
                                                             @endif
                                                         </td>
                                                         <td>
-                                                            <small>{{ $registro->motivo ?? 'N/A' }}</small>
+                                                            <small>
+                                                                @if($registro->motivo)
+                                                                    {{ \Illuminate\Support\Str::limit($registro->motivo, 10, '...') }}
+                                                                    @if(strlen($registro->motivo) > 10)
+                                                                        <i class="ti ti-info-triangle text-warning ms-1" title="{{ $registro->motivo }}" style="cursor: help;"></i>
+                                                                    @endif
+                                                                @else
+                                                                    N/A
+                                                                @endif
+                                                            </small>
                                                         </td>
                                                     </tr>
                                                 @endforeach
@@ -295,7 +368,7 @@
 
                                     @if ($recurso->nombre_archivo)
                                         <div class="col-xs-12 col-md-12 ">
-                                        <a href="{{ Storage::disk('public')->url($recurso->ruta_archivo) }}" class="btn btn-outline-primary waves-effect w-100 m-2" target="_blank" download>
+                                        <a href="{{ $recurso->archivo_url }}" class="btn btn-outline-primary waves-effect w-100 m-2" target="_blank" download>
                                             <i class="ti ti-clipboard-text"></i> Ver Archivo
                                         </a>
                                         </div>

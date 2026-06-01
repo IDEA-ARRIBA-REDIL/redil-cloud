@@ -13,15 +13,9 @@
           <div class="d-flex justify-content-between mt-3">
             <div class="my-auto">
               <h5 class="mb-1 text-primary">
-                @if($seccion->logo)
-                <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/secciones-formulario/'.$seccion->logo) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$seccion->logo }}?v={{ time() }}" alt="react-logo" class="me-2" width="30">
-                @endif
                 {{ $seccion->nombre }}
               </h5>
               <p class="m-0"><b>Título:</b> {{ $seccion->titulo }}</p>
-              @if($seccion->icono)
-              <p class="m-0"><b>Icono:</b> <i class="{{$seccion->icono}}"></i></p>
-              @endif
             </div>
 
             <div class="my-auto">
@@ -218,42 +212,9 @@
             @enderror
           </div>
 
-          <div class="mb-3 col-12">
-            <label class="form-label" for="icono">Icono </label>
-            <input id="icono" name="icono" wire:model.defer="icono" type="text" class="form-control" placeholder="ejemplo 'ti ti-home'" />
-            @error('icono')
-            <div class="text-danger ti-12px mt-2">
-              <i class="ti ti-circle-x"></i> {{ $message }}
-            </div>
-            @enderror
-            <div class="ti-12px mt-2"> <i class="text-info ti ti-info-circle me-1"></i>Librería de iconos <a href="https://tabler.io/icons" target="_blank">(Ver librería)</a></div>
-          </div>
-
-          @if($seccionEditando && $seccionEditando->logo)
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/secciones-formulario/'.$seccionEditando->logo) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$seccionEditando->logo }}?v={{ time() }}" alt="react-logo" class="me-2 mt-1" width="50">
-          @endif
-
-          <!-- imagen -->
-          <div class="mb-3 col-12">
-            <label id="label_imagen" class="form-label" for="imagen">
-              {{ $seccionEditando && $seccionEditando->logo ? 'Reemplazar imagen'  : 'Subir imagen' }}
-            </label>
-            <input type="file" id="imagen" name="imagen" wire:model.defer="imagen" data-input="imagen" class="form-control inputFile " accept=".jpg, .png, .jpeg">
-            @if($errors->has('imagen'))
-            <div class="text-danger ti-12px mt-2">
-              <i class="ti ti-circle-x"></i> {{ $errors->first('imagen') }}
-            </div>
-            @endif
-            <div class="ti-12px mt-2"> <i class="text-info ti ti-info-circle me-1"></i>La imagen debe ser de 100px alto y 100px ancho</div>
-          </div>
-          <!-- /imagen -->
         </div>
       </div>
       <div class="offcanvas-footer p-5 border-top border-2 px-8">
-        <button class="btnGuardarLoader d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" type="button" disabled="">
-          <span class="spinner-border" role="status" aria-hidden="true"></span>
-          <span class="ms-1">Cargando archivo...</span>
-        </button>
         <button type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
         <button type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
       </div>
@@ -300,24 +261,6 @@
         }
       });
     });
-  });
-
-  document.addEventListener('livewire:initialized', () => {
-    const inputImagen = document.getElementById('imagen');
-    const btnGuardar = document.querySelector('#nuevaSeccion .btnGuardar');
-    const btnLoader = document.querySelector('#nuevaSeccion .btnGuardarLoader');
-
-    if (inputImagen && btnGuardar) {
-      inputImagen.addEventListener('change', () => {
-        btnGuardar.classList.add('d-none');
-        btnLoader.classList.remove('d-none');
-
-        setTimeout(() => {
-          btnGuardar.classList.remove('d-none');
-          btnLoader.classList.add('d-none');
-        }, 1000);
-      });
-    }
   });
 
   $('.accordion-collapse').on('shown.bs.collapse', function() {

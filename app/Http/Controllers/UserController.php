@@ -43,8 +43,8 @@ use App\Models\TipoUsuario;
 use App\Models\TipoVinculacion;
 use App\Models\TipoVivienda;
 use App\Models\User;
-use App\Services\NotificacionService;
 use App\Notifications\EnviarCodigoCambioCorreo;
+use App\Services\NotificacionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
@@ -53,6 +53,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redirect;
@@ -323,7 +324,7 @@ class UserController extends Controller
             $item->url = 'todos';
             $item->cantidad = $countTodas;
             $item->color = 'bg-label-success';
-            $item->imagen = 'Todos.png';
+            $item->imagen = 'personas/indicadores/Todos.png';
             $item->icono = 'ti ti-asterisk';
             $item->es_global = true;
             $indicadoresGenerales[] = $item;
@@ -340,7 +341,7 @@ class UserController extends Controller
             $item->url = 'sin-grupo';
             $item->cantidad = $countSinGrupo;
             $item->color = 'bg-label-primary';
-            $item->imagen = 'Sin-grupo.png';
+            $item->imagen = 'personas/indicadores/Sin-grupo.png';
             $item->icono = 'ti ti-users';
             $item->es_global = true;
             $indicadoresGenerales[] = $item;
@@ -354,7 +355,7 @@ class UserController extends Controller
             $item->url = 'dados-de-baja';
             $item->cantidad = $countBajas;
             $item->color = 'bg-label-secondary';
-            $item->imagen = 'Dados-de-baja.png';
+            $item->imagen = 'personas/indicadores/Dados-de-baja.png';
             $item->icono = 'ti ti-user-off';
             $item->es_global = true;
             $indicadoresGenerales[] = $item;
@@ -374,7 +375,7 @@ class UserController extends Controller
             $item->url = 'inactivas-reunion';
             $item->cantidad = $countInactivasReunion;
             $item->color = 'bg-label-danger';
-            $item->imagen = 'Inactivas-en-reunion.png';
+            $item->imagen = 'personas/indicadores/Inactivas-en-reunion.png';
             $item->icono = 'ti ti-building-church';
             $item->es_global = true;
             $indicadoresGenerales[] = $item;
@@ -394,7 +395,7 @@ class UserController extends Controller
             $item->url = 'inactivas-grupo';
             $item->cantidad = $countInactivasGrupo;
             $item->color = 'bg-label-danger';
-            $item->imagen = 'Inactivas-en-grupo.png';
+            $item->imagen = 'personas/indicadores/Inactivas-en-grupo.png';
             $item->icono = 'ti ti-user-exclamation';
             $item->es_global = true;
             $indicadoresGenerales[] = $item;
@@ -418,7 +419,7 @@ class UserController extends Controller
             $item->url = 'inactivas-todo';
             $item->cantidad = $countInactivasTodo;
             $item->color = 'bg-label-danger';
-            $item->imagen = 'Inactivas-en-todo.png';
+            $item->imagen = 'personas/indicadores/Inactivas-en-todo.png';
             $item->icono = 'ti ti-x';
             $item->es_global = true;
             $indicadoresGenerales[] = $item;
@@ -438,8 +439,12 @@ class UserController extends Controller
                 $item->url = $tipoUsuario->id;
                 $item->cantidad = $c;
                 $item->color = $tipoUsuario->color;
-                $item->imagen = $tipoUsuario->imagen;
                 $item->icono = $tipoUsuario->icono;
+                if ($tipoUsuario->imagen === 'indicador_general.png') {
+                    $item->imagen = 'personas/indicadores/indicador_general.png';
+                } else {
+                    $item->imagen = 'img/tipos-usuarios/'.$tipoUsuario->imagen;
+                }
                 $item->es_global = ($tipoUsuario->imagen === 'indicador_general.png');
                 $indicadoresPorTipoUsuario[] = $item;
             }
@@ -1054,9 +1059,13 @@ class UserController extends Controller
             ->get();
 
         $nombreArchivo = 'informe_personas'.Carbon::now()->format('Y-m-d-H-i-s');
-        $rutaArchivo = "/$configuracion->ruta_almacenamiento/informes/personas/$nombreArchivo.csv";
+        $rutaRelativa = "archivos/usuario/listadoCsv/$nombreArchivo.csv";
 
-        $archivo = fopen(storage_path('app/public').$rutaArchivo, 'w');
+        // Aseguramos que el directorio exista
+        Storage::makeDirectory('archivos/usuario/listadoCsv');
+
+        $archivoPath = Storage::path($rutaRelativa);
+        $archivo = fopen($archivoPath, 'w');
         fwrite($archivo, $bom = chr(0xEF).chr(0xBB).chr(0xBF));
 
         /* Aquí se crean los encabezados */
@@ -1456,13 +1465,7 @@ class UserController extends Controller
                     array_push($fila, $pasoActual->pivot->fecha ? $pasoActual->pivot->fecha : 'Sin Fecha');
                     array_push(
                         $fila,
-                        $pasoActual->pivot->estado == 1
-                          ? 'No Finalizado'
-                          : ($pasoActual->pivot->estado == 2
-                            ? 'En Curso'
-                            : ($pasoActual->pivot->estado == 3
-                              ? 'Finalizado'
-                              : 'Sin estado'))
+                        $pasoActual->pivot->estado ? $pasoActual->pivot->estado->nombre : 'Sin estado'
                     );
                     array_push(
                         $fila,
@@ -1486,7 +1489,7 @@ class UserController extends Controller
 
         return Redirect::back()->with(
             'success',
-            'El informe fue generado con éxito, <a href="'.Storage::url($rutaArchivo).'" class=" link-success fw-bold" download="'.$nombreArchivo.'.csv"> descargalo aquí</a>'
+            'El informe fue generado con éxito, <a href="'.tenant_asset($rutaRelativa).'" class=" link-success fw-bold" download="'.$nombreArchivo.'.csv"> descargalo aquí</a>'
         );
     }
 
@@ -2344,15 +2347,15 @@ class UserController extends Controller
             try {
                 $nombreCompleto = trim("{$usuario->primer_nombre} {$usuario->segundo_nombre} {$usuario->primer_apellido} {$usuario->segundo_apellido}");
                 NotificacionService::dispatch('crear_persona', [
-                    'titulo' => 'Nueva Persona Registrada',
                     'mensaje' => "Se ha registrado a: {$nombreCompleto}",
                     'icono' => 'ti-user-plus',
                     'url' => route('usuario.perfil', $usuario->id),
                     'color' => 'success',
                 ], auth()->user(), $usuario);
+                \Log::error('Notificación crear_persona despachada correctamente');
             } catch (\Exception $e) {
                 // No detenemos el flujo si la notificación falla
-                \Log::error("Error al despachar notificación crear_persona: " . $e->getMessage());
+                \Log::error('Error al despachar notificación crear_persona: '.$e->getMessage());
             }
 
             // / esta sección es para el guardado de los campos extra
@@ -2393,22 +2396,12 @@ class UserController extends Controller
             $campoFoto = $campos->where('nombre_bd', 'foto')->first();
             if ($campoFoto) {
                 if ($request[$campoFoto->name_id]) {
-                    if ($configuracion->version == 1) {
-                        $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
-                        $imagenBase64 = base64_decode($imagenPartes[1]);
-                        $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
-                        
-                        Storage::put('usuario/fotos/'.$nombreFoto, $imagenBase64);
-                        $usuario->foto = $nombreFoto;
-                    } else {
-                        /*
-                          $s3 = AWS::get('s3');
-                          $s3->putObject(array(
-                            'Bucket'     => $_ENV['aws_bucket'],
-                            'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                            'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                          ));*/
-                    }
+                    $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
+                    $imagenBase64 = base64_decode($imagenPartes[1]);
+                    $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
+
+                    Storage::put('img/usuario/fotos/'.$nombreFoto, $imagenBase64);
+                    $usuario->foto = $nombreFoto;
                 }
             }
             // fin Foto
@@ -2421,7 +2414,7 @@ class UserController extends Controller
             $usuario->email = $email;
 
             // documentos adjuntos
-                    // El directorio se crea automáticamente al usar storeAs con el disco tenant si no existe.
+            // El directorio se crea automáticamente al usar storeAs con el disco tenant si no existe.
 
             // archivo_a
             $campoArchivo = $campos->where('nombre_bd', 'archivo_a')->first();
@@ -2430,24 +2423,14 @@ class UserController extends Controller
                 $nombreArchivoA = $formulario->label_archivo_a
                   ? $formulario->label_archivo_a.$usuario->id.'.'.$extension
                   : 'archivo-a'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual si existe
-                    if ($usuario->archivo_a && Storage::exists('usuario/archivos/'.$usuario->archivo_a)) {
-                        Storage::delete('usuario/archivos/'.$usuario->archivo_a);
-                    }
-
-                    $request[$campoArchivo->name_id]->storeAs(
-                        'usuario/archivos',
-                        $nombreArchivoA);
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoA,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                // elimino el archivo actual si existe
+                if ($usuario->archivo_a && Storage::exists('archivos/usuario/'.$usuario->archivo_a)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_a);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs(
+                    'archivos/usuario',
+                    $nombreArchivoA);
                 $usuario->archivo_a = $nombreArchivoA;
                 $usuario->save();
             }
@@ -2459,24 +2442,15 @@ class UserController extends Controller
                 $nombreArchivoB = $formulario->label_archivo_b
                   ? $formulario->label_archivo_b.$usuario->id.'.'.$extension
                   : 'archivo-b'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual si existe
-                    if ($usuario->archivo_b && Storage::exists('usuario/archivos/'.$usuario->archivo_b)) {
-                        Storage::delete('usuario/archivos/'.$usuario->archivo_b);
-                    }
-
-                    $request[$campoArchivo->name_id]->storeAs(
-                        'usuario/archivos',
-                        $nombreArchivoB);
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoB,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                // elimino el archivo actual si existe
+                if ($usuario->archivo_b && Storage::exists('archivos/usuario/'.$usuario->archivo_b)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_b);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs(
+                    'archivos/usuario',
+                    $nombreArchivoB);
+
                 $usuario->archivo_b = $nombreArchivoB;
                 $usuario->save();
             }
@@ -2489,24 +2463,15 @@ class UserController extends Controller
                 $nombreArchivoC = $formulario->label_archivo_c
                   ? $formulario->label_archivo_c.$usuario->id.'.'.$extension
                   : 'archivo-c'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual si existe
-                    if ($usuario->archivo_c && Storage::exists('usuario/archivos/'.$usuario->archivo_c)) {
-                        Storage::delete('usuario/archivos/'.$usuario->archivo_c);
-                    }
-
-                    $request[$campoArchivo->name_id]->storeAs(
-                        'usuario/archivos',
-                        $nombreArchivoC);
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoC,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                // elimino el archivo actual si existe
+                if ($usuario->archivo_c && Storage::exists('archivos/usuario/'.$usuario->archivo_c)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_c);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs(
+                    'archivos/usuario',
+                    $nombreArchivoC);
+
                 $usuario->archivo_c = $nombreArchivoC;
                 $usuario->save();
             }
@@ -2518,24 +2483,14 @@ class UserController extends Controller
                 $nombreArchivoD = $formulario->label_archivo_d
                   ? $formulario->label_archivo_d.$usuario->id.'.'.$extension
                   : 'archivo-d'.$usuario->id.'.'.$extension;
-                if ($configuracion->version == 1) {
-                    // elimino el archivo actual si existe
-                    if ($usuario->archivo_d && Storage::exists('usuario/archivos/'.$usuario->archivo_d)) {
-                        Storage::delete('usuario/archivos/'.$usuario->archivo_d);
-                    }
-
-                    $request[$campoArchivo->name_id]->storeAs(
-                        'usuario/archivos',
-                        $nombreArchivoD);
-                } elseif ($configuracion->version == 2) {
-                    /*
-                        $s3 = AWS::get('s3');
-                        $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivoD,
-                        'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-                        ));*/
+                // elimino el archivo actual si existe
+                if ($usuario->archivo_d && Storage::exists('archivos/usuario/'.$usuario->archivo_d)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_d);
                 }
+
+                $request[$campoArchivo->name_id]->storeAs(
+                    'archivos/usuario',
+                    $nombreArchivoD);
                 $usuario->archivo_d = $nombreArchivoD;
                 $usuario->save();
             }
@@ -2638,14 +2593,7 @@ class UserController extends Controller
                         $mailData->mensaje = $mensaje;
 
                         if ($peticion->tipoPeticion->banner_email != '') {
-                            $mailData->banner =
-                              $configuracion->version == 1
-                              ? Storage::url(
-                                  $configuracion->ruta_almacenamiento.'/img/email/'.$peticion->tipoPeticion->banner_email
-                              )
-                              : Storage::url(
-                                  $configuracion->ruta_almacenamiento.'/img/email/'.$peticion->tipoPeticion->banner_email
-                              );
+                            $mailData->banner = tenant_asset('img/email/peticiones/'.$peticion->tipoPeticion->banner_email);
                         }
 
                         Mail::to($usuario->email)->send(new DefaultMail($mailData));
@@ -2740,14 +2688,7 @@ class UserController extends Controller
                 $mailData->mensaje = $configuracion->mensaje_bienvenida;
 
                 if ($configuracion->banner_mensaje_bienvenida) {
-                    $mailData->banner =
-                      $configuracion->version == 1
-                      ? Storage::url(
-                          $configuracion->ruta_almacenamiento.'/img/email/bienvenida_usuario.png'
-                      )
-                      : Storage::url(
-                          $configuracion->ruta_almacenamiento.'/img/email/bienvenida_usuario.png'
-                      );
+                    $mailData->banner = tenant_asset('img/email/bienvenida_usuario.png');
                 }
 
                 Mail::to($usuario->email)->send(new DefaultMail($mailData));
@@ -3241,15 +3182,15 @@ class UserController extends Controller
             $campoFoto = $campos->where('nombre_bd', 'foto')->first();
             if ($campoFoto && $request[$campoFoto->name_id]) {
                 // Eliminar foto anterior si existe
-                if ($usuario->foto && Storage::exists('usuario/fotos/'.$usuario->foto)) {
-                    Storage::delete('usuario/fotos/'.$usuario->foto);
+                if ($usuario->foto && Storage::exists('img/usuario/fotos/'.$usuario->foto)) {
+                    Storage::delete('img/usuario/fotos/'.$usuario->foto);
                 }
 
                 $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
                 $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
-                
-                Storage::put('usuario/fotos/'.$nombreFoto, $imagenBase64);
+
+                Storage::put('img/usuario/fotos/'.$nombreFoto, $imagenBase64);
                 $usuario->foto = $nombreFoto;
             }
             // fin Foto
@@ -3262,11 +3203,11 @@ class UserController extends Controller
                   ? str($formulario->label_archivo_a)->slug().'-'.$usuario->id.'.'.$extension
                   : 'archivo-a-'.$usuario->id.'.'.$extension;
 
-                if ($usuario->archivo_a && Storage::exists('usuario/archivos/'.$usuario->archivo_a)) {
-                    Storage::delete('usuario/archivos/'.$usuario->archivo_a);
+                if ($usuario->archivo_a && Storage::exists('archivos/usuario/'.$usuario->archivo_a)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_a);
                 }
 
-                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoA);
+                $request[$campoArchivo->name_id]->storeAs('archivos/usuario', $nombreArchivoA);
                 $usuario->archivo_a = $nombreArchivoA;
                 $usuario->save();
             }
@@ -3279,11 +3220,11 @@ class UserController extends Controller
                   ? str($formulario->label_archivo_b)->slug().'-'.$usuario->id.'.'.$extension
                   : 'archivo-b-'.$usuario->id.'.'.$extension;
 
-                if ($usuario->archivo_b && Storage::exists('usuario/archivos/'.$usuario->archivo_b)) {
-                    Storage::delete('usuario/archivos/'.$usuario->archivo_b);
+                if ($usuario->archivo_b && Storage::exists('archivos/usuario/'.$usuario->archivo_b)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_b);
                 }
 
-                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoB);
+                $request[$campoArchivo->name_id]->storeAs('archivos/usuario', $nombreArchivoB);
                 $usuario->archivo_b = $nombreArchivoB;
                 $usuario->save();
             }
@@ -3296,11 +3237,11 @@ class UserController extends Controller
                   ? str($formulario->label_archivo_c)->slug().'-'.$usuario->id.'.'.$extension
                   : 'archivo-c-'.$usuario->id.'.'.$extension;
 
-                if ($usuario->archivo_c && Storage::exists('usuario/archivos/'.$usuario->archivo_c)) {
-                    Storage::delete('usuario/archivos/'.$usuario->archivo_c);
+                if ($usuario->archivo_c && Storage::exists('archivos/usuario/'.$usuario->archivo_c)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_c);
                 }
 
-                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoC);
+                $request[$campoArchivo->name_id]->storeAs('archivos/usuario', $nombreArchivoC);
                 $usuario->archivo_c = $nombreArchivoC;
                 $usuario->save();
             }
@@ -3313,11 +3254,11 @@ class UserController extends Controller
                   ? str($formulario->label_archivo_d)->slug().'-'.$usuario->id.'.'.$extension
                   : 'archivo-d-'.$usuario->id.'.'.$extension;
 
-                if ($usuario->archivo_d && Storage::exists('usuario/archivos/'.$usuario->archivo_d)) {
-                    Storage::delete('usuario/archivos/'.$usuario->archivo_d);
+                if ($usuario->archivo_d && Storage::exists('archivos/usuario/'.$usuario->archivo_d)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_d);
                 }
 
-                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoD);
+                $request[$campoArchivo->name_id]->storeAs('archivos/usuario', $nombreArchivoD);
                 $usuario->archivo_d = $nombreArchivoD;
                 $usuario->save();
             }
@@ -3762,15 +3703,15 @@ class UserController extends Controller
             $campoFoto = $campos->where('nombre_bd', 'foto')->first();
             if ($campoFoto && $request[$campoFoto->name_id]) {
                 // Eliminar foto anterior si existe
-                if ($usuario->foto && Storage::exists('usuario/fotos/'.$usuario->foto)) {
-                    Storage::delete('usuario/fotos/'.$usuario->foto);
+                if ($usuario->foto && Storage::exists('img/usuario/fotos/'.$usuario->foto)) {
+                    Storage::delete('img/usuario/fotos/'.$usuario->foto);
                 }
 
                 $imagenPartes = explode(';base64,', $request[$campoFoto->name_id]);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
                 $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
-                
-                Storage::put('usuario/fotos/'.$nombreFoto, $imagenBase64);
+
+                Storage::put('img/usuario/fotos/'.$nombreFoto, $imagenBase64);
                 $usuario->foto = $nombreFoto;
             }
             // fin Foto
@@ -3783,11 +3724,11 @@ class UserController extends Controller
                   ? str($formulario->label_archivo_a)->slug().'-'.$usuario->id.'.'.$extension
                   : 'archivo-a-'.$usuario->id.'.'.$extension;
 
-                if ($usuario->archivo_a && Storage::exists('usuario/archivos/'.$usuario->archivo_a)) {
-                    Storage::delete('usuario/archivos/'.$usuario->archivo_a);
+                if ($usuario->archivo_a && Storage::exists('archivos/usuario/'.$usuario->archivo_a)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_a);
                 }
 
-                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoA);
+                $request[$campoArchivo->name_id]->storeAs('archivos/usuario', $nombreArchivoA);
                 $usuario->archivo_a = $nombreArchivoA;
                 $usuario->save();
             }
@@ -3800,11 +3741,11 @@ class UserController extends Controller
                   ? str($formulario->label_archivo_b)->slug().'-'.$usuario->id.'.'.$extension
                   : 'archivo-b-'.$usuario->id.'.'.$extension;
 
-                if ($usuario->archivo_b && Storage::exists('usuario/archivos/'.$usuario->archivo_b)) {
-                    Storage::delete('usuario/archivos/'.$usuario->archivo_b);
+                if ($usuario->archivo_b && Storage::exists('archivos/usuario/'.$usuario->archivo_b)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_b);
                 }
 
-                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoB);
+                $request[$campoArchivo->name_id]->storeAs('archivos/usuario', $nombreArchivoB);
                 $usuario->archivo_b = $nombreArchivoB;
                 $usuario->save();
             }
@@ -3817,11 +3758,11 @@ class UserController extends Controller
                   ? str($formulario->label_archivo_c)->slug().'-'.$usuario->id.'.'.$extension
                   : 'archivo-c-'.$usuario->id.'.'.$extension;
 
-                if ($usuario->archivo_c && Storage::exists('usuario/archivos/'.$usuario->archivo_c)) {
-                    Storage::delete('usuario/archivos/'.$usuario->archivo_c);
+                if ($usuario->archivo_c && Storage::exists('archivos/usuario/'.$usuario->archivo_c)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_c);
                 }
 
-                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoC);
+                $request[$campoArchivo->name_id]->storeAs('archivos/usuario', $nombreArchivoC);
                 $usuario->archivo_c = $nombreArchivoC;
                 $usuario->save();
             }
@@ -3834,11 +3775,11 @@ class UserController extends Controller
                   ? str($formulario->label_archivo_d)->slug().'-'.$usuario->id.'.'.$extension
                   : 'archivo-d-'.$usuario->id.'.'.$extension;
 
-                if ($usuario->archivo_d && Storage::exists('usuario/archivos/'.$usuario->archivo_d)) {
-                    Storage::delete('usuario/archivos/'.$usuario->archivo_d);
+                if ($usuario->archivo_d && Storage::exists('archivos/usuario/'.$usuario->archivo_d)) {
+                    Storage::delete('archivos/usuario/'.$usuario->archivo_d);
                 }
 
-                $request[$campoArchivo->name_id]->storeAs('usuario/archivos', $nombreArchivoD);
+                $request[$campoArchivo->name_id]->storeAs('archivos/usuario', $nombreArchivoD);
                 $usuario->archivo_d = $nombreArchivoD;
                 $usuario->save();
             }
@@ -3919,16 +3860,16 @@ class UserController extends Controller
     {
         if ($request->foto) {
             // Eliminar foto anterior si existe
-            if ($usuario->foto && Storage::exists('usuario/fotos/'.$usuario->foto)) {
-                Storage::delete('usuario/fotos/'.$usuario->foto);
+            if ($usuario->foto && Storage::exists('img/usuario/fotos/'.$usuario->foto)) {
+                Storage::delete('img/usuario/fotos/'.$usuario->foto);
             }
 
             $imagenPartes = explode(';base64,', $request->foto);
             $imagenBase64 = base64_decode($imagenPartes[1]);
             $nombreFoto = 'asistente-'.$usuario->id.'.jpg';
-            
-            Storage::put('usuario/fotos/'.$nombreFoto, $imagenBase64);
-            
+
+            Storage::put('img/usuario/fotos/'.$nombreFoto, $imagenBase64);
+
             $usuario->foto = $nombreFoto;
             $usuario->save();
         }
@@ -3936,28 +3877,26 @@ class UserController extends Controller
         return back()->with('success', 'La foto de perfil de <b>'.$usuario->nombre(3).'</b> fue actualizada con éxito.');
     }
 
-
     public function cambiarPortada(Request $request, User $usuario)
     {
         if ($request->foto) {
             // Eliminar portada anterior si existe y no es la por defecto
-            if ($usuario->portada && $usuario->portada !== 'profile-banner.png' && Storage::exists('usuario/banners/'.$usuario->portada)) {
-                Storage::delete('usuario/banners/'.$usuario->portada);
+            if ($usuario->portada && $usuario->portada !== 'profile-banner.png' && Storage::exists('img/usuario/banners/'.$usuario->portada)) {
+                Storage::delete('img/usuario/banners/'.$usuario->portada);
             }
 
             $imagenPartes = explode(';base64,', $request->foto);
             $imagenBase64 = base64_decode($imagenPartes[1]);
             $nombreFoto = 'banner-'.$usuario->id.'.jpg';
-            
-            Storage::put('usuario/banners/'.$nombreFoto, $imagenBase64);
-            
+
+            Storage::put('img/usuario/banners/'.$nombreFoto, $imagenBase64);
+
             $usuario->portada = $nombreFoto;
             $usuario->save();
         }
 
         return back()->with('success', 'La foto de portada de <b>'.$usuario->nombre(3).'</b> fue actualizada con éxito.');
     }
-
 
     public function informacionCongregacional(?int $formulario, User $usuario, int $tipoUsuarioSugeridoId = 0)
     {
@@ -4476,12 +4415,16 @@ class UserController extends Controller
         $mailData = new stdClass;
         $mailData->subject = 'Cambio de contraseña';
         $mailData->nombre = $usuario->nombre(3);
-        $mailData->mensaje = 'Su contraseña ha sido cambiada satisfactoriamente por parte del administrador, su nueva contraseña es:
-      <br> <center><p class="centrar-text" style="font:18px/1.25em '.'Century Gothic'.',Arial,Helvetica;color:#939393"><b>Nueva clave: '.$nuevaContrasena.'</b></p></center>    ';
+        $mailData->mensaje = 'Su contraseña ha sido cambiada satisfactoriamente por parte del administrador. Si no solicitó este cambio, contacte al soporte inmediatamente.';
 
         try {
             Mail::to($usuario->email)->send(new DefaultMail($mailData));
         } catch (Exception $e) {
+            Log::error('Error al enviar email de cambio de contraseña', [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return back()->with('success', 'La contraseña de <b>'.$usuario->nombre(3).'</b> fue cambiada con éxito a <b>'.$nuevaContrasena.'</b>.');
@@ -4500,12 +4443,16 @@ class UserController extends Controller
         $mailData = new stdClass;
         $mailData->subject = 'Cambio de contraseña';
         $mailData->nombre = $usuario->nombre(3);
-        $mailData->mensaje = 'Su contraseña ha sido cambiada satisfactoriamente por parte del administrador, su nueva contraseña es:
-      <br> <center><p class="centrar-text" style="font:18px/1.25em '.'Century Gothic'.',Arial,Helvetica;color:#939393"><b>Nueva clave: '.$request->password.'</b></p></center>    ';
+        $mailData->mensaje = 'Su contraseña ha sido cambiada satisfactoriamente por parte del administrador. Si no solicitó este cambio, contacte al soporte inmediatamente.';
 
         try {
             Mail::to($usuario->email)->send(new DefaultMail($mailData));
         } catch (Exception $e) {
+            Log::error('Error al enviar email de cambio de contraseña', [
+                'usuario_id' => $usuario->id,
+                'email' => $usuario->email,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return back()->with('success', 'La contraseña de <b>'.$usuario->nombre(3).'</b> fue cambiada con éxito.');

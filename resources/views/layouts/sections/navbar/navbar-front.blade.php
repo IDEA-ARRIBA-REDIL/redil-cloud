@@ -7,8 +7,8 @@ $activeClass = in_array($currentRouteName, $activeRoutes) ? 'active' : '';
  $configuracion = Configuracion::find(1);
 @endphp
 <!-- Navbar: Start -->
-<nav style="height: 70px;
-    margin-bottom: 10px !important;" class="layout-navbar shadow-bottom py-0">
+<nav style="height: 80px;
+    margin-bottom: 10px !important;" class="layout-navbar shadow-bottom py-0 ">
   <div class="container-xxl">
     <div class="navbar navbar-expand-lg pt-1 pb-0 landing-navbar">
       <!-- Menu logo wrapper: Start -->
@@ -18,20 +18,10 @@ $activeClass = in_array($currentRouteName, $activeRoutes) ? 'active' : '';
           <i class="ti ti-menu-2 ti-lg align-middle text-heading fw-medium"></i>
         </button>
         <!-- Mobile menu toggle: End-->
-        <a href="{{url('front-pages/landing')}}" class="app-brand-link">
-           @if ($configuracion->version == 1)
-              <img style="width:30px" class="app-brand-logo"
-                  src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/logo_crecer.png') }}">
-            @else
-                <span class="app-brand-logo demo p-0">
-                    @include('_partials.macros', [
-                        'height' => '40px',
-                        'width' => '40px',
-                        'fill' => '#3772e4',
-                    ])
-                </span>
-            @endif
-          <h4 class="mb-0"> <span class="app-brand-text text-primary fw-bold ms-2 ps-1">{{ config('variables.templateName') }}</span> </h4>
+        <a href="{{url('front-pages/landing')}}" class="app-brand-link">  
+            @include('_partials.macros', [
+                'width' => '120px'
+            ])
         </a>
       </div>
       <!-- Menu logo wrapper: End -->
@@ -261,5 +251,6 @@ $activeClass = in_array($currentRouteName, $activeRoutes) ? 'active' : '';
       <!-- Toolbar: End -->
     </div>
   </div>
+
 </nav>
 <!-- Navbar: End -->

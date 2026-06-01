@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
      */
     protected function baseSeeders(): void
     {
+        $this->call(PlansSeeder::class);
         $this->call(TenantSeeder::class);
     }
 

@@ -1,4 +1,4 @@
-<div>
+ <div>
     {{-- Bucle principal para mostrar los cortes académicos --}}
     @foreach ($cortes as $corte)
         <div class="card mb-4">
@@ -39,17 +39,17 @@
                                             {{-- Lógica de botones: La clave del funcionamiento del modal está aquí --}}
                                             @if (is_null($item->nota))
                                                 @if ($item->entregado)
-                                                    {{-- Botón para EDITAR: Emite un evento 'openEditModal' --}}
+                                                    {{-- Botón para EDITAR --}}
                                                     <button
-                                                        wire:click="$dispatch('openEditModal', { itemId: {{ $item->id }} })"
+                                                        wire:click="abrirModal({{ $item->id }})"
                                                         class="btn btn-primary rounded-pill btn-sm">
                                                        <i class="ti ti-edit"></i>
                                                         Editar Respuesta
                                                     </button>
                                                 @else
-                                                    {{-- Botón para RESPONDER: Emite un evento 'openCreateModal' --}}
+                                                    {{-- Botón para RESPONDER --}}
                                                     <button
-                                                        wire:click="$dispatch('openCreateModal', { itemId: {{ $item->id }} })"
+                                                        wire:click="abrirModal({{ $item->id }})"
                                                         class="btn btn-primary rounded-pill btn-sm">
                                                        <i class="ti ti-text-wrap-disabled"></i>
                                                         Responder
@@ -81,35 +81,96 @@
     @endforeach
 
     {{-- ============================================= --}}
-    {{-- === MODAL PARA CREAR RESPUESTA            === --}}
+    {{-- === MODAL UNIFICADO PARA RESPONDER/EDITAR === --}}
     {{-- ============================================= --}}
-    {{-- Este bloque solo se renderiza en el HTML si $showCreateModal es true en el componente --}}
-    @if($showCreateModal)
-        <div class="modal fade show" style="display: block;" tabindex="-1" >
+    @if($showModal)
+        <div class="modal fade show" style="display: block;" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Responder a: {{ $selectedItem?->nombre }}</h5>
-                        <button wire:click="$set('showCreateModal', false)" type="button" class="btn-close"></button>
+                        <button wire:click="$set('showModal', false)" type="button" class="btn-close"></button>
                     </div>
-                    <form wire:submit="crearRespuesta">
+                    <form wire:submit="guardarRespuesta">
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="respuestaTextoCreate" class="form-label">Tu respuesta:</label>
-                                <textarea wire:model="respuestaTexto" id="respuestaTextoCreate" class="form-control" rows="8"></textarea>
+                                <label for="respuestaTexto" class="form-label">Tu respuesta:</label>
+                                <textarea wire:model="respuestaTexto" id="respuestaTexto" class="form-control" rows="8"></textarea>
                                 @error('respuestaTexto') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
-                            <div class="mb-3">
-                                <label for="archivoCreate" class="form-label">Adjuntar archivo (opcional):</label>
-                                <input wire:model="archivo" type="file" id="archivoCreate" class="form-control">
-                                <div wire:loading wire:target="archivo" class="small text-muted mt-1">Subiendo...</div>
-                                @error('archivo') <span class="text-danger small">{{ $message }}</span> @enderror
+
+                            {{-- Componente Alpine.js para la subida de archivos --}}
+                            <div class="mb-3" x-data="{
+                                subiendo: false,
+                                errorMsg: '',
+                                subirArchivo(event) {
+                                    const file = event.target.files[0];
+                                    if (!file) return;
+
+                                    this.subiendo = true;
+                                    this.errorMsg = '';
+
+                                    const formData = new FormData();
+                                    formData.append('archivo', file);
+                                    formData.append('item_id', {{ $selectedItem->id }});
+                                    formData.append('periodo_id', {{ $horario->materiaPeriodo->periodo_id }});
+
+                                    fetch('{{ route("alumnos.uploadArchivoRespuesta") }}', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                                            'Accept': 'application/json'
+                                        },
+                                        body: formData
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        this.subiendo = false;
+                                        if (data.success) {
+                                            $wire.set('nombreArchivoSubido', data.nombre);
+                                        } else {
+                                            this.errorMsg = data.message || 'Error al subir el archivo.';
+                                            this.$refs.archivoInput.value = '';
+                                        }
+                                    })
+                                    .catch(error => {
+                                        this.subiendo = false;
+                                        this.errorMsg = 'Error de conexión al subir el archivo.';
+                                        this.$refs.archivoInput.value = '';
+                                    });
+                                },
+                                eliminarArchivoLocal() {
+                                    $wire.call('eliminarArchivo');
+                                }
+                            }">
+                                <label class="form-label">Archivo Adjunto (opcional):</label>
+
+                                <template x-if="!$wire.nombreArchivoSubido">
+                                    <div>
+                                        <input type="file" class="form-control" x-ref="archivoInput" @change="subirArchivo">
+                                        <div x-show="subiendo" class="small text-muted mt-2 d-flex align-items-center">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Subiendo archivo...
+                                        </div>
+                                        <div x-show="errorMsg" class="small text-danger mt-1" x-text="errorMsg"></div>
+                                    </div>
+                                </template>
+
+                                <template x-if="$wire.nombreArchivoSubido">
+                                    <div class="alert alert-success d-flex align-items-center p-2 mb-0">
+                                        <i class="mdi mdi-check-circle-outline me-2 fs-4"></i>
+                                        <div class="flex-grow-1 text-truncate">
+                                            <strong>Archivo adjunto:</strong> <span x-text="$wire.nombreArchivoSubido"></span>
+                                        </div>
+                                        <button type="button" class="btn-close ms-auto" @click="eliminarArchivoLocal" aria-label="Close"></button>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button wire:click="$set('showCreateModal', false)" type="button" class="btn btn-outline-secondary rounded-pill">Cancelar</button>
+                            <button wire:click="$set('showModal', false)" type="button" class="btn btn-outline-secondary rounded-pill">Cancelar</button>
                             <button type="submit" class="btn btn-primary rounded-pill">
-                                <span wire:loading wire:target="crearRespuesta" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span wire:loading wire:target="guardarRespuesta" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                 Guardar Respuesta
                             </button>
                         </div>
@@ -118,66 +179,6 @@
             </div>
         </div>
         <div class="modal-backdrop fade show"></div>
-    @endif
-
-    {{-- ============================================= --}}
-    {{-- === MODAL PARA EDITAR RESPUESTA           === --}}
-    {{-- ============================================= --}}
-    {{-- Este bloque solo se renderiza si $showEditModal es true --}}
-    @if($showEditModal)
-        <div class="modal fade show" style="display: block;" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Editar respuesta para: {{ $selectedItem?->nombre }}</h5>
-                    <button wire:click="$set('showEditModal', false)" type="button" class="btn-close"></button>
-                </div>
-                <form wire:submit="editarRespuesta">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Tu respuesta:</label>
-                            <textarea wire:model="respuestaTexto" class="form-control" rows="8"></textarea>
-                            @error('respuestaTexto') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        {{-- === INICIO DE LA LÓGICA CONDICIONAL PARA ARCHIVOS === --}}
-                        <div class="mb-3">
-                            <label class="form-label">Archivo Adjunto:</label>
-
-                            @if ($existingResponse->enlace_documento_alumno)
-                                {{-- Si SÍ existe un archivo, mostramos el enlace y el botón de eliminar --}}
-                                <div class="d-flex align-items-center">
-                                    <a href="{{ $existingResponse->archivo_url }}" target="_blank" class="btn btn-outline-secondary btn-sm me-2">
-                                        <i class="mdi mdi-paperclip me-1"></i>
-                                        Ver Archivo Subido
-                                    </a>
-                                    <button
-                                        wire:click.prevent="eliminarArchivo"
-                                        wire:confirm="¿Estás seguro de que quieres eliminar este archivo permanentemente?"
-                                        type="button" class="btn btn-danger btn-icon btn-sm">
-                                        <i class="ti ti-x"></i>
-                                    </button>
-                                </div>
-                            @else
-                                {{-- Si NO existe un archivo, mostramos el input para subir uno nuevo --}}
-                                <input wire:model="archivo" type="file" class="form-control">
-                                <div wire:loading wire:target="archivo" class="small text-muted mt-1">Subiendo...</div>
-                                @error('archivo') <span class="text-danger small">{{ $message }}</span> @enderror
-                            @endif
-                        </div>
-                        {{-- === FIN DE LA LÓGICA CONDICIONAL PARA ARCHIVOS === --}}
-
-                    </div>
-                    <div class="modal-footer">
-                        <button wire:click="$set('showEditModal', false)" type="button" class="btn btn-outline-secondary rounded-pill">Cancelar</button>
-                        <button type="submit" class="btn btn-primary rounded-pill">Actualizar Respuesta</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-
     @endif
 
 </div>

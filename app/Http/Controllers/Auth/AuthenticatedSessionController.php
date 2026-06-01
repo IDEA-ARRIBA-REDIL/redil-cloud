@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Configuracion;
 use App\Models\FormularioUsuario;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
@@ -32,9 +33,12 @@ class AuthenticatedSessionController extends Controller
             session(['url.intended' => $request->input('redirect')]);
         }
 
+        $configuracion = Configuracion::first();
+
         return view('contenido.authentications.login', [
             'formularios' => $formularios,
             'emailDefault' => $emailDefault,
+            'configuracion' => $configuracion,
         ]);
     }
 

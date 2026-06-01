@@ -52,7 +52,7 @@
                             <!-- Usuario -->
                             <div class="col-md-4 d-flex align-items-center gap-3">
                                 @if ($hilo->user->foto && !in_array($hilo->user->foto, ['default-m.png', 'default-f.png']))
-                                    <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $hilo->user->foto) }}"
+                                    <img src="{{ $hilo->user->foto_url }}"
                                         alt="{{ $hilo->user->nombre(3) }}"
                                         class="rounded-circle border border-2 border-white shadow-sm object-fit-cover"
                                         style="width: 50px; height: 50px;">
@@ -167,7 +167,7 @@
                         {{-- Avatar del usuario --}}
                         <div class="avatar  me-3">
                             @if ($hiloActivo->user->foto && !in_array($hiloActivo->user->foto, ['default-m.png', 'default-f.png']))
-                                <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $hiloActivo->user->foto) }}"
+                                <img src="{{ tenant_asset('img/usuarios/foto-usuario/' . $hiloActivo->user->foto) }}"
                                     alt="{{ $hiloActivo->user->nombre(3) }}"
                                     class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
                             @else

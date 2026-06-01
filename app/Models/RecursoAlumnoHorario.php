@@ -4,7 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage; // <- IMPORTANTE
+
+// <- IMPORTANTE
 
 class RecursoAlumnoHorario extends Model
 {
@@ -35,8 +36,11 @@ class RecursoAlumnoHorario extends Model
     public function getArchivoUrlAttribute()
     {
         if ($this->ruta_archivo) {
-            return Storage::disk('public')->url($this->ruta_archivo);
+            $directorio = "archivos/escuelas/recursos-horario/horario-{$this->horario_materia_periodo_id}";
+
+            return tenant_asset("{$directorio}/{$this->ruta_archivo}");
         }
+
         return null;
     }
 }

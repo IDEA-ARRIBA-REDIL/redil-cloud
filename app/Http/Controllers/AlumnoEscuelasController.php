@@ -44,6 +44,8 @@ class AlumnoEscuelasController extends Controller
         // --- BLOQUE 1: DATOS GENERALES DE LA MATERIA ---
         $materiaData = new \stdClass;
         $materiaData->nombre = $horario->materiaPeriodo->materia->nombre;
+        $materiaData->escuela = $horario->materiaPeriodo->materia->escuela->nombre ?? 'N/A';
+        $materiaData->periodo = $horario->materiaPeriodo->periodo->nombre ?? 'N/A';
 
         $materiaData->maestros = $horario->maestros->map(fn ($maestro) => (object) [
             'nombre' => $maestro->user->nombre(3),
@@ -56,8 +58,10 @@ class AlumnoEscuelasController extends Controller
             $horario->horarioBase->dia_semana,
             $horario->horarioBase->hora_inicio_formato,
             $horario->horarioBase->hora_fin_formato,
-            $horario->horarioBase->aula->nombre
+            $horario->horarioBase->aula->nombre ?? 'N/A'
         );
+        $materiaData->sede = $horario->horarioBase->aula->sede->nombre ?? 'N/A';
+        $materiaData->tipo_aula = $horario->horarioBase->aula->tipo->nombre ?? 'N/A';
 
         // --- BLOQUE 2: DATOS DE ASISTENCIA ---
         $asistenciaData = new \stdClass;
@@ -113,6 +117,17 @@ class AlumnoEscuelasController extends Controller
                 }
             });
         });
+
+        // Contar actividades pendientes (que no están calificadas ni entregadas)
+        $actividadesPendientes = 0;
+        foreach ($cortes as $corte) {
+            foreach ($corte->itemInstancias as $item) {
+                if ($item->estado === 'Pendiente') {
+                    $actividadesPendientes++;
+                }
+            }
+        }
+        $materiaData->pendientes_count = $actividadesPendientes;
 
         // Creamos la tabla de resumen para la primera pestaña
         $materiaData->items_tabla_resumen = [];
@@ -308,5 +323,63 @@ class AlumnoEscuelasController extends Controller
         }
 
         return (object) ['horario' => 'N/A', 'aula' => 'N/A', 'sede' => 'N/A', 'maestro' => 'N/A'];
+    }
+
+    /**
+     * Sube un archivo de respuesta mediante fetch/Alpine.js
+     */
+    public function uploadArchivoRespuesta(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'archivo' => 'required|file|mimes:pdf,docx,xlsx,pptx,jpg,jpeg,png|max:10240',
+            'periodo_id' => 'required|integer',
+            'item_id' => 'required|integer',
+        ]);
+
+        $periodoId = $request->input('periodo_id');
+        $alumnoId = \Illuminate\Support\Facades\Auth::id();
+        $itemId = $request->input('item_id');
+
+        $archivo = $request->file('archivo');
+        $extension = $archivo->getClientOriginalExtension();
+        // Usamos un identificador único para evitar colisiones si se suben múltiples archivos
+        $nombreArchivo = "archivo-{$alumnoId}-{$itemId}-".uniqid().".{$extension}";
+
+        $directorio = "archivos/escuelas/periodo-{$periodoId}/respuestas";
+
+        try {
+            // Aseguramos que cada carpeta intermedia tenga permisos 0755
+            $currentPath = storage_path('app/public');
+            $relativeParts = explode('/', trim($directorio, '/'));
+            foreach ($relativeParts as $part) {
+                if (empty($part)) {
+                    continue;
+                }
+                $currentPath .= '/'.$part;
+                if (! file_exists($currentPath)) {
+                    @mkdir($currentPath, 0755, true);
+                }
+                @chmod($currentPath, 0755);
+            }
+
+            // Almacenamos el archivo en el disco 'public'
+            $archivo->storeAs($directorio, $nombreArchivo, 'public');
+
+            // Aseguramos que el archivo recién creado tenga permisos 0755
+            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivo}");
+            @chmod($filePath, 0755);
+
+            return response()->json([
+                'success' => true,
+                'nombre' => $nombreArchivo,
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error uploading file: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el archivo.',
+            ], 500);
+        }
     }
 }

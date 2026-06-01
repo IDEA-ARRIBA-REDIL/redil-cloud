@@ -64,7 +64,8 @@ $configData = Helper::appClasses();
 
   $(".selectAllItems").click(function() {
     var selectId = $(this).data('select');
-    $('#' + selectId).select2('destroy').find('option').prop('selected', 'selected').end().select2();
+    $("#" + selectId + " > option").prop("selected", true);
+    $("#" + selectId).trigger("change");
   });
 </script>
 

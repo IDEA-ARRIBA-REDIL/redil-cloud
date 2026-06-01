@@ -22,7 +22,7 @@
                     <div class="modal-body p-4">
                         <div class="d-flex align-items-center mb-4">
                             <div class="avatar avatar-md me-3">
-                                <img src="{{ $estudiante->profile_photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($estudiante->nombre(3)) . '&color=7F9CF5&background=EBF4FF' }}"
+                                <img src="{{ $estudiante->foto_url }}"
                                     alt="Avatar" class="rounded-circle">
                             </div>
                             <div>

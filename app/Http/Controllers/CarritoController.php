@@ -366,10 +366,10 @@ class CarritoController extends Controller
                                 }
                             }
                             // Guardado del archivo
-                            $directorio = $configuracion->ruta_almacenamiento.'/archivos/actividades/';
+                            $directorio = 'archivos/actividades/';
                             $nombreOriginalLimpio = preg_replace('/[^A-Za-z0-9.\-\_]/', '', $file->getClientOriginalName());
                             $nombreArchivo = time().'_'.$nombreOriginalLimpio;
-                            $rutaGuardada = $file->storeAs($directorio, $nombreArchivo, 'public');
+                            $rutaGuardada = $file->storeAs($directorio, $nombreArchivo);
                             $respuesta->url_archivo = $nombreArchivo; // Guardamos la ruta completa que devuelve storeAs
                         } elseif ($elemento->required && empty($respuesta->url_archivo)) {
                             // Si es requerido y no se subió un nuevo archivo (y no había uno antes).
@@ -408,13 +408,9 @@ class CarritoController extends Controller
                             }
                             // Guardado de la imagen
                             $numero = random_int(1, 10000);
-                            $directorioRelativo = $configuracion->ruta_almacenamiento.'/img/respuestas-formulario/';
-                            $directorioCompleto = public_path('storage/'.$directorioRelativo);
-                            if (! is_dir($directorioCompleto)) {
-                                mkdir($directorioCompleto, 0775, true);
-                            }
+                            $directorio = 'img/actividades/respuesta-formularios';
                             $nombreFoto = 'imagen-'.$elementoId.'-user-'.($usuario->id ?? '0').'-'.$numero.'.png';
-                            file_put_contents($directorioCompleto.$nombreFoto, base64_decode(explode(';base64,', $request->$key)[1]));
+                            Storage::put($directorio.'/'.$nombreFoto, base64_decode(explode(';base64,', $request->$key)[1]));
                             $respuesta->url_foto = $nombreFoto;
                         } elseif ($elemento->required && empty($respuesta->url_foto)) {
                             // Si es requerido y no se envió una nueva imagen (y no había una antes).
@@ -456,11 +452,11 @@ class CarritoController extends Controller
         // Verificamos si hay un archivo o una imagen para borrar del disco.
         if ($respuesta->url_archivo) {
             // Borramos el archivo físico del disco 'public'.
-            Storage::disk('public')->delete($respuesta->url_archivo);
+            Storage::delete('archivos/actividades/' . $respuesta->url_archivo);
         }
         if ($respuesta->url_foto) {
             // Borramos la imagen física del disco 'public'.
-            Storage::disk('public')->delete($respuesta->url_foto);
+            Storage::delete('img/actividades/respuesta-formularios/' . $respuesta->url_foto);
         }
 
         // Eliminamos el registro de la respuesta de la base de datos.
@@ -978,14 +974,14 @@ class CarritoController extends Controller
         $nombreLimpio = preg_replace('/[^A-Za-z0-9.\-\_]/', '', $file->getClientOriginalName());
 
         if ($tipo === 'imagen') {
-            $directorio = $configuracion->ruta_almacenamiento.'/img/respuestas-formulario';
+            $directorio = 'img/actividades/respuesta-formularios';
             $nombre = 'img_'.time().'_'.$nombreLimpio;
         } else {
-            $directorio = $configuracion->ruta_almacenamiento.'/archivos/actividades';
+            $directorio = 'archivos/actividades';
             $nombre = time().'_'.$nombreLimpio;
         }
 
-        \Illuminate\Support\Facades\Storage::disk('public')->putFileAs($directorio, $file, $nombre);
+        Storage::putFileAs($directorio, $file, $nombre);
 
         return response()->json([
             'success' => true,

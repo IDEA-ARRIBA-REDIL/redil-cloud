@@ -10,7 +10,6 @@ class VersiculoDelDia extends Component
 {
     public $versiculoId;
 
-
     public $claseColumnas;
 
     public function mount($claseColumnas = 'col-12 col-md-4')
@@ -64,7 +63,6 @@ class VersiculoDelDia extends Component
 
             $plainText = trim(strip_tags($plainText));
         }
-
 
         return view('livewire.dashboard.versiculo-del-dia', [
             'versiculo' => $versiculo,

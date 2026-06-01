@@ -346,7 +346,7 @@ $configData = Helper::appClasses();
                     @if ($respuestaElemento && $respuestaElemento->url_foto)
                     <div class="mb-2">
                         <p class="mb-1">Imagen actual:</p>
-                        <img src="{{ Storage::disk('public')->url($respuestaElemento->url_foto) }}" class="img-fluid rounded border" style="max-height: 200px;">
+                        <img src="{{ tenant_asset('img/actividades/respuesta-formularios/' . $respuestaElemento->url_foto) }}" class="img-fluid rounded border" style="max-height: 200px;">
                     </div>
                     @if($puedeEditar)
                     <a href="{{ route('carrito.eliminarRespuesta', ['compra' => $compra, 'respuesta' => $respuestaElemento]) }}" class="btn btn-danger"><i class="ti ti-trash me-1"></i>Eliminar para subir una nueva</a>

@@ -18,15 +18,15 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0"><i class="mdi mdi-book-open-variant-outline me-2"></i>Listado de Recursos</h5>
-            
-            
+
+
         </div>
         <div class="card-body">
             <div class="list-group">
                 @forelse ($recursos as $recurso)
                     <div class="list-group-item list-group-item-action p-3">
                         <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center">
-                            
+
                             {{-- SECCIÓN IZQUIERDA: Ícono e Información --}}
                             <div class="d-flex align-items-center flex-grow-1">
                                 {{-- Lógica de íconos de tu tabla original --}}
@@ -45,8 +45,8 @@
                                     {{-- Estilo de Título y Descripción del nuevo diseño --}}
                                     <h6 class="mb-1">{{ $recurso->nombre }}</h6>
                                     <small class="text-muted d-block mb-1">{{ Str::limit($recurso->descripcion, 80) }}</small>
-                                    
-                                   
+
+
                                 </div>
                             </div>
 
@@ -56,11 +56,11 @@
                                 <button wire:click="abrirModalEditar({{ $recurso->id }})" class="btn me-1 btn-sm btn-icon btn-outline-secondary" data-bs-toggle="tooltip" title="Editar Contenido">
                                     <i class="ti ti-pencil"></i>
                                 </button>
-                               
-                                <button 
-                                    wire:click="eliminarRecurso( {{ $recurso->id }})" 
-                                    class="btn btn-sm btn-icon btn-outline-danger" 
-                                    data-bs-toggle="tooltip" 
+
+                                <button
+                                    wire:click="eliminarRecurso( {{ $recurso->id }})"
+                                    class="btn btn-sm btn-icon btn-outline-danger"
+                                    data-bs-toggle="tooltip"
                                     title="Eliminar Recurso">
                                     <i class="ti ti-trash"></i>
                                 </button>
@@ -131,8 +131,8 @@
                              <label class="form-label">Archivo Adjunto (Opcional)</label>
                                 @if ($editingResource && $editingResource->nombre_archivo)
                                     <div class="d-flex align-items-center p-2 border rounded">
-                                        <i class="mdi mdi-file-check-outline mdi-24px text-success me-2"></i>
-                                        <a href="{{ $editingResource->archivo_url }}" target="_blank" class="text-black fw-bold me-auto">
+                                        <i class="ti ti-file-check fs-4 text-success me-2"></i>
+                                        <a href="{{ $editingResource->archivo_url }}" target="_blank" class="text-black fw-bold me-auto text-truncate" style="max-width: 80%;">
                                             {{ $editingResource->nombre_archivo }}
                                         </a>
                                         <button
@@ -146,9 +146,70 @@
                                         </button>
                                     </div>
                                 @else
-                                    <input class="form-control" type="file" wire:model="archivo">
-                                    @error('archivo') <span class="text-danger small">{{ $message }}</span> @enderror
-                                    <div wire:loading wire:target="archivo" class="text-muted small mt-1">Subiendo...</div>
+                                    <div x-data="{
+                                        subiendo: false,
+                                        errorMsg: '',
+                                        subirArchivo(event) {
+                                            const file = event.target.files[0];
+                                            if (!file) return;
+
+                                            this.subiendo = true;
+                                            this.errorMsg = '';
+
+                                            const formData = new FormData();
+                                            formData.append('archivo', file);
+                                            formData.append('horario_id', {{ $horario->id }});
+
+                                            fetch('{{ route("maestros.uploadArchivoRecurso") }}', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                                                    'Accept': 'application/json'
+                                                },
+                                                body: formData
+                                            })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                this.subiendo = false;
+                                                if (data.success) {
+                                                    $wire.set('nombreArchivoSubido', data.nombre);
+                                                    $wire.set('rutaArchivoSubida', data.ruta_relativa);
+                                                } else {
+                                                    this.errorMsg = data.message || 'Error al subir el archivo.';
+                                                    this.$refs.archivoInput.value = '';
+                                                }
+                                            })
+                                            .catch(error => {
+                                                this.subiendo = false;
+                                                this.errorMsg = 'Error de conexión al subir el archivo.';
+                                                this.$refs.archivoInput.value = '';
+                                            });
+                                        },
+                                        eliminarArchivoLocal() {
+                                            $wire.call('eliminarArchivoLocal');
+                                        }
+                                    }">
+                                        <template x-if="!$wire.nombreArchivoSubido">
+                                            <div>
+                                                <input type="file" class="form-control" x-ref="archivoInput" @change="subirArchivo">
+                                                <div x-show="subiendo" class="small text-muted mt-2 d-flex align-items-center">
+                                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                    Subiendo archivo...
+                                                </div>
+                                                <div x-show="errorMsg" class="small text-danger mt-1" x-text="errorMsg"></div>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="$wire.nombreArchivoSubido">
+                                            <div class="alert alert-success d-flex align-items-center p-2 mb-0">
+                                                <i class="ti ti-circle-check me-2 fs-4"></i>
+                                                <div class="flex-grow-1 text-truncate">
+                                                    <strong>Archivo cargado:</strong> <span x-text="$wire.nombreArchivoSubido"></span>
+                                                </div>
+                                                <button type="button" class="btn-close ms-auto" @click="eliminarArchivoLocal" aria-label="Close"></button>
+                                            </div>
+                                        </template>
+                                    </div>
                                 @endif
                         </div>
                     </div>

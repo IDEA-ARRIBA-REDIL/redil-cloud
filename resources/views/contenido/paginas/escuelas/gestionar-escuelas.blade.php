@@ -47,7 +47,7 @@
 
                 <div class="h-100 card ">
                     <img id="preview-foto" style="height: 100px;" class="card-img-top object-fit-cover"
-                        src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/escuelas/' . $escuela->portada) }}"
+                        src="{{ $escuela->portada_url ?? Storage::disk('global_media')->url('Banner-escuelas.png')  }}"
                         alt="Portada {{ $escuela->nombre }}">
 
 

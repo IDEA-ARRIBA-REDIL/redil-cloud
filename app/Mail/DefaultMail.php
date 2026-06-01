@@ -17,7 +17,7 @@ class DefaultMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $mailData, $version, $iglesia;
+    public $mailData, $iglesia;
 
     protected $pdfData;
     protected $pdfFilename;
@@ -33,15 +33,10 @@ class DefaultMail extends Mailable
       $this->pdfData = $pdfData;
       $this->pdfFilename = $pdfFilename;
 
-      $configuracion = Configuracion::find(1);
-      $this->version = $configuracion->version;
       $this->iglesia = Iglesia::find(1);
 
-      if(!isset($mailData->banner))
-      {
-        $this->mailData->banner = $configuracion->version == 1
-        ? Storage::url($configuracion->ruta_almacenamiento.'/img/email/base.png')
-        : Storage::url($configuracion->ruta_almacenamiento.'/img/email/base.png');
+      if (!isset($mailData->banner)) {
+          $this->mailData->banner = Storage::disk('global_media')->url('emails/default.png');
       }
 
     }

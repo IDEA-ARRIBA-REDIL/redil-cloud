@@ -5,7 +5,7 @@
  <div class="card-header d-flex justify-content-end align-items-center mb-3">
            
             @if ($rolActivo && $rolActivo->hasPermissionTo('cursos.opcion_crear_curso'))
-            <a href="{{ route('cursos.crear') }}" class="btn btn-primary"><i class="ti ti-plus me-1 text-white"></i> Nuevo curso</a>
+            <a href="{{ route('cursos.crear') }}" class="btn btn-primary rounded-pill"><i class="ti ti-plus  me-1 text-white"></i> Nuevo curso</a>
             @endif
         </div>
     <div class="card">
@@ -28,7 +28,7 @@
             {{-- Tags de Filtro Activos --}}
             <div class="filter-tags mb-4">
                 @if(!empty($search) || !empty($filtroEstado) || !empty($filtroDificultad) || !empty($filtroCarrera) || !empty($filtroCategoria))
-                    <span class="text-muted small me-2">Filtros aplicados:</span>
+                    <span class="text-black small me-2">Filtros aplicados:</span>
 
                     @if(!empty($search))
                         <button type="button" class="btn btn-xs rounded-pill btn-outline-secondary ps-2 pe-1 mt-1" wire:click="removeTag('search')" title="Quitar filtro de búsqueda">
@@ -73,10 +73,10 @@
                 <div class="col-12 col-xl-4 col-md-6">
                     <div class="card h-100 border rounded">
                         <div class="position-relative">
-                             <img class="card-img-top object-fit-cover" style="height: 180px;"
-                                 src="{{ $curso->imagen_portada ? Storage::url($configuracion->ruta_almacenamiento.'/img/cursos/portadas/'.$curso->imagen_portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/default.png') }}"
+                             <img class="card-img-top object-fit-cover" style="height: 100px;"
+                                 src="{{ $curso->portada_url }}"
                                  alt="Portada {{ $curso->nombre }}"
-                                 onerror="this.onerror=null; this.src='{{ Storage::url($configuracion->ruta_almacenamiento.'/img/grupos/default.png') }}';" />
+                                 onerror="this.onerror=null; this.src='{{ Storage::disk('global_media')->url('cursos/default.png') }}';" />
                             @if($curso->es_gratuito)
                                 <span class="badge bg-success text-white position-absolute top-0 end-0 m-2">Gratis</span>
                             @else
@@ -89,14 +89,14 @@
                                 <div class="d-flex align-items-start">
                                     <div class="me-2 mt-1">
                                         <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $curso->nombre }}</h5>
-                                        <div class="client-info fw-semibold text-muted small mt-1">
+                                        <div class="client-info fw-semibold text-black small mt-1">
                                           Carrera: {{ $curso->carrera ? $curso->carrera->nombre : 'Curso General' }}
                                         </div>
                                     </div>
                                 </div>
                                 <div class="ms-auto">
                                     <div class="dropdown zindex-2 p-1 float-end">
-                                        <button type="button" class="btn rounded-circle dropdown-toggle hide-arrow btn btn-sm waves-effect text-black border p-1" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
+                                        <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
                                         <ul class="dropdown-menu dropdown-menu-end">
                                             @php
                                                 // Logica combinada: si el rol NO tiene permiso global, verificamos a nivel cargo de curso
@@ -169,14 +169,14 @@
                         </div>
 
                         <div class="card-body">
-                            <div class="d-flex align-items-center mb-2">
+                            <div class="d-flex align-items-end justify-content-between mb-2">
                                 <span class="badge bg-label-{{ $curso->estado == 'Publicado' ? 'success' : ($curso->estado == 'Borrador' ? 'warning' : 'secondary') }} me-2">
                                     {{ $curso->estado }}
                                 </span>
-                                <span class="text-muted small"><i class="ti ti-chart-bar me-1"></i>{{ $curso->nivel_dificultad }}</span>
+                                <span class="text-black small"><i class="ti ti-chart-bar me-1"></i>{{ $curso->nivel_dificultad }}</span>
                             </div>
 
-                            <p class="text-muted small mb-3">
+                            <p class="text-black small mb-3">
                                 {{ Str::limit($curso->descripcion_corta, 80) }}
                             </p>
 

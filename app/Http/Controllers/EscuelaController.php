@@ -215,8 +215,6 @@ class EscuelaController extends Controller
      */
     public function update(Request $request, Escuela $escuela)
     {
-        // ... (Código del método update sin cambios respecto a la versión anterior) ...
-        $configuracion = Configuracion::find(1);
         $datosValidados = $request->validate([
             'nombre' => 'required|string|max:200|unique:escuelas,nombre,'.$escuela->id,
             'descripcion' => 'nullable|string',
@@ -231,20 +229,16 @@ class EscuelaController extends Controller
             'habilitada_consolidacion' => $request->has('habilitada_consolidacion'),
         ]);
 
-        if ($request->filled('foto')) {
-
-            if ($configuracion->version == 1) {
-                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/escuelas/');
-                ! is_dir($path) && mkdir($path, 0777, true);
-
-                $data = explode(';base64,', $request->foto)[1];
-                file_put_contents(
-                    $path.'escuela'.$escuela->id.'.png',
-                    base64_decode($data)
-                );
-                $escuela->portada = 'escuela'.$escuela->id.'.png';
-                $escuela->save();
+        // Actualizar portada (nombre del archivo subido via fetch async)
+        if ($request->filled('portada_nombre')) {
+            // Eliminar portada anterior si existe y no es la default
+            if ($escuela->portada && $escuela->portada !== 'default.png') {
+                $rutaAnterior = "archivos/escuelas/portadas/{$escuela->portada}";
+                Storage::disk('public')->delete($rutaAnterior);
             }
+
+            $escuela->portada = $request->portada_nombre;
+            $escuela->save();
         }
 
         return redirect()->route('escuelas.actualizar', $escuela->id)
@@ -314,6 +308,57 @@ class EscuelaController extends Controller
             // Manejar error si hay restricciones que impiden borrar
             return redirect()->route('escuelas.gestionarEscuelas')
                 ->with('error', 'No se pudo eliminar la escuela. Puede tener registros asociados.');
+        }
+    }
+
+    /**
+     * Sube una imagen de portada para una escuela mediante fetch/Cropper.js.
+     */
+    public function uploadPortada(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'portada' => 'required|file|mimes:jpg,jpeg,png,gif,webp|max:10240',
+        ]);
+
+        $archivo = $request->file('portada');
+        $nombreArchivo = 'portada-escuela-'.uniqid().'-'.time().'.'.$archivo->getClientOriginalExtension();
+
+        $directorio = 'archivos/escuelas/portadas';
+
+        try {
+            // Aseguramos que cada carpeta intermedia tenga permisos 0755
+            $currentPath = storage_path('app/public');
+            $relativeParts = explode('/', trim($directorio, '/'));
+            foreach ($relativeParts as $part) {
+                if (empty($part)) {
+                    continue;
+                }
+                $currentPath .= '/'.$part;
+                if (! file_exists($currentPath)) {
+                    @mkdir($currentPath, 0755, true);
+                }
+                @chmod($currentPath, 0755);
+            }
+
+            // Almacenamos el archivo en el disco 'public'
+            $archivo->storeAs($directorio, $nombreArchivo, 'public');
+
+            // Aseguramos que el archivo recién creado tenga permisos 0755
+            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivo}");
+            @chmod($filePath, 0755);
+
+            return response()->json([
+                'success' => true,
+                'nombre' => $nombreArchivo,
+                'ruta_relativa' => "{$directorio}/{$nombreArchivo}",
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error uploading escuela portada: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno al subir la imagen.',
+            ], 500);
         }
     }
 

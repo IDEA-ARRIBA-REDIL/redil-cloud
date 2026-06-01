@@ -7,12 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Tema extends Model
 {
     use HasFactory;
     protected $table = 'temas';
     protected $guarded = [];
+    protected $appends = ['portada_url'];
+
+    public function getPortadaUrlAttribute(): string
+    {
+        if ($this->portada && $this->portada !== '' && $this->portada !== 'default.png') {
+            return tenant_asset('img/temas/'.$this->portada);
+        }
+        return Storage::disk('global_media')->url('temas/default.png'); 
+    }
 
 
 

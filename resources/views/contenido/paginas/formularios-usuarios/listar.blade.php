@@ -32,7 +32,7 @@ $configData = Helper::appClasses();
 
 @section('content')
   <h4 class="mb-1 fw-semibold text-primary">Listado de formularios</h4>
-  <p class="mb-8">Aquí encontraras el listado de formularios de usuarios.</p>
+  <p class="mb-8 text-black">Aquí encontraras el listado de formularios de usuarios.</p>
 
 
   @livewire('FormulariosParaUsuarios.gestionar-formularios')

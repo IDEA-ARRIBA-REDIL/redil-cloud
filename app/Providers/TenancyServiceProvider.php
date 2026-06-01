@@ -115,6 +115,10 @@ class TenancyServiceProvider extends ServiceProvider
             $directorios = [
                 storage_path('app/livewire-tmp'),
                 storage_path('app/public'),
+                storage_path('framework/cache'),
+                storage_path('framework/views'),
+                storage_path('framework/sessions'),
+                storage_path('logs'),
             ];
 
             foreach ($directorios as $dir) {

@@ -100,21 +100,16 @@ class ModalBajaAlta extends Component
   public function eliminacionForzada($usuarioId)
   {
     $usuario = User::withTrashed()->find($usuarioId);
-    $configuracion = Configuracion::find(1);
 
-    // Elimino las fotos y archivos
-    if ($configuracion->version == 1) {
-      // Elimino los archivos
-      Storage::delete('public/' . $configuracion->ruta_almacenamiento . '/archivos' . '/' . $usuario->archivo_a);
-      Storage::delete('public/' . $configuracion->ruta_almacenamiento . '/archivos' . '/' . $usuario->archivo_b);
-      Storage::delete('public/' . $configuracion->ruta_almacenamiento . '/archivos' . '/' . $usuario->archivo_c);
-      Storage::delete('public/' . $configuracion->ruta_almacenamiento . '/archivos' . '/' . $usuario->archivo_d);
+    // Elimino los archivos
+    Storage::delete('archivos/usuario/'.$usuario->archivo_a);
+    Storage::delete('archivos/usuario/'.$usuario->archivo_b);
+    Storage::delete('archivos/usuario/'.$usuario->archivo_c);
+    Storage::delete('archivos/usuario/'.$usuario->archivo_d);
 
-      // Elimino foto
-      Storage::delete('public/' . $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $usuario->archivo_d);
-    } elseif ($configuracion->version == 2) {
-    }
-
+    // Elimino foto
+    Storage::delete('img/usuario/fotos/'.$usuario->foto);
+   
     // Eliminar parentezco
     $usuario->parientesDelUsuario()->detach();
     $usuario->usuariosDelPariente()->detach();

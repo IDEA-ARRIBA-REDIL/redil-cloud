@@ -38,7 +38,7 @@ class PostSeeder extends Seeder
             'publicacion3.jpeg',
         ];
 
-        $tenantPath = $configuracion->ruta_almacenamiento . '/img/publicaciones/';
+        $tenantPath = 'img/publicaciones/';
 
         // Asegurar que el directorio de destino existe en el disco public
         if (!Storage::disk('public')->exists($tenantPath)) {

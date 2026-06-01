@@ -2,81 +2,7 @@
     {{-- Close your eyes. Count to one. That is how long forever feels. --}}
     <div id="row-completo-container" style="margin:2% 0%;" class="row align-items-center w-90">
         <div id="container-completo" class="p-lg-0 px-md-5 col-lg-12 col-md-10 col-sm-12">
-            @if ($configuracion->version == 2)
-                <!-- Stepper (Paso a Paso) - Versión Mejorada -->
-                <div class="m-lg-auto border-0 mb-4">
-                    <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 gap-md-2">
-                        <!-- Paso 1 - Carrito (Activo) -->
-                        <div class="step  d-flex align-items-center">
-                            <button type="button" class="step-trigger bg-transparent border-0 p-0">
-                                <span class="bs-stepper-icon bg-light">
-                                    <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                        <use
-                                            xlink:href="{{ asset('assets/svg/icons/wizard-checkout-cart.svg#wizardCart') }}">
-                                        </use>
-                                    </svg>
-                                </span>
-                                <span class="bs-stepper-label d-none d-md-block mt-2">Carrito</span>
-                            </button>
-                        </div>
 
-                        <div class="line d-none d-md-block">
-                            <i class="ti ti-chevron-right fs-5 text-muted"></i>
-                        </div>
-
-                        <!-- Paso 2 - Formulario -->
-                        <div class="step d-flex align-items-center">
-                            <button type="button" class="step-trigger bg-transparent border-0 p-0">
-                                <span class="bs-stepper-icon bg-light">
-                                    <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                        <use
-                                            xlink:href="{{ asset('assets/svg/icons/wizard-checkout-address.svg#wizardCheckoutAddress') }}">
-                                        </use>
-                                    </svg>
-                                </span>
-                                <span class="bs-stepper-label d-none d-md-block mt-2 text-muted">Formulario</span>
-                            </button>
-                        </div>
-
-                        <div class="line d-none d-md-block">
-                            <i class="ti ti-chevron-right fs-5 text-muted"></i>
-                        </div>
-
-                        <!-- Paso 3 - Checkout -->
-                        <div class="step active d-flex align-items-center">
-                            <button type="button" class="step-trigger bg-transparent border-0 p-0">
-                                <span class="bs-stepper-icon btn-primary">
-                                    <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                        <use
-                                            xlink:href="{{ asset('assets/svg/icons/wizard-checkout-payment.svg#wizardPayment') }}">
-                                        </use>
-                                    </svg>
-                                </span>
-                                <span class="bs-stepper-label d-none d-md-block mt-2 text-muted">Checkout</span>
-                            </button>
-                        </div>
-
-                        <div class="line d-none d-md-block">
-                            <i class="ti ti-chevron-right fs-5 text-muted"></i>
-                        </div>
-
-                        <!-- Paso 4 - Confirmación -->
-                        <div class="step d-flex align-items-center">
-                            <button type="button" class="step-trigger bg-transparent border-0 p-0">
-                                <span class="bs-stepper-icon bg-light">
-                                    <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                        <use
-                                            xlink:href="{{ asset('assets/svg/icons/wizard-checkout-confirmation.svg#wizardConfirm') }}">
-                                        </use>
-                                    </svg>
-                                </span>
-                                <span class="bs-stepper-label d-none d-md-block mt-2 text-muted">Compra
-                                    Finalizada</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            @endif
             <!-- Fin del Stepper Mejorado -->
             <h3 class="fw-semibold p-0">Check Out</h3>
             <div class="ps-4 row">
@@ -209,7 +135,7 @@
                                                             wire:model="tipoPagoSeleccionado"
                                                             :checked="activeTab === '{{ $tipo->id }}'">
                                                         <span class="custom-option-body">
-                                                            <img style="    width: 50px !important;" src="{{ tenant_asset($configuracion->ruta_almacenamiento . '/tipos-pagos/fondos/' . $tipo->fondo) }}?v={{ time() }}" alt="">
+                                                            <img style="    width: 50px !important;" src="{{ tenant_asset('tipos-pagos/fondos/' . $tipo->fondo) }}?v={{ time() }}" alt="">
                                                             <span
                                                                 class="ms-4 fw-medium text-heading">{{ $tipo->nombre }}</span>
                                                         </span>

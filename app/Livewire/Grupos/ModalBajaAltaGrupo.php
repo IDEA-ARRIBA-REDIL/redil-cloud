@@ -175,8 +175,9 @@ class ModalBajaAltaGrupo extends Component
       $grupo->delete();
       IntegranteGrupo::where("grupo_id",$grupo->id)->delete();
 
-      if($grupo->portada != 'default.png')
-      Storage::delete('public/' . $configuracion->ruta_almacenamiento . '/img/grupos' . '/' . $grupo->portada);
+      if ($grupo->portada && $grupo->portada != 'default.png') {
+          \Illuminate\Support\Facades\Storage::disk('tenant')->delete('img/grupos/' . $grupo->portada);
+      }
 
       return redirect('/grupos')->with('success', ' ¡Muy bien! el grupo <b>'.$grupo->nombre.'</b> fue eliminado de manera éxitosa.');
     }

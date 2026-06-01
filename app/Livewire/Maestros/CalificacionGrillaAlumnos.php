@@ -2,31 +2,35 @@
 
 namespace App\Livewire\Maestros;
 
-use Livewire\Component;
-use App\Models\HorarioMateriaPeriodo;
-use App\Models\User;
-use App\Models\Configuracion;
-use App\Models\Periodo;
-use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
-use App\Models\ItemCorteMateriaPeriodo;
 use App\Models\AlumnoRespuestaItem;
-use App\Models\CortePeriodo;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Configuracion;
+use App\Models\HorarioMateriaPeriodo;
+use App\Models\ItemCorteMateriaPeriodo;
+use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Livewire\Component;
 
 class CalificacionGrillaAlumnos extends Component
 {
     public HorarioMateriaPeriodo $horarioAsignado;
+
     public Collection $alumnosConEstado;
+
     public Collection $items;
+
     public $configuracion;
+
     public $periodo;
+
     public array $notas = [];
+
     public $rolActivo;
+
     public $puedeCalificarSinFecha;
+
     public Carbon $fechaActual;
 
     protected $messages = [
@@ -54,17 +58,20 @@ class CalificacionGrillaAlumnos extends Component
 
     public function cargarDatos()
     {
-        // 1. Cargar Items ordenados cronológicamente y por nombre
-        $this->items = ItemCorteMateriaPeriodo::where('horario_materia_periodo_id', $this->horarioAsignado->id)
-
+        // 1. Cargar Items ordenados por orden del corte de escuela y luego por orden del item
+        $this->items = ItemCorteMateriaPeriodo::query()
+            ->join('cortes_periodo', 'item_corte_materia_periodo.corte_periodo_id', '=', 'cortes_periodo.id')
+            ->join('cortes_escuela', 'cortes_periodo.corte_escuela_id', '=', 'cortes_escuela.id')
+            ->where('item_corte_materia_periodo.horario_materia_periodo_id', $this->horarioAsignado->id)
             // Filtro de fecha inicio <= hoy, como en el ejemplo
-            ->when(!($this->rolActivo && $this->rolActivo->hasPermissionTo('escuelas.es_administrativo')), function ($q) {
-                $q->whereDate('fecha_inicio', '<=', $this->fechaActual);
+            ->when(! ($this->rolActivo && $this->rolActivo->hasPermissionTo('escuelas.es_administrativo')), function ($q) {
+                $q->whereDate('item_corte_materia_periodo.fecha_inicio', '<=', $this->fechaActual);
             })
             ->with(['cortePeriodo.corteEscuela'])
-            ->orderBy('fecha_inicio', 'asc')
-            ->orderBy('orden', 'asc')
-            ->orderBy('nombre', 'asc') // Fallback sort
+            ->orderBy('cortes_escuela.orden', 'asc')
+            ->orderBy('item_corte_materia_periodo.orden', 'asc')
+            ->orderBy('item_corte_materia_periodo.nombre', 'asc') // Fallback sort
+            ->select('item_corte_materia_periodo.*')
             ->get();
 
         // 2. Cargar Alumnos
@@ -95,7 +102,7 @@ class CalificacionGrillaAlumnos extends Component
         foreach ($respuestas as $respuesta) {
             // Convertimos a string para el input y manejamos decimales
             $this->notas[$respuesta->user_id][$respuesta->item_corte_materia_periodo_id] =
-                $respuesta->nota_obtenida !== null ? (string)$respuesta->nota_obtenida : '';
+                $respuesta->nota_obtenida !== null ? (string) $respuesta->nota_obtenida : '';
         }
     }
 
@@ -106,10 +113,11 @@ class CalificacionGrillaAlumnos extends Component
         if ($this->configuracion) {
             foreach ($this->notas as $userId => $items) {
                 foreach ($items as $itemId => $nota) {
-                    $rules["notas.{$userId}.{$itemId}"] = ['nullable', 'numeric', 'min:' . ($this->configuracion->nota_minima ?? 0), 'max:' . ($this->configuracion->nota_maxima ?? 5)];
+                    $rules["notas.{$userId}.{$itemId}"] = ['nullable', 'numeric', 'min:'.($this->configuracion->nota_minima ?? 0), 'max:'.($this->configuracion->nota_maxima ?? 5)];
                 }
             }
         }
+
         return $rules;
     }
 
@@ -126,10 +134,12 @@ class CalificacionGrillaAlumnos extends Component
     {
         // Validar item
         $item = $this->items->find($itemId);
-        if (!$item) return;
+        if (! $item) {
+            return;
+        }
 
         // Validar Fechas (Corte Cerrado)
-        if (!$this->puedeCalificarSinFecha) {
+        if (! $this->puedeCalificarSinFecha) {
             $fechaFinItem = $item->fecha_fin ? Carbon::parse($item->fecha_fin)->endOfDay() : null;
             // O checkear fecha fin del corte
             $corte = $item->cortePeriodo;
@@ -140,10 +150,11 @@ class CalificacionGrillaAlumnos extends Component
 
             if ($limite && $this->fechaActual->gt($limite)) {
                 $this->dispatch('mostrarErrorConSweetAlert', ['texto' => 'El plazo para calificar este ítem (o su corte) ha vencido.']);
-                 // Revertir valor en vista
-                 $originalValue = AlumnoRespuestaItem::where('user_id', $userId)->where('item_corte_materia_periodo_id', $itemId)->value('nota_obtenida');
-                 $this->notas[$userId][$itemId] = $originalValue !== null ? (string)$originalValue : '';
-                 return;
+                // Revertir valor en vista
+                $originalValue = AlumnoRespuestaItem::where('user_id', $userId)->where('item_corte_materia_periodo_id', $itemId)->value('nota_obtenida');
+                $this->notas[$userId][$itemId] = $originalValue !== null ? (string) $originalValue : '';
+
+                return;
             }
         }
 
@@ -159,10 +170,10 @@ class CalificacionGrillaAlumnos extends Component
             );
 
             // Feedback sutil
-             $this->dispatch('notaGuardada', ['userId' => $userId, 'itemId' => $itemId]);
+            $this->dispatch('notaGuardada', ['userId' => $userId, 'itemId' => $itemId]);
 
         } catch (\Exception $e) {
-            Log::error("Error guardando nota grilla: " . $e->getMessage());
+            Log::error('Error guardando nota grilla: '.$e->getMessage());
             $this->dispatch('mostrarErrorConSweetAlert', ['texto' => 'Error al guardar.']);
         }
     }

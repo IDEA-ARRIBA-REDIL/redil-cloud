@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class BannerEscuela extends Model
 {
@@ -38,14 +37,15 @@ class BannerEscuela extends Model
     ];
 
     /**
-     * Accesor para obtener la URL completa de la imagen.
+     * Accesor para obtener la URL completa de la imagen de forma compatible con Multi-Tenant.
      * Esto es muy útil para mostrar la imagen en el frontend.
      */
     public function getImagenUrlAttribute(): string
     {
-        // Verifica si el campo 'imagen' tiene un valor y si el archivo existe en el disco 'public'
-        return $this->imagen && Storage::disk('public')->exists($this->imagen)
-            ? Storage::disk('public')->url($this->imagen)
-            : asset('images/placeholder.jpg'); // Devuelve una imagen por defecto si no existe
+        if ($this->imagen) {
+            return tenant_asset($this->imagen);
+        }
+
+        return asset('images/placeholder.jpg'); // Devuelve una imagen por defecto si no existe
     }
 }

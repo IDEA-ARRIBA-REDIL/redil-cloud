@@ -1035,7 +1035,7 @@ use Carbon\Carbon;
                               @if($persona->foto == "default-m.png" || $persona->foto == "default-f.png")
                                 <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $persona->inicialesNombre() }} </span>
                               @else
-                                  <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) }}" alt="{{ $persona->foto }}" alt="avatar" class="rounded-circle">
+                                  <img src="{{ $persona->foto_url }}" alt="{{ $persona->foto }}" class="rounded-circle">
                               @endif
                             </div>
                             <div class="me-2 ms-1">
@@ -1077,7 +1077,7 @@ use Carbon\Carbon;
                             @if($persona->foto == "default-m.png" || $persona->foto == "default-f.png")
                               <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $persona->inicialesNombre() }} </span>
                             @else
-                                <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) }}" alt="{{ $persona->foto }}" alt="avatar" class="rounded-circle">
+                                <img src="{{ $persona->foto_url }}" alt="{{ $persona->foto }}" class="rounded-circle">
                             @endif
                           </div>
                           <div class="me-2 ms-1">
@@ -1330,7 +1330,7 @@ use Carbon\Carbon;
                   <div class="mb-2">
                     <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la portada</label><br>
                     <center>
-                      <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
+                      <img src="{{ \Illuminate\Support\Facades\Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
                     </center>
                     <input class="form-control d-none" type="text" value="" id="imagen-recortada-portada" name="foto">
                   </div>

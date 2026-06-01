@@ -2,31 +2,42 @@
 
 namespace App\Livewire\Maestros;
 
-use Livewire\Component;
-use Livewire\WithFileUploads;
 use App\Models\HorarioMateriaPeriodo;
-use App\Models\RecursoAlumnoHorario;
 use App\Models\Maestro;
-use App\Models\Configuracion;
-use App\Models\User;
-use Livewire\Attributes\On; // <-- 1. IMPORTAR EL ATRIBUTO
+use App\Models\RecursoAlumnoHorario;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\On;
+use Livewire\Component;
 
 class GestionRecursos extends Component
 {
-    use WithFileUploads;
-
     // Propiedades del componente
     public $horario;
+
     public $maestro; // Si necesitas datos del maestro, puedes pasarlos también
+
     // NUEVA PROPIEDAD: para mantener el modelo del recurso que se está editando
     public ?RecursoAlumnoHorario $editingResource = null;
 
     // Propiedades para el formulario del modal
     public bool $showModal = false;
+
     public ?int $recursoId = null;
-    public string $nombre = '', $descripcion = '', $tipo = 'Video', $link_externo = '', $link_youtube = '';
-    public $archivo;
+
+    public string $nombre = '';
+
+    public string $descripcion = '';
+
+    public string $tipo = 'Video';
+
+    public string $link_externo = '';
+
+    public string $link_youtube = '';
+
+    // Propiedades para la subida asíncrona vía Alpine/Fetch
+    public ?string $nombreArchivoSubido = null;
+
+    public ?string $rutaArchivoSubida = null;
 
     // Reglas de validación
     protected function rules()
@@ -35,8 +46,6 @@ class GestionRecursos extends Component
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'tipo' => 'required|string',
-
-            'archivo' => 'nullable|file|mimes:pdf,docx,pptx,xlsx,jpg,png|max:10240', // Max 10MB
         ];
     }
 
@@ -52,8 +61,8 @@ class GestionRecursos extends Component
     public function abrirModalCrear()
     {
         $this->resetValidation();
-        $this->reset(['recursoId', 'nombre', 'descripcion', 'tipo', 'link_externo', 'link_youtube', 'archivo']);
-        $this->editingResource = null; // <- AÑADIR ESTA LÍNEA
+        $this->reset(['recursoId', 'nombre', 'descripcion', 'tipo', 'link_externo', 'link_youtube', 'nombreArchivoSubido', 'rutaArchivoSubida']);
+        $this->editingResource = null;
         $this->tipo = 'Video';
         $this->showModal = true;
     }
@@ -74,7 +83,8 @@ class GestionRecursos extends Component
         $this->tipo = $recurso->tipo;
         $this->link_externo = $recurso->link_externo;
         $this->link_youtube = $recurso->link_youtube;
-        $this->archivo = null;
+        $this->nombreArchivoSubido = null;
+        $this->rutaArchivoSubida = null;
 
         $this->showModal = true;
     }
@@ -82,14 +92,16 @@ class GestionRecursos extends Component
     // Cierra el modal
     public function cerrarModal()
     {
+        // Si hay una subida temporal que no se guardó en BD, la eliminamos físicamente
+        $this->eliminarArchivoLocal();
+
         $this->showModal = false;
-        $this->editingResource = null; // <- AÑADIR ESTA LÍNEA
+        $this->editingResource = null;
     }
 
     // Guarda el recurso (ya sea nuevo o editado)
     public function guardarRecurso()
     {
-        $configuracion = Configuracion::find(1);
         $this->validate();
 
         $data = [
@@ -101,39 +113,54 @@ class GestionRecursos extends Component
             'horario_materia_periodo_id' => $this->horario->id,
         ];
 
-        // Lógica para subir el archivo
-        if ($this->archivo) {
-            // Eliminar archivo anterior si estamos editando y subiendo uno nuevo
+        // Lógica para guardar el archivo recién subido vía Alpine/Controller
+        if ($this->rutaArchivoSubida) {
+            // Eliminar archivo anterior si estamos editando y subimos uno nuevo
             if ($this->recursoId) {
                 $recursoExistente = RecursoAlumnoHorario::find($this->recursoId);
                 if ($recursoExistente && $recursoExistente->ruta_archivo) {
-                    Storage::disk('public')->delete($recursoExistente->ruta_archivo);
+                    $rutaCompleta = "archivos/escuelas/recursos-horario/horario-{$this->horario->id}/{$recursoExistente->ruta_archivo}";
+                    Storage::disk('public')->delete($rutaCompleta);
                 }
             }
-            $periodoId = $this->horario->materiaPeriodo->periodo_id;
 
-            $directorio = $configuracion->ruta_almacenamiento . "/archivos/escuelas/periodo-{$periodoId}/recursos/";
-            $extension = $this->archivo->getClientOriginalExtension();
-            $nombreArchivo = 'recursos-alumno-' . $this->horario->id . '.' . $extension;
-            $data['ruta_archivo'] = $this->archivo->storeAs($directorio, $nombreArchivo, 'public');
-            $data['nombre_archivo'] = $nombreArchivo;
+            // Guardamos solo el nombre del archivo (sin el directorio)
+            $data['ruta_archivo'] = basename($this->rutaArchivoSubida);
+            $data['nombre_archivo'] = $this->nombreArchivoSubido;
         }
 
         RecursoAlumnoHorario::updateOrCreate(['id' => $this->recursoId], $data);
 
+        // Ya que guardamos la asociación, reseteamos las referencias temporales sin borrarlas físicamente
+        $this->nombreArchivoSubido = null;
+        $this->rutaArchivoSubida = null;
+
         $this->dispatch('notificacion', ['mensaje' => '¡Recurso guardado con éxito!']);
         $this->cerrarModal();
     }
+
+    // Elimina el archivo que se subió de forma temporal en la sesión actual
+    public function eliminarArchivoLocal()
+    {
+        if ($this->rutaArchivoSubida) {
+            Storage::disk('public')->delete($this->rutaArchivoSubida);
+            $this->nombreArchivoSubido = null;
+            $this->rutaArchivoSubida = null;
+            $this->dispatch('notificacion', ['texto' => 'Archivo temporal eliminado.']);
+        }
+    }
+
     // === NUEVO MÉTODO PARA ELIMINAR SÓLO EL ARCHIVO ===
     public function eliminarArchivoAdjunto()
     {
         // 1. Verificamos que estemos editando un recurso y que tenga un archivo
-        if (!$this->editingResource || !$this->editingResource->ruta_archivo) {
+        if (! $this->editingResource || ! $this->editingResource->ruta_archivo) {
             return;
         }
 
         // 2. Eliminamos el archivo físico del almacenamiento
-        Storage::disk('public')->delete($this->editingResource->ruta_archivo);
+        $rutaCompleta = "archivos/escuelas/recursos-horario/horario-{$this->horario->id}/{$this->editingResource->ruta_archivo}";
+        Storage::disk('public')->delete($rutaCompleta);
 
         // 3. Limpiamos las columnas relacionadas al archivo en la base de datos
         $this->editingResource->update([
@@ -145,6 +172,9 @@ class GestionRecursos extends Component
         // re-renderice la vista y muestre el input para subir un nuevo archivo.
         $this->editingResource->refresh();
 
+        $this->nombreArchivoSubido = null;
+        $this->rutaArchivoSubida = null;
+
         $this->dispatch('notificacion', ['texto' => 'Archivo eliminado con éxito.']);
     }
 
@@ -153,13 +183,10 @@ class GestionRecursos extends Component
     public function eliminarRecurso($id)
     {
         $recurso = RecursoAlumnoHorario::findOrFail($id);
-        $configuracion = Configuracion::find(1);
-        $periodoId = $this->horario->materiaPeriodo->periodo_id;
-        $directorio = $configuracion->ruta_almacenamiento . "/archivos/periodo-{$periodoId}/recursos/";
-        $rutaCompleta = $directorio . '/' . $recurso->ruta_archivo;
 
         // Eliminar el archivo físico si existe
         if ($recurso->ruta_archivo) {
+            $rutaCompleta = "archivos/escuelas/recursos-horario/horario-{$recurso->horario_materia_periodo_id}/{$recurso->ruta_archivo}";
             Storage::disk('public')->delete($rutaCompleta);
         }
 
@@ -171,7 +198,7 @@ class GestionRecursos extends Component
     public function toggleVisibilidad($id)
     {
         $recurso = RecursoAlumnoHorario::findOrFail($id);
-        $recurso->visible = !$recurso->visible;
+        $recurso->visible = ! $recurso->visible;
         $recurso->save();
     }
 

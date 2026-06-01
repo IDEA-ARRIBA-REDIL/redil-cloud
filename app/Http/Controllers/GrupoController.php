@@ -87,7 +87,7 @@ class GrupoController extends Controller
         $item->url = 'todos';
         $item->cantidad = $gruposParaIndicadores->where('dado_baja', false)->pluck('id')->count();
         $item->color = 'bg-label-success';
-        $item->imagen = 'Todos.png';
+        $item->imagen = 'grupos/indicadores/Todos.png';
         $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
@@ -96,16 +96,16 @@ class GrupoController extends Controller
         $item->url = 'nuevos';
         $item->cantidad = Grupo::gruposNuevos()->select('grupos.id')->count();
         $item->color = 'bg-label-info';
-        $item->imagen = 'Nuevos.png';
+        $item->imagen = 'grupos/indicadores/Nuevos.png';
         $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
-        $item = new stdClass;
+        $item = new stdClass; 
         $item->nombre = 'Sin geo referencia';
         $item->url = 'sin-georreferencia';
         $item->cantidad = $gruposParaIndicadores->whereNull('latitud')->whereNull('longitud')->where('dado_baja', false)->pluck('id')->count();
         $item->color = 'bg-label-danger';
-        $item->imagen = 'Sin-georeferencia.png';
+        $item->imagen = 'grupos/indicadores/Sin-georeferencia.png';
         $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
@@ -114,7 +114,7 @@ class GrupoController extends Controller
         $item->url = 'grupos-sin-lideres';
         $item->cantidad = Grupo::gruposSinLider()->select('grupos.id')->count();
         $item->color = 'bg-label-danger';
-        $item->imagen = 'Grupos-sin-lideres.png';
+        $item->imagen = 'grupos/indicadores/Grupos-sin-lideres.png';
         $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
@@ -130,7 +130,7 @@ class GrupoController extends Controller
               $grupo->ultimo_reporte_grupo == null;
         })->pluck('id')->count();
         $item->color = 'bg-label-danger';
-        $item->imagen = 'Sin-actividad.png';
+        $item->imagen = 'grupos/indicadores/Sin-actividad.png';
         $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
@@ -139,7 +139,7 @@ class GrupoController extends Controller
         $item->url = 'dados-de-baja';
         $item->cantidad = $gruposParaIndicadores->where('dado_baja', true)->pluck('id')->count();
         $item->color = 'bg-label-secondary';
-        $item->imagen = 'Dados-de-baja.png';
+        $item->imagen = 'grupos/indicadores/Dados-de-baja.png';
         $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
@@ -152,15 +152,15 @@ class GrupoController extends Controller
                 ->where('tipo_grupo_id', $tipoGrupo->id)
                 ->count();
             $item->color = 'bg-label-success';
-            
+
             if (empty($tipoGrupo->imagen)) {
-                $item->imagen = 'indicador_general.png';
+                $item->imagen = 'grupos/indicadores/indicador_general.png';
                 $item->es_global = true;
             } else {
-                $item->imagen = $tipoGrupo->imagen;
+                $item->imagen = 'img/tipos-grupos/iconos/' .$tipoGrupo->imagen;
                 $item->es_global = false;
             }
-            
+
             $indicadoresPortipoGrupo[] = $item;
         }
         // Fin contadores
@@ -417,9 +417,13 @@ class GrupoController extends Controller
             ->get();
 
         $nombreArchivo = 'informe_grupos'.Carbon::now()->format('Y-m-d-H-i-s');
-        $rutaArchivo = "/$configuracion->ruta_almacenamiento/informes/grupos/$nombreArchivo.csv";
+        $rutaRelativa = "archivos/grupos/informes/$nombreArchivo.csv";
 
-        $archivo = fopen(storage_path('app/public').$rutaArchivo, 'w');
+        // Aseguramos que el directorio exista
+        \Illuminate\Support\Facades\Storage::makeDirectory('archivos/grupos/informes');
+
+        $archivoPath = \Illuminate\Support\Facades\Storage::path($rutaRelativa);
+        $archivo = fopen($archivoPath, 'w');
         fwrite($archivo, $bom = chr(0xEF).chr(0xBB).chr(0xBF));
 
         /* Aquí se crean los encabezados */
@@ -691,7 +695,7 @@ class GrupoController extends Controller
 
         return Redirect::back()->with(
             'success',
-            'El informe fue generado con éxito, <a href="'.Storage::url($rutaArchivo).'" class=" link-success fw-bold" download="'.$nombreArchivo.'.csv"> descargalo aquí</a>'
+            'El informe fue generado con éxito, <a href="'.tenant_asset($rutaRelativa).'" class=" link-success fw-bold" download="'.$nombreArchivo.'.csv"> descargalo aquí</a>'
         );
     }
 
@@ -741,12 +745,7 @@ class GrupoController extends Controller
             $validarFecha = [];
             $configuracion->fecha_creacion_grupo_obligatorio ? array_push($validarFecha, 'required') : '';
             $validacion = array_merge($validacion, ['fecha' => $validarFecha]);
-        }
-
-        // Tiene AMO
-        if ($configuracion->version == 2) {
-            $validacion = array_merge($validacion, ['contiene_amo' => []]);
-        }
+        }       
 
         // telefono
         if ($configuracion->habilitar_telefono_grupo) {
@@ -814,7 +813,6 @@ class GrupoController extends Controller
         $grupo->rhema = $request->adiccional;
         $grupo->dia = $request->día_de_reunión;
         $grupo->hora = $request->hora_de_reunión;
-        $grupo->contiene_amo = $request->amo ? true : false;
         $grupo->fecha_apertura = $request->fecha;
         $grupo->inactivo = 0;
         $grupo->dado_baja = 0;
@@ -844,27 +842,32 @@ class GrupoController extends Controller
 
             // AÑADO LA PORTADA
             if ($request->foto) {
-                if ($configuracion->version == 1) {
-                    $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/grupos/');
-                    ! is_dir($path) && mkdir($path, 0777, true);
+                $imagenPartes = explode(';base64,', $request->foto);
+                $imagenBase64 = base64_decode($imagenPartes[1]);
+                $nombreFoto = 'grupo'.$grupo->id.'.png';
+                $rutaDestino = 'img/grupos/'.$nombreFoto;
 
-                    $imagenPartes = explode(';base64,', $request->foto);
-                    $imagenBase64 = base64_decode($imagenPartes[1]);
-                    $nombreFoto = 'grupo'.$grupo->id.'.png';
-                    $imagenPath = $path.$nombreFoto;
-                    file_put_contents($imagenPath, $imagenBase64);
-                    $grupo->portada = $nombreFoto;
-                    $grupo->save();
-                } else {
-                    /*
-                    $s3 = AWS::get('s3');
-                    $s3->putObject(array(
-                      'Bucket'     => $_ENV['aws_bucket'],
-                      'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                      'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                    ));*/
-                }
+                \Illuminate\Support\Facades\Storage::put($rutaDestino, $imagenBase64);
+
+                $grupo->portada = $nombreFoto;
+                $grupo->save();
             }
+        }
+
+        // GATILLO: Notificación de Grupo Creado
+        try {
+            \App\Services\NotificacionService::dispatch(
+                'grupo_creado',
+                [
+                    'mensaje' => 'Se ha creado el grupo "'.$grupo->nombre.'".',
+                    'url' => '/grupos/ver/'.$grupo->id,
+                    'icono' => 'ti ti-users text-primary',
+                    'color' => 'primary',
+                ],
+                auth()->user()
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error disparando notificación grupo_creado: '.$e->getMessage());
         }
 
         return back()->with('success', 'El grupo <b>'.$grupo->nombre.'</b> fue creado con éxito.');
@@ -3085,12 +3088,7 @@ class GrupoController extends Controller
             $configuracion->fecha_creacion_grupo_obligatorio ? array_push($validarFecha, 'required') : '';
             $validacion = array_merge($validacion, ['fecha' => $validarFecha]);
         }
-
-        // Tiene AMO
-        if ($configuracion->version == 2) {
-            $validacion = array_merge($validacion, ['contiene_amo' => []]);
-        }
-
+     
         // telefono
         if ($configuracion->habilitar_telefono_grupo) {
             $validarTelefono = [];
@@ -3156,7 +3154,6 @@ class GrupoController extends Controller
         $grupo->rhema = $request->adiccional;
         $grupo->dia = $request->día_de_reunión;
         $grupo->hora = $request->hora_de_reunión;
-        $grupo->contiene_amo = $request->amo ? true : false;
         $grupo->fecha_apertura = $request->fecha;
         $grupo->inactivo = 0;
         $grupo->dado_baja = 0;
@@ -3200,26 +3197,15 @@ class GrupoController extends Controller
 
             // AÑADO LA PORTADA
             if ($request->foto) {
-                if ($configuracion->version == 1) {
-                    $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/grupos/');
-                    ! is_dir($path) && mkdir($path, 0777, true);
+                $imagenPartes = explode(';base64,', $request->foto);
+                $imagenBase64 = base64_decode($imagenPartes[1]);
+                $nombreFoto = 'grupo'.$grupo->id.'.png';
+                $rutaDestino = 'img/grupos/'.$nombreFoto;
 
-                    $imagenPartes = explode(';base64,', $request->foto);
-                    $imagenBase64 = base64_decode($imagenPartes[1]);
-                    $nombreFoto = 'grupo'.$grupo->id.'.png';
-                    $imagenPath = $path.$nombreFoto;
-                    file_put_contents($imagenPath, $imagenBase64);
-                    $grupo->portada = $nombreFoto;
-                    $grupo->save();
-                } else {
-                    /*
-                    $s3 = AWS::get('s3');
-                    $s3->putObject(array(
-                      'Bucket'     => $_ENV['aws_bucket'],
-                      'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                      'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                    ));*/
-                }
+                \Illuminate\Support\Facades\Storage::put($rutaDestino, $imagenBase64);
+
+                $grupo->portada = $nombreFoto;
+                $grupo->save();
             }
         }
 
@@ -3593,9 +3579,7 @@ class GrupoController extends Controller
             $idsGruposTemporal = [];
             foreach ($usuarios as $usuario) {
                 if (! in_array($usuario->id, $array_ids_usuarios_dibujados)) {
-                    $urlFoto = $configuracion->version == 1
-                      ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto)
-                      : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto);
+                    $urlFoto = $usuario->foto_url;
 
                     // / aqui se creo los
                     $item = new stdClass;
@@ -3730,26 +3714,14 @@ class GrupoController extends Controller
     {
         $configuracion = Configuracion::find(1);
         if ($request->foto) {
-            if ($configuracion->version == 1) {
+            $imagenPartes = explode(';base64,', $request->foto);
+            $imagenBase64 = base64_decode($imagenPartes[1]);
+            $nombreFoto = 'grupo'.$grupo->id.'.jpg';
+            $rutaDestino = 'img/grupos/'.$nombreFoto;
 
-                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/grupos/');
-                ! is_dir($path) && mkdir($path, 0777, true);
+            \Illuminate\Support\Facades\Storage::put($rutaDestino, $imagenBase64);
 
-                $imagenPartes = explode(';base64,', $request->foto);
-                $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'grupo'.$grupo->id.'.jpg';
-                $imagenPath = $path.$nombreFoto;
-                file_put_contents($imagenPath, $imagenBase64);
-                $grupo->portada = $nombreFoto;
-            } else {
-                /*
-                $s3 = AWS::get('s3');
-                $s3->putObject(array(
-                  'Bucket'     => $_ENV['aws_bucket'],
-                  'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                  'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                ));*/
-            }
+            $grupo->portada = $nombreFoto;
             $grupo->save();
         }
 

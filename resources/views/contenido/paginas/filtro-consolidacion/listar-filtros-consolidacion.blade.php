@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Gestión de Filtros y Tareas de Consolidación')
+@section('title', 'Gestión de filtros y tareas de consolidación')
 
 
 @section('vendor-style')
@@ -337,7 +337,7 @@
 
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-1 fw-semibold text-primary">Filtros de consolidación</h4>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCreateFiltro" aria-controls="offcanvasCreateFiltro">
+    <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCreateFiltro" aria-controls="offcanvasCreateFiltro">
       <i class="ti ti-plus me-1"></i> Nuevo filtro
     </button>
   </div>

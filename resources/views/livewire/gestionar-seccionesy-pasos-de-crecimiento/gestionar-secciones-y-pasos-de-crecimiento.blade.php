@@ -14,7 +14,7 @@
             <div class="my-auto">
               <h5 class="mb-1 text-primary">
                 @if($seccion->logo)
-                <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/secciones-formulario/'.$seccion->logo) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$seccion->logo }}?v={{ time() }}" alt="react-logo" class="me-2" width="30">
+                <img src="{{ tenant_asset('img/secciones-formulario/'.$seccion->logo) }}?v={{ time() }}" alt="react-logo" class="me-2" width="30">
                 @endif
                 {{ $seccion->nombre }}
               </h5>
@@ -201,7 +201,7 @@
           </div>
 
           @if($seccionEditando && $seccionEditando->logo)
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/secciones-formulario/'.$seccionEditando->logo) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$seccionEditando->logo }}?v={{ time() }}" alt="react-logo" class="me-2 mt-1" width="50">
+          <img src="{{ tenant_asset('img/secciones-formulario/'.$seccionEditando->logo) }}?v={{ time() }}" alt="react-logo" class="me-2 mt-1" width="50">
           @endif
 
         </div>

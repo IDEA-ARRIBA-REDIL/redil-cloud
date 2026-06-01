@@ -1056,17 +1056,17 @@ class AbonoCarrito extends Component
                     case 'moneda': $respuesta->respuesta_moneda = $valor; break;
                     case 'archivo':
                         if ($valor instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
-                            $directorio = $this->configuracion->ruta_almacenamiento . '/archivos/actividades/';
+                            $directorio = 'archivos/actividades/';
                             $nombreArchivo = time() . '_' . preg_replace('/[^A-Za-z0-9.\-\_]/', '', $valor->getClientOriginalName());
-                            $valor->storeAs($directorio, $nombreArchivo, 'public');
+                            $valor->storeAs($directorio, $nombreArchivo);
                             $respuesta->url_archivo = $nombreArchivo;
                         }
                         break;
                     case 'imagen':
                         if ($valor instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
-                            $directorio = $this->configuracion->ruta_almacenamiento . '/img/respuestas-formulario/';
+                            $directorio = 'img/actividades/respuesta-formularios/';
                             $nombreFoto = 'img_' . time() . '_' . $valor->getClientOriginalName();
-                            $valor->storeAs($directorio, $nombreFoto, 'public');
+                            $valor->storeAs($directorio, $nombreFoto);
                             $respuesta->url_foto = $nombreFoto;
                         }
                         break;

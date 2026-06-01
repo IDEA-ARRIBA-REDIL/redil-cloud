@@ -32,15 +32,20 @@ class NotificacionService
 
         // 2. Si no existe o está desactivada, salimos
         if (! $config || ! $config->activo) {
+            \Illuminate\Support\Facades\Log::warning("Notificación '{$slug}' abortada: No existe en la base de datos o está inactiva.");
+
             return false;
         }
 
-        // 3. Calcular la fecha de expiración si aplica
+        // 3. Inyectar título desde la base de datos (forzado para evitar valores manuales en el controlador)
+        $datosMensaje['titulo'] = $config->titulo;
+
+        // 4. Calcular la fecha de expiración si aplica
         if ($config->dias_vigencia) {
             $datosMensaje['expira_en'] = Carbon::now()->addDays($config->dias_vigencia)->toISOString();
         }
 
-        // 4. Resolver la audiencia acumulando cada alcance configurado
+        // 5. Resolver la audiencia acumulando cada alcance configurado
         $alcances = is_array($config->alcance) ? $config->alcance : [$config->alcance];
         $audiencia = collect();
 
@@ -71,6 +76,9 @@ class NotificacionService
         // 7. Enviar
         if ($audiencia->isNotEmpty()) {
             Notification::send($audiencia, new NotificacionGeneral($datosMensaje));
+            \Illuminate\Support\Facades\Log::info("Notificación '{$slug}' despachada exitosamente a {$audiencia->count()} usuario(s).");
+        } else {
+            \Illuminate\Support\Facades\Log::info("Notificación '{$slug}' omitida: la audiencia final quedó vacía.");
         }
 
         return true;

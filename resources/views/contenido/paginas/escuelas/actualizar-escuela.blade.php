@@ -22,13 +22,10 @@
             'use strict';
 
             var croppingImage = document.querySelector('#croppingImage'),
-                //img_w = document.querySelector('.img-w'),
                 cropBtn = document.querySelector('.crop'),
                 croppedImg = document.querySelector('.cropped-img'),
-                dwn = document.querySelector('.download'),
                 upload = document.querySelector('#cropperImageUpload'),
-                modalImg = document.querySelector('.modal-img'),
-                inputResultado = document.querySelector('#imagen-recortada'),
+                inputNombreArchivo = document.querySelector('#portada-nombre'),
                 cropper = '';
 
             setTimeout(() => {
@@ -39,14 +36,11 @@
                 });
             }, 1000);
 
-            // on change show image with crop options
             upload.addEventListener('change', function(e) {
                 if (e.target.files.length) {
-                    console.log(e.target.files[0]);
                     var fileType = e.target.files[0].type;
                     if (fileType === 'image/gif' || fileType === 'image/jpeg' || fileType === 'image/png') {
                         cropper.destroy();
-                        // start file reader
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             if (e.target.result) {
@@ -65,20 +59,45 @@
                 }
             });
 
-            // crop on click
             cropBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                // get result to data uri
-                let imgSrc = cropper
-                    .getCroppedCanvas({
+                if (cropper) {
+                    const statusEl = document.querySelector('#upload-status');
+                    statusEl.classList.remove('d-none');
+
+                    cropper.getCroppedCanvas({
                         height: 376,
-                        width: 1693 // input value
-                    })
-                    .toDataURL();
-                croppedImg.src = imgSrc;
-                inputResultado.value = imgSrc;
-                //dwn.setAttribute('href', imgSrc);
-                //dwn.download = 'imagename.png';
+                        width: 1693
+                    }).toBlob(function(blob) {
+                        const formData = new FormData();
+                        formData.append('portada', blob, 'portada.png');
+
+                        fetch('{{ route("escuelas.uploadPortada") }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            statusEl.classList.add('d-none');
+                            if (data.success) {
+                                croppedImg.src = cropper.getCroppedCanvas({ height: 376, width: 1693 }).toDataURL();
+                                inputNombreArchivo.value = data.nombre;
+                            } else {
+                                alert(data.message || 'Error al subir la imagen.');
+                            }
+                        })
+                        .catch(error => {
+                            statusEl.classList.add('d-none');
+                            alert('Error de conexión al subir la imagen.');
+                        });
+                    }, 'image/png');
+                } else {
+                    alert('Por favor, selecciona una imagen primero.');
+                }
             });
         });
     </script>
@@ -97,14 +116,20 @@
             <div class="col-md-12">
                 <div class="card mb-4 rounded rounded-3">
                     <img id="preview-foto" class="cropped-img card-img-top mb-2"
-                        src="{{ $escuela->portada && $escuela->portada !== 'default.png' ? Storage::url($configuracion->ruta_almacenamiento . '/img/escuelas/' . $escuela->portada) : asset('assets/img/pages/profile-banner.png') }}"
+                        src="{{ $escuela->portada_url ?? Storage::disk('global_media')->url('Banner-escuelas.png')  }}"
                         alt="Portada {{ $escuela->nombre }}">
                     <button type="button" style="background-color: rgba(255, 255, 255, 0.5);"
                         class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2"
                         data-bs-toggle="modal" data-bs-target="#modalFoto">Cambiar portada <i style="padding-left: 5px;"
                             class="ti ti-camera"></i></button>
-                    <input class="form-control d-none" type="text" value="{{ old('foto') }}" id="imagen-recortada"
-                        name="foto">
+                    {{-- Input hidden para guardar solo el nombre del archivo --}}
+                    <input class="form-control d-none" type="text" value="" id="portada-nombre"
+                        name="portada_nombre">
+                    {{-- Indicador de carga --}}
+                    <div id="upload-status" class="d-none small text-muted p-2">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Subiendo imagen...
+                    </div>
 
                     <div class="row p-4 m-0 d-flex card-body">
                         <h5 class="mb-1 fw-semibold text-black">Actualizar escuela: {{ $escuela->nombre }}</h5>

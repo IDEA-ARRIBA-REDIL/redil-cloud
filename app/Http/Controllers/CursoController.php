@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Curso;
 use App\Models\CursoUsuarioCargo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class CursoController extends Controller
 {
@@ -83,7 +85,8 @@ class CursoController extends Controller
 
     public function inscritos(Curso $curso)
     {
-        $configuracion = \App\Models\Configuracion::first();
+        // OPTIMIZACIÓN (Fix #9): Configuracion cacheada 10 minutos
+        $configuracion = Cache::remember('configuracion_global', 600, fn () => \App\Models\Configuracion::first());
 
         return view('contenido.paginas.cursos.gestionar-estudiantes', compact('curso', 'configuracion'));
     }
@@ -106,8 +109,13 @@ class CursoController extends Controller
             ->where('estado', 'Publicado')
             ->firstOrFail();
 
-        // Obtener la configuración general para los logos y URLs base de imágenes
-        $configuracion = \App\Models\Configuracion::first();
+        /*
+         * OPTIMIZACIÓN (Fix #9):
+         * Configuracion::first() se cachea 10 minutos en Valkey (Redis).
+         * Este registro casi nunca cambia. Sin cache, cada request al servidor
+         * ejecutaba una query SELECT a la tabla configuraciones innecesariamente.
+         */
+        $configuracion = Cache::remember('configuracion_global', 600, fn () => \App\Models\Configuracion::first());
 
         return view('contenido.paginas.cursos.previsualizar', compact('curso', 'configuracion'));
     }
@@ -118,7 +126,9 @@ class CursoController extends Controller
     {
         $equipo = $curso->equipo()->with(['user', 'tipoCargo'])->paginate(15);
         $tiposCargo = \App\Models\TipoCargoCurso::all();
-        $configuracion = \App\Models\Configuracion::find(1); // Requisito para las rutas de imágenes
+
+        // OPTIMIZACIÓN (Fix #9): Configuracion cacheada 10 minutos
+        $configuracion = Cache::remember('configuracion_global', 600, fn () => \App\Models\Configuracion::find(1));
 
         return view('contenido.paginas.cursos.gestionar-equipo', compact('curso', 'equipo', 'tiposCargo', 'configuracion'));
     }
@@ -207,50 +217,13 @@ class CursoController extends Controller
 
         $carreraId = $request->query('carrera_id', '');
 
-        // 1. Jerarquía Superior: Permisos Globales (Spatie)
-        $user = auth()->user();
-        $tieneAccesoTotal = false;
-        $carrerasPermitidasIds = [];
-
-        if ($user->can('cursos.listar_todos_cursos')) {
-            $tieneAccesoTotal = true;
-        } elseif ($user->can('cursos.listar_solo_cursos_asignados')) {
-            // Acceso restringido -> Aplicamos el filtro de Cargos de Curso granular
-            $usuarioId = $user->id;
-            $cargosUsuario = \App\Models\CursoUsuarioCargo::with('tipoCargo')
-                ->where('usuario_id', $usuarioId)
-                ->where('activo', true)
-                ->get();
-
-            if ($cargosUsuario->isNotEmpty()) {
-                // Verificar si algún cargo le da acceso total dentro del módulo
-                $tieneAccesoTotal = $cargosUsuario->contains(function ($cargo) {
-                    return $cargo->tipoCargo && $cargo->tipoCargo->puede_ver_todos_los_cursos;
-                });
-
-                if (! $tieneAccesoTotal) {
-                    foreach ($cargosUsuario as $cargo) {
-                        if ($cargo->tipoCargo && $cargo->tipoCargo->limita_carreras) {
-                            $permitidas = $cargo->tipoCargo->carreras_permitidas ?? [];
-                            if (is_array($permitidas)) {
-                                $carrerasPermitidasIds = array_merge($carrerasPermitidasIds, $permitidas);
-                            }
-                        }
-                    }
-                    $carrerasPermitidasIds = array_unique($carrerasPermitidasIds);
-
-                    // Si no tiene "Ver Todos" y no limita carreras en ningún cargo,
-                    // se asume que solo ve lo asignado (pero el dashboard es por carrera,
-                    // así que si no hay carreras limitadas y tampoco acceso total,
-                    // mostramos vacío o podrías decidir mostrar todo lo asignado...
-                    // Por simplicidad, si limita_carreras es false en todos sus cargos
-                    // le damos acceso total para el dashboard si tiene el permiso de Spatie)
-                    if (empty($carrerasPermitidasIds) && ! $cargosUsuario->contains(fn ($c) => $c->tipoCargo?->limita_carreras)) {
-                        $tieneAccesoTotal = true;
-                    }
-                }
-            }
-        }
+        /*
+         * OPTIMIZACIÓN (Fix #8):
+         * La lógica de verificación de permisos de cargos estaba duplicada literalmente entre
+         * dashboard() y exportarInscritos(). Cualquier cambio había que hacerlo en dos lugares.
+         * Se extrajo al método privado resolverPermisosAccesoCursos() para eliminar la duplicación.
+         */
+        [$tieneAccesoTotal, $carrerasPermitidasIds] = $this->resolverPermisosAccesoCursos();
 
         // Obtener el query base de inscripciones según el rango de fecha
         $queryInscripciones = \App\Models\CursoUser::whereBetween('fecha_inscripcion', [
@@ -350,58 +323,82 @@ class CursoController extends Controller
             ->get();
 
         // 7. Estadísticas detalladas para cada curso (para el acordeón)
-        $cursosDetalle = \App\Models\Curso::where(function ($q) use ($carreraId, $tieneAccesoTotal, $carrerasPermitidasIds) {
-            if (! $tieneAccesoTotal) {
-                if (empty($carrerasPermitidasIds)) {
-                    $q->whereRaw('1 = 0');
-                } else {
-                    $q->whereIn('carrera_id', $carrerasPermitidasIds);
-                }
-            }
+        /*
+         * OPTIMIZACIÓN (Fix #1): Reescritura completa del bloque cursosDetalle.
+         *
+         * ANTES: Se hacía Curso::get()->map(function($curso) { ... }) y dentro del map() se lanzaban
+         * 6 queries separadas POR CADA CURSO (count, avg, count completados, join género, join roles,
+         * join entidades). Con 20 cursos = 120 queries; con 50 cursos = 300 queries.
+         *
+         * AHORA: Se reemplazan esas 6×N queries por 5 queries agregadas totales que traen los datos
+         * de TODOS los cursos a la vez usando groupBy('curso_id'). Luego se asignan a cada curso
+         * en memoria usando keyBy() — sin tocar más la BD.
+         */
 
-            if ($carreraId) {
-                if (is_array($carreraId)) {
-                    $q->whereIn('carrera_id', array_filter($carreraId));
-                } else {
-                    $q->where('carrera_id', $carreraId);
-                }
-            }
-        })->get()->map(function ($curso) use ($fechaInicio, $fechaFin) {
-            // Filtro base de inscripciones para este curso específico
-            $queryCurso = \App\Models\CursoUser::where('curso_id', $curso->id)
-                ->whereBetween('fecha_inscripcion', [
-                    $fechaInicio.' 00:00:00',
-                    $fechaFin.' 23:59:59',
-                ]);
+        // Obtener los IDs de los cursos visibles según los permisos del usuario
+        $cursoIdsVisibles = Curso::query()
+            ->when(! $tieneAccesoTotal && empty($carrerasPermitidasIds), fn ($q) => $q->whereRaw('1 = 0'))
+            ->when(! $tieneAccesoTotal && ! empty($carrerasPermitidasIds), fn ($q) => $q->whereIn('carrera_id', $carrerasPermitidasIds))
+            ->when($carreraId, function ($q) use ($carreraId) {
+                is_array($carreraId)
+                    ? $q->whereIn('carrera_id', array_filter($carreraId))
+                    : $q->where('carrera_id', $carreraId);
+            })
+            ->pluck('id');
 
-            // Totales básicos
-            $curso->stats_count = (clone $queryCurso)->count();
-            $curso->stats_progreso = round((clone $queryCurso)->avg('porcentaje_progreso') ?? 0, 2);
-            $curso->stats_completados = (clone $queryCurso)->where('porcentaje_progreso', 100)->count();
+        // Query 1: Totales básicos (count, promedio y completados) por curso — una sola query
+        $statsTotales = DB::table('curso_users')
+            ->selectRaw('curso_id, COUNT(*) as stats_count, AVG(porcentaje_progreso) as stats_progreso, SUM(CASE WHEN porcentaje_progreso = 100 THEN 1 ELSE 0 END) as stats_completados')
+            ->whereIn('curso_id', $cursoIdsVisibles)
+            ->whereBetween('fecha_inscripcion', [$fechaInicio.' 00:00:00', $fechaFin.' 23:59:59'])
+            ->groupBy('curso_id')
+            ->get()
+            ->keyBy('curso_id');
 
-            // Distribución por Género para este curso
-            $curso->stats_genero = (clone $queryCurso)
-                ->join('users', 'curso_users.user_id', '=', 'users.id')
-                ->select('users.genero', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
-                ->groupBy('users.genero')
-                ->get();
+        // Query 2: Distribución por género por curso — una sola query
+        $statsGenero = DB::table('curso_users')
+            ->join('users', 'curso_users.user_id', '=', 'users.id')
+            ->selectRaw('curso_users.curso_id, users.genero, COUNT(*) as total')
+            ->whereIn('curso_users.curso_id', $cursoIdsVisibles)
+            ->whereBetween('curso_users.fecha_inscripcion', [$fechaInicio.' 00:00:00', $fechaFin.' 23:59:59'])
+            ->groupBy('curso_users.curso_id', 'users.genero')
+            ->get()
+            ->groupBy('curso_id');
 
-            // Distribución por Roles para este curso
-            $curso->stats_roles = (clone $queryCurso)
-                ->join('model_has_roles', 'curso_users.user_id', '=', 'model_has_roles.model_id')
-                ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-                ->select('roles.name as rol', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
-                ->groupBy('roles.name')
-                ->get();
+        // Query 3: Distribución por roles por curso — una sola query
+        $statsRoles = DB::table('curso_users')
+            ->join('model_has_roles', 'curso_users.user_id', '=', 'model_has_roles.model_id')
+            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->selectRaw('curso_users.curso_id, roles.name as rol, COUNT(*) as total')
+            ->whereIn('curso_users.curso_id', $cursoIdsVisibles)
+            ->whereBetween('curso_users.fecha_inscripcion', [$fechaInicio.' 00:00:00', $fechaFin.' 23:59:59'])
+            ->groupBy('curso_users.curso_id', 'roles.name')
+            ->get()
+            ->groupBy('curso_id');
 
-            // Distribución por Entidad para este curso
-            $curso->stats_entidades = (clone $queryCurso)
-                ->join('users', 'curso_users.user_id', '=', 'users.id')
-                ->join('tipo_usuarios', 'users.tipo_usuario_id', '=', 'tipo_usuarios.id')
-                ->leftJoin('entidades_relacionadas', 'tipo_usuarios.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
-                ->select(\Illuminate\Support\Facades\DB::raw("COALESCE(entidades_relacionadas.nombre, 'Sin Entidad') as entidad"), \Illuminate\Support\Facades\DB::raw('count(*) as total'))
-                ->groupBy('entidad')
-                ->get();
+        // Query 4: Distribución por entidades por curso — una sola query
+        $statsEntidades = DB::table('curso_users')
+            ->join('users', 'curso_users.user_id', '=', 'users.id')
+            ->join('tipo_usuarios', 'users.tipo_usuario_id', '=', 'tipo_usuarios.id')
+            ->leftJoin('entidades_relacionadas', 'tipo_usuarios.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
+            ->selectRaw("curso_users.curso_id, COALESCE(entidades_relacionadas.nombre, 'Sin Entidad') as entidad, COUNT(*) as total")
+            ->whereIn('curso_users.curso_id', $cursoIdsVisibles)
+            ->whereBetween('curso_users.fecha_inscripcion', [$fechaInicio.' 00:00:00', $fechaFin.' 23:59:59'])
+            ->groupBy('curso_users.curso_id', 'entidad')
+            ->get()
+            ->groupBy('curso_id');
+
+        // Ahora cargamos los cursos y asignamos las stats desde las colecciones en memoria (sin más queries)
+        $cursosDetalle = Curso::whereIn('id', $cursoIdsVisibles)->get()->map(function ($curso) use ($statsTotales, $statsGenero, $statsRoles, $statsEntidades) {
+            $totales = $statsTotales->get($curso->id);
+            $curso->stats_count = $totales?->stats_count ?? 0;
+            $curso->stats_progreso = round($totales?->stats_progreso ?? 0, 2);
+            $curso->stats_completados = $totales?->stats_completados ?? 0;
+
+            // Estas colecciones ya están en memoria — solo hacemos get() sobre PHP arrays
+            $curso->stats_genero = $statsGenero->get($curso->id, collect());
+            $curso->stats_roles = $statsRoles->get($curso->id, collect());
+            $curso->stats_entidades = $statsEntidades->get($curso->id, collect());
 
             return $curso;
         });
@@ -439,44 +436,12 @@ class CursoController extends Controller
         $carreraId = $request->query('carrera_id');
         $cursoId = $curso ? $curso->id : null;
 
-        // 1. Jerarquía Superior: Permisos Globales (Spatie)
-        $user = auth()->user();
-        $tieneAccesoTotal = false;
-        $carrerasPermitidasIds = [];
-
-        if ($user->can('cursos.listar_todos_cursos')) {
-            $tieneAccesoTotal = true;
-        } elseif ($user->can('cursos.listar_solo_cursos_asignados')) {
-            // Acceso restringido -> Aplicamos el filtro de Cargos de Curso granular
-            $usuarioId = $user->id;
-            $cargosUsuario = \App\Models\CursoUsuarioCargo::with('tipoCargo')
-                ->where('usuario_id', $usuarioId)
-                ->where('activo', true)
-                ->get();
-
-            if ($cargosUsuario->isNotEmpty()) {
-                // Verificar si algún cargo le da acceso total dentro del módulo
-                $tieneAccesoTotal = $cargosUsuario->contains(function ($cargo) {
-                    return $cargo->tipoCargo && $cargo->tipoCargo->puede_ver_todos_los_cursos;
-                });
-
-                if (! $tieneAccesoTotal) {
-                    foreach ($cargosUsuario as $cargo) {
-                        if ($cargo->tipoCargo && $cargo->tipoCargo->limita_carreras) {
-                            $permitidas = $cargo->tipoCargo->carreras_permitidas ?? [];
-                            if (is_array($permitidas)) {
-                                $carrerasPermitidasIds = array_merge($carrerasPermitidasIds, $permitidas);
-                            }
-                        }
-                    }
-                    $carrerasPermitidasIds = array_unique($carrerasPermitidasIds);
-
-                    if (empty($carrerasPermitidasIds) && ! $cargosUsuario->contains(fn ($c) => $c->tipoCargo?->limita_carreras)) {
-                        $tieneAccesoTotal = true;
-                    }
-                }
-            }
-        }
+        /*
+         * OPTIMIZACIÓN (Fix #8):
+         * La lógica de permisos se extrajo aquí al mismo método privado resolverPermisosAccesoCursos()
+         * que usa dashboard(). Antes era código duplicado palabra por palabra.
+         */
+        [$tieneAccesoTotal, $carrerasPermitidasIds] = $this->resolverPermisosAccesoCursos();
 
         $nombreArchivo = 'inscritos_cursos_'.now()->format('Ymd_His').'.xlsx';
         if ($curso) {
@@ -501,13 +466,14 @@ class CursoController extends Controller
                 'curso_id' => 'required|exists:cursos,id',
             ]);
 
-            $configuracion = \App\Models\Configuracion::first();
+            $configuracion = Cache::remember('configuracion_global', 600, fn () => \App\Models\Configuracion::first());
+
             $file = $request->file('archivo');
             $cursoId = $request->input('curso_id');
 
             $nombreLimpio = preg_replace('/[^A-Za-z0-9.\-\_]/', '', $file->getClientOriginalName());
             $nombre = time().'_'.$nombreLimpio;
-            $directorio = $configuracion->ruta_almacenamiento.'/archivos/cursos/'.$cursoId;
+            $directorio = 'archivos/cursos/'.$cursoId;
 
             // Almacenar en el disco 'public' respetando la estructura del tenant
             $path = \Illuminate\Support\Facades\Storage::disk('public')->putFileAs($directorio, $file, $nombre);
@@ -523,5 +489,51 @@ class CursoController extends Controller
                 'message' => 'Error al subir el archivo: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * OPTIMIZACIÓN (Fix #8): Método privado que centraliza la resolución de permisos de acceso
+     * a cursos por cargo. Antes este bloque estaba duplicado en dashboard() y exportarInscritos().
+     *
+     * Retorna un array: [bool $tieneAccesoTotal, array $carrerasPermitidasIds]
+     */
+    private function resolverPermisosAccesoCursos(): array
+    {
+        $user = auth()->user();
+        $tieneAccesoTotal = false;
+        $carrerasPermitidasIds = [];
+
+        if ($user->can('cursos.listar_todos_cursos')) {
+            $tieneAccesoTotal = true;
+        } elseif ($user->can('cursos.listar_solo_cursos_asignados')) {
+            $cargosUsuario = CursoUsuarioCargo::with('tipoCargo')
+                ->where('usuario_id', $user->id)
+                ->where('activo', true)
+                ->get();
+
+            if ($cargosUsuario->isNotEmpty()) {
+                $tieneAccesoTotal = $cargosUsuario->contains(
+                    fn ($cargo) => $cargo->tipoCargo?->puede_ver_todos_los_cursos
+                );
+
+                if (! $tieneAccesoTotal) {
+                    foreach ($cargosUsuario as $cargo) {
+                        if ($cargo->tipoCargo?->limita_carreras) {
+                            $permitidas = $cargo->tipoCargo->carreras_permitidas ?? [];
+                            if (is_array($permitidas)) {
+                                $carrerasPermitidasIds = array_merge($carrerasPermitidasIds, $permitidas);
+                            }
+                        }
+                    }
+                    $carrerasPermitidasIds = array_unique($carrerasPermitidasIds);
+
+                    if (empty($carrerasPermitidasIds) && ! $cargosUsuario->contains(fn ($c) => $c->tipoCargo?->limita_carreras)) {
+                        $tieneAccesoTotal = true;
+                    }
+                }
+            }
+        }
+
+        return [$tieneAccesoTotal, $carrerasPermitidasIds];
     }
 }

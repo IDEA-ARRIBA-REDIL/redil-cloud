@@ -2,45 +2,58 @@
 
 namespace App\Livewire\Maestros;
 
-use Livewire\Component;
-use App\Models\HorarioMateriaPeriodo;
-use App\Models\User;
-use App\Models\Configuracion;
-use App\Models\Periodo;
-use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
-use App\Models\CortePeriodo;
-use App\Models\ItemCorteMateriaPeriodo;
 use App\Models\AlumnoRespuestaItem;
+use App\Models\Configuracion;
+use App\Models\CortePeriodo;
+use App\Models\HorarioMateriaPeriodo;
+use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\On;
-use Carbon\Carbon; // Necesario para comparar fechas
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Livewire\Component; // Necesario para comparar fechas
 
 class CalificacionMultipleAlumnos extends Component
 {
     // --- PROPIEDADES PÚBLICAS (ESTADO DEL COMPONENTE) ---
     public HorarioMateriaPeriodo $horarioAsignado;
+
     public Collection $alumnosConEstado;
+
     public string $busquedaAlumno = '';
+
     public $configuracion; // Necesaria para las reglas de validación y la vista
+
     public $periodo;
+
     public array $estructuraItemsPorAlumno = [];
+
     public array $notas = [];
+
     public array $calificacionesDelAlumno = [];
+
     public array $notasCalculadasPorCorte = [];
+
     public array $promedioGeneralMateria = [];
+
     public ?int $alumnoActivoIdParaCalificaciones = null;
+
     public array $activeTabId = [];
+
     public string $observacionMaestro = '';
+
     public Carbon $fechaActual;
+
     public $rolActivo;
 
     // Propiedades para el modal "Ver Respuesta"
     public bool $showRespuestaModal = false;
+
     public ?AlumnoRespuestaItem $respuestaSeleccionada = null;
+
     public array $cortesPeriodoInfo = [];
+
     public $puedeCalificarSinFecha;
 
     // --- MÉTODOS DE CICLO DE VIDA Y CONFIGURACIÓN ---
@@ -51,10 +64,11 @@ class CalificacionMultipleAlumnos extends Component
         if ($this->configuracion) {
             foreach ($this->notas as $userId => $items) {
                 foreach ($items as $itemId => $nota) {
-                    $rules["notas.{$userId}.{$itemId}"] = ['nullable', 'numeric', 'min:' . ($this->configuracion->nota_minima ?? 0), 'max:' . ($this->configuracion->nota_maxima ?? 5)];
+                    $rules["notas.{$userId}.{$itemId}"] = ['nullable', 'numeric', 'min:'.($this->configuracion->nota_minima ?? 0), 'max:'.($this->configuracion->nota_maxima ?? 5)];
                 }
             }
         }
+
         return $rules;
     }
 
@@ -85,31 +99,34 @@ class CalificacionMultipleAlumnos extends Component
 
     public function cargarEstructuraCalificacion(int $userId)
     {
-        if (!empty($this->estructuraItemsPorAlumno[$userId])) return;
+        if (! empty($this->estructuraItemsPorAlumno[$userId])) {
+            return;
+        }
 
         $this->alumnoActivoIdParaCalificaciones = $userId;
         $periodoId = $this->horarioAsignado->materiaPeriodo->periodo_id;
 
-
         // 1. Cargamos los cortes con sus ítems Y extraemos info de fechas
         $cortesDelPeriodo = CortePeriodo::where('periodo_id', $periodoId)
             ->with([
-                'itemInstancias' => fn($query) => $query->where('horario_materia_periodo_id', $this->horarioAsignado->id)->orderBy('orden', 'asc'),
-                'corteEscuela:id,nombre,orden'
+                'itemInstancias' => fn ($query) => $query->where('horario_materia_periodo_id', $this->horarioAsignado->id)->orderBy('orden', 'asc'),
+                'corteEscuela:id,nombre,orden',
             ])
             ->join('cortes_escuela', 'cortes_periodo.corte_escuela_id', '=', 'cortes_escuela.id')
             ->orderBy('cortes_escuela.orden', 'asc')
             ->select('cortes_periodo.*')
             ->get();
 
-        if ($cortesDelPeriodo->isEmpty()) return;
+        if ($cortesDelPeriodo->isEmpty()) {
+            return;
+        }
 
         // ----> NUEVO/MODIFICADO: Guarda la información de fecha_fin de los cortes <----
         // Hacemos esto una sola vez para eficiencia
         if (empty($this->cortesPeriodoInfo)) {
             $this->cortesPeriodoInfo = $cortesDelPeriodo->mapWithKeys(function ($corteP) {
                 return [$corteP->id => [
-                    'fecha_fin' => $corteP->fecha_fin ? Carbon::parse($corteP->fecha_fin)->endOfDay() : null
+                    'fecha_fin' => $corteP->fecha_fin ? Carbon::parse($corteP->fecha_fin)->endOfDay() : null,
                 ]];
             })->toArray();
         }
@@ -128,7 +145,7 @@ class CalificacionMultipleAlumnos extends Component
             foreach ($corte->itemInstancias as $item) {
                 $respuesta = $respuestasDeEsteAlumno->get($item->id);
                 $item->respuestaDelAlumno = $respuesta;
-                $this->notas[$userId][$item->id] = $respuesta ? (string)$respuesta->nota_obtenida : '';
+                $this->notas[$userId][$item->id] = $respuesta ? (string) $respuesta->nota_obtenida : '';
             }
             // --- CORRECCIÓN CLAVE ---
             // Ahora la clave del array es 'itemInstancias', coincidiendo con el modelo y la vista.
@@ -140,7 +157,7 @@ class CalificacionMultipleAlumnos extends Component
         }
         $this->estructuraItemsPorAlumno[$userId] = $estructuraTemporal;
 
-        if (!isset($this->activeTabId[$userId])) {
+        if (! isset($this->activeTabId[$userId])) {
             $this->activeTabId[$userId] = $cortesDelPeriodo->first()->id;
         }
         $this->recalcularTodasLasNotas($userId);
@@ -152,7 +169,9 @@ class CalificacionMultipleAlumnos extends Component
      */
     public function recalcularTodasLasNotas(int $userId)
     {
-        if (!isset($this->estructuraItemsPorAlumno[$userId])) return;
+        if (! isset($this->estructuraItemsPorAlumno[$userId])) {
+            return;
+        }
 
         $promedioGeneralCalculado = 0.0;
         foreach ($this->estructuraItemsPorAlumno[$userId] as $corteId => $dataCorte) {
@@ -160,7 +179,7 @@ class CalificacionMultipleAlumnos extends Component
 
             // --- CORRECCIÓN CLAVE ---
             // Usamos la clave correcta 'itemInstancias' para la comprobación y el bucle.
-            if (!empty($dataCorte['itemInstancias'])) {
+            if (! empty($dataCorte['itemInstancias'])) {
                 foreach ($dataCorte['itemInstancias'] as $item) {
                     $notaItem = isset($this->notas[$userId][$item->id]) && $this->notas[$userId][$item->id] !== ''
                         ? (float) $this->notas[$userId][$item->id] : null;
@@ -172,7 +191,7 @@ class CalificacionMultipleAlumnos extends Component
             $notaFinalCorte = $notaAcumuladaDelCorte;
             $this->notasCalculadasPorCorte[$userId][$corteId] = round($notaFinalCorte, 2);
 
-            $porcentajeDelCorte = (float)($dataCorte['corte_obj']->porcentaje ?? 0);
+            $porcentajeDelCorte = (float) ($dataCorte['corte_obj']->porcentaje ?? 0);
             if ($porcentajeDelCorte > 0) {
                 $promedioGeneralCalculado += $notaFinalCorte * ($porcentajeDelCorte / 100);
             }
@@ -221,7 +240,7 @@ class CalificacionMultipleAlumnos extends Component
         }
 
         // --- INICIO VALIDACIÓN DE FECHA ---
-        if (!$this->puedeCalificarSinFecha && $corteId) {
+        if (! $this->puedeCalificarSinFecha && $corteId) {
             $corteInfo = $this->cortesPeriodoInfo[$corteId] ?? null;
             $fechaFinCorte = $corteInfo['fecha_fin'] ?? null;
 
@@ -229,7 +248,8 @@ class CalificacionMultipleAlumnos extends Component
                 $this->dispatch('mostrarErrorConSweetAlert', ['texto' => 'El plazo para calificar este ítem ha vencido.']);
                 // Revertir visualmente el valor en el input
                 $originalValue = AlumnoRespuestaItem::where('user_id', $userId)->where('item_corte_materia_periodo_id', $itemId)->value('nota_obtenida');
-                $this->notas[$userId][$itemId] = $originalValue !== null ? (string)$originalValue : '';
+                $this->notas[$userId][$itemId] = $originalValue !== null ? (string) $originalValue : '';
+
                 return; // Detiene la ejecución
             }
         }
@@ -261,14 +281,12 @@ class CalificacionMultipleAlumnos extends Component
             // $this->dispatch('mostrarExitoConSweetAlert', ['texto' => 'Nota guardada.']); // Opcional: Feedback
         } catch (\Exception $e) {
             $this->dispatch('mostrarErrorConSweetAlert', ['texto' => 'Error al guardar la nota. Intenta de nuevo.']);
-            Log::error("Error guardando calificación individual (U:{$userId}, I:{$itemId}): " . $e->getMessage());
+            Log::error("Error guardando calificación individual (U:{$userId}, I:{$itemId}): ".$e->getMessage());
             // Revertir visualmente si falla el guardado
             $originalValue = AlumnoRespuestaItem::where('user_id', $userId)->where('item_corte_materia_periodo_id', $itemId)->value('nota_obtenida');
-            $this->notas[$userId][$itemId] = $originalValue !== null ? (string)$originalValue : '';
+            $this->notas[$userId][$itemId] = $originalValue !== null ? (string) $originalValue : '';
         }
     }
-
-
 
     /**
      * Prepara el modal para mostrar la respuesta de un alumno.
@@ -277,7 +295,7 @@ class CalificacionMultipleAlumnos extends Component
     {
         $respuesta = AlumnoRespuestaItem::where('user_id', $userId)
             ->where('item_corte_materia_periodo_id', $itemId)
-            ->with(['alumno:id,primer_nombre,primer_apellido', 'itemCalificado:id,nombre'])
+            ->with(['alumno', 'itemCalificado'])
             ->first();
 
         if ($respuesta) {
@@ -299,19 +317,20 @@ class CalificacionMultipleAlumnos extends Component
     public function guardarObservacion()
     {
         // 1. Verificación: Nos aseguramos de que haya una respuesta seleccionada.
-        if (!$this->respuestaSeleccionada) {
+        if (! $this->respuestaSeleccionada) {
             $this->dispatch('mostrarError', ['texto' => 'No hay una respuesta seleccionada para guardar la observación.']);
+
             return;
         }
 
         // 2. Validación (opcional pero recomendado)
         $this->validate([
-            'observacionMaestro' => 'nullable|string|max:5000'
+            'observacionMaestro' => 'nullable|string|max:5000',
         ]);
 
         // 3. Actualizamos el registro en la base de datos.
         $this->respuestaSeleccionada->update([
-            'observaciones_maestro' => $this->observacionMaestro
+            'observaciones_maestro' => $this->observacionMaestro,
         ]);
 
         // 4. Cerramos el modal.
@@ -325,6 +344,7 @@ class CalificacionMultipleAlumnos extends Component
     {
         $this->activeTabId[$userId] = $cortePeriodoId;
     }
+
     public function isTabActive($userId, $cortePeriodoId, $isFirst)
     {
         return isset($this->activeTabId[$userId]) ? $this->activeTabId[$userId] == $cortePeriodoId : $isFirst;
@@ -341,8 +361,8 @@ class CalificacionMultipleAlumnos extends Component
             ->join('users', 'matricula_horario_materia_periodo.user_id', '=', 'users.id')
             ->select('matricula_horario_materia_periodo.*');
 
-        if (!empty(trim($this->busquedaAlumno))) {
-            $terminoBusqueda = '%' . trim($this->busquedaAlumno) . '%';
+        if (! empty(trim($this->busquedaAlumno))) {
+            $terminoBusqueda = '%'.trim($this->busquedaAlumno).'%';
             $query->whereHas('user', function ($q_user_search) use ($terminoBusqueda) {
                 $q_user_search->where(DB::raw("CONCAT(users.primer_nombre, ' ', users.primer_apellido)"), 'ilike', $terminoBusqueda)
                     ->orWhere('users.identificacion', 'like', $terminoBusqueda)
@@ -377,7 +397,7 @@ class CalificacionMultipleAlumnos extends Component
 
         // Recorremos la estructura que ya está en memoria...
         foreach ($this->estructuraItemsPorAlumno[$userId] as $corteId => $dataCorte) {
-            if (!empty($dataCorte['itemInstancias'])) {
+            if (! empty($dataCorte['itemInstancias'])) {
                 // ...y volvemos a añadir la propiedad 'respuestaDelAlumno' a cada ítem.
                 foreach ($dataCorte['itemInstancias'] as $item) {
                     $item->respuestaDelAlumno = $respuestasDeEsteAlumno->get($item->id);

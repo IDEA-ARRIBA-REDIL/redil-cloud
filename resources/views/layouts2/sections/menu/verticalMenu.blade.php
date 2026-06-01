@@ -18,8 +18,7 @@
         <div style="padding-left: 20px !important;" class="app-brand demo p-0">
             <a href="{{ url('/') }}" class="app-brand-link">
                 @if ($configuracion->version == 1)
-                    <img style="width:30px" class="app-brand-logo"
-                        src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/logo_crecer.png') }}">
+                    <img style="width:30px" class="app-brand-logo" src="{{ tenant_asset('img/logo_crecer.png') }}">
                 @else
                     <span class="app-brand-logo demo p-0">
                         @include('_partials.macros', [

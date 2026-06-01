@@ -150,4 +150,16 @@ class Materia extends Model
     {
         return $this->getConfigProp('asistencias_minimas', $value);
     }
+
+    /**
+     * Accesor para obtener la URL pública de la portada.
+     */
+    public function getPortadaUrlAttribute(): ?string
+    {
+        if ($this->portada && $this->portada !== 'default.png') {
+            return tenant_asset('archivos/escuelas/materias/'.$this->portada);
+        }
+
+        return null;
+    }
 }

@@ -46,7 +46,7 @@ $isFooter = ($isFooter ?? false);
   @foreach($grupos as $grupo)
     @if($grupo->latitud != null && $grupo->longitud != null && $grupo->tipoGrupo->visible_mapa_asignacion == true)
       var IconoGrupo = L.icon({
-        iconUrl: "{{$configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/pines-mapa/'.$grupo->tipoGrupo->geo_icono) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-m.png' }}",
+        iconUrl: "{{ tenant_asset('img/pines-mapa/'.$grupo->tipoGrupo->geo_icono) }}",
         iconSize: [35, 45],
         iconAnchor: [27, 27],
         popupAnchor: [0, -14]
@@ -97,7 +97,7 @@ $isFooter = ($isFooter ?? false);
 
 @section('content')
 
-  <h4 class="mb-1 fw-semibold text-primary">eo asignación</h4>
+  <h4 class="mb-1 fw-semibold text-primary">Geo asignación</h4>
   <p class="mb-4 text-black">Aquí podrás gestionar a <b>{{$usuario->nombre(3)}}</b> a un grupo.</p>
 
   @include('layouts.status-msn')

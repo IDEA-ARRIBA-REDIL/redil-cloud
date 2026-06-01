@@ -35,7 +35,7 @@
   @include('layouts.status-msn')
 
   <div class="card h-100">
-    <img class="card-img-top" src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/temas/'.$tema->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/temas/default.jpg')}}" alt="Card imagen {{ $tema->titulo }}" />
+    <img class="card-img-top" src="{{ $tema->portada_url }}" alt="Card imagen {{ $tema->titulo }}" />
 
     <div class="card-header">
       <div class="d-flex justify-content-between">
@@ -46,8 +46,8 @@
         </div>
         <div class="ms-auto">
           @if($rolActivo->hasPermissionTo('temas.editar_tema'))
-            <div class="dropdown zindex-2 border rounded p-1">
-            <button type="button" class="btn dropdown-toggle hide-arrow p-0" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical text-muted"></i></button>
+            <div class="dropdown zindex-2 p-1 float-end">
+            <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical text-muted"></i></button>
               <ul class="dropdown-menu dropdown-menu-end">
                 @if($rolActivo->hasPermissionTo('temas.editar_tema'))
                 <li>

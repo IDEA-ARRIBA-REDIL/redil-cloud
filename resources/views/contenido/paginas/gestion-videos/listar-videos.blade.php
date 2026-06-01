@@ -129,7 +129,7 @@ $configData = Helper::appClasses();
 
 @section('content')
 <h4 class="mb-1 fw-semibold text-primary">Gestión de videos</h4>
-<p class="text-muted">Administra los enlaces a videos de YouTube o externos.</p>
+<p class="text-black">Administra los enlaces a videos de YouTube o externos.</p>
 
 <form id="formBuscar" class="forms-sample" method="GET" action="{{ route('gestion-videos.listarVideos') }}">
     <div class="row mt-4 mb-4">
@@ -140,7 +140,7 @@ $configData = Helper::appClasses();
             </div>
         </div>
         <div class="col-12 col-md-6 d-flex justify-content-end mt-3 mt-md-0">
-            <button type="button" class="btn btn-primary waves-effect waves-light" onclick="crearVideo()">
+            <button type="button" class="btn btn-primary rounded-pill waves-effect waves-light" onclick="crearVideo()">
                 <i class="ti ti-plus me-1"></i> Nuevo video
             </button>
         </div>

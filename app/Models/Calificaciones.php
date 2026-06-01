@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Calificaciones extends Model
 {
     use HasFactory;
+
     protected $table = 'calificaciones';
+
     protected $guarded = [];
 
     // dentro de la clase Calificaciones

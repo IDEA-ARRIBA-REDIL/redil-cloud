@@ -112,8 +112,8 @@ class MateriaController extends Controller
             'nombre' => 'required|string|max:100',
             'descripción' => 'required|string',
             'nivel_id' => 'nullable|integer',
-            'asistenciasMinimas' => 'integer|min:1',
-            'asistenciasAlerta' => 'integer|min:1',
+            'asistenciasMinimas' => 'integer|min:0',
+            'asistenciasAlerta' => 'integer|min:0',
             'paso_iniciar_id' => 'nullable|string',
             'paso_culminar_id' => 'nullable|string',
             'proceso_prerrequisito' => 'nullable|array',
@@ -125,9 +125,9 @@ class MateriaController extends Controller
             'nombre.max' => 'El nombre no puede tener más de 100 caracteres.',
             'descripción.required' => 'La descripción es obligatoria.',
             'asistenciasMinimas.integer' => 'Las asistencias mínimas deben ser un número entero.',
-            'asistenciasMinimas.min' => 'Las asistencias mínimas deben ser al menos 1.',
+            'asistenciasMinimas.min' => 'Las asistencias mínimas deben ser al menos 0.',
             'asistenciasAlerta.integer' => 'La cantidad de inasistencias para alerta debe ser un número entero.',
-            'asistenciasAlerta.min' => 'La cantidad de inasistencias para alerta debe ser al menos 1.',
+            'asistenciasAlerta.min' => 'La cantidad de inasistencias para alerta debe ser al menos 0.',
         ]);
 
         // Validación adicional para al menos un sistema habilitado
@@ -173,28 +173,10 @@ class MateriaController extends Controller
 
         $materia->save();
 
-        // AÑADO LA PORTADA
-        if ($request->foto) {
-            if ($configuracion->version == 1) {
-                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/materias/');
-                ! is_dir($path) && mkdir($path, 0777, true);
-
-                $imagenPartes = explode(';base64,', $request->foto);
-                $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'materia'.$materia->id.'.png';
-                $imagenPath = $path.$nombreFoto;
-                file_put_contents($imagenPath, $imagenBase64);
-                $materia->portada = $nombreFoto;
-                $materia->save();
-            } else {
-                /*
-             $s3 = AWS::get('s3');
-             $s3->putObject(array(
-               'Bucket'     => $_ENV['aws_bucket'],
-               'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-               'SourceFile' => "img/temp/".Input::get('foto-hide'),
-             ));*/
-            }
+        // AÑADO LA PORTADA (nombre del archivo subido via fetch async)
+        if ($request->portada_nombre) {
+            $materia->portada = $request->portada_nombre;
+            $materia->save();
         }
 
         // Materias prerrequisito
@@ -397,19 +379,19 @@ class MateriaController extends Controller
             'limiteReportes' => [
                 'nullable',
                 'integer',
-                'min:1',
+                'min:0',
                 'required_with:asistenciasMinimas,cantidadInasistencias',
             ],
             'asistenciasMinimas' => [
                 'nullable',
                 'integer',
-                'min:1',
+                'min:0',
                 'lte:limiteReportes',
             ],
             'cantidadInasistencias' => [
                 'nullable',
                 'integer',
-                'min:1',
+                'min:0',
                 'lte:limiteReportes',
             ],
             // --- FIN DE VALIDACIONES NUEVAS Y MODIFICADAS ---
@@ -429,11 +411,11 @@ class MateriaController extends Controller
             'nombre.max' => 'El nombre no puede tener más de 100 caracteres.',
             'descripción.required' => 'La descripción es obligatoria.',
             'limiteReportes.required_with' => 'El campo Límite de reportes es obligatorio cuando se especifican asistencias mínimas o cantidad de inasistencias para alerta.',
-            'limiteReportes.min' => 'El límite de reportes debe ser al menos 1.',
+            'limiteReportes.min' => 'El límite de reportes debe ser al menos 0.',
             'asistenciasMinimas.lte' => 'Las asistencias mínimas no pueden ser superiores al límite de reportes.',
-            'asistenciasMinimas.min' => 'Las asistencias mínimas deben ser al menos 1.',
+            'asistenciasMinimas.min' => 'Las asistencias mínimas deben ser al menos 0.',
             'cantidadInasistencias.lte' => 'La cantidad de inasistencias para alerta no puede ser superior al límite de reportes.',
-            'cantidadInasistencias.min' => 'La cantidad de inasistencias para alerta debe ser al menos 1.',
+            'cantidadInasistencias.min' => 'La cantidad de inasistencias para alerta debe ser al menos 0.',
         ];
 
         // Validación de los campos
@@ -451,32 +433,34 @@ class MateriaController extends Controller
         $materia->descripcion = $validatedData['descripción'] ?? $validatedData['descripcion']; // Ajusta según el nombre real
         $materia->nivel_id = $validatedData['nivel_id'] ?? null;
 
-        $materia->limite_reporte_asistencias = $validatedData['limiteReportes'] ?? null;
-        $materia->asistencias_minimas = $validatedData['asistenciasMinimas'] ?? null;
-        $materia->asistencias_minima_alerta = $validatedData['cantidadInasistencias'] ?? null;
-        $materia->tipo_usuario_inicial_id = $request->tipoUsuarioInicial;
-        $materia->tipo_usuario_objetivo_id = $request->tipoUsuarioObjetivo;
+        if (! $materia->nivel_id) {
+            $materia->limite_reporte_asistencias = $validatedData['limiteReportes'] ?? null;
+            $materia->asistencias_minimas = $validatedData['asistenciasMinimas'] ?? null;
+            $materia->asistencias_minima_alerta = $validatedData['cantidadInasistencias'] ?? null;
+            $materia->tipo_usuario_inicial_id = $request->tipoUsuarioInicial;
+            $materia->tipo_usuario_objetivo_id = $request->tipoUsuarioObjetivo;
 
-        // Toggles
-        $materia->tiene_dia_limite = $request->has('diaLimiteHabilitado');
-        $materia->dia_limite_reporte = $request->input('dia');
+            // Toggles
+            $materia->tiene_dia_limite = $request->has('diaLimiteHabilitado');
+            $materia->dia_limite_reporte = $request->input('dia');
 
-        $materia->habilitar_asistencias = $request->has('habilitarAsistencias');
-        $materia->habilitar_inasistencias = $request->has('habilitarInasistencias');
-        $materia->habilitar_calificaciones = $request->has('habilitarCalificaciones');
-        $materia->habilitar_traslado = $request->has('habilitarTraslado');
-        $materia->caracter_obligatorio = $request->has('obligatorio');
+            $materia->habilitar_asistencias = $request->has('habilitarAsistencias');
+            $materia->habilitar_inasistencias = $request->has('habilitarInasistencias');
+            $materia->habilitar_calificaciones = $request->has('habilitarCalificaciones');
+            $materia->habilitar_traslado = $request->has('habilitarTraslado');
+            $materia->caracter_obligatorio = $request->has('obligatorio');
 
-        if ($request->input('cantidadReportesSemana') != '') {
-            $materia->cantidad_limite_reportes_semana = $request->input('cantidadReportesSemana');
-        } else {
-            $materia->cantidad_limite_reportes_semana = 0;
-        }
+            if ($request->input('cantidadReportesSemana') != '') {
+                $materia->cantidad_limite_reportes_semana = $request->input('cantidadReportesSemana');
+            } else {
+                $materia->cantidad_limite_reportes_semana = 0;
+            }
 
-        if ($request->diasPlazoReporte != '') {
-            $materia->dias_plazo_reporte = $request->diasPlazoReporte;
-        } else {
-            $materia->dias_plazo_reporte = 0;
+            if ($request->diasPlazoReporte != '') {
+                $materia->dias_plazo_reporte = $request->diasPlazoReporte;
+            } else {
+                $materia->dias_plazo_reporte = 0;
+            }
         }
 
         $materia->save();
@@ -489,24 +473,58 @@ class MateriaController extends Controller
         // Reguardar relaciones (pasos, prerrequisitos)
         $this->guardarRelaciones($materia, $request);
 
-        // Actualizar portada (misma lógica que en guardar())
-        if ($request->foto) {
-            if ($configuracion->version == 1) {
-                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/materias/');
-                ! is_dir($path) && mkdir($path, 0777, true);
-
-                $data = explode(';base64,', $request->foto)[1];
-                file_put_contents(
-                    $path.'materia'.$materia->id.'.png',
-                    base64_decode($data)
-                );
-                $materia->portada = 'materia'.$materia->id.'.png';
-                $materia->save();
+        // Actualizar portada (nombre del archivo subido via fetch async)
+        if ($request->portada_nombre) {
+            // Eliminar portada anterior si existe
+            if ($materia->portada && $materia->portada !== 'default.png') {
+                $rutaAnterior = "archivos/escuelas/materias/{$materia->portada}";
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($rutaAnterior);
             }
+
+            $materia->portada = $request->portada_nombre;
+            $materia->save();
         }
 
         return redirect()->route('materias.gestionar', $materia)
             ->with('success', 'Materia actualizada exitosamente');
+    }
+
+    /**
+     * Guarda la imagen de portada en el storage del tenant.
+     */
+    private function guardarImagenPortada(string $fotoBase64, Materia $materia, string $directorio): void
+    {
+        // Aseguramos que cada carpeta intermedia tenga permisos 0755
+        $currentPath = storage_path('app/public');
+        $relativeParts = explode('/', trim($directorio, '/'));
+        foreach ($relativeParts as $part) {
+            if (empty($part)) {
+                continue;
+            }
+            $currentPath .= '/'.$part;
+            if (! file_exists($currentPath)) {
+                @mkdir($currentPath, 0755, true);
+            }
+            @chmod($currentPath, 0755);
+        }
+
+        // Decodificamos la imagen base64
+        $imagenPartes = explode(';base64,', $fotoBase64);
+        $imagenBase64 = base64_decode($imagenPartes[1]);
+
+        // Generamos un nombre único para el archivo
+        $nombreFoto = 'materia-'.$materia->id.'-'.uniqid().'.png';
+
+        // Guardamos el archivo en el storage
+        $rutaCompleta = storage_path("app/public/{$directorio}/{$nombreFoto}");
+        file_put_contents($rutaCompleta, $imagenBase64);
+
+        // Asignamos permisos 0755 al archivo
+        @chmod($rutaCompleta, 0755);
+
+        // Guardamos solo el nombre del archivo en la base de datos
+        $materia->portada = $nombreFoto;
+        $materia->save();
     }
 
     private function actualizarRelaciones(Materia $materia, Request $request)
@@ -602,6 +620,57 @@ class MateriaController extends Controller
             // Redireccionar atrás con el error
             return back()->withInput()
                 ->withErrors(['error_materia_rapida_update' => 'Ocurrió un error al actualizar la materia.'], 'materiaRapidaUpdate');
+        }
+    }
+
+    /**
+     * Sube una imagen de portada para una materia mediante fetch/Cropper.js.
+     */
+    public function uploadPortada(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'portada' => 'required|file|mimes:jpg,jpeg,png,gif,webp|max:10240',
+        ]);
+
+        $archivo = $request->file('portada');
+        $nombreArchivo = 'portada-materia-'.uniqid().'-'.time().'.'.$archivo->getClientOriginalExtension();
+
+        $directorio = 'archivos/escuelas/materias';
+
+        try {
+            // Aseguramos que cada carpeta intermedia tenga permisos 0755
+            $currentPath = storage_path('app/public');
+            $relativeParts = explode('/', trim($directorio, '/'));
+            foreach ($relativeParts as $part) {
+                if (empty($part)) {
+                    continue;
+                }
+                $currentPath .= '/'.$part;
+                if (! file_exists($currentPath)) {
+                    @mkdir($currentPath, 0755, true);
+                }
+                @chmod($currentPath, 0755);
+            }
+
+            // Almacenamos el archivo en el disco 'public'
+            $archivo->storeAs($directorio, $nombreArchivo, 'public');
+
+            // Aseguramos que el archivo recién creado tenga permisos 0755
+            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivo}");
+            @chmod($filePath, 0755);
+
+            return response()->json([
+                'success' => true,
+                'nombre' => $nombreArchivo,
+                'ruta_relativa' => "{$directorio}/{$nombreArchivo}",
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error uploading materia portada: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno al subir la imagen.',
+            ], 500);
         }
     }
 }

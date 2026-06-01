@@ -10,20 +10,71 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
-use NotificationChannels\WebPush\HasPushSubscriptions;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\HasApiTokens;
+use NotificationChannels\WebPush\HasPushSubscriptions;
+use Spatie\Permission\Traits\HasRoles;
 
-// darwin 
+// darwin
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, HasPushSubscriptions;
+    use HasApiTokens, HasFactory, HasPushSubscriptions, Notifiable;
+
+    // =========================================================================
+    // PWA Push Subscriptions — Overrides multi-tenant
+    // =========================================================================
+    // El trait HasPushSubscriptions usa NotificationChannels\WebPush\PushSubscription
+    // con conexión fija (central). Sobrescribimos para usar App\Models\PushSubscription
+    // que tiene $connection = null y respeta la conexión activa del tenant.
+    // =========================================================================
+
+    /**
+     * Relación morphMany hacia las suscripciones push del usuario.
+     * Usa el modelo tenant-aware en lugar del del package.
+     */
+    public function pushSubscriptions(): MorphMany
+    {
+        return $this->morphMany(PushSubscription::class, 'subscribable');
+    }
+
+    /**
+     * Crea o actualiza la suscripción push del usuario.
+     * Sobrescribe el método del trait para usar App\Models\PushSubscription.
+     */
+    public function updatePushSubscription(
+        string $endpoint,
+        ?string $publicKey = null,
+        ?string $authToken = null,
+        ?string $contentEncoding = null
+    ): ?PushSubscription {
+        /** @var PushSubscription|null $subscription */
+        $subscription = PushSubscription::where('endpoint', $endpoint)->first();
+
+        if ($subscription && $this->pushSubscriptions()->where('endpoint', $endpoint)->exists()) {
+            $subscription->public_key = $publicKey;
+            $subscription->auth_token = $authToken;
+            $subscription->content_encoding = $contentEncoding;
+            $subscription->save();
+        } elseif ($subscription) {
+            $this->pushSubscriptions()->save($subscription);
+        } else {
+            $subscription = $this->pushSubscriptions()->create([
+                'endpoint' => $endpoint,
+                'public_key' => $publicKey,
+                'auth_token' => $authToken,
+                'content_encoding' => $contentEncoding,
+            ]);
+        }
+
+        return $subscription;
+    }
+
     use HasRoles;
     use SoftDeletes;
 
@@ -67,9 +118,9 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->genero == 1
-            ? Storage::disk('global_media')->url('placeholders/default-f.png')
-            : Storage::disk('global_media')->url('placeholders/default-m.png');
-    } 
+            ? Storage::disk('global_media')->url('personas/default-f.png')
+            : Storage::disk('global_media')->url('personas/default-m.png');
+    }
 
     /**
      * Get the user's banner URL.
@@ -80,7 +131,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return tenant_asset('img/usuario/banners/'.$this->portada);
         }
 
-        return Storage::disk('global_media')->url('profile-banner.png');
+        return Storage::disk('global_media')->url('personas/profile-banner.png');
     }
 
     /**
@@ -114,7 +165,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->archivo_d ? tenant_asset('archivos/usuario/'.$this->archivo_d) : null;
     }
-
 
     protected static function booted()
     {
@@ -402,8 +452,8 @@ class User extends Authenticatable implements MustVerifyEmail
     public function planesLectoresInscritos(): BelongsToMany
     {
         return $this->belongsToMany(PlanLector::class, 'plan_lector_users', 'user_id', 'plan_lector_id')
-                    ->withPivot('estado', 'fecha_inscripcion', 'porcentaje_progreso')
-                    ->withTimestamps();
+            ->withPivot('estado', 'fecha_inscripcion', 'porcentaje_progreso')
+            ->withTimestamps();
     }
 
     public function reportesReunion(): BelongsToMany
@@ -1517,15 +1567,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
             if ($pasoActual) {
                 $html .= '<td>'.($pasoActual->pivot->fecha ? $pasoActual->pivot->fecha : 'Sin Fecha').'</td>';
-                $html .= '<td>'.(
-                    $pasoActual->pivot->estado == 1
-                    ? 'No Finalizado'
-                    : ($pasoActual->pivot->estado == 2
-                      ? 'En Curso'
-                      : ($pasoActual->pivot->estado == 3
-                        ? 'Finalizado'
-                        : 'Sin estado'))
-                ).'</td>';
+                $html .= '<td>'.($pasoActual->pivot->estado ? $pasoActual->pivot->estado->nombre : 'Sin estado').'</td>';
                 $html .= '<td>'.(
                     $pasoActual->pivot->detalle
                     ? preg_replace("[\n|\r|\n\r]", '', ucwords(mb_strtolower($pasoActual->pivot->detalle)))
@@ -1915,7 +1957,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(PostLike::class);
     }
 
-    
     public function entidadRelacionada(): BelongsTo
     {
         return $this->belongsTo(EntidadRelacionada::class, 'entidad_relacionada_id');

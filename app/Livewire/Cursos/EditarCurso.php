@@ -24,6 +24,7 @@ class EditarCurso extends Component
     public $descripcion_corta;
     public $descripcion_larga;
     public $imagen_portada; // Nueva imagen (upload)
+    public $cropped_imagen_portada; // Imagen recortada base64
     public $imagen_actual; // URL o path de la imagen actual
     public $video_preview_url;
     public $categoria_id;
@@ -115,6 +116,7 @@ class EditarCurso extends Component
             'es_gratuito' => 'boolean',
             'moneda_id' => 'nullable|exists:monedas,id',
             'imagen_portada' => 'nullable|image|max:2048',
+            'cropped_imagen_portada' => 'nullable|string',
             'video_preview_url' => 'nullable|url',
             'carrera_id' => 'nullable|exists:carreras,id',
             'cupos_totales' => 'nullable|integer|min:1',
@@ -162,17 +164,37 @@ class EditarCurso extends Component
         }
     }
 
-    public function update()
+    public function update(): \Livewire\Features\SupportRedirects\Redirector|\Illuminate\Http\RedirectResponse
     {
         $this->validate();
 
         $rutaImagen = $this->imagen_actual;
 
-        if ($this->imagen_portada) {
-            $configuracion = \App\Models\Configuracion::find(1);
-            $directorio = $configuracion->ruta_almacenamiento . '/img/cursos/portadas';
+        if ($this->cropped_imagen_portada) {
+            $directorio = 'img/cursos/portadas';
 
-            // Generar nombre personalizado: ID_portada_timestamp.ext
+            // Decodificar la imagen base64 recortada
+            $imagenPartes = explode(';base64,', $this->cropped_imagen_portada);
+            $imagenBase64 = base64_decode($imagenPartes[1]);
+
+            // Generar nombre de archivo único
+            $nombreImagen = $this->curso->id . '-portada-' . time() . '.png';
+            $rutaCompleta = $directorio . '/' . $nombreImagen;
+
+            // Guardar la imagen decodificada en el disco public del tenant
+            Storage::disk('public')->put($rutaCompleta, $imagenBase64);
+
+            // Guardar SOLO el nombre de archivo en la BD
+            $rutaImagen = $nombreImagen;
+
+            // Eliminar imagen anterior si existe y es diferente de default
+            if ($this->imagen_actual && $this->imagen_actual !== 'default.png' && Storage::disk('public')->exists($directorio . '/' . $this->imagen_actual)) {
+                Storage::disk('public')->delete($directorio . '/' . $this->imagen_actual);
+            }
+        } elseif ($this->imagen_portada) {
+            $directorio = 'img/cursos/portadas';
+
+            // Generar nombre de archivo único para subida normal
             $nombreImagen = $this->curso->id . '-portada-' . time() . '.' . $this->imagen_portada->getClientOriginalExtension();
 
             // Guardar imagen con el nombre personalizado
@@ -181,10 +203,10 @@ class EditarCurso extends Component
             // Guardar SOLO el nombre del archivo en la BD
             $rutaImagen = $nombreImagen;
 
-            // Opcional: Eliminar imagen anterior si existe y es diferente
-            // if ($this->imagen_actual && Storage::disk('public')->exists($directorio . '/' . $this->imagen_actual)) {
-            //    Storage::disk('public')->delete($directorio . '/' . $this->imagen_actual);
-            // }
+            // Eliminar imagen anterior si existe y es diferente de default
+            if ($this->imagen_actual && $this->imagen_actual !== 'default.png' && Storage::disk('public')->exists($directorio . '/' . $this->imagen_actual)) {
+                Storage::disk('public')->delete($directorio . '/' . $this->imagen_actual);
+            }
         }
 
         // Normalize YouTube URL

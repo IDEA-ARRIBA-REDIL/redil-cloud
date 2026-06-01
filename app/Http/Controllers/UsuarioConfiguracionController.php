@@ -89,16 +89,9 @@ class UsuarioConfiguracionController extends Controller
             }
 
             $nombreImagen = 'imagen-'.$tipoUsuario->id.'.png';
+            $directorio = 'img/tipos-usuarios';
 
-            // Usamos public_path() ya que public/storage/ es un directorio real (no symlink).
-            // Esto garantiza que el archivo se guarde donde es accesible vía HTTP.
-            $destinationDir = public_path('storage/'.$configuracion->ruta_almacenamiento.'/tipos-usuarios');
-
-            if (! is_dir($destinationDir)) {
-                mkdir($destinationDir, 0755, true);
-            }
-
-            $file->move($destinationDir, $nombreImagen);
+            Storage::putFileAs($directorio, $file, $nombreImagen);
 
             $tipoUsuario->imagen = $nombreImagen;
             $tipoUsuario->save();
@@ -161,24 +154,16 @@ class UsuarioConfiguracionController extends Controller
         if ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
             $nombreImagen = 'imagen-'.$tipoUsuario->id.'.png';
-
-            // Usamos public_path() ya que public/storage/ es un directorio real (no symlink).
-            // Esto garantiza que el archivo se guarde donde es accesible vía HTTP.
-            $destinationDir = public_path('storage/'.$configuracion->ruta_almacenamiento.'/tipos-usuarios');
+            $directorio = 'img/tipos-usuarios';
 
             // Eliminar la imagen anterior si existía
             if ($tipoUsuario->imagen && $tipoUsuario->imagen !== 'indicador_general.png') {
-                $oldFile = $destinationDir.'/'.$tipoUsuario->imagen;
-                if (file_exists($oldFile)) {
-                    unlink($oldFile);
+                if (Storage::exists($directorio.'/'.$tipoUsuario->imagen)) {
+                    Storage::delete($directorio.'/'.$tipoUsuario->imagen);
                 }
             }
 
-            if (! is_dir($destinationDir)) {
-                mkdir($destinationDir, 0755, true);
-            }
-
-            $file->move($destinationDir, $nombreImagen);
+            Storage::putFileAs($directorio, $file, $nombreImagen);
 
             // Actualizar el nombre de la imagen en el modelo
             $tipoUsuario->imagen = $nombreImagen;

@@ -119,4 +119,16 @@ class NivelEscuela extends Model
     {
         return $this->belongsTo(TipoUsuario::class, 'tipo_usuario_objetivo_id');
     }
+
+    /**
+     * Accesor para obtener la URL pública de la portada.
+     */
+    public function getPortadaUrlAttribute(): ?string
+    {
+        if ($this->portada && $this->portada !== 'default.png') {
+            return tenant_asset('archivos/escuelas/niveles/'.$this->portada);
+        }
+
+        return null;
+    }
 }

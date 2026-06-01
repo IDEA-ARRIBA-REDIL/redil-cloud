@@ -172,6 +172,7 @@
                             <select wire:model="modulo"
                                     class="form-select @error('modulo') is-invalid @enderror">
                                 <option value="">-- Selecciona un módulo --</option>
+                                <option value="Asistentes">Asistentes</option>
                                 <option value="Membresía">Membresía</option>
                                 <option value="Grupos">Grupos</option>
                                 <option value="Reporte de Grupos">Reporte de Grupos</option>

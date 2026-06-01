@@ -80,7 +80,7 @@ window.asignarAsistente = function(grupoId, idUsuario) {
       var lng = "{{$grupo->longitud}}";
       @if($grupo->latitud != null && $grupo->longitud != null && $grupo->tipoGrupo->visible_mapa_asignacion == true)
         var IconoGrupo = L.icon({
-          iconUrl: "{{$configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/pines-mapa/'.$grupo->tipoGrupo->geo_icono) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-m.png' }}",
+          iconUrl: "{{ tenant_asset('img/pines-mapa/'.$grupo->tipoGrupo->geo_icono) }}",
           iconSize: [35, 45],
           iconAnchor: [27, 27],
           popupAnchor: [0, -14]

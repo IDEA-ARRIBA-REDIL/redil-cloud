@@ -429,7 +429,7 @@
 
                 async function downloadPostImage(e, url, captureId) {
                     if (e) e.stopPropagation();
-                    
+
                     Swal.fire({
                         title: 'Preparando descarga...',
                         text: 'Estamos procesando tu imagen',

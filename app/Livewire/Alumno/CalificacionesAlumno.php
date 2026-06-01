@@ -2,37 +2,42 @@
 
 namespace App\Livewire\Alumno;
 
-use Livewire\Component;
-use Livewire\WithFileUploads; // Importante para la subida de archivos
-use App\Models\HorarioMateriaPeriodo;
-use App\Models\CortePeriodo;
-use App\Models\Configuracion;
-use App\Models\Calificaciones;
 use App\Models\AlumnoRespuestaItem;
+// Importante para la subida de archivos
+use App\Models\Calificaciones;
+use App\Models\CortePeriodo;
+use App\Models\HorarioMateriaPeriodo;
 use App\Models\ItemCorteMateriaPeriodo;
-use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log; // Importar Log para errores
+use Livewire\Component; // Importar Log para errores
 
 class CalificacionesAlumno extends Component
 {
-    use WithFileUploads;
-
     public HorarioMateriaPeriodo $horario;
-    public $alumno;
-    public bool $showCreateModal = false;
-    public bool $showEditModal = false;
-    public ?ItemCorteMateriaPeriodo $selectedItem = null;
-    public ?AlumnoRespuestaItem $existingResponse = null;
-    public string $respuestaTexto = '';
-    public $archivo;
 
-    // Reglas de validación para el formulario
-    protected $rules = [
-        'respuestaTexto' => 'required|string|min:10',
-        'archivo' => 'nullable|file|mimes:pdf,docx,xlsx,pptx|max:10240'
-    ];
+    public $alumno;
+
+    public bool $showModal = false;
+
+    public ?ItemCorteMateriaPeriodo $selectedItem = null;
+
+    public ?AlumnoRespuestaItem $existingResponse = null;
+
+    public string $respuestaTexto = '';
+
+    public ?string $nombreArchivoSubido = null;
+
+    // Reglas de validación dinámicas para el formulario
+    public function rules(): array
+    {
+        $tieneArchivo = ! empty($this->nombreArchivoSubido);
+
+        return [
+            'respuestaTexto' => $tieneArchivo ? 'nullable|string' : 'required|string|min:10',
+        ];
+    }
 
     /**
      * Se ejecuta cuando el componente se inicializa.
@@ -43,110 +48,97 @@ class CalificacionesAlumno extends Component
         $this->alumno = Auth::user();
     }
 
-    // --- NUEVOS MÉTODOS QUE ESCUCHAN EVENTOS ---
-
-    #[On('openCreateModal')]
-    public function openCreateModal(int $itemId)
-    {
-        $this->selectedItem = ItemCorteMateriaPeriodo::find($itemId);
-        $this->reset(['respuestaTexto', 'archivo', 'existingResponse']);
-        $this->resetErrorBag();
-        $this->showEditModal = false;
-        $this->showCreateModal = true;
-    }
-
-    #[On('openEditModal')]
-    public function openEditModal(int $itemId)
+    public function abrirModal(int $itemId)
     {
         $this->selectedItem = ItemCorteMateriaPeriodo::find($itemId);
         $this->existingResponse = AlumnoRespuestaItem::where('user_id', $this->alumno->id)
             ->where('item_corte_materia_periodo_id', $itemId)
             ->first();
 
+        $this->reset(['respuestaTexto', 'nombreArchivoSubido']);
+        $this->resetErrorBag();
+
         if ($this->existingResponse) {
             $this->respuestaTexto = $this->existingResponse->respuesta_alumno;
+            $this->nombreArchivoSubido = $this->existingResponse->enlace_documento_alumno;
         }
 
-        $this->reset(['archivo']);
-        $this->resetErrorBag();
-        $this->showCreateModal = false;
-        $this->showEditModal = true;
+        $this->showModal = true;
     }
 
-    // --- MÉTODOS DE GUARDADO SEPARADOS ---
-
-    /**
-     * Guarda la nueva respuesta del alumno.
-     */
-    public function crearRespuesta()
+    public function guardarRespuesta()
     {
         $this->validate();
 
-        // 1. Creamos el registro inicial sin el archivo.
-        $respuesta = AlumnoRespuestaItem::create([
-            'user_id' => $this->alumno->id,
-            'item_corte_materia_periodo_id' => $this->selectedItem->id,
-            'respuesta_alumno' => $this->respuestaTexto,
-            'enlace_documento_alumno' => null, // Se deja nulo por ahora
-        ]);
+        // Buscamos la respuesta en la base de datos de manera directa y fresca
+        $response = AlumnoRespuestaItem::where('user_id', $this->alumno->id)
+            ->where('item_corte_materia_periodo_id', $this->selectedItem->id)
+            ->first();
 
-        // 2. Si hay un archivo para subir, lo procesamos.
-        if ($this->archivo) {
-            $nombreArchivo = $this->_subirArchivo($respuesta);
+        if ($response) {
+            $response->respuesta_alumno = $this->respuestaTexto;
+            $response->enlace_documento_alumno = $this->nombreArchivoSubido;
+            $response->save();
 
-            // 3. Actualizamos el registro con el nombre del archivo.
-            $respuesta->update(['enlace_documento_alumno' => $nombreArchivo]);
+            // Sincronizamos la propiedad del componente
+            $this->existingResponse = $response;
+
+            $this->dispatch('notificacion', ['mensaje' => '¡Respuesta actualizada con éxito!']);
+        } else {
+            $response = new AlumnoRespuestaItem;
+            $response->user_id = $this->alumno->id;
+            $response->item_corte_materia_periodo_id = $this->selectedItem->id;
+            $response->respuesta_alumno = $this->respuestaTexto;
+            $response->enlace_documento_alumno = $this->nombreArchivoSubido;
+            $response->save();
+
+            // Sincronizamos la propiedad del componente
+            $this->existingResponse = $response;
+
+            $this->dispatch('notificacion', ['mensaje' => '¡Respuesta guardada con éxito!']);
         }
 
-        $this->showCreateModal = false;
-        $this->dispatch('notificacion', ['mensaje' => '¡Respuesta guardada con éxito!']);
-    }
-
-    /**
-     * Actualiza una respuesta existente.
-     */
-    public function editarRespuesta()
-    {
-        $this->validate();
-        $nombreArchivo = $this->existingResponse->enlace_documento_alumno;
-
-        if ($this->archivo) {
-            $nombreArchivo = $this->_subirArchivo($this->existingResponse);
-        }
-
-        $this->existingResponse->update([
-            'respuesta_alumno' => $this->respuestaTexto,
-            'enlace_documento_alumno' => $nombreArchivo,
-        ]);
-
-        $this->showEditModal = false;
-        $this->dispatch('notificacion', ['texto' => '¡Respuesta actualizada con éxito!']);
+        $this->showModal = false;
     }
 
     public function eliminarArchivo()
     {
-        // Verificamos que tengamos una respuesta cargada para trabajar
-        if (!$this->existingResponse || !$this->existingResponse->enlace_documento_alumno) {
+        $periodoId = $this->horario->materiaPeriodo->periodo_id;
+        $directorio = "/archivos/escuelas/periodo-{$periodoId}/respuestas";
+
+        // Caso 1: Hay un archivo subido temporalmente pero no se ha guardado la respuesta en la BD todavía
+        if (! $this->existingResponse && $this->nombreArchivoSubido) {
+            $rutaCompleta = $directorio.'/'.$this->nombreArchivoSubido;
+            Storage::disk('public')->delete($rutaCompleta);
+            $this->nombreArchivoSubido = null;
+            $this->dispatch('notificacion', ['mensaje' => 'Archivo eliminado con éxito.']);
+
             return;
         }
 
-        // 1. Reconstruimos la ruta completa del archivo para poder borrarlo
-        $configuracion = Configuracion::find(1);
-        $periodoId = $this->horario->materiaPeriodo->periodo_id;
-        $directorio = $configuracion->ruta_almacenamiento . "/archivos/periodo-{$periodoId}";
-        $rutaCompleta = $directorio . '/' . $this->existingResponse->enlace_documento_alumno;
+        // Caso 2: Ya existe una respuesta en la BD y tiene un archivo guardado
+        if ($this->existingResponse && $this->existingResponse->enlace_documento_alumno) {
+            $rutaCompleta = $directorio.'/'.$this->existingResponse->enlace_documento_alumno;
+            Storage::disk('public')->delete($rutaCompleta);
 
-        // 2. Eliminamos el archivo físico del almacenamiento
-        Storage::disk('public')->delete($rutaCompleta);
+            // Guardamos el cambio en la base de datos de manera explícita con save()
+            $this->existingResponse->enlace_documento_alumno = null;
+            $this->existingResponse->save();
+            $this->existingResponse->refresh();
 
-        // 3. Limpiamos la columna en la base de datos
-        $this->existingResponse->update(['enlace_documento_alumno' => null]);
+            $this->nombreArchivoSubido = null;
+            $this->dispatch('notificacion', ['mensaje' => 'Archivo eliminado con éxito.']);
 
-        // 4. Refrescamos los datos del modelo desde la BD
-        // Esto es clave para que Livewire re-renderice la vista y muestre el input para subir archivo.
-        $this->existingResponse->refresh();
+            return;
+        }
 
-        $this->dispatch('notificacion', ['mensaje' => 'Archivo eliminado con éxito.']);
+        // Caso de seguridad por si las dudas (por ejemplo, si el nombreArchivoSubido local difiere de la BD)
+        if ($this->nombreArchivoSubido) {
+            $rutaCompleta = $directorio.'/'.$this->nombreArchivoSubido;
+            Storage::disk('public')->delete($rutaCompleta);
+            $this->nombreArchivoSubido = null;
+            $this->dispatch('notificacion', ['mensaje' => 'Archivo eliminado con éxito.']);
+        }
     }
 
     /**
@@ -159,7 +151,7 @@ class CalificacionesAlumno extends Component
         // --- CORRECCIÓN ---
         // Aseguramos que se carga la relación con el nombre 'itemInstancias'
         $cortes = CortePeriodo::where('periodo_id', $periodo->id)
-            ->with(['itemInstancias' => fn($query) => $query->where('horario_materia_periodo_id', $this->horario->id)->orderBy('orden')])
+            ->with(['itemInstancias' => fn ($query) => $query->where('horario_materia_periodo_id', $this->horario->id)->orderBy('orden')])
             ->get();
 
         // --- CORRECCIÓN ---
@@ -186,45 +178,19 @@ class CalificacionesAlumno extends Component
 
                 // Lógica de estado correcta
                 $item->estado = 'Pendiente';
-                if ($item->entregado) $item->estado = 'Entregado';
-                if ($item->nota !== null) $item->estado = 'Calificado';
+                if ($item->entregado) {
+                    $item->estado = 'Entregado';
+                }
+                if ($item->nota !== null) {
+                    $item->estado = 'Calificado';
+                }
             });
         });
 
         return view('livewire.alumno.calificaciones', [
             'cortes' => $cortes,
-            'notaMinimaAprobacion' => $notaMinimaAprobacion
+            'notaMinimaAprobacion' => $notaMinimaAprobacion,
 
         ]);
-    }
-
-    /**
-     * Procesa y guarda el archivo subido por el alumno.
-     *
-     * @param AlumnoRespuestaItem $respuesta La instancia de la respuesta para obtener los IDs.
-     * @return string El nombre del archivo guardado.
-     */
-    private function _subirArchivo(AlumnoRespuestaItem $respuesta): string
-    {
-        $configuracion = Configuracion::find(1);
-        $periodoId = $this->horario->materiaPeriodo->periodo_id;
-        $alumnoId = $this->alumno->id;
-        $itemId = $this->selectedItem->id;
-
-        // 2. --- CORRECCIÓN ---
-        // Construimos la ruta del directorio uniendo la ruta de la configuración
-        // con la estructura de carpetas específica que necesitas.
-        $directorio = $configuracion->ruta_almacenamiento . "/archivos/escuelas/periodo-{$periodoId}/respuestas";
-
-        // 3. El nombre del archivo se mantiene como lo definiste.
-        $extension = $this->archivo->getClientOriginalExtension();
-        $nombreArchivo = "archivo-{$alumnoId}-{$itemId}.{$extension}";
-
-        // 4. Usamos storeAs() indicando la ruta, el nombre y el disco 'public'.
-        // Laravel se encargará de crear la estructura de carpetas si no existe.
-        $this->archivo->storeAs($directorio, $nombreArchivo, 'public');
-
-        // Devolvemos solo el nombre del archivo para guardarlo en la BD.
-        return $nombreArchivo;
     }
 }

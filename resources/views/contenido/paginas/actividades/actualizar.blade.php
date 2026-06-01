@@ -23,7 +23,6 @@ $configData = Helper::appClasses();
         width: 40px !important;
         border: solid 1px #3e3e3e;
     }
-    }
 
     /* Custom Radio Cards for Gender Selection */
     .custom-radio-card {

@@ -15,6 +15,14 @@ class TipoNotificacionSeeder extends Seeder
         $notificaciones = [
             // MODULO: GRUPOS
             [
+                'slug' => 'grupo_creado',
+                'modulo' => 'Grupos',
+                'titulo' => 'Nuevo grupo registrado',
+                'descripcion' => 'Notifica cuando se crea un nuevo grupo en el sistema.',
+                'alcance' => TipoNotificacion::ALCANCE_ESCALA_MINISTERIAL,
+                'activo' => true,
+            ],
+            [
                 'slug' => 'grupo_reporte_creado',
                 'modulo' => 'Grupos',
                 'titulo' => 'Reporte de Grupo Enviado',
@@ -22,11 +30,13 @@ class TipoNotificacionSeeder extends Seeder
                 'alcance' => TipoNotificacion::ALCANCE_ESCALA_MINISTERIAL,
                 'activo' => true,
             ],
+
+            // MODULO: ASISTENTES
             [
-                'slug' => 'grupo_persona_creada',
-                'modulo' => 'Grupos',
+                'slug' => 'crear_persona',
+                'modulo' => 'Asistentes',
                 'titulo' => 'Nueva Persona Registrada',
-                'descripcion' => 'Notifica cuando un líder registra a una nueva persona en su red.',
+                'descripcion' => 'Notifica cuando un líder registra a una nueva persona en su red o sistema.',
                 'alcance' => TipoNotificacion::ALCANCE_ESCALA_MINISTERIAL,
                 'activo' => true,
             ],

@@ -84,53 +84,37 @@
         <div class="col-lg-10 col-xl-9 mx-auto">
             <div class="card p-4">
                 <div class ="card-header row">
-                    @if ($configuracion->version == 1)
-                        <div class="text-center mb-4 col-12">
-                            {{-- La imagen ahora usa la variable $icono que viene del controlador --}}
+                    <div class="text-center mb-4 col-12">
+                        {{-- La imagen ahora usa la variable $icono que viene del controlador --}}
+                        @if($pago->estadoPago->estado_anulado_inscripcion)
                             <img style="width: 240px; height: 240px;"
-                                src="{{ Storage::disk('global_media')->url('Reserva-exitosa.png') }}"
-                                class="p-0">
+                            src="{{ Storage::disk('global_media')->url('Reserva_fallida.png') }}"
+                            class="p-0">
+                        @else
+                        <img style="width: 240px; height: 240px;"
+                            src="{{ Storage::disk('global_media')->url('Reserva-exitosa.png') }}"
+                            class="p-0">
+                        @endif
 
-                            {{-- El título ahora usa el color en un estilo en línea --}}
-                            @if ($pago->estadoPago->estado_final_inscripcion)
-                                <h2 class="text-black fw-bold mb-0 lh-sm mt-3">Felicidades </h2>
-                                <h3 style="color: {{ $colorEncabezado }};" class="fw-bold mb-1">{{ $titulo }}</h3>
-                                <p>{{ $mensaje }}</p>
-                            @endif
-                            @if ($pago->estadoPago->estado_anulado_inscripcion)
-                                <h2 class="text-black fw-bold mb-0 lh-sm mt-3">Lo lamentamos no pudimos procesar tu pago,
-                                    puedes intentar en 20 minutos </h2>
-                                <h3 style="color: {{ $colorEncabezado }};" class="fw-bold mb-1">{{ $titulo }}</h3>
-                                <p>{{ $mensaje }}</p>
-                            @endif
-                            @if ($pago->estadoPago->estado_inicial_defecto)
-                                <h2 class="text-black fw-bold mb-0 lh-sm mt-3">Tu pago esta siendo procesado en este
-                                    momento, consulta en 1 hora nuevamente. </h2>
-                                <h3 style="color: {{ $colorEncabezado }};" class="fw-bold mb-1">{{ $titulo }}</h3>
-                                <p>{{ $mensaje }}</p>
-                            @endif
-                        </div>
-                    @else
-                        <div class="col-md-6  text-center col-12">
-                            <img style="width: 140px; height: 140px;"
-                                src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/iglesia/' . $iglesia->logo) }}"
-                                class="p-0">
-                        </div>
-                        <div class="text-center mb-4 col-md-6 col-12">
-                            {{-- La imagen ahora usa la variable $icono que viene del controlador --}}
-                            <img style="width: 140px; height: 140px;"
-                                src="{{ Storage::disk('global_media')->url('Reserva_fallida.png') }}"
-                                class="p-0">
-                        </div>
-
-                        <div class="col-12 text-center mb-4">
-                            {{-- El título ahora usa el color en un estilo en línea --}}
+                        {{-- El título ahora usa el color en un estilo en línea --}}
+                        @if ($pago->estadoPago->estado_final_inscripcion)
+                            <h2 class="text-black fw-bold mb-0 lh-sm mt-3">Felicidades </h2>
                             <h3 style="color: {{ $colorEncabezado }};" class="fw-bold mb-1">{{ $titulo }}</h3>
                             <p>{{ $mensaje }}</p>
-                        </div>
-                    @endif
-
-
+                        @endif
+                        @if ($pago->estadoPago->estado_anulado_inscripcion)
+                            <h2 class="text-black fw-bold mb-0 lh-sm mt-3">Lo lamentamos no pudimos procesar tu pago,
+                                puedes intentar en 20 minutos </h2>
+                            <h3 style="color: {{ $colorEncabezado }};" class="fw-bold mb-1">{{ $titulo }}</h3>
+                            <p>{{ $mensaje }}</p>
+                        @endif
+                        @if ($pago->estadoPago->estado_inicial_defecto)
+                            <h2 class="text-black fw-bold mb-0 lh-sm mt-3">Tu pago esta siendo procesado en este
+                                momento, consulta en 1 hora nuevamente. </h2>
+                            <h3 style="color: {{ $colorEncabezado }};" class="fw-bold mb-1">{{ $titulo }}</h3>
+                            <p>{{ $mensaje }}</p>
+                        @endif
+                    </div>
                 </div>
                 <div class="row px-4 mb-0">
                     <div class="col-12 text-md-start text-sm-start ">

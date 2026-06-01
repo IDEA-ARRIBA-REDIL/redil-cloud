@@ -109,9 +109,7 @@
             <div class="col-xl-4 col-lg-4 col-md-6 col-12 mb-4 equal-height-col">
                 <div class="card h-100 border rounded">
                     {{-- Portada Banner --}}
-                    <img class="card-img-top object-fit-cover" style="height: 100px;"
-                        src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/banner-usuario/' . $miembro->user->portada) : Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/banner-usuario/' . $miembro->user->portada) }}"
-                        alt="portada {{ $miembro->user->primer_nombre ?? '' }}" />
+                    <img class="card-img-top object-fit-cover" style="height: 100px;" src="{{ $miembro->user->banner_url }}" alt="portada {{$miembro->user->primer_nombre}}" />
 
                     <div class="card-body">
                         <div class="user-profile-header d-flex flex-row text-start mb-2 ">
@@ -123,7 +121,7 @@
                                     </div>
                                 @else
                                     <div class="avatar avatar-xl">
-                                        <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $miembro->user->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $miembro->user->foto }}"
+                                        <img src="{{ tenant_asset('img/usuarios/foto-usuario/' . $miembro->user->foto) }}"
                                             alt="{{ $miembro->user->foto ?? 'foto' }}"
                                             class="avatar-initial rounded-circle border border-3 border-white bg-info">
                                     </div>

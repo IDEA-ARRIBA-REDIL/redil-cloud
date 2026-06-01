@@ -10,13 +10,24 @@ use Livewire\Component;
 
 class CampusCurso extends Component
 {
-    public $curso;
+    /**
+     * OPTIMIZACIÓN (Fix #10):
+     * Guardamos solo el ID del curso como propiedad pública en lugar del objeto Eloquent completo.
+     * Livewire serializa todas las propiedades públicas en el "snapshot" que viaja entre servidor
+     * y cliente en cada request. Un Curso con módulos/items cargados puede pesar varios KB de JSON.
+     * Almacenar solo el ID reduce ese payload a un número entero.
+     * El objeto se hidrata bajo demanda con getCurso() usando el ID.
+     */
+    public $cursoData = null; // Cache privado del objeto Curso en memoria durante el request
 
     public $cursoId;
 
     public $itemActivoId = null;
 
     public $itemActivo = null;
+
+    // Hilos del foro del ítem activo — se actualiza en seleccionarItem(), no en cada render()
+    public $hilosForoItem = null;
 
     // Propiedades para el tracking de progreso
     public $progresoPorcentaje = 0;
@@ -66,20 +77,38 @@ class CampusCurso extends Component
 
     public function mount($slug)
     {
-        $this->curso = Curso::where('slug', $slug)
+        // Cargamos el curso y lo guardamos en el cache privado del request
+        $this->cursoData = Curso::where('slug', $slug)
             ->with(['modulos.items.tipo', 'rolesRestringidos', 'pasosRequisito', 'tareasRequisito', 'equipo.user'])
             ->firstOrFail();
 
-        $this->cursoId = $this->curso->id;
+        $this->cursoId = $this->cursoData->id;
 
         // Validar si el usuario está inscrito
         $user = Auth::user();
-        if (! $this->curso->usuarios()->where('user_id', $user->id)->exists()) {
+        if (! $this->cursoData->usuarios()->where('user_id', $user->id)->exists()) {
             abort(403, 'No estás inscrito en este curso.');
         }
 
         // Cargar y procesar el progreso general para bloquear/desbloquear items
         $this->cargarProgreso();
+    }
+
+    /**
+     * OPTIMIZACIÓN (Fix #10):
+     * Helper privado que devuelve el objeto Curso con sus relaciones cargadas.
+     * Durante el mismo request PHP usa el cache en $cursoData (memoria).
+     * Si el objeto no está en memoria (nuevo request Livewire), lo recarga desde BD usando
+     * el ID que sí se persiste en el snapshot de Livewire.
+     */
+    private function getCurso(): Curso
+    {
+        if (! $this->cursoData) {
+            $this->cursoData = Curso::with(['modulos.items.tipo', 'rolesRestringidos', 'pasosRequisito', 'tareasRequisito', 'equipo.user'])
+                ->findOrFail($this->cursoId);
+        }
+
+        return $this->cursoData;
     }
 
     /**
@@ -89,10 +118,12 @@ class CampusCurso extends Component
     public function cargarProgreso()
     {
         $user = Auth::user();
+        $curso = $this->getCurso();
 
         // Obtener todos los IDs de los ítems del curso en orden (Módulo -> Item)
+        // Usamos getCurso() para que la colección de módulos/items venga de memoria (no genera queries)
         $this->itemsOrdenados = [];
-        foreach ($this->curso->modulos as $modulo) {
+        foreach ($curso->modulos as $modulo) {
             foreach ($modulo->items as $item) {
                 $this->itemsOrdenados[] = $item->id;
             }
@@ -174,6 +205,21 @@ class CampusCurso extends Component
         $this->itemActivoId = $itemId;
         $this->itemActivo = CursoItem::with('tipo', 'itemable')->find($itemId);
 
+        /*
+         * OPTIMIZACIÓN (Fix #5):
+         * Antes los hilos del foro se consultaban en render(), que se ejecuta en CADA acción de Livewire
+         * (cada click, cada evaluación, cada avance). Eso significaba una query a foro_hilos por cada
+         * interacción del estudiante en el campus.
+         *
+         * Ahora la query solo corre aquí, cuando el usuario realmente cambia de ítem. Si el estudiante
+         * navega entre opciones de una evaluación o marca como completado, el foro no se re-consulta.
+         */
+        $this->hilosForoItem = \App\Models\CursoForoHilo::where('curso_item_id', $itemId)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
         // Registramos en BD que el usuario "inició" la visualización de este ítem (si no lo había hecho ya)
         $user = Auth::user();
         \App\Models\CursoItemUser::firstOrCreate([
@@ -241,7 +287,7 @@ class CampusCurso extends Component
         if ($this->evaluacionResultado) {
             $haRevisado = $this->evaluacionResultado->respuestas_json['__revisado'] ?? false;
 
-            if (!$haRevisado) {
+            if (! $haRevisado) {
                 if ($this->evaluacionResultado->aprobado && $evaluacion->mostrar_respuestas_si_aprueba) {
                     $this->puedeVerRespuestasActual = true;
                 } elseif (! $this->evaluacionResultado->aprobado && $sinMasIntentos && $evaluacion->mostrar_respuestas_si_pierde) {
@@ -290,7 +336,7 @@ class CampusCurso extends Component
         }
 
         $sessionKey = "eval_start_{$user->id}_{$this->itemActivo->id}";
-        if (!session()->has($sessionKey)) {
+        if (! session()->has($sessionKey)) {
             session()->put($sessionKey, now()->timestamp);
         }
         $this->inicioExamen = session($sessionKey);
@@ -370,12 +416,15 @@ class CampusCurso extends Component
 
             if ($segundosTranscurridos > ($segundosMaximos + 10)) { // 10 seg de margen
                 $this->dispatch('tiempo-agotado');
+
                 return;
             }
         }
 
         $totalPreguntas = count($this->preguntasEvaluacion);
-        if ($totalPreguntas === 0) return;
+        if ($totalPreguntas === 0) {
+            return;
+        }
 
         $puntosTotales = 0;
 
@@ -434,7 +483,7 @@ class CampusCurso extends Component
 
         if ($aprobado && $evaluacion->mostrar_respuestas_si_aprueba) {
             $this->puedeVerRespuestasActual = true;
-        } elseif (!$aprobado && $sinMasIntentos && $evaluacion->mostrar_respuestas_si_pierde) {
+        } elseif (! $aprobado && $sinMasIntentos && $evaluacion->mostrar_respuestas_si_pierde) {
             $this->puedeVerRespuestasActual = true;
         }
 
@@ -444,8 +493,7 @@ class CampusCurso extends Component
         } else {
             $this->intentosRealizados = $intentoActual;
 
-            if ($sinMasIntentos) 
-            {
+            if ($sinMasIntentos) {
                 $this->preguntasEvaluacion = [];
                 $this->evaluacionBloqueada = true;
                 $this->horasRestantesDilatacion = $evaluacion->tiempo_dilatacion;
@@ -456,9 +504,9 @@ class CampusCurso extends Component
                     $this->dispatch('evaluacion-reprobada-finalizar-quiz', nota: round($notaFinal, 2), puedeVerRespuestas: $this->puedeVerRespuestasActual);
                 } else {
                     // Evaluación Final u otro: Bloqueo total y notificación
-                    $this->dispatch('evaluacion-reprobada-bloqueada', 
-                        nota: round($notaFinal, 2), 
-                        horas: $evaluacion->tiempo_dilatacion, 
+                    $this->dispatch('evaluacion-reprobada-bloqueada',
+                        nota: round($notaFinal, 2),
+                        horas: $evaluacion->tiempo_dilatacion,
                         puedeVerRespuestas: $this->puedeVerRespuestasActual,
                         esFinal: $this->itemActivo->tipo->codigo === 'evaluacion_final'
                     );
@@ -498,7 +546,7 @@ class CampusCurso extends Component
         $totalPermitidos = 1 + ($evaluacion->cantidad_repeticiones ?? 0);
         $sinMasIntentos = $this->intentosRealizados >= $totalPermitidos;
 
-        if ($this->itemActivo->tipo->codigo === 'evaluacion_final' && !$this->evaluacionResultado->aprobado && $sinMasIntentos) {
+        if ($this->itemActivo->tipo->codigo === 'evaluacion_final' && ! $this->evaluacionResultado->aprobado && $sinMasIntentos) {
             $this->redirect(route('cursos.catalogo'), navigate: true);
         }
     }
@@ -548,28 +596,43 @@ class CampusCurso extends Component
     private function obtenerSiguienteItem($actualItemId)
     {
         $currentIndex = array_search($actualItemId, $this->itemsOrdenados);
-        if ($currentIndex !== false && $currentIndex < count($this->itemsOrdenados) - 1) {
-            return CursoItem::find($this->itemsOrdenados[$currentIndex + 1]);
+
+        if ($currentIndex === false || $currentIndex >= count($this->itemsOrdenados) - 1) {
+            return null; // Era el último o no se encontró
         }
 
-        return null; // Era el último
+        $siguienteId = $this->itemsOrdenados[$currentIndex + 1];
+
+        /*
+         * OPTIMIZACIÓN (Fix #3):
+         * Antes se hacía CursoItem::find($id) aquí, que lanza una query SELECT a la BD
+         * cada vez que el estudiante avanza de lección.
+         *
+         * El curso y todos sus módulos/items ya están en memoria desde el mount().
+         * Buscamos el ítem directamente en esa colección usando flatMap — sin tocar la BD.
+         */
+        $curso = $this->getCurso();
+        $itemEnMemoria = $curso->modulos
+            ->flatMap(fn ($modulo) => $modulo->items)
+            ->firstWhere('id', $siguienteId);
+
+        // Si por alguna razón no está en la colección cargada (ítem muy nuevo), hacemos fallback a BD
+        return $itemEnMemoria ?? CursoItem::with('tipo', 'itemable')->find($siguienteId);
     }
 
     public function render()
     {
-        // Consultar los hilos del foro correspondientes a este ítem específico
-        $hilosForo = collect();
-        if ($this->itemActivo) {
-            $hilosForo = \App\Models\CursoForoHilo::where('curso_item_id', $this->itemActivo->id)
-                ->with('user')
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
-        }
-
+        /*
+         * OPTIMIZACIÓN (Fix #5):
+         * La consulta de hilos del foro se movió a seleccionarItem().
+         * render() se ejecuta en CADA interacción de Livewire; seleccionarItem() solo cuando
+         * el estudiante cambia de lección. Esto elimina queries innecesarias al foro.
+         *
+         * $hilosForoItem es una propiedad pública del componente actualizada en seleccionarItem().
+         */
         return view('livewire.cursos.campus-curso', [
             'progresoPorcentaje' => $this->progresoPorcentaje,
-            'hilosForo' => $hilosForo,
+            'hilosForo' => $this->hilosForoItem ?? collect(),
             'evaluacionBloqueada' => $this->evaluacionBloqueada,
             'horasRestantesDilatacion' => $this->horasRestantesDilatacion,
             'intentosRealizados' => $this->intentosRealizados,

@@ -66,4 +66,16 @@ class Escuela extends Model
     {
         return $this->hasMany(NivelAgrupacion::class);
     }
+
+    /**
+     * Accesor para obtener la URL pública de la portada.
+     */
+    public function getPortadaUrlAttribute(): ?string
+    {
+        if ($this->portada && $this->portada !== 'default.png') {
+            return tenant_asset('archivos/escuelas/portadas/'.$this->portada);
+        }
+
+        return null;
+    }
 }

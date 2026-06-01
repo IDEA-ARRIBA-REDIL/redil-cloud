@@ -10,7 +10,7 @@ use App\Models\ThemeSetting;
 return [
     'creatorName' => 'IDEARRIBA',
     'creatorUrl' => 'https://redil.co',
-    'templateName' => '',
+    'templateName' => 'Redil',
     'templateNameColor' => 'white',
     'templateDescriptionLogin' => 'Descubre lo que Dios tiene para ti',
     'templateSuffix' => 'Software Redil, descubre lo que Dios tiene para ti',

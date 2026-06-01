@@ -11,7 +11,7 @@
         <div class="card-header">
             <h5 class="card-title">Recursos generales de la escuela</h5>
         </div>
-     
+
         <div class="table-responsive text-nowrap">
             <table class="table table-hover">
                 <thead>
@@ -53,10 +53,10 @@
                                     <button wire:click="abrirModalEditar({{ $recurso->id }})" class="btn me-1 btn-sm btn-icon btn-outline-primary item-edit" data-bs-toggle="tooltip" title="Editar Contenido"><i class="ti ti-pencil"></i></button>
                                     {{-- Botón actualizado para llamar al nuevo método del modal de roles --}}
                                     <button wire:click="abrirModalRoles({{ $recurso->id }})" class="btn me-1 btn-sm btn-outline-secondary btn-icon" data-bs-toggle="tooltip" title="Gestionar Roles"><i class="ti ti-users"></i></button>
-                                    <button 
-                                        wire:click="$dispatch('mostrarAlertaConfirmacion', {{ $recurso->id }})" 
-                                        class="btn me-1 btn-sm btn-icon btn-outline-danger item-delete" 
-                                        data-bs-toggle="tooltip" 
+                                    <button
+                                        wire:click="$dispatch('mostrarAlertaConfirmacion', {{ $recurso->id }})"
+                                        class="btn me-1 btn-sm btn-icon btn-outline-danger item-delete"
+                                        data-bs-toggle="tooltip"
                                         title="Eliminar Recurso">
                                         <i class="ti ti-trash"></i>
                                     </button>
@@ -98,7 +98,7 @@
                                 <option value="Libro">Libro</option>
                                 <option value="Clase">Clase</option>
                                 <option value="Predica">Predica</option>
-                                
+
                             </select>
                             @error('tipo') <span class="text-danger">{{ $message }}</span> @enderror
                         </div>
@@ -112,7 +112,7 @@
                         </div>
                         <div class="mb-3 col-12">
                             <label for="archivo" class="form-label">Subir archivo (Opcional)</label>
-                            
+
                             {{-- Si estamos editando Y existe un archivo, mostramos la vista previa y el botón de eliminar --}}
                                 @if ($modoEdicion && $archivoExistente)
                                     <div class="d-flex align-items-center p-2 border rounded bg-light">
@@ -132,14 +132,70 @@
                                         </button>
                                     </div>
                                 @else
-                                    {{-- Si no, mostramos el input para subir un nuevo archivo --}}
-                                    <input class="form-control" type="file" wire:model="archivo">
-                                    @error('archivo') <span class="text-danger small">{{ $message }}</span> @enderror
-                                    <div wire:loading wire:target="archivo" class="text-muted small mt-1">
-                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        Subiendo...
+                                    {{-- Cargador con Alpine.js para subir un nuevo archivo --}}
+                                    <div x-data="{
+                                        subiendo: false,
+                                        errorMsg: '',
+                                        subirArchivo(event) {
+                                            const file = event.target.files[0];
+                                            if (!file) return;
+
+                                            this.subiendo = true;
+                                            this.errorMsg = '';
+
+                                            const formData = new FormData();
+                                            formData.append('archivo', file);
+
+                                            fetch('{{ route("escuela.recursos-generales.upload") }}', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
+                                                    'Accept': 'application/json'
+                                                },
+                                                body: formData
+                                            })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                this.subiendo = false;
+                                                if (data.success) {
+                                                    $wire.set('nombreArchivoSubido', data.nombre);
+                                                    $wire.set('rutaArchivoSubida', data.ruta_relativa);
+                                                } else {
+                                                    this.errorMsg = data.message || 'Error al subir el archivo.';
+                                                    this.$refs.archivoInput.value = '';
+                                                }
+                                            })
+                                            .catch(error => {
+                                                this.subiendo = false;
+                                                this.errorMsg = 'Error de conexión al subir el archivo.';
+                                                this.$refs.archivoInput.value = '';
+                                            });
+                                        },
+                                        eliminarArchivoLocal() {
+                                            $wire.call('eliminarArchivoLocal');
+                                        }
+                                    }">
+                                        <template x-if="!$wire.nombreArchivoSubido">
+                                            <div>
+                                                <input type="file" class="form-control" x-ref="archivoInput" @change="subirArchivo">
+                                                @error('archivo') <span class="text-danger small">{{ $message }}</span> @enderror
+                                                <div x-show="subiendo" class="small text-muted mt-2 d-flex align-items-center">
+                                                    <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+                                                    Subiendo archivo...
+                                                </div>
+                                                <div x-show="errorMsg" class="small text-danger mt-1" x-text="errorMsg"></div>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="$wire.nombreArchivoSubido">
+                                            <div class="alert alert-success d-flex align-items-center p-2 mb-0">
+                                                <i class="ti ti-circle-check me-2 fs-4"></i>
+                                                <div class="flex-grow-1 text-truncate">
+                                                    <strong>Archivo cargado:</strong> <span x-text="$wire.nombreArchivoSubido"></span>
+                                                </div>
+                                                <button type="button" class="btn-close ms-auto" @click="eliminarArchivoLocal" aria-label="Close"></button>
+                                            </div>
+                                        </template>
                                     </div>
                                 @endif
                         </div>
@@ -156,7 +212,7 @@
             </div>
         </div>
     </div>
-    
+
     {{-- Modal para Gestionar Roles --}}
     <div class="modal fade" id="rolesModal" tabindex="-1" aria-hidden="true" wire:ignore.self>
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -247,7 +303,7 @@
 @push('scripts')
 <script>
     document.addEventListener('livewire:initialized', () => {
-        
+
         // --- Gestión del Modal de Recursos ---
         Livewire.on('abrir-modal-recurso', () => {
             var modalEl = document.getElementById('recursoModal');

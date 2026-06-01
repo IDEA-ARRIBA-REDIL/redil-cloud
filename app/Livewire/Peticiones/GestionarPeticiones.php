@@ -113,14 +113,7 @@ class GestionarPeticiones extends Component
       $mailData->mensaje = $mensaje;
 
       if ($peticion->tipoPeticion->banner_email != '') {
-        $mailData->banner =
-          $configuracion->version == 1
-          ? Storage::url(
-            $configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email
-          )
-          : Storage::url(
-            $configuracion->ruta_almacenamiento . '/img/email/' . $peticion->tipoPeticion->banner_email
-          );
+        $mailData->banner = tenant_asset('img/email/peticiones/' . $peticion->tipoPeticion->banner_email);
       }
 
       try {

@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Configuracion;
 use App\Models\TipoGrupo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class GestionarTipoDeGruposController extends Controller
 {
@@ -127,7 +124,7 @@ class GestionarTipoDeGruposController extends Controller
         if ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
             $nombreImagen = 'imagen-'.$tipoGrupo->id.'.png';
-            $directorio = 'img/tipos-grupos/';
+            $directorio = 'img/tipos-grupos/iconos/';
 
             // --- Auto-crop a 100x100 usando GD nativo ---
             $sourceImage = imagecreatefrompng($file->getPathname());
@@ -152,7 +149,7 @@ class GestionarTipoDeGruposController extends Controller
             $imageData = ob_get_clean();
 
             // Guardar transparente en el disco por defecto
-            Storage::disk()->put($directorio.$nombreImagen, $imageData);
+            Storage::put($directorio.$nombreImagen, $imageData);
 
             imagedestroy($sourceImage);
             imagedestroy($targetImage);
@@ -165,9 +162,9 @@ class GestionarTipoDeGruposController extends Controller
             $file = $request->file('portada');
             $extension = $file->getClientOriginalExtension();
             $nombrePortada = 'portada-'.$tipoGrupo->id.'.'.$extension;
-            $directorio = 'img/tipos-grupos/';
+            $directorio = 'img/tipos-grupos/banners/';
 
-            Storage::disk()->putFileAs($directorio, $file, $nombrePortada);
+            Storage::putFileAs($directorio, $file, $nombrePortada);
             $tipoGrupo->portada = $nombrePortada;
         }
 
@@ -250,11 +247,11 @@ class GestionarTipoDeGruposController extends Controller
         if ($request->hasFile('imagen')) {
             $file = $request->file('imagen');
             $nombreImagen = 'imagen-'.$tipoGrupo->id.'.png';
-            $directorio = 'img/tipos-grupos/';
+            $directorio = 'img/tipos-grupos/iconos/';
 
             // Borrar anterior si existe
             if ($tipoGrupo->imagen && $tipoGrupo->imagen !== 'icono_indicador.png') {
-                Storage::disk()->delete($directorio.$tipoGrupo->imagen);
+                Storage::delete($directorio.$tipoGrupo->imagen);
             }
 
             // --- Auto-crop a 100x100 usando GD nativo ---
@@ -278,7 +275,7 @@ class GestionarTipoDeGruposController extends Controller
             imagepng($targetImage);
             $imageData = ob_get_clean();
 
-            Storage::disk()->put($directorio.$nombreImagen, $imageData);
+            Storage::put($directorio.$nombreImagen, $imageData);
 
             imagedestroy($sourceImage);
             imagedestroy($targetImage);
@@ -290,13 +287,13 @@ class GestionarTipoDeGruposController extends Controller
             $file = $request->file('portada');
             $extension = $file->getClientOriginalExtension();
             $nombrePortada = 'portada-'.$tipoGrupo->id.'.'.$extension;
-            $directorio = 'img/tipos-grupos/';
+            $directorio = 'img/tipos-grupos/banners/';
 
             if ($tipoGrupo->portada) {
-                Storage::disk()->delete($directorio.$tipoGrupo->portada);
+                Storage::delete($directorio.$tipoGrupo->portada);
             }
 
-            Storage::disk()->putFileAs($directorio, $file, $nombrePortada);
+            Storage::putFileAs($directorio, $file, $nombrePortada);
             $tipoGrupo->portada = $nombrePortada;
         }
 

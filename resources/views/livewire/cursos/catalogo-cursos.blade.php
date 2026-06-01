@@ -3,7 +3,7 @@
 
     <div class="row mt-9">
         <div class="col-12 col-md-10 offset-md-1">
-            <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/grupos/default.png') }}" alt="Educación"
+            <img src="{{ Storage::exists('img/cursos/portada-campus.png') ? tenant_asset('img/cursos/portada-campus.png') : Storage::disk('global_media')->url('cursos/default-campus.png') }}" alt="Educación"
                 class="img-fluid rounded">
         </div>
     </div>
@@ -16,7 +16,7 @@
             <div class="col-12 col-md-10 offset-md-1 mt-9">
                 <div class="row ">
                     @if ($misCursos->count() > 0)
-                        <h4 class="fw-bold mt-8 mb-5 text-black">Mis cursos</h4>
+                        <h4 class="fw-semibold mt-8 mb-5 text-black">Mis cursos</h4>
 
                         @foreach ($misCursos as $miCurso)
                             @php
@@ -28,7 +28,7 @@
                                     <div class="d-flex flex-row align-items-stretch">
                                         {{-- Miniatura del curso --}}
                                         <div class="flex-shrink-0 me-3 me-sm-4">
-                                            <img src="{{ $miCurso->imagen_portada ? Storage::url($configuracion->ruta_almacenamiento . '/img/cursos/portadas/' . $miCurso->imagen_portada) : Storage::url($configuracion->ruta_almacenamiento . '/img/grupos/default.png') }}"
+                                            <img src="{{ $miCurso->portada_url }}"
                                                 class="rounded-3" style="width: 140px; height: 110px; object-fit: cover;"
                                                 alt="{{ $miCurso->nombre }}">
                                         </div>
@@ -92,7 +92,7 @@
     <div class="row">
         <div id="container-categorias" style="margin-top:-95px;margin-bottom: 20px;"
             class="col-12 col-md-10 offset-md-1 ">
-            <h4 class="fw-bold text-white mb-3">Cursos disponibles</h4>
+            <h4 class="fw-semibold text-white mb-3">Cursos disponibles</h4>
             <div style="" class="d-flex gap-2 flex-wrap">
 
                 <div wire:click="$set('categoriasSeleccionadas', [])"
@@ -108,41 +108,41 @@
 
             </div>
         </div>
-        <div id="container-select-categorias" class="col-12 col-md-10 mt-3 pt-3">
-            <label class="form-label text-black fw-bold ps-1 text-uppercase small"
+        <div id="container-select-categorias" class="col-12 col-md-10 mt-3 pt-3 d-none">
+                <label class="form-label text-black fw-bold ps-1 text-uppercase small"
                 style="letter-spacing: 0.5px;">Selecciona categorías</label>
 
-            <div x-data="{
-                open: false,
-                search: '',
-                selected: @entangle('categoriasSeleccionadas'),
-                options: {{ $categoriasList->map(fn($c) => ['id' => (string) $c->id, 'nombre' => ucfirst(strtolower($c->nombre))])->toJson() }},
-            
-                get filteredOptions() {
-                    return this.options.filter(
-                        i => i.nombre.toLowerCase().includes(this.search.toLowerCase())
-                    );
-                },
-            
-                toggle(id) {
-                    id = id.toString();
-                    if (this.selected.includes(id)) {
-                        this.selected = this.selected.filter(i => i !== id);
-                    } else {
-                        this.selected.push(id);
+                <div x-data="{
+                    open: false,
+                    search: '',
+                    selected: @entangle('categoriasSeleccionadas'),
+                    options: {{ $categoriasList->map(fn($c) => ['id' => (string) $c->id, 'nombre' => ucfirst(strtolower($c->nombre))])->toJson() }},
+                
+                    get filteredOptions() {
+                        return this.options.filter(
+                            i => i.nombre.toLowerCase().includes(this.search.toLowerCase())
+                        );
+                    },
+                
+                    toggle(id) {
+                        id = id.toString();
+                        if (this.selected.includes(id)) {
+                            this.selected = this.selected.filter(i => i !== id);
+                        } else {
+                            this.selected.push(id);
+                        }
+                    },
+                
+                    isSelected(id) {
+                        return this.selected.includes(id.toString());
+                    },
+                
+                    getSelectedNames() {
+                        return this.options
+                            .filter(i => this.selected.includes(i.id.toString()))
+                            .map(i => i.nombre);
                     }
-                },
-            
-                isSelected(id) {
-                    return this.selected.includes(id.toString());
-                },
-            
-                getSelectedNames() {
-                    return this.options
-                        .filter(i => this.selected.includes(i.id.toString()))
-                        .map(i => i.nombre);
-                }
-            }" class="position-relative">
+                }" class="position-relative">
 
                 {{-- Gatillo del Dropdown --}}
                 <div @click="open = !open" @click.away="open = false"
@@ -255,17 +255,16 @@
                     <div class="col-12  col-lg-3 mb-5">
                         <div class="card h-100 shadow-sm border-0 rounded-3">
                             {{-- Imagen del curso --}}
-                            <img src="{{ $curso->imagen_portada ? Storage::url($configuracion->ruta_almacenamiento . '/img/cursos/portadas/' . $curso->imagen_portada) : Storage::url($configuracion->ruta_almacenamiento . '/img/grupos/default.png') }}"
-                                class="card-img-top course-card-img" alt="{{ $curso->nombre }}">
+                            <img src="{{ $curso->portada_url }}" class="card-img-top object-fit-cover" style="height: 130px;"  alt="{{ $curso->nombre }}">
 
                             <div class="card-body p-3 d-flex flex-column">
                                 {{-- Etiquetas superioes: Categoría y Duración --}}
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="text-muted" style="font-size: 0.75rem;">
+                                    <span class="text-black" style="font-size: 0.75rem;">
                                         <i class="ti ti-grid-dots me-1"></i>
                                         {{ ucfirst(strtolower($curso->categorias->first()->nombre ?? 'General')) }}
                                     </span>
-                                    <span class="text-muted" style="font-size: 0.75rem;">
+                                    <span class="text-black" style="font-size: 0.75rem;">
                                         <i class="ti ti-clock me-1"></i>
                                         {{ $curso->duracion_estimada_dias > 0 ? $curso->duracion_estimada_dias . ' Meses' : 'A su ritmo' }}
                                     </span>
@@ -273,7 +272,7 @@
 
                                 {{-- Título y Descripción Corta --}}
                                 <h6 class="fw-bold text-dark mb-2">{{ ucfirst(strtolower($curso->nombre)) }}</h6>
-                                <p class="text-muted small mb-3 flex-grow-1"
+                                <p class="text-black small mb-3 flex-grow-1"
                                     style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
                                     {{ ucfirst(strtolower($curso->descripcion_corta ?? 'Sin descripción disponible.')) }}
                                 </p>

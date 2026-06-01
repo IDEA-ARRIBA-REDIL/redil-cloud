@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Sede extends Model
 {
@@ -20,7 +21,19 @@ class Sede extends Model
         'nombre',
     ];
 
+     /**
+     * Get the sede's photo URL.
+     */
     protected $guarded = [];
+
+    public function getFotoUrlAttribute(): string
+    {
+        if ($this->foto && $this->foto !== '' && $this->foto !== 'sede.png' && $this->foto !== 'default.png') {
+            return tenant_asset('img/sedes/' . $this->foto);
+        }
+
+        return Storage::disk('global_media')->url('sedes/default.png');
+    }
 
     // obtiene los grupos de una sede
     public function grupos(): HasMany

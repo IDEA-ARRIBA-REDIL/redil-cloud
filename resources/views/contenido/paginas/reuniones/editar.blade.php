@@ -83,7 +83,8 @@
 
         $(".selectAllItems").click(function() {
             var selectId = $(this).data('select');
-            $('#' + selectId).select2('destroy').find('option').prop('selected', 'selected').end().select2();
+            $("#" + selectId + " > option").prop("selected", true);
+            $("#" + selectId).trigger("change");
         });
     </script>
 
@@ -191,14 +192,12 @@
     <form id="formulario" role="form" class="forms-sample" method="POST"  action="{{ route('reuniones.actualizar', $reunion) }}" enctype="multipart/form-data">
         @csrf
         @method('PATCH')
-
         <!-- PORTADA -->
         <div class="col-md-12">
           <div class="card mb-4 rounded rounded-3">
-            <img id="preview-foto" class="cropped-img card-img-top mb-2" src="{{ Storage::url($configuracion->ruta_almacenamiento.'/img/reuniones/'.$reunion->portada) }}" alt="Portada {{$reunion->nombre}}">
+            <img id="preview-foto" class="cropped-img card-img-top mb-2" src="{{ $reunion->portada_url }}" alt="Portada {{$reunion->nombre}}">
             <button type="button" style="background-color: rgba(255, 255, 255, 0.5);" class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2" data-bs-toggle="modal" data-bs-target="#modalFoto">Cambiar portada <i style="padding-left: 5px;" class="ti ti-camera"></i></button>
             <input class="form-control d-none" type="text" value="{{ old('foto') }}" id="imagen-recortada" name="foto">
-
             <div class="row p-4 m-0 d-flex card-body">
               <h5 class="mb-1 fw-semibold text-black">Editar reunión</h5>
               <p class="mb-4 text-black">Aquí podras editar la reunión, por favor llena los campos que son requeridos.</p>
@@ -210,9 +209,7 @@
         <!-- Información principal -->
         <div class="col-md-12">
             <div class="card mb-4">
-                <h5 class="card-header text-black fw-semibold">
-                    <img src="{{ Storage::url('generales/img/reuniones/icono_seccion_informacion_principal.png') }}"
-                        alt="icono" class="me-2" width="30">
+                <h5 class="card-header text-black fw-semibold">                    
                     Información principal
                 </h5>
                 <div class="card-body">
@@ -424,8 +421,6 @@
         <div class="col-md-12">
             <div class="card mb-4">
                 <h5 class="card-header text-black fw-semibold">
-                    <img src="{{ Storage::url('generales/img/reuniones/icono_seccion_configuracion_reservas.png') }}"
-                        alt="icono" class="me-2" width="30">
                     Configuración de reservas
                 </h5>
                 <div class="card-body">
@@ -542,8 +537,6 @@
         <div class="col-md-12">
             <div class="card mb-4">
                 <h5 class="card-header text-black fw-semibold">
-                    <img src="{{ Storage::url('generales/img/reuniones/icono_seccion_iglesia_infantil.png') }}"
-                        alt="icono" class="me-2" width="30">
                     Iglesia infantil
                 </h5>
                 <div class="card-body">
@@ -584,19 +577,19 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         <div class="text-center mb-4">
           <h3 class="mb-2"><i class="ti ti-camera  ti-lg"></i> Subir foto</h3>
-          <p class="text-muted">Selecciona y recorta la foto</p>
+          <p class="text-black">Selecciona y recorta la foto</p>
         </div>
 
         <div class="row">
           <div class="col-12">
             <div class="mb-2">
-              <label class="mb-2"><span class="fw-bold">Paso #1</span> Selecciona la foto</label><br>
+              <label class="mb-2 text-black"><span class="fw-bold">Paso #1</span> Selecciona la foto</label><br>
               <input class="form-control" type="file" id="cropperImageUpload">
             </div>
             <div class="mb-2">
-              <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
+              <label class="mb-2 text-black"><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
               <center>
-                <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100" id="croppingImage" alt="cropper">
+                <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100" id="croppingImage" alt="cropper">
               </center>
             </div>
           </div>
@@ -605,8 +598,8 @@
 
       <div class="modal-footer text-center">
         <div class="col-12 text-center">
-          <button type="submit" class="btn btn-primary rounded-pill crop me-sm-3 me-1" data-bs-dismiss="modal">Guardar</button>
-          <button type="reset" class="btn rounded-pill btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+          <button type="reset" class="btn rounded-pill  btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+          <button type="submit" class="btn rounded-pill  btn-primary crop me-sm-3 me-1" data-bs-dismiss="modal">Guardar</button>
         </div>
       </div>
     </div>

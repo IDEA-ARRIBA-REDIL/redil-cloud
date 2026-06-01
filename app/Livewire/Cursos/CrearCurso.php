@@ -135,8 +135,7 @@ class CrearCurso extends Component
 
         $rutaImagen = null;
         if ($this->imagen_portada) {
-            $configuracion = \App\Models\Configuracion::find(1);
-            $directorio = $configuracion->ruta_almacenamiento . '/img/cursos/portadas';
+            $directorio = 'img/cursos/portadas';
 
             // Generar nombre personalizado: slug_portada_timestamp.ext
             $nombreArchivo = $this->slug . '-portada-' . time() . '.' . $this->imagen_portada->getClientOriginalExtension();

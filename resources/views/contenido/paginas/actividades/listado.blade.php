@@ -17,8 +17,7 @@ use App\Models\TagGeneral;
 'resources/assets/vendor/scss/pages/page-profile.scss',
 'resources/assets/vendor/libs/select2/select2.scss',
 'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
-'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
-'resources/assets/vendor/libs/swiper/swiper.scss'
+'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
 ])
 @endsection
 
@@ -26,8 +25,7 @@ use App\Models\TagGeneral;
 @vite([
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
 'resources/assets/vendor/libs/select2/select2.js',
-'resources/assets/vendor/libs/flatpickr/flatpickr.js',
-  'resources/assets/vendor/libs/swiper/swiper.js'
+'resources/assets/vendor/libs/flatpickr/flatpickr.js'
 ])
 @endsection
 
@@ -215,7 +213,7 @@ use App\Models\TagGeneral;
 @section('content')
 
 <h4 class="mb-1 fw-semibold text-primary">Listado </h4>
-<p class="mb-4">Gestiona las actividades de tu congregación</p>
+<p class="mb-4 text-black">Gestiona las actividades de tu congregación</p>
 
 <div class="row">
     <!-- Upcoming Webinar -->
@@ -249,19 +247,9 @@ use App\Models\TagGeneral;
             <div class="col equal-height-col col-lg-4 col-md-4 col-sm-6 col-12 col-xxl-4">
                 <div class="card border rounded p-0  h-100">
                     <div class="card-header p-0 m-0">
-                        @if (isset($actividad->banner->id))
-                        <div style="background-position: center !important;background-size: contain !important;min-height: 165px;background-image: url('{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre) : $configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre }}') !important" class="bg-label-primary rounded text-center">
-
+                        <div style="background-position: center !important; background-size: cover !important; min-height: 100px; background-image: url('{{ $actividad->portada_url }}') !important" class="bg-label-primary rounded-top text-center">
                         </div>
-                        @else
-                        <div class="rounded-top text-center">
-                            <img class="img-fluid p-0 rounded-top " src="{{Storage::disk('global_media')->url('Portada-default-actividades.png')}}" alt="Card girl image" />
-                        </div>
-                        @endif
-
-
                     </div>
-
                     <div class="card-body">
                         @if (isset($usuario->id))
                         <?php
@@ -269,9 +257,7 @@ use App\Models\TagGeneral;
                                     ?>
                         @if (count($tiposCargo) > 0 || $rolActivo->hasPermissionTo('actividades.ver_todas_las_actividades'))
                         <div class="dropdown float-end mt-3">
-                            <button class="btn  btn-text-secondary  border p-1 me-n1" type="button" id="assignmentProgress" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="ti ti-dots-vertical ti-md text-muted"></i>
-                            </button>
+                            <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect"  data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="assignmentProgress">
                                 @if ($rolActivo->hasPermissionTo('actividades.ver_todas_las_actividades'))
 

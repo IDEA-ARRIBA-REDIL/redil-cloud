@@ -151,7 +151,7 @@ $configData = Helper::appClasses();
 
               <div class="card-body text-center">
                 <div class="mx-auto my-3">
-                  <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$pariente->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$pariente->foto }}" alt="foto {{$pariente->primer_nombre}}" class="rounded-circle w-px-100" />
+                  <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$pariente->foto) }}" alt="foto {{$pariente->primer_nombre}}" class="rounded-circle w-px-100" />
                 </div>
 
                 <span class="pb-1"><span></span><b>Relación:</b> {{ $usuario->genero == 0 ? $pariente->nombre_masculino : $pariente->nombre_femenino }} de </span>

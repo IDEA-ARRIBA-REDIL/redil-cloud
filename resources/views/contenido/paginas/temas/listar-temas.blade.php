@@ -202,7 +202,7 @@ $configData = Helper::appClasses();
   @foreach($temas as $tema)
     <div class="col-md-6 col-lg-4">
       <div class="card">
-        <img class="card-img-top" src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/temas/'.$tema->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/temas/default.png')}}" alt="Card imagen {{ $tema->titulo }}" />
+        <img class="card-img-top" src="{{ $tema->portada_url }}" alt="Card imagen {{ $tema->titulo }}" />
 
         <div class="card-header">
           <div class="d-flex justify-content-between">
@@ -213,7 +213,7 @@ $configData = Helper::appClasses();
             </div>
             <div class="ms-auto">
               <div class="dropdown zindex-2 p-1 float-end">
-                <button type="button" class="btn dropdown-toggle hide-arrow btn btn-sm waves-effect text-black border p-1" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
+                <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
                 <ul class="dropdown-menu dropdown-menu-end">
                   @if($rolActivo->hasPermissionTo('temas.ver_tema'))
                   <li>

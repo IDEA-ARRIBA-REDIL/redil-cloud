@@ -63,7 +63,7 @@
                                 <div class="d-flex align-items-center">
                                     <div class="avatar avatar-md me-3">
                                         @if($alumno->foto && !in_array($alumno->foto, ["default-m.png", "default-f.png"]))
-                                            <img src="{{ Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$alumno->foto) }}" alt="{{ $alumno->nombre(3) }}" class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
+                                            <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$alumno->foto) }}" alt="{{ $alumno->nombre(3) }}" class="avatar-initial rounded-circle border border-2 border-white bg-light object-fit-cover">
                                         @else
                                             <span class="avatar-initial rounded-circle bg-primary bg-opacity-10 text-primary fw-bold">{{ $alumno->inicialesNombre() }}</span>
                                         @endif

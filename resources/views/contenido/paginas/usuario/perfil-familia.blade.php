@@ -1,6 +1,9 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'User Profile - Profile')
+@section('title', 'Perfil')
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 
 @section('vendor-style')
 
@@ -21,6 +24,143 @@
 
 ])
 @endsection
+
+
+<!-- foto portada -->
+<script type="module">
+
+  $(function () {
+    'use strict';
+
+    var croppingImagePortada = document.querySelector('#croppingImagePortada'),
+      cropBtnPortada = document.querySelector('#cropSubmitPortada'),
+      upload = document.querySelector('#cropperImageUploadPortada'),
+      inputResultadoPortada = document.querySelector('#imagen-recortada-portada'),
+      formularioPortada  =document.querySelector('#formularioPortada'),
+      cropper = '';
+
+    setTimeout(() => {
+      cropper = new Cropper( croppingImagePortada, {
+        zoomable: false,
+        aspectRatio: 1693 / 376,
+        cropBoxResizable: true
+      });
+    }, 1000);
+
+    // on change show image with crop options
+    upload.addEventListener('change', function (e) {
+      if (e.target.files.length) {
+        console.log(e.target.files[0]);
+        var fileType = e.target.files[0].type;
+        if (fileType === 'image/gif' || fileType === 'image/jpeg' || fileType === 'image/png') {
+          cropper.destroy();
+          // start file reader
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            if (e.target.result) {
+              croppingImagePortada.src = e.target.result;
+              cropper = new Cropper(croppingImagePortada, {
+                zoomable: false,
+                aspectRatio: 1693 / 376,
+                cropBoxResizable: true
+              });
+            }
+          };
+          reader.readAsDataURL(e.target.files[0]);
+        } else {
+          alert('Selected file type is not supported. Please try again');
+        }
+      }
+    });
+
+    // crop on click
+    cropBtnPortada.addEventListener('click', function (e) {
+      e.preventDefault();
+
+      // get result to data uri
+      let imgSrc = cropper
+        .getCroppedCanvas({
+          height: 376,
+          width: 1693 // input value
+        })
+        .toDataURL('image/jpeg', 0.8);
+
+      inputResultadoPortada.value = imgSrc;
+      cropBtnPortada.disabled = true;
+      formularioPortada.submit();
+    });
+  });
+
+</script>
+<!-- foto portada -->
+
+<!-- foto perfil -->
+<script type="module">
+
+  $(function () {
+    'use strict';
+
+    var croppingImage = document.querySelector('#croppingImage'),
+      cropBtn = document.querySelector('#cropSubmit'),
+      upload = document.querySelector('#cropperImageUpload'),
+      modalImg = document.querySelector('#modalFoto'),
+      inputResultado = document.querySelector('#imagen-recortada'),
+      formulario  =document.querySelector('#formularioFoto'),
+      cropper = '';
+
+    setTimeout(() => {
+      cropper = new Cropper( croppingImage, {
+        zoomable: false,
+        aspectRatio: 1,
+        cropBoxResizable: true
+      });
+    }, 1000);
+
+    // on change show image with crop options
+    upload.addEventListener('change', function (e) {
+      if (e.target.files.length) {
+        console.log(e.target.files[0]);
+        var fileType = e.target.files[0].type;
+        if (fileType === 'image/gif' || fileType === 'image/jpeg' || fileType === 'image/png') {
+          cropper.destroy();
+          // start file reader
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            if (e.target.result) {
+              croppingImage.src = e.target.result;
+              cropper = new Cropper(croppingImage, {
+                zoomable: false,
+                aspectRatio: 1,
+                cropBoxResizable: true
+              });
+            }
+          };
+          reader.readAsDataURL(e.target.files[0]);
+        } else {
+          alert('Selected file type is not supported. Please try again');
+        }
+      }
+    });
+
+    // crop on click
+    cropBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+
+      // get result to data uri
+      let imgSrc = cropper
+        .getCroppedCanvas({
+          width: 300 // input value
+        })
+        .toDataURL('image/jpeg', 0.8);
+
+      inputResultado.value = imgSrc;
+      cropBtn.disabled = true;
+      formularioFoto.submit();
+    });
+  });
+
+</script>
+<!-- foto perfil -->
 
 @section('page-script')
   <script>
@@ -52,25 +192,43 @@
     <div class="col-12">
       <div class="card mb-5">
         <div class="user-profile-header-banner ">
-          <img src="{{ asset('global_media/placeholders/profile-banner.png') }}" alt="Banner image" class="rounded-top">
+          <img src="{{ $usuario->banner_url }}" alt="Banner image" class="rounded-top">
+          @if( $usuario->id == auth()->user()->id )
+          <button type="button" style="background-color: rgba(255, 255, 255, 0.5);" class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2" data-bs-toggle="modal" data-bs-target="#modalPortada">Cambiar portada <i style="padding-left: 5px;" class="ti ti-camera"></i></button>
+          @endif
         </div>
         <div class="user-profile-header d-flex flex-column flex-md-row text-md-start text-center mb-8 mx-5">
           <div class="flex-shrink-0 mt-n5 mx-md-0 mx-auto">
-            <img src="{{ $usuario->foto_url }}" alt="{{ $usuario->foto }}" class="d-block h-auto ms-0 ms-md-4 rounded-circle user-profile-img">
+            @if($usuario->foto == "default-m.png" || $usuario->foto == "default-f.png")
+            <div class="avatar avatar-xxl">
+              <span class="avatar-initial rounded-circle border border-5 border-white bg-info"> {{ $usuario->inicialesNombre() }} </span>
+              @if( $usuario->id == auth()->user()->id )
+                <button class="btn btn-sm rounded-pill btn-icon btn-secondary waves-effect waves-light position-absolute bottom-0 end-0 mb-2 mr-2" data-bs-toggle="modal" data-bs-target="#modalFoto"><i class="ti ti-camera"></i></button>
+              @endif
+            </div>
+            @else
+            <div class="avatar avatar-xxl">
+              <img src="{{ $usuario->foto_url }}" alt="{{ $usuario->foto }}" class="avatar-initial rounded-circle border border-5 border-white bg-info">
+              @if( $usuario->id == auth()->user()->id )
+                <button class="btn btn-sm rounded-pill btn-icon btn-secondary waves-effect waves-light position-absolute bottom-0 end-0 mb-2 mr-2" data-bs-toggle="modal" data-bs-target="#modalFoto"><i class="ti ti-camera"></i></button>
+              @endif
+            </div>
+             @endif
           </div>
+
           <div class="flex-grow-1 mt-3 mt-md-5">
             <div class="d-flex align-items-md-end align-items-start align-items-center justify-content-md-between justify-content-start mx-4 flex-md-row flex-column gap-4">
               <div class="user-profile-info">
                 <h5 class="mb-2 mt-md-6 fw-semibold">{{ $usuario->nombre(3) }}</h5>
                 <ul class="list-inline mb-0 d-flex align-items-center flex-wrap justify-content-sm-start justify-content-center gap-2">
                   <li class="list-inline-item d-flex gap-1">
-                    <span class="badge text-white rounded-pill px-6 fw-light " style="background-color: {{ $usuario->tipoUsuario->color }}">
-                      <i class="{{ $usuario->tipoUsuario->icono }} fs-6"></i> {{ $usuario->tipoUsuario->nombre }}
+                    <span class="badge  rounded-pill px-6 fw-light " style="background-color: {{ $usuario->tipoUsuario->color }}">
+                      <i class="{{ $usuario->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $usuario->tipoUsuario->nombre }}</span>
                     </span>
                   </li>
                 </ul>
               </div>
-              <div class="dropdown">
+              <div id="divBotonOpciones" class="dropdown">
                 <button type="button" class="btn btn-sm p-2 rounded-3 btn-outline-primary waves-effectdropdown-toggle hide-arrow" data-bs-toggle="dropdown" aria-expanded="false">
                   <span class="mx-1">Gestionar perfil</span>
                   <i class="pl-5 ti ti-edit"></i>
@@ -270,7 +428,7 @@
 
             <div class="text-center mb-4">
               <h3 class="role-title mb-2"><i class="ti ti-password ti-lg"></i> Cambio de contraseña</h3>
-              <p class="text-muted">La contraseña debe contener como mínimo 5 caracteres, una letra minúscula y un número.</p>
+              <p class="text-black">La contraseña debe contener como mínimo 5 caracteres, una letra minúscula y un número.</p>
             </div>
 
             <div class="row">
@@ -290,12 +448,98 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn rounded-pill btn-label-secondary" data-bs-dismiss="modal">Cerrar</button>
-            <button type="submit" class="btn rounded-pill btn-primary"><i class="ti ti-donwload ml-3"></i> Guardar </button>
+            <button type="button" class="btn rounded-pill btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <button type="submit" class="btn rounded-pill btn-primary "><i class="ti ti-check"></i> Guardar </button>
           </div>
         </div>
       </form>
     </div>
   </div>
+
+  @if( $usuario->id == auth()->user()->id )
+    <!-- modal foto-->
+    <form id="formularioFoto"  role="form" class="forms-sample" method="POST" action="{{ route('usuario.cambiarFoto', $usuario) }}"  enctype="multipart/form-data">
+      @csrf
+      @method('PATCH')
+      <div class="modal fade modal-img" id="modalFoto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-simple modal-edit-user">
+          <div class="modal-content">
+            <div class="modal-body">
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <div class="text-center mb-4">
+                <h3 class="mb-2 text-black"><i class="ti ti-camera  ti-lg"></i> Subir foto</h3>
+                <p class="text-muted text-black">Selecciona y recorta la foto</p>
+              </div>
+
+              <div class="row">
+                <div class="col-12">
+                  <div class="mb-2">
+                    <label class="mb-2 text-black"><span class="fw-bold">Paso #1</span> Selecciona la foto</label><br>
+                    <input class="form-control" type="file" id="cropperImageUpload">
+                  </div>
+                  <div class="mb-2">
+                    <label class="mb-2 text-black"><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
+                    <center>
+                      <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100" id="croppingImage" alt="cropper">
+                    </center>
+                    <input class="form-control d-none" type="text" value="" id="imagen-recortada" name="foto">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer text-center">
+              <div class="col-12 text-center">
+                <button type="reset" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                <button type="submit" id="cropSubmit" class="btn btn-primary rounded-pill me-sm-3 me-1">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--/ modal foto -->
+    </form>
+
+    <!-- modal portada-->
+    <form id="formularioPortada"  role="form" class="forms-sample" method="POST" action="{{ route('usuario.cambiarPortada', $usuario) }}"  enctype="multipart/form-data">
+      @csrf
+      @method('PATCH')
+      <div class="modal fade modal-img" id="modalPortada" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-simple modal-edit-user">
+          <div class="modal-content">
+            <div class="modal-body">
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <div class="text-center mb-4">
+                <h3 class="mb-2"><i class="ti ti-camera  ti-lg"></i> Subir portada</h3>
+                <p class="text-muted">Selecciona y recorta la portada</p>
+              </div>
+
+              <div class="row">
+                <div class="col-12">
+                  <div class="mb-2">
+                    <label class="mb-2"><span class="fw-bold">Paso #1</span> Selecciona la portada</label><br>
+                    <input class="form-control" type="file" id="cropperImageUploadPortada">
+                  </div>
+                  <div class="mb-2">
+                    <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la portada</label><br>
+                    <center>
+                      <img src="{{ Storage::disk('global_media')->url('placeholders/placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
+                    </center>
+                    <input class="form-control d-none" type="text" value="" id="imagen-recortada-portada" name="foto">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer text-center">
+              <div class="col-12 text-center">
+                <button type="submit" id="cropSubmitPortada" class="btn btn-primary me-sm-3 me-1">Guardar</button>
+                <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--/ modal foto -->
+    </form>
+  @endif
 
 @endsection

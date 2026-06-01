@@ -26,7 +26,7 @@ $configData = Helper::appClasses();
 
 @section('content')
   <h4 class="mb-1 fw-semibold text-primary">Lista de reproducción</h4>
-  <p class="mb-8">Aquí podrás gestionar la lista de reproducción</p>
+  <p class="mb-8 text-black">Aquí podrás gestionar la lista de reproducción</p>
 
    @livewire('TiempoConDios.gestionar-lista-reproduccion')
 

@@ -134,9 +134,9 @@ $configData = Helper::appClasses();
     if ($("#imagen-recortada").val() == "") {
       @if($usuario->foto == 'default-m.png' || $usuario->foto == 'default-f.png')
       if ($(this).val() == 1) {
-        $("#preview-foto").attr("src", "{{ asset('global_media/placeholders/default-f.png') }}");
+        $("#preview-foto").attr("src", "{{ Storage::disk('global_media')->url('personas/default-f.png') }}");
       } else {
-        $("#preview-foto").attr("src", "{{ asset('global_media/placeholders/default-m.png') }}");
+        $("#preview-foto").attr("src", "{{ Storage::disk('global_media')->url('personas/default-m.png') }}");
       }
       @endif
     }
@@ -358,7 +358,7 @@ $configData = Helper::appClasses();
     <div class="card mb-4">
       <h5 class="card-header text-black fw-semibold">
         @if ($seccion->logo)
-        <img src="{{ asset('global_media/img/secciones-formulario/' . $seccion->logo) }}"
+        <img src="{{ Storage::disk('global_media')->url('img/secciones-formulario/' . $seccion->logo) }}"
           alt="react-logo" class="me-2" width="30">
         @endif
         {{ $seccion->titulo }}
@@ -1444,19 +1444,19 @@ $configData = Helper::appClasses();
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         <div class="text-center mb-4">
           <h3 class="mb-2"><i class="ti ti-camera  ti-lg"></i> Subir foto</h3>
-          <p class="text-muted">Selecciona y recorta la foto</p>
+          <p class="text-black">Selecciona y recorta la foto</p>
         </div>
 
         <div class="row">
           <div class="col-12">
             <div class="mb-2">
-              <label class="mb-2"><span class="fw-bold">Paso #1</span> Selecciona la foto</label><br>
+              <label class="mb-2 text-black "><span class="fw-bold">Paso #1</span> Selecciona la foto</label><br>
               <input class="form-control" type="file" id="cropperImageUpload">
             </div>
             <div class="mb-2">
-              <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
+              <label class="mb-2 text-black "><span class="fw-bold">Paso #2</span> Recorta la foto</label><br>
               <center>
-                <img src="{{ asset('global_media/placeholders/placeholder.jpg') }}" class="w-100"
+                <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100"
                   id="croppingImage" alt="cropper">
               </center>
             </div>
@@ -1465,10 +1465,10 @@ $configData = Helper::appClasses();
       </div>
       <div class="modal-footer text-center">
         <div class="col-12 text-center">
-          <button type="submit" class="btn btn-primary crop me-sm-3 me-1"
-            data-bs-dismiss="modal">Guardar</button>
-          <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal"
+          <button type="reset" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal"
             aria-label="Close">Cancelar</button>
+          <button type="submit" class="btn btn-primary crop rounded-pill me-sm-3 me-1"
+            data-bs-dismiss="modal">Guardar</button>
         </div>
       </div>
     </div>

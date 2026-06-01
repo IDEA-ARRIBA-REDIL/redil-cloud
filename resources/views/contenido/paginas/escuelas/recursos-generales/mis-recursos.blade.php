@@ -30,10 +30,10 @@
 
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="d-flex align-items-center">
-                            
+
                             <div>
                                 <h5 class="card-title mb-0">{{ $recurso->nombre }}</h5>
-                                
+
                                 <span class="badge bg-label-primary mt-1">{{ $recurso->tipo }}</span>
                             </div>
                         </div>
@@ -45,25 +45,25 @@
 
                 <div class="card-footer pt-0 border-0 bg-transparent">
                      <div class="row">
-                              
+
                                 {{-- Se muestra un botón diferente dependiendo del contenido del recurso --}}
-                                @if ($recurso->ruta_archivo)
+
                                 <div class="col-xs-12 col-md-12">
-                                    <a href="{{ Storage::disk('public')->url($recurso->ruta_archivo) }}" class="btn btn-outline-primary waves-effect w-100 m-2" target="_blank" download>
+                                    <a href="{{ $recurso->archivo_url }}" class="btn btn-outline-primary waves-effect w-100 m-2" target="_blank" download>
                                         <i class="ti ti-download me-1"></i> Ver/Descargar Archivo
                                     </a>
                                 </div>
-                                @endif
+
 
                                 @if ($recurso->link_youtube)
                                 <div class="col-xs-12 col-md-6 py-3">
                                     <a style="text-decoration:underline"  href="{{ $recurso->link_youtube }}" target="_blank" class="link-underline-secondary">
-                                        <i class="ti ti-external-link me-1"></i> Ver Video 
+                                        <i class="ti ti-external-link me-1"></i> Ver Video
                                     </a>
                                 </div>
                                 @endif
 
-                                @if ($recurso->link_externo) 
+                                @if ($recurso->link_externo)
                                 <div class="col-xs-12 col-md-6 py-3">
                                     <a style="text-decoration:underline" href="{{ $recurso->link_externo }}" class="link-underline-secondary" target="_blank">
                                         <i class="ti ti-external-link me-1"></i> Abrir Enlace

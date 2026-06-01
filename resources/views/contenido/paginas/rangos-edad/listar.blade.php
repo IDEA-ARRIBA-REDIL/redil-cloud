@@ -10,10 +10,13 @@
 @endsection
 
 @section('content')
+  <h4 class="mb-1 fw-semibold text-primary">Listado de rangos de edad</h4>
+  <p class="mb-8 text-black">Aquí encontraras el listado de rangos de edad registrados.</p>
+
   <div class="row g-4 mb-4">
     <div class="col-12 text-end">
       <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalCrear">
-        <i class="ti ti-plus me-1"></i> Nuevo Rango de Edad
+        <i class="ti ti-plus me-1"></i> Nuevo rango de edad
       </button>
     </div>
   </div>

@@ -6,14 +6,13 @@
           <div class="modal-body">
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             <div class="text-center mb-4">
-              <h3 class="mb-2">{!! $titulo !!}</h3>
-              <p class="text-muted">Los campos con <span class="badge badge-dot bg-info me-1"></span> son obligatorios</p>
+              <h5 class="mb-2 fw-semibold text-black">{!! $titulo !!}</h5>
             </div>
             <form wire:submit="crearBajaAlta({{ $grupoId }}, '{{$tipo}}')" class="row g-3">
               <!-- Motivo -->
               <div class="mb-2 col-12 col-md-12">
                 <label class="form-label">
-                <span class="badge badge-dot bg-info me-1"></span> Motivo  @error('motivo') <span class="error">{{ $message }}</span> @enderror
+                 Motivo  @error('motivo') <span class="error">{{ $message }}</span> @enderror
                 </label>
                 <input wire:model="motivo" name="motivo" type="text" class="form-control" value="" placeholder="Detalla aquí el motivo de la {{$tipo}}.">
               </div>
@@ -46,8 +45,8 @@
               @endif
 
               <div class="col-12 text-center">
-                <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar</button>
-                <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                <button type="reset" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                <button type="submit" class="btn btn-primary me-sm-3 me-1 rounded-pill">Guardar</button>
               </div>
 
 

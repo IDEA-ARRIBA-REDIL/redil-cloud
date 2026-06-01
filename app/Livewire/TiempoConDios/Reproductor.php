@@ -104,9 +104,7 @@ class Reproductor extends Component
 
     private function obtenerRutaAudio()
     {
-        return $this->configuracion->version == 1
-            ? Storage::url($this->configuracion->ruta_almacenamiento . '/reproductor-audio/audios/' . $this->cancionActual->archivo)
-            : Storage::url($this->configuracion->ruta_almacenamiento . '/reproductor-audio/audios/' . $this->cancionActual->archivo);
+        return $this->cancionActual->ruta_audio;
     }
 
     // Método para manejar el evento
@@ -122,6 +120,6 @@ class Reproductor extends Component
 
     private function actualizarImagenAlbum()
     {
-        $this->imgAlbumActual = $this->cancionActual->album ? $this->cancionActual->album->imagen : 'album-default.png';
+        $this->imgAlbumActual = $this->cancionActual->album ? $this->cancionActual->album->portada_url : Storage::disk('global_media')->url('reproductor/album-default.png');
     }
 }

@@ -100,12 +100,16 @@ $configData = Helper::appClasses();
               
               @if ($tipoUsuario->imagen)
               <div id="info-imagen-actual">
-                <div class="alert alert-info d-flex justify-content-between align-items-center p-2 mb-0">
-                  <span class="text-truncate" style="font-size: 0.85rem;">
-                    <i class="ti ti-photo ti-sm me-1"></i> {{ $tipoUsuario->imagen }}
-                  </span>
-                  <button type="button" id="btn-reemplazar" class="btn btn-sm btn-outline-danger p-1">
-                    <i class="ti ti-replace"></i>
+                <div class="border rounded p-2 d-flex justify-content-between align-items-center mb-3">
+                  <div class="d-flex align-items-center">
+                    <img src="{{ $tipoUsuario->imagen_url }}" alt="Imagen actual" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
+                    <div class="d-flex flex-column">
+                      <span style="font-size: 0.75rem;" class="text-muted">Imagen actual</span>
+                      <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ $tipoUsuario->imagen }}</span>
+                    </div>
+                  </div>
+                  <button type="button" id="btn-reemplazar" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
+                    <i class="ti ti-trash"></i>
                   </button>
                 </div>
               </div>

@@ -263,7 +263,7 @@ use Illuminate\Support\Str;
       <div class="card-body text-center pb-3">
         <div class="mx-auto mb-3">
           {{-- FOTO --}}
-          <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$usuario->foto }}"
+          <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$usuario->foto) }}"
             alt="Foto" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;"
             onerror="this.src='{{ asset('assets/img/avatars/default-m.png') }}'">
         </div>

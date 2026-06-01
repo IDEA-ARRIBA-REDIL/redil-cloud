@@ -188,7 +188,7 @@ $configData = Helper::appClasses();
     <!-- PORTADA -->
     <div class="col-md-12">
       <div class="card mb-4 rounded rounded-3">
-        <img id="preview-foto" class="cropped-img card-img-top mb-2" src="{{ Storage::url($configuracion->ruta_almacenamiento.'/img/reuniones/'.$reunion->portada) }}" alt="Portada">
+        <img id="preview-foto" class="cropped-img card-img-top mb-2" src="{{ $reunion->portada_url }}" alt="Portada">
         <button type="button" style="background-color: rgba(255, 255, 255, 0.5);" class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2" data-bs-toggle="modal" data-bs-target="#modalFoto">Cambiar portada <i style="padding-left: 5px;" class="ti ti-camera"></i></button>
         <input class="form-control d-none" type="text" value="{{ old('foto') }}" id="imagen-recortada" name="foto">
 

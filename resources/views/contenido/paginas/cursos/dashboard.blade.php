@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Dashboard de Cursos')
+@section('title', 'Dashboard de cursos')
 
 @section('vendor-style')
     @vite(['resources/assets/vendor/libs/bootstrap-select/bootstrap-select.scss', 'resources/assets/vendor/libs/select2/select2.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss', 'resources/assets/vendor/libs/apex-charts/apex-charts.scss'])
@@ -335,7 +335,7 @@
 
 @section('content')
     <h4 class="py-3 mb-4">
-        <span class="text-primary fw-semibold">Cursos Dashboard Administrativo</span>
+        <span class="text-primary fw-semibold">Dashboard de cursos</span>
     </h4>
 
     <!-- Barra de Filtros -->

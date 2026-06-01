@@ -13,7 +13,7 @@
     <div class="row g-4 mt-1 equal-height-row">
 
         @forelse($cajasAsignadas as $caja)
-            <div class="col equal-height-col col-12 col-md-6 col-lg-4">
+            <div class="col equal-height-col col-12 col-md-6 col-lg-6">
                 <div class="card rounded-3 shadow h-100">
 
                     {{-- 1. Encabezado (Nombre y Estado) --}}

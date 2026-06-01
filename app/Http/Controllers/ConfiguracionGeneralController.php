@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ConfiguracionGeneralController extends Controller
 {
@@ -99,6 +100,7 @@ class ConfiguracionGeneralController extends Controller
       'sufijoApp' => 'nullable|string|max:255',
       'versionApp' => 'nullable|string|max:20',
       'logoAppFile' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
+      'logo_base64' => 'nullable|string',
       'faviconAppFile' => 'nullable|file|mimes:ico,png|max:512',
 
       // Informes Evidencias Grupo
@@ -163,7 +165,6 @@ class ConfiguracionGeneralController extends Controller
       'version' => $validated['version'],
       'limite_menor_edad' => $validated['LimiteMenorEdad'],
       'nombre_app_personalizado' => $validated['nombreAppPersonalizada'],
-      'ruta_almacenamiento' => $validated['rutaAlmacenamiento'],
       'label_seccion_campos_extra' => $validated['labelSeccionCamposExtra'],
       'visible_seccion_campos_extra' => $on('visibleSeccionCamposExtra'),
       'visible_seccion_campos_extra_grupo' => $on('visibleSeccionCamposExtraGrupo'),
@@ -291,20 +292,46 @@ class ConfiguracionGeneralController extends Controller
     ];
 
     // --- Procesamiento de Archivos (Logo / Favicon) ---
-    $rutaAlmacenamiento = $configuracion->ruta_almacenamiento ? $configuracion->ruta_almacenamiento . '/' : '';
-    $pathBranding = $rutaAlmacenamiento . 'img/branding';
+    $pathBranding = 'img/branding';
 
-    if ($request->hasFile('logoAppFile')) {
+    if ($request->filled('logo_base64')) {
+      $base64String = $request->input('logo_base64');
+      $datosImagen = explode(',', $base64String);
+      $decodificado = base64_decode(end($datosImagen));
+
+      $extension = 'png';
+      if (preg_match('/^data:image\/(\w+);base64/', $base64String, $type)) {
+        $extension = strtolower($type[1]);
+      }
+
+      $fileName = 'logo_' . time() . '.' . $extension;
+
+      // Guardar el archivo recortado usando Storage en la carpeta del tenant
+      Storage::put($pathBranding . '/' . $fileName, $decodificado);
+
+      // Eliminar el logo anterior si existe para evitar archivos huérfanos
+      if ($configuracion->logo_app && Storage::exists($pathBranding . '/' . $configuracion->logo_app)) {
+        Storage::delete($pathBranding . '/' . $configuracion->logo_app);
+      }
+
+      $datos['logo_app'] = $fileName;
+    } elseif ($request->hasFile('logoAppFile')) {
       $file = $request->file('logoAppFile');
       $fileName = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
-      $file->storeAs($pathBranding, $fileName, 'public');
+      $file->storeAs($pathBranding, $fileName);
+
+      // Eliminar el logo anterior si existe
+      if ($configuracion->logo_app && Storage::exists($pathBranding . '/' . $configuracion->logo_app)) {
+        Storage::delete($pathBranding . '/' . $configuracion->logo_app);
+      }
+
       $datos['logo_app'] = $fileName;
     }
 
     if ($request->hasFile('faviconAppFile')) {
       $file = $request->file('faviconAppFile');
       $fileName = 'favicon_' . time() . '.' . $file->getClientOriginalExtension();
-      $file->storeAs($pathBranding, $fileName, 'public');
+      $file->storeAs($pathBranding, $fileName);
       $datos['favicon_app'] = $fileName;
     }
 

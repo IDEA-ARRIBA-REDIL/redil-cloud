@@ -136,7 +136,7 @@ $(document).ready(function() {
 
           <div class="d-flex justify-content-center align-items-center user-name">
             <div class="avatar-wrapper">
-              <div class="avatar avatar-lg me-4"><img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$pariente->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$pariente->foto }}" alt="foto {{ $pariente->primer_nombre }}" class="rounded-circle"></div>
+              <div class="avatar avatar-lg me-4"><img src="{{ $pariente->foto_url }}" alt="foto {{ $pariente->primer_nombre }}" class="rounded-circle"></div>
             </div>
             <div class="d-flex flex-column">
               <h6 class="mb-1 fw-bold">{{ $pariente->primer_nombre }}</h6>
@@ -158,7 +158,7 @@ $(document).ready(function() {
 
           <div class="d-flex justify-content-center align-items-center user-name">
             <div class="avatar-wrapper">
-              <div class="avatar avatar-lg me-4"><img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$pariente->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$pariente->foto }}" alt="foto {{ $pariente->primer_nombre }}" class="rounded-circle"></div>
+              <div class="avatar avatar-lg me-4"><img src="{{ $pariente->fotoParienteSecundarioUrl }}" alt="foto {{ $pariente->primer_nombre }}" class="rounded-circle"></div>
             </div>
             <div class="d-flex flex-column">
               <h6 class="mb-1 fw-bold">{{ $pariente->nombreParienteSecundario }}</h6>

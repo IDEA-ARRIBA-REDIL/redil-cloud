@@ -103,22 +103,10 @@ class NivelesEscuelasController extends Controller
             $nivel->prerrequisitos()->sync($datosPivot);
         }
 
-        // Manejo de la portada (si se envió)
-        if ($request->foto) {
-            $configuracion = Configuracion::find(1);
-            $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/niveles/');
-            if (! is_dir($path)) {
-                mkdir($path, 0777, true);
-            }
-
-            $imagenPartes = explode(';base64,', $request->foto);
-            if (isset($imagenPartes[1])) {
-                $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'nivel'.$nivel->id.'.png';
-                file_put_contents($path.$nombreFoto, $imagenBase64);
-                $nivel->portada = $nombreFoto;
-                $nivel->save();
-            }
+        // Manejo de la portada (si se envió mediante la carga asíncrona)
+        if ($request->portada_nombre) {
+            $nivel->portada = $request->portada_nombre;
+            $nivel->save();
         }
 
         // Guardar relaciones (pasos y tareas)
@@ -193,13 +181,12 @@ class NivelesEscuelasController extends Controller
         }
 
         // Manejo de la portada
-        if ($request->foto) {
-            $configuracion = Configuracion::find(1);
-            $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/niveles/');
-            $imagenBase64 = base64_decode(explode(';base64,', $request->foto)[1]);
-            $nombreFoto = 'nivel'.$nivel->id.'.png';
-            file_put_contents($path.$nombreFoto, $imagenBase64);
-            $nivel->portada = $nombreFoto;
+        if ($request->portada_nombre) {
+            // Eliminar portada anterior si existe y no es por defecto
+            if ($nivel->portada && $nivel->portada !== 'default.png') {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete("archivos/escuelas/niveles/{$nivel->portada}");
+            }
+            $nivel->portada = $request->portada_nombre;
             $nivel->save();
         }
 
@@ -347,6 +334,57 @@ class NivelesEscuelasController extends Controller
                     'indice' => $index + 1,
                 ]);
             }
+        }
+    }
+
+    /**
+     * Sube una imagen de portada para un nivel mediante fetch/Cropper.js.
+     */
+    public function uploadPortada(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'portada' => 'required|file|mimes:jpg,jpeg,png,gif,webp|max:10240',
+        ]);
+
+        $archivo = $request->file('portada');
+        $nombreArchivo = 'portada-nivel-'.uniqid().'-'.time().'.'.$archivo->getClientOriginalExtension();
+
+        $directorio = 'archivos/escuelas/niveles';
+
+        try {
+            // Aseguramos que cada carpeta intermedia tenga permisos 0755
+            $currentPath = storage_path('app/public');
+            $relativeParts = explode('/', trim($directorio, '/'));
+            foreach ($relativeParts as $part) {
+                if (empty($part)) {
+                    continue;
+                }
+                $currentPath .= '/'.$part;
+                if (! file_exists($currentPath)) {
+                    @mkdir($currentPath, 0755, true);
+                }
+                @chmod($currentPath, 0755);
+            }
+
+            // Almacenamos el archivo en el disco 'public'
+            $archivo->storeAs($directorio, $nombreArchivo, 'public');
+
+            // Aseguramos que el archivo recién creado tenga permisos 0755
+            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivo}");
+            @chmod($filePath, 0755);
+
+            return response()->json([
+                'success' => true,
+                'nombre' => $nombreArchivo,
+                'ruta_relativa' => "{$directorio}/{$nombreArchivo}",
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error uploading nivel portada: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno al subir la imagen.',
+            ], 500);
         }
     }
 }

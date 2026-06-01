@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
 class PwaController extends Controller
 {
@@ -19,23 +20,14 @@ class PwaController extends Controller
         $shortName = config('variables.templateName') ?: 'REDIL';
         $description = config('variables.templateDescription') ?: 'Plataforma REDIL';
         $themeColor = config('variables.templateNameColor') ?: '#7367f0';
-        $logoUrl = asset('storage/global/img/logo_crecer.png');
+        $iconUrl = url('/pwa-icon.png');
 
         if ($configuracion) {
             $name = $configuracion->nombre_app_personalizado ?: $name;
             $shortName = $configuracion->nombre_app_personalizado ?: $shortName;
-            $description = $configuracion->templateDescription ?: $description;
             $themeColor = $configuracion->color_nombre_app ?: $themeColor;
-
-            if ($configuracion->marca_blanca) {
-                $rutaBase = $configuracion->ruta_almacenamiento ? $configuracion->ruta_almacenamiento.'/' : '';
-                if ($configuracion->logo_app) {
-                    $logoUrl = tenant_asset($rutaBase.'img/branding/'.$configuracion->logo_app);
-                }
-            }
         }
 
-        // Usamos '/login' como start_url para entrar directo sin rebotes
         $manifest = [
             'name' => $name,
             'short_name' => substr($shortName, 0, 12),
@@ -46,13 +38,13 @@ class PwaController extends Controller
             'theme_color' => $themeColor,
             'icons' => [
                 [
-                    'src' => url('/pwa-icon.png'),
+                    'src' => $iconUrl,
                     'sizes' => '512x512',
                     'type' => 'image/png',
                     'purpose' => 'any maskable',
                 ],
                 [
-                    'src' => url('/pwa-icon.png'),
+                    'src' => $iconUrl,
                     'sizes' => '192x192',
                     'type' => 'image/png',
                     'purpose' => 'any maskable',
@@ -71,41 +63,55 @@ class PwaController extends Controller
     public function icon()
     {
         $configuracion = Configuracion::first();
+        $logoPath = null;
 
-        // Default global path
-        $logoPath = storage_path('app/public/global/img/logo_crecer.png');
-
-        if (! file_exists($logoPath)) {
-            $logoPath = public_path('storage/global/img/logo_crecer.png');
+        // 1. Intentar usar el logo personalizado si está configurado y habilitado
+        if ($configuracion && $configuracion->logo_personalizado && $configuracion->logo_app) {
+            try {
+                $tenantPath = Storage::disk('public')->path($configuracion->logo_app);
+                if (file_exists($tenantPath)) {
+                    $logoPath = $tenantPath;
+                }
+            } catch (\Exception $e) {
+                // Fallback al logo global
+            }
         }
 
-        if ($configuracion && $configuracion->marca_blanca) {
-            $rutaBase = $configuracion->ruta_almacenamiento ? $configuracion->ruta_almacenamiento.'/' : '';
-            if ($configuracion->logo_app) {
+        // 2. Si no se encontró el logo personalizado o no existe, buscar fallbacks en global_media
+        if (! $logoPath || ! file_exists($logoPath)) {
+            $fallbacks = [
+                'ICONO_APP.png',
+
+            ];
+
+            foreach ($fallbacks as $fallback) {
                 try {
-                    $tenantPath = \Illuminate\Support\Facades\Storage::disk('public')->path($rutaBase.'img/branding/'.$configuracion->logo_app);
-                    if (file_exists($tenantPath)) {
-                        $logoPath = $tenantPath;
+                    $path = Storage::disk('global_media')->path($fallback);
+                    if (file_exists($path)) {
+                        $logoPath = $path;
+                        break;
                     }
                 } catch (\Exception $e) {
-                    // Fallback
+                    // Continuar al siguiente fallback
                 }
             }
         }
 
-        if (! file_exists($logoPath)) {
+        if (! $logoPath || ! file_exists($logoPath)) {
             abort(404);
         }
 
         $mime = mime_content_type($logoPath);
         $source = null;
 
-        if (str_contains($mime, 'png')) {
-            $source = @imagecreatefrompng($logoPath);
-        } elseif (str_contains($mime, 'jpeg') || str_contains($mime, 'jpg')) {
-            $source = @imagecreatefromjpeg($logoPath);
-        } elseif (str_contains($mime, 'webp')) {
-            $source = @imagecreatefromwebp($logoPath);
+        if (function_exists('imagecreatetruecolor') && function_exists('imagecreatefrompng')) {
+            if (str_contains($mime, 'png')) {
+                $source = @imagecreatefrompng($logoPath);
+            } elseif (str_contains($mime, 'jpeg') || str_contains($mime, 'jpg')) {
+                $source = @imagecreatefromjpeg($logoPath);
+            } elseif (str_contains($mime, 'webp')) {
+                $source = @imagecreatefromwebp($logoPath);
+            }
         }
 
         if (! $source) {
@@ -120,7 +126,7 @@ class PwaController extends Controller
         $white = imagecolorallocate($canvas, 255, 255, 255);
         imagefill($canvas, 0, 0, $white);
 
-        // Padding para que el logo respire (100px por lado en 512)
+        // Padding para que el logo respire (50px por lado en 512)
         $padding = 50;
         $maxWidth = $size - ($padding * 2);
         $maxHeight = $size - ($padding * 2);

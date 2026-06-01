@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helpers\Helpers;
 use App\Models\AbonoCategoria;
 use App\Models\Actividad;
-use App\Models\ActividadBanner;
 use App\Models\ActividadCategoria; // Útil para depurar
 use App\Models\ActividadVideo;
 use App\Models\Compra;
@@ -33,7 +32,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Storage;
 use stdClass;
 
 class ActividadController extends Controller
@@ -1671,7 +1669,6 @@ class ActividadController extends Controller
     public function multimedia(Actividad $actividad)
     {
         $configuracion = Configuracion::find(1);
-        $bannerActual = ActividadBanner::where('actividad_id', $actividad->id)->first();
         $video = ActividadVideo::where('actividad_id', $actividad->id)->first();
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $usuario = User::find($rolActivo->pivot->model_id);
@@ -1685,7 +1682,6 @@ class ActividadController extends Controller
                 [
                     'actividad' => $actividad,
                     'configuracion' => $configuracion,
-                    'bannerActual' => $bannerActual,
                     'video' => $video,
                     'rolActivo' => $rolActivo,
                     'usuario' => $usuario,
@@ -1825,47 +1821,75 @@ class ActividadController extends Controller
         ]);
     }
 
-    public function uploadBanner(Request $request, Actividad $actividad)
+    public function uploadPortada(Request $request): \Illuminate\Http\JsonResponse
     {
-        $configuracion = Configuracion::find(1);
-        if ($request->foto) {
-            if ($configuracion->version == 1) {
-                $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/banner-actividad/');
-                ! is_dir($path) && mkdir($path, 0777, true);
+        $request->validate([
+            'portada' => 'required|file|mimes:jpg,jpeg,png,gif,webp|max:10240',
+        ]);
 
-                $imagenPartes = explode(';base64,', $request->foto);
-                $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'banner-activdad'.$actividad->id.'.jpg';
-                $imagenPath = $path.$nombreFoto;
-                file_put_contents($imagenPath, $imagenBase64);
+        $archivo = $request->file('portada');
+        $nombreArchivo = 'portada-actividad-'.uniqid().'-'.time().'.'.$archivo->getClientOriginalExtension();
 
-                $banner = new ActividadBanner;
-                $banner->nombre = $nombreFoto;
-                $banner->actividad_id = $actividad->id;
-                $banner->img = $imagenPath;
-                $banner->save();
-            } else {
-                /*
-                $s3 = AWS::get('s3');
-                $s3->putObject(array(
-                  'Bucket'     => $_ENV['aws_bucket'],
-                  'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                  'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                ));*/
+        $directorio = 'img/actividades/banners';
+
+        try {
+            $currentPath = storage_path('app/public');
+            $relativeParts = explode('/', trim($directorio, '/'));
+            foreach ($relativeParts as $part) {
+                if (empty($part)) {
+                    continue;
+                }
+                $currentPath .= '/'.$part;
+                if (! file_exists($currentPath)) {
+                    @mkdir($currentPath, 0755, true);
+                }
+                @chmod($currentPath, 0755);
             }
-        }
 
-        return back()->with('success', 'el banner para la actividad <b>'.$actividad->nombre.'</b> fue creado con éxito.');
+            $archivo->storeAs($directorio, $nombreArchivo, 'public');
+
+            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivo}");
+            @chmod($filePath, 0755);
+
+            return response()->json([
+                'success' => true,
+                'nombre' => $nombreArchivo,
+                'ruta_relativa' => "{$directorio}/{$nombreArchivo}",
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error uploading actividad portada: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno al subir la imagen.',
+            ], 500);
+        }
     }
 
-    public function eliminarBanner($banner)
+    public function updatePortada(Request $request, Actividad $actividad): \Illuminate\Http\JsonResponse
     {
-        $configuracion = Configuracion::find(1);
-        $bannerActual = ActividadBanner::find($banner);
-        Storage::delete($configuracion->ruta_almacenamiento.'/img/banner-actividad/'.$bannerActual->nombre);
-        $bannerActual->delete();
+        $request->validate([
+            'portada_nombre' => 'required|string|max:500',
+        ]);
 
-        return back()->with('success', 'el banner para la actividad fue eliminado  con éxito.');
+        $actividad->portada = $request->portada_nombre;
+        $actividad->save();
+
+        return response()->json([
+            'success' => true,
+            'portada_url' => $actividad->portada_url,
+        ]);
+    }
+
+    public function eliminarPortada(Actividad $actividad): \Illuminate\Http\RedirectResponse
+    {
+        if ($actividad->portada && $actividad->portada !== 'default.png') {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete('img/actividades/banners/'.$actividad->portada);
+            $actividad->portada = 'default.png';
+            $actividad->save();
+        }
+
+        return back()->with('success', 'La portada de la actividad fue eliminada con éxito.');
     }
 
     public function newVideo(Request $request, Actividad $actividad)

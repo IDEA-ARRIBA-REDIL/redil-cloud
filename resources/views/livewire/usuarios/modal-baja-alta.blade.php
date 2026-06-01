@@ -6,15 +6,14 @@
           <div class="modal-body">
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             <div class="text-center mb-4">
-              <h3 class="mb-2">{!! $titulo !!}</h3>
-              <p class="text-muted">Los campos con <span class="badge badge-dot bg-info me-1"></span> son obligatorios</p>
+              <h5 class="mb-2 fw-semibold text-black">{!! $titulo !!}</h5>
             </div>
             <form wire:submit="editarBajaAlta({{ $usuarioId }}, '{{$tipo}}')" class="row g-3">
               <!-- motivo -->
               <div class="mb-2 col-12 col-md-12">
-                <label class="form-label" for="motivo">
-                  <span class="badge badge-dot bg-info me-1"></span>
-                  Motivo  @error('motivo') <span class="error">{{ $message }}</span> @enderror
+                <label class="form-label text-black" for="motivo">
+                  <span class="badge badge-dot bg-info me-1"></span>                  
+                  Motivo  <br> @error('motivo') <span class="error">{{ $message }}</span> @enderror
                 </label>
                 <select wire:model="motivo"  id="motivo" name="motivo" class="select2 form-select" >
                   <option  value="">Ninguno</option>
@@ -27,7 +26,7 @@
 
               <!-- Observacion -->
               <div class="mb-2 col-12 col-md-12">
-                <label class="form-label">
+                <label class="form-label text-black">
                   Observaciones
                 </label>
                 <textarea wire:model="observacion" class="form-control" rows="2" maxlength="500" spellcheck="false" data-ms-editor="true" placeholder="Detalla aquí las observaciones adicionales .">{{ old('descripcion_peticion') }}</textarea>
@@ -35,8 +34,8 @@
               <!--/Observacion-->
 
               <div class="col-12 text-center">
-                <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar</button>
-                <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                <button type="reset" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                <button type="submit" class="btn btn-primary me-sm-3 me-1 rounded-pill">Guardar</button>
               </div>
             </form>
           </div>

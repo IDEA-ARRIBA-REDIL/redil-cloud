@@ -2,16 +2,19 @@
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\Facades\Auth;
     use App\Models\User;
+    use App\Models\Configuracion;
     $maestro = auth()->user()->first();
     $user = auth()->user();
     $rolActivo = auth()->user()->roles()->where('activo', true)->first();
+    $configuracion = Configuracion::find(1);
 @endphp
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme-escuelas">
-      <div style="padding-left: 20px !important;" class="app-brand demo p-0 mb-3">
-            <a href="{{ url('/') }}" class="app-brand-link">
-                <img style="width:150px" class="app-brand-logo" src="{{ config('variables.logoApp') }}">
-               
+      <div style="padding-left: 20px !important;" class="app-brand mt-5 demo p-0 mb-3">
+            <a href="{{ url('/') }}" class="app-brand-link">              
+                @include('_partials.macros', [
+                    'width' => '120px'
+                ])
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -19,10 +22,7 @@
                 <i class="ti ti-x d-block d-xl-none ti-sm align-middle pe-2"></i>
             </a>
         </div>
-        <div>
-             <span style='color:{{ config('variables.templateNameColor') }} !important'
-                    class="app-brand-text demo menu-text fw-bold fs-6">{{ config('variables.templateName') }}</span>
-        </div>
+
 
     <div class="menu-inner-shadow"></div>
 

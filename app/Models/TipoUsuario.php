@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 class TipoUsuario extends Model
 {
@@ -70,5 +71,14 @@ class TipoUsuario extends Model
     public function rolDependiente(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'id_rol_dependiente');
+    }
+
+    public function getImagenUrlAttribute(): string
+    {
+        if ($this->imagen && $this->imagen !== '' && $this->imagen !== 'indicador_general.png') {
+            return tenant_asset('img/tipos-usuarios/'.$this->imagen);
+        }
+
+        return Storage::disk('global_media')->url('personas/indicadores/indicador_general.png');
     }
 }

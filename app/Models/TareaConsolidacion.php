@@ -44,11 +44,11 @@ class TareaConsolidacion extends Model
   public function usuarios(): BelongsToMany
   {
 
-    $usuario->load(
+    /*$usuario->load(
       'asignaciones.tareaConsolidacion',
       'asignaciones.estado',
       'asignaciones.historial'
-    );
+    );*/
 
     return $this->belongsToMany(User::class, 'tarea_consolidacion_usuario', 'tarea_consolidacion_id', 'user_id')
       ->using(TareaConsolidacionUsuario::class)

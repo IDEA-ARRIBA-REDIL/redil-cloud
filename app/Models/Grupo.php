@@ -136,30 +136,21 @@ class Grupo extends Model
     /**
      * Obtiene la ruta de la portada del grupo, con fallback a la portada del tipo de grupo.
      */
-    public function getPortadaVinculadaAttribute()
+    public function getPortadaVinculadaAttribute(): string
     {
-        $configuracion = Configuracion::find(1);
-        
-        // Limpiamos la ruta base por si ruta_almacenamiento viene vacía desde el seeder
-        $rutaBaseGrupos = 'img/grupos/';
-        if (!empty($configuracion->ruta_almacenamiento)) {
-            $rutaBaseGrupos = $configuracion->ruta_almacenamiento . '/' . $rutaBaseGrupos;
-        }
-
-        // CASO 1: El grupo tiene su propia portada
-        // Storage::url interactúa dinámicamente con el disco aislando al tenant según su driver.
-        if ($this->portada) {
-            return \Illuminate\Support\Facades\Storage::url($rutaBaseGrupos . $this->portada);
+        // CASO 1: El grupo tiene su propia portada (Banner)
+        if ($this->portada && $this->portada != 'default.png') {
+            return tenant_asset('img/grupos/' . $this->portada);
         }
 
         // CASO 2: No tiene portada el grupo, revisamos la del tipo de grupo
-        if ($this->tipoGrupo && $this->tipoGrupo->portada) {
-            return asset('storage/' . $configuracion->ruta_almacenamiento . '/tipos-grupos/' . $this->tipoGrupo->portada);
+        if ($this->tipoGrupo && $this->tipoGrupo->portada) {            
+            return $this->tipoGrupo->portada_url;
         }
 
         // CASO 3: Fallback Global Absoluto
         // Apuntamos al disco global_media por defecto
-        return \Illuminate\Support\Facades\Storage::disk('global_media')->url('banner-default.jpg');
+        return \Illuminate\Support\Facades\Storage::disk('global_media')->url('grupos/banner-default.jpg');
     }
 
     public function encargadosDirectos()
@@ -167,7 +158,7 @@ class Grupo extends Model
         $lideres = $this->encargados()
             ->leftJoin('tipo_usuarios', 'users.tipo_usuario_id', '=', 'tipo_usuarios.id')
             ->selectRaw(
-                "users.id, CONCAT(users.primer_nombre, ' ',users.primer_apellido) as nombre, users.primer_nombre, users.primer_apellido, users.segundo_nombre, users.segundo_apellido, foto,
+                "users.id, CONCAT(users.primer_nombre, ' ',users.primer_apellido) as nombre, users.primer_nombre, users.primer_apellido, users.segundo_nombre, users.segundo_apellido, foto, genero,
         tipo_usuarios.nombre as tipo_usuario, tipo_usuarios.color, tipo_usuarios.icono"
             )
             ->get()

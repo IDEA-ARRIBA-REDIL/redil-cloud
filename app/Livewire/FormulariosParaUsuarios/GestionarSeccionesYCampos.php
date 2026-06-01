@@ -14,12 +14,8 @@ use Livewire\Attributes\On;
 
 use Illuminate\Support\Facades\Storage;
 
-use Livewire\WithFileUploads;
-
 class GestionarSeccionesYCampos extends Component
 {
-  use WithFileUploads;
-
   public $formulario;
   public $secciones = [];
   public $variable = [0];
@@ -32,8 +28,6 @@ class GestionarSeccionesYCampos extends Component
   /* Campos para el funcionamiento de editar y crear seccion  */
   public $nombre;
   public $título;
-  public $icono;
-  public $imagen;
   public $modoEdicion = false;
   public $seccionEditando;
 
@@ -54,11 +48,6 @@ class GestionarSeccionesYCampos extends Component
   protected $rules = [
     'nombre' => 'required',
     'título' => 'required',
-    'imagen' => [
-        'nullable', // El campo imagen es opcional
-        'image',
-        'mimes:jpg,png' // Validar formato
-    ]
   ];
 
   protected $rulesCampos = [
@@ -176,7 +165,7 @@ class GestionarSeccionesYCampos extends Component
   {
     // Resetea los campos del formulario
     $this->seccionEditando = null;
-    $this->reset(['nombre', 'título', 'icono', 'imagen']);
+    $this->reset(['nombre', 'título']);
 
     $this->modoEdicion = false;
 
@@ -189,13 +178,12 @@ class GestionarSeccionesYCampos extends Component
   {
       // Resetea los campos del formulario
       $this->seccionEditando = null;
-      $this->reset(['nombre', 'título', 'icono', 'imagen']);
+      $this->reset(['nombre', 'título']);
 
       $this->modoEdicion = true;
       $this->seccionEditando = SeccionFormularioUsuario::find($seccionId);
       $this->nombre = $this->seccionEditando->nombre;
       $this->título = $this->seccionEditando->titulo;
-      $this->icono = $this->seccionEditando->icono;
 
       // Emitir evento para abrir el offcanvas (opcional)
       $this->dispatch('abrirModal', nombreModal: 'modalNuevaSeccion');
@@ -205,56 +193,11 @@ class GestionarSeccionesYCampos extends Component
   {
     $validatedData = Validator::make($this->all(), $this->rules)->validate();
 
-    // Validar dimensiones de la imagen si se proporciona
-    if ($this->imagen) {
-      // Usar sometimes() en lugar de validate sometimes
-      Validator::make($this->all(), [
-        'imagen' => Rule::dimensions()->maxWidth(100)->maxHeight(100)
-      ])->validate();
-    }
-
     if ($this->modoEdicion) {
       // Actualizar la sección existente
       $this->seccionEditando->nombre = $this->nombre;
       $this->seccionEditando->titulo = $this->título;
-      $this->seccionEditando->icono = $this->icono;
       $this->seccionEditando->save();
-
-       // Guardar la imagen (si se proporciona)
-       if ($this->imagen) {
-
-        // creo la carpeta si no exite
-        $path = public_path('storage/' . $this->configuracion->ruta_almacenamiento . '/img' . '/secciones-formulario' . '/');
-        !is_dir($path) && mkdir($path, 0777, true);
-
-        $extension = $this->imagen->extension();
-        $nombreArchivo = 'img-seccion' . $this->seccionEditando->id . '.' . $extension;
-
-        if ($this->configuracion->version == 1) {
-
-          // elimino el archivo actual
-          Storage::delete('public/' . $this->configuracion->ruta_almacenamiento . '/img' . '/secciones-formulario' . '/' . $this->seccionEditando->logo);
-
-          $this->imagen->storeAs(
-            $this->configuracion->ruta_almacenamiento .  '/img' . '/secciones-formulario' . '/',
-            $nombreArchivo,
-            'public'
-          );
-        } elseif ($this->configuracion->version == 2) {
-          /*
-            $s3 = AWS::get('s3');
-            $s3->putObject(array(
-            'Bucket'     => $_ENV['aws_bucket'],
-            'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivo,
-            'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-            ));*/
-        }
-
-        $this->seccionEditando->logo = $nombreArchivo;
-        $this->seccionEditando->save();
-      }
-
-
 
       $this->dispatch('cerrarModal', nombreModal: 'modalNuevaSeccion');
       $this->modoEdicion = false;
@@ -271,46 +214,10 @@ class GestionarSeccionesYCampos extends Component
       $seccion->nombre = $validatedData['nombre'];
       $seccion->titulo = $validatedData['título'];
       $seccion->formulario_usuario_id = $this->formulario->id;
-      $seccion->icono = $this->icono; // Guardar el icono
 
       $ultimaSeccionActual = SeccionFormularioUsuario::where('formulario_usuario_id', $this->formulario->id)->orderBy('orden', 'desc')->first();
       $seccion->orden = $ultimaSeccionActual ? $ultimaSeccionActual->orden + 1 : 1;
       $seccion->save();
-
-      // Guardar la imagen (si se proporciona)
-      if ($this->imagen) {
-
-        // creo la carpeta si no exite
-        $path = public_path('storage/' . $this->configuracion->ruta_almacenamiento . '/img' . '/secciones-formulario' . '/');
-        !is_dir($path) && mkdir($path, 0777, true);
-
-        $extension = $this->imagen->extension();
-        $nombreArchivo = 'img-seccion' . $seccion->id . '.' . $extension;
-
-        if ($this->configuracion->version == 1) {
-
-          $this->imagen->storeAs(
-            $this->configuracion->ruta_almacenamiento .  '/img' . '/secciones-formulario' . '/',
-            $nombreArchivo,
-            'public'
-          );
-        } elseif ($this->configuracion->version == 2) {
-          /*
-            $s3 = AWS::get('s3');
-            $s3->putObject(array(
-            'Bucket'     => $_ENV['aws_bucket'],
-            'Key'        => $_ENV['aws_carpeta']."/archivos"."/".$nombreArchivo,
-            'SourceFile' => "img/temp/archivo-a-temp-".$asistente->id.".".$extension,
-            ));*/
-        }
-
-        $seccion->logo = $nombreArchivo;
-        $seccion->save();
-      } else {
-        // Si no se proporciona imagen, puedes asignar un valor por defecto o dejarlo en blanco
-        $seccion->logo = null; // o una ruta por defecto si la tienes
-        $seccion->save();
-      }
 
       $this->dispatch('cerrarModal', nombreModal: 'modalNuevaSeccion');
       $this->modoEdicion = false;
@@ -322,12 +229,6 @@ class GestionarSeccionesYCampos extends Component
         msnTexto: 'La sección fue creada con éxito.'
       );
     }
-  }
-
-  #[On('imagenSeleccionada')]
-  public function actualizarImagen($file)
-  {
-    $this->imagen = $file; // Actualizar la propiedad $imagen
   }
 
   public function actualizarOrdenCampos($campoId, $seccionOrigenId, $seccionDestinoId, $ordenOrigen, $ordenDestino)
@@ -412,14 +313,6 @@ class GestionarSeccionesYCampos extends Component
     if ($seccion) {
         $formularioId = $seccion->formulario_usuario_id;
         $ordenEliminado = $seccion->orden;
-
-        // elimino el archivo actual
-        if ($this->configuracion->version == 1) {
-            Storage::delete('public/' . $this->configuracion->ruta_almacenamiento . '/img' . '/secciones-formulario' . '/' . $seccion->logo);
-        } elseif ($this->configuracion->version == 2) {
-
-
-        }
 
         //Desvincula todos los campos
         $seccion->campos()->detach();

@@ -232,17 +232,8 @@
                 <div class="mt-5 col-md-4 col-lg-4 col-xxl-4">
                     <div class="card boxShadow  p-0  h-100">
                         <div class="card-header p-0 m-0">
-                            @if (isset($actividad->banner->id))
-                            <div style="background-position: center !important;background-size: cover !important;min-height: 165px;background-image: url('{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre) : $configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre }}') !important" class="bg-label-primary rounded text-center">
-
-                            </div>
-                            @else
-                            <div class="rounded-top text-center">
-                                <img class="img-fluid p-0 rounded-top " src="{{Storage::disk('global_media')->url('Portada-default-actividades.png')}}" alt="Card girl image"  />
-                            </div>
-                            @endif
-
-
+                          <div style="background-position: center !important; background-size: cover !important; min-height: 100px; background-image: url('{{ $actividad->portada_url }}') !important" class="bg-label-primary rounded-top text-center">
+                          </div>
                         </div>
                         <div class="card-body">
 

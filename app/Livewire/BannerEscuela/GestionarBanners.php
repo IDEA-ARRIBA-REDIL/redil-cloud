@@ -2,34 +2,29 @@
 
 namespace App\Livewire\BannerEscuela;
 
-
-
 use App\Models\BannerEscuela;
-use Livewire\Component;
-use Livewire\WithFileUploads;
-use Livewire\Attributes\Rule;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
-
+use Livewire\Component;
 
 class GestionarBanners extends Component
 {
-    use WithFileUploads;
-
     // Propiedades del formulario
-    #[Rule('nullable|image|max:5120')] // 5MB Máximo
-    public $imagen;
-
-    #[Rule('nullable|string')]
     public $descripcion = '';
 
-    #[Rule('boolean')]
     public $activo = true;
 
     // Propiedades de gestión
     public $banners;
+
     public $bannerId = null;
+
     public $modalVisible = false;
+
+    // Propiedades para Alpine Upload
+    public $nombreArchivoSubido = null;
+
+    public $rutaArchivoSubida = null;
 
     /**
      * Carga inicial.
@@ -65,25 +60,25 @@ class GestionarBanners extends Component
             'descripcion' => 'nullable|string',
             'activo' => 'boolean',
         ];
-        if (!$this->bannerId) {
-            $reglas['imagen'] = 'required|image|max:5120';
+        if (! $this->bannerId) {
+            $reglas['rutaArchivoSubida'] = 'required|string';
         }
-        $this->validate($reglas);
+        $this->validate($reglas, [
+            'rutaArchivoSubida.required' => 'La imagen del banner es obligatoria.',
+        ]);
 
         $datos = [
             'descripcion' => $this->descripcion,
             'activo' => $this->activo,
         ];
 
-        if ($this->imagen) {
-            $directorio = 'archivos/escuelas/banners';
-            $rutaArchivo = $this->imagen->store($directorio, 'public');
-            $datos['imagen'] = $rutaArchivo;
+        if ($this->rutaArchivoSubida) {
+            $datos['imagen'] = $this->rutaArchivoSubida;
         }
 
         if ($this->bannerId) {
             $banner = BannerEscuela::find($this->bannerId);
-            if ($this->imagen && $banner->imagen) {
+            if ($this->rutaArchivoSubida && $banner->imagen) {
                 Storage::disk('public')->delete($banner->imagen);
             }
             $banner->update($datos);
@@ -91,11 +86,15 @@ class GestionarBanners extends Component
             BannerEscuela::create($datos);
         }
 
+        // Anulamos la subida temporal una vez guardado con éxito para que no la borre el resetearFormulario
+        $this->rutaArchivoSubida = null;
+        $this->nombreArchivoSubido = null;
+
         $this->cargarBanners();
         $this->modalVisible = false;
         $this->resetearFormulario();
 
-        // CAMBIO: Despachamos un evento para SweetAlert en lugar de usar session()
+        // Despachamos un evento para SweetAlert en lugar de usar session()
         $this->dispatch('notificacion', ['titulo' => '¡Éxito!', 'mensaje' => 'Banner guardado correctamente.', 'icono' => 'success']);
     }
 
@@ -108,12 +107,13 @@ class GestionarBanners extends Component
         $this->bannerId = $banner->id;
         $this->descripcion = $banner->descripcion;
         $this->activo = $banner->activo;
-        $this->imagen = null;
+        $this->nombreArchivoSubido = null;
+        $this->rutaArchivoSubida = null;
         $this->modalVisible = true;
     }
 
     /**
-     * CAMBIO: Esta función ahora solo despacha el evento para confirmar con SweetAlert.
+     * Esta función despacha el evento para confirmar con SweetAlert.
      */
     public function confirmarBorrado($id)
     {
@@ -121,7 +121,7 @@ class GestionarBanners extends Component
     }
 
     /**
-     * CAMBIO: Este método es llamado desde JS después de la confirmación.
+     * Este método es llamado desde JS después de la confirmación.
      * Añadimos el oyente #[On] para que pueda ser llamado desde el frontend.
      */
     #[On('eliminarBanner')]
@@ -141,14 +141,25 @@ class GestionarBanners extends Component
     }
 
     /**
+     * Elimina el archivo subido localmente en caso de cancelar o resetear.
+     */
+    public function eliminarArchivoLocal()
+    {
+        if ($this->rutaArchivoSubida) {
+            Storage::disk('public')->delete($this->rutaArchivoSubida);
+            $this->rutaArchivoSubida = null;
+            $this->nombreArchivoSubido = null;
+        }
+    }
+
+    /**
      * Resetea las propiedades del formulario.
      */
     public function resetearFormulario()
     {
-        $this->reset(['imagen', 'descripcion', 'activo', 'bannerId']);
+        $this->eliminarArchivoLocal();
+        $this->reset(['descripcion', 'activo', 'bannerId', 'nombreArchivoSubido', 'rutaArchivoSubida']);
     }
-
-
 
     public function render()
     {

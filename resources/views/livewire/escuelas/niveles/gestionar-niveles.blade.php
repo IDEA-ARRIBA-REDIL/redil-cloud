@@ -3,9 +3,9 @@
     <div class="col-xl-3 col-lg-4 col-md-6">
         <div class="card h-100 rounded rounded-3">
              <img style="height: 150px; object-fit: cover;" class="card-img-top mb-2 rounded-top"
-                 @if ($nivel->portada != '') src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/niveles/' . $nivel->portada) }}"
+                 @if ($nivel->portada != '') src="{{ tenant_asset('img/niveles/' . $nivel->portada) }}"
             @else
-                src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/niveles/default.png') }}" @endif
+                src="{{ tenant_asset('img/niveles/default.png') }}" @endif
             alt="Portada ">
 
             <div class="card-body p-4 pt-2">

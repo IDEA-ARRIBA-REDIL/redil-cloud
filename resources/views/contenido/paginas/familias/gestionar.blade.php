@@ -134,7 +134,7 @@
 
                                         <div class="card-body text-center">
                                             <div class="mx-auto my-3">
-                                                <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $pariente->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $pariente->foto }}"
+                                                <img src="{{ $pariente->foto_url }}"
                                                     alt="foto {{ $pariente->primer_nombre }}"
                                                     class="rounded-circle w-px-100" />
                                             </div>

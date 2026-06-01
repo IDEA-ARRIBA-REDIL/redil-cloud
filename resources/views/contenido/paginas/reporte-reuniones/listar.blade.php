@@ -314,6 +314,14 @@ use App\Models\Sede;
                             @endif
                           @endif
 
+                          @if($rolActivo->hasPermissionTo('reporte_reuniones.opcion_anadir_servidores_reporte_reunion'))
+                            <li><a class="dropdown-item" href="{{route('reporteReunion.añadirServidores', $reporte)}}"> Añadir servidores </a></li>
+                          @endif
+
+                          @if($rolActivo->hasPermissionTo('reporte_reuniones.opcion_anadir_ingresos_reporte_reunion'))
+                            <li><a class="dropdown-item" href="{{route('reporteReunion.añadirIngresos', $reporte)}}"> Añadir ingresos </a></li>
+                          @endif
+
                           @if($rolActivo->hasPermissionTo('reporte_reuniones.opcion_anadir_asistentes_reservas_reunion'))
                             @if($reporte->habilitar_reserva && $reporte->puedeAñadirReservas())
                               <li><a class="dropdown-item" href="{{route('reporteReunion.añadirReservas', $reporte)}}"> Añadir reservas </a></li>

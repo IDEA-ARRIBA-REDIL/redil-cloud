@@ -479,7 +479,7 @@ class DashboardFormularios extends Component
                     return '<span class="text-muted fst-italic">No se subió archivo</span>';
                 }
 
-                $urlArchivo = tenant_asset($configuracion->ruta_almacenamiento.'/archivos/actividades/'.$respuesta->url_archivo);
+                $urlArchivo = tenant_asset('archivos/actividades/'.$respuesta->url_archivo);
                 $esImagen = preg_match('/\.(jpg|jpeg|png|webp|gif)$/i', $respuesta->url_archivo);
 
                 if ($esImagen) {
@@ -498,7 +498,7 @@ class DashboardFormularios extends Component
                     return '<span class="text-muted fst-italic">No se subió imagen</span>';
                 }
 
-                $urlFoto = tenant_asset($configuracion->ruta_almacenamiento.'/img/respuestas-formulario/'.$respuesta->url_foto);
+                $urlFoto = tenant_asset('img/actividades/respuesta-formularios/'.$respuesta->url_foto);
 
                 return '<a href="'.$urlFoto.'" target="_blank">
                             <img src="'.$urlFoto.'" class="img-fluid rounded border" style="max-height: 150px; cursor: pointer;" alt="Imagen respuesta">

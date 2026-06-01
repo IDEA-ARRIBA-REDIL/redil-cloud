@@ -197,7 +197,7 @@
                             <div class="col-md-6 col-lg-4">
                                 <div class="card h-100 shadow-sm">
                                     <img class="card-img-top"
-                                        src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/materias/' . $matricula->horarioMateriaPeriodo->materiaPeriodo->materia->portada) }}"
+                                        src="{{ tenant_asset('img/materias/' . $matricula->horarioMateriaPeriodo->materiaPeriodo->materia->portada) }}"
                                         alt="Portada de la Materia" style="height: 100px; object-fit: cover;">
                                     <div class="card-body d-flex flex-column">
                                         <h5 class="card-title fw-semibold">

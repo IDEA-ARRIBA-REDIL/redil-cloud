@@ -52,23 +52,6 @@ class IglesiaController extends Controller
         $iglesia->direccion = $request->direccion;
 
         $iglesia->save();
-        if ($iglesia->save()) {
-            if ($request->foto) {
-                if ($configuracion->version == 1) {
-                    $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/iglesia/');
-                    ! is_dir($path) && mkdir($path, 0777, true);
-
-                    $imagenPartes = explode(';base64,', $request->foto);
-                    $imagenBase64 = base64_decode($imagenPartes[1]);
-                    $nombreFoto = 'iglesia'.$iglesia->id.'.png';
-                    $imagenPath = $path.$nombreFoto;
-                    file_put_contents($imagenPath, $imagenBase64);
-                    $iglesia->logo = $nombreFoto;
-                    $iglesia->save();
-                }
-            }
-        }
-
         return back()->with('success', 'Iglesia actualizada correctamente');
     }
 }

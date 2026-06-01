@@ -79,26 +79,16 @@ class TemaController extends Controller
 
             // AÑADO LA PORTADA
             if ($request->foto) {
-                if ($configuracion->version == 1) {
-                    $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/temas/');
-                    ! is_dir($path) && mkdir($path, 0777, true);
-
-                    $imagenPartes = explode(';base64,', $request->foto);
-                    $imagenBase64 = base64_decode($imagenPartes[1]);
-                    $nombreFoto = 'tema'.$tema->id.'.png';
-                    $imagenPath = $path.$nombreFoto;
-                    file_put_contents($imagenPath, $imagenBase64);
-                    $tema->portada = $nombreFoto;
-                    $tema->save();
-                } else {
-                    /*
-                      $s3 = AWS::get('s3');
-                      $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                        'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                      ));*/
-                }
+                $path = 'img/temas/';
+                
+                $imagenPartes = explode(';base64,', $request->foto);
+                $imagenBase64 = base64_decode($imagenPartes[1]);
+                $nombreFoto = 'tema'.$tema->id.'.png';
+                
+                Storage::put($path . $nombreFoto, $imagenBase64);
+                
+                $tema->portada = $nombreFoto;
+                $tema->save();
             }
 
             //  CREO LA RELACIÓN CON LAS SEDES
@@ -118,18 +108,11 @@ class TemaController extends Controller
 
     public function cargar(Request $request)
     {
-
-        $configuracion = Configuracion::find(1);
-        $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/temas');
-        ! is_dir($path) && mkdir($path, 0777, true);
-
-        $imageFolder = 'storage/'.$configuracion->ruta_almacenamiento.'/img/temas/';
-
         $validatedData = $request->validate([
             'file' => 'required|file',
         ]);
 
-        $path = $request->file('file')->store('public/'.$configuracion->ruta_almacenamiento.'/img/temas');
+        $path = $request->file('file')->store('img/temas');
 
         return ['location' => Storage::url($path)];
     }
@@ -193,26 +176,16 @@ class TemaController extends Controller
 
             // AÑADO LA PORTADA
             if ($request->foto) {
-                if ($configuracion->version == 1) {
-                    $path = public_path('storage/'.$configuracion->ruta_almacenamiento.'/img/temas/');
-                    ! is_dir($path) && mkdir($path, 0777, true);
-
-                    $imagenPartes = explode(';base64,', $request->foto);
-                    $imagenBase64 = base64_decode($imagenPartes[1]);
-                    $nombreFoto = 'tema'.$tema->id.'.png';
-                    $imagenPath = $path.$nombreFoto;
-                    file_put_contents($imagenPath, $imagenBase64);
-                    $tema->portada = $nombreFoto;
-                    $tema->save();
-                } else {
-                    /*
-                      $s3 = AWS::get('s3');
-                      $s3->putObject(array(
-                        'Bucket'     => $_ENV['aws_bucket'],
-                        'Key'        => $_ENV['aws_carpeta']."/fotos/asistente-".$asistente->id.".jpg",
-                        'SourceFile' => "img/temp/".Input::get('foto-hide'),
-                      ));*/
-                }
+                $path = 'img/temas/';
+                
+                $imagenPartes = explode(';base64,', $request->foto);
+                $imagenBase64 = base64_decode($imagenPartes[1]);
+                $nombreFoto = 'tema'.$tema->id.'.png';
+                
+                Storage::put($path . $nombreFoto, $imagenBase64);
+                
+                $tema->portada = $nombreFoto;
+                $tema->save();
             }
 
             // PRIMERO CREO LA RELACIÓN CON LAS SEDES
@@ -325,10 +298,9 @@ class TemaController extends Controller
 
     public function eliminar(Tema $tema)
     {
-        $configuracion = Configuracion::find(1);
-
         if ($tema->portada != 'default.png') {
-            Storage::delete('public/'.$configuracion->ruta_almacenamiento.'/img/temas'.'/'.$tema->portada);
+            $path = 'img/temas/';
+            Storage::delete($path . $tema->portada);
         }
 
         $tema->delete();

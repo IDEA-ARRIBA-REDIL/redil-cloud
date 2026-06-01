@@ -45,13 +45,17 @@
                         <div>
                             {{-- Cabecera con avatar, nombre y menú de acciones --}}
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div class="d-flex align-items-center">
+                               <div class="flex-grow-1 mt-n5 mx-auto text-start">
                                     {{-- Lógica del Avatar: Foto o Iniciales --}}
-                                    <div class="avatar avatar-md me-3">
-                                        @if($alumno->foto && !in_array($alumno->foto, ["default-m.png", "default-f.png"]))
-                                            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$alumno->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$alumno->foto }}" alt="{{ $alumno->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
+                                    <div class="avatar avatar-xl">
+                                         @if($alumno->foto == "default-m.png" || $alumno->foto == "default-f.png")
+                                            <div class="avatar avatar-xl">
+                                              <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $alumno->inicialesNombre() }} </span>
+                                            </div>
                                         @else
-                                            <span class="avatar-initial rounded-circle bg-primary">{{ $alumno->inicialesNombre() }}</span>
+                                            <div class="avatar avatar-xl">
+                                              <img src="{{ $alumno->foto_url }}" alt="{{ $alumno->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
+                                            </div>
                                         @endif
                                     </div>
                                     <div>

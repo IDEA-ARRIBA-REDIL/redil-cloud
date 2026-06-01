@@ -230,7 +230,7 @@ $configData = Helper::appClasses();
                     </div>
                     @elseif($campo->tipo->id == 3)
                     <div class="{{ $campo->class }}">
-                       <img class="img-responsive" src="{{ tenant_asset($configuracion->ruta_almacenamiento . '/img/tiempo-con-dios/' . $campo->url_imagen) }}" alt="{{ $campo->nombre }}" />
+                       <img class="img-responsive" src="{{ tenant_asset('img/tiempo-con-dios/' . $campo->url_imagen) }}" alt="{{ $campo->nombre }}" />
                     </div>
                     @elseif($campo->tipo->id == 4)
                       @livewire('TiempoConDios.reproductor', [

@@ -1,58 +1,10 @@
 <div style="margin: 2% 2%;" class="row align-items-center">
 
     <div class="p-4 col-lg-12 col-md-10 col-sm-12">
-        <!-- Stepper (Paso a Paso) -->
-        @if ($configuracion->version == 2)
-        <div class="m-lg-auto border-0 mb-4">
-            <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 gap-md-2">
-                <!-- Paso 1 - Carrito -->
-                <div class="step {{ $pasoActual == 1 ? 'active' : '' }} d-flex align-items-center">
-                    <button type="button" class="step-trigger bg-transparent border-0 p-0" wire:click="volverPaso">
-                        <span class="bs-stepper-icon {{ $pasoActual == 1 ? 'btn-primary' : 'bg-light' }}">
-                            <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                <use xlink:href="{{ asset('assets/svg/icons/wizard-checkout-cart.svg#wizardCart') }}"></use>
-                            </svg>
-                        </span>
-                        <span class="bs-stepper-label d-none d-md-block mt-2 {{ $pasoActual == 1 ? '' : 'text-muted' }}">Carrito</span>
-                    </button>
-                </div>
 
-                @if($totalPasos > 1)
-                <div class="line d-none d-md-block"><i class="ti ti-chevron-right fs-5 text-muted"></i></div>
-
-                <!-- Paso 2 - Formulario -->
-                <div class="step {{ $pasoActual == 2 ? 'active' : '' }} d-flex align-items-center">
-                    <button type="button" class="step-trigger bg-transparent border-0 p-0" @if($pasoActual == 1) disabled @endif>
-                        <span class="bs-stepper-icon {{ $pasoActual == 2 ? 'btn-primary' : 'bg-light' }}">
-                            <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                <use xlink:href="{{ asset('assets/svg/icons/wizard-checkout-address.svg#wizardCheckoutAddress') }}"></use>
-                            </svg>
-                        </span>
-                        <span class="bs-stepper-label d-none d-md-block mt-2 {{ $pasoActual == 2 ? '' : 'text-muted' }}">Formulario</span>
-                    </button>
-                </div>
-                @endif
-
-                <div class="line d-none d-md-block"><i class="ti ti-chevron-right fs-5 text-muted"></i></div>
-
-                <!-- Paso Checkout (Referencial) -->
-                <div class="step d-flex align-items-center">
-                    <button type="button" class="step-trigger bg-transparent border-0 p-0" disabled>
-                        <span class="bs-stepper-icon bg-light">
-                            <svg viewBox="0 0 60 60" class="w-40px h-40px">
-                                <use xlink:href="{{ asset('assets/svg/icons/wizard-checkout-payment.svg#wizardPayment') }}"></use>
-                            </svg>
-                        </span>
-                        <span class="bs-stepper-label d-none d-md-block mt-2 text-muted">Checkout</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        @endif
-        <!-- Fin del Stepper -->
 
         <div style="margin-bottom: 120px;" class="row">
-            
+
             @if($pasoActual == 1)
             {{-- ==========================================
                  PASO 1: SELECCIÓN DE PRODUCTOS Y DATOS
@@ -88,7 +40,7 @@
                                                     <button wire:click="eliminarDelCarrito({{ $categoria->id }})" class="btn btn-outline-danger fw-semibold">
                                                         <i class="ti ti-shopping-cart-x"></i> Eliminar
                                                     </button>
-                                                    @else 
+                                                    @else
                                                     <button wire:click="agregarAlCarrito({{ $categoria->id }})" class="btn btn-label-secondary fw-semibold btn-outline-secondary " @if (count($carrito)> 0 || isset($compraActual->id)) disabled @endif>
                                                         <i class="ti ti-shopping-cart-plus"></i> Agregar
                                                     </button>
@@ -135,7 +87,7 @@
                         </div>
                     </ul>
                 </div>
-                @endif           
+                @endif
 
                 <!-- Datos del Comprador (Si no está logueado) -->
                 @if($actividad->requiere_inicio_sesion == false && !Auth::check())
@@ -261,7 +213,7 @@
                         {{-- CAMPOS DE PREGUNTA --}}
                         <div class="card shadow-sm border p-4 mb-4 rounded-3 bg-light bg-opacity-10">
                             <label class="form-label fw-bold fs-6">
-                                {{ $elemento->titulo }} 
+                                {{ $elemento->titulo }}
                                 @if($elemento->required) <span class="text-danger">*</span> @endif
                             </label>
                             @if($elemento->descripcion)
@@ -410,16 +362,16 @@
                 </div>
 
                 <div>
-                    <button type="button" 
-                        wire:click="siguientePaso" 
+                    <button type="button"
+                        wire:click="siguientePaso"
                         wire:loading.attr="disabled"
                         class="btn btn-primary rounded-pill px-5 py-2 fw-bold"
                         @if (empty($carrito)) disabled @endif>
-                        
+
                         <span wire:loading wire:target="siguientePaso">
                             <span class="spinner-border spinner-border-sm me-2"></span> Procesando...
                         </span>
-                        
+
                         <span wire:loading.remove wire:target="siguientePaso">
                             @if($pasoActual < $totalPasos)
                                 Continuar a Formulario <i class="ti ti-arrow-right ms-1"></i>
@@ -473,7 +425,7 @@
         }
 
         .bg-label-claro-success { background: #E8FADF; color: #71DD37; }
-        
+
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }

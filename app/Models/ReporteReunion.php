@@ -9,11 +9,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Support\Facades\Storage;
+
 class ReporteReunion extends Model
 {
     use HasFactory;
 
     protected $table = 'reporte_reuniones';
+
+    protected $appends = ['portada_url'];
+
+    public function getPortadaUrlAttribute(): string
+    {
+        if ($this->portada && $this->portada !== '' && $this->portada !== 'default.png') {
+            return tenant_asset('img/reportes-reuniones/' . $this->portada);
+        }
+
+        if ($this->reunion && $this->reunion->portada && $this->reunion->portada !== '' && $this->reunion->portada !== 'default.png') {
+            return $this->reunion->portada_url;
+        }
+
+        return Storage::disk('global_media')->url('reuniones/default.png');
+    }
 
     protected $guarded = [];
 

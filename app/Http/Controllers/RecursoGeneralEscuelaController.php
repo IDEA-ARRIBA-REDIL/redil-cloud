@@ -40,4 +40,56 @@ class RecursoGeneralEscuelaController extends Controller
             'recursos' => $recursos,
         ]);
     }
+
+    /**
+     * Sube un archivo de recurso general mediante fetch/Alpine.js.
+     */
+    public function uploadArchivoRecursoGeneral(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'archivo' => 'required|file|mimes:pdf,docx,xlsx,pptx,jpg,jpeg,png|max:10240',
+        ]);
+
+        $archivo = $request->file('archivo');
+        $extension = $archivo->getClientOriginalExtension();
+        $nombreArchivo = 'recurso-general-'.uniqid().'-'.time().'.'.$extension;
+
+        $directorio = 'archivos/escuelas/recursos-generales';
+
+        try {
+            // Aseguramos que cada carpeta intermedia tenga permisos 0755
+            $currentPath = storage_path('app/public');
+            $relativeParts = explode('/', trim($directorio, '/'));
+            foreach ($relativeParts as $part) {
+                if (empty($part)) {
+                    continue;
+                }
+                $currentPath .= '/'.$part;
+                if (! file_exists($currentPath)) {
+                    @mkdir($currentPath, 0755, true);
+                }
+                @chmod($currentPath, 0755);
+            }
+
+            // Almacenamos el archivo en el disco 'public'
+            $archivo->storeAs($directorio, $nombreArchivo, 'public');
+
+            // Aseguramos que el archivo recién creado tenga permisos 0755
+            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivo}");
+            @chmod($filePath, 0755);
+
+            return response()->json([
+                'success' => true,
+                'nombre' => $nombreArchivo,
+                'ruta_relativa' => "{$directorio}/{$nombreArchivo}",
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error uploading general resource file: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno al subir el archivo.',
+            ], 500);
+        }
+    }
 }

@@ -47,6 +47,7 @@ class ParienteUsuarioController extends Controller
                 ->select(
                     'users.id',
                     'users.foto',
+                    'users.genero',
                     'users.identificacion',
                     'users.primer_nombre',
                     'users.segundo_nombre',
@@ -168,8 +169,8 @@ class ParienteUsuarioController extends Controller
         ) {
 
             if ($rolActivo->hasPermissionTo('personas.lista_asistentes_todos')) {
-                $parientes = DB::table('users')->leftJoin('parientes_usuarios', 'parientes_usuarios.user_id', 'users.id')
-                    ->where('user_id', '!=', null);
+                $parientes = User::query()->leftJoin('parientes_usuarios', 'parientes_usuarios.user_id', 'users.id')
+                    ->where('parientes_usuarios.user_id', '!=', null);
             } else {
 
                 $parientes = auth()
@@ -240,8 +241,7 @@ class ParienteUsuarioController extends Controller
             // / aqui como es una collection, le agrego los registros nuevos que voy a necesitar para construir
             // / la card en la vista
             $pariente->nombreParienteSecundario = $usuarioParienteSecundario->nombre(3);
-            $pariente->fotoParienteSecundario = $usuarioParienteSecundario->foto;
-            $pariente->generoParienteSecundario = $usuarioParienteSecundario->genero;
+            $pariente->fotoParienteSecundarioUrl = $usuarioParienteSecundario->foto_url;
             $pariente->relacion_id = $relacion->id;
             $pariente->responsableParienteSecundario = $relacion->es_el_responsable;
             $pariente->nombre_masculino = $tipoParentesco->nombre_masculino;
@@ -291,8 +291,9 @@ class ParienteUsuarioController extends Controller
         $arrayCamposExtra = $request->informacionCamposExtras ? $request->informacionCamposExtras : []; // $arrayCamposExtra
 
         // / aqui lo que se hace es crear el archivo que se va a crear en el servidor
-        $nombreArchivo = 'informe_parentescos_'.Carbon::now()->format('Y-m-d-H-i-s');
-        $rutaArchivo = "/$configuracion->ruta_almacenamiento/informes/familias/$nombreArchivo.xlsx";
+        $nombreArchivo = 'informe_parentescos_'.Carbon::now()->format('Y-m-d-H-i-s').'.xlsx';
+        $directorio = 'archivos/familia/informe';
+        $rutaArchivo = $directorio . '/' . $nombreArchivo;
 
         // / aqui envio las variables necesarias para ejecutar el controlador del excel y poder general la vista
 
@@ -301,132 +302,17 @@ class ParienteUsuarioController extends Controller
         $campos = $camposRelacionesUsuarios->pluck('value')->toArray();
         array_push($campos, 'parientes_usuarios.id', 'user_id');
 
-        /*
-          ESTE CODIGO LO DEJO ACA PORQUE ES DE EJEMPLO PARA CONSTRIUR LA CONSULTA
-          QUE USE PARA EXPORTAR EL EXCEL
-
-                  //// aqui es para consultar las relaciones segun le pertenezcan todas o solo ministerio
-                  if (
-                      $rolActivo->hasPermissionTo('personas.lista_asistentes_todos') ||
-                      $rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')
-                    ) {
-
-                          if($rolActivo->hasPermissionTo('personas.lista_asistentes_todos'))
-                          {
-
-                              $parientes= ParienteUsuario::leftJoin('users','parientes_usuarios.user_id','users.id')
-                              ->where('user_id','!=',null);
-                          }else{
-
-                            $parientes = auth()
-                            ->user()
-                            ->discipulos('todos')->toQuery()->leftJoin('integrantes_grupo','grupo_id', 'integrantes_grupo.user_id')
-                                  ->leftJoin('parientes_usuarios','parientes_usuarios.user_id','users.id')
-                                  ->where('parientes_usuarios.user_id','!=',null);
-                          }
-
-                      }
-
-
-
-                  /// relaciones segun el asistente
-
-                  if(isset($parametrosBusqueda->buscador_usuario))
-                  {
-                    $parientes=$parientes->where('user_id',$parametrosBusqueda->buscador_usuario);
-
-                  }
-
-
-
-
-                  /// relaciones segun el asistente
-
-                  if(isset($parametrosBusqueda->inputGruposIds) && !isset($parametrosBusqueda->buscador_usuario))
-                  {
-
-                    $grupo=Grupo::find($parametrosBusqueda->inputGruposIds);
-
-                    if ($tipoMinisterioSeleccionado == 0)
-                    {
-                      $gruposIds = $grupo->gruposMinisterio('array');
-
-                      //Agrego el id del grupo que estoy consultado
-                      array_push($gruposIds, $grupo->id);
-
-                      $idsUsers = IntegranteGrupo::whereIn('grupo_id', $gruposIds)
-                        ->select('user_id')
-                        ->pluck('user_id')
-                        ->toArray();
-
-                    } else {
-                      $idsUsers = IntegranteGrupo::where('grupo_id', '=', $grupo->id)
-                        ->select('user_id')
-                        ->pluck('user_id')
-                        ->toArray();
-
-                    }
-                    // aqui traigo solo los ids unicos, debido a que una persona puede estar en varios grupos pero no necesito traer varias veces su relaciones
-
-                    $parientes=$parientes->whereIn('users.id',$idsUsers);
-
-                  };
-
-
-                //$parientes->select('parientes_usuarios.*','users.primer_nombre','users.segundo_nombre', 'users.primer_apellido')->get();
-                $parientes=$parientes->select('parientes_usuarios.*','users.primer_nombre','users.segundo_nombre', 'users.genero','users.primer_apellido')->get();
-                $parientes->map( function($pariente)
-                {
-                  ///aqui tengo que detectar el usuario del otro lado de la relacion o sea el parienteSecundario o parienteB
-                  $usuarioParienteSecundario=User::find($pariente->pariente_user_id);
-                  $tipoParentesco=TipoParentesco::find($pariente->tipo_pariente_id);
-                  /// luego traigo todas las relaciones entre ambos usuarios
-                  $relacion=$usuarioParienteSecundario->parientesDelUsuario()
-                  ->leftJoin('tipos_parentesco', 'parientes_usuarios.tipo_pariente_id', '=', 'tipos_parentesco.id')
-                  ->where('user_id',$usuarioParienteSecundario->id)
-                  ->where('pariente_user_id',$pariente->user_id)
-                  ->select(
-                    'tipos_parentesco.nombre as nombre_parentesco',
-                    'tipos_parentesco.nombre_masculino',
-                    'tipos_parentesco.nombre_femenino',
-                    'parientes_usuarios.es_el_responsable',
-                    'parientes_usuarios.id'
-                  )
-                  ->first();
-
-                    /// aqui como es una collection, le agrego los registros nuevos que voy a necesitar para construir
-                    /// la card en la vista
-                  $pariente->nombreParienteSecundario=$usuarioParienteSecundario->nombre(3);
-                  $pariente->fotoParienteSecundario=$usuarioParienteSecundario->foto;
-                  $pariente->generoParienteSecundario=$usuarioParienteSecundario->genero;
-                  $pariente->relacion_id=$relacion->id;
-                  $pariente->responsableParienteSecundario=$relacion->es_el_responsable;
-                  $pariente->nombre_masculino= $tipoParentesco->nombre_masculino;
-                  $pariente->nombre_femenino= $tipoParentesco->nombre_femenino;
-
-                });
-
-
-              return view('contenido.paginas.familias.exportar.exportarParentescos', [
-                'parientes' => $parientes,
-                'camposRelacionesUsuarios' => $camposRelacionesUsuarios,
-                'arrayCamposInfoPersonal' => $arrayCamposInfoPersonal,
-                'arrayPasosCrecimiento' => $arrayPasosCrecimiento,
-                'arrayDatosCongregacionales' => $arrayDatosCongregacionales,
-                'arrayCamposExtra' => $arrayCamposExtra
-              ]);
-
-        */
-
         Excel::store(
             new ParentescoExport($parametrosBusqueda, $camposRelacionesUsuarios, $arrayCamposInfoPersonal, $arrayPasosCrecimiento, $arrayDatosCongregacionales, $arrayCamposExtra),
             $rutaArchivo,
             'public'
         );
 
+        $downloadUrl = tenant_asset($rutaArchivo);
+
         return back()->with(
             'success',
-            'El informe fue generado con éxito, <a href="'.Storage::url($rutaArchivo).'" class=" link-success fw-bold" download="'.$nombreArchivo.'.xlsx"> descargalo aquí</a>'
+            'El informe fue generado con éxito, <a href="'.$downloadUrl.'" class=" link-success fw-bold" download="'.$nombreArchivo.'"> descargalo aquí</a>'
         );
 
     }

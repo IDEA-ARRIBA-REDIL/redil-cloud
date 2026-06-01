@@ -15,6 +15,7 @@
                 : '');
     $isFront = ($isFront ?? '') == true ? 'Front' : '';
     $contentLayout = isset($container) ? ($container === 'container-xxl' ? 'layout-compact' : 'layout-wide') : '';
+    $configuracion=Configuracion::find(1);
 @endphp
 
 <html lang="{{ session()->get('locale') ?? app()->getLocale() }}"
@@ -45,15 +46,19 @@
     <!-- Canonical SEO -->
     <link rel="canonical" href="{{ config('variables.productPage') ? config('variables.productPage') : '' }}">
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ config('variables.faviconApp') }}" />
+     @if ($configuracion && $configuracion->logo_personalizado && $configuracion->favicon_app)
+    <link rel="icon" type="image/x-icon" href="{{ tenant_asset($configuracion->favicon_app) }}?v=2" />
+  @else
+    <link rel="icon" type="image/x-icon" href="{{ Storage::disk('global_media')->url('favicon-redil.ico') }}?v=2" />
+  @endif
 
     <!-- PWA Config (Estrategia Segura) -->
     <meta name="theme-color" content="{{ config('variables.templateNameColor') }}">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="{{ config('variables.templateName') }}">
-    <link rel="apple-touch-icon" href="{{ url('/pwa-icon.png') }}">
-    <link rel="manifest" href="{{ url('/manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url('/pwa-icon.png') }}?v=2">
+    <link rel="manifest" href="{{ url('/manifest.json') }}?v=2">
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
         crossorigin="anonymous"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -94,13 +99,13 @@
     <!-- PWA Service Worker Registration -->
     <script>
         window.VAPID_PUBLIC_KEY = "{{ config('webpush.vapid.public_key') }}";
-        
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Agregamos ?v=4 para forzar al navegador a descargar la nueva versión
-                navigator.serviceWorker.register('/sw.js?v=4')
+                // Agregamos ?v=5 para forzar al navegador a descargar la nueva versión
+                navigator.serviceWorker.register('/sw.js?v=5')
                     .then(reg => {
-                        console.log('Service Worker registrado (V4 Final)', reg.scope);
+                        console.log('Service Worker registrado (V5 Final)', reg.scope);
                         // Forzar comprobación de actualización imediata
                         reg.update();
                     })

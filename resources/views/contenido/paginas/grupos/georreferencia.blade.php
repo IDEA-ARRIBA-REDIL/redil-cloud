@@ -57,7 +57,7 @@ $isFooter = ($isFooter ?? false);
   // función que crea el pin o marcador
   function crearMarcador(lat, lng){
     let IconoGrupo = L.icon({
-      iconUrl: "{{$configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/pines-mapa/'.$grupo->tipoGrupo->geo_icono) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/default-m.png' }}",
+      iconUrl: "{{ tenant_asset('img/pines-mapa/'.$grupo->tipoGrupo->geo_icono) }}",
       iconSize: [35, 45],
       iconAnchor: [27, 27],
       popupAnchor: [0, -14]

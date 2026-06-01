@@ -2,19 +2,21 @@
 
 namespace App\Livewire\Escuelas;
 
-use App\Models\Periodo;
-use App\Models\Sede;
-use App\Models\MateriaPeriodo;
 use App\Models\HorarioMateriaPeriodo;
-use Livewire\Component;
-use Livewire\Attributes\Rule;
+use App\Models\MateriaPeriodo;
+use App\Models\Periodo;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Rule;
+use Livewire\Component;
 
 class AdminDashboard extends Component
 {
     public $periodos;
+
     public $sedes = [];
+
     public $materiasPeriodo = [];
+
     public $user;
 
     #[Rule('required', message: 'Debe seleccionar un período.')]
@@ -50,8 +52,8 @@ class AdminDashboard extends Component
         $this->validate();
 
         $query = HorarioMateriaPeriodo::query()
-            ->whereHas('materiaPeriodo', fn($q) => $q->where('periodo_id', $this->selectedPeriodoId))
-            ->whereHas('horarioBase.aula.sede', fn($q) => $q->where('sedes.id', $this->selectedSedeId));
+            ->whereHas('materiaPeriodo', fn ($q) => $q->where('periodo_id', $this->selectedPeriodoId))
+            ->whereHas('horarioBase.aula.sede', fn ($q) => $q->where('sedes.id', $this->selectedSedeId));
 
         if ($this->selectedMateriaPeriodoId) {
             $query->where('materia_periodo_id', $this->selectedMateriaPeriodoId);
@@ -66,7 +68,9 @@ class AdminDashboard extends Component
 
     public function render()
     {
-        return view('livewire.escuelas.admin-dashboard')
+        return view('livewire.escuelas.admin-dashboard', [
+            'banners' => \App\Models\BannerEscuela::where('activo', true)->latest()->get(),
+        ])
             ->extends('layouts.layoutMaster')
             ->section('content');
     }

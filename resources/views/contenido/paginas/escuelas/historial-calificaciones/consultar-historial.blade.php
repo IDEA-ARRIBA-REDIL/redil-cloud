@@ -57,7 +57,7 @@
                 @endphp
 
                 <div class="card mb-5 shadow-sm border-primary">
-                    <div class="card-header d-flex justify-content-between align-items-center bg-label-primary p-3">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-label-primary p-3 d-none">
                         <div class="d-flex align-items-center">
                             <div class="avatar avatar-md me-3">
                                 <span class="avatar-initial rounded bg-primary">
@@ -65,10 +65,11 @@
                                 </span>
                             </div>
                             <div>
-                                <h4 class="mb-0 fw-bold text-primary">
+
+                                <h4 class="mb-0 fw-bold text-white">
                                     {{ $mismoNivel ? $mismoNivel->nombre : 'Materias sin nivel definido' }}
                                 </h4>
-                                <small class="text-muted">Resumen de nivel educativo</small>
+                                <small class="text-white">Resumen de nivel educativo</small>
                             </div>
                         </div>
                         <div>
@@ -107,9 +108,9 @@
                                                         @endif
                                                     </h5>
                                                     <div class="btn-group">
-                                                        <a href="{{ route('escuelas.historial.exportar-boletin', $registro->id) }}" 
-                                                            class="btn btn-sm btn-icon btn-outline-secondary rounded-circle" 
-                                                            data-bs-toggle="tooltip" 
+                                                        <a href="{{ route('escuelas.historial.exportar-boletin', $registro->id) }}"
+                                                            class="btn btn-sm btn-icon btn-outline-secondary rounded-circle"
+                                                            data-bs-toggle="tooltip"
                                                             title="Descargar Boletín">
                                                             <i class="ti ti-file-type-pdf"></i>
                                                         </a>

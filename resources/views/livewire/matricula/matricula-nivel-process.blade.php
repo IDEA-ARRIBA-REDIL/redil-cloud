@@ -82,7 +82,7 @@
                             <div class="card-header d-flex justify-content-between align-items-center py-2">
                                 <div class="d-flex align-items-center">
                                      <div class="avatar me-2">
-                                        <img src="{{ Storage::url(config('app.ruta_almacenamiento') . '/img/materias/' . ($materia->portada ?? 'default.png')) }}" alt class="rounded-circle">
+                                        <img src="{{ $materia->portada_url ? $materia->portada_url : asset('storage/global/img/temas/default.png') }}" alt class="rounded-circle">
                                     </div>
                                     <div>
                                         <h6 class="mb-0">{{ $materia->nombre }}</h6>

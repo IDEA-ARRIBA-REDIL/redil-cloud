@@ -16,7 +16,7 @@
 
 @section('vendor-script')
     @vite(['resources/assets/vendor/libs/sweetalert2/sweetalert2.js', 'resources/assets/vendor/libs/select2/select2.js', 'resources/assets/vendor/libs/flatpickr/flatpickr.js', 'resources/assets/vendor/libs/bootstrap-select/bootstrap-select.js'])
-  
+
 
 @endsection
 
@@ -26,7 +26,7 @@
  @include('layouts.status-msn')
     <!-- botonera -->
     <div class="row mb-5 mt-5">
-   
+
         <div class="me-auto ">
             <h4 class="mb-1 fw-semibold text-primary">Materias asociadas </h4>
             <p class="mb-4 text-black">aqui podras crear y gestionar tus materias asociadas </p>
@@ -48,7 +48,7 @@
                     <div class="col equal-height-col  col-12 col-xl-4 col-md-6 mb-4">
                         <div class="h-100 card">
                             <img id="preview-foto" style="height: 100px;" class="card-img-top object-fit-cover"
-                                src="{{ $materia->portada ? Storage::url($configuracion->ruta_almacenamiento . '/img/materias/' . $materia->portada) : Storage::disk('global_media')->url('Banner-escuelas.png') }}"
+                                src="{{ $materia->portada_url ?? Storage::disk('global_media')->url('Banner-escuelas.png')}}"
                                 alt="Portada {{ $materia->nombre }}">
                             <div class="card-header">
                                 <div class="d-flex align-items-start justify-content-between">
@@ -77,12 +77,12 @@
                                                     @method('POST')
                                                     <button type="submit" class="dropdown-item"
                                                         data-nombre="{{ $materia->nombre }}">
-                                                        Eliminar 
+                                                        Eliminar
                                                     </button>
                                                 </form>
                                             </li>
                                         @endif
-                                        
+
                                         </ul>
                                     </div>
                                 </div>

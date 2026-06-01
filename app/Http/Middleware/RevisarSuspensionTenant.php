@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class RevisarSuspensionTenant
@@ -11,11 +12,19 @@ class RevisarSuspensionTenant
     public function handle(Request $request, Closure $next): Response
     {
         $tenant = tenant();
-        
+
         if ($tenant) {
-            $data = is_string($tenant->data) ? json_decode($tenant->data, true) : $tenant->data;
-            if (isset($data['is_suspended']) && $data['is_suspended']) {
-                abort(403, 'El entorno de esta iglesia se encuentra suspendido. Por favor, contacta con REDIL.');
+            Log::withContext([
+                'tenant_id' => $tenant->id,
+            ]);
+            // Verificar estado pendiente de revisión
+            if ($tenant->status === 'pending_review') {
+                return response(view('errors.tenant-pending'), 403);
+            }
+
+            // Verificar estado suspendido (ya sea por columna is_suspended o status)
+            if ($tenant->is_suspended || $tenant->status === 'suspended') {
+                return response(view('errors.tenant-suspended'), 403);
             }
         }
 

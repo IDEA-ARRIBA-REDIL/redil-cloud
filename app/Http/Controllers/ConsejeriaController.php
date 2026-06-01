@@ -236,7 +236,7 @@ class ConsejeriaController extends Controller
             $bandera = 1;
         }
 
-        $consejeros = $query->orderBy('consejeros.id', 'desc')->paginate(9);
+        $consejeros = $query->with('usuario')->orderBy('consejeros.id', 'desc')->paginate(9);
 
         $tiposConsejeria = TipoConsejeria::orderBy('nombre', 'asc')->select('id', 'nombre')->get();
         $sedes = Sede::orderBy('nombre', 'asc')->select('id', 'nombre')->get();

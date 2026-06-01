@@ -260,7 +260,11 @@ $configData = Helper::appClasses();
                 <div class="d-flex align-items-start">
                   <div class="d-flex align-items-start">
                     <div class="avatar avatar-md me-2 my-auto">
-                      <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$encargado->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$encargado->foto }}" alt="Avatar" class="rounded-circle" />
+                      @if($encargado->foto == "default-m.png" || $encargado->foto == "default-f.png")
+                        <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $encargado->inicialesNombre() }} </span>
+                      @else
+                        <img src="{{ $encargado->foto_url }}" alt="Avatar" class="rounded-circle" />
+                      @endif
                     </div>
                     <div class="me-2 ms-1">
                       <h6 class="mb-0">{{ $encargado->nombre(3) }}</h6>
@@ -302,7 +306,11 @@ $configData = Helper::appClasses();
                 <div class="d-flex align-items-start">
                   <div class="d-flex align-items-start">
                     <div class="avatar avatar-md me-2 my-auto">
-                      <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$servidor->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$servidor->foto }}" alt="Avatar" class="rounded-circle" />
+                      @if($servidor->foto == "default-m.png" || $servidor->foto == "default-f.png")
+                        <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $servidor->inicialesNombre() }} </span>
+                      @else
+                        <img src="{{ $servidor->foto_url }}" alt="Avatar" class="rounded-circle" />
+                      @endif
                     </div>
                     <div class="me-2 ms-1">
                       <h6 class="mb-0">{{ $servidor->nombre(3) }}</h6>

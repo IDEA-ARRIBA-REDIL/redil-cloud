@@ -3,12 +3,12 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
-
-class NotificacionGeneral extends Notification
+class NotificacionGeneral extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -28,7 +28,6 @@ class NotificacionGeneral extends Notification
     {
         return ['database', WebPushChannel::class];
     }
-
 
     /**
      * Datos que se almacenan en la tabla notifications (columna data).

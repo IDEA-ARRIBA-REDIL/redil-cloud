@@ -80,8 +80,8 @@ self.addEventListener('push', event => {
   const title = data.titulo || 'REDIL CLOUD';
   const options = {
     body: data.mensaje || 'Nueva notificación',
-    icon: '/assets/img/favicon/logo_crecer.ico',
-    badge: '/assets/img/favicon/logo_crecer.ico', // El iconito blanco que sale en la barra superior del celular
+    icon: '/pwa-icon.png',
+    badge: '/pwa-icon.png', // El iconito blanco que sale en la barra superior del celular
     data: {
       url: data.url || '/' // Guardamos a dónde debe ir si toca la notificación
     }

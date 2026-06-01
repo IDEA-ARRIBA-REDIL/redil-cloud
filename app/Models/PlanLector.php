@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PlanLector extends Model
 {
@@ -26,6 +27,10 @@ class PlanLector extends Model
         'estado',
         'visible_todos',
         'genero',
+    ];
+
+    protected $appends = [
+        'portada_url',
     ];
 
     protected function casts(): array
@@ -157,6 +162,17 @@ class PlanLector extends Model
         return $this->belongsToMany(User::class, 'plan_lector_users', 'plan_lector_id', 'user_id')
             ->withPivot('estado', 'fecha_inscripcion', 'porcentaje_progreso', 'calificacion_usuario')
             ->withTimestamps();
+    }
+
+    public function getPortadaUrlAttribute(): ?string
+    {
+        if (!$this->imagen_url) {
+            return null;
+        }      
+        
+        $filename = basename($this->imagen_url);
+
+        return tenant_asset('img/plan-lector/' . $filename);
     }
 
     /**

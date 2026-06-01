@@ -95,11 +95,7 @@
                     @else
                         <!-- Dummy Video Player Image for mockup -->
                         <div class="ratio ratio-16x9 rounded overflow-hidden shadow-sm bg-dark position-relative d-flex align-items-center justify-content-center">
-                            @if($curso->imagen_portada)
-                                <img src="{{ \Storage::url($configuracion->ruta_almacenamiento.'/img/cursos/'.$curso->imagen_portada) }}" alt="{{ $curso->nombre }}" class="img-fluid w-100 h-100" style="object-fit: cover; opacity: 0.7;">
-                            @else
-                                <img src="https://via.placeholder.com/800x450/343a40/ffffff?text=Video+del+Curso" alt="Video Preview" class="img-fluid w-100 h-100" style="object-fit: cover; opacity: 0.7;">
-                            @endif
+                            <img src="{{ $curso->portada_url }}" alt="{{ $curso->nombre }}" class="img-fluid w-100 h-100" style="object-fit: cover; opacity: 0.7;">
                             <i class="ti ti-player-play-filled position-absolute text-white" style="font-size: 4rem; opacity: 0.8; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); cursor: pointer; color: #e83e8c !important;"></i>
                         </div>
                     @endif

@@ -15,10 +15,13 @@
 
     <!-- ! Hide app brand if navbar-full -->
     @if (!isset($navbarFull))
-        <div style="padding-left: 20px !important;" class="app-brand demo p-0 mb-3">
-            <a href="{{ url('/') }}" class="app-brand-link">
-                <img style="width:150px" class="app-brand-logo" src="{{ config('variables.logoApp') }}">
-               
+        <div style="padding-left: 20px !important;" class="app-brand mt-5 demo p-0 mb-3">
+            <a href="{{ url('/') }}" class="app-brand-link">                
+                <span class="app-brand-logo demo p-0">
+                    @include('_partials.macros', [
+                        'width' => '120px'
+                    ])
+                </span>
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -27,8 +30,7 @@
             </a>
         </div>
         <div>
-             <span style='color:{{ config('variables.templateNameColor') }} !important'
-                    class="app-brand-text demo menu-text fw-bold fs-6">{{ config('variables.templateName') }}</span>
+
         </div>
     @endif
 
@@ -469,7 +471,7 @@
                     @if ($rolActivo->hasPermissionTo('cursos.gestionar_tipos_cargo_cursos'))
                         <li class="menu-item {{ request()->routeIs('cursos.tipos-cargo.index') ? 'active' : '' }}">
                             <a href="{{ route('cursos.tipos-cargo.index') }}" class="menu-link">
-                                <div>Tipos de Cargo</div>
+                                <div>Tipos de cargo</div>
                             </a>
                         </li>
                     @endif

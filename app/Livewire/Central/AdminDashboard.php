@@ -10,10 +10,12 @@ class AdminDashboard extends Component
     public function toggleSuspension($tenantId)
     {
         $tenant = Tenant::findOrFail($tenantId);
-        // En stancl/tenancy v3 $tenant->data es un array por defecto
-        $data = $tenant->data;
-        $data['is_suspended'] = ! ($data['is_suspended'] ?? false);
-        $tenant->data = $data;
+        $tenant->is_suspended = ! $tenant->is_suspended;
+        if ($tenant->is_suspended) {
+            $tenant->status = 'suspended';
+        } else {
+            $tenant->status = 'active'; // o al estado anterior, pero por ahora active
+        }
         $tenant->save();
 
         session()->flash('message', 'Estado del inquilino actualizado.');
@@ -21,7 +23,7 @@ class AdminDashboard extends Component
 
     public function render()
     {
-        $tenants = Tenant::with('domains')->get();
+        $tenants = Tenant::with(['domains', 'plan'])->get();
 
         return view('livewire.central.admin-dashboard', compact('tenants'))
             ->layout('layouts.centralApp');

@@ -2,7 +2,7 @@
 
 return [
 
-  /*
+    /*
   |--------------------------------------------------------------------------
   | Default Filesystem Disk
   |--------------------------------------------------------------------------
@@ -13,9 +13,9 @@ return [
   |
   */
 
-  'default' => env('FILESYSTEM_DISK', 'local'),
+    'default' => env('FILESYSTEM_DISK', 'local'),
 
-  /*
+    /*
   |--------------------------------------------------------------------------
   | Filesystem Disks
   |--------------------------------------------------------------------------
@@ -28,56 +28,54 @@ return [
   |
   */
 
-  'disks' => [
+    'disks' => [
 
-   /* 'local' => [
-      'driver' => 'local',
-      'root' => storage_path('app'),
-      'throw' => false,
-    ],*/
-    
+        'local' => [
+            'driver' => 'local',
+            'root' => storage_path('app'),
+            'throw' => false,
+        ],
 
-    'public' => [
-      'driver' => 'local',
-      'root' => storage_path('app/public'),
-      'url' => env('APP_URL') . '/storage',
-      'visibility' => 'public',
-      'throw' => false,
-    ],
+        'public' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public'),
+            'url' => env('APP_URL').'/storage',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
 
-    
-   's3' => [
-    'driver' => 's3',
-    'key' => env('AWS_ACCESS_KEY_ID'),     // Será null, lo cual es correcto
-    'secret' => env('AWS_SECRET_ACCESS_KEY'), // Será null, lo cual es correcto
-    'region' => env('AWS_DEFAULT_REGION'),
-    'bucket' => env('AWS_BUCKET'),
-    'url' => env('AWS_URL'),
-    'endpoint' => env('AWS_ENDPOINT'),
-    'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-    'throw' => false,
-    // Agrega esta línea para usar tu carpeta 'crecer' como raíz
-    'root' => env('AWS_CARPETA', ''), 
-],
+        's3' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),     // Será null, lo cual es correcto
+            'secret' => env('AWS_SECRET_ACCESS_KEY'), // Será null, lo cual es correcto
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BUCKET'),
+            'url' => env('AWS_URL'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+            // Agrega esta línea para usar tu carpeta 'crecer' como raíz
+            'root' => env('AWS_CARPETA', ''),
+        ],
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | Disco Globalizado para Medios Generales (Evita Multi-Tenancy)
     |--------------------------------------------------------------------------
     | Se utiliza para imágenes estáticas, configuraciones globales y seeders
     | que deben ser visibles para todas las iglesias sin distinción.
     */
-    'global_media' => [
-      'driver' => 'local',
-      'root' => storage_path('app/global_media'),
-      'url' => env('APP_URL') . '/global_media',
-      'visibility' => 'public',
-      'throw' => false,
+        'global_media' => [
+            'driver' => 'local',
+            'root' => storage_path('app/global_media'),
+            'url' => env('APP_URL').'/global_media',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
     ],
 
-  ],
-
-  /*
+    /*
   |--------------------------------------------------------------------------
   | Symbolic Links
   |--------------------------------------------------------------------------
@@ -88,10 +86,10 @@ return [
   |
   */
 
-  'links' => [
-    public_path('storage') => storage_path('app/public'),
-    // Enlace para el disco globalizado de medios
-    public_path('global_media') => storage_path('app/global_media'),
-  ],
+    'links' => [
+        public_path('storage') => storage_path('app/public'),
+        // Enlace para el disco globalizado de medios
+        public_path('global_media') => storage_path('app/global_media'),
+    ],
 
 ];

@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Support\Facades\Storage;
-use App\Models\Configuracion;
 
 class AlumnoRespuestaItem extends Model
 {
@@ -53,24 +51,39 @@ class AlumnoRespuestaItem extends Model
         return Attribute::make(
             get: function () {
                 // Si no hay nombre de archivo en la base de datos, no hay nada que hacer.
-                if (!$this->enlace_documento_alumno) {
+                if (! $this->enlace_documento_alumno) {
                     return null;
                 }
 
-                // 1. Obtenemos la configuración que contiene la carpeta base (ej: 'iglesia1')
-                $configuracion = Configuracion::find(1);
+                /*
+                 * OPTIMIZACIÓN (Fix #6):
+                 * Antes este accesor hacía dos lazy loads silenciosos:
+                 *   1. Configuracion::first() — una query a BD que era innecesaria porque la ruta
+                 *      se construye solo con el periodo_id, no con datos de configuración.
+                 *   2. $this->itemCalificado y $this->itemCalificado->materiaPeriodo se cargaban
+                 *      de forma lazy (una query por cada fila de la lista de calificaciones).
+                 *
+                 * La solución:
+                 *   - Se eliminó Configuracion::first() completamente (no se usaba para construir la URL).
+                 *   - Se usa loadMissing() para cargar las relaciones anidadas eficientemente si no
+                 *     están ya en memoria (ideal cuando se llama sobre una colección en lugar de uno a uno).
+                 *     Al hacer ->with(['itemCalificado.materiaPeriodo']) en la consulta del maestro, este
+                 *     loadMissing() no genera queries adicionales — ya está en caché.
+                 */
+                $this->loadMissing('itemCalificado.materiaPeriodo');
 
-                // 2. Navegamos por las relaciones para obtener el ID del periodo
-                $item = ItemCorteMateriaPeriodo::find($this->itemCalificado->id);
+                $item = $this->itemCalificado;
+                if (! $item || ! $item->materiaPeriodo) {
+                    return null;
+                }
+
                 $periodoId = $item->materiaPeriodo->periodo_id;
 
+                // 3. Reconstruimos la ruta relativa TAL COMO la guardamos (sin barra inicial para tenant_asset)
+                $rutaRelativa = "archivos/escuelas/periodo-{$periodoId}/respuestas/{$this->enlace_documento_alumno}";
 
-
-                // 3. Reconstruimos la ruta relativa TAL COMO la guardamos
-                $rutaRelativa = "{$configuracion->ruta_almacenamiento}/archivos/escuelas/periodo-" . $periodoId . "/respuestas/{$this->enlace_documento_alumno}";
-
-                // 4. Usamos el helper de Laravel para generar la URL pública completa
-                return Storage::disk('public')->url($rutaRelativa);
+                // 4. Usamos el helper oficial de Tenancy para generar la URL pública del tenant
+                return tenant_asset($rutaRelativa);
             },
         );
     }

@@ -438,7 +438,7 @@ $configData = Helper::appClasses();
                             @if($persona->foto == "default-m.png" || $persona->foto == "default-f.png")
                                 <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $persona->inicialesNombre() }} </span>
                             @else
-                                <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) }}" alt="{{ $persona->foto }}" alt="avatar" class="rounded-circle">
+                                <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$persona->foto) }}" alt="{{ $persona->foto }}" alt="avatar" class="rounded-circle">
                             @endif
                           </div>
                           <div class="d-flex justify-content-between flex-grow-1">
@@ -485,7 +485,7 @@ $configData = Helper::appClasses();
                             @if($persona->foto == "default-m.png" || $persona->foto == "default-f.png")
                                 <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $persona->inicialesNombre() }} </span>
                             @else
-                                <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) }}" alt="{{ $persona->foto }}" alt="avatar" class="rounded-circle">
+                                <img src="{{ tenant_asset('img/usuarios/foto-usuario/'.$persona->foto) }}" alt="{{ $persona->foto }}" alt="avatar" class="rounded-circle">
                             @endif
                           </div>
                           <div class="d-flex justify-content-between flex-grow-1">

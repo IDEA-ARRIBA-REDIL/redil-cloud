@@ -11,13 +11,22 @@ const PwaPush = {
    * Inicializa el sistema de suscripción.
    */
   async init() {
+    console.log('[PWA-Push] init() - Notification.permission:', Notification.permission);
+    console.log('[PWA-Push] serviceWorker in navigator:', 'serviceWorker' in navigator);
+    console.log('[PWA-Push] PushManager in window:', 'PushManager' in window);
+    console.log('[PWA-Push] VAPID_PUBLIC_KEY:', this.publicKey ? 'PRESENTE' : 'FALTANTE');
+
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Este navegador no soporta notificaciones Push.');
+      console.warn('[PWA-Push] Este navegador no soporta notificaciones Push.');
       return;
     }
 
-    // Verificamos si ya tenemos permiso
+    if (this.publicKey) {
+      console.log('[PWA-Push] VAPID_PUBLIC_KEY:', this.publicKey.substring(0, 20) + '...');
+    }
+
     if (Notification.permission === 'granted') {
+      console.log('[PWA-Push] Permiso ya concedido, suscribiendo...');
       this.subscribeUser();
     }
   },
@@ -47,29 +56,32 @@ const PwaPush = {
    */
   async subscribeUser() {
     try {
+      console.log('[PWA-Push] subscribeUser() iniciado');
       const registration = await navigator.serviceWorker.ready;
+      console.log('[PWA-Push] Service Worker ready:', registration);
 
-      // Verificamos si ya existe una suscripción
       let subscription = await registration.pushManager.getSubscription();
+      console.log('[PWA-Push] getSubscription():', subscription);
 
       if (subscription) {
-        // Si existe, la enviamos para asegurar que el servidor esté actualizado
+        console.log('[PWA-Push] Suscripción existente encontrada, enviando al servidor...');
         await this.sendSubscriptionToServer(subscription);
         return;
       }
 
-      // Si no existe, creamos una nueva
       const subscribeOptions = {
         userVisibleOnly: true,
         applicationServerKey: this.urlBase64ToUint8Array(this.publicKey)
       };
+      console.log('[PWA-Push] Creando nueva suscripción con VAPID key...');
 
       subscription = await registration.pushManager.subscribe(subscribeOptions);
-      console.log('Usuario suscrito correctamente.');
+      console.log('[PWA-Push] Usuario suscrito correctamente:', subscription.endpoint);
 
       await this.sendSubscriptionToServer(subscription);
     } catch (error) {
-      console.error('Error al suscribir al usuario:', error);
+      console.error('[PWA-Push] Error al suscribir al usuario:', error);
+      console.error('[PWA-Push] Error stack:', error.stack);
     }
   },
 
@@ -78,6 +90,7 @@ const PwaPush = {
    */
   async sendSubscriptionToServer(subscription) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    console.log('[PWA-Push] Enviando suscripción a /push-subscriptions...');
 
     try {
       const response = await fetch('/push-subscriptions', {
@@ -89,13 +102,16 @@ const PwaPush = {
         body: JSON.stringify(subscription)
       });
 
+      const data = await response.json();
+      console.log('[PWA-Push] Respuesta del servidor:', data);
+
       if (!response.ok) {
-        throw new Error('Error al enviar la suscripción al servidor.');
+        throw new Error('Error al enviar la suscripción al servidor: ' + JSON.stringify(data));
       }
 
-      console.log('Suscripción sincronizada con el servidor.');
+      console.log('[PWA-Push] Suscripción sincronizada con el servidor.');
     } catch (error) {
-      console.error('Error de sincronización:', error);
+      console.error('[PWA-Push] Error de sincronización:', error);
     }
   },
 

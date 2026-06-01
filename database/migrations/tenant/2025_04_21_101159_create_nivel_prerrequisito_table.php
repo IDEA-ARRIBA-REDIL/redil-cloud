@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tipo_grupos', function (Blueprint $table) {
-            $table->string('portada')->nullable()->after('imagen');
+        Schema::create('nivel_prerrequisito', function (Blueprint $table) {
+            $table->id();
+            $table->integer('nivel_id');
+            $table->integer('nivel_prerrequisito_id');
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('tipo_grupos', function (Blueprint $table) {
-            $table->dropColumn('portada');
-        });
+        Schema::dropIfExists('nivel_prerrequisito');
     }
 };

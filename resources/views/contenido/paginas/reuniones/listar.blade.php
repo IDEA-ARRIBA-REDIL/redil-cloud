@@ -164,7 +164,7 @@ use App\Models\Sede;
                 <div class="card-body d-flex flex-row p-3">
 
                   <div class="card-icon me-1 ">
-                    <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/reuniones/icono_indicador.png') : Storage::url($configuracion->ruta_almacenamiento.'/img/reuniones/icono_indicador.png') }}" alt="icono" class="me-2" width="50">
+                    <img src="{{ Storage::disk('global_media')->url('reuniones/indicadores/Todos.png') }}" alt="icono" class="me-2" width="50">
                   </div>
 
                   <div class="card-title mb-0 lh-sm">
@@ -185,7 +185,7 @@ use App\Models\Sede;
                 <div class="card-body d-flex flex-row p-3">
 
                   <div class="card-icon me-1 ">
-                    <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/reuniones/icono_indicador.png') : Storage::url($configuracion->ruta_almacenamiento.'/img/reuniones/icono_indicador.png') }}" alt="icono" class="me-2" width="50">
+                    <img src="{{ Storage::disk('global_media')->url('reuniones/indicadores/Dados-de-baja.png') }}" alt="icono" class="me-2" width="50">
                   </div>
 
                   <div class="card-title mb-0 lh-sm">
@@ -257,7 +257,7 @@ use App\Models\Sede;
 
   <div class="col-12 col-xl-4 col-md-6">
     <div class="card ">
-       <img class="card-img-top object-fit-cover" style="height: 130px;"  src="{{ $configuracion->version == 1  ? Storage::url($configuracion->ruta_almacenamiento.'/img/reuniones/'.$reunion->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img/reuniones/'.$reunion->portada)}}" alt="Card imagen " />
+       <img class="card-img-top object-fit-cover" style="height: 130px;"  src="{{ $reunion->portada_url }}" alt="Card imagen " />
 
       <div class="card-header">
         <div class="d-flex justify-content-between">
@@ -268,7 +268,7 @@ use App\Models\Sede;
           </div>
           <div class="ms-auto">
             <div class="dropdown zindex-2 p-1 float-end">
-              <button type="button" class="btn dropdown-toggle hide-arrow btn btn-sm waves-effect text-black border p-1" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
+              <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
               <ul class="dropdown-menu dropdown-menu-end">
                 @if ($rolActivo->hasPermissionTo('reuniones.opcion_modificar_reunion') && $reunion->trashed()==FALSE)
                 <li><a class="dropdown-item" href="{{ route('reuniones.editar', $reunion) }}">Editar</a></li>

@@ -24,7 +24,7 @@
                 <div class="col-12 col-xl-4 col-md-6 mb-4">
                     <div class="card h-100 border-0 shadow-sm hover-shadow transition-all" style="border-radius: 15px;">
                         @if ($nivel->portada)
-                            <img src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/niveles/' . $nivel->portada) }}"
+                            <img src="{{ tenant_asset('img/niveles/' . $nivel->portada) }}"
                                 class="card-img-top object-fit-cover"
                                 style="height: 150px; border-top-left-radius: 15px; border-top-right-radius: 15px;"
                                 alt="Portada {{ $nivel->nombre }}">

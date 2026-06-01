@@ -159,7 +159,8 @@ $configData = Helper::appClasses();
 
   $(".selectAllItems").click(function() {
     var selectId = $(this).data('select');
-    $('#' + selectId).select2('destroy').find('option').prop('selected', 'selected').end().select2();
+    $("#" + selectId + " > option").prop("selected", true);
+    $("#" + selectId).trigger("change");
   });
 </script>
 
@@ -280,7 +281,7 @@ $configData = Helper::appClasses();
                     @if($indicador->es_global)
                       <img src="{{ Storage::disk('global_media')->url($indicador->imagen) }}" alt="icono" class="me-2" width="50">
                     @else
-                      <img src="{{ tenant_asset('tipos-usuarios/'. $indicador->imagen) }}" alt="icono" class="me-2" width="50">
+                      <img src="{{ tenant_asset( $indicador->imagen) }}" alt="icono" class="me-2" width="50">
                     @endif
                     </div>
 
@@ -379,7 +380,7 @@ $configData = Helper::appClasses();
             </div>
             <div class="ms-auto">
               <div class="dropdown zindex-2 p-1 float-end">
-                <button type="button" class="btn dropdown-toggle hide-arrow btn btn-sm waves-effect text-black border p-1" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
+                <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect"  data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
                 <ul class="dropdown-menu dropdown-menu-end">
 
                   @can('verPerfilUsuarioPolitica', [$persona, 'principal'])

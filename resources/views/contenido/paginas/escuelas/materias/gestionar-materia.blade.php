@@ -69,6 +69,7 @@
 
         // Cargar contenido existente en el editor
         editor.root.innerHTML = `{!! $materia->descripcion !!}`;
+        $('#descripcion').val(editor.root.innerHTML);
 
         editor.on('text-change', (delta, oldDelta, source) => {
             $('#descripcion').val(editor.root.innerHTML);
@@ -80,13 +81,10 @@
             'use strict';
 
             var croppingImage = document.querySelector('#croppingImage'),
-                //img_w = document.querySelector('.img-w'),
                 cropBtn = document.querySelector('.crop'),
                 croppedImg = document.querySelector('.cropped-img'),
-                dwn = document.querySelector('.download'),
                 upload = document.querySelector('#cropperImageUpload'),
-                modalImg = document.querySelector('.modal-img'),
-                inputResultado = document.querySelector('#imagen-recortada'),
+                inputNombreArchivo = document.querySelector('#portada-nombre'),
                 cropper = '';
 
             setTimeout(() => {
@@ -100,7 +98,6 @@
             // on change show image with crop options
             upload.addEventListener('change', function(e) {
                 if (e.target.files.length) {
-                    console.log(e.target.files[0]);
                     var fileType = e.target.files[0].type;
                     if (fileType === 'image/gif' || fileType === 'image/jpeg' || fileType === 'image/png') {
                         cropper.destroy();
@@ -123,20 +120,51 @@
                 }
             });
 
-            // crop on click
+            // crop on click - upload async
             cropBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                // get result to data uri
-                let imgSrc = cropper
-                    .getCroppedCanvas({
+                if (cropper) {
+                    // Mostrar indicador de carga
+                    const statusEl = document.querySelector('#upload-status');
+                    statusEl.classList.remove('d-none');
+
+                    cropper.getCroppedCanvas({
                         height: 376,
-                        width: 1693 // input value
-                    })
-                    .toDataURL();
-                croppedImg.src = imgSrc;
-                inputResultado.value = imgSrc;
-                //dwn.setAttribute('href', imgSrc);
-                //dwn.download = 'imagename.png';
+                        width: 1693
+                    }).toBlob(function(blob) {
+                        // Crear FormData con el archivo
+                        const formData = new FormData();
+                        formData.append('portada', blob, 'portada.png');
+
+                        // Subir via fetch
+                        fetch('{{ route("materias.uploadPortada") }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            statusEl.classList.add('d-none');
+                            if (data.success) {
+                                // Mostrar preview
+                                croppedImg.src = cropper.getCroppedCanvas({ height: 376, width: 1693 }).toDataURL();
+                                // Guardar nombre del archivo en input hidden
+                                inputNombreArchivo.value = data.nombre;
+                            } else {
+                                alert(data.message || 'Error al subir la imagen.');
+                            }
+                        })
+                        .catch(error => {
+                            statusEl.classList.add('d-none');
+                            alert('Error de conexión al subir la imagen.');
+                        });
+                    }, 'image/png');
+                } else {
+                    alert('Por favor, selecciona una imagen primero y espera a que cargue el recortador.');
+                }
             });
         });
     </script>
@@ -179,16 +207,16 @@
                 // Validación 1: Asistencias mínimas si está habilitado
                 if ($('#togglehabilitarAsistencias').is(':checked')) {
                     let asistencias = $('#asistenciasMinimas').val();
-                    if (!asistencias || asistencias < 1) {
-                        errors.push('Debe ingresar un valor válido (≥1) para asistencias mínimas');
+                    if (asistencias === '' || asistencias < 0) {
+                        errors.push('Debe ingresar un valor válido (≥0) para asistencias mínimas');
                     }
                 }
 
                 // Validación 2: Alertas de inasistencia si está habilitado
                 if ($('#togglehabilitarInasistencias').is(':checked')) {
                     let alerta = $('#cantidadInasistencias').val();
-                    if (!alerta || alerta < 1) {
-                        errors.push('Debe ingresar un valor válido (≥1) para alerta de inasistencias');
+                    if (alerta === '' || alerta < 0) {
+                        errors.push('Debe ingresar un valor válido (≥0) para alerta de inasistencias');
                     }
                 }
 
@@ -343,16 +371,16 @@
                 // Validación 1: Asistencias mínimas si está habilitado (ya lo tienes)
                 if ($('#togglehabilitarAsistencias').is(':checked')) {
                     let asistencias = $('#asistenciasMinimas').val();
-                    if (!asistencias || asistencias < 1) {
-                        errors.push('Debe ingresar un valor válido (≥1) para asistencias mínimas');
+                    if (asistencias === '' || asistencias < 0) {
+                        errors.push('Debe ingresar un valor válido (≥0) para asistencias mínimas');
                     }
                 }
 
                 // Validación 2: Alertas de inasistencia si está habilitado (ya lo tienes)
                 if ($('#togglehabilitarInasistencias').is(':checked')) {
                     let alerta = $('#cantidadInasistencias').val();
-                    if (!alerta || alerta < 1) {
-                        errors.push('Debe ingresar un valor válido (≥1) para alerta de inasistencias');
+                    if (alerta === '' || alerta < 0) {
+                        errors.push('Debe ingresar un valor válido (≥0) para alerta de inasistencias');
                     }
                 }
 
@@ -430,14 +458,20 @@
         <div class="col-md-12">
             <div class="card mb-4 rounded rounded-3">
                 <img id="preview-foto" class="cropped-img card-img-top mb-2"
-                    src="{{ Storage::url($configuracion->ruta_almacenamiento . '/img/materias/' . $materia->portada) }}"
+                    src="{{ $materia->portada_url ??  Storage::disk('global_media')->url('Banner-escuelas.png') }}"
                     alt="Portada {{ $escuela->nombre }}">
                 <button type="button" style="background-color: rgba(255, 255, 255, 0.5);"
                     class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2"
                     data-bs-toggle="modal" data-bs-target="#modalFoto">Cambiar portada <i style="padding-left: 5px;"
                         class="ti ti-camera"></i></button>
-                <input class="form-control d-none" type="text" value="{{ old('foto') }}" id="imagen-recortada"
-                    name="foto">
+                {{-- Input hidden para guardar solo el nombre del archivo --}}
+                <input class="form-control d-none" type="text" value="" id="portada-nombre"
+                    name="portada_nombre">
+                {{-- Indicador de carga --}}
+                <div id="upload-status" class="d-none small text-muted p-2">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Subiendo imagen...
+                </div>
 
                 <div class="row p-4 m-0 d-flex card-body">
                     <h5 class="mb-1 fw-semibold text-black">Actualizar materia: {{ $materia->nombre }}</h5>
@@ -517,7 +551,7 @@
                         <div class="row">
                             <div id="" class="mb-3 col-12 col-md-6 ">
                                 <label for="limiteReportes" class="form-label">Limite reportes asistencia </label>
-                                <input value="{{ $materia->limite_reporte_asistencias }}" type="number"
+                                <input value="{{ $materia->limite_reporte_asistencias }}" type="number" min="0"
                                     class="form-control @error('limiteReportes') is-invalid @enderror" id="limiteReportes"
                                     name="limiteReportes">
                                 @error('limiteReportes')
@@ -573,7 +607,7 @@
                             <div id="labelCantidadReportesSemana" class="mb-3  col-md-6  col-sm-12 ">
                                 <label for="cantidadReportesSemana" class="form-label">Cantidad de reportes
                                     semana</label><br>
-                                <input value="{{ $materia->cantidad_limite_reportes_semana }}" type="number"
+                                <input value="{{ $materia->cantidad_limite_reportes_semana }}" type="number" min="0"
                                     class="form-control @error('cantidadReportesSemana') is-invalid @enderror"
                                     id="cantidadReportesSemana" name="cantidadReportesSemana">
                                 @error('cantidadReportesSemana')
@@ -582,7 +616,7 @@
                             </div>
                             <div id="labeldiasPlazoReporte" class="mb-3  col-md-6  col-sm-12 ">
                                 <label for="diasPlazoReporte" class="form-label">dias de plazo reparto</label><br>
-                                <input value="{{ $materia->dias_plazo_reporte }}" type="number"
+                                <input value="{{ $materia->dias_plazo_reporte }}" type="number" min="0"
                                     class="form-control @error('diasPlazoReporte') is-invalid @enderror"
                                     id="diasPlazoReporte" name="diasPlazoReporte">
                                 @error('diasPlazoReporte')
@@ -616,7 +650,7 @@
                                 class="mb-3 {{ $materia->habilitar_asistencias ? '' : 'd-none' }} col-md-6  col-sm-12">
                                 <label for="asistenciasMinimas" class="form-label">Asistencias Mínimas
                                     (opcional)</label><br>
-                                <input value="{{ $materia->asistencias_minimas }}" type="number"
+                                <input value="{{ $materia->asistencias_minimas }}" type="number" min="0"
                                     class="form-control @error('asistenciasMinimas') is-invalid @enderror"
                                     id="asistenciasMinimas" name="asistenciasMinimas">
                                 @error('asistenciasMinimas')
@@ -648,7 +682,7 @@
                                 class="mb-3  {{ $materia->habilitar_inasistencias ? '' : 'd-none' }}  col-md-6  col-sm-12">
                                 <label for="asistenciasAlerta" class="form-label">Cantidad inasistencia
                                     (alerta)</label><br>
-                                <input value="{{ $materia->asistencias_minima_alerta }}" type="number"
+                                <input value="{{ $materia->asistencias_minima_alerta }}" type="number" min="0"
                                     class="form-control @error('cantidadInasistencias') is-invalid @enderror"
                                     id="cantidadInasistencias" name="cantidadInasistencias">
                                 @error('cantidadInasistencias')
@@ -695,7 +729,7 @@
                             <div class="mb-3  col-12 col-md-6">
                                 <label for="obligatorio" class="form-label">¿Cáracter obligatorio?</label><br>
                                 <label class="switch switch-lg">
-                                    <input type="checkbox" {{ $materia->habilitar_traslado ? 'checked' : '' }}
+                                    <input type="checkbox" {{ $materia->caracter_obligatorio ? 'checked' : '' }}
                                         class="switch-input" id="toggleobligatorio" name="obligatorio" />
                                     <span class="switch-toggle-slider">
                                         <span class="switch-on">Si</span>
@@ -718,7 +752,7 @@
                 @if ($escuela->tipo_matriculas == 'niveles_agrupados')
                     <div class="mb-3 col-12 col-md-4">
                         <label for="nivel_id" class="form-label">Nivel (opcional)</label><br>
-                        <input type="number" class="form-control" id="nivel_id" name="nivel_id">
+                        <input type="number" class="form-control" id="nivel_id" name="nivel_id" min="0">
                         @error('nivel_id')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
@@ -801,7 +835,7 @@
                     <label for="descripcion" class="form-label">Descripción (opcional)</label>
 
                     <div id="editor"></div>
-                    <input id="descripcion" name="descripción" class='d-none'>
+                    <input id="descripcion" name="descripción" class='d-none' value="{!! old('descripción', $materia->descripcion) !!}">
                 </div>
                 @error('descripción')
                     <span class="text-danger small">{{ $message }}</span>

@@ -54,22 +54,22 @@ $configData = Helper::appClasses();
 </script>
 
 <script>
-    ///confirmación para eliminar tema
-    $('.confirmacionEliminar').on('click', function() {
+    ///confirmación para eliminar portada
+    $('.confirmacionEliminarPortada').on('click', function() {
 
         let id = $(this).data('id');
 
         Swal.fire({
-            title: "¿Estás seguro que deseas eliminar el banner?"
-            , html: "Esta acción no es reversible."
+            title: "¿Estás seguro que deseas eliminar la portada?"
+            , html: "Esta acción restablecerá la portada de la actividad a la predeterminada global."
             , icon: "warning"
-            , showCancelButton: false
-            , confirmButtonText: 'Si, eliminar'
+            , showCancelButton: true
+            , confirmButtonText: 'Sí, eliminar'
             , cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                $('#eliminarBanner').attr('action', "/actividades/" + id + "/eliminar-banner");
-                $('#eliminarBanner').submit();
+                $('#eliminarPortadaForm').attr('action', "/actividades/" + id + "/eliminar-portada");
+                $('#eliminarPortadaForm').submit();
             }
         })
     });
@@ -104,8 +104,8 @@ $configData = Helper::appClasses();
     var croppingImagePortada = document.querySelector('#croppingImagePortada'),
       cropBtnPortada = document.querySelector('#cropSubmitPortada'),
       upload = document.querySelector('#cropperImageUploadPortada'),
-      inputResultadoPortada = document.querySelector('#imagen-recortada-portada'),
-      formularioPortada = document.querySelector('#formularioPortada'),
+      inputPortadaNombre = document.querySelector('#portada-nombre'),
+      uploadStatus = document.querySelector('#upload-status'),
       cropper = '';
 
     setTimeout(() => {
@@ -116,14 +116,11 @@ $configData = Helper::appClasses();
       });
     }, 1000);
 
-    // on change show image with crop options
     upload.addEventListener('change', function(e) {
       if (e.target.files.length) {
-        console.log(e.target.files[0]);
         var fileType = e.target.files[0].type;
         if (fileType === 'image/gif' || fileType === 'image/jpeg' || fileType === 'image/png') {
           cropper.destroy();
-          // start file reader
           const reader = new FileReader();
           reader.onload = function(e) {
             if (e.target.result) {
@@ -142,20 +139,68 @@ $configData = Helper::appClasses();
       }
     });
 
-    // crop on click
     cropBtnPortada.addEventListener('click', function(e) {
       e.preventDefault();
 
-      // get result to data uri
-      let imgSrc = cropper
-        .getCroppedCanvas({
-          width: 1000 // input value
-        })
-        .toDataURL();
-
-      inputResultadoPortada.value = imgSrc;
       cropBtnPortada.disabled = true;
-      formularioPortada.submit();
+      uploadStatus.style.display = 'block';
+      uploadStatus.textContent = 'Subiendo imagen...';
+      uploadStatus.className = 'text-primary fw-bold';
+
+      cropper.getCroppedCanvas({
+        width: 1000
+      }).toBlob(function(blob) {
+        var formData = new FormData();
+        formData.append('portada', blob, 'portada.png');
+        formData.append('_token', '{{ csrf_token() }}');
+
+        fetch('{{ route("actividades.uploadPortada") }}', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            inputPortadaNombre.value = data.nombre;
+            uploadStatus.textContent = 'Imagen subida correctamente.';
+            uploadStatus.className = 'text-success fw-bold';
+
+            fetch('{{ route("actividades.updatePortada", $actividad) }}', {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+              },
+              body: JSON.stringify({ portada_nombre: data.nombre })
+            })
+            .then(response => response.json())
+            .then(res => {
+              if (res.success) {
+                uploadStatus.textContent = 'Portada guardada correctamente.';
+                setTimeout(() => { location.reload(); }, 1000);
+              } else {
+                uploadStatus.textContent = 'Error al guardar la portada.';
+                uploadStatus.className = 'text-danger fw-bold';
+                cropBtnPortada.disabled = false;
+              }
+            })
+            .catch(() => {
+              uploadStatus.textContent = 'Error al guardar la portada.';
+              uploadStatus.className = 'text-danger fw-bold';
+              cropBtnPortada.disabled = false;
+            });
+          } else {
+            uploadStatus.textContent = 'Error al subir la imagen.';
+            uploadStatus.className = 'text-danger fw-bold';
+            cropBtnPortada.disabled = false;
+          }
+        })
+        .catch(() => {
+          uploadStatus.textContent = 'Error al subir la imagen.';
+          uploadStatus.className = 'text-danger fw-bold';
+          cropBtnPortada.disabled = false;
+        });
+      }, 'image/png');
     });
   });
 </script>
@@ -178,24 +223,32 @@ $configData = Helper::appClasses();
         <button type="button" class="btn-primary rounded-pill float-start waves-effect waves-light  text-white p-3" data-bs-toggle="modal" data-bs-target="#modalPortada">
 
             <i style="padding-left: 5px;" class="ti ti-camera"></i>
-            <span class="align-middle">crear banner </span>
+            <span class="align-middle">Subir portada </span>
         </button>
     </div>
-    @if (isset($bannerActual->id))
+    @if ($actividad->portada && $actividad->portada !== 'default.png')
     <div class="card">
-        <div class="card-header">
-            <h5>Banner Actividad </h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Portada Actividad (Personalizada)</h5>
+            <button data-id="{{ $actividad->id }}" type="button" class="btn btn-danger confirmacionEliminarPortada float-end py-2 px-3">
+                <i class="ti ti-trash"></i> Eliminar Portada
+            </button>
         </div>
         <div class="card-body">
 
-            <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $bannerActual->nombre) : $configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $bannerActual->nombre }}" alt="Banner image" class="rounded-top">
+            <img src="{{ $actividad->portada_url }}" alt="Portada actividad" class="rounded-top w-100">
 
         </div>
+    </div>
+    @else
+    <div class="card">
+        <div class="card-header">
+            <h5>Portada Predeterminada (Global)</h5>
+        </div>
+        <div class="card-body">
 
-        <div class="card-footer">
-            <button data-id="{{ $bannerActual->id }}" type="button" class="btn ms-3 btn-editar-input btn-secondary confirmacionEliminar float-end p-1_5">
-                <i class="ti ti-trash"></i>
-            </button>
+            <img src="{{ $actividad->portada_url }}" alt="Portada predeterminada" class="rounded-top w-100">
+
         </div>
     </div>
     @endif
@@ -232,50 +285,47 @@ $configData = Helper::appClasses();
 
 
 <!--/ modal - form para cargar el banner de la actividad -->
-<form id="formularioPortada" role="form" class="forms-sample" method="POST" action="{{ route('actividades.uploadBanner', $actividad) }}" enctype="multipart/form-data">
-    @csrf
-    @method('PATCH')
-    <div class="modal fade modal-img" id="modalPortada" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-simple modal-edit-user">
-            <div class="modal-content">
-                <div class="modal-body">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    <div class="text-center mb-4">
-                        <h3 class="mb-2"><i class="ti ti-camera  ti-lg"></i> Subir banner</h3>
-                        <p class="text-muted">Selecciona y tu banner</p>
-                    </div>
+<div class="modal fade modal-img" id="modalPortada" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-simple modal-edit-user">
+        <div class="modal-content">
+            <div class="modal-body">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="text-center mb-4">
+                    <h3 class="mb-2"><i class="ti ti-camera  ti-lg"></i> Subir portada</h3>
+                    <p class="text-muted">Selecciona y recorta tu portada</p>
+                </div>
 
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="mb-2">
-                                <label class="mb-2"><span class="fw-bold">Paso #1</span> Selecciona tu
-                                    banner</label><br>
-                                <input class="form-control" type="file" id="cropperImageUploadPortada">
-                            </div>
-                            <div class="mb-2">
-                                <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta tu
-                                    banner</label><br>
-                                <center>
-                                    <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
-                                </center>
-                                <input class="form-control d-none" type="text" value="" id="imagen-recortada-portada" name="foto">
-                            </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-2">
+                            <label class="mb-2"><span class="fw-bold">Paso #1</span> Selecciona tu
+                                portada</label><br>
+                            <input class="form-control" type="file" id="cropperImageUploadPortada">
                         </div>
+                        <div class="mb-2">
+                            <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta tu
+                                portada</label><br>
+                            <center>
+                                <img src="{{ Storage::url('generales/img/otros/placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
+                            </center>
+                            <input class="form-control d-none" type="text" value="" id="portada-nombre" name="portada_nombre">
+                        </div>
+                        <div id="upload-status" style="display:none;" class="text-center mt-2"></div>
                     </div>
                 </div>
-                <div class="modal-footer text-center">
-                    <div class="col-12 text-center">
-                        <button type="submit" id="cropSubmitPortada" class="btn btn-primary me-sm-3 me-1">Guardar</button>
-                        <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
-                    </div>
+            </div>
+            <div class="modal-footer text-center">
+                <div class="col-12 text-center">
+                    <button type="button" id="cropSubmitPortada" class="btn btn-primary me-sm-3 me-1">Guardar</button>
+                    <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
                 </div>
             </div>
         </div>
     </div>
-    <!--/ modal foto -->
-</form>
-<!--/ modal - form para eliminar banner-->
-<form id="eliminarBanner" method="POST" action="">
+</div>
+<!--/ modal foto -->
+<!--/ modal - form para eliminar portada-->
+<form id="eliminarPortadaForm" method="POST" action="">
     @csrf
 </form>
 

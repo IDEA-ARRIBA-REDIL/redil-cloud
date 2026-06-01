@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Gestión de Tipos de Ofrenda')
+@section('title', 'Tipos de ofrenda')
 
 {{-- Estilos de SweetAlert2 --}}
 @section('vendor-style')
@@ -8,12 +8,16 @@
 @endsection
 
 @section('content')
+
 <div class="container mt-4">
+  <h4 class="mb-1 fw-semibold text-primary">Tipos de ofrenda</h4>
+  <p class="mb-8 text-black">Aquí podrás gestionar los tipos de ofrenda</p>
+
   <div class="row g-4 mb-4">
     <div class="col-12 text-end">
       <!-- Botón Crear -->
       <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#crearModal">
-        <i class="ti ti-plus me-1"></i> Nuevo Tipo de Ofrenda
+        <i class="ti ti-plus me-1"></i> Nuevo tipo de ofrenda
       </button>
     </div>
   </div>

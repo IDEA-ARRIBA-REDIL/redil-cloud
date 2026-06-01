@@ -54,7 +54,7 @@
                                 </div>
                             @elseif (isset($alumno))
                                 <div class="avatar avatar-xl">
-                                    <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $alumno->foto) : $configuracion->ruta_almacenamiento . '/img/usuarios/foto-usuario/' . $alumno->foto }}"
+                                    <img src="{{ tenant_asset('img/usuarios/foto-usuario/' . $alumno->foto) }}"
                                         alt="{{ $alumno->foto }}"
                                         class="avatar-initial rounded-circle border border-3 border-white bg-info">
                                     {{-- El class aquí podría ser solo rounded-circle --}}

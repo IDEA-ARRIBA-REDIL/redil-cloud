@@ -64,7 +64,6 @@ $configData = Helper::appClasses();
 
 </style>
 
-
 @vite(['resources/assets/vendor/scss/pages/page-profile.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss', 'resources/assets/vendor/libs/pickr/pickr-themes.scss', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'])
 
 @endsection
@@ -86,18 +85,9 @@ $configData = Helper::appClasses();
 @section('content')
 @include('layouts.status-msn')
 
-<div  class="row p-0 mb-3">
+<div class="row p-0 mb-3">
     <div class="col-12">
-        @if (isset($actividad->banner->id))
-        <div style="background-image: url('{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre) : $configuracion->ruta_almacenamiento . '/img/banner-actividad/' . $actividad->banner->nombre }}') !important" class="text-center banner-img">
-        </div>
-        @else
-        <div class="bg-label-primary rounded text-center">
-            <img class="img-fluid " src="{{ asset('assets/img/illustrations/girl-with-laptop.png') }}" alt="Card girl image" width="140" />
-        </div>
-        @endif
-
-
+        <div style="background-image: url('{{ $actividad->portada_url }}') !important" class="text-center banner-img"></div>
     </div>
 </div>
 <div style="margin:2% 5%" class="row  g-6">

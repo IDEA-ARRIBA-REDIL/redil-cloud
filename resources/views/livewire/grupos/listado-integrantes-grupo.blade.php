@@ -13,19 +13,19 @@
         <div class="col equal-height-col col-lg-4 col-md-4 col-sm-6 col-12">
             <!-- esta linea es para igualar en altura todas las col e igualar la altura de las cards -->
           <div  class="h-100 card border rounded">
-            <img class="card-img-top object-fit-cover" style="height: 100px;" src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img//usuarios/banner-usuario/'.$persona->portada) : Storage::url($configuracion->ruta_almacenamiento.'/img//usuarios/banner-usuario/'.$persona->portada)  }}" alt="portada {{$persona->primer_nombre}}" />
+            <img class="card-img-top object-fit-cover" style="height: 100px;" src="{{ $persona->banner_url }}" alt="portada {{$persona->primer_nombre}}" />
 
             <div class="card-body">
 
               <div class="user-profile-header d-flex flex-row text-start mb-2 ">
                 <div class="flex-grow-1 mt-n5 mx-auto text-start">
-                  @if($persona->foto == "default-m.png" || $persona->foto == "default-f.png")
+                  @if(!$persona->foto || $persona->foto == "default-m.png" || $persona->foto == "default-f.png")
                   <div class="avatar avatar-xl">
                     <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $persona->inicialesNombre() }} </span>
                   </div>
                   @else
                   <div class="avatar avatar-xl">
-                    <img src="{{ $configuracion->version == 1 ? Storage::url($configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto) : $configuracion->ruta_almacenamiento.'/img/usuarios/foto-usuario/'.$persona->foto }}" alt="{{ $persona->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
+                    <img src="{{ $persona->foto_url }}" alt="{{ $persona->foto }}" class="avatar-initial rounded-circle border border-3 border-white bg-info">
                   </div>
                   @endif
                 </div>

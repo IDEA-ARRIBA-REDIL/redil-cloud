@@ -19,10 +19,10 @@
       @if($grupos && count($grupos) >0)
       @foreach($grupos as $grupo)
       <a href="{{ $redirect ? route($redirect, $grupo) : 'javascript:;'}}" @if($multiple) wire:click="seleccionarGrupos({{$grupo->id}})" @else wire:click="seleccionarGrupo({{$grupo->id}})" @endif class="dropdown-item d-flex align-items-center p-2 mb-1 border">
-        <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupo->tipoGrupo->color ?? '#000000' }}">
-          <i class="ti ti-users-group text-white" style="font-size: 3.0rem !important"></i>
+        <div class="flex-shrink-0 me-3">
+          <img src="{{ $grupo->tipoGrupo->imagen_url }}" alt="Icono {{ $grupo->tipoGrupo->nombre }}" class="rounded" style="width: 50px; height: 50px; object-fit: contain;padding: 4px;">
         </div>
-        <div class="flex-grow-1 me-2">
+        <div class="flex-grow-1 me-2 text-black">
           <p class="fs-7 text-wrap m-0">{{ $grupo->nombre }}</p>
           <p class="fs-7 text-wrap fw-bold m-0">ID: {{ $grupo->id }} | {{ $grupo->tipoGrupo->nombre }}</p>
           @foreach ($grupo->encargados as $encargado)
