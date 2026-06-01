@@ -65,6 +65,16 @@ Homestead.yaml
 # ─── Seguridad / Claves ───────────────────────────────────────────────────────
 deploy_key
 
+# ─── Documentos internos / Archivos del agente (no van al repo) ─────────────
+ACTA_ENTREGA_REDIL_CLOUD.md
+AGENTS.md
+ARCHITECTURE.md
+ERRORES_DE_SEGURIDAD.md
+erroresBDPostgresql.md
+plan_migracion_multitenant.md
+"acciones del agente.md"
+"agente juan_carlos.md"
+
 # ─── Archivos generados en el servidor (no van al repo) ──────────────────────
 # Nota: config/tenants.php y routes/tenant.php son generados automáticamente
 /config/tenants.php
