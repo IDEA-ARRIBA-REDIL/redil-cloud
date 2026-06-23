@@ -2,23 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Configuracion;
-use App\Models\EstadoCivil;
-use App\Models\EstadoPasoCrecimientoUsuario;
-use App\Models\EstadoTareaConsolidacion;
-use App\Models\PasoCrecimiento;
 use App\Models\PlanLector;
-use App\Models\PlanLectorCategoria;
-use App\Models\RangoEdad;
+use App\Models\Configuracion;
 use App\Models\Sede;
-use App\Models\TareaConsolidacion;
+use App\Models\EstadoCivil;
+use App\Models\RangoEdad;
 use App\Models\TipoUsuario;
-use Carbon\Carbon;
+use App\Models\PasoCrecimiento;
+use App\Models\EstadoPasoCrecimientoUsuario;
+use App\Models\TareaConsolidacion;
+use App\Models\EstadoTareaConsolidacion;
+use App\Models\PlanLectorCategoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-
+use Carbon\Carbon;
 class PlanLectorController extends Controller
 {
     /**
@@ -39,11 +38,11 @@ class PlanLectorController extends Controller
     public function lectura(PlanLector $plan, $dia = null)
     {
         $configuracion = Configuracion::find(1);
-
+        
         return view('contenido.paginas.plan-lector.lectura', [
             'plan' => $plan,
             'dia_inicial' => $dia,
-            'configuracion' => $configuracion,
+            'configuracion' => $configuracion
         ]);
     }
 
@@ -56,24 +55,23 @@ class PlanLectorController extends Controller
 
         // Evitar que el usuario se inscriba si no cumple con las restricciones (Validación del backend)
         $puedeVer = PlanLector::forUser($usuario)->where('planes_lectores.id', $plan->id)->exists();
-
-        if (! $puedeVer || ! $plan->estado) {
+        
+        if (!$puedeVer || !$plan->estado) {
             return back()->with('error', 'No tienes permitido acceder a este plan lector en estos momentos.');
         }
 
         // Crear la relación (attach lanza error si el unique la rechaza pero validamos antes)
-        if (! $usuario->planesLectoresInscritos()->where('plan_lector_id', $plan->id)->exists()) {
+        if (!$usuario->planesLectoresInscritos()->where('plan_lector_id', $plan->id)->exists()) {
             $usuario->planesLectoresInscritos()->attach($plan->id, [
                 'estado' => 'inscrito',
                 'fecha_inscripcion' => now(),
-                'porcentaje_progreso' => 0,
+                'porcentaje_progreso' => 0
             ]);
         }
 
         // Redirigir directamente al visor de lectura.
-        return redirect()->route('planes-lectores.lectura', $plan->slug)->with('success', '¡Te has inscrito exitosamente a '.$plan->titulo.'!');
+        return redirect()->route('planes-lectores.lectura', $plan->slug)->with('success', '¡Te has inscrito exitosamente a ' . $plan->titulo . '!');
     }
-
     /**
      * Muestra la lista de planes lectores para administración.
      */
@@ -96,19 +94,19 @@ class PlanLectorController extends Controller
             $planesQuery->where(function ($query) use ($palabras) {
                 foreach ($palabras as $palabra) {
                     if (trim($palabra) !== '') {
-                        $term = '%'.trim($palabra).'%';
-
+                        $term = '%' . trim($palabra) . '%';
+                        
                         // Normalizamos acentos tanto en la columna como en el término de búsqueda para PostgreSQL
-                        $query->where(DB::raw("TRANSLATE(planes_lectores.titulo, 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU')"), 'ILIKE', DB::raw("TRANSLATE('".$term."', 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU')"));
+                        $query->where(DB::raw("TRANSLATE(planes_lectores.titulo, 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU')"), 'ILIKE', DB::raw("TRANSLATE('" . $term . "', 'áéíóúÁÉÍÓÚ', 'aeiouAEIOU')"));
                     }
                 }
             });
         }
 
-        if (! empty($categoriasSeleccionadas)) {
-            $planesQuery->whereHas('categorias', function ($q) use ($categoriasSeleccionadas) {
-                $q->whereIn('plan_lector_categorias.id', $categoriasSeleccionadas);
-            });
+        if (!empty($categoriasSeleccionadas)) {
+             $planesQuery->whereHas('categorias', function ($q) use ($categoriasSeleccionadas) {
+                 $q->whereIn('plan_lector_categorias.id', $categoriasSeleccionadas);
+             });
         }
 
         if ($estado !== null && $estado !== '') {
@@ -116,7 +114,7 @@ class PlanLectorController extends Controller
         }
 
         // Restricciones según permisos
-        if (! $rolActivo->hasPermissionTo('planes_lectores.listar_todos_planes_lectores')) {
+        if (!$rolActivo->hasPermissionTo('planes_lectores.listar_todos_planes_lectores')) {
             if ($rolActivo->hasPermissionTo('planes_lectores.listar_solo_mis_planes_lectores')) {
                 $planesQuery->where('autor_id', auth()->id());
             } else {
@@ -134,24 +132,24 @@ class PlanLectorController extends Controller
         $bandera = 0;
 
         if ($buscar) {
-            $tagsBusqueda[] = (object) [
+            $tagsBusqueda[] = (object)[
                 'field' => 'buscar_plan',
                 'fieldAux' => 'buscar_plan_offcanvas',
                 'value' => $buscar,
-                'label' => 'Búsqueda: '.$buscar,
+                'label' => 'Búsqueda: ' . $buscar
             ];
             $bandera = 1;
         }
 
-        if (! empty($categoriasSeleccionadas)) {
+        if (!empty($categoriasSeleccionadas)) {
             foreach ($categoriasSeleccionadas as $catId) {
                 $cat = $categorias->where('id', $catId)->first();
                 if ($cat) {
-                    $tagsBusqueda[] = (object) [
+                    $tagsBusqueda[] = (object)[
                         'field' => 'categorias',
                         'fieldAux' => null,
                         'value' => $cat->id,
-                        'label' => 'Categoría: '.$cat->nombre,
+                        'label' => 'Categoría: ' . $cat->nombre
                     ];
                 }
             }
@@ -160,11 +158,11 @@ class PlanLectorController extends Controller
 
         if ($estado !== null && $estado !== '') {
             $estadoStr = $estado == 1 ? 'Activos' : 'Inactivos';
-            $tagsBusqueda[] = (object) [
+            $tagsBusqueda[] = (object)[
                 'field' => 'estado',
                 'fieldAux' => null,
                 'value' => $estado,
-                'label' => 'Estado: '.$estadoStr,
+                'label' => 'Estado: ' . $estadoStr
             ];
             $bandera = 1;
         }
@@ -224,7 +222,7 @@ class PlanLectorController extends Controller
         try {
             DB::beginTransaction();
 
-            $plan = new PlanLector;
+            $plan = new PlanLector();
             $plan->titulo = $request->titulo;
             $plan->slug = Str::slug($request->titulo);
             $plan->descripcion = $request->descripcion;
@@ -238,17 +236,17 @@ class PlanLectorController extends Controller
                 $imagenPartes = explode(';base64,', $request->imagen_base64);
                 if (isset($imagenPartes[1])) {
                     $imagenBase64 = base64_decode($imagenPartes[1]);
-
+                    
                     $extension = 'jpg';
                     if (preg_match('/^data:image\/(\w+);base64/', $request->imagen_base64, $type)) {
                         $extension = strtolower($type[1]);
                     }
 
-                    $nombreFoto = 'plan-'.time().'.'.$extension;
+                    $nombreFoto = 'plan-' . time() . '.' . $extension;
                     $pathPlanLector = 'img/plan-lector';
 
                     // Guardar usando Storage en la carpeta del tenant
-                    Storage::put($pathPlanLector.'/'.$nombreFoto, $imagenBase64);
+                    Storage::put($pathPlanLector . '/' . $nombreFoto, $imagenBase64);
 
                     // Guardamos únicamente el nombre del archivo en la base de datos
                     $plan->imagen_url = $nombreFoto;
@@ -263,7 +261,7 @@ class PlanLectorController extends Controller
             }
 
             // Guardar restricciones
-            if (! $plan->visible_todos) {
+            if (!$plan->visible_todos) {
                 if ($request->sedes) {
                     $plan->sedes()->sync($request->sedes);
                 }
@@ -283,7 +281,7 @@ class PlanLectorController extends Controller
                         if (isset($paso['id']) && isset($paso['estado'])) {
                             $plan->procesosRequisito()->attach($paso['id'], [
                                 'estado_paso_crecimiento_usuario_id' => $paso['estado'],
-                                'indice' => $index,
+                                'indice' => $index
                             ]);
                         }
                     }
@@ -295,7 +293,7 @@ class PlanLectorController extends Controller
                         if (isset($tarea['id']) && isset($tarea['estado'])) {
                             $plan->tareasRequisito()->attach($tarea['id'], [
                                 'estado_tarea_consolidacion_id' => $tarea['estado'],
-                                'indice' => $index,
+                                'indice' => $index
                             ]);
                         }
                     }
@@ -308,8 +306,7 @@ class PlanLectorController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            return back()->with('error', 'Error al crear el plan lector: '.$e->getMessage())->withInput();
+            return back()->with('error', 'Error al crear el plan lector: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -393,16 +390,16 @@ class PlanLectorController extends Controller
                 // Borrar imagen anterior si existe y no es el placeholder
                 if ($plan->imagen_url && strpos($plan->imagen_url, 'placeholder') === false) {
                     $oldFilename = basename($plan->imagen_url);
-
+                    
                     // Intentar borrar de img/plan-lector
-                    if (Storage::exists('img/plan-lector/'.$oldFilename)) {
-                        Storage::delete('img/plan-lector/'.$oldFilename);
+                    if (Storage::exists('img/plan-lector/' . $oldFilename)) {
+                        Storage::delete('img/plan-lector/' . $oldFilename);
                     }
                     // Intentar borrar de img/planes_lectores (ruta heredada)
-                    if (Storage::exists('img/planes_lectores/'.$oldFilename)) {
-                        Storage::delete('img/planes_lectores/'.$oldFilename);
+                    if (Storage::exists('img/planes_lectores/' . $oldFilename)) {
+                        Storage::delete('img/planes_lectores/' . $oldFilename);
                     }
-
+                    
                     // Intentar borrar por compatibilidad física directa en public_path si existiese
                     $oldPath = public_path($plan->imagen_url);
                     if (file_exists($oldPath)) {
@@ -413,18 +410,18 @@ class PlanLectorController extends Controller
                 $imagenPartes = explode(';base64,', $request->imagen_base64);
                 if (isset($imagenPartes[1])) {
                     $imagenBase64 = base64_decode($imagenPartes[1]);
-
+                    
                     $extension = 'jpg';
                     if (preg_match('/^data:image\/(\w+);base64/', $request->imagen_base64, $type)) {
                         $extension = strtolower($type[1]);
                     }
 
-                    $nombreFoto = 'plan-'.time().'.'.$extension;
+                    $nombreFoto = 'plan-' . time() . '.' . $extension;
                     $pathPlanLector = 'img/plan-lector';
 
                     // Guardar usando Storage en la carpeta del tenant
-                    Storage::put($pathPlanLector.'/'.$nombreFoto, $imagenBase64);
-
+                    Storage::put($pathPlanLector . '/' . $nombreFoto, $imagenBase64);
+                    
                     // Guardamos únicamente el nombre del archivo en la base de datos
                     $plan->imagen_url = $nombreFoto;
                 }
@@ -436,7 +433,7 @@ class PlanLectorController extends Controller
             $plan->categorias()->sync($request->categorias ?? []);
 
             // Guardar restricciones
-            if (! $plan->visible_todos) {
+            if (!$plan->visible_todos) {
                 $plan->sedes()->sync($request->sedes ?? []);
                 $plan->estadosCiviles()->sync($request->estadosCiviles ?? []);
                 $plan->rangosEdad()->sync($request->rangosEdad ?? []);
@@ -452,7 +449,7 @@ class PlanLectorController extends Controller
                         if (isset($paso['id']) && isset($paso['estado'])) {
                             $plan->procesosRequisito()->attach($paso['id'], [
                                 'estado_paso_crecimiento_usuario_id' => $paso['estado'],
-                                'indice' => $index,
+                                'indice' => $index
                             ]);
                         }
                     }
@@ -464,7 +461,7 @@ class PlanLectorController extends Controller
                         if (isset($tarea['id']) && isset($tarea['estado'])) {
                             $plan->tareasRequisito()->attach($tarea['id'], [
                                 'estado_tarea_consolidacion_id' => $tarea['estado'],
-                                'indice' => $index,
+                                'indice' => $index
                             ]);
                         }
                     }
@@ -485,8 +482,7 @@ class PlanLectorController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
-            return back()->with('error', 'Error al actualizar el plan lector: '.$e->getMessage())->withInput();
+            return back()->with('error', 'Error al actualizar el plan lector: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -503,10 +499,10 @@ class PlanLectorController extends Controller
             // Borrar imagen física
             if ($plan->imagen_url && strpos($plan->imagen_url, 'placeholder') === false) {
                 $filename = basename($plan->imagen_url);
-
+                
                 // Intentar borrar de img/plan-lector
-                if (Storage::exists('img/plan-lector/'.$filename)) {
-                    Storage::delete('img/plan-lector/'.$filename);
+                if (Storage::exists('img/plan-lector/' . $filename)) {
+                    Storage::delete('img/plan-lector/' . $filename);
                 }
             }
 
@@ -514,18 +510,18 @@ class PlanLectorController extends Controller
 
             return redirect()->route('planes-lectores.gestionar')->with('success', 'Plan lector eliminado correctamente.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al eliminar el plan lector: '.$e->getMessage());
+            return back()->with('error', 'Error al eliminar el plan lector: ' . $e->getMessage());
         }
     }
-
     /**
      * Muestra la vista con el componente Livewire para gestionar los días y contenidos.
      */
     public function gestionarContenido(PlanLector $plan)
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        
 
-        // Puedes cambiar esto a un permiso específico si es necesario,
+        // Puedes cambiar esto a un permiso específico si es necesario, 
         // de momento reutiliza el permiso de modificar plan lector.
         $rolActivo->verificacionDelPermiso('planes_lectores.opcion_modificar_plan_lector');
 
@@ -542,14 +538,13 @@ class PlanLectorController extends Controller
         $rolActivo->verificacionDelPermiso('planes_lectores.opcion_modificar_plan_lector');
 
         try {
-            $plan->estado = ! $plan->estado;
+            $plan->estado = !$plan->estado;
             $plan->save();
 
             $mensaje = $plan->estado ? 'Plan lector activado correctamente.' : 'Plan lector inactivado correctamente.';
-
             return back()->with('success', $mensaje);
         } catch (\Exception $e) {
-            return back()->with('error', 'Error al cambiar el estado del plan lector: '.$e->getMessage());
+            return back()->with('error', 'Error al cambiar el estado del plan lector: ' . $e->getMessage());
         }
     }
 
@@ -571,7 +566,7 @@ class PlanLectorController extends Controller
         } else {
             $fechaInicio = now()->startOfMonth();
             $fechaFin = now()->endOfDay();
-            $rangoFechas = $fechaInicio->format('Y-m-d').' a '.$fechaFin->format('Y-m-d');
+            $rangoFechas = $fechaInicio->format('Y-m-d') . ' a ' . $fechaFin->format('Y-m-d');
         }
 
         // 2. Filtro de Sede
@@ -604,10 +599,10 @@ class PlanLectorController extends Controller
         $esMensual = $fechaInicio->diffInDays($fechaFin) > 30;
         $formatoAgrupacionSql = $esMensual ? "TO_CHAR(fecha_inscripcion, 'YYYY-MM')" : "TO_CHAR(fecha_inscripcion, 'YYYY-MM-DD')";
         $formatoAgrupacionLecturaSql = $esMensual ? "TO_CHAR(fecha_completado, 'YYYY-MM')" : "TO_CHAR(fecha_completado, 'YYYY-MM-DD')";
-
+        
         // Gráfico de Actividad (Línea)
         $actividadDiaria = (clone $queryInscripciones)
-            ->select(DB::raw($formatoAgrupacionSql.' as fecha'), DB::raw('COUNT(*) as total'))
+            ->select(DB::raw($formatoAgrupacionSql . ' as fecha'), DB::raw('COUNT(*) as total'))
             ->groupBy('fecha')
             ->orderBy('fecha')
             ->get();
@@ -615,12 +610,10 @@ class PlanLectorController extends Controller
         $lecturasDiariasQuery = DB::table('plan_lector_dia_users')
             ->join('users', 'plan_lector_dia_users.user_id', '=', 'users.id')
             ->whereBetween('plan_lector_dia_users.fecha_completado', [$fechaInicio, $fechaFin]);
+        
+        if ($sedeId) { $lecturasDiariasQuery->where('users.sede_id', $sedeId); }
 
-        if ($sedeId) {
-            $lecturasDiariasQuery->where('users.sede_id', $sedeId);
-        }
-
-        $lecturasDiarias = $lecturasDiariasQuery->select(DB::raw($formatoAgrupacionLecturaSql.' as fecha'), DB::raw('COUNT(*) as total'))
+        $lecturasDiarias = $lecturasDiariasQuery->select(DB::raw($formatoAgrupacionLecturaSql . ' as fecha'), DB::raw('COUNT(*) as total'))
             ->groupBy('fecha')
             ->orderBy('fecha')
             ->get();
@@ -632,10 +625,10 @@ class PlanLectorController extends Controller
 
         $tempInicio = $esMensual ? $fechaInicio->copy()->startOfMonth() : $fechaInicio->copy();
         $tempFin = $fechaFin->copy();
-
+        
         $intervalo = $esMensual ? 'P1M' : 'P1D';
         $formatoPHP = $esMensual ? 'Y-m' : 'Y-m-d';
-
+        
         $periodo = new \DatePeriod($tempInicio, new \DateInterval($intervalo), $tempFin->addSecond());
         foreach ($periodo as $dt) {
             $f = $dt->format($formatoPHP);
@@ -649,7 +642,7 @@ class PlanLectorController extends Controller
         $topPlanes = (clone $queryInscripciones)
             ->join('planes_lectores', 'plan_lector_users.plan_lector_id', '=', 'planes_lectores.id')
             ->select(
-                'planes_lectores.titulo',
+                'planes_lectores.titulo', 
                 DB::raw('COUNT(*) as total'),
                 DB::raw('AVG(plan_lector_users.porcentaje_progreso) as progreso_promedio')
             )
@@ -665,9 +658,7 @@ class PlanLectorController extends Controller
             ->join('plan_lector_categorias', 'categoria_plan_lector.plan_lector_categoria_id', '=', 'plan_lector_categorias.id')
             ->whereBetween('plan_lector_users.fecha_inscripcion', [$fechaInicio, $fechaFin]);
 
-        if ($sedeId) {
-            $distribucionCategoriasQuery->where('users.sede_id', $sedeId);
-        }
+        if ($sedeId) { $distribucionCategoriasQuery->where('users.sede_id', $sedeId); }
 
         $topCategorias = (clone $distribucionCategoriasQuery)
             ->select('plan_lector_categorias.nombre', DB::raw('COUNT(*) as total'))
@@ -685,7 +676,7 @@ class PlanLectorController extends Controller
                 'autores.foto',
                 'autores.primer_nombre',
                 'autores.primer_apellido',
-                DB::raw("CONCAT(autores.primer_nombre, ' ', autores.primer_apellido) as name"),
+                DB::raw("CONCAT(autores.primer_nombre, ' ', autores.primer_apellido) as name"), 
                 DB::raw('COUNT(*) as total')
             )
             ->groupBy('autores.id', 'autores.foto', 'autores.primer_nombre', 'autores.primer_apellido')

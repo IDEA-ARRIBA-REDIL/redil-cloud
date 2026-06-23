@@ -33,7 +33,6 @@ class NotificacionService
         // 2. Si no existe o está desactivada, salimos
         if (! $config || ! $config->activo) {
             \Illuminate\Support\Facades\Log::warning("Notificación '{$slug}' abortada: No existe en la base de datos o está inactiva.");
-
             return false;
         }
 

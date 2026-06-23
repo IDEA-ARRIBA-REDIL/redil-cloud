@@ -26,6 +26,7 @@ class PermisoSeeder extends Seeder
         $consolidadorMedellin = Role::findByName('Consolidador Medellin');
         $consolidadorBogota = Role::findByName('Consolidador Bogota');
         $cajero = Role::findByName('Cajero PDP');
+        $intercesor = Role::findByName('Intercesor');
         // $coordinador = Role::findByName('Coordinador');
 
         // Personas
@@ -1595,6 +1596,36 @@ class PermisoSeeder extends Seeder
 
         // Peticiones
         Permission::firstOrCreate([
+            'titulo' => 'subitem_gestionar_intercesores',
+            'descripcion' => '',
+            'name' => 'peticiones.subitem_gestionar_intercesores',
+        ])->syncRoles([$superAdmin, $administrador]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'boton_nuevo_intercesor',
+            'descripcion' => '',
+            'name' => 'peticiones.boton_nuevo_intercesor',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'opcion_editar_intercesor',
+            'descripcion' => '',
+            'name' => 'peticiones.opcion_editar_intercesor',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'opcion_activar_desactivar_intercesor',
+            'descripcion' => '',
+            'name' => 'peticiones.opcion_activar_desactivar_intercesor',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'opcion_eliminar_intercesor',
+            'descripcion' => '',
+            'name' => 'peticiones.opcion_eliminar_intercesor',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
             'titulo' => 'crear_peticion_otros',
             'descripcion' => 'Permite crear peticiones para otras personas o externos',
             'name' => 'peticiones.crear_peticion_otros',
@@ -1610,7 +1641,7 @@ class PermisoSeeder extends Seeder
             'titulo' => 'item_peticiones',
             'descripcion' => '',
             'name' => 'peticiones.item_peticiones',
-        ])->syncRoles([$superAdmin, $lider]);
+        ])->syncRoles([$superAdmin, $lider, $intercesor]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_mis_peticiones',
@@ -1619,16 +1650,16 @@ class PermisoSeeder extends Seeder
         ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
-            'titulo' => 'subitem_panel_peticiones',
+            'titulo' => 'subitem_dashboard_peticiones',
             'descripcion' => '',
-            'name' => 'peticiones.subitem_panel_peticiones',
+            'name' => 'peticiones.subitem_dashboard_peticiones',
         ])->syncRoles([$superAdmin, $lider]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_peticiones',
             'descripcion' => '',
             'name' => 'peticiones.subitem_gestionar_peticiones',
-        ])->syncRoles([$superAdmin, $lider]);
+        ])->syncRoles([$superAdmin, $lider, $intercesor]);
 
         Permission::firstOrCreate([
             'titulo' => 'lista_peticiones_todas',
@@ -1640,7 +1671,7 @@ class PermisoSeeder extends Seeder
             'titulo' => 'lista_peticiones_solo_ministerio',
             'descripcion' => '',
             'name' => 'peticiones.lista_peticiones_solo_ministerio',
-        ])->syncRoles([$lider]);
+        ])->syncRoles([$lider, $intercesor]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_eliminar',
@@ -1659,6 +1690,7 @@ class PermisoSeeder extends Seeder
             'descripcion' => '',
             'name' => 'peticiones.boton_descargar_excel',
         ])->syncRoles([$superAdmin]);
+        
 
         // Padres
         Permission::firstOrCreate([
@@ -1684,6 +1716,8 @@ class PermisoSeeder extends Seeder
             'descripcion' => '',
             'name' => 'padres.opcion_modificar_hijo',
         ]);
+
+
 
         // Escuelas
         Permission::firstOrCreate([
@@ -2455,6 +2489,12 @@ class PermisoSeeder extends Seeder
             'descripcion' => '',
             'name' => 'configuraciones.subitem_tipo_pagos',
         ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'subitem_tipo_de_peticiones',
+            'descripcion' => '',
+            'name' => 'configuraciones.subitem_tipo_de_peticiones',
+        ])->syncRoles([]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_videos',

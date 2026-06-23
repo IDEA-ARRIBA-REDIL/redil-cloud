@@ -496,7 +496,7 @@ $configData = Helper::appClasses();
                   </div>
                   @if($configuracion->favicon_app)
                     <div class="mt-2 d-flex align-items-center gap-2">
-                      <img src="{{ tenant_asset($configuracion->favicon_app) }}" alt="Favicon actual" style="width: 32px; height: 32px; object-fit: contain; background: #2d2d2d; padding: 3px; border-radius: 4px;">
+                      <img src="{{ tenant_asset('img/branding/'.$configuracion->favicon_app) }}" alt="Favicon actual" style="width: 32px; height: 32px; object-fit: contain; background: #2d2d2d; padding: 3px; border-radius: 4px;">
                       <span class="badge bg-label-secondary">{{ basename($configuracion->favicon_app) }}</span>
                     </div>
                   @endif

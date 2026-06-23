@@ -385,7 +385,7 @@ $configData = Helper::appClasses();
 
       <div class="col-3 col-md-8 d-flex justify-content-end">
         @if($rolActivo->hasPermissionTo('consejeria.boton_nuevo_consejero'))
-        <button type="button" class="btn btn-primary px-2 px-md-3" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCrearConsejero"><span class="d-none d-md-block fw-semibold">Nuevo consejero</span><i class="ti ti-plus ms-1"></i> </button>
+        <button type="button" class="btn btn-primary px-2 px-md-5 rounded-pill" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCrearConsejero"><span class="d-none d-md-block">Nuevo consejero</span><i class="ti ti-plus ms-1"></i> </button>
         @endif
       </div>
     </div>
@@ -584,7 +584,7 @@ $configData = Helper::appClasses();
               <small class="fw-semibold text-black">{{ $consejero->dias_maximos_futuro }} días</small>
             </div>
 
-              <div class="col-12 mt-1">
+            <div class="col-12 mt-1">
               <small class="text-black">Tipo de consejerias asignadas:</small>
               <div>
                   @forelse ($consejero->tipoConsejerias as $tipo)

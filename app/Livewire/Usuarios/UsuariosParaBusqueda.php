@@ -37,78 +37,37 @@ class UsuariosParaBusqueda extends Component
     public $placeholder;
 
     // placeholder del campo input
-    public $obligatorio = false;
-
-    // si es TRUE coloca el asterisco para indicar que el input es obligatorio
-    public $queUsuariosCargar;
-
-    // Para saber si carga 'todos' los usuarios o los 'discipulos'
-    public $soloVerificados = true;
-
-    // Trae los usuarios con email verificado
-    public $tipoBuscador;
-
-    // Parametro para saber si es de tipo = lista, multiple o unico.
-    public $conDadosDeBaja;
-
-    // Para saber si carga con los dados de baja o solo los dados de alta.
-    public $modulo;
-
-    // esta variable nos ayuda identificar de que modulo es para programar su comportamiento en particular, por ejemplo si es para seleccionar los encargados de un grupo.
-    public $usuarioSeleccionadoId;
-
-    // Cuando el tipoBuscador = unico va a precargar este usuario
-    public $usuariosSeleccionadosIds = [];
-
-    // Cuando el tipoBuscador = multiple va precargar estos usuarios
-    public $grupo = null;
-
-    // Puedo enviar por parametro el grupo, necesario por ejemplo para añadir un encargado
-    public $estiloSeleccion = null;
-
-    // Si es null es el estilo basico que es (foto, nombre y tipo de usuario)
-    public $redirect = null;
-    // si existe re dirije a una ruta especifica
+    public $obligatorio = false;  // si es TRUE coloca el asterisco para indicar que el input es obligatorio
+    public $queUsuariosCargar;  // Para saber si carga 'todos' los usuarios o los 'discipulos'
+    public $soloVerificados = true;  // Trae los usuarios con email verificado
+    public $tipoBuscador;  // Parametro para saber si es de tipo = lista, multiple o unico.
+    public $conDadosDeBaja; // Para saber si carga con los dados de baja o solo los dados de alta.
+    public $modulo;  // esta variable nos ayuda identificar de que modulo es para programar su comportamiento en particular, por ejemplo si es para seleccionar los encargados de un grupo.
+    public $usuarioSeleccionadoId;  // Cuando el tipoBuscador = unico va a precargar este usuario
+    public $usuariosSeleccionadosIds = []; // Cuando el tipoBuscador = multiple va precargar estos usuarios
+    public $grupo = null;  // Puedo enviar por parametro el grupo, necesario por ejemplo para añadir un encargado
+    public $estiloSeleccion = null;  // Si es null es el estilo basico que es (foto, nombre y tipo de usuario)
+    public $redirect = null; // si existe re dirije a una ruta especifica
 
     // --- Parametros de vinculación y desvinculación ---//
-    public $tieneInformeDeVinculacion = false;
-
-    // Si es TRUE, una vez seleccionado el grupo debe de abrir el modal para escribir el informe de vinculación al grupo
-    public $tieneInformeDeDesvinculacion = false;
-
-    // Si es TRUE, una vez se de en el btn de eliminar el grupo debe de abrir el modal para escribir el informe de desvinculación al grupo
-    public $validarPrivilegiosTipoGrupo = false;
-    // Si es TRUE verifica si el ROL activo tiene el privilegio de asignar/desvincular grupo según el tipo de grupo
+    public $tieneInformeDeVinculacion = false; // Si es TRUE, una vez seleccionado el grupo debe de abrir el modal para escribir el informe de vinculación al grupo
+    public $tieneInformeDeDesvinculacion = false; // Si es TRUE, una vez se de en el btn de eliminar el grupo debe de abrir el modal para escribir el informe de desvinculación al grupo
+    public $validarPrivilegiosTipoGrupo = false; // Si es TRUE verifica si el ROL activo tiene el privilegio de asignar/desvincular grupo según el tipo de grupo
 
     // --- Parametros privilegio para asignar o desvincular
     public $tiposGruposNoPrivilegioAsignar = [];
-
     public $tiposGruposNoPrivilegioDesvincular = [];
-
     public $cantUsuariosCargados = 3;
-
     public $busqueda = '';
-
     public $configuracion;
-
-    public $usuarioSeleccionado = null;
-
-    // Variable donde se guardara el usuario seleccionado cuando el tipoBuscador = unico
-    public $usuariosSeleccionados = [];
-
-    // Variable donde se guardaran los usuarios seleccionados cuando el tipoBuscador = multiple
+    public $usuarioSeleccionado = null; // Variable donde se guardara el usuario seleccionado cuando el tipoBuscador = unico
+    public $usuariosSeleccionados = []; // Variable donde se guardaran los usuarios seleccionados cuando el tipoBuscador = multiple
     public $verListaBusqueda = false;
-
     public $verInputBusqueda = true;
-
     public $tipoAsignacionDefault = null;
-
     public $tiposAsignaciones = null;
-
     public $tiposDesvinculacion = null;
-
     public $tiposServicioGrupo = null;
-
     public $informeId;
 
     public $gruposDondeAsisteActualmente = [];
@@ -163,7 +122,7 @@ class UsuariosParaBusqueda extends Component
         $this->verInputBusqueda = true;
         $this->verListaBusqueda = false;
         
-        $this->dispatch('usuario-seleccionado', id: null);
+        $this->dispatch('usuario-seleccionado', id: null, buscadorId: $this->id);
     }
 
     // / variables para registrar asistencias en la acitividad
@@ -500,7 +459,7 @@ class UsuariosParaBusqueda extends Component
             }
             $this->verListaBusqueda = false;
 
-            $this->dispatch('usuario-seleccionado', id: $user->id);
+            $this->dispatch('usuario-seleccionado', id: $user->id, buscadorId: $this->id);
         } else {
             $this->dispatch(
                 'msn',
@@ -609,7 +568,7 @@ class UsuariosParaBusqueda extends Component
             if ($this->redirect && ! $this->usuarioSeleccionadoId) {
                 $this->redirectRoute($this->redirect);
             } else {
-                $this->dispatch('usuario-seleccionado', id: null);
+                $this->dispatch('usuario-seleccionado', id: null, buscadorId: $this->id);
             }
         } else {
             $this->dispatch(
@@ -763,6 +722,10 @@ class UsuariosParaBusqueda extends Component
                 ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
                 ->where('integrantes_grupo.grupo_id', $this->grupo->id)
                 ->select('users.*', 'integrantes_grupo.grupo_id as grupo_id');
+        } elseif (strtolower($this->queUsuariosCargar) == 'intercesores') {
+            $query = User::join('intercesores', 'users.id', '=', 'intercesores.user_id')
+                ->where('intercesores.activo', true)
+                ->select('users.*');
         }
 
         if ($this->soloVerificados) {

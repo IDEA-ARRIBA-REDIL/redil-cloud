@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Mail\CuentaCreadaMail;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -10,9 +11,9 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ConfigurarNuevoTenantJob implements ShouldQueue
 {
@@ -77,6 +78,6 @@ class ConfigurarNuevoTenantJob implements ShouldQueue
             'updated_at' => now(),
         ]);
 
-        Log::critical('ConfigurarNuevoTenantJob falló para tenant: '.$this->tenant->id, ['error' => $e->getMessage()]);
+        Log::critical('ConfigurarNuevoTenantJob falló para tenant: ' . $this->tenant->id, ['error' => $e->getMessage()]);
     }
 }

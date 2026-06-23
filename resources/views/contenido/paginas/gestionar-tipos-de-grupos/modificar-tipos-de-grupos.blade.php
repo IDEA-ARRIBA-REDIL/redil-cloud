@@ -5,18 +5,35 @@ $configuracion = \App\Models\Configuracion::find(1);
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Editar Tipo de Grupo')
+@section('title', 'Editar tipo de grupo')
 
 @section('page-style')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 @vite([
 'resources/assets/vendor/libs/select2/select2.scss',
 'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
 'resources/assets/vendor/libs/@form-validation/umd/styles/index.min.css'
 ])
+<style>
+    .img-container {
+        min-height: 300px;
+        max-height: 80vh;
+        background-color: #f7f7f7;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    .img-container img {
+        display: block;
+        max-width: 100%;
+    }
+</style>
 @endsection
 
 @section('vendor-script')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 @vite([
 'resources/js/app.js',
 'resources/assets/vendor/libs/select2/select2.js',
@@ -159,8 +176,10 @@ $configuracion = \App\Models\Configuracion::find(1);
 
               <div id="contenedor-input-imagen" class="{{ $tipoGrupo->imagen ? 'd-none' : '' }}">
                 <div class="input-group">
-                  <input type="file" id="imagen" name="imagen" class="form-control" accept="image/png">
+                  <input type="file" id="imagen" name="imagen" class="form-control" accept="image/*">
                 </div>
+                <div class="form-text">El icono se recortará a 100x100 px.</div>
+                <input type="hidden" id="imagen_recortada" name="imagen_recortada" value="{{ old('imagen_recortada') }}">
                 @error('imagen')
                 <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
                 @enderror
@@ -193,6 +212,8 @@ $configuracion = \App\Models\Configuracion::find(1);
                 <div class="input-group">
                   <input type="file" id="portada" name="portada" class="form-control" accept="image/*">
                 </div>
+                <div class="form-text">La portada se recortará a 1700x400 px.</div>
+                <input type="hidden" id="portada_recortada" name="portada_recortada" value="{{ old('portada_recortada') }}">
                 @error('portada')
                 <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
                 @enderror
@@ -414,4 +435,135 @@ $configuracion = \App\Models\Configuracion::find(1);
   </div>
   <!-- /botonera -->
 </form>
+
+<div class="modal fade" id="modalRecorte" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header pb-4">
+        <h5 class="modal-title" id="modalRecorteTitle">Recortar imagen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+         <div class="img-container">
+            <img src="" id="croppingImage" alt="Imagen para recortar">
+        </div>
+      </div>
+      <div class="modal-footer pt-5">
+        <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-outline-primary crop-btn rounded-pill">Recortar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var croppingImage = document.getElementById('croppingImage');
+    var cropBtn = document.querySelector('.crop-btn');
+    var uploadImagen = document.getElementById('imagen');
+    var uploadPortada = document.getElementById('portada');
+    var modalRecorteEl = document.getElementById('modalRecorte');
+    var inputResultadoImagen = document.getElementById('imagen_recortada');
+    var inputResultadoPortada = document.getElementById('portada_recortada');
+    var modalRecorteTitle = document.getElementById('modalRecorteTitle');
+    var cropper = null;
+    var currentTarget = null;
+
+    function handleFileSelect(e, target) {
+        if (e.target.files.length) {
+            var file = e.target.files[0];
+            var fileType = file.type;
+
+            if (fileType === 'image/gif' || fileType === 'image/jpeg' || fileType === 'image/png' || fileType === 'image/webp') {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    croppingImage.src = e.target.result;
+                    if(cropper) {
+                        cropper.destroy();
+                        cropper = null;
+                    }
+                    currentTarget = target;
+                    if (target === 'imagen') {
+                        modalRecorteTitle.innerText = 'Recortar Icono (100x100 px)';
+                    } else {
+                        modalRecorteTitle.innerText = 'Recortar Portada (1700x400 px)';
+                    }
+                    var modalRecorte = bootstrap.Modal.getOrCreateInstance(modalRecorteEl);
+                    modalRecorte.show();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                Swal.fire('Error', 'Formato de archivo no soportado', 'error');
+            }
+        }
+    }
+
+    if(uploadImagen) {
+        uploadImagen.addEventListener('change', function(e) {
+            handleFileSelect(e, 'imagen');
+        });
+    }
+
+    if(uploadPortada) {
+        uploadPortada.addEventListener('change', function(e) {
+            handleFileSelect(e, 'portada');
+        });
+    }
+
+    modalRecorteEl.addEventListener('shown.bs.modal', function () {
+        var aspect = currentTarget === 'imagen' ? 1 : 1700 / 400;
+        cropper = new Cropper(croppingImage, {
+            zoomable: false,
+            viewMode: 1,
+            aspectRatio: aspect,
+            autoCropArea: 1,
+            responsive: true,
+            restore: false,
+            checkCrossOrigin: false,
+        });
+    });
+
+    modalRecorteEl.addEventListener('hidden.bs.modal', function () {
+        if(cropper){
+            cropper.destroy();
+            cropper = null;
+        }
+        if(currentTarget === 'imagen' && inputResultadoImagen.value === ""){
+            uploadImagen.value = "";
+        } else if(currentTarget === 'portada' && inputResultadoPortada.value === ""){
+            uploadPortada.value = "";
+        }
+    });
+
+    cropBtn.addEventListener('click', function() {
+        if(!cropper) return;
+        var width = currentTarget === 'imagen' ? 100 : 1700;
+        var height = currentTarget === 'imagen' ? 100 : 400;
+
+        var canvas = cropper.getCroppedCanvas({
+            width: width,
+            height: height,
+        });
+
+        var imgSrc = canvas.toDataURL('image/png');
+
+        if(currentTarget === 'imagen') {
+            inputResultadoImagen.value = imgSrc;
+        } else {
+            inputResultadoPortada.value = imgSrc;
+        }
+
+        Swal.fire({
+            position: 'top-end',
+            icon: 'success',
+            title: 'Imagen recortada',
+            showConfirmButton: false,
+            timer: 1500
+        });
+
+        var modalRecorte = bootstrap.Modal.getInstance(modalRecorteEl);
+        modalRecorte.hide();
+    });
+});
+</script>
 @endsection

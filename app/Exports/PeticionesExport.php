@@ -11,19 +11,24 @@ use Carbon\Carbon;
 
 class PeticionesExport implements FromView
 {
-    /**
-    * @return \Illuminate\Support\Collection
-    */
-
+    public $tipo;
+    public $camposPeticiones;
+    public $arrayCamposInfoPersonal;
+    public $arrayPasosCrecimiento;
+    public $arrayDatosCongregacionales;
+    public $arrayCamposExtra;
+    public $parametrosBusqueda;
 
     public function __construct(string $tipo, $parametrosBusqueda, $camposPeticiones, $arrayCamposInfoPersonal, $arrayPasosCrecimiento, $arrayDatosCongregacionales, $arrayCamposExtra)
     {
-      if($tipo == 'sin-responder'){
-        $this->tipo = 1;
-      }elseif($tipo == 'finalizadas'){
-        $this->tipo = 2;
-      }elseif($tipo == 'con-seguimiento'){
-        $this->tipo = 3;
+      if($tipo == 'sin-responder' || $tipo == 'pendientes'){
+        $this->tipo = 'sin-responder';
+      }elseif($tipo == 'finalizadas' || $tipo == 'cerradas'){
+        $this->tipo = 'finalizadas';
+      }elseif($tipo == 'con-seguimiento' || $tipo == 'en-proceso'){
+        $this->tipo = 'con-seguimiento';
+      }else{
+        $this->tipo = $tipo;
       }
 
       $this->camposPeticiones = $camposPeticiones;
@@ -32,13 +37,12 @@ class PeticionesExport implements FromView
       $this->arrayDatosCongregacionales = $arrayDatosCongregacionales;
       $this->arrayCamposExtra = $arrayCamposExtra;
       $this->parametrosBusqueda = $parametrosBusqueda;
-
     }
 
 
     public function view(): View
     {
-      $peticiones = [];
+      $peticiones = collect();
       $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
       $campos = $this->camposPeticiones->pluck('value')->toArray();
       array_push($campos,"id","user_id");
@@ -109,16 +113,22 @@ class PeticionesExport implements FromView
         }
       }
 
-      $peticiones = $peticiones->toQuery()->get($campos);
+      $peticiones = $peticiones->toQuery()
+        ->leftJoin('users', 'peticiones.user_id', '=', 'users.id')
+        ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
+        ->with(['pais', 'tipoPeticion', 'autorCreacion', 'asignado'])
+        ->get();
+
       $peticiones->map(function ($peticion) {
 
-        if($peticion->estado)
-        $peticion->estado = Helpers::estadoPeticion($peticion->estado);
+        if ($peticion->estado) {
+          $peticion->estado = Helpers::estadoPeticion($peticion->estado);
+        }
 
         if($peticion->autor_creacion_id)
         {
           // usuarioCreacion
-          $usuarioCreacion = $peticion->autorCreacion()->withTrashed()->select('id','primer_nombre','segundo_nombre', 'primer_apellido')->first();
+          $usuarioCreacion = $peticion->autorCreacion;
           $peticion->usuarioCreacion = ($usuarioCreacion && $peticion->user_id != $usuarioCreacion->id)
           ? $usuarioCreacion->nombre(3)
           : 'Autogestión';
@@ -136,8 +146,6 @@ class PeticionesExport implements FromView
           $peticion->telefono_otro ? array_push($telefonosArray, $peticion->telefono_otro) : '';
           $peticion->telefono_solicitante = $telefonosArray ? implode(", ", $telefonosArray) : 'Sin datos';
 
-          // El género del usuario ya viene en el join (users.genero)
-          // Pero en PeticionesExport el select dice 'peticiones.*', so if we want to be safe:
           $peticion->genero_solicitante = $peticion->genero == 1 ? 'Mujer' : 'Hombre';
         } else {
           $peticion->nombre_solicitante = $peticion->nombre_externo;
@@ -152,6 +160,9 @@ class PeticionesExport implements FromView
         }else{
           $peticion->paisNombre = 'No indicado';
         }
+
+        $usuarioAsignado = $peticion->asignado;
+        $peticion->asignado_a = $usuarioAsignado ? $usuarioAsignado->nombre(3) : 'Sin asignar';
       });
 
       return view('contenido.paginas.peticiones.exportar.exportarPeticiones', [

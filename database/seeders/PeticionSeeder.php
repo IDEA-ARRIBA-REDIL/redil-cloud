@@ -18,7 +18,7 @@ class PeticionSeeder extends Seeder
             'tipo_peticion_id' => 1,
             'estado' => 1,
             'descripcion' => 'Pido oración para que DIOS tenga miscericordia de mi familia. La amo y quiero que sean salvos. ',
-            'fecha' => '2025-03-21',
+            'fecha' => '2026-06-09',
         ]);
 
         Peticion::firstOrCreate([
@@ -27,7 +27,7 @@ class PeticionSeeder extends Seeder
             'tipo_peticion_id' => 1,
             'estado' => 1,
             'descripcion' => 'Pido oración para que 2 ',
-            'fecha' => '2025-03-21',
+            'fecha' => '2026-06-08',
             'autor_creacion_id' => 1,
         ]);
 
@@ -37,7 +37,7 @@ class PeticionSeeder extends Seeder
             'tipo_peticion_id' => 3,
             'estado' => 2,
             'descripcion' => 'Pido oración para que 3 ',
-            'fecha' => '2025-03-21',
+            'fecha' => '2026-06-08',
             'autor_creacion_id' => 1,
         ]);
 
@@ -47,7 +47,7 @@ class PeticionSeeder extends Seeder
             'tipo_peticion_id' => 8,
             'estado' => 3,
             'descripcion' => 'Pido oración para que 4. ',
-            'fecha' => '2025-03-21',
+            'fecha' => '2026-06-08',
             'autor_creacion_id' => 1,
         ]);
 
@@ -57,7 +57,7 @@ class PeticionSeeder extends Seeder
             'tipo_peticion_id' => 7,
             'estado' => 1,
             'descripcion' => 'Pido oración para que 5. ',
-            'fecha' => '2025-03-21',
+            'fecha' => '2026-06-08',
             'autor_creacion_id' => 1,
         ]);
 

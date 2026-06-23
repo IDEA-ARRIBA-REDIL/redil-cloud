@@ -15,14 +15,14 @@ class PushSubscriptionController extends Controller
     {
         try {
             $this->validate($request, [
-                'endpoint' => 'required',
+                'endpoint'    => 'required',
                 'keys.p256dh' => 'required',
-                'keys.auth' => 'required',
+                'keys.auth'   => 'required',
             ]);
 
-            $endpoint = $request->endpoint;
-            $key = $request->keys['p256dh'];
-            $token = $request->keys['auth'];
+            $endpoint        = $request->endpoint;
+            $key             = $request->keys['p256dh'];
+            $token           = $request->keys['auth'];
             $contentEncoding = $request->input('content_encoding', 'aesgcm');
 
             /** @var \App\Models\User $user */
@@ -38,12 +38,12 @@ class PushSubscriptionController extends Controller
         } catch (\Exception $e) {
             Log::error('[PushSubscription] Error al guardar suscripción: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'user' => $request->user()?->id,
+                'user'  => $request->user()?->id,
             ]);
 
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }

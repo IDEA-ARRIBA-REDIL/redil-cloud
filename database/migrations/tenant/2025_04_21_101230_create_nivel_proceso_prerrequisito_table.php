@@ -11,15 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('nivel_proceso_prerrequisito')) {
-            Schema::create('nivel_proceso_prerrequisito', function (Blueprint $table) {
-                $table->id();
-                $table->integer('nivel_id');
-                $table->integer('paso_crecimiento_id');
-                $table->integer('estado_proceso');
-                $table->timestamps();
-            });
-        }
+        Schema::create('nivel_proceso_prerrequisito', function (Blueprint $table) {
+            $table->id();
+            $table->integer('nivel_id');
+            $table->integer('paso_crecimiento_id');
+            $table->integer('estado_proceso');
+            $table->timestamps();
+        });
     }
 
     /**

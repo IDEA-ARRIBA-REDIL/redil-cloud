@@ -36,4 +36,9 @@ class Peticion extends Model
   {
     return $this->belongsTo(Pais::class, 'pais_id');
   }
+
+  public function asignado(): BelongsTo
+  {
+    return $this->belongsTo(User::class, 'asignacion_peticion_id');
+  }
 }

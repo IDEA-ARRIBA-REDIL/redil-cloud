@@ -4,17 +4,34 @@ $configData = Helper::appClasses();
 
 @extends('layouts.layoutMaster')
 
-@section('title', 'Editar Tipo de Usuario')
+@section('title', 'Editar Tipo de usuario')
 
 @section('page-style')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 @vite([
   'resources/assets/vendor/libs/select2/select2.scss',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
   'resources/assets/vendor/libs/@form-validation/umd/styles/index.min.css'
 ])
+<style>
+    .img-container {
+        min-height: 300px;
+        max-height: 80vh;
+        background-color: #f7f7f7;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    .img-container img {
+        display: block;
+        max-width: 100%;
+    }
+</style>
 @endsection
 
 @section('vendor-script')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 @vite([
   'resources/assets/vendor/libs/select2/select2.js',
   'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
@@ -73,7 +90,7 @@ $configData = Helper::appClasses();
         <div class="card-body">
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="nombre" class="form-label">Nombre *</label>
+              <label for="nombre" class="form-label">Nombre</label>
               <input type="text" name="nombre" id="nombre" class="form-control" value="{{ old('nombre', $tipoUsuario->nombre) }}" placeholder="Ej: Líder" required>
               @error('nombre')
               <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
@@ -95,34 +112,36 @@ $configData = Helper::appClasses();
               <label for="icono" class="form-label">Clase del ícono</label>
               <input type="text" name="icono" id="icono" class="form-control" value="{{ old('icono', $tipoUsuario->icono) }}" placeholder="ti ti-user">
             </div>
-            <div class="col-md-5 mb-3">
-              <label for="imagen" class="form-label">Imagen (100x100 PNG)</label>
-              
-              @if ($tipoUsuario->imagen)
-              <div id="info-imagen-actual">
-                <div class="border rounded p-2 d-flex justify-content-between align-items-center mb-3">
-                  <div class="d-flex align-items-center">
-                    <img src="{{ $tipoUsuario->imagen_url }}" alt="Imagen actual" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
-                    <div class="d-flex flex-column">
-                      <span style="font-size: 0.75rem;" class="text-muted">Imagen actual</span>
-                      <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ $tipoUsuario->imagen }}</span>
-                    </div>
-                  </div>
-                  <button type="button" id="btn-reemplazar" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
-                    <i class="ti ti-trash"></i>
-                  </button>
-                </div>
-              </div>
-              @endif
+             <div class="col-md-5 mb-3">
+               <label for="imagen" class="form-label">Imagen (100x100 PNG)</label>
+               
+               @if ($tipoUsuario->imagen)
+               <div id="info-imagen-actual">
+                 <div class="border rounded p-2 d-flex justify-content-between align-items-center mb-3">
+                   <div class="d-flex align-items-center">
+                     <img src="{{ $tipoUsuario->imagen_url }}" alt="Imagen actual" class="rounded me-3 border" style="width: 50px; height: 50px; object-fit: cover;">
+                     <div class="d-flex flex-column">
+                       <span style="font-size: 0.75rem;" class="text-muted">Imagen actual</span>
+                       <span class="text-truncate fw-semibold" style="font-size: 0.85rem;">{{ $tipoUsuario->imagen }}</span>
+                     </div>
+                   </div>
+                   <button type="button" id="btn-reemplazar" class="btn btn-icon btn-label-danger btn-sm" title="Quitar y reemplazar">
+                     <i class="ti ti-trash"></i>
+                   </button>
+                 </div>
+               </div>
+               @endif
 
-              <div id="contenedor-input-imagen" class="{{ $tipoUsuario->imagen ? 'd-none' : '' }}">
-                <input class="form-control" type="file" name="imagen" id="imagen" accept="image/png">
-              </div>
-              
-              @error('imagen')
-              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
-              @enderror
-            </div>
+               <div id="contenedor-input-imagen" class="{{ $tipoUsuario->imagen ? 'd-none' : '' }}">
+                 <input class="form-control" type="file" id="imagen" accept="image/*">
+                 <div class="form-text">La imagen se recortará a 100x100 px.</div>
+                 <input type="hidden" id="imagen_recortada" name="imagen_recortada" value="{{ old('imagen_recortada') }}">
+               </div>
+               
+               @error('imagen')
+               <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+               @enderror
+             </div>
           </div>
         </div>
       </div>
@@ -246,4 +265,105 @@ $configData = Helper::appClasses();
     </div>
   </div>
 </form>
+
+<div class="modal fade" id="modalRecorte" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header pb-4">
+        <h5 class="modal-title">Recortar imagen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+         <div class="img-container">
+            <img src="" id="croppingImage" alt="Imagen para recortar">
+        </div>
+      </div>
+      <div class="modal-footer pt-5">
+        <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-outline-primary crop-btn rounded-pill">Recortar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var croppingImage = document.getElementById('croppingImage');
+    var cropBtn = document.querySelector('.crop-btn');
+    var uploadImagen = document.getElementById('imagen');
+    var modalRecorteEl = document.getElementById('modalRecorte');
+    var inputResultadoImagen = document.getElementById('imagen_recortada');
+    var cropper = null;
+
+    if (uploadImagen) {
+        uploadImagen.addEventListener('change', function(e) {
+            if (e.target.files.length) {
+                var file = e.target.files[0];
+                var fileType = file.type;
+
+                if (fileType === 'image/gif' || fileType === 'image/jpeg' || fileType === 'image/png' || fileType === 'image/webp') {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        croppingImage.src = e.target.result;
+                        if(cropper) {
+                            cropper.destroy();
+                            cropper = null;
+                        }
+                        var modalRecorte = bootstrap.Modal.getOrCreateInstance(modalRecorteEl);
+                        modalRecorte.show();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    Swal.fire('Error', 'Formato de archivo no soportado', 'error');
+                }
+            }
+        });
+    }
+
+    modalRecorteEl.addEventListener('shown.bs.modal', function () {
+        cropper = new Cropper(croppingImage, {
+            zoomable: false,
+            viewMode: 1,
+            aspectRatio: 1,
+            autoCropArea: 1,
+            responsive: true,
+            restore: false,
+            checkCrossOrigin: false,
+        });
+    });
+
+    modalRecorteEl.addEventListener('hidden.bs.modal', function () {
+        if(cropper){
+            cropper.destroy();
+            cropper = null;
+        }
+        if(inputResultadoImagen.value === ""){
+            uploadImagen.value = "";
+        }
+    });
+
+    cropBtn.addEventListener('click', function() {
+        if(!cropper) return;
+
+        var canvas = cropper.getCroppedCanvas({
+            width: 100,
+            height: 100,
+        });
+
+        var imgSrc = canvas.toDataURL('image/png');
+        inputResultadoImagen.value = imgSrc;
+
+        Swal.fire({
+            position: 'top-end',
+            icon: 'success',
+            title: 'Imagen recortada',
+            showConfirmButton: false,
+            timer: 1500
+        });
+
+        var modalRecorte = bootstrap.Modal.getInstance(modalRecorteEl);
+        modalRecorte.hide();
+    });
+});
+</script>
 @endsection

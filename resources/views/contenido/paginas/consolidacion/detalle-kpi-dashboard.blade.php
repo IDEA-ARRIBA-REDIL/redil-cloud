@@ -4,7 +4,7 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Detalle KPI Consolidación (Dashboard)')
+@section('title', 'Detalle KPI consolidación (Dashboard)')
 
 @section('content')
 
@@ -12,7 +12,7 @@
     <a href="{{ route('consolidacion.dashboard', array_merge(request()->except(['kpi', 'buscar']), ['tab' => request('tab', 'indicador-1')])) }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver al Dashboard">
         <i class="ti ti-arrow-left text-primary fs-4"></i>
     </a>
-    <h4 class="mb-0 fw-semibold text-primary">Detalle de Consolidación: 
+    <h4 class="mb-0 fw-semibold text-primary">Detalle de consolidación: 
       @switch($kpi)
           @case('cosecha_total') Total cosecha @break
           @case('cosecha_efectiva') Cosecha efectiva @break

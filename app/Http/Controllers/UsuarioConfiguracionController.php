@@ -45,12 +45,12 @@ class UsuarioConfiguracionController extends Controller
             'descripcion' => 'nullable|string|max:200',
             'color' => 'nullable|string|max:10',
             'icono' => 'nullable|string|max:100', // ahora es string
-            'imagen' => 'nullable|file|mimes:png',
             'nombre_plural' => 'nullable|string|max:50',
             'id_rol_dependiente' => 'nullable|string',
             'dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion' => 'nullable|integer',
             'puntaje' => 'nullable|integer',
             'orden' => 'nullable|integer',
+            'imagen_recortada' => 'nullable|string',
         ]);
 
         $data = $request->only([
@@ -79,19 +79,16 @@ class UsuarioConfiguracionController extends Controller
         // Crear el registro primero
         $tipoUsuario = TipoUsuario::create($data);
 
-        // Manejo de imagen
-        if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
-
-            [$width, $height] = getimagesize($file->getPathname());
-            if ($width != 100 || $height != 100) {
-                return back()->withErrors(['imagen' => 'La imagen debe ser de 100x100 píxeles.']);
-            }
-
+        // Manejo de imagen recortada
+        if ($request->filled('imagen_recortada')) {
             $nombreImagen = 'imagen-'.$tipoUsuario->id.'.png';
             $directorio = 'img/tipos-usuarios';
 
-            Storage::putFileAs($directorio, $file, $nombreImagen);
+            $imageData = $request->input('imagen_recortada');
+            $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $imageData);
+            $imageData = base64_decode($imageData);
+
+            Storage::put($directorio.'/'.$nombreImagen, $imageData);
 
             $tipoUsuario->imagen = $nombreImagen;
             $tipoUsuario->save();
@@ -130,15 +127,11 @@ class UsuarioConfiguracionController extends Controller
             'dias_de_seguimiento_para_dar_de_baja_por_no_iniciar_sesion' => 'nullable|integer',
             'puntaje' => 'nullable|integer',
             'orden' => 'nullable|integer',
-            'imagen' => [ // ¡Mejora! Validación de imagen integrada
-                'nullable',
-                'file',
-                'mimes:png',
-            ],
+            'imagen_recortada' => 'nullable|string',
         ]);
 
-        // 3. Asignar los datos validados al modelo
-        $tipoUsuario->fill($validatedData);
+        // 3. Asignar los datos validados al modelo (excluyendo imagen_recortada de fill)
+        $tipoUsuario->fill($request->except(['imagen_recortada']));
 
         // 4. Manejar los campos booleanos (checkboxes) por separado
         $tipoUsuario->tipo_pastor = $request->has('tipo_pastor');
@@ -151,8 +144,7 @@ class UsuarioConfiguracionController extends Controller
         $tipoUsuario->default = $request->has('default');
 
         // 5. Procesar la subida de la nueva imagen si se envió una
-        if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
+        if ($request->filled('imagen_recortada')) {
             $nombreImagen = 'imagen-'.$tipoUsuario->id.'.png';
             $directorio = 'img/tipos-usuarios';
 
@@ -163,7 +155,11 @@ class UsuarioConfiguracionController extends Controller
                 }
             }
 
-            Storage::putFileAs($directorio, $file, $nombreImagen);
+            $imageData = $request->input('imagen_recortada');
+            $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $imageData);
+            $imageData = base64_decode($imageData);
+
+            Storage::put($directorio.'/'.$nombreImagen, $imageData);
 
             // Actualizar el nombre de la imagen en el modelo
             $tipoUsuario->imagen = $nombreImagen;

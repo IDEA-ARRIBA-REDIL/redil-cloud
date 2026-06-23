@@ -47,7 +47,7 @@
     <link rel="canonical" href="{{ config('variables.productPage') ? config('variables.productPage') : '' }}">
     <!-- Favicon -->
      @if ($configuracion && $configuracion->logo_personalizado && $configuracion->favicon_app)
-    <link rel="icon" type="image/x-icon" href="{{ tenant_asset($configuracion->favicon_app) }}?v=2" />
+    <link rel="icon" type="image/x-icon" href="{{ tenant_asset('img/branding/'.$configuracion->favicon_app) }}?v=2" />
   @else
     <link rel="icon" type="image/x-icon" href="{{ Storage::disk('global_media')->url('favicon-redil.ico') }}?v=2" />
   @endif

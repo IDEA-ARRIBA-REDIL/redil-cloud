@@ -152,6 +152,13 @@ class ConfiguracionController extends Controller
                 'permission' => 'configuraciones.subitem_tipo_pagos',
             ],
             [
+                'title' => 'Tipo de peticiones',
+                'route' => 'tipo-peticiones.listar',
+                'icon' => 'ti-file-star',
+                'color' => 'bg-label-secondary',
+                'permission' => 'configuraciones.subitem_tipo_de_peticiones',
+            ],
+            [
                 'title' => 'Gestionar videos',
                 'route' => 'gestion-videos.listarVideos',
                 'icon' => 'ti-video',

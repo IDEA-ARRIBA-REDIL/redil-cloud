@@ -16,7 +16,7 @@
     <!-- ! Hide app brand if navbar-full -->
     @if (!isset($navbarFull))
         <div style="padding-left: 20px !important;" class="app-brand mt-5 demo p-0 mb-3">
-            <a href="{{ url('/') }}" class="app-brand-link">                
+            <a href="{{ url('/') }}" class="app-brand-link">
                 <span class="app-brand-logo demo p-0">
                     @include('_partials.macros', [
                         'width' => '120px'
@@ -213,7 +213,7 @@
         @endif
 
         @if ($rolActivo->hasPermissionTo('peticiones.item_peticiones'))
-            <li class="menu-item {{ request()->routeIs('peticion.*') ? 'active open' : '' }}">
+            <li class="menu-item {{ (request()->routeIs('peticion.*') || request()->routeIs('peticiones.*')) ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-notes"></i>
                     <div>Peticiones </div>
@@ -237,10 +237,18 @@
                         </li>
                     @endif
 
-                    @if ($rolActivo->hasPermissionTo('peticiones.subitem_panel_peticiones'))
+                    @if ($rolActivo->hasPermissionTo('peticiones.subitem_dashboard_peticiones'))
                         <li class="menu-item">
-                            <a href="{{ route('peticion.panel') }}" class="menu-link">
-                                <div>Panel peticiones</div>
+                            <a href="{{ route('peticion.dashboard') }}" class="menu-link">
+                                <div>Dashboard</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores'))
+                        <li class="menu-item {{ request()->routeIs('peticiones.gestionarIntercesores') ? 'active' : '' }}">
+                            <a href="{{ route('peticiones.gestionarIntercesores') }}" class="menu-link">
+                                <div>Gestionar intercesores</div>
                             </a>
                         </li>
                     @endif
@@ -760,6 +768,12 @@
             <a href="{{ route('informe.lista') }}" class="menu-link">
                 <i class="menu-icon tf-icons ti ti-report"></i>
                 <div>Informes </div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('informes-personalizados.*') ? 'active' : '' }}">
+            <a href="{{ route('informes-personalizados.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons ti ti-report-analytics"></i>
+                <div>Informes Personalizados</div>
             </a>
         </li>
     @endif

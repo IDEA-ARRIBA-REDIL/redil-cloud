@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('nivel_paso_crecimiento')) {
-            Schema::create('nivel_paso_crecimiento', function (Blueprint $table) {
-                $table->id();
-                $table->integer('nivel_id');
-                $table->integer('paso_crecimiento_id');
-                $table->boolean('al_iniciar')->nullable();
-                $table->integer('estado')->nullable();
-                $table->timestamps();
-            });
-        }
+        Schema::create('nivel_paso_crecimiento', function (Blueprint $table) {
+            $table->id();
+            $table->integer('nivel_id');
+            $table->integer('paso_crecimiento_id');
+            $table->boolean('al_iniciar')->nullable();
+            $table->integer('estado')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**

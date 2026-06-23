@@ -30,6 +30,8 @@ use App\Http\Controllers\IglesiaController;
 use App\Http\Controllers\IglesiaInfantilController;
 use App\Http\Controllers\InformeEvidenciaGrupoController;
 use App\Http\Controllers\InformesController;
+use App\Http\Controllers\InformesPersonalizadosController;
+use App\Http\Controllers\IntercesorController;
 use App\Http\Controllers\ListaReproducionController;
 use App\Http\Controllers\MaestroController;
 use App\Http\Controllers\MateriaController;
@@ -66,6 +68,7 @@ use App\Http\Controllers\TipoActividadGestionController;
 use App\Http\Controllers\TipoCargoCursoController;
 use App\Http\Controllers\TipoOfrendaController;
 use App\Http\Controllers\TipoPagosController;
+use App\Http\Controllers\TipoPeticionesController;
 use App\Http\Controllers\TipoServicioActividadController;
 use App\Http\Controllers\TipoServicioReporteReunionController;
 use App\Http\Controllers\UserController;
@@ -503,13 +506,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/sede/mapa-sedes', [SedeController::class, 'mapa'])->name('sedes.mapa');
 
     // Peticiones
-    Route::get('/peticiones/panel-peticiones', [PeticionController::class, 'panel'])->name('peticion.panel');
+    Route::get('/peticiones/dashboard', [PeticionController::class, 'dashboard'])->name('peticion.dashboard');
+    Route::get('/peticiones/dashboard/detalle-kpi', [PeticionController::class, 'detalleKpi'])->name('peticion.dashboard.detalle-kpi');
+    Route::get('/peticiones/dashboard/detalle-kpi/exportar', [PeticionController::class, 'exportarDetalleKpi'])->name('peticion.dashboard.detalle-kpi.exportar');
     Route::get('/peticiones/gestionar/{tipo?}', [PeticionController::class, 'gestionar'])->name('peticion.gestionar');
     Route::get('/peticion/nueva', [PeticionController::class, 'nueva'])->name('peticion.nueva');
     Route::post('/peticion/crear', [PeticionController::class, 'crear'])->name('peticion.crear');
     Route::post('/peticion/{tipo}/eliminaciones', [PeticionController::class, 'eliminaciones'])->name('peticion.eliminaciones');
     Route::post('/peticion/{id}/eliminacion', [PeticionController::class, 'eliminacion'])->name('peticion.eliminacion');
     Route::post('/peticion/{tipo}/generar-excel', [PeticionController::class, 'generarExcel'])->name('peticion.generarExcel');
+
+    // Intercesores
+    Route::get('/peticiones/gestionar-intercesores', [IntercesorController::class, 'gestionarIntercesores'])->name('peticiones.gestionarIntercesores');
+    Route::post('/peticiones/crear-intercesor', [IntercesorController::class, 'crearIntercesor'])->name('peticiones.crearIntercesor');
+    Route::delete('/peticiones/{intercesor}/eliminar-intercesor', [IntercesorController::class, 'eliminarIntercesor'])->name('peticiones.eliminarIntercesor');
+    Route::patch('/peticiones/{intercesor}/activar', [IntercesorController::class, 'activar'])->name('peticiones.activar');
+    Route::patch('/peticiones/{intercesor}/desactivar', [IntercesorController::class, 'desactivar'])->name('peticiones.desactivar');
+    Route::patch('/peticiones/actualizar/{intercesor}', [IntercesorController::class, 'actualizarIntercesor'])->name('peticiones.actualizarIntercesor');
 
     // temas generales
     Route::get('/temas', [TemaController::class, 'listar'])->name('tema.lista');
@@ -913,6 +926,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/informes/compras/{informe?}', [InformesController::class, 'informeCompras'])->name('informes.compras');
     Route::get('/informes/pagos/{informe?}', [InformesController::class, 'informePagos'])->name('informes.pagos');
 
+    // Informes Personalizados (Migrados)
+    Route::get('/informes-personalizados', [InformesPersonalizadosController::class, 'index'])->name('informes-personalizados.index');
+    Route::get('/informes-personalizados/obreros/{id}', [InformesPersonalizadosController::class, 'showInformeObreros'])->name('informes-personalizados.obreros.show');
+    Route::post('/informes-personalizados/obreros/{id}/exportar', [InformesPersonalizadosController::class, 'exportarInformeObreros'])->name('informes-personalizados.obreros.exportar');
+
     // Bloques Clasificacion Asistentes
     Route::get('/bloques-clasificacion', [BloqueClasificacionController::class, 'index'])->name('bloques-clasificacion');
 
@@ -1073,6 +1091,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/eliminar-tarea-consolidacion/{tarea}', [TareaConsolidacionController::class, 'eliminarTareaConsolidacion'])
             ->name('eliminarTareaConsolidacion');
     });
+
+    // Tipos de peticiones
+    Route::get('tipos-peticiones/listar', [TipoPeticionesController::class, 'listar'])->name('tipo-peticiones.listar');
+    Route::get('tipos-peticiones/crear', [TipoPeticionesController::class, 'nueva'])->name('tipo-peticiones.nueva');
+    Route::post('tipos-peticiones/crear', [TipoPeticionesController::class, 'crear'])->name('tipo-peticiones.crear');
+    Route::get('tipos-peticiones/editar/{tipoPeticion}', [TipoPeticionesController::class, 'editar'])->name('tipo-peticiones.editar');
+    Route::put('tipos-peticiones/actualizar/{tipoPeticion}', [TipoPeticionesController::class, 'actualizar'])->name('tipo-peticiones.actualizar');
+    Route::delete('tipos-peticiones/eliminar/{tipoPeticion}', [TipoPeticionesController::class, 'eliminar'])->name('tipo-peticiones.eliminar');
 
     // Banner
     Route::get('/banner-general', [BannerGeneralController::class, 'listarBanners'])->name('banner-general.listarBanners');

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Configuracion;
 use App\Models\TipoGrupo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class GestionarTipoDeGruposController extends Controller
 {
@@ -77,7 +80,6 @@ class GestionarTipoDeGruposController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:50',
             'nombre_plural' => 'nullable|string|max:35',
-            'imagen' => 'nullable|image|mimes:png',
             'geo_icono' => 'nullable|string|max:50',
             'descripcion' => 'nullable|string|max:200',
             'color' => 'nullable|string|max:10',
@@ -94,11 +96,12 @@ class GestionarTipoDeGruposController extends Controller
             'descripcion1_finalizar_reporte' => 'nullable|string',
             'descripcion_ofrendas_finalizar_reporte' => 'nullable|string',
             'mensaje_bienvenida' => 'nullable|string',
-            'portada' => 'nullable|image|max:2048',
+            'imagen_recortada' => 'nullable|string',
+            'portada_recortada' => 'nullable|string',
         ]);
 
         // 🔹 2. Crear el registro base (sin imagen ni portada)
-        $data = $request->except(['imagen', 'portada', '_token', '_method']);
+        $data = $request->except(['imagen', 'portada', 'imagen_recortada', 'portada_recortada', '_token', '_method']);
         $tipoGrupo = new TipoGrupo($data);
 
         // 🔹 3. Checkboxes (valores booleanos)
@@ -120,56 +123,43 @@ class GestionarTipoDeGruposController extends Controller
         // 🔹 4. Guardar primero para generar el ID
         $tipoGrupo->save();
 
-        // 🔹 5. Manejar imagen si fue cargada
-        if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
+        // 🔹 5. Manejar imagen si fue recortada
+        if ($request->filled('imagen_recortada')) {
             $nombreImagen = 'imagen-'.$tipoGrupo->id.'.png';
             $directorio = 'img/tipos-grupos/iconos/';
 
-            // --- Auto-crop a 100x100 usando GD nativo ---
-            $sourceImage = imagecreatefrompng($file->getPathname());
-            $targetImage = imagecreatetruecolor(100, 100);
+            // Borrar anterior si existe
+            if ($tipoGrupo->imagen && $tipoGrupo->imagen !== 'icono_indicador.png') {
+                Storage::delete($directorio.$tipoGrupo->imagen);
+            }
 
-            imagealphablending($targetImage, false);
-            imagesavealpha($targetImage, true);
-            $transparent = imagecolorallocatealpha($targetImage, 255, 255, 255, 127);
-            imagefilledrectangle($targetImage, 0, 0, 100, 100, $transparent);
+            $imageData = $request->input('imagen_recortada');
+            $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $imageData);
+            $imageData = base64_decode($imageData);
 
-            $sourceWidth = imagesx($sourceImage);
-            $sourceHeight = imagesy($sourceImage);
-            $side = min($sourceWidth, $sourceHeight);
-            $x = ($sourceWidth - $side) / 2;
-            $y = ($sourceHeight - $side) / 2;
-
-            imagecopyresampled($targetImage, $sourceImage, 0, 0, $x, $y, 100, 100, $side, $side);
-
-            // Capturar el output de GD en un buffer
-            ob_start();
-            imagepng($targetImage);
-            $imageData = ob_get_clean();
-
-            // Guardar transparente en el disco por defecto
             Storage::put($directorio.$nombreImagen, $imageData);
-
-            imagedestroy($sourceImage);
-            imagedestroy($targetImage);
-
             $tipoGrupo->imagen = $nombreImagen;
         }
 
-        // 🔹 6. Manejar portada si fue cargada
-        if ($request->hasFile('portada')) {
-            $file = $request->file('portada');
-            $extension = $file->getClientOriginalExtension();
-            $nombrePortada = 'portada-'.$tipoGrupo->id.'.'.$extension;
+        // 🔹 6. Manejar portada si fue recortada
+        if ($request->filled('portada_recortada')) {
+            $nombrePortada = 'portada-'.$tipoGrupo->id.'.png';
             $directorio = 'img/tipos-grupos/banners/';
 
-            Storage::putFileAs($directorio, $file, $nombrePortada);
+            if ($tipoGrupo->portada) {
+                Storage::delete($directorio.$tipoGrupo->portada);
+            }
+
+            $portadaData = $request->input('portada_recortada');
+            $portadaData = preg_replace('#^data:image/\w+;base64,#i', '', $portadaData);
+            $portadaData = base64_decode($portadaData);
+
+            Storage::put($directorio.$nombrePortada, $portadaData);
             $tipoGrupo->portada = $nombrePortada;
         }
 
         // 🔹 7. Guardar de nuevo si hubo imágenes
-        if ($request->hasFile('imagen') || $request->hasFile('portada')) {
+        if ($request->filled('imagen_recortada') || $request->filled('portada_recortada')) {
             $tipoGrupo->save();
         }
 
@@ -189,7 +179,6 @@ class GestionarTipoDeGruposController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:50',
             'nombre_plural' => 'nullable|string|max:35',
-            'imagen' => 'nullable|image|mimes:png',
             'geo_icono' => 'nullable|string|max:50',
             'descripcion' => 'nullable|string|max:200',
             'color' => 'nullable|string|max:10',
@@ -201,12 +190,13 @@ class GestionarTipoDeGruposController extends Controller
             'titulo1_finalizar_reporte' => 'nullable|string|max:255',
             'subtitulo_encargados_finalizar_reporte' => 'nullable|string|max:255',
             'subtitulo_sumatorias_adiccionales_finalizar_reporte' => 'nullable|string|max:255',
-            'subtitulo_miebros_finalizar_reporte' => 'nullable|string|max:255',
+            'subtitulo_miembros_finalizar_reporte' => 'nullable|string|max:255',
             'subtitulo_ofrendas_finalizar_reporte' => 'nullable|string|max:255',
             'descripcion1_finalizar_reporte' => 'nullable|string',
             'descripcion_ofrendas_finalizar_reporte' => 'nullable|string',
             'mensaje_bienvenida' => 'nullable|string',
-            'portada' => 'nullable|image|max:2048',
+            'imagen_recortada' => 'nullable|string',
+            'portada_recortada' => 'nullable|string',
         ]);
 
         $tipoGrupo->nombre = $request->nombre;
@@ -243,9 +233,8 @@ class GestionarTipoDeGruposController extends Controller
         $tipoGrupo->registrar_inasistencia = $request->has('registrar_inasistencia');
         $tipoGrupo->inasistencia_obligatoria = $request->has('inasistencia_obligatoria');
 
-        // 🔹 Manejo de archivos
-        if ($request->hasFile('imagen')) {
-            $file = $request->file('imagen');
+        // 🔹 Manejo de archivos recortados
+        if ($request->filled('imagen_recortada')) {
             $nombreImagen = 'imagen-'.$tipoGrupo->id.'.png';
             $directorio = 'img/tipos-grupos/iconos/';
 
@@ -254,46 +243,27 @@ class GestionarTipoDeGruposController extends Controller
                 Storage::delete($directorio.$tipoGrupo->imagen);
             }
 
-            // --- Auto-crop a 100x100 usando GD nativo ---
-            $sourceImage = imagecreatefrompng($file->getPathname());
-            $targetImage = imagecreatetruecolor(100, 100);
-
-            imagealphablending($targetImage, false);
-            imagesavealpha($targetImage, true);
-            $transparent = imagecolorallocatealpha($targetImage, 255, 255, 255, 127);
-            imagefilledrectangle($targetImage, 0, 0, 100, 100, $transparent);
-
-            $sourceWidth = imagesx($sourceImage);
-            $sourceHeight = imagesy($sourceImage);
-            $side = min($sourceWidth, $sourceHeight);
-            $x = ($sourceWidth - $side) / 2;
-            $y = ($sourceHeight - $side) / 2;
-
-            imagecopyresampled($targetImage, $sourceImage, 0, 0, $x, $y, 100, 100, $side, $side);
-
-            ob_start();
-            imagepng($targetImage);
-            $imageData = ob_get_clean();
+            $imageData = $request->input('imagen_recortada');
+            $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $imageData);
+            $imageData = base64_decode($imageData);
 
             Storage::put($directorio.$nombreImagen, $imageData);
-
-            imagedestroy($sourceImage);
-            imagedestroy($targetImage);
-
             $tipoGrupo->imagen = $nombreImagen;
         }
 
-        if ($request->hasFile('portada')) {
-            $file = $request->file('portada');
-            $extension = $file->getClientOriginalExtension();
-            $nombrePortada = 'portada-'.$tipoGrupo->id.'.'.$extension;
+        if ($request->filled('portada_recortada')) {
+            $nombrePortada = 'portada-'.$tipoGrupo->id.'.png';
             $directorio = 'img/tipos-grupos/banners/';
 
             if ($tipoGrupo->portada) {
                 Storage::delete($directorio.$tipoGrupo->portada);
             }
 
-            Storage::putFileAs($directorio, $file, $nombrePortada);
+            $portadaData = $request->input('portada_recortada');
+            $portadaData = preg_replace('#^data:image/\w+;base64,#i', '', $portadaData);
+            $portadaData = base64_decode($portadaData);
+
+            Storage::put($directorio.$nombrePortada, $portadaData);
             $tipoGrupo->portada = $nombrePortada;
         }
 

@@ -2592,8 +2592,8 @@ class UserController extends Controller
                         $mailData->nombre = $usuario->nombre(3);
                         $mailData->mensaje = $mensaje;
 
-                        if ($peticion->tipoPeticion->banner_email != '') {
-                            $mailData->banner = tenant_asset('img/email/peticiones/'.$peticion->tipoPeticion->banner_email);
+                        if ($peticion->tipoPeticion->banner_email_url != '') {
+                            $mailData->banner = $peticion->tipoPeticion->banner_email_url;
                         }
 
                         Mail::to($usuario->email)->send(new DefaultMail($mailData));

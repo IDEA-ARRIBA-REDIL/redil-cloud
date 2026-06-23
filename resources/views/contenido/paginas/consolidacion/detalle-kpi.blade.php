@@ -8,7 +8,7 @@
 
 @section('content')
 
-  <h4 class="mb-1 fw-semibold text-primary">Detalle de Consolidación: 
+  <h4 class="mb-1 fw-semibold text-primary">Detalle de consolidación: 
     @switch($kpi)
         @case('cosecha_total')
             Total cosecha

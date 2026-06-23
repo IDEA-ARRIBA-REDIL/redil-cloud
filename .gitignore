@@ -1,83 +1,36 @@
-# ─── PHP / Laravel ────────────────────────────────────────────────────────────
-/vendor
-/bootstrap/cache/*
-!/bootstrap/cache/.gitignore
+/.phpunit.cache
+/node_modules
+.DS_Store
 
-# ─── Variables de entorno ─────────────────────────────────────────────────────
+/public/build
+/public/hot
+
+/storage/*.key
+package-lock.json
+
 .env
 .env.backup
 .env.production
-.env.*.local
+.phpunit.result.cache
+.editorconfig
 
-# ─── Node / npm ───────────────────────────────────────────────────────────────
-/node_modules
+docker-compose.override.yml
+/storage/debugbar
+Homestead.json
+Homestead.yaml
 npm-debug.log
 yarn-error.log
-package-lock.json
-
-# ─── Assets compilados ────────────────────────────────────────────────────────
-/public/build
-/public/hot
-/public/css
-
-# ─── Archivos de debug / scratch en raíz y public ────────────────────────────
-scratch.php
-scratch/
-crear_push_subscriptions.php
-debug_tempnam_root.php
-probar_push.php
-test_notificacion.php
-/public/clear-opcache.php
-/public/clear_cache.php
-/public/debug_tempnam.php
-/public/build.zip
-/public/php.ini
-/public/test-lottie.html
-
-# ─── Storage ──────────────────────────────────────────────────────────────────
-/storage/*.key
-/storage/logs/*.log
-/storage/debugbar
-/storage/app/google-calendar/oauth-credentials.json
-# Datos de tenants (se generan en producción, no van al repo)
-/storage/tenantoasis-*/
-
-# ─── Archivos del sistema macOS ───────────────────────────────────────────────
-.DS_Store
-.ftpquota
-**/.DS_Store
-
-# ─── IDEs y editores ──────────────────────────────────────────────────────────
+storage/logs/*.log
 /.fleet
 /.idea
 /.vscode
-.editorconfig
-
-# ─── PHPUnit ──────────────────────────────────────────────────────────────────
-/.phpunit.cache
-.phpunit.result.cache
-
-# ─── Docker / Homestead ───────────────────────────────────────────────────────
-docker-compose.override.yml
-Homestead.json
-Homestead.yaml
-
-# ─── Seguridad / Claves ───────────────────────────────────────────────────────
-deploy_key
-
-# ─── Documentos internos / Archivos del agente (no van al repo) ─────────────
-ACTA_ENTREGA_REDIL_CLOUD.md
-AGENTS.md
-ARCHITECTURE.md
-ERRORES_DE_SEGURIDAD.md
-erroresBDPostgresql.md
-plan_migracion_multitenant.md
-"acciones del agente.md"
-"agente juan_carlos.md"
-
-# ─── Archivos generados en el servidor (no van al repo) ──────────────────────
-# Nota: config/tenants.php y routes/tenant.php son generados automáticamente
-/config/tenants.php
-/routes/tenant.php
+/vendor
 /app/Providers/AppServiceProvider.php
+/config/tenants.php
+/public/css
+/routes/tenant.php
 /app/Providers
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+deploy_key
+storage/app/google-calendar/oauth-credentials.json

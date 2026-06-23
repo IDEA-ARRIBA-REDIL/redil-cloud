@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use stdClass;
 
 class ActividadController extends Controller
@@ -1821,6 +1822,8 @@ class ActividadController extends Controller
         ]);
     }
 
+
+
     public function uploadPortada(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
@@ -1884,7 +1887,7 @@ class ActividadController extends Controller
     public function eliminarPortada(Actividad $actividad): \Illuminate\Http\RedirectResponse
     {
         if ($actividad->portada && $actividad->portada !== 'default.png') {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete('img/actividades/banners/'.$actividad->portada);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete('img/actividades/banners/' . $actividad->portada);
             $actividad->portada = 'default.png';
             $actividad->save();
         }

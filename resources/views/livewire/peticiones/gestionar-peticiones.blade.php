@@ -18,7 +18,7 @@
           <!--/Observacion-->
 
           <div id="buscarBiblia" class="mt-2">
-            <button type="button" class="btn btn-success rounded-pill waves-effect waves-light btn-sm openBible"> <i class="ti ti-book"> </i> Buscar en la Biblia</button>
+            <button type="button" class="btn btn-success rounded-pill waves-effect waves-light btn-sm openBible"> <i class="ti ti-book me-3"> </i> Buscar en la Biblia</button>
           </div>
 
           <div id="versiculosRecomendados" class="demo-inline-spacing mt-1">
@@ -72,10 +72,12 @@
       <div class="modal-content">
         <div class="modal-body">
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
           <div class="text-center mb-4">
-            <h3 class="mb-2"><i class="ti ti-book ti-lg"></i> Buscar en la Biblia</h3>
-            <p class="text-muted">Busca la cita bíblica directamente seleccionando el libro, capítulo y versículos, o busca versículos por una palabra clave.</p>
+            <h3 class="mb-2 fw-semibold"><i class="ti ti-book ti-lg me-1"></i> Buscar en la Biblia</h3>
+            <p class="text-black">Busca la cita bíblica directamente seleccionando el libro, capítulo y versículos, o busca versículos por una palabra clave.</p>
           </div>
+          
           <div class="row">
             <div class="mb-2 mb-2 col-12 col-md-4">
               <label class="form-label" for="select-libro">
@@ -98,14 +100,14 @@
               </select>
             </div>
 
-            <div class="mb-2 mb-2 col-12 col-md-3">
+            <div class="mb-2 mb-2 col-12 col-md-4">
               <label class="form-label" for="versiculo">
                 Versículo
               </label>
               <input disabled id="versiculo" name="versiculo" value="" type="text" class="form-control" placeholder="Ej. 2-10" />
             </div>
 
-            <div class="mb-2 mb-2 col-2 pt-4">
+            <div class="mb-2 mb-2 col-1 my-auto">
               <button id="buscar-biblia-versiculo" class="btn btn-outline-primary px-2 px-md-3 waves-effect" type="button"><i class="ti ti-search"></i></button>
             </div>
 
@@ -128,6 +130,50 @@
     </div>
   </div>
   <!--/ Modal buscarBiblia  -->
+
+  <!-- Modal Asignar Intercesor -->
+  <div wire:ignore.self class="modal fade" id="modalAsignarIntercesor" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-simple modal-edit-user">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="text-center mb-4">
+                      <h3 class="mb-2 fw-semibold"><i class="ti ti-user-check ti-lg me-1"></i> Reasignar Intercesor</h3>
+                      <p class="text-black">Busca y selecciona un intercesor activo para asignarle esta petición.</p>
+                    </div>
+          
+                    <div class="row">
+                      <div class="col-12">
+                        @livewire('Usuarios.usuarios-para-busqueda', [
+                          'id' => 'intercesor_asignado_id',
+                          'class' => 'col-12 mb-3',
+                          'label' => 'Seleccionar intercesor (*)',
+                          'placeholder' => 'Buscar por nombre o identificación...',
+                          'queUsuariosCargar' => 'Intercesores',
+                          'tipoBuscador' => 'unico',
+                          'conDadosDeBaja' => 'no',
+                          'modulo' => 'peticiones_asignacion',
+                          'obligatorio' => true,
+                        ], key('buscador-intercesor-' . ($peticionAsignarId ?? 'none')))
+                      </div>
+                    </div>
+
+                    <div class="row mt-4">
+                      <div class="col-12 text-center">
+                        <button type="button" 
+                          wire:click="asignarIntercesorConfirmado" 
+                          class="btn btn-primary rounded-pill me-sm-3 me-1 px-4" 
+                          {{ !$intercesorSeleccionadoId ? 'disabled' : '' }}>
+                          <i class="ti ti-check me-1"></i> Confirmar asignación
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                      </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  <!--/ Modal Asignar Intercesor -->
 
 </div>
 

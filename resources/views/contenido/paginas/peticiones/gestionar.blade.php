@@ -110,15 +110,12 @@ $configData = Helper::appClasses();
 <script type="module">
 
   $(document).ready(function() {
-    $('.select2').select2({
-        placeholder: 'Filtrar por tipo de petición',
-      }
-    );
-  });
-
-
-  $(document).ready(function() {
-    $('.select2').select2({
+    $('#filtroTipoPeticiones').select2({
+      placeholder: 'Filtrar por tipo de petición',
+      dropdownParent: $('#modalBusquedaAvanzada')
+    });
+    $('#filtroSedes').select2({
+      placeholder: 'Filtrar por sedes',
       dropdownParent: $('#modalBusquedaAvanzada')
     });
   });
@@ -320,7 +317,7 @@ $configData = Helper::appClasses();
                     <div class="card-body d-flex flex-row p-3">
 
                       <div class="card-icon me-1">
-                      <img src="{{ tenant_asset('img/peticiones/'. $indicador->imagen) }}" alt="icono" class="me-2" width="50">
+                      <img src="{{ $indicador->imagen }}" alt="icono" class="me-2" width="50">
                       </div>
 
                       <div class="card-title mb-0">
@@ -416,9 +413,14 @@ $configData = Helper::appClasses();
                 <div class="dropdown zindex-2 p-1 float-end">
                   <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i> </button>
                   <ul class="dropdown-menu dropdown-menu-end">
+                    @if($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores'))
+                      <li><a class="dropdown-item" href="javascript:void(0);" onclick="Livewire.dispatch('modalAsignarIntercesor', { peticionId: '{{$peticion->id}}'})">Asignar a intercesor</a></li>
+                    @endif
                     @if($rolActivo->hasPermissionTo('peticiones.opcion_eliminar'))
                       <li><a class="dropdown-item text-danger" href="javascript:void(0);" onclick="confirmarEliminacion('{{$peticion->id}}')">Eliminar</a></li>
                     @else
+                    @endif
+                    @if(!$rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores') && !$rolActivo->hasPermissionTo('peticiones.opcion_eliminar'))
                       <li><a class="dropdown-item disabled" href="javascript:void(0);">Sin acciones</a></li>
                     @endif
                   </ul>
@@ -430,13 +432,33 @@ $configData = Helper::appClasses();
           <div class="card-body">
             <div class="row mt-4">
               
-              <div class="col-12 d-flex flex-column mb-3">
+              <div class="col-6 d-flex flex-column mb-3">
                 <small class="text-black">Creada por</small>
                 <div class="d-flex align-items-center mt-1">
                   <div class="avatar avatar-sm me-2">
-                     <img class="rounded-circle" src="{{ $peticion->fotoUsuario ? tenant_asset('img/usuarios/foto-usuario/'.$peticion->fotoUsuario) : asset('assets/img/avatars/1.png') }}" alt="foto">
+                    @if($peticion->autorCreacion && !empty($peticion->autorCreacion->foto) && !in_array($peticion->autorCreacion->foto, ['default-m.png', 'default-f.png']))
+                      <img class="rounded-circle" src="{{ tenant_asset('img/usuarios/foto-usuario/'.$peticion->autorCreacion->foto) }}" alt="foto">
+                    @else
+                      <span class="avatar-initial rounded-circle bg-label-primary">{{ $peticion->autorCreacion ? $peticion->autorCreacion->inicialesNombre() : 'AG' }}</span>
+                    @endif
                   </div>
                   <small class="fw-semibold text-black ">{{ $peticion->usuarioCreacion ?? 'No especificado'}}</small>
+                </div>
+              </div>
+
+              <div class="col-6 d-flex flex-column mb-3">
+                <small class="text-black">Asignada a</small>
+                <div class="d-flex align-items-center mt-1">
+                  <div class="avatar avatar-sm me-2">
+                    @if($peticion->asignado && !empty($peticion->asignado->foto) && !in_array($peticion->asignado->foto, ['default-m.png', 'default-f.png']))
+                      <img class="rounded-circle" src="{{ tenant_asset('img/usuarios/foto-usuario/'.$peticion->asignado->foto) }}" alt="foto">
+                    @elseif($peticion->asignado)
+                      <span class="avatar-initial rounded-circle bg-label-success">{{ $peticion->asignado->inicialesNombre() }}</span>
+                    @else
+                      <span class="avatar-initial rounded-circle bg-label-secondary"><i class="ti ti-user-x"></i></span>
+                    @endif
+                  </div>
+                  <small class="fw-semibold text-black text-truncate" title="{{ $peticion->usuarioAsignadoNombre ?? 'Sin asignar' }}">{{ $peticion->usuarioAsignadoNombre ?? 'Sin asignar'}}</small>
                 </div>
               </div>
 
@@ -559,6 +581,27 @@ $configData = Helper::appClasses();
                 </select>
               </div>
 
+              <!-- Por sede -->
+              <div class="col-12 mb-3">
+                <label class="form-label">Por sedes</label>
+                <select id="filtroSedes" name="filtroSedes[]" class="select2 form-select" multiple>
+                  @foreach($sedes as $sede)
+                  <option value="{{ $sede->id }}" {{ isset($filtroSedes) && in_array($sede->id, $filtroSedes) ? 'selected' : '' }}>{{ $sede->nombre }}</option>
+                  @endforeach
+                </select>
+              </div>
+
+              <!-- Por estado de asignación -->
+              <div class="col-12 mb-3">
+                <label class="form-label">Estado de asignación</label>
+                <select id="filtroAsignacion" name="filtroAsignacion" class="form-select">
+                  <option value="">Todas</option>
+                  <option value="asignadas" {{ isset($filtroAsignacion) && $filtroAsignacion === 'asignadas' ? 'selected' : '' }}>Asignadas</option>
+                  <option value="sin_asignar" {{ isset($filtroAsignacion) && $filtroAsignacion === 'sin_asignar' ? 'selected' : '' }}>Sin asignar</option>
+                  <option value="asignadas_a_mi" {{ isset($filtroAsignacion) && $filtroAsignacion === 'asignadas_a_mi' ? 'selected' : '' }}>Asignadas a mí</option>
+                </select>
+              </div>
+
                 <!-- Por persona -->
                 @livewire('Usuarios.usuarios-para-busqueda', [
                   'id' => 'persona_id',
@@ -585,6 +628,7 @@ $configData = Helper::appClasses();
   <!-- offcanvas generador de excel  -->
   <form class="forms-sample" method="POST" action="{{ route('peticion.generarExcel', $tipo) }}">
     @csrf
+    <textarea id="parametros-busqueda-excel" name="parametrosBusqueda" class="d-none">{{json_encode(request()->input())}}</textarea>
     <div class="offcanvas offcanvas-end event-sidebar modalSelect2"  tabindex="-1" id="modalGeneradorExcel" aria-labelledby="modalGeneradorExcelLabel">
         <div class="offcanvas-header my-1 px-8">
             <h4 class="offcanvas-title fw-bold text-primary" id="modalGeneradorExcelLabel">
@@ -599,56 +643,6 @@ $configData = Helper::appClasses();
             </div>
 
              <div class="row">
-                <!-- Informacion personal -->
-                <div class="col-12 mb-3">
-                  <label for="informacionPersonal" class="form-label">Información personal <br>
-                    (<a href="javascript:;" data-select="informacionPersonal" class="selectAllItems"><span class="fw-medium">Seleccionar todos</span></a> | <a href="javascript:;" data-select="informacionPersonal" class="clearAllItems"><span class="fw-medium">Quitar todos</span></a>)
-                  </label>
-                  <select id="informacionPersonal" name="informacionPersonal[]" class="select2GeneradorExcel form-select" multiple>
-                    @foreach($camposInformeExcel->where('selector_id',1) as $campo)
-                    <option value="{{ $campo->id }}">{{ $campo->nombre_campo_informe }}</option>
-                    @endforeach
-                  </select>
-                </div>
-
-                <!-- Informacion ministerial -->
-                <div class="col-12 mb-3">
-                  <label for="informacionMinisterial" class="form-label">Información ministerial <br>
-                    (<a href="javascript:;" data-select="informacionMinisterial" class="selectAllItems"><span class="fw-medium">Seleccionar todos</span></a> | <a href="javascript:;" data-select="informacionMinisterial" class="clearAllItems"><span class="fw-medium">Quitar todos</span></a>)
-                  </label>
-                  <select id="informacionMinisterial" name="informacionMinisterial[]" class="select2GeneradorExcel form-select" multiple>
-                    @foreach($pasosCrecimiento as $pasoCrecimiento)
-                    <option value="{{ $pasoCrecimiento->id }}">{{ $pasoCrecimiento->nombre }}</option>
-                    @endforeach
-                  </select>
-                </div>
-
-                <!-- Informacion congregacional -->
-                <div class="col-12 mb-3">
-                  <label for="informacionCongregacional" class="form-label">Información congregacional <br>
-                    (<a href="javascript:;" data-select="informacionCongregacional" class="selectAllItems"><span class="fw-medium">Seleccionar todos</span></a> | <a href="javascript:;" data-select="informacionCongregacional" class="clearAllItems"><span class="fw-medium">Quitar todos</span></a>)
-                  </label>
-                  <select id="informacionCongregacional" name="informacionCongregacional[]" class="select2GeneradorExcel form-select" multiple>
-                    @foreach($camposInformeExcel->where('selector_id',2) as $campo)
-                    <option value="{{ $campo->id }}">{{ $campo->nombre_campo_informe }}</option>
-                    @endforeach
-                  </select>
-                </div>
-
-                @if($configuracion->visible_seccion_campos_extra)
-                <!-- Informacion congregacional -->
-                <div class="col-12 mb-3">
-                  <label for="informacionCamposExtras" class="form-label">Información {{$configuracion->label_seccion_campos_extra}} <br>
-                    (<a href="javascript:;" data-select="informacionCamposExtras" class="selectAllItems"><span class="fw-medium">Seleccionar todos</span></a> | <a href="javascript:;" data-select="informacionCamposExtras" class="clearAllItems"><span class="fw-medium">Quitar todos</span></a>)
-                  </label>
-                  <select id="informacionCamposExtras" name="informacionCamposExtras[]" class="select2GeneradorExcel form-select" multiple>
-                    @foreach($camposExtras as $campo)
-                    <option value="{{ $campo->id }}">{{ $campo->nombre }}</option>
-                    @endforeach
-                  </select>
-                </div>
-                @endif
-
                 <!-- Información petición-->
                 <div class="col-12 mb-3">
                   <label for="informacionCamposPeticiones" class="form-label">Información campos petición <br>

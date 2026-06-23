@@ -73,7 +73,7 @@ $configData = Helper::appClasses();
             </div>
             <div class="ms-auto">
               <div class="dropdown zindex-2 p-1 float-end">
-                <button type="button" class="btn dropdown-toggle hide-arrow btn btn-sm waves-effect text-black border p-1" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
+                <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect"  data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
                 <ul class="dropdown-menu dropdown-menu-end">
                   <li>
                     <a class="dropdown-item" href="{{ route('gestionar-tipos-de-grupos.editarTipoDeGrupo', $tipoGrupo->id) }}">

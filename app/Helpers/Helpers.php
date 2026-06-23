@@ -342,37 +342,36 @@ class Helpers
 
   public static function camposPeticiones()
   {
-
     $camposPeticiones = [];
 
     $item = new \stdClass();
     $item->id = 1;
-    $item->value = 'tipo_peticion_id';
-    $item->nombre = 'Tipo de petición';
+    $item->value = 'nombre_solicitante';
+    $item->nombre = 'Nombre';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
     $item->id = 2;
-    $item->value = 'estado';
-    $item->nombre = 'Estado de la petición';
+    $item->value = 'email_solicitante';
+    $item->nombre = 'Email';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
     $item->id = 3;
-    $item->value = 'descripcion';
-    $item->nombre = 'Descripción petición';
+    $item->value = 'telefono_solicitante';
+    $item->nombre = 'Teléfonos';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
     $item->id = 4;
-    $item->value = 'respuesta';
-    $item->nombre = 'Respuesta petición';
+    $item->value = 'genero_solicitante';
+    $item->nombre = 'Género';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
     $item->id = 5;
-    $item->value = 'fecha';
-    $item->nombre = 'Fecha petición';
+    $item->value = 'pais_id';
+    $item->nombre = 'Pais';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
@@ -383,32 +382,32 @@ class Helpers
 
     $item = new \stdClass();
     $item->id = 7;
-    $item->value = 'pais_id';
-    $item->nombre = 'Pais petición';
+    $item->value = 'asignado_a';
+    $item->nombre = 'Asignado a';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
     $item->id = 8;
-    $item->value = 'nombre_solicitante';
-    $item->nombre = 'Nombre Solicitante';
+    $item->value = 'tipo_peticion_id';
+    $item->nombre = 'Tipo de peticion';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
     $item->id = 9;
-    $item->value = 'email_solicitante';
-    $item->nombre = 'Email Solicitante';
+    $item->value = 'estado';
+    $item->nombre = 'Estado de la petición';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
     $item->id = 10;
-    $item->value = 'telefono_solicitante';
-    $item->nombre = 'Teléfono Solicitante';
+    $item->value = 'descripcion';
+    $item->nombre = 'Descripción';
     $camposPeticiones[] = $item;
 
     $item = new \stdClass();
     $item->id = 11;
-    $item->value = 'genero_solicitante';
-    $item->nombre = 'Género Solicitante';
+    $item->value = 'fecha';
+    $item->nombre = 'Fecha';
     $camposPeticiones[] = $item;
 
     return $camposPeticiones;
@@ -442,11 +441,11 @@ class Helpers
   public static function estadoPeticion($estado)
   {
     if($estado == 1){
-      $respuesta = 'Sin responder';
+      $respuesta = 'Pendiente';
     }elseif($estado == 2){
-      $respuesta = 'Finalizada';
+      $respuesta = 'Cerrada';
     }elseif($estado == 3){
-      $respuesta = 'En seguimiento';
+      $respuesta = 'En proceso';
     }
 
     return $respuesta;

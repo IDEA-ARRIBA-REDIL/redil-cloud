@@ -3,1080 +3,666 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Software para Iglesias y Pastores - REDIL Cloud</title>
-    <meta name="description" content="Administra tu congregación en tiempo real. Software inteligente para iglesias con presencia en 16 países.">
+    <title>Software para Iglesias - REDIL Cloud</title>
+    <meta name="description" content="Administra tu congregación en tiempo real. Pastoreo inteligente para iglesias de todos los tamaños.">
 
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts: Plus Jakarta Sans + Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <!-- Google Fonts: Afacad Flux & Lexend Deca -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&family=Lexend+Deca:wght@100..900&display=swap" rel="stylesheet">
 
     <style>
-        /* =====================================
-           DESIGN TOKENS (HexTone-inspired)
-        ===================================== */
-        :root {
-            --primary:       #1b86fa;
-            --primary-dark:  #0a6fd8;
-            --heading:       #120036;
-            --body-text:     #6c757d;
-            --nav-text:      #353f4f;
-            --bg-white:      #ffffff;
-            --bg-light:      #f8faff;
-            --bg-alt:        #f0f4ff;
-            --border:        #e4ecff;
-            --success:       #12c46e;
-            --font-head:     'Plus Jakarta Sans', sans-serif;
-            --font-body:     'Inter', sans-serif;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Open+Sans:wght@400;600;700&display=swap');
 
-        * { box-sizing: border-box; }
+        :root {
+            --primary: #63e3bb; /* The vibrant teal from the design */
+            --primary-dark: #63e3bb;
+            --text-dark: #111827;
+            --text-gray: #6b7280;
+            --bg-light-grey: #f3f8fb; /* Top section, problems, team */
+        }
 
         body {
-            font-family: var(--font-body);
-            color: var(--body-text);
-            background: var(--bg-white);
-            line-height: 1.7;
-            overflow-x: hidden;
+            font-family: "Lexend Deca", sans-serif;
+            font-optical-sizing: auto;
+            font-style: normal;
+            color: var(--text-gray);
+            -webkit-font-smoothing: antialiased;
         }
 
-        h1, h2, h3, h4, h5 {
-            font-family: var(--font-head);
-            color: var(--heading);
-            font-weight: 700;
+
+
+        h1, h2, h3, h4, h5, h6, .font-heading {
+            font-family: "Lexend Deca", sans-serif;
+            font-optical-sizing: auto;
+            font-style: normal;
+            color: var(--text-dark);
         }
 
-        /* =====================================
-           NAVBAR
-        ===================================== */
-        .navbar {
-            background: var(--bg-white);
-            padding: 18px 0;
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+        .text-primary { color: var(--primary) !important; }
+        .text-lista { color: #00E4BB !important; }
+        .text-formulario::placeholder {
+          color: #A9AEB3 !important;
+          opacity: 1;
         }
-        .navbar-brand {
-            font-family: var(--font-head);
-            font-weight: 800;
-            font-size: 1.4rem;
-            color: var(--heading) !important;
-            text-decoration: none;
-        }
-        .navbar-brand span { color: var(--primary); }
-        .nav-link {
-            font-family: var(--font-head);
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: var(--nav-text) !important;
-            padding: 6px 14px !important;
-            transition: color .2s;
-        }
-        .nav-link:hover { color: var(--primary) !important; }
-        .btn-nav-cta {
-            background: var(--primary);
-            color: #fff !important;
-            font-family: var(--font-head);
-            font-weight: 600;
-            font-size: 0.9rem;
-            padding: 10px 22px;
-            border-radius: 8px;
-            border: none;
-            transition: background .2s, transform .2s;
-            text-decoration: none;
-        }
-        .btn-nav-cta:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .text-formulario { color: #A9AEB3 !important; }
+        .bg-primary { background-color: var(--primary) !important; }
+        .text-dark { color: var(--text-dark) !important; }
+        .bg-light-grey { background-color: var(--bg-light-grey) !important; }
+        .bg-contacto{background-color:#00a78b}
+        .bg-footer{background-color:#000a0b}
 
-        /* =====================================
-           HERO SECTION
-        ===================================== */
-        .hero-section {
-            background: var(--bg-light);
-            border-radius: 0 0 32px 32px;
-            padding: 90px 0 60px;
-            margin: 0 20px;
-            position: relative;
-            overflow: hidden;
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
         }
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: -100px; right: -100px;
-            width: 600px; height: 600px;
-            background: radial-gradient(circle, rgba(27,134,250,0.10) 0%, transparent 70%);
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+
+        /* Rounded elements */
+        .rounded-4 { border-radius: 1rem !important; }
+        .rounded-5 { border-radius: 1.5rem !important; }
+
+        /* Play Button */
+        .play-btn-wrapper:hover .play-btn {
+            transform: scale(1.05);
+        }
+        .play-btn {
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-        }
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background: #fff;
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            padding: 8px 18px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--nav-text);
-            margin-bottom: 24px;
-            box-shadow: 0 2px 12px rgba(27,134,250,0.08);
-        }
-        .hero-badge .dot {
-            width: 8px; height: 8px;
-            background: var(--success);
-            border-radius: 50%;
-        }
-        .hero-title {
-            font-size: clamp(2.2rem, 5vw, 3.4rem);
-            font-weight: 800;
-            color: var(--heading);
-            line-height: 1.2;
-            margin-bottom: 22px;
-        }
-        .hero-subtitle {
-            font-size: 1.1rem;
-            color: var(--body-text);
-            max-width: 480px;
-            margin-bottom: 36px;
-        }
-        .btn-primary-main {
-            background: var(--primary);
-            color: #fff;
-            font-family: var(--font-head);
-            font-weight: 700;
-            font-size: 1rem;
-            padding: 14px 30px;
-            border-radius: 8px;
-            border: none;
-            text-decoration: none;
-            display: inline-block;
-            transition: background .2s, transform .2s, box-shadow .2s;
-        }
-        .btn-primary-main:hover {
-            background: var(--primary-dark);
-            color: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(27,134,250,0.3);
-        }
-        .btn-secondary-main {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--nav-text);
-            font-family: var(--font-head);
-            font-weight: 600;
-            font-size: 1rem;
-            text-decoration: none;
-            padding: 14px 0;
-            transition: color .2s;
-        }
-        .btn-secondary-main .play-btn {
-            width: 44px; height: 44px;
-            background: #fff;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            font-size: 1rem;
-            color: var(--primary);
-        }
-        .btn-secondary-main:hover { color: var(--primary); }
-        .hero-illustration {
-            position: relative;
-        }
-        .hero-illustration img {
-            width: 100%;
-            max-width: 520px;
-            filter: drop-shadow(0 20px 40px rgba(27,134,250,0.15));
-        }
-
-        /* =====================================
-           TRUSTED BY LOGOS
-        ===================================== */
-        .trust-section {
-            padding: 50px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .trust-label {
-            font-size: 0.85rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--body-text);
-        }
-        .trust-logos {
+            background-color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 48px;
-            flex-wrap: wrap;
-            margin-top: 28px;
-        }
-        .trust-logo {
-            font-family: var(--font-head);
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: #b0bec5;
-            letter-spacing: -0.5px;
-        }
-
-        /* =====================================
-           SECTION LABELS
-        ===================================== */
-        .section-label {
-            display: inline-block;
-            font-family: var(--font-head);
-            font-weight: 700;
-            font-size: 0.78rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--primary);
-            margin-bottom: 14px;
-        }
-        .section-title {
-            font-size: clamp(1.8rem, 4vw, 2.5rem);
-            font-weight: 800;
-            color: var(--heading);
-            line-height: 1.2;
-            margin-bottom: 18px;
-        }
-        .section-sub {
-            font-size: 1.05rem;
-            color: var(--body-text);
-            max-width: 520px;
-        }
-
-        /* =====================================
-           FEATURE ALTERNATING SECTIONS
-        ===================================== */
-        .feature-section { padding: 90px 0; }
-        .feature-section.bg-alt { background: var(--bg-alt); }
-
-        .feature-check {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-        .feature-check i {
-            color: var(--primary);
-            font-size: 1.1rem;
-            margin-top: 3px;
-            flex-shrink: 0;
-        }
-        .feature-check p { margin: 0; color: var(--body-text); }
-
-        .feature-card-mockup {
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(27,134,250,0.12);
-            padding: 28px;
-            position: relative;
-        }
-        .stat-chip {
-            background: #fff;
-            border-radius: 14px;
-            box-shadow: 0 8px 28px rgba(0,0,0,0.10);
-            padding: 16px 22px;
-            display: inline-block;
-        }
-        .stat-chip .stat-val {
-            font-family: var(--font-head);
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--heading);
-        }
-        .stat-chip .stat-label {
-            font-size: 0.8rem;
-            color: var(--body-text);
-        }
-
-        /* =====================================
-           MINI ICON FEATURES
-        ===================================== */
-        .mini-feature {
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 30px;
-        }
-        .mini-feature-icon {
-            width: 52px; height: 52px;
-            background: rgba(27,134,250,0.1);
-            border-radius: 14px;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--primary);
-            font-size: 1.4rem;
-            flex-shrink: 0;
-        }
-        .mini-feature h6 {
-            font-family: var(--font-head);
-            font-weight: 700;
-            color: var(--heading);
-            margin-bottom: 4px;
-        }
-        .mini-feature p { margin: 0; font-size: 0.9rem; }
-
-        /* =====================================
-           STATISTICS COUNTER SECTION
-        ===================================== */
-        .stats-section {
-            padding: 80px 0;
-            border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border);
-        }
-        .stat-item {
-            text-align: center;
-            padding: 30px 20px;
-        }
-        .stat-item .stat-number {
-            font-family: var(--font-head);
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--heading);
-            line-height: 1;
-            margin-bottom: 8px;
-        }
-        .stat-item .stat-number .arrow {
-            font-size: 1.6rem;
-            color: var(--success);
-        }
-        .stat-item h6 {
-            font-family: var(--font-head);
-            font-weight: 700;
-            color: var(--heading);
-        }
-        .stat-divider {
-            width: 1px;
-            background: var(--border);
-            align-self: stretch;
-            margin: 20px 0;
-        }
-
-        /* =====================================
-           BENEFITS GRID
-        ===================================== */
-        .benefits-section { padding: 90px 0; background: var(--bg-light); }
-        .benefit-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 30px;
-            height: 100%;
-            border: 1px solid var(--border);
-            transition: box-shadow .3s, transform .3s;
-        }
-        .benefit-card:hover {
-            box-shadow: 0 12px 40px rgba(27,134,250,0.12);
-            transform: translateY(-4px);
-        }
-        .benefit-icon {
-            width: 56px; height: 56px;
-            background: rgba(27,134,250,0.1);
-            border-radius: 16px;
-            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             color: var(--primary);
             font-size: 1.5rem;
-            margin-bottom: 18px;
-        }
-        .benefit-card h5 {
-            font-size: 1.05rem;
-            margin-bottom: 10px;
+            transition: transform 0.2s;
         }
 
-        /* =====================================
-           CONTACT SECTION
-        ===================================== */
-        .contact-section { padding: 90px 0; }
-        .contact-info-item {
+        /* Feature grid icons */
+        .feature-icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background-color: rgba(0, 208, 156, 0.1);
             display: flex;
             align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .contact-info-item .icon-wrap {
-            width: 50px; height: 50px;
-            background: rgba(27,134,250,0.1);
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
+            justify-content: center;
+            font-size: 1.8rem;
             color: var(--primary);
-            font-size: 1.2rem;
             flex-shrink: 0;
         }
-        .contact-info-item h6 {
-            font-family: var(--font-head);
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-        .contact-info-item p { margin: 0; font-size: 0.9rem; }
-        .contact-form-wrap {
-            background: #fff;
-            border-radius: 20px;
-            padding: 44px;
-            box-shadow: 0 20px 60px rgba(18,0,54,0.08);
-            border: 1px solid var(--border);
-        }
-        .form-control {
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            padding: 12px 16px;
-            font-size: 0.95rem;
-            transition: border-color .2s, box-shadow .2s;
-        }
-        .form-control:focus {
+
+        /* Forms */
+        .form-control:focus, .form-select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(27,134,250,0.12);
+            box-shadow: 0 0 0 0.25rem rgba(0, 208, 156, 0.25);
         }
-        .form-label {
-            font-family: var(--font-head);
-            font-weight: 600;
-            font-size: 0.88rem;
-            color: var(--heading);
-        }
-        .btn-submit {
-            background: var(--primary);
-            color: #fff;
-            font-family: var(--font-head);
-            font-weight: 700;
-            font-size: 1rem;
-            padding: 14px;
-            border-radius: 10px;
-            border: none;
-            width: 100%;
-            transition: background .2s, transform .2s, box-shadow .2s;
-        }
-        .btn-submit:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(27,134,250,0.3);
+        .form-control, .form-select {
+            border-color: #e5e7eb;
         }
 
-        /* =====================================
-           CTA BANNER
-        ===================================== */
-        .cta-banner {
-            background: linear-gradient(135deg, #1b86fa 0%, #0a4fa3 100%);
-            border-radius: 24px;
-            padding: 70px 60px;
-            text-align: center;
+        /* Team Image Slicing */
+        .team-img-container {
+            width: 100%;
+            padding-top: 75%; /* 4:3 aspect ratio roughly */
             position: relative;
             overflow: hidden;
-            margin: 30px 0;
+            background-color: #e5e7eb;
         }
-        .cta-banner::before, .cta-banner::after {
-            content: '';
+        .team-img {
             position: absolute;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.07);
+            width: 200%;
+            height: 200%;
+            object-fit: cover;
         }
-        .cta-banner::before { width: 350px; height: 350px; top: -120px; right: -80px; }
-        .cta-banner::after  { width: 250px; height: 250px; bottom: -100px; left: -60px; }
-        .cta-banner h2 {
-            color: #fff;
-            font-size: clamp(1.8rem, 4vw, 2.6rem);
-            margin-bottom: 16px;
+        .team-img-1 { top: 0; left: 0; }
+        .team-img-2 { top: 0; left: -100%; }
+        .team-img-3 { top: -100%; left: 0; }
+        .team-img-4 { top: -100%; left: -100%; }
+
+        .fw-bolder{font-weight: 900 !important;}
+        /* Hover effects */
+        .hover-white:hover { color: white !important; }
+
+        .bg-hero{
+            background-color: #f3f8fb;
         }
-        .cta-banner p { color: rgba(255,255,255,0.8); font-size: 1.05rem; margin-bottom: 32px; }
-        .btn-cta-white {
-            background: #fff;
-            color: var(--primary);
-            font-family: var(--font-head);
-            font-weight: 700;
-            font-size: 1rem;
-            padding: 14px 36px;
-            border-radius: 10px;
+
+        .hero-section {
+            background-image: url('{{ Storage::disk("global_media")->url("/landing/imagen 1 (1).png") }}');
+            background-position: right -50px bottom;
+            background-repeat: no-repeat;
+            background-size: 68%;
+        }
+
+        @media (max-width: 991px) {
+            .bg-hero-row {
+                background-position: bottom center;
+                background-size: 120%;
+            }
+            .hero-mobile-space {
+                min-height: 380px;
+            }
+        }
+        .bg-feature1-row {
+            background-image: url('{{ Storage::disk("global_media")->url("/landing/imagen-4.png") }}');
+            background-position: right -50px center;
+            background-repeat: no-repeat;
+            background-size: 55%;
+        }
+
+        @media (max-width: 991px) {
+            .bg-feature1-row {
+                background-position: bottom center;
+                background-size: 100%;
+            }
+            .feature1-mobile-space {
+                min-height: 380px;
+            }
+        }
+        /* Navbar active state */
+        .navbar-brand {
             text-decoration: none;
-            display: inline-block;
-            transition: transform .2s, box-shadow .2s;
-        }
-        .btn-cta-white:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-            color: var(--primary-dark);
-        }
-
-        /* =====================================
-           FOOTER
-        ===================================== */
-        .footer {
-            background: var(--heading);
-            color: rgba(255,255,255,0.7);
-            padding: 60px 0 30px;
-        }
-        .footer-brand {
-            font-family: var(--font-head);
-            font-weight: 800;
-            font-size: 1.4rem;
-            color: #fff;
-            margin-bottom: 14px;
-        }
-        .footer-brand span { color: var(--primary); }
-        .footer h6 {
-            font-family: var(--font-head);
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 16px;
-        }
-        .footer a {
-            color: rgba(255,255,255,0.6);
-            text-decoration: none;
-            display: block;
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            transition: color .2s;
-        }
-        .footer a:hover { color: #fff; }
-        .footer-divider {
-            border-color: rgba(255,255,255,0.1);
-            margin: 40px 0 24px;
-        }
-        .social-links { display: flex; gap: 14px; margin-top: 16px; }
-        .social-link {
-            width: 38px; height: 38px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            color: rgba(255,255,255,0.7) !important;
-            font-size: 1rem;
-            transition: background .2s, color .2s;
-        }
-        .social-link:hover {
-            background: var(--primary);
-            color: #fff !important;
-        }
-
-        /* =====================================
-           RESPONSIVE TWEAKS
-        ===================================== */
-        @media (max-width: 768px) {
-            .hero-section { margin: 0 10px; padding: 60px 0 40px; }
-            .feature-section { padding: 60px 0; }
-            .contact-form-wrap { padding: 28px 20px; }
-            .cta-banner { padding: 50px 24px; }
-            .stats-section .stat-divider { display: none; }
-        }
-
-        /* Smooth scroll */
-        html { scroll-behavior: smooth; }
-
-        /* Grid pattern overlay */
-        .grid-bg {
-            background-image: radial-gradient(circle, #d8e6ff 1px, transparent 1px);
-            background-size: 28px 28px;
         }
     </style>
 </head>
 <body>
 
-<!-- =====================================
-     NAVBAR
-===================================== -->
-<nav class="navbar">
-    <div class="container">
-        <a class="navbar-brand" href="#">
-            <span>&#9678;</span> REDIL <span>Cloud</span>
-        </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-            <i class="bi bi-list fs-2" style="color:var(--heading)"></i>
-        </button>
-        <div class="collapse navbar-collapse" id="navMenu">
-            <ul class="navbar-nav mx-auto">
-                <li class="nav-item"><a class="nav-link" href="#inicio">Inicio</a></li>
-                <li class="nav-item"><a class="nav-link" href="#beneficios">Beneficios</a></li>
-                <li class="nav-item"><a class="nav-link" href="#modulos">Módulos</a></li>
-                <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
-            </ul>
-            <div class="d-flex align-items-center gap-3">
-                <a href="#contacto" style="color:var(--nav-text); font-family:var(--font-head); font-weight:600; text-decoration:none; font-size:.95rem;">Iniciar Sesión</a>
-                <a href="#contacto" class="btn-nav-cta">Solicitar Demo</a>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light-white pt-4 pb-3">
+        <div class="container">
+            <!-- Custom Logo as SVG -->
+            <a class="navbar-brand d-flex align-items-center" href="#inicio">
+                <img style="width:100px !important" src="{{ Storage::disk('global_media')->url('OPCION 1 NEGRO (1).png') }}">
+                <div class="ms-2 lh-1 text-dark">
+
+                </div>
+            </a>
+            <button class="navbar-toggler border-0 p-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="bi bi-list fs-1 text-dark"></i>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center gap-3 fw-semibold">
+                    <li class="nav-item"><a class="nav-link text-dark" href="#inicio">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="#beneficios">Beneficios</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="#caracteristicas">Características</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="#modulos">Módulos</a></li>
+                    <li class="nav-item ms-lg-3"><a class="btn rounded-pill px-4 py-2 fw-bold text-dark shadow-sm" style="background-color: #00E4BB !important;" href="#contacto">Contacto</a></li>
+                </ul>
             </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<!-- =====================================
-     HERO SECTION
-===================================== -->
-<section id="inicio" class="py-4">
-    <div class="hero-section">
+    <!-- HERO SECTION -->
+    <section id="inicio" class="hero-section pb-5 pt-4" style="background-color: #F3F8FB; overflow: hidden;">
         <div class="container">
-            <div class="row align-items-center g-5">
-                <div class="col-lg-6">
-                    <div class="hero-badge">
-                        <span class="dot"></span>
-                        Presencia en 16 países · Software activo
-                    </div>
-                    <h1 class="hero-title">
-                        El software más inteligente para tu <span style="color:var(--primary)">iglesia</span>
+            <div class="row align-items-center pb-5 pb-lg-0">
+                <div class="col-lg-6 mb-5 mb-lg-0 pt-5 pb-lg-5 position-relative" style="z-index: 2;">
+                    <h1 class="fw-bolder mb-4" style="font-size: 3.8rem; line-height: 1.1; letter-spacing: -1px;">
+                        El software más<br>
+                        inteligente para<br>
+                        tu <span style="color:#00B596">congregación</span>
                     </h1>
-                    <p class="hero-subtitle">
+                    <p class="fs-5 text-dark mb-5 pe-lg-5" style="line-height: 1.6;">
                         Administra tu congregación en tiempo real desde cualquier dispositivo. Pastoreo inteligente para iglesias de todos los tamaños.
                     </p>
-                    <div class="d-flex align-items-center gap-4 flex-wrap">
-                        <a href="#contacto" class="btn-primary-main">Solicitar Demo gratis</a>
-                        <a href="#modulos" class="btn-secondary-main">
-                            <span class="play-btn"><i class="bi bi-play-fill"></i></span>
-                            Ver módulos
+                    <div class="d-flex align-items-center gap-4 mb-5">
+                        <a href="#" style="background-color: #00E4BB !important;" class="btn  rounded-pill text-dark px-4 py-3 fw-bold text-white fs-6 shadow-sm">Solicitar demo gratis</a>
+                        <a href="#" class="play-btn-wrapper d-flex align-items-center text-dark text-decoration-none fw-bold fs-6">
+                            <div class="play-btn"><i class="bi bi-play-fill"></i></div>
+                            <span class="ms-3">Ver modulos</span>
+                        </a>
+                    </div>
+                    <div class="d-flex flex-wrap gap-4  text-dark fs-6">
+                        <span class="d-flex align-items-center"><i class="bi bi-check2 text-primary fs-4 me-1"></i> Facil de usar</span>
+                        <span class="d-flex align-items-center"><i class="bi bi-check2 text-primary fs-4 me-1"></i> Soporte en español</span>
+                        <span class="d-flex align-items-center"><i class="bi bi-check2 text-primary fs-4 me-1"></i> Seguro y Confiable</span>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS SECTION -->
+    <section class="stats-section py-5 bg-white border-bottom border-light">
+        <div class="container my-4">
+            <div class="row text-center">
+                <div class="col-md-4 border-end border-light">
+                    <h2 class="fw-bolder mb-2" style="font-size: 3.8rem; letter-spacing: -1px;"><span class="text-primary fs-3  fw-bold">↑</span> 13</h2>
+                    <h5 class="fw-bold mb-3 text-dark">Años al servicio</h5>
+                    <p class="text-secondary small px-lg-4 mb-0 fw-semibold">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do</p>
+                </div>
+                <div class="col-md-4 border-end border-light mt-4 mt-md-0">
+                    <h2 class="fw-bolder mb-2" style="font-size: 3.8rem; letter-spacing: -1px;"><span class="text-primary fs-3  fw-bold">↑</span> +500</h2>
+                    <h5 class="fw-bold mb-3 text-dark">Iglesias Activas</h5>
+                    <p class="text-secondary small px-lg-4 mb-0 fw-semibold">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do</p>
+                </div>
+                <div class="col-md-4 mt-4 mt-md-0">
+                    <h2 class="fw-bolder mb-2" style="font-size: 3.8rem; letter-spacing: -1px;"><span class="text-primary fs-3  fw-bold">↑</span> 99%</h2>
+                    <h5 class="fw-bold mb-3 text-dark">Satisfacción de Usuarios</h5>
+                    <p class="text-secondary small px-lg-4 mb-0 fw-semibold">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRESENCE SECTION -->
+    <section class="presence-section py-5 bg-white">
+        <div class="container py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-5 mb-lg-0 text-center text-lg-start">
+                    <img src="{{ Storage::disk('global_media')->url('/landing/imagen-2.png') }}" class="img-fluid" alt="Presencia Global" style="max-width: 95%;">
+                </div>
+                <div class="col-lg-6 ps-lg-5">
+                    <h2 class="fw-bolder mb-4" style="font-size: 3.5rem; line-height: 1.1; letter-spacing: -1px;">
+                        Software redil<br>
+                        tiene presencia<br>
+                        en <span style="color:#00B596">20 paises</span>
+                    </h2>
+                    <p class="fs-5 text-secondary fw-semibold mb-5 pe-lg-4" style="line-height: 1.6;">
+                        Administra tu congregación en tiempo real desde cualquier dispositivo. Pastoreo inteligente para iglesias de todos los tamaños.
+                    </p>
+                    <div class="d-flex align-items-center gap-4">
+                        <a href="#" style="background-color: #00E4BB !important;" class="btn rounded-pill text-dark px-4 py-3 fw-bold text-white fs-6 shadow-sm">Solicitar demo gratis</a>
+                        <a href="#" class="play-btn-wrapper d-flex align-items-center text-dark text-decoration-none fw-bold fs-6">
+                            <div class="play-btn"><i class="bi bi-play-fill"></i></div>
+                            <span class="ms-3">Ver modulos</span>
                         </a>
                     </div>
                 </div>
-                <div class="col-lg-6 d-flex justify-content-center hero-illustration">
-                    <!-- Mockup visual -->
-                    <div style="position:relative; width:100%; max-width:480px;">
-                        <div class="grid-bg" style="border-radius:24px; padding:30px; background-color:#f0f5ff;">
-                            <!-- Mock dashboard card -->
-                            <div style="background:#fff; border-radius:16px; padding:20px; box-shadow:0 8px 32px rgba(27,134,250,0.12); margin-bottom:16px;">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span style="font-family:var(--font-head); font-weight:700; color:var(--heading); font-size:.95rem;">Mi Congregación</span>
-                                    <span style="background:rgba(18,196,110,0.12); color:var(--success); font-size:.75rem; font-weight:700; padding:4px 10px; border-radius:100px;">+12% este mes</span>
-                                </div>
-                                <div class="row text-center g-2">
-                                    <div class="col-4">
-                                        <div style="font-family:var(--font-head); font-weight:800; font-size:1.7rem; color:var(--heading);">245</div>
-                                        <div style="font-size:.75rem; color:var(--body-text);">Miembros</div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div style="font-family:var(--font-head); font-weight:800; font-size:1.7rem; color:var(--heading);">18</div>
-                                        <div style="font-size:.75rem; color:var(--body-text);">Grupos</div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div style="font-family:var(--font-head); font-weight:800; font-size:1.7rem; color:var(--heading);">92%</div>
-                                        <div style="font-size:.75rem; color:var(--body-text);">Asistencia</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Mini chips -->
-                            <div class="d-flex gap-2 flex-wrap">
-                                <div style="background:#fff; border-radius:12px; padding:12px 18px; box-shadow:0 4px 16px rgba(0,0,0,0.07); flex:1; min-width:120px;">
-                                    <div style="font-size:.75rem; color:var(--body-text); margin-bottom:4px;">Diezmos</div>
-                                    <div style="font-family:var(--font-head); font-weight:800; color:var(--heading);">$14,580</div>
-                                </div>
-                                <div style="background:var(--primary); border-radius:12px; padding:12px 18px; flex:1; min-width:120px;">
-                                    <div style="font-size:.75rem; color:rgba(255,255,255,.75); margin-bottom:4px;">Nuevos</div>
-                                    <div style="font-family:var(--font-head); font-weight:800; color:#fff;">+7 hoy</div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Floating chip -->
-                        <div style="position:absolute; bottom:-16px; right:-16px; background:#fff; border-radius:14px; padding:14px 20px; box-shadow:0 8px 28px rgba(0,0,0,0.12); display:flex; align-items:center; gap:10px;">
-                            <div style="width:36px;height:36px;background:rgba(27,134,250,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);">
-                                <i class="bi bi-people-fill"></i>
-                            </div>
-                            <div>
-                                <div style="font-size:.7rem;color:var(--body-text);">Líderes activos</div>
-                                <div style="font-family:var(--font-head);font-weight:700;color:var(--heading);font-size:.9rem;">32 en línea</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- =====================================
-     TRUSTED BY
-===================================== -->
-<section class="trust-section">
-    <div class="container text-center">
-        <p class="trust-label">Con presencia en más de 16 países</p>
-        <div class="trust-logos">
-            <span class="trust-logo">Colombia</span>
-            <span class="trust-logo">México</span>
-            <span class="trust-logo">Venezuela</span>
-            <span class="trust-logo">Ecuador</span>
-            <span class="trust-logo">Perú</span>
-            <span class="trust-logo">España</span>
-            <span class="trust-logo">EE.UU.</span>
+    <!-- ALLY BANNER -->
+    <section style="background-color: #00E4BB;" class="ally-banner py-5">
+        <div class="container text-center py-5">
+            <h6 class="fw-bold text-dark mb-3" style="letter-spacing: 3px;">SOMOS MÁS QUE UNA HERRAMIENTA</h6>
+            <h1 class="fw-bolder text-dark mb-0" style="font-size: 4.5rem; letter-spacing: -1px;">SOMOS UN ALIADO</h1>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- =====================================
-     FEATURE 1 — Información Valiosa
-===================================== -->
-<section class="feature-section">
-    <div class="container">
-        <div class="row align-items-center g-5">
-            <div class="col-lg-6">
-                <span class="section-label">Información Valiosa</span>
-                <h2 class="section-title">Conoce el estado real de tu congregación</h2>
-                <p class="section-sub mb-4">Accede a datos de asistencia, crecimiento e ingresos financieros en tiempo real, desde cualquier dispositivo y en cualquier momento.</p>
-                <div class="feature-check">
-                    <i class="bi bi-check-circle-fill"></i>
-                    <p>Métricas de asistencia por grupo y celda actualizadas al instante.</p>
+    <!-- PROBLEMS SECTION -->
+    <section id="beneficios" class="problems-section py-5 bg-light-grey">
+        <div class="container py-5 my-4">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-5 mb-lg-0">
+                    <img src="{{ Storage::disk('global_media')->url('/landing/imagen-3.png') }}" class=" w-100" alt="Problemas de organización">
                 </div>
-                <div class="feature-check">
-                    <i class="bi bi-check-circle-fill"></i>
-                    <p>Reportes de crecimiento y consolidación en un solo panel.</p>
-                </div>
-                <div class="feature-check">
-                    <i class="bi bi-check-circle-fill"></i>
-                    <p>Control financiero de diezmos, ofrendas y donaciones.</p>
-                </div>
-                <a href="#contacto" class="btn-primary-main mt-3" style="font-size:.9rem; padding:12px 24px;">Explorar funcionalidades</a>
-            </div>
-            <div class="col-lg-6 d-flex justify-content-center">
-                <div style="position:relative; width:100%; max-width:460px;">
-                    <div class="grid-bg" style="border-radius:20px; padding:24px; background:#f8faff;">
-                        <div class="feature-card-mockup">
-                            <div style="font-family:var(--font-head);font-weight:700;color:var(--heading);margin-bottom:16px;">Panel de Asistencia</div>
-                            <!-- Fake bar chart -->
-                            <div class="d-flex align-items-end gap-2" style="height:100px; margin-bottom:8px;">
-                                @foreach([60,80,50,90,70,85,95] as $h)
-                                <div style="flex:1; height:{{$h}}%; background:{{ $h > 80 ? '#1b86fa' : 'rgba(27,134,250,0.2)' }}; border-radius:6px 6px 0 0; transition:all .3s;"></div>
-                                @endforeach
-                            </div>
-                            <div class="d-flex justify-content-between" style="font-size:.7rem; color:var(--body-text);">
-                                <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
-                            </div>
+                <div class="col-lg-6 ps-lg-5">
+                    <h6 style="color:#00B192" class=" fw-bold mb-3" style="letter-spacing: 1px;">¿QUÉ PROBLEMA RESOLVEMOS?</h6>
+                    <h2 class="fw-bolder mb-4" style="font-size: 3.2rem; line-height: 1.1; letter-spacing: -1px;">
+                        Soluciona los<br>
+                        problemas de<br>
+                        organización.
+                    </h2>
+                    <p class="text-secondary fs-5 mb-5 fw-semibold" style="line-height: 1.6;">
+                        Redil centraliza toda la información de tu iglesia en un solo lugar, eliminando el desorden y ahorrando tiempo para que puedas enfocarte en lo que realmente importa: las personas.
+                    </p>
+                    <h6 style="color:#00B192;font-size: 26px;" class=" fw-bold mb-4" style="letter-spacing: 1px;">NO MÁS</h6>
+                    <div class="row g-4">
+                        <div class="col-sm-6 d-flex align-items-center gap-3">
+                            <div style="color:#00B396" class="fs-3"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+                            <span class="fw-bold text-dark lh-sm">Registros en papel<br>o Excel</span>
                         </div>
-                        <!-- Floating stat -->
-                        <div style="position:absolute;top:-16px;right:10px;background:#fff;border-radius:12px;padding:12px 18px;box-shadow:0 8px 24px rgba(0,0,0,0.10);">
-                            <div style="font-size:.7rem;color:var(--body-text);">Asistencia Dom.</div>
-                            <div style="font-family:var(--font-head);font-weight:800;font-size:1.3rem;color:var(--heading);">95% <span style="font-size:.75rem;color:var(--success);">↑</span></div>
+                        <div class="col-sm-6 d-flex align-items-center gap-3">
+                            <div style="color:#00B396" class="fs-3"><i class="bi bi-folder-x"></i></div>
+                            <span class="fw-bold text-dark lh-sm">Información<br>desorganizada</span>
+                        </div>
+                        <div class="col-sm-6 d-flex align-items-center gap-3">
+                            <div style="color:#00B396" class="fs-3"><i class="bi bi-hourglass-bottom"></i></div>
+                            <span class="fw-bold text-dark lh-sm">Falta de tiempo para<br>lo importante</span>
+                        </div>
+                        <div class="col-sm-6 d-flex align-items-center gap-3">
+                            <div style="color:#00B396" class="fs-3"><i class="bi bi-chat-dots"></i></div>
+                            <span class="fw-bold text-dark lh-sm">Comunicación<br>ineficiente</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- =====================================
-     FEATURE 2 — Trabajo en Equipo (reversed)
-===================================== -->
-<section class="feature-section bg-alt">
-    <div class="container">
-        <div class="row align-items-center g-5 flex-lg-row-reverse">
-            <div class="col-lg-6">
-                <span class="section-label">Trabajo en Equipo</span>
-                <h2 class="section-title">Cada líder, su propia cuenta y cobertura</h2>
-                <p class="section-sub mb-4">REDIL no asigna una sola persona para gestionar todo. Cada líder tiene su propio acceso, limitado a su área de responsabilidad.</p>
-                <div class="mini-feature">
-                    <div class="mini-feature-icon"><i class="bi bi-person-badge-fill"></i></div>
-                    <div>
-                        <h6>Roles Personalizados</h6>
-                        <p>Define permisos por área: pastores, diáconos, tesoreros y más.</p>
-                    </div>
+    <!-- FEATURE 1 (TABLET) -->
+    <section id="caracteristicas" class="feature-1-section bg-feature1-row py-5 bg-white" style="overflow: hidden;">
+        <div class="container py-5 my-4">
+            <div class="row align-items-center  pb-5 pb-lg-0">
+                <div class="col-lg-7 mb-5 mb-lg-0 pe-lg-5 position-relative" style="z-index: 2;">
+                    <h6 class="text-lista fw-bold mb-3" style="letter-spacing: 1px;">INFORMACIÓN CLARA Y OPORTUNA</h6>
+                    <h2 class="fw-bolder mb-4" style="font-size: 3.2rem; line-height: 1.1; letter-spacing: -1px;">
+                        Conoce el estado real<br>
+                        de tu congregación
+                    </h2>
+                    <p class="text-secondary fs-5 mb-5 fw-semibold" style="line-height: 1.6;">
+                        Accede a datos de asistencia, crecimiento e ingresos financieros en tiempo real, desde cualquier dispositivo y en cualquier momento.
+                    </p>
+                    <ul class="list-unstyled mb-5 fs-7">
+                        <li class="d-flex align-items-start gap-3 mb-4 fw-bold text-secondary">
+                            <i class="bi bi-check-circle-fill text-lista mt-1"></i> Métricas de asistencia por grupo y celdas actualizadas al instante.
+                        </li>
+                        <li class="d-flex align-items-start gap-3 mb-4 fw-bold text-secondary">
+                            <i class="bi bi-check-circle-fill text-lista mt-1"></i> Reportes de crecimiento y consolidación en un solo panel.
+                        </li>
+                        <li class="d-flex align-items-start gap-3 mb-4 fw-bold text-secondary">
+                            <i class="bi bi-check-circle-fill text-lista mt-1"></i> Control financiero de diezmos, ofrendas y donaciones.
+                        </li>
+                    </ul>
+                    <a href="#" class="btn btn-primary rounded-pill px-4 py-3 fw-bold text-dark fs-6 shadow-sm">Explorar Funcionalidades</a>
                 </div>
-                <div class="mini-feature">
-                    <div class="mini-feature-icon"><i class="bi bi-shield-lock-fill"></i></div>
-                    <div>
-                        <h6>Información Segura</h6>
-                        <p>Cada usuario solo ve la información correspondiente a su rol.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6 d-flex justify-content-center">
-                <div style="position:relative; width:100%; max-width:420px;">
-                    <!-- Team cards -->
-                    <div style="background:#fff; border-radius:18px; padding:24px; box-shadow:0 16px 48px rgba(27,134,250,0.10); border:1px solid var(--border);">
-                        <div style="font-family:var(--font-head);font-weight:700;color:var(--heading);margin-bottom:18px;">Equipo de Líderes</div>
-                        @foreach([['Pastor Principal','#1b86fa','bi-person-fill'],['Líder de Jóvenes','#7c4dff','bi-people-fill'],['Tesorería','#12c46e','bi-cash-coin'],['Consolidación','#f59e0b','bi-heart-fill']] as $member)
-                        <div class="d-flex align-items-center gap-3 mb-3 p-2" style="border-radius:10px; background:var(--bg-light);">
-                            <div style="width:38px;height:38px;background:{{$member[1]}};border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;">
-                                <i class="bi {{$member[2]}}"></i>
-                            </div>
-                            <div>
-                                <div style="font-family:var(--font-head);font-weight:600;font-size:.88rem;color:var(--heading);">{{$member[0]}}</div>
-                                <div style="font-size:.75rem;color:var(--body-text);">Acceso activo</div>
-                            </div>
-                            <div class="ms-auto">
-                                <span style="width:8px;height:8px;background:var(--success);border-radius:50%;display:inline-block;"></span>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
+                <div class="col-lg-5 feature1-mobile-space">
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- =====================================
-     STATISTICS SECTION
-===================================== -->
-<section class="stats-section">
-    <div class="container">
-        <div class="row text-center">
-            <div class="col-md-4">
-                <div class="stat-item">
-                    <div class="stat-number"><span class="arrow">↑</span> 16</div>
-                    <h6>Países con Presencia</h6>
-                    <p style="font-size:.9rem;">Implementado en congregaciones de Colombia, México, España y muchos más.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stat-item" style="border-left:1px solid var(--border); border-right:1px solid var(--border);">
-                    <div class="stat-number"><span class="arrow">↑</span> +500</div>
-                    <h6>Iglesias Activas</h6>
-                    <p style="font-size:.9rem;">Cientos de comunidades de fe confían en REDIL para gestionar su ministerio.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stat-item">
-                    <div class="stat-number"><span class="arrow">↑</span> 99%</div>
-                    <h6>Satisfacción de Usuarios</h6>
-                    <p style="font-size:.9rem;">Soporte continuo y actualizaciones constantes garantizan la mejor experiencia.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- =====================================
-     BENEFITS GRID
-===================================== -->
-<section id="modulos" class="benefits-section">
-    <div class="container">
-        <div class="text-center mb-5">
-            <span class="section-label">Módulos del Sistema</span>
-            <h2 class="section-title mx-auto" style="max-width:560px;">Todo lo que necesita tu iglesia en un solo lugar</h2>
-        </div>
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="bi bi-people-fill"></i></div>
-                    <h5>Gestión de Miembros</h5>
-                    <p style="font-size:.9rem;">Registro completo de datos personales, seguimiento espiritual y estado de cada miembro de la congregación.</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="bi bi-calendar-check-fill"></i></div>
-                    <h5>Asistencia & Eventos</h5>
-                    <p style="font-size:.9rem;">Control de asistencia en cultos, grupos celulares y eventos especiales con reportes automatizados.</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="bi bi-cash-coin"></i></div>
-                    <h5>Finanzas & Tesorería</h5>
-                    <p style="font-size:.9rem;">Gestiona diezmos, ofrendas, proyectos y genera reportes financieros con transparencia total.</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="bi bi-diagram-3-fill"></i></div>
-                    <h5>Grupos & Células</h5>
-                    <p style="font-size:.9rem;">Organiza grupos de ministerio, redes y células con mapas digitales y estructura visual de la congregación.</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="bi bi-graph-up-arrow"></i></div>
-                    <h5>Consolidación</h5>
-                    <p style="font-size:.9rem;">Proceso estructurado para el seguimiento y consolidación de nuevos creyentes hasta su madurez en la fe.</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="benefit-card">
-                    <div class="benefit-icon"><i class="bi bi-mortarboard-fill"></i></div>
-                    <h5>Escuela & LMS</h5>
-                    <p style="font-size:.9rem;">Plataforma de formación integrada con cursos, evaluaciones y seguimiento del progreso académico espiritual.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- =====================================
-     CTA BANNER
-===================================== -->
-<section class="py-5">
-    <div class="container">
-        <div class="cta-banner">
-            <h2>¿Listo para llevar tu iglesia al siguiente nivel?</h2>
-            <p>Únete a cientos de iglesias que ya confían en REDIL Cloud para su administración.</p>
-            <a href="#contacto" class="btn-cta-white">Comienza gratis hoy</a>
-        </div>
-    </div>
-</section>
-
-<!-- =====================================
-     CONTACT SECTION
-===================================== -->
-<section id="contacto" class="contact-section">
-    <div class="container">
-        <div class="row g-5 align-items-start">
-            <div class="col-lg-5">
-                <span class="section-label">Contáctanos</span>
-                <h2 class="section-title">Nos encantaría saber de tu iglesia</h2>
-                <p class="mb-40" style="margin-bottom:36px;">Cuéntanos sobre tu congregación y te ayudaremos a encontrar el plan ideal. Respuesta en menos de 24 horas.</p>
-
-                <div class="contact-info-item">
-                    <div class="icon-wrap"><i class="bi bi-geo-alt-fill"></i></div>
-                    <div>
-                        <h6>Dirección</h6>
-                        <p>Calle 25A # 3 – 06 Tuluá, Colombia</p>
-                    </div>
-                </div>
-                <div class="contact-info-item">
-                    <div class="icon-wrap"><i class="bi bi-envelope-fill"></i></div>
-                    <div>
-                        <h6>Correo Electrónico</h6>
-                        <p>info@redil.co</p>
-                    </div>
-                </div>
-                <div class="contact-info-item">
-                    <div class="icon-wrap"><i class="bi bi-whatsapp"></i></div>
-                    <div>
-                        <h6>WhatsApp</h6>
-                        <p>+(57) 318 712 7025</p>
-                    </div>
-                </div>
-
-                <div class="social-links mt-3">
-                    <a href="https://www.facebook.com/SoftwareRedil/" target="_blank" class="social-link"><i class="bi bi-facebook"></i></a>
-                    <a href="https://www.instagram.com/software.redil/" target="_blank" class="social-link"><i class="bi bi-instagram"></i></a>
-                    <a href="https://www.youtube.com/channel/UCY1VhTUnhyhd_UywEKo2udg" target="_blank" class="social-link"><i class="bi bi-youtube"></i></a>
-                    <a href="https://twitter.com/redil_software" target="_blank" class="social-link"><i class="bi bi-twitter"></i></a>
-                </div>
-            </div>
-
-            <div class="col-lg-7">
-                <div class="contact-form-wrap">
-                    <h4 style="font-family:var(--font-head); font-weight:800; color:var(--heading); margin-bottom:28px;">Envíanos un mensaje</h4>
-                    <form id="contactForm" onsubmit="handleSubmit(event)">
+    <!-- FEATURE 2 (TEAM) -->
+    <section class="feature-2-section py-5 bg-light-grey">
+        <div class="container py-5 my-4">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-5 mb-lg-0">
+                    <!-- The custom Team Card -->
+                    <div class="bg-white rounded-5 p-4 shadow-sm " style="border: 1px solid #f0f0f0; ">
+                        <h5 class="fw-bold text-center mb-4 text-dark">Equipo de Líderes</h5>
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Nombre de la Iglesia</label>
-                                <input type="text" class="form-control" id="church" placeholder="Ej. Iglesia Central" required>
+                            <!-- Pastor Principal -->
+                            <div class="col-6">
+                                <div class="border border-light rounded-4 overflow-hidden">
+                                    <div class="team-img-container">
+
+                                    </div>
+                                    <div class="p-2 px-3 bg-white d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 24px; height: 24px; background-color: var(--primary);"><i class="bi bi-person-fill" style="font-size: 0.8rem;"></i></div>
+                                        <div class="w-100">
+                                            <div class="fw-bold text-dark" style="font-size: 0.8rem;">Pastor Principal</div>
+                                            <div class="text-secondary d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                                                Acceso activo <span class="rounded-circle" style="width: 6px; height: 6px; background-color: var(--primary);"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Nombre del Pastor / Líder</label>
-                                <input type="text" class="form-control" id="name" placeholder="Tu nombre completo" required>
+                            <!-- Lider Jovenes -->
+                            <div class="col-6">
+                                <div class="border border-light rounded-4 overflow-hidden">
+                                    <div class="team-img-container">
+
+                                    </div>
+                                    <div class="p-2 px-3 bg-white d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 24px; height: 24px; background-color: var(--primary);"><i class="bi bi-person-fill" style="font-size: 0.8rem;"></i></div>
+                                        <div class="w-100">
+                                            <div class="fw-bold text-dark" style="font-size: 0.8rem;">Líder Jóvenes</div>
+                                            <div class="text-secondary d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                                                Acceso activo <span class="rounded-circle" style="width: 6px; height: 6px; background-color: var(--primary);"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Correo Electrónico</label>
-                                <input type="email" class="form-control" id="email" placeholder="correo@iglesia.com" required>
+                            <!-- Tesoreria -->
+                            <div class="col-6">
+                                <div class="border border-light rounded-4 overflow-hidden">
+                                    <div class="team-img-container">
+
+                                    </div>
+                                    <div class="p-2 px-3 bg-white d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 24px; height: 24px; background-color: var(--primary);"><i class="bi bi-person-fill" style="font-size: 0.8rem;"></i></div>
+                                        <div class="w-100">
+                                            <div class="fw-bold text-dark" style="font-size: 0.8rem;">Tesorería</div>
+                                            <div class="text-secondary d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                                                Acceso activo <span class="rounded-circle" style="width: 6px; height: 6px; background-color: var(--primary);"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">WhatsApp / Teléfono</label>
-                                <input type="tel" class="form-control" id="phone" placeholder="+57 300 000 0000" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">País</label>
-                                <select class="form-control" id="country">
-                                    <option value="">Selecciona tu país...</option>
-                                    <option>Colombia</option>
-                                    <option>México</option>
-                                    <option>Venezuela</option>
-                                    <option>Ecuador</option>
-                                    <option>Perú</option>
-                                    <option>Argentina</option>
-                                    <option>España</option>
-                                    <option>Otro</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Tamaño de la Congregación</label>
-                                <select class="form-control" id="size">
-                                    <option value="">Número de miembros...</option>
-                                    <option>1 – 50 miembros</option>
-                                    <option>51 – 200 miembros</option>
-                                    <option>201 – 500 miembros</option>
-                                    <option>Más de 500 miembros</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Mensaje</label>
-                                <textarea class="form-control" id="message" rows="4" placeholder="Cuéntanos sobre tu congregación y en qué podemos ayudarte..."></textarea>
-                            </div>
-                            <div class="col-12 mt-2">
-                                <button type="submit" class="btn-submit" id="submitBtn">
-                                    Enviar Solicitud &nbsp;<i class="bi bi-arrow-right"></i>
-                                </button>
-                                <div id="successMsg" style="display:none; margin-top:16px; background:rgba(18,196,110,0.1); border:1px solid var(--success); border-radius:10px; padding:14px; color:#0a7d45; font-weight:600; text-align:center;">
-                                    <i class="bi bi-check-circle-fill me-2"></i> ¡Mensaje enviado! Pronto nos comunicaremos contigo.
+                            <!-- Consolidacion -->
+                            <div class="col-6">
+                                <div class="border border-light rounded-4 overflow-hidden">
+                                    <div class="team-img-container">
+
+                                    </div>
+                                    <div class="p-2 px-3 bg-white d-flex align-items-center gap-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 24px; height: 24px; background-color: var(--primary);"><i class="bi bi-person-fill" style="font-size: 0.8rem;"></i></div>
+                                        <div class="w-100">
+                                            <div class="fw-bold text-dark" style="font-size: 0.8rem;">Consolidación</div>
+                                            <div class="text-secondary d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                                                Acceso activo <span class="rounded-circle" style="width: 6px; height: 6px; background-color: var(--primary);"></span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </form>
+                    </div>
+                </div>
+                <div class="col-lg-6 ps-lg-5">
+                    <h6 style="color:#00B192" class="fw-bold mb-3" style="letter-spacing: 1px;">TRABAJO EN EQUIPO</h6>
+                    <h2 class="fw-bolder mb-4" style="font-size: 3.2rem; line-height: 1.1; letter-spacing: -1px;">
+                        Cada líder con su<br>
+                        propia cuenta
+                    </h2>
+                    <p class="text-secondary fs-5 mb-5 fw-semibold" style="line-height: 1.6;">
+                        REDIL no asigna una sola persona para gestionar todo. Cada líder tiene su propio acceso, limitado a su área de responsabilidad.
+                    </p>
+                    <div class="d-flex align-items-center gap-4 mb-4">
+                        <div style="color:#00B396" class="fs-3"><i class="bi bi-person-badge"></i></div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-1">Roles Personalizados</h5>
+                            <p class="text-secondary fw-semibold mb-0">Define permisos por área: pastores, diáconos, tesoreros y más.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-4">
+                        <div style="color:#00B396" class="fs-3"><i class="bi bi-shield-check"></i></div>
+                        <div>
+                            <h5 class="fw-bold text-dark mb-1">Información Segura</h5>
+                            <p class="text-secondary fw-semibold mb-0">Cada usuario solo ve la información correspondiente a su rol.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- =====================================
-     FOOTER
-===================================== -->
-<footer class="footer">
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-lg-4 col-md-6">
-                <div class="footer-brand">&#9678; REDIL <span>Cloud</span></div>
-                <p style="font-size:.9rem; max-width:280px; line-height:1.7;">Software Redil – Pastoreo Inteligente. Tecnología en la nube para tu congregación.</p>
+    <!-- MODULES SECTION -->
+    <section id="modulos" class="modules-section py-5 bg-white">
+        <div class="container py-5 my-4">
+            <div class="text-center mb-5">
+                <h6 style="color:#00B192; letter-spacing: 1px;" class="fw-bold mb-3 text-uppercase">Módulos del Sistema</h6>
+                <h2 class="fw-bolder mb-4" style="font-size: 3.2rem; line-height: 1.1; letter-spacing: -1px;">
+                    Todo lo que necesita tu<br>
+                    iglesia en un solo lugar
+                </h2>
             </div>
-            <div class="col-lg-2 col-md-6">
-                <h6>Producto</h6>
-                <a href="#modulos">Módulos</a>
-                <a href="#beneficios">Beneficios</a>
-                <a href="#contacto">Precios</a>
-                <a href="#contacto">Soporte</a>
-            </div>
-            <div class="col-lg-2 col-md-6">
-                <h6>Empresa</h6>
-                <a href="#">Acerca de</a>
-                <a href="#">Noticias</a>
-                <a href="#">Alianzas</a>
-                <a href="#contacto">Contacto</a>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <h6>Síguenos</h6>
-                <p style="font-size:.9rem;">Conoce todo lo que tenemos para ti en nuestras redes sociales.</p>
-                <div class="social-links">
-                    <a href="https://www.facebook.com/SoftwareRedil/" target="_blank" class="social-link"><i class="bi bi-facebook"></i></a>
-                    <a href="https://www.instagram.com/software.redil/" target="_blank" class="social-link"><i class="bi bi-instagram"></i></a>
-                    <a href="https://co.pinterest.com/SofwareRedil/" target="_blank" class="social-link"><i class="bi bi-pinterest"></i></a>
-                    <a href="https://www.youtube.com/channel/UCY1VhTUnhyhd_UywEKo2udg" target="_blank" class="social-link"><i class="bi bi-youtube"></i></a>
-                    <a href="https://twitter.com/redil_software" target="_blank" class="social-link"><i class="bi bi-twitter-x"></i></a>
+
+            <div class="row g-4">
+                <!-- Module 1 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="p-4 rounded-4 h-100 border-0" style="background-color: #f4f7f9;">
+                        <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #2bc4a5; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-3">Gestión de Miembros</h5>
+                        <p class="text-secondary fw-semibold mb-0" style="font-size: 0.95rem; line-height: 1.6;">Registro completo de datos personales, seguimiento espiritual y estado de cada miembro de la congregación.</p>
+                    </div>
+                </div>
+                <!-- Module 2 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="p-4 rounded-4 h-100 border-0" style="background-color: #f4f7f9;">
+                        <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #2bc4a5; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-calendar2-check-fill"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-3">Asistencia & Eventos</h5>
+                        <p class="text-secondary fw-semibold mb-0" style="font-size: 0.95rem; line-height: 1.6;">Registro completo de datos personales, seguimiento espiritual y estado de cada miembro de la congregación.</p>
+                    </div>
+                </div>
+                <!-- Module 3 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="p-4 rounded-4 h-100 border-0" style="background-color: #f4f7f9;">
+                        <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #2bc4a5; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-currency-exchange"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-3">Finanzas & Tesorería</h5>
+                        <p class="text-secondary fw-semibold mb-0" style="font-size: 0.95rem; line-height: 1.6;">Gestiona diezmos, ofrendas, proyectos y genera reportes financieros con transparencia total.</p>
+                    </div>
+                </div>
+                <!-- Module 4 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="p-4 rounded-4 h-100 border-0" style="background-color: #f4f7f9;">
+                        <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #2bc4a5; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-diagram-3-fill"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-3">Grupos & Células</h5>
+                        <p class="text-secondary fw-semibold mb-0" style="font-size: 0.95rem; line-height: 1.6;">Organiza grupos de ministerio, redes y células con mapas digitales y estructura visual de la congregación.</p>
+                    </div>
+                </div>
+                <!-- Module 5 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="p-4 rounded-4 h-100 border-0" style="background-color: #f4f7f9;">
+                        <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #2bc4a5; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-tree-fill"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-3">Consolidación</h5>
+                        <p class="text-secondary fw-semibold mb-0" style="font-size: 0.95rem; line-height: 1.6;">Proceso estructurado para el seguimiento y consolidación de nuevos creyentes hasta su madurez en la fe.</p>
+                    </div>
+                </div>
+                <!-- Module 6 -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="p-4 rounded-4 h-100 border-0" style="background-color: #f4f7f9;">
+                        <div class="mb-3 d-inline-flex align-items-center justify-content-center rounded-3" style="width: 48px; height: 48px; background-color: #2bc4a5; color: white; font-size: 1.5rem;">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-3">Escuela & LMS</h5>
+                        <p class="text-secondary fw-semibold mb-0" style="font-size: 0.95rem; line-height: 1.6;">Plataforma de formación integrada con cursos, evaluaciones y seguimiento del progreso académico espiritual.</p>
+                    </div>
                 </div>
             </div>
         </div>
-        <hr class="footer-divider">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-            <p style="margin:0; font-size:.85rem;">&copy; <span id="year"></span> REDIL Cloud. Todos los derechos reservados.</p>
-            <p style="margin:0; font-size:.85rem;">Hecho con <i class="bi bi-heart-fill" style="color:var(--primary)"></i> para la iglesia</p>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section id="contacto" class="contact-section bg-contacto text-white">
+        <div style="    padding: 6% 8%;" >
+            <div style="background-color:#00d0af" class="row  align-items-center">
+                <div class="col-lg-6" style="padding: 8%;
+    text-align: center;">
+                    <div class="align-items-center gap-3 mb-4">
+                        <img style="width:80% !important" src="{{ Storage::disk('global_media')->url('OPCION 1 BLANCO (1).png') }}">
+                    </div>
+
+                    <p class="fs-5 mb-5 fw-semibold" style="line-height: 1.6;">
+                        Cuéntanos sobre tu congregación y te ayudaremos a encontrar el plan ideal. Respuesta en menos de 24 horas.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="#" class="text-white border border-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.2rem; text-decoration: none;"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="text-white border border-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.2rem; text-decoration: none;"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="text-white border border-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.2rem; text-decoration: none;"><i class="bi bi-tiktok"></i></a>
+                        <a href="#" class="text-white border border-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.2rem; text-decoration: none;"><i class="bi bi-pinterest"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-6 bg-white">
+                    <div class=" text-dark  p-4 p-md-5  mx-auto" style="max-width: 650px;">
+                        <h4 class="fw-bolder mb-4" style="font-size: 1.8rem;">Envíanos un mensaje</h4>
+                        <form>
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-bold text-dark small mb-1">Nombre de la iglesia</label>
+                                    <input type="text" class="form-control bg-white rounded-3 text-formulario py-2 " placeholder="Ej. Iglesia Central">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-bold text-dark small mb-1">Nombre del Pastor/Líder</label>
+                                    <input type="text" class="form-control bg-white rounded-3 text-formulario py-2 " placeholder="Ej. Iglesia Central">
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-bold text-dark small mb-1">E-mail</label>
+                                    <input type="email" class="form-control bg-white rounded-3 text-formulario py-2 " placeholder="correo@iglesia.com">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-bold text-dark small mb-1">WhatsApp / Teléfono</label>
+                                    <input type="text" class="form-control bg-white rounded-3 text-formulario py-2 " placeholder="Ej. Iglesia Central">
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-bold text-dark small mb-1">País</label>
+                                    <select class="form-select bg-white rounded-3 text-formulario py-2  text-formulario">
+                                        <option>Selecciona Tu País...</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-bold text-dark small mb-1">Tamaño de la Congregación</label>
+                                    <select class="form-select bg-white rounded-3 text-formulario py-2  text-formulario">
+                                        <option>Número de miembros...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-dark small mb-1">Mensaje</label>
+                                <textarea class="form-control bg-white rounded-3 text-formulario py-2 " rows="4" placeholder="Cuéntanos sobre tu congregación y en qué podemos ayudarte"></textarea>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 fw-bold text-dark w-80 fs-6 shadow-sm mt-2">Enviar Solicitud</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-</footer>
+    </section>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // Year
-    document.getElementById('year').textContent = new Date().getFullYear();
+    <!-- FOOTER -->
+    <footer class="bg-footer text-white py-5">
+        <div class="container pt-5 pb-3">
+            <div class="row">
+                <div class="col-lg-5 pe-lg-5 mb-5 mb-lg-0">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                         <img style="width:50% !important" src="{{ Storage::disk('global_media')->url('OPCION 1 BLANCO (1).png') }}">
 
-    // Form submit
-    function handleSubmit(e) {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Enviando...';
-        btn.disabled = true;
-        setTimeout(() => {
-            btn.style.display = 'none';
-            document.getElementById('successMsg').style.display = 'block';
-        }, 1200);
-    }
+                    </div>
+                    <p class="text-secondary mb-1 fw-semibold">Software Redil - Pastoreo Inteligente.</p>
+                    <p class="text-secondary fw-semibold">Tecnología en la nube para tu congregación.</p>
+                </div>
+                <div class="col-lg-3 col-sm-6 mb-4 mb-lg-0">
+                    <h5 class="fw-bold text-white mb-4">Navegación</h5>
+                    <ul class="list-unstyled text-secondary lh-lg fw-semibold">
+                        <li><a href="#inicio" class="text-decoration-none text-secondary hover-white">Inicio</a></li>
+                        <li><a href="#beneficios" class="text-decoration-none text-secondary hover-white">Beneficios</a></li>
+                        <li><a href="#caracteristicas" class="text-decoration-none text-secondary hover-white">Características</a></li>
+                        <li><a href="#modulos" class="text-decoration-none text-secondary hover-white">Módulos</a></li>
+                        <li><a href="#contacto" class="text-decoration-none text-secondary hover-white">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-sm-6 mb-4 mb-lg-0">
+                    <h5 class="fw-bold text-white mb-4">Empresa</h5>
+                    <ul class="list-unstyled text-secondary lh-lg fw-semibold">
+                        <li><a href="#" class="text-decoration-none text-secondary hover-white">Acerca de</a></li>
+                        <li><a href="#" class="text-decoration-none text-secondary hover-white">Noticias</a></li>
+                        <li><a href="#" class="text-decoration-none text-secondary hover-white">Alianzas</a></li>
+                        <li><a href="#" class="text-decoration-none text-secondary hover-white">Contacto</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-5 pt-4 border-top border-secondary text-secondary small fw-semibold">
+                © 2026 REDIL Cloud. Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
 
-    // Smooth scroll
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-        a.addEventListener('click', e => {
-            const target = document.querySelector(a.getAttribute('href'));
-            if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
-        });
-    });
-
-    // Animate stats on scroll
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-            if (e.isIntersecting) e.target.classList.add('visible');
-        });
-    }, { threshold: 0.2 });
-    document.querySelectorAll('.stat-item').forEach(el => observer.observe(el));
-</script>
+    <!-- Bootstrap JS (needed for navbar toggle) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1080,18 +1080,58 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasPermissionTo('sedes.lista_sedes_todas');
     }
 
-    public function misPeticiones()
+    public function misPeticiones(): Collection
     {
         $rolActivo = $this->roles()
             ->wherePivot('activo', true)
             ->first();
 
         // Verifica si es administrador de una sede
-        if (Sede::find($rolActivo->lista_peticiones_sede_id ?? null)) {
+        if ($rolActivo && Sede::find($rolActivo->lista_peticiones_sede_id ?? null)) {
             $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
                 ->where('users.sede_id', $rolActivo->lista_peticiones_sede_id);
-        } else {
+        } elseif ($rolActivo && $rolActivo->es_intercesor) {
+            $intercesor = \App\Models\Intercesor::where('user_id', $this->id)
+                ->where('activo', true)
+                ->first();
 
+            if ($intercesor) {
+                if ($intercesor->solo_peticiones_asignadas) {
+                    $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
+                        ->where('peticiones.asignacion_peticion_id', $this->id);
+                } else {
+                    $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id');
+
+                    $sedesIds = $intercesor->sedes()->pluck('sedes.id')->toArray();
+                    $tiposIds = $intercesor->tipoPeticiones()->pluck('tipo_peticiones.id')->toArray();
+                    $verInvitados = (bool) $intercesor->ver_peticiones_de_invitados;
+
+                    $peticiones->where(function ($q) use ($sedesIds, $tiposIds, $verInvitados) {
+                        $q->where(function ($sub) use ($sedesIds, $tiposIds) {
+                            $sub->whereNotNull('peticiones.user_id');
+                            if (!empty($sedesIds)) {
+                                $sub->whereIn('users.sede_id', $sedesIds);
+                            }
+                            if (!empty($tiposIds)) {
+                                $sub->whereIn('peticiones.tipo_peticion_id', $tiposIds);
+                            }
+                        });
+
+                        if ($verInvitados) {
+                            $q->orWhere(function ($sub) use ($tiposIds) {
+                                $sub->whereNull('peticiones.user_id');
+                                if (!empty($tiposIds)) {
+                                    $sub->whereIn('peticiones.tipo_peticion_id', $tiposIds);
+                                }
+                            });
+                        }
+                    });
+                }
+            } else {
+                $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
+                    ->whereRaw('1 = 0');
+            }
+        } else {
             $gruposIds = $this->gruposMinisterio()
                 ->select('id')
                 ->pluck('id')
@@ -1127,7 +1167,7 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $peticiones
-            ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'genero')
+            ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', 'genero')
             ->get()
             ->unique('id');
     }

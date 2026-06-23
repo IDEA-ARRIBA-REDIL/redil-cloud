@@ -24,6 +24,8 @@ class GestionarPeticiones extends Component
 
   //modalResponder
   public $peticionResponderId;
+  public $peticionAsignarId;
+  public $intercesorSeleccionadoId;
   public $descripcionRespuesta="";
   public $versiculosRecomendados;
   public $libros;
@@ -112,8 +114,8 @@ class GestionarPeticiones extends Component
       $mailData->nombre = $nombre;
       $mailData->mensaje = $mensaje;
 
-      if ($peticion->tipoPeticion->banner_email != '') {
-        $mailData->banner = tenant_asset('img/email/peticiones/' . $peticion->tipoPeticion->banner_email);
+      if ($peticion->tipoPeticion->banner_email_url != '') {
+        $mailData->banner = $peticion->tipoPeticion->banner_email_url;
       }
 
       try {
@@ -151,43 +153,26 @@ class GestionarPeticiones extends Component
   }
 
   #[On('cargarVersiculosRecomendados')]
-  public function versiculosSegunTipoPeticion($peticionId)
-	{
+  public function versiculosSegunTipoPeticion($peticionId): void
+  {
     $peticion = Peticion::find($peticionId);
+    if (!$peticion || !$peticion->tipoPeticion) {
+      $this->versiculosRecomendados = '';
+      return;
+    }
     $tipoPeticion = $peticion->tipoPeticion;
     $versiculos = json_decode($tipoPeticion->json_versiculos);
 
-    if($versiculos)
-    {
-      $key = config('variables.biblia_key');
-      $arrContextOptions = [
-        'ssl' => [
-          'verify_peer' => false,
-          'verify_peer_name' => false,
-        ],
-      ];
+    $this->versiculosRecomendados = '<p class="text-black">Añade el versículo dando clic sobre él</p>';
+    if ($versiculos) {
+      foreach ($versiculos as $versiculo) {
+        $respuestaText = $versiculo->cita ?? '';
+        $titulo = $versiculo->titulo ?? '';
 
-      $this->versiculosRecomendados = '<p>Añade el versículo dando clic sobre él</p>';
-      foreach ($versiculos as $versiculo)
-			{
-        try {
-          $respuestaText = file_get_contents(
-            'https://api.biblia.com/v1/bible/content/RVR60.txt?passage=' .
-            $versiculo->cita .
-            '&key=' .
-            $key .
-            '&style=neVersePerLineFullReference&culture=es',
-            false,
-            stream_context_create($arrContextOptions)
-          );
-
-          $this->versiculosRecomendados = $this->versiculosRecomendados.' <button type="button" class="btn rounded-pill btn-outline-primary waves-effect btn-sm mt-1 add-versiculo" data-toggle="tooltip" data-placement="top" title="'.$respuestaText.'" data-verso="'.$respuestaText.'" data-cita="'.$versiculo->titulo.'" >'.$versiculo->titulo.'</button>';
-        } catch (Exception $e) {
-					$this->versiculosRecomendados = $this->versiculosRecomendados.'<button type="button" class="btn rounded-pill btn-outline-primary waves-effect mt-1 ">'.$versiculo->titulo.' (No encontrado)</button>';
-				}
-			}
+        $this->versiculosRecomendados = $this->versiculosRecomendados . ' <button type="button" class="btn rounded-pill btn-outline-primary waves-effect btn-sm mt-1 add-versiculo" data-toggle="tooltip" data-placement="top" title="' . e($respuestaText) . '" data-verso="' . e($respuestaText) . '" data-cita="' . e($titulo) . '" >' . e($titulo) . '</button>';
+      }
     }
-	}
+  }
 
   #[On('buscarBibliaCita')]
   public function buscarBibliaCita($libro,$capitulo,$versiculo)
@@ -252,6 +237,42 @@ class GestionarPeticiones extends Component
       }
     }
 
+  }
+
+  #[On('modalAsignarIntercesor')]
+  public function modalAsignarIntercesor($peticionId)
+  {
+    $this->peticionAsignarId = $peticionId;
+    $this->intercesorSeleccionadoId = null;
+    $this->dispatch('limpiar-seleccion');
+    $this->dispatch('abrirModal', nombreModal: 'modalAsignarIntercesor');
+  }
+
+  #[On('usuario-seleccionado')]
+  public function usuarioSeleccionado($id, $buscadorId = null)
+  {
+    if ($buscadorId === 'intercesor_asignado_id') {
+      $this->intercesorSeleccionadoId = $id;
+    }
+  }
+
+  public function asignarIntercesorConfirmado()
+  {
+    if ($this->intercesorSeleccionadoId) {
+      $peticion = Peticion::find($this->peticionAsignarId);
+      if ($peticion) {
+        $peticion->asignacion_peticion_id = $this->intercesorSeleccionadoId;
+        $peticion->save();
+
+        $this->dispatch('cerrarModal', nombreModal: 'modalAsignarIntercesor');
+        $nombreIntercesor = User::find($this->intercesorSeleccionadoId)->nombre(3);
+
+        $this->dispatch('limpiar-seleccion');
+        $this->intercesorSeleccionadoId = null;
+
+        return redirect(request()->header('Referer'))->with('success', "La petición fue asignada a <b>{$nombreIntercesor}</b> con éxito.");
+      }
+    }
   }
 
   public function render()

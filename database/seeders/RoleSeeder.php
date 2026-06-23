@@ -62,5 +62,7 @@ class RoleSeeder extends Seeder
         // roles consolidacion
         $consolidadorMedellin = Role::firstOrCreate(['name' => 'Consolidador Medellin'], ['icono' => 'ti ti ti-user', 'dependiente' => false, 'zona_de_consolidacion_id' => 5]);
         $consolidadorBogota = Role::firstOrCreate(['name' => 'Consolidador Bogota'], ['icono' => 'ti ti ti-user', 'dependiente' => false, 'zona_de_consolidacion_id' => 6]);
+
+        $intercesor = Role::firstOrCreate(['name' => 'Intercesor'], ['icono' => 'ti ti ti-message-circle-user', 'dependiente' => false, 'es_intercesor' => true]);
     }
 }

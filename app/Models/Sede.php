@@ -217,4 +217,9 @@ class Sede extends Model
     {
         return $this->belongsToMany(Consejero::class, 'consejero_sede');
     }
+
+    public function intercesores(): BelongsToMany
+    {
+        return $this->belongsToMany(Intercesor::class, 'intercesor_sede', 'sede_id', 'intercesor_id');
+    }
 }

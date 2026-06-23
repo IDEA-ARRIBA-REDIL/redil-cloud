@@ -2,6 +2,24 @@
     $configData = Helper::appClasses();
     use App\Models\Actividad;
     use App\Models\TagGeneral;
+
+    $iglesiaData = \App\Models\Iglesia::first();
+    $mostrarAlertaLicencia = false;
+    $diasRestantesLicencia = 0;
+
+    if ($iglesiaData && $iglesiaData->fecha_vencimiento_licencia) {
+        $fechaVencimiento = \Carbon\Carbon::parse($iglesiaData->fecha_vencimiento_licencia)->startOfDay();
+        $diasRestantesLicencia = now()->startOfDay()->diffInDays($fechaVencimiento, false);
+
+        // Si faltan 30 días o menos (o ya venció) y no se ha mostrado hoy
+        if ($diasRestantesLicencia <= 30) {
+            $keyAlerta = 'alerta_licencia_' . now()->format('Y-m-d');
+            if (!session()->has($keyAlerta)) {
+                $mostrarAlertaLicencia = true;
+                session()->put($keyAlerta, true);
+            }
+        }
+    }
 @endphp
 
 @extends('layouts/layoutMaster')
@@ -10,7 +28,10 @@
 
 
 @section('page-style')
-    @vite(['resources/assets/vendor/libs/swiper/swiper.scss'])
+    @vite([
+        'resources/assets/vendor/libs/swiper/swiper.scss',
+        'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
+    ])
     <style>
         /* Estilos para el header y navbar solo para dashboard  */
             .dashboard-header {
@@ -216,7 +237,10 @@
 @endsection
 
 @section('vendor-script')
-    @vite(['resources/assets/vendor/libs/swiper/swiper.js'])
+    @vite([
+        'resources/assets/vendor/libs/swiper/swiper.js',
+        'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'
+    ])
 @endsection
 
 @section('page-script')
@@ -365,6 +389,33 @@
         // Forzar un pequeño delay para asegurar la carga de assets
         setTimeout(initTemasSwiper, 500);
     </script>
+
+    @if($mostrarAlertaLicencia)
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let htmlContent = '';
+            @if($diasRestantesLicencia > 0)
+                htmlContent += 'Tu licencia de software REDIL está próxima a vencer en <strong>{{ intval($diasRestantesLicencia) }} días</strong> ({{ \Carbon\Carbon::parse($iglesiaData->fecha_vencimiento_licencia)->format("d/m/Y") }}).<br><br>';
+            @elseif($diasRestantesLicencia == 0)
+                htmlContent += 'Tu licencia de software REDIL vence <strong>hoy</strong>.<br><br>';
+            @else
+                htmlContent += 'Tu licencia de software REDIL ha <strong>vencido</strong> hace {{ abs(intval($diasRestantesLicencia)) }} días.<br><br>';
+            @endif
+            htmlContent += '{{ $iglesiaData->mensaje_vencimiento_licencia ?? "Por favor, comunícate con soporte o renueva tu plan para evitar interrupciones en el servicio." }}';
+
+            Swal.fire({
+                title: '¡Aviso importante!',
+                html: htmlContent,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                customClass: {
+                    confirmButton: 'btn btn-primary rounded-pill'
+                },
+                buttonsStyling: false
+            });
+        });
+    </script>
+    @endif
 @endsection
 
 
