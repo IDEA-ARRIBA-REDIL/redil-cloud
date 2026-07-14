@@ -12,7 +12,7 @@ class VersiculoDiario extends Model
 
     protected $table = 'versiculos_diarios';
 
-    protected $fillable = [
+    /*protected $fillable = [
         'version_uri',
         'libro_nombre',
         'cita_referencia',
@@ -20,7 +20,9 @@ class VersiculoDiario extends Model
         'ruta_imagen',
         'url_video_reflexion',
         'fecha_publicacion',
-    ];
+    ];*/
+
+    protected $guarded = [];
 
     protected $casts = [
         'fecha_publicacion' => 'date',

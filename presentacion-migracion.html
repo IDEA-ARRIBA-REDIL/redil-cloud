@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Migración · VISION → CRECER · Manantial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0e1a;
+    --surface:   #111827;
+    --card:      #1a2236;
+    --border:    rgba(255,255,255,0.08);
+    --accent:    #6366f1;
+    --accent2:   #8b5cf6;
+    --green:     #10b981;
+    --red:       #ef4444;
+    --yellow:    #f59e0b;
+    --blue:      #3b82f6;
+    --text:      #f1f5f9;
+    --muted:     #94a3b8;
+    --radius:    16px;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+    z-index: 100;
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  #counter {
+    position: fixed; bottom: 28px; right: 36px;
+    font-size: 13px; color: var(--muted);
+    letter-spacing: 1px; z-index: 100;
+  }
+
+  .nav-btn {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; z-index: 100;
+    transition: all 0.2s ease;
+  }
+  .nav-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  #btn-prev { left: 20px; }
+  #btn-next { right: 20px; }
+
+  #slides { width: 100%; height: 100%; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 80px;
+    opacity: 0; pointer-events: none;
+    transform: translateX(60px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .slide.active {
+    opacity: 1; pointer-events: all; transform: translateX(0);
+  }
+  .slide.exit {
+    opacity: 0; transform: translateX(-60px);
+  }
+
+  .slide-inner { width: 100%; max-width: 1100px; }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+  }
+  h1 { font-size: clamp(36px, 5vw, 64px); font-weight: 900; line-height: 1.1; }
+  h2 { font-size: clamp(28px, 3.5vw, 46px); font-weight: 800; line-height: 1.2; }
+  h3 { font-size: clamp(18px, 2vw, 26px); font-weight: 700; }
+  p  { font-size: 16px; color: var(--muted); line-height: 1.7; }
+  .lead { font-size: 20px; color: var(--text); line-height: 1.6; font-weight: 400; }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+  }
+  .card-grid { display: grid; gap: 16px; }
+  .card-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .card-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600;
+  }
+  .badge-accent  { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+  .badge-green   { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-red     { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-yellow  { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-pink    { background: rgba(236,72,153,0.15); color: #f472b6; border: 1px solid rgba(236,72,153,0.3); }
+  .badge-teal    { background: rgba(20,184,166,0.15); color: #2dd4bf; border: 1px solid rgba(20,184,166,0.3); }
+
+  .step-pill {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 16px 20px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: 12px;
+  }
+  .step-num {
+    min-width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .step-body h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .step-body p  { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 15px; line-height: 1.5;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist .icon { font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+  .check-yes .icon::before  { content: '✅'; }
+  .check-no  .icon::before  { content: '🚫'; }
+  .check-warn .icon::before { content: '⚠️'; }
+  .check-q   .icon::before  { content: '❓'; }
+  .check-lock .icon::before { content: '🔒'; }
+  .check-play .icon::before { content: '▶️'; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    background: rgba(99,102,241,0.15); color: #818cf8;
+    padding: 10px 14px; text-align: left; font-weight: 600;
+    font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Timeline compacta para muchas fases */
+  .timeline-wrap {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 24px;
+  }
+  .timeline-wrap.row2 { grid-template-columns: repeat(5, 1fr); }
+  .phase-block {
+    padding: 14px 10px; text-align: center;
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .phase-block .num { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+  .phase-block .label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .phase-block .sub { font-size: 9px; color: var(--muted); margin-top: 3px; opacity: 0.7; }
+
+  .ph-0  { background: rgba(99,102,241,0.08); }
+  .ph-1  { background: rgba(59,130,246,0.08); }
+  .ph-2  { background: rgba(245,158,11,0.08); }
+  .ph-3  { background: rgba(139,92,246,0.08); }
+  .ph-4  { background: rgba(236,72,153,0.08); }
+  .ph-5  { background: rgba(251,113,133,0.08); }
+  .ph-6  { background: rgba(45,212,191,0.08); }
+  .ph-7  { background: rgba(16,185,129,0.08); }
+  .ph-8  { background: rgba(251,146,60,0.08); }
+  .ph-9  { background: rgba(20,184,166,0.08); }
+
+  .risk-high   { color: #f87171; font-weight: 600; }
+  .risk-medium { color: #fbbf24; font-weight: 600; }
+  .risk-low    { color: #34d399; font-weight: 600; }
+
+  .team-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .team-icon { font-size: 36px; }
+  .team-card h3 { font-size: 18px; }
+  .team-card .who { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .team-tasks { list-style: none; }
+  .team-tasks li { font-size: 13px; color: var(--muted); padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .team-tasks li:last-child { border-bottom: none; }
+  .team-tasks li::before { content: '→ '; color: var(--accent); }
+
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.12));
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: var(--radius); padding: 28px 32px;
+  }
+  .warning-box {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: var(--radius); padding: 20px 24px;
+  }
+  .danger-box {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: var(--radius); padding: 20px 24px;
+  }
+  .success-box {
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: var(--radius); padding: 20px 24px;
+  }
+  .pink-box {
+    background: rgba(236,72,153,0.08);
+    border: 1px solid rgba(236,72,153,0.3);
+    border-radius: var(--radius); padding: 20px 24px;
+  }
+  .teal-box {
+    background: rgba(20,184,166,0.08);
+    border: 1px solid rgba(20,184,166,0.3);
+    border-radius: var(--radius); padding: 20px 24px;
+  }
+
+  .stat-block { text-align: center; }
+  .stat-num { font-size: 52px; font-weight: 900; line-height: 1; }
+  .stat-label { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  .slide-cover { background: radial-gradient(ellipse at 30% 50%, rgba(99,102,241,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.1) 0%, transparent 50%); }
+
+  #dots {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 100;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted); opacity: 0.4; cursor: pointer;
+    transition: all 0.3s;
+  }
+  .dot.active { opacity: 1; background: var(--accent); width: 20px; border-radius: 3px; }
+
+  .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
+
+  .phase-header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+  .phase-number {
+    width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 900;
+  }
+
+  .arrow-vs { display: flex; align-items: center; gap: 20px; font-size: 28px; font-weight: 900; }
+  .vs-tag {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 28px; flex: 1; text-align: center;
+  }
+  .vs-arrow { font-size: 32px; color: var(--accent); }
+
+  /* Video tutorial pill */
+  .tutorial-pill {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 10px; padding: 12px 16px; margin-top: 12px;
+  }
+  .tutorial-pill .icon { font-size: 22px; }
+  .tutorial-pill p { font-size: 13px; color: var(--text); margin: 0; }
+  .tutorial-pill span { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="counter"></div>
+<div id="dots"></div>
+
+<button class="nav-btn" id="btn-prev" onclick="changeSlide(-1)">‹</button>
+<button class="nav-btn" id="btn-next" onclick="changeSlide(1)">›</button>
+
+<div id="slides">
+
+  <!-- ══ SLIDE 1 · PORTADA ══ -->
+  <div class="slide slide-cover active" id="s0">
+    <div class="slide-inner">
+      <div style="display:flex; flex-direction:column; justify-content:center; min-height:70vh; gap:32px;">
+        <div>
+          <div class="eyebrow">Manantial · Plan Estratégico · 2026</div>
+          <h1 style="margin-bottom:20px;">
+            Plan de<br>
+            <span class="gradient-text">Migración</span><br>
+            de Datos
+          </h1>
+          <p class="lead" style="max-width:560px;">
+            Traslado estratégico y quirúrgico de personas, grupos y avances de crecimiento desde el sistema <strong style="color:#fff">VISION</strong> hacia la nueva plataforma <strong style="color:#fff">CRECER</strong>.
+          </p>
+        </div>
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <span class="badge badge-accent">10 Fases</span>
+          <span class="badge badge-yellow">3 Equipos</span>
+          <span class="badge badge-green">Migración Quirúrgica</span>
+          <span class="badge badge-pink">Menores de Edad</span>
+          <span class="badge badge-teal">Círculo Familiar</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,auto); gap:40px; margin-top:12px;">
+          <div class="stat-block">
+            <div class="stat-num gradient-text">113K</div>
+            <div class="stat-label">Registros en VISION</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num" style="color:var(--green)">~25K</div>
+            <div class="stat-label">Estimado a migrar</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-num" style="color:var(--accent)">10</div>
+            <div class="stat-label">Fases del plan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 2 · CONTEXTO ══ -->
+  <div class="slide" id="s1">
+    <div class="slide-inner">
+      <div class="eyebrow">El punto de partida</div>
+      <h2 style="margin-bottom:32px;">¿Qué estamos migrando?</h2>
+      <div class="arrow-vs" style="margin-bottom:32px;">
+        <div class="vs-tag">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Sistema actual</div>
+          <div style="font-size:32px;font-weight:900;color:#f87171;">VISION</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:8px;">PostgreSQL 9.2 · Laravel Legacy</div>
+        </div>
+        <div class="vs-arrow">→</div>
+        <div class="vs-tag">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Nueva plataforma</div>
+          <div style="font-size:32px;font-weight:900;color:var(--green);">CRECER</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:8px;">Laravel 11 · Livewire 3 · Multi-tenant</div>
+        </div>
+      </div>
+      <div class="card-grid cols-3">
+        <div class="card">
+          <div style="font-size:28px;margin-bottom:12px;">👥</div>
+          <h3 style="font-size:16px;margin-bottom:8px;">Personas</h3>
+          <p style="font-size:13px;">Adultos activos con información personal, tipo de usuario y vinculación a grupos.</p>
+        </div>
+        <div class="card">
+          <div style="font-size:28px;margin-bottom:12px;">🏛️</div>
+          <h3 style="font-size:16px;margin-bottom:8px;">Grupos</h3>
+          <p style="font-size:13px;">Jerarquía ministerial completa: sedes, coordinaciones, áreas y células.</p>
+        </div>
+        <div class="card">
+          <div style="font-size:28px;margin-bottom:12px;">📈</div>
+          <h3 style="font-size:16px;margin-bottom:8px;">Crecimiento</h3>
+          <p style="font-size:13px;">Avances de pasos de crecimiento (en curso y finalizados) por cada persona.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 3 · PRINCIPIO CENTRAL ══ -->
+  <div class="slide" id="s2">
+    <div class="slide-inner">
+      <div class="eyebrow">El principio que guía todo</div>
+      <h2 style="margin-bottom:32px;">No se migra todo —<br>se migra lo que importa</h2>
+      <div class="two-col">
+        <div>
+          <div class="highlight-box" style="margin-bottom:20px;">
+            <p style="font-size:18px;color:var(--text);line-height:1.7;">
+              De ~<strong>113.000</strong> personas registradas históricamente en VISION, la mayoría nunca tuvo actividad real.<br><br>
+              La migración conserva solo quienes tienen <strong>al menos una relación activa</strong> con la iglesia documentada en la base de datos.
+            </p>
+          </div>
+          <div class="warning-box">
+            <div style="font-size:14px;color:#fbbf24;font-weight:600;margin-bottom:6px;">⚠️ ¿Por qué no migrar todo?</div>
+            <p style="font-size:13px;color:var(--muted);">Una base de datos contaminada con registros inactivos aumenta el costo de cada consulta, dificulta los informes y degrada el rendimiento de CRECER a largo plazo.</p>
+          </div>
+        </div>
+        <div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Estimado de reducción</div>
+            <div style="position:relative;height:12px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;margin-bottom:8px;">
+              <div style="position:absolute;left:0;top:0;height:100%;width:22%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
+              <span style="color:var(--green);font-weight:600;">~15-35K migran ✓</span>
+              <span>~113K total</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600;">Una persona pasa si tiene al menos uno de:</div>
+          <ul class="checklist">
+            <li class="check-yes"><span class="icon"></span><span>Aparece en reportes de grupos desde 2022</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Es líder o encargado de un grupo activo</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Es integrante registrado de un grupo</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Tiene matrícula activa en escuela</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Tiene pasos de crecimiento en curso o finalizados</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 4 · EXCLUSIONES ══ -->
+  <div class="slide" id="s3">
+    <div class="slide-inner">
+      <div class="eyebrow">Criterios de elegibilidad</div>
+      <h2 style="margin-bottom:32px;">¿Quién <span style="color:var(--red)">no</span> pasa a CRECER?</h2>
+      <div class="two-col">
+        <div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Exclusión automática</div>
+          <ul class="checklist">
+            <li class="check-no"><span class="icon"></span><span>Registros eliminados del sistema</span></li>
+            <li class="check-no"><span class="icon"></span><span>Marcados como "inactivo en la iglesia"</span></li>
+            <li class="check-no"><span class="icon"></span><span><strong>Menores de 14 años</strong> — se gestionan de forma separada</span></li>
+            <li class="check-no"><span class="icon"></span><span>Registrados solo por formulario de donación</span></li>
+            <li class="check-no"><span class="icon"></span><span>Pertenecientes a sedes que no continuarán</span></li>
+            <li class="check-no"><span class="icon"></span><span>Sin ninguna actividad registrada desde 2022</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="pink-box" style="margin-bottom:16px;">
+            <div style="font-size:14px;color:#f472b6;font-weight:600;margin-bottom:8px;">👶 ¿Qué pasa con los menores de edad?</div>
+            <p style="font-size:13px;color:var(--muted);">Los menores de 14 años <strong style="color:var(--text)">no se migran automáticamente</strong>. En CRECER existe un proceso separado (Fase 5) donde cada adulto responsable los registra con sus datos y el permiso correspondiente.<br><br>Esto garantiza el cumplimiento legal de protección de datos de menores.</p>
+          </div>
+          <div class="success-box">
+            <div style="font-size:14px;color:#34d399;font-weight:600;margin-bottom:8px;">✅ Lo que NO se migra nunca</div>
+            <ul style="font-size:13px;color:var(--muted);list-style:none;">
+              <li style="padding:4px 0;">→ Reportes históricos de grupos</li>
+              <li style="padding:4px 0;">→ Ofrendas, donaciones y pagos</li>
+              <li style="padding:4px 0;">→ Historial de reuniones</li>
+              <li style="padding:4px 0;">→ Contraseñas de acceso</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 5 · LOS 3 EQUIPOS ══ -->
+  <div class="slide" id="s4">
+    <div class="slide-inner">
+      <div class="eyebrow">Estructura de trabajo</div>
+      <h2 style="margin-bottom:32px;">Tres equipos, un objetivo</h2>
+      <div class="card-grid cols-3">
+        <div class="team-card">
+          <div class="team-icon">💻</div>
+          <h3>Equipo de Desarrollo</h3>
+          <div class="who">Desarrolladores REDIL Cloud</div>
+          <ul class="team-tasks">
+            <li>Configurar catálogos y mapeos</li>
+            <li>Herramientas de detección y scoring</li>
+            <li>Ejecución técnica de cada fase</li>
+            <li>Video tutoriales para usuarios</li>
+            <li>Validaciones de integridad</li>
+          </ul>
+        </div>
+        <div class="team-card" style="border-color:rgba(245,158,11,0.3);">
+          <div class="team-icon">🖥️</div>
+          <h3>Equipo TI Manantial</h3>
+          <div class="who">Personal de TI del cliente</div>
+          <ul class="team-tasks">
+            <li>Acceso y coordinación con VISION</li>
+            <li>Distribuir listas a cada sede</li>
+            <li>Recopilar respuestas ministeriales</li>
+            <li>Validación operativa final</li>
+            <li>Reporte de discrepancias</li>
+          </ul>
+        </div>
+        <div class="team-card" style="border-color:rgba(16,185,129,0.3);">
+          <div class="team-icon">⛪</div>
+          <h3>Personal Ministerial</h3>
+          <div class="who">Pastores, coordinadores, líderes</div>
+          <ul class="team-tasks">
+            <li>Revisar lista de su sede</li>
+            <li>Confirmar o depurar personas</li>
+            <li>Registrar menores a su cargo</li>
+            <li>Construir círculo familiar</li>
+            <li>Validación final en CRECER</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 6 · MAPA 10 FASES ══ -->
+  <div class="slide" id="s5">
+    <div class="slide-inner">
+      <div class="eyebrow">Mapa del proceso</div>
+      <h2 style="margin-bottom:28px;">Las 10 fases de la migración</h2>
+      <div class="timeline-wrap" style="margin-bottom:10px;">
+        <div class="phase-block ph-0"><div class="num" style="color:#818cf8;">0</div><div class="label">Preparación</div><div class="sub">Catálogos y mapeos</div></div>
+        <div class="phase-block ph-1"><div class="num" style="color:#60a5fa;">1</div><div class="label">Detección</div><div class="sub">Scoring de personas</div></div>
+        <div class="phase-block ph-2"><div class="num" style="color:#fbbf24;">2</div><div class="label">Revisión</div><div class="sub">Aprobación ministerial</div></div>
+        <div class="phase-block ph-3"><div class="num" style="color:#a78bfa;">3</div><div class="label">Grupos</div><div class="sub">Jerarquía ministerial</div></div>
+        <div class="phase-block ph-4"><div class="num" style="color:#f472b6;">4</div><div class="label">Adultos</div><div class="sub">Asistentes → Usuarios</div></div>
+      </div>
+      <div class="timeline-wrap">
+        <div class="phase-block ph-5"><div class="num" style="color:#fb7185;">5</div><div class="label">Menores</div><div class="sub">Registro tutelado</div></div>
+        <div class="phase-block ph-6"><div class="num" style="color:#2dd4bf;">6</div><div class="label">Familia</div><div class="sub">Círculo familiar</div></div>
+        <div class="phase-block ph-7"><div class="num" style="color:#34d399;">7</div><div class="label">Crecimiento</div><div class="sub">Pasos y avances</div></div>
+        <div class="phase-block ph-8"><div class="num" style="color:#fb923c;">8</div><div class="label">Escuelas</div><div class="sub">Matrículas activas</div></div>
+        <div class="phase-block ph-9"><div class="num" style="color:#22d3ee;">9</div><div class="label">Validación</div><div class="sub">Cierre y apertura</div></div>
+      </div>
+      <div class="card-grid cols-3" style="gap:12px;margin-top:18px;">
+        <div class="card" style="padding:14px;">
+          <div class="badge badge-accent" style="margin-bottom:8px;">Fases 0–1 · Técnicas</div>
+          <p style="font-size:12px;">Preparación del terreno y diagnóstico de datos. Solo el equipo de desarrollo.</p>
+        </div>
+        <div class="card" style="padding:14px;border-color:rgba(245,158,11,0.3);">
+          <div class="badge badge-yellow" style="margin-bottom:8px;">Fase 2 · CRÍTICA</div>
+          <p style="font-size:12px;">Revisión ministerial por sede. Sin aprobación, no se ejecuta la migración.</p>
+        </div>
+        <div class="card" style="padding:14px;border-color:rgba(236,72,153,0.3);">
+          <div class="badge badge-pink" style="margin-bottom:8px;">Fases 5–6 · Autogestión</div>
+          <p style="font-size:12px;">Los propios usuarios registran menores y construyen su círculo familiar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 7 · FASE 0 ══ -->
+  <div class="slide" id="s6">
+    <div class="slide-inner">
+      <div class="phase-header">
+        <div class="phase-number" style="background:rgba(99,102,241,0.2);color:#818cf8;">0</div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:4px;">Primera fase</div>
+          <h2 style="font-size:32px;">Preparación y Configuración</h2>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <p style="margin-bottom:20px;font-size:14px;">Antes de mover un solo dato, CRECER debe tener todos los catálogos configurados correctamente.</p>
+          <table>
+            <thead><tr><th>En VISION</th><th>En CRECER</th></tr></thead>
+            <tbody>
+              <tr><td>tipo_asistentes</td><td>tipo_usuarios</td></tr>
+              <tr><td>pasos_crecimiento</td><td>pasos_crecimiento</td></tr>
+              <tr><td>tipo_grupos</td><td>tipo_grupos</td></tr>
+              <tr><td>sedes</td><td>Tenants / sedes</td></tr>
+              <tr><td>tipo_vinculaciones</td><td>Equivalente CRECER</td></tr>
+              <tr><td>Arrays (sector, vivienda, sangre)</td><td>Tablas dinámicas</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600;">Estados de Pasos de Crecimiento</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(148,163,184,0.08);border-radius:8px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:#94a3b8;"></div>
+                <span style="font-size:13px;">Estado 1 · Sin Iniciar <span style="color:var(--muted)">(default)</span></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(59,130,246,0.08);border-radius:8px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:#60a5fa;"></div>
+                <span style="font-size:13px;">Estado 2 · En Curso</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(16,185,129,0.08);border-radius:8px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:#34d399;"></div>
+                <span style="font-size:13px;">Estado 3 · Finalizado</span>
+              </div>
+            </div>
+          </div>
+          <div class="highlight-box" style="padding:16px;">
+            <p style="font-size:13px;">También se construye una <strong style="color:var(--text)">tabla interna de mapeo de IDs</strong> — conecta cada ID de VISION con su equivalente en CRECER para no perder relaciones.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 8 · FASE 1 ══ -->
+  <div class="slide" id="s7">
+    <div class="slide-inner">
+      <div class="phase-header">
+        <div class="phase-number" style="background:rgba(59,130,246,0.2);color:#60a5fa;">1</div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:4px;">Segunda fase</div>
+          <h2 style="font-size:32px;">Detección y Clasificación</h2>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="step-pill">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>Proceso de Scoring</h4>
+              <p>Se evalúa automáticamente cada persona en VISION según sus relaciones activas. Solo pasan quienes alcanzan el umbral mínimo de actividad.</p>
+            </div>
+          </div>
+          <div class="step-pill">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>Reporte de Salud de Datos</h4>
+              <p>Se genera un informe completo: candidatos por sede, documentos duplicados, matrículas con problemas e inconsistencias históricas.</p>
+            </div>
+          </div>
+          <div class="step-pill">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>Detección de Inconsistencias</h4>
+              <p>Se identifican problemas en la BD de VISION (personas con grupo inválido, matrículas huérfanas) antes de que contaminen CRECER.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="warning-box" style="margin-bottom:16px;">
+            <div style="font-size:14px;color:#fbbf24;font-weight:600;margin-bottom:10px;">⚠️ Expectativa real</div>
+            <p style="font-size:13px;color:var(--muted);">El Reporte de Salud va a revelar inconsistencias históricas. Esto es <strong style="color:var(--text)">completamente normal</strong> en cualquier sistema de 10+ años. No son errores de la migración — son datos que siempre estuvieron mal y que ahora se hacen visibles.</p>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="font-size:24px;margin-bottom:8px;">📋</div>
+            <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Entregable: lista de candidatos por sede</div>
+            <p style="font-size:12px;">Particionada por sede para que cada equipo ministerial trabaje independientemente sobre su porción del trabajo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 9 · FASE 2 · CRÍTICA ══ -->
+  <div class="slide" id="s8">
+    <div class="slide-inner">
+      <div class="phase-header">
+        <div class="phase-number" style="background:rgba(245,158,11,0.2);color:#fbbf24;">2</div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:4px;">Tercera fase · La más crítica</div>
+          <h2 style="font-size:32px;">Revisión por Sede</h2>
+        </div>
+      </div>
+      <div class="danger-box" style="margin-bottom:24px;">
+        <div style="font-size:14px;color:#f87171;font-weight:700;margin-bottom:8px;">🔴 Esta fase no puede saltarse</div>
+        <p style="font-size:14px;">Si el personal ministerial no revisa las listas, la migración puede incluir personas incorrectas o excluir personas importantes. La calidad de este paso determina el resultado final.</p>
+      </div>
+      <div class="two-col">
+        <div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600;">Cada pastor / coordinador de sede recibe:</div>
+          <ul class="checklist">
+            <li class="check-yes"><span class="icon"></span><span>Lista de personas candidatas de su sede</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Por qué cada persona está siendo incluida</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Casos de documentos duplicados para resolver</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Lista de grupos activos para confirmar</span></li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600;">Tareas del personal ministerial:</div>
+          <ul class="checklist">
+            <li class="check-yes"><span class="icon"></span><span>Confirmar o depurar su lista de personas</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Marcar personas que no deben migrar</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Resolver cédulas duplicadas</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Confirmar jerarquía de grupos de su área</span></li>
+          </ul>
+          <div class="highlight-box" style="margin-top:16px;padding:16px;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px;">✅ Entregable requerido</div>
+            <p style="font-size:13px;">Lista aprobada y firmada por sede, con casos especiales resueltos.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 10 · FASES 3 Y 4 ══ -->
+  <div class="slide" id="s9">
+    <div class="slide-inner">
+      <div class="eyebrow">Ejecución técnica</div>
+      <h2 style="margin-bottom:28px;">Fases 3 y 4 · Grupos y Adultos</h2>
+      <div class="two-col">
+        <div>
+          <div class="phase-header" style="margin-bottom:16px;">
+            <div class="phase-number" style="background:rgba(139,92,246,0.2);color:#a78bfa;width:40px;height:40px;font-size:18px;">3</div>
+            <h3 style="font-size:20px;">Migración de Grupos</h3>
+          </div>
+          <p style="font-size:13px;margin-bottom:14px;">Se migra la jerarquía ministerial completa, de arriba hacia abajo:</p>
+          <div class="card" style="padding:16px;margin-bottom:12px;">
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+              <div style="padding:8px;background:rgba(139,92,246,0.1);border-radius:6px;">🏢 1. Grupos tipo Sede</div>
+              <div style="padding:8px;background:rgba(99,102,241,0.08);border-radius:6px;margin-left:16px;">🔗 2. Grupos de Coordinación</div>
+              <div style="padding:8px;background:rgba(59,130,246,0.06);border-radius:6px;margin-left:32px;">📍 3. Grupos de Área</div>
+              <div style="padding:8px;background:rgba(16,185,129,0.06);border-radius:6px;margin-left:48px;">👥 4. Células / Grupos Homogéneos</div>
+            </div>
+          </div>
+          <div class="warning-box" style="padding:12px;">
+            <p style="font-size:12px;color:#fbbf24;">No se migran reportes. CRECER inicia su propio historial desde cero.</p>
+          </div>
+        </div>
+        <div>
+          <div class="phase-header" style="margin-bottom:16px;">
+            <div class="phase-number" style="background:rgba(236,72,153,0.2);color:#f472b6;width:40px;height:40px;font-size:18px;">4</div>
+            <h3 style="font-size:20px;">Migración de Adultos</h3>
+          </div>
+          <p style="font-size:13px;margin-bottom:14px;">Una sede a la vez. Cada sede se valida antes de continuar con la siguiente.</p>
+          <ul class="checklist">
+            <li class="check-yes"><span class="icon"></span><span>Información personal y de contacto</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Tipo de usuario (con mapeo de equivalencia)</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Tipo de vinculación equivalente</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Grupo asignado (ya migrado en Fase 3)</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Campos adicionales del perfil</span></li>
+            <li class="check-no"><span class="icon"></span><span>Fotos, contraseñas, historial de pagos</span></li>
+            <li class="check-no"><span class="icon"></span><span>Menores de edad — se gestionan en Fase 5</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 11 · FASE 5 · MENORES DE EDAD ══ -->
+  <div class="slide" id="s10">
+    <div class="slide-inner">
+      <div class="phase-header">
+        <div class="phase-number" style="background:rgba(251,113,133,0.2);color:#fb7185;">5</div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:4px;">Fase de autogestión</div>
+          <h2 style="font-size:32px;">Registro de Menores de Edad</h2>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <p style="font-size:14px;margin-bottom:18px;">Una vez migrados todos los adultos, cada miembro responsable tiene la posibilidad de registrar y asociar a los menores de edad que estén a su cargo.</p>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600;">Tipos de relación aceptados:</div>
+          <ul class="checklist" style="margin-bottom:16px;">
+            <li class="check-yes"><span class="icon"></span><span>Hijos directos</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Hijos adoptivos</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Nietos bajo custodia</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Sobrinos bajo custodia</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Cualquier menor bajo responsabilidad legal comprobable</span></li>
+          </ul>
+          <div class="tutorial-pill">
+            <div class="icon">🎬</div>
+            <div>
+              <p>Se suministrará un <strong>video tutorial</strong> a los usuarios para guiarlos en este proceso.</p>
+              <span>Disponible en CRECER antes del inicio de la Fase 5</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="danger-box" style="margin-bottom:14px;">
+            <div style="font-size:14px;color:#f87171;font-weight:700;margin-bottom:8px;">🔒 Requisitos legales de protección de datos</div>
+            <ul class="checklist" style="margin:0;">
+              <li class="check-lock"><span class="icon"></span><span style="font-size:13px;">No se pueden registrar menores sin <strong>permiso escrito o virtual</strong> del adulto responsable.</span></li>
+              <li class="check-lock"><span class="icon"></span><span style="font-size:13px;">Líderes, pastores o personal ministerial <strong>no pueden registrar menores</strong> con quienes no tengan relación o no puedan comprobar autorización legal.</span></li>
+              <li class="check-lock"><span class="icon"></span><span style="font-size:13px;">La iglesia solo puede administrar datos de menores con <strong>consentimiento explícito</strong> del adulto responsable.</span></li>
+            </ul>
+          </div>
+          <div class="warning-box">
+            <div style="font-size:13px;color:#fbbf24;font-weight:600;margin-bottom:6px;">⚠️ Responsabilidad compartida</div>
+            <p style="font-size:12px;color:var(--muted);">El adulto que registra al menor asume la responsabilidad de tener la autorización correspondiente. El sistema debe registrar quién creó cada perfil de menor y la fecha.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 12 · FASE 6 · CÍRCULO FAMILIAR ══ -->
+  <div class="slide" id="s11">
+    <div class="slide-inner">
+      <div class="phase-header">
+        <div class="phase-number" style="background:rgba(45,212,191,0.2);color:#2dd4bf;">6</div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:4px;">Fase de autogestión</div>
+          <h2 style="font-size:32px;">Círculo Familiar</h2>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <p style="font-size:14px;margin-bottom:18px;">Cada usuario en CRECER puede construir su núcleo familiar dentro de la plataforma, vinculando tanto a los menores que tiene a cargo como a otros adultos con los que tenga relación familiar.</p>
+
+          <div class="teal-box" style="margin-bottom:16px;">
+            <div style="font-size:13px;color:#2dd4bf;font-weight:600;margin-bottom:10px;">👨‍👩‍👧‍👦 Asignación automática</div>
+            <p style="font-size:13px;color:var(--muted);">Los menores registrados en la <strong style="color:var(--text)">Fase 5</strong> (hijos, sobrinos, nietos bajo custodia, etc.) se asignan <strong style="color:var(--text)">automáticamente</strong> como miembros del círculo familiar del adulto responsable. No requieren ninguna acción adicional.</p>
+          </div>
+
+          <div class="tutorial-pill">
+            <div class="icon">🎬</div>
+            <div>
+              <p>Se suministrará un <strong>video tutorial</strong> a los usuarios para guiarlos en este proceso.</p>
+              <span>Disponible en CRECER antes del inicio de la Fase 6</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600;">Familiares adultos que se pueden asociar:</div>
+          <div class="card-grid cols-2" style="gap:10px;margin-bottom:16px;">
+            <div style="background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.2);border-radius:8px;padding:10px;font-size:13px;text-align:center;">💍 Esposo / Esposa</div>
+            <div style="background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.2);border-radius:8px;padding:10px;font-size:13px;text-align:center;">👴 Padres</div>
+            <div style="background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.2);border-radius:8px;padding:10px;font-size:13px;text-align:center;">🧓 Abuelos</div>
+            <div style="background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.2);border-radius:8px;padding:10px;font-size:13px;text-align:center;">🤝 Tíos</div>
+            <div style="background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.2);border-radius:8px;padding:10px;font-size:13px;text-align:center;">👫 Hermanos adultos</div>
+            <div style="background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.2);border-radius:8px;padding:10px;font-size:13px;text-align:center;">🫂 Primos</div>
+          </div>
+          <div class="success-box" style="padding:14px;">
+            <p style="font-size:12px;">Solo se puede vincular a personas que <strong style="color:var(--text)">ya existan en CRECER</strong>. No se pueden crear perfiles de adultos desde el círculo familiar.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 13 · FASE 7 · PASOS DE CRECIMIENTO ══ -->
+  <div class="slide" id="s12">
+    <div class="slide-inner">
+      <div class="phase-header">
+        <div class="phase-number" style="background:rgba(16,185,129,0.2);color:#34d399;">7</div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:4px;">Migración técnica</div>
+          <h2 style="font-size:32px;">Pasos de Crecimiento</h2>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <p style="font-size:14px;margin-bottom:18px;">Se preserva el historial de avance espiritual de cada persona migrada. Son datos de alto valor e irreemplazables.</p>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600;">Qué se migra:</div>
+          <ul class="checklist" style="margin-bottom:16px;">
+            <li class="check-yes"><span class="icon"></span><span>Pasos con estado <strong>En Curso</strong></span></li>
+            <li class="check-yes"><span class="icon"></span><span>Pasos con estado <strong>Finalizado</strong></span></li>
+            <li class="check-yes"><span class="icon"></span><span>Fecha y detalle del avance registrado</span></li>
+          </ul>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600;">Validación post-migración:</div>
+          <div class="card" style="padding:14px;">
+            <p style="font-size:12px;">Comparar total de registros "En Curso" y "Finalizado" por persona entre VISION y CRECER. Generar reporte de personas con pasos migrados exitosamente.</p>
+          </div>
+        </div>
+        <div>
+          <div class="warning-box" style="margin-bottom:16px;">
+            <div style="font-size:13px;color:#fbbf24;font-weight:600;margin-bottom:8px;">⚠️ Decisión pendiente del cliente</div>
+            <p style="font-size:13px;color:var(--muted);">Los pasos con estado <strong style="color:var(--text)">"Sin Iniciar"</strong> — ¿se migran?</p>
+            <div class="divider" style="margin:12px 0;"></div>
+            <p style="font-size:12px;color:var(--muted);"><strong style="color:var(--text)">Recomendación técnica: No migrarlos.</strong><br>En CRECER, "Sin Iniciar" es el estado por defecto del sistema. Migrarlos no agrega información real y genera registros innecesarios. El cliente debe confirmar.</p>
+          </div>
+          <div class="success-box">
+            <div style="font-size:13px;color:#34d399;font-weight:600;margin-bottom:6px;">✅ Pre-requisito</div>
+            <p style="font-size:12px;">Esta fase se ejecuta solo después de que la Fase 4 (adultos) esté completa y validada. Los pasos necesitan que la persona ya exista en CRECER.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 14 · FASE 8 · ESCUELAS ══ -->
+  <div class="slide" id="s13">
+    <div class="slide-inner">
+      <div class="phase-header">
+        <div class="phase-number" style="background:rgba(251,146,60,0.2);color:#fb923c;">8</div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:4px;">Migración técnica</div>
+          <h2 style="font-size:32px;">Escuelas y Matrículas</h2>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <p style="font-size:14px;margin-bottom:18px;">Se traslada la estructura académica de las sedes confirmadas y las matrículas activas de las personas ya migradas.</p>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600;">Qué se migra:</div>
+          <ul class="checklist" style="margin-bottom:16px;">
+            <li class="check-yes"><span class="icon"></span><span>Estructura de escuelas de sedes confirmadas</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Materias y niveles académicos</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Matrículas activas y no canceladas</span></li>
+            <li class="check-yes"><span class="icon"></span><span>Solo de personas ya migradas en Fase 4</span></li>
+          </ul>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600;">Qué NO se migra:</div>
+          <ul class="checklist">
+            <li class="check-no"><span class="icon"></span><span>Matrículas canceladas</span></li>
+            <li class="check-no"><span class="icon"></span><span>Matrículas de personas no migradas</span></li>
+            <li class="check-no"><span class="icon"></span><span>Matrículas con registros inválidos</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="danger-box" style="margin-bottom:16px;">
+            <div style="font-size:14px;color:#f87171;font-weight:600;margin-bottom:8px;">🔴 Orden de ejecución obligatorio</div>
+            <p style="font-size:13px;">Esta fase se ejecuta <strong>después de la Fase 4</strong>. Si se intenta antes, las matrículas no podrán vincularse a los usuarios porque aún no existen en CRECER.</p>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:600;">Cadena de dependencias:</div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+              <div style="padding:8px;background:rgba(236,72,153,0.08);border-radius:6px;">✓ Fase 4 — Adultos migrados</div>
+              <div style="text-align:center;color:var(--muted);">↓</div>
+              <div style="padding:8px;background:rgba(251,146,60,0.08);border-radius:6px;">✓ Fase 8 — Matrículas vinculadas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 15 · DECISIONES PENDIENTES ══ -->
+  <div class="slide" id="s14">
+    <div class="slide-inner">
+      <div class="eyebrow">Requieren respuesta del cliente</div>
+      <h2 style="margin-bottom:28px;">Decisiones Pendientes</h2>
+      <p style="margin-bottom:24px;">Estas decisiones deben tomarse <strong style="color:var(--text)">antes de iniciar cualquier ejecución técnica</strong>.</p>
+      <div class="card-grid cols-2" style="gap:14px;">
+        <div class="step-pill">
+          <div class="step-num" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);">❓</div>
+          <div class="step-body">
+            <h4>¿Cuáles sedes son las confirmadas?</h4>
+            <p>Lista exacta de sedes que pasarán a CRECER. Determina todo el universo de datos.</p>
+          </div>
+        </div>
+        <div class="step-pill">
+          <div class="step-num" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);">❓</div>
+          <div class="step-body">
+            <h4>Equivalencias de catálogos</h4>
+            <p>Mapeo completo: tipo de asistente, vinculación, pasos de crecimiento y tipos de grupo.</p>
+          </div>
+        </div>
+        <div class="step-pill">
+          <div class="step-num" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);">❓</div>
+          <div class="step-body">
+            <h4>¿Se migran los pasos "Sin Iniciar"?</h4>
+            <p>Recomendación técnica: No. CRECER los gestiona automáticamente.</p>
+          </div>
+        </div>
+        <div class="step-pill">
+          <div class="step-num" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);">❓</div>
+          <div class="step-body">
+            <h4>Corte de actividad mínima</h4>
+            <p>¿Confirmamos que personas sin actividad antes de 2022 no se migran?</p>
+          </div>
+        </div>
+        <div class="step-pill">
+          <div class="step-num" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);">❓</div>
+          <div class="step-body">
+            <h4>¿Las fotos de perfil se migran?</h4>
+            <p>Implica almacenamiento adicional y procesamiento extra.</p>
+          </div>
+        </div>
+        <div class="step-pill">
+          <div class="step-num" style="background:var(--surface);border:1px solid var(--border);color:var(--muted);">❓</div>
+          <div class="step-body">
+            <h4>Fecha de apertura de CRECER</h4>
+            <p>Para planear el congelamiento de ingresos en VISION y el inicio de operaciones.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 16 · RIESGOS ══ -->
+  <div class="slide" id="s15">
+    <div class="slide-inner">
+      <div class="eyebrow">Gestión de riesgos</div>
+      <h2 style="margin-bottom:28px;">Riesgos del Proyecto</h2>
+      <table>
+        <thead>
+          <tr><th>Riesgo</th><th>Probabilidad</th><th>Impacto</th><th>Mitigación</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Personal ministerial no completa la revisión a tiempo</td>
+            <td><span class="risk-high">Alta</span></td>
+            <td><span class="risk-high">Alto</span></td>
+            <td>Fecha límite clara y responsable por sede</td>
+          </tr>
+          <tr>
+            <td>Cédulas duplicadas sin resolución</td>
+            <td><span class="risk-high">Alta</span></td>
+            <td><span class="risk-medium">Medio</span></td>
+            <td>Regla automática + revisión manual de casos</td>
+          </tr>
+          <tr>
+            <td>Inconsistencias históricas en VISION no detectadas</td>
+            <td><span class="risk-medium">Media</span></td>
+            <td><span class="risk-high">Alto</span></td>
+            <td>Reporte de salud exhaustivo en Fase 1</td>
+          </tr>
+          <tr>
+            <td>Personas clave excluidas por el filtro automático</td>
+            <td><span class="risk-low">Baja</span></td>
+            <td><span class="risk-high">Alto</span></td>
+            <td>Fase 2 permite inclusión manual por líderes</td>
+          </tr>
+          <tr>
+            <td>Adultos que no registran a sus menores a cargo</td>
+            <td><span class="risk-medium">Media</span></td>
+            <td><span class="risk-medium">Medio</span></td>
+            <td>Video tutorial + acompañamiento en la Fase 5</td>
+          </tr>
+          <tr>
+            <td>Registro de menores sin autorización del responsable</td>
+            <td><span class="risk-low">Baja</span></td>
+            <td><span class="risk-high">Alto</span></td>
+            <td>Sistema registra quién creó el perfil y cuándo</td>
+          </tr>
+          <tr>
+            <td>Matrículas con registros de persona inválidos</td>
+            <td><span class="risk-medium">Media</span></td>
+            <td><span class="risk-medium">Medio</span></td>
+            <td>Detectado en Fase 1 y excluido de la migración</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ SLIDE 17 · CIERRE ══ -->
+  <div class="slide slide-cover" id="s16">
+    <div class="slide-inner">
+      <div style="display:flex;flex-direction:column;justify-content:center;min-height:70vh;gap:32px;">
+        <div>
+          <div class="eyebrow">Próximos pasos</div>
+          <h1 style="margin-bottom:24px;">Arranquemos con<br><span class="gradient-text">las decisiones</span></h1>
+          <p class="lead" style="max-width:600px;">
+            Con la aprobación de este plan y las respuestas a las decisiones pendientes, el equipo de desarrollo puede iniciar la <strong style="color:#fff">Fase 0</strong> de inmediato.
+          </p>
+        </div>
+        <div class="card-grid cols-3">
+          <div class="card" style="padding:20px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:8px;">✅</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Aprobación del plan</div>
+            <p style="font-size:12px;">Confirmación de que el enfoque estratégico es correcto</p>
+          </div>
+          <div class="card" style="padding:20px;text-align:center;border-color:rgba(245,158,11,0.3);">
+            <div style="font-size:32px;margin-bottom:8px;">📋</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Responder decisiones</div>
+            <p style="font-size:12px;">Las 6 preguntas de la diapositiva anterior</p>
+          </div>
+          <div class="card" style="padding:20px;text-align:center;border-color:rgba(16,185,129,0.3);">
+            <div style="font-size:32px;margin-bottom:8px;">🚀</div>
+            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Inicio de Fase 0</div>
+            <p style="font-size:12px;">Configuración de catálogos y mapeos en CRECER</p>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--muted);">
+          Equipo de Desarrollo REDIL Cloud · Manantial · 2026
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const totalSlides = document.querySelectorAll('.slide').length;
+  let current = 0;
+  let isAnimating = false;
+
+  const dotsContainer = document.getElementById('dots');
+  for (let i = 0; i < totalSlides; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsContainer.appendChild(d);
+  }
+
+  function updateUI() {
+    const progress = ((current + 1) / totalSlides) * 100;
+    document.getElementById('progress-bar').style.width = progress + '%';
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + totalSlides;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  }
+
+  function goTo(next) {
+    if (isAnimating || next === current || next < 0 || next >= totalSlides) return;
+    isAnimating = true;
+    const slides = document.querySelectorAll('.slide');
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => { slides[current].classList.remove('exit'); }, 500);
+    current = next;
+    slides[current].classList.add('active');
+    updateUI();
+    setTimeout(() => { isAnimating = false; }, 520);
+  }
+
+  function changeSlide(dir) { goTo(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); changeSlide(-1); }
+  });
+
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const dx = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 50) changeSlide(dx > 0 ? 1 : -1);
+  });
+
+  updateUI();
+</script>
+</body>
+</html>

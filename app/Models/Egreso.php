@@ -13,7 +13,7 @@ class Egreso extends Model
 
   protected $table = 'egresos';
 
-  protected $fillable = [
+  /*protected $fillable = [
     'fecha',
     'proveedor_id',
     'documento_equivalente_id',
@@ -28,7 +28,9 @@ class Egreso extends Model
     'fecha_anulacion',
     'sede_id',
     'moneda_id',
-  ];
+  ];*/
+
+  protected $guarded = [];
 
   public function centroDeCostosEgresos() : BelongsTo
   {

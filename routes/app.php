@@ -898,6 +898,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/posts/{post}/update', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}/destroy', [PostController::class, 'destroy'])->name('posts.destroy');
 
+    // ============================================
+    // HITOS - DEMO (rutas temporales para mostrar al cliente)
+    // ============================================
+    Route::prefix('hitos')->name('hitos.')->group(function () {
+        Route::get('/', function () {
+            return view('contenido.paginas.hitos.muro-demo');
+        })->name('muro');
+
+        Route::get('/crear', function () {
+            return view('contenido.paginas.hitos.crear');
+        })->name('crear');
+
+        Route::get('/gestionar', function () {
+            return view('contenido.paginas.hitos.muro-demo');
+        })->name('gestionar');
+    });
+    // ============================================
+
     // Planes Lectores
     Route::get('/planes-lectores/dashboard', [PlanLectorController::class, 'dashboard'])->name('planes-lectores.dashboard');
     Route::get('/planes-lectores/gestionar', [PlanLectorController::class, 'gestionar'])->name('planes-lectores.gestionar');

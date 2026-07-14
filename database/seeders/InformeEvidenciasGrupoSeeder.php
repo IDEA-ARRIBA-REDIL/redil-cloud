@@ -37,7 +37,7 @@ class InformeEvidenciasGrupoSeeder extends Seeder
             );
         }
 
-        $grupoId = 2;
+        $grupoId = 27;
         $startDate = Carbon::now()->startOfYear();
         $endDate = Carbon::now();
 

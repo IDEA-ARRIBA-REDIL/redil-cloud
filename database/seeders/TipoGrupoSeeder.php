@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\TipoGrupo;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\File;
 
 class TipoGrupoSeeder extends Seeder
 {
@@ -12,563 +13,68 @@ class TipoGrupoSeeder extends Seeder
      */
     public function run(): void
     {
-        $tipoGrupo1 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Célula de liderazgo Sup Auxiliar'],
-            [
-                'nombre_plural' => 'Células de liderazgo Sup Auxiliar',
-                'descripcion' => '',
-                'contiene_servidores' => true,
-                'imagen' => '',
-                'geo_icono' => 'grupo-verde.png',
-                'seguimiento_actividad' => 1,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos abiertos',
-                'metros_cobertura' => 5000,
-                'color' => '#c12',
-                'automatizacion_tipo_usuario_id' => 2,
+        $jsonPath = base_path('storage/app/seeders/tipos_grupo_manantial.json');
+
+        if (! File::exists($jsonPath)) {
+            $this->command->warn("El archivo {$jsonPath} no existe. Saltando seeder de tipos de grupo.");
+
+            return;
+        }
+
+        $json = File::get($jsonPath);
+        $data = json_decode($json, true);
+
+        foreach ($data['tipo_grupos'] as $grupo) {
+            $attributes = [
+                'nombre' => $grupo['nombre'],
+                'descripcion' => $grupo['descripcion'] ?? '',
+                'seguimiento_actividad' => $grupo['seguimiento_actividad'] ?? false,
+                'contiene_servidores' => $grupo['contiene_servidores'] ?? false,
+                'posible_grupo_sede' => $grupo['posible_grupo_sede'] ?? false,
+                'metros_cobertura' => $grupo['metros_cobertura'] ?? 0,
+                'ingresos_individuales_discipulos' => $grupo['ingresos_individuales_discipulos'] ?? false,
+                'ingresos_individuales_lideres' => $grupo['ingresos_individuales_lideres'] ?? false,
+                'registra_datos_planeacion' => $grupo['registra_datos_planeacion'] ?? false,
+                'servidores_solo_discipulos' => $grupo['servidores_solo_discipulos'] ?? false,
+                'color' => $grupo['color'] ?? null,
+                'visible_mapa_asignacion' => $grupo['visible_mapa_asignacion'] ?? false,
+                'geo_icono' => $grupo['geo_icono'] ?? null,
+                'nombre_plural' => $grupo['nombre_plural'] ?? null,
+                'tipo_evangelistico' => $grupo['tipo_evangelistico'] ?? false,
+                'cantidad_maxima_reportes_semana' => $grupo['cantidad_maxima_reportes_semana'] ?? 1,
+                'enviar_mensaje_bienvenida' => $grupo['enviar_mensaje_bienvenida'] ?? false,
+                'mensaje_bienvenida' => $grupo['mensaje_bienvenida'] ?? null,
+                'orden' => $grupo['orden'] ?? 0,
+                'tiempo_para_definir_inactivo_grupo' => $grupo['tiempo_para_definir_inactivo_grupo'] ?? 30,
+                'inasistencia_obligatoria' => $grupo['inasistencia_obligatoria'] ?? false,
                 'horas_disponiblidad_link_asistencia' => 2,
                 'estado' => true,
-            ]);
+            ];
 
-        // Automatizaciones de los pasos 1 y 2
-        $tipoGrupo1->automatizacionesPasosCrecimiento()->sync([
-            1 => ['estado_por_defecto' => 3, 'descripcion_por_defecto' => 'Hola, es automatizo este paso.'],
-            2 => ['estado_por_defecto' => 2, 'descripcion_por_defecto' => 'Hola, es automatizo este paso.'],
-        ], false); // false = no detach existing, or use syncWithoutDetaching if preferred. But sync with detach=false is basically attach without duplicate if ID is same? No, attach duplicates. syncWithoutDetaching is better.
-        // Actually, distinct pivot usage usually implies syncWithoutDetaching or check keys.
-        // Users instructions were "firstOrCreate". For pivots, syncWithoutDetaching is safe.
-        // But keeping it simple: firstOrCreate the main model.
-        // For pivot: "->attach" creates duplicates if run twice. I will change to syncWithoutDetaching or check existence?
-        // The user didn't explicitly ask for pivot refactor here but "seeders idempotency".
-        // I will use syncWithoutDetaching for relations to be safe.
+            $tipoGrupo = TipoGrupo::find($grupo['id']);
+            if (! $tipoGrupo) {
+                $attributes['id'] = $grupo['id'];
+                $attributes['created_at'] = now();
+                $attributes['updated_at'] = now();
+                \Illuminate\Support\Facades\DB::table('tipo_grupos')->insert($attributes);
+                $tipoGrupo = TipoGrupo::find($grupo['id']);
+            } else {
+                $tipoGrupo->update($attributes);
+            }
 
-        $tipoGrupo1->automatizacionesPasosCrecimiento()->syncWithoutDetaching([
-            1 => ['estado_por_defecto' => 3, 'descripcion_por_defecto' => 'Hola, es automatizo este paso.'],
-            2 => ['estado_por_defecto' => 2, 'descripcion_por_defecto' => 'Hola, es automatizo este paso.'],
-        ]);
+            // Automatizaciones de los pasos 1 y 2 para la Célula Liderazgo Sup Auxiliar (id 5)
+            if ($grupo['id'] == 5) {
+                $tipoGrupo->automatizacionesPasosCrecimiento()->syncWithoutDetaching([
+                    1 => ['estado_por_defecto' => 3, 'descripcion_por_defecto' => 'Hola, es automatizo este paso.'],
+                    2 => ['estado_por_defecto' => 2, 'descripcion_por_defecto' => 'Hola, es automatizo este paso.'],
+                ]);
+            }
 
-        $tipoGrupo2 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de crecimiento'],
-            [
-                'nombre_plural' => 'Grupos de crecimiento',
-                'descripcion' => '',
-                'contiene_servidores' => true,
-                'imagen' => '',
-                'geo_icono' => 'grupo-rojo.png',
-                'seguimiento_actividad' => 1,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos cerrados',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        // clasificaciones asistentes
-        $tipoGrupo2->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-
-        // tipo ofrendas del grupo
-        $tipoGrupo2->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo3 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo Warriors'],
-            [
-                'nombre_plural' => 'Grupos Warriors',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        // clasificaciones asistentes
-        $tipoGrupo3->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-
-        // tipo ofrendas del grupo
-        $tipoGrupo3->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo4 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo relevo'],
-            [
-                'nombre_plural' => 'Grupos relevo',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-vinotinto.png',
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos eliminables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        // clasificaciones asistentes
-        $tipoGrupo4->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-
-        // tipo ofrendas del grupo
-        $tipoGrupo4->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo5 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Célula de liderazgo Coord. relevo'],
-            [
-                'nombre_plural' => 'Células de liderazgo Coord. relevo',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-vinotinto.png',
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos eliminables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo6 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Célula de liderazgo Sup General'],
-            [
-                'nombre_plural' => 'Células de liderazgo Sup General',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-vinotinto.png',
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos eliminables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo7 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Célula de liderazgo pastor'],
-            [
-                'nombre_plural' => 'Células de liderazgo pastor',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-vinotinto.png',
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos eliminables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo8 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de área'],
-            [
-                'nombre_plural' => 'Grupos de área',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-vinotinto.png',
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos eliminables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo9 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de región'],
-            [
-                'nombre_plural' => 'Grupos de región',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-vinotinto.png',
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos eliminables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo10 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo principal'],
-            [
-                'nombre_plural' => 'Grupos principales',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-vinotinto.png',
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos eliminables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo11 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de deportistas'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de deportistas',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo11->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo11->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo12 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Empresarios'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Empresarios',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo12->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo12->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo13 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Mujeres'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Mujeres',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo13->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo13->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo14 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Hombres'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Hombres',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo14->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo14->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo15 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Años Dorados'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Años Dorados',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo15->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo15->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo16 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Solteros 30 años'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Solteros 30 años',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo16->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo16->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo17 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Músicos'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Músicos',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo17->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo17->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo18 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Estudiantes'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Estudiantes',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo18->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo18->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo19 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Legendarios'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Legendarios',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo19->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo19->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo20 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Emprendedores'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Emprendedores',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo20->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo20->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo21 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Familias'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Familias',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo21->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo21->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo22 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de parejas'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de parejas',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo22->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo22->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo23 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Parejas en unión libre'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Parejas en unión libre',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo23->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo23->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
-
-        $tipoGrupo24 = TipoGrupo::firstOrCreate(
-            ['nombre' => 'Grupo de Crecimiento de Madres solteras'],
-            [
-                'nombre_plural' => 'Grupos de Crecimiento de Madres solteras',
-                'descripcion' => 'Esta es la descripción',
-                'imagen' => '',
-                'geo_icono' => 'grupo-azul-claro.png',
-                'seguimiento_actividad' => 0,
-                'enviar_mensaje_bienvenida' => 1,
-                'mensaje_bienvenida' => 'Ahora ya eres un líder, que bendición que puedas servir al señor desde los grupos inasignables',
-                'metros_cobertura' => 1000,
-                'color' => '#ed2',
-                'tipo_evangelistico' => true,
-                'registrar_inasistencia' => false,
-                'inasistencia_obligatoria' => false,
-                'ingresos_individuales_discipulos' => false,
-                'ingresos_individuales_lideres' => false,
-                'cantidad_maxima_reportes_semana' => 1,
-                'horas_disponiblidad_link_asistencia' => 2,
-                'estado' => true,
-            ]);
-
-        $tipoGrupo24->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-        $tipoGrupo24->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
+            // clasificaciones asistentes y ofrendas para grupos evangelísticos (Crecimiento, Warriors, etc.)
+            if (! empty($grupo['tipo_evangelistico'])) {
+                $tipoGrupo->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
+                $tipoGrupo->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
+            }
+        }
     }
 }

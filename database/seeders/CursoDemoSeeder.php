@@ -3,13 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Curso;
+use App\Models\CursoEvaluacion;
 use App\Models\CursoItem;
 use App\Models\CursoItemTipo;
 use App\Models\CursoLeccion;
 use App\Models\CursoModulo;
-use App\Models\CursoEvaluacion;
-use App\Models\CursoPregunta;
-use App\Models\CursoPreguntaOpcion;
 use App\Models\CursoUser;
 use App\Models\User;
 use Carbon\Carbon;
@@ -114,7 +112,7 @@ class CursoDemoSeeder extends Seeder
                 // Agregar Quiz de la Biblia si es el curso de Mentoreo Espiritual 1
                 if ($curso->nombre === 'Mentoreo Espiritual 1 | Introducción' && $i === 1) {
                     $tipoQuiz = CursoItemTipo::where('codigo', 'quiz')->first();
-                    
+
                     if ($tipoQuiz) {
                         $evaluacion = CursoEvaluacion::create([
                             'minimo_aprobacion' => 70,
@@ -130,7 +128,7 @@ class CursoDemoSeeder extends Seeder
                                     ['opcion' => 'Noé', 'correcta' => true],
                                     ['opcion' => 'Moisés', 'correcta' => false],
                                     ['opcion' => 'Abraham', 'correcta' => false],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => '¿Cuáles son los primeros 4 libros del Nuevo Testamento?',
@@ -141,7 +139,7 @@ class CursoDemoSeeder extends Seeder
                                     ['opcion' => 'Lucas', 'correcta' => true],
                                     ['opcion' => 'Juan', 'correcta' => true],
                                     ['opcion' => 'Hechos', 'correcta' => false],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => 'Jesús nació en Nazaret.',
@@ -149,7 +147,7 @@ class CursoDemoSeeder extends Seeder
                                 'opciones' => [
                                     ['opcion' => 'Verdadero', 'correcta' => false],
                                     ['opcion' => 'Falso', 'correcta' => true],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => '¿En cuántos días creó Dios el mundo?',
@@ -158,7 +156,7 @@ class CursoDemoSeeder extends Seeder
                                     ['opcion' => '6', 'correcta' => true],
                                     ['opcion' => '7', 'correcta' => false],
                                     ['opcion' => '1', 'correcta' => false],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => '¿Cuáles de estos fueron discípulos de Jesús?',
@@ -168,7 +166,7 @@ class CursoDemoSeeder extends Seeder
                                     ['opcion' => 'Andrés', 'correcta' => true],
                                     ['opcion' => 'Pablo', 'correcta' => false],
                                     ['opcion' => 'Juan', 'correcta' => true],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => 'El versículo más corto de la Biblia es "Jesús lloró".',
@@ -176,7 +174,7 @@ class CursoDemoSeeder extends Seeder
                                 'opciones' => [
                                     ['opcion' => 'Verdadero', 'correcta' => true],
                                     ['opcion' => 'Falso', 'correcta' => false],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => '¿Quién derrotó a Goliat?',
@@ -185,7 +183,7 @@ class CursoDemoSeeder extends Seeder
                                     ['opcion' => 'David', 'correcta' => true],
                                     ['opcion' => 'Saúl', 'correcta' => false],
                                     ['opcion' => 'Salomón', 'correcta' => false],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => '¿Qué usó Dios para crear a Eva?',
@@ -194,7 +192,7 @@ class CursoDemoSeeder extends Seeder
                                     ['opcion' => 'La costilla de Adán', 'correcta' => true],
                                     ['opcion' => 'Polvo', 'correcta' => false],
                                     ['opcion' => 'Una piedra', 'correcta' => false],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => '¿Cuáles de estos son libros del Pentateuco?',
@@ -204,7 +202,7 @@ class CursoDemoSeeder extends Seeder
                                     ['opcion' => 'Éxodo', 'correcta' => true],
                                     ['opcion' => 'Salmos', 'correcta' => false],
                                     ['opcion' => 'Levítico', 'correcta' => true],
-                                ]
+                                ],
                             ],
                             [
                                 'pregunta' => 'Pablo era un apóstol.',
@@ -212,7 +210,7 @@ class CursoDemoSeeder extends Seeder
                                 'opciones' => [
                                     ['opcion' => 'Verdadero', 'correcta' => true],
                                     ['opcion' => 'Falso', 'correcta' => false],
-                                ]
+                                ],
                             ],
                         ];
 
@@ -263,10 +261,9 @@ class CursoDemoSeeder extends Seeder
                         // Solo intentamos asignar si el rol existe en la DB
                         $roleModel = \Spatie\Permission\Models\Role::where('name', $rolAsignar)->first();
                         if ($roleModel) {
-                            $user->assignRole($roleModel);
-                            $user->roles()->updateExistingPivot(
+                            $user->roles()->attach(
                                 $roleModel->id,
-                                ['activo' => true, 'model_type' => User::class] // Corrigiendo error de model_type común
+                                ['activo' => true, 'model_type' => User::class]
                             );
                         }
                     }

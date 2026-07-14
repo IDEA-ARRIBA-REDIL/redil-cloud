@@ -2494,7 +2494,7 @@ class PermisoSeeder extends Seeder
             'titulo' => 'subitem_tipo_de_peticiones',
             'descripcion' => '',
             'name' => 'configuraciones.subitem_tipo_de_peticiones',
-        ])->syncRoles([]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_videos',

@@ -61,8 +61,8 @@ class UserSeeder extends Seeder
                 'password' => bcrypt('12345678'),
                 'activo' => 0,
                 'asistente_id' => 1,
-                'primer_nombre' => 'Hector Fabio',
-                'primer_apellido' => 'Jaramillo',
+                'primer_nombre' => 'Eduardo Sebastian',
+                'primer_apellido' => 'Cañas',
                 'genero' => 0,
                 'identificacion' => '2384283482',
                 'tipo_usuario_id' => 1,
@@ -80,9 +80,35 @@ class UserSeeder extends Seeder
             $usuario2->iglesiaEncargada()->attach(1); // Relación de iglesia
         }
 
+        $usuario2 = \App\Models\User::withTrashed()->firstOrCreate(
+            ['email' => 'pastorprincipal2@redil.com'],
+            [
+                'pais_id' => 45,
+                'password' => bcrypt('12345678'),
+                'activo' => 0,
+                'asistente_id' => 1,
+                'primer_nombre' => 'David',
+                'primer_apellido' => 'Cañas',
+                'genero' => 0,
+                'identificacion' => '2384283543',
+                'tipo_usuario_id' => 1,
+                'foto' => 'default-m.png',
+                'fecha_nacimiento' => '1977-02-05',
+                'tipo_vinculacion_id' => 2,
+                'email_verified_at' => '2016-01-01 05:00:01',
+                'sede_id' => 2,
+            ]
+        );
+        if ($usuario2->wasRecentlyCreated || $usuario2->roles()->wherePivot('activo', 1)->count() == 0) {
+            $usuario2->roles()->detach($pastor->id);
+            $usuario2->roles()->attach($pastor->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
+            $usuario2->iglesiaEncargada()->detach(1);
+            $usuario2->iglesiaEncargada()->attach(1); // Relación de iglesia
+        }
+
         $usuario3 = \App\Models\User::withTrashed()->firstOrCreate(
             ['email' => 'lider_d@redil.com'],
-            [
+            [   'id'=>14636,
                 'pais_id' => 45,
                 'password' => bcrypt('12345678'),
                 'telefono_fijo' => '435354',
@@ -90,8 +116,8 @@ class UserSeeder extends Seeder
                 'telefono_movil' => '3155552546',
                 'activo' => 0,
                 'asistente_id' => 1,
-                'primer_nombre' => 'Fabian',
-                'primer_apellido' => 'Aguirre',
+                'primer_nombre' => 'Jesus Antonio',
+                'primer_apellido' => 'Peña',
                 'genero' => 0,
                 'identificacion' => '243599756',
                 'tipo_usuario_id' => 2,
@@ -121,8 +147,8 @@ class UserSeeder extends Seeder
                 'telefono_otro' => '453868',
                 'telefono_movil' => '3155552546',
                 'asistente_id' => 1,
-                'primer_nombre' => 'James',
-                'primer_apellido' => 'Cano',
+                'primer_nombre' => 'Gabriel',
+                'primer_apellido' => 'de Avila',
                 'genero' => 0,
                 'identificacion' => '43545345345',
                 'tipo_usuario_id' => 2,

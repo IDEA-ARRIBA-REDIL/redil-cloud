@@ -13,10 +13,8 @@ class DocumentoEquivalente extends Model
 
   protected $table = 'documento_equivalente';
 
-  protected $fillable = [
-    'nombre',
-    'descripcion',
-  ];
+  //protected $fillable = ['nombre','descripcion', ];
+  protected $guarded = [];
 
   public function egresos()
   {

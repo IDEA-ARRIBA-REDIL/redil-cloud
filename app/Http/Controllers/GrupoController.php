@@ -25,7 +25,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Storage;
 use stdClass;
 
 class GrupoController extends Controller
@@ -100,7 +99,7 @@ class GrupoController extends Controller
         $item->es_global = true;
         $indicadoresGenerales[] = $item;
 
-        $item = new stdClass; 
+        $item = new stdClass;
         $item->nombre = 'Sin geo referencia';
         $item->url = 'sin-georreferencia';
         $item->cantidad = $gruposParaIndicadores->whereNull('latitud')->whereNull('longitud')->where('dado_baja', false)->pluck('id')->count();
@@ -157,7 +156,7 @@ class GrupoController extends Controller
                 $item->imagen = 'grupos/indicadores/indicador_general.png';
                 $item->es_global = true;
             } else {
-                $item->imagen = 'img/tipos-grupos/iconos/' .$tipoGrupo->imagen;
+                $item->imagen = 'img/tipos-grupos/iconos/'.$tipoGrupo->imagen;
                 $item->es_global = false;
             }
 
@@ -745,7 +744,7 @@ class GrupoController extends Controller
             $validarFecha = [];
             $configuracion->fecha_creacion_grupo_obligatorio ? array_push($validarFecha, 'required') : '';
             $validacion = array_merge($validacion, ['fecha' => $validarFecha]);
-        }       
+        }
 
         // telefono
         if ($configuracion->habilitar_telefono_grupo) {
@@ -1039,11 +1038,11 @@ class GrupoController extends Controller
                 $q->where('fecha_apertura', '<=', $fechaFin);
                 $q->where(function ($query) use ($fechaFin) {
                     $query->whereRaw('
-                        (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                        WHERE grupo_id = grupos.id AND fecha <= ? 
-                        ORDER BY id DESC LIMIT 1) IS NULL OR 
-                        (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                        WHERE grupo_id = grupos.id AND fecha <= ? 
+                        (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                        WHERE grupo_id = grupos.id AND fecha <= ?
+                        ORDER BY id DESC LIMIT 1) IS NULL OR
+                        (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                        WHERE grupo_id = grupos.id AND fecha <= ?
                         ORDER BY id DESC LIMIT 1) IS FALSE
                     ', [$fechaFin, $fechaFin]);
                 });
@@ -1088,20 +1087,20 @@ class GrupoController extends Controller
                     $queryGruposActivosSemana = Grupo::where('fecha_apertura', '<=', $finSemana)
                         ->where(function ($query) use ($finSemana) {
                             $query->whereRaw('
-                                (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                                WHERE grupo_id = grupos.id AND fecha <= ? 
-                                ORDER BY id DESC LIMIT 1) IS NULL OR 
-                                (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                                WHERE grupo_id = grupos.id AND fecha <= ? 
+                                (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                                WHERE grupo_id = grupos.id AND fecha <= ?
+                                ORDER BY id DESC LIMIT 1) IS NULL OR
+                                (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                                WHERE grupo_id = grupos.id AND fecha <= ?
                                 ORDER BY id DESC LIMIT 1) IS FALSE
                             ', [$finSemana, $finSemana]);
                         })
                         ->where(function ($query) use ($sede, $finSemana) {
                             $query->whereRaw('
                                 COALESCE(
-                                    (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo 
-                                    WHERE grupo_id = grupos.id AND created_at <= ? 
-                                    ORDER BY id DESC LIMIT 1), 
+                                    (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo
+                                    WHERE grupo_id = grupos.id AND created_at <= ?
+                                    ORDER BY id DESC LIMIT 1),
                                     sede_id
                                 ) = ?
                             ', [$finSemana.' 23:59:59', $sede->id]);
@@ -1112,9 +1111,9 @@ class GrupoController extends Controller
                             $placeholders = implode(',', array_fill(0, count($tiposSeleccionados), '?'));
                             $query->whereRaw('
                                 COALESCE(
-                                    (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                                    WHERE grupo_id = grupos.id AND created_at <= ? 
-                                    ORDER BY id DESC LIMIT 1), 
+                                    (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                                    WHERE grupo_id = grupos.id AND created_at <= ?
+                                    ORDER BY id DESC LIMIT 1),
                                     tipo_grupo_id
                                 ) IN ('.$placeholders.')
                             ', array_merge([$finSemana.' 23:59:59'], $tiposSeleccionados));
@@ -1189,17 +1188,17 @@ class GrupoController extends Controller
                 $sede->kpi_bajas = Grupo::where('fecha_apertura', '<=', $fechaFin)
                     ->where(function ($query) use ($fechaFin) {
                         $query->whereRaw('
-                            (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                            WHERE grupo_id = grupos.id AND fecha <= ? 
+                            (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                            WHERE grupo_id = grupos.id AND fecha <= ?
                             ORDER BY id DESC LIMIT 1) IS TRUE
                         ', [$fechaFin]);
                     })
                     ->where(function ($query) use ($sede, $fechaFin) {
                         $query->whereRaw('
                             COALESCE(
-                                (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo 
-                                WHERE grupo_id = grupos.id AND created_at <= ? 
-                                ORDER BY id DESC LIMIT 1), 
+                                (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo
+                                WHERE grupo_id = grupos.id AND created_at <= ?
+                                ORDER BY id DESC LIMIT 1),
                                 sede_id
                             ) = ?
                         ', [$fechaFin.' 23:59:59', $sede->id]);
@@ -1209,9 +1208,9 @@ class GrupoController extends Controller
                             $placeholders = implode(',', array_fill(0, count($tiposSeleccionados), '?'));
                             $query->whereRaw('
                                 COALESCE(
-                                    (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                                    WHERE grupo_id = grupos.id AND created_at <= ? 
-                                    ORDER BY id DESC LIMIT 1), 
+                                    (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                                    WHERE grupo_id = grupos.id AND created_at <= ?
+                                    ORDER BY id DESC LIMIT 1),
                                     tipo_grupo_id
                                 ) IN ('.$placeholders.')
                             ', array_merge([$fechaFin.' 23:59:59'], $tiposSeleccionados));
@@ -1223,20 +1222,20 @@ class GrupoController extends Controller
                 $qActivosHistoricosSede = Grupo::where('fecha_apertura', '<=', $fechaFin)
                     ->where(function ($query) use ($fechaFin) {
                         $query->whereRaw('
-                            (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                            WHERE grupo_id = grupos.id AND fecha <= ? 
-                            ORDER BY id DESC LIMIT 1) IS NULL OR 
-                            (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                            WHERE grupo_id = grupos.id AND fecha <= ? 
+                            (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                            WHERE grupo_id = grupos.id AND fecha <= ?
+                            ORDER BY id DESC LIMIT 1) IS NULL OR
+                            (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                            WHERE grupo_id = grupos.id AND fecha <= ?
                             ORDER BY id DESC LIMIT 1) IS FALSE
                         ', [$fechaFin, $fechaFin]);
                     })
                     ->where(function ($query) use ($sede, $fechaFin) {
                         $query->whereRaw('
                             COALESCE(
-                                (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo 
-                                WHERE grupo_id = grupos.id AND created_at <= ? 
-                                ORDER BY id DESC LIMIT 1), 
+                                (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo
+                                WHERE grupo_id = grupos.id AND created_at <= ?
+                                ORDER BY id DESC LIMIT 1),
                                 sede_id
                             ) = ?
                         ', [$fechaFin.' 23:59:59', $sede->id]);
@@ -1247,9 +1246,9 @@ class GrupoController extends Controller
                         $placeholders = implode(',', array_fill(0, count($tiposSeleccionados), '?'));
                         $query->whereRaw('
                             COALESCE(
-                                (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                                WHERE grupo_id = grupos.id AND created_at <= ? 
-                                ORDER BY id DESC LIMIT 1), 
+                                (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                                WHERE grupo_id = grupos.id AND created_at <= ?
+                                ORDER BY id DESC LIMIT 1),
                                 tipo_grupo_id
                             ) IN ('.$placeholders.')
                         ', array_merge([$fechaFin.' 23:59:59'], $tiposSeleccionados));
@@ -1267,11 +1266,11 @@ class GrupoController extends Controller
         $queryGruposHistoricos = Grupo::where('fecha_apertura', '<=', $fechaFin)
             ->where(function ($query) use ($fechaFin) {
                 $query->whereRaw('
-                    (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                    WHERE grupo_id = grupos.id AND fecha <= ? 
-                    ORDER BY id DESC LIMIT 1) IS NULL OR 
-                    (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                    WHERE grupo_id = grupos.id AND fecha <= ? 
+                    (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                    WHERE grupo_id = grupos.id AND fecha <= ?
+                    ORDER BY id DESC LIMIT 1) IS NULL OR
+                    (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                    WHERE grupo_id = grupos.id AND fecha <= ?
                     ORDER BY id DESC LIMIT 1) IS FALSE
                 ', [$fechaFin, $fechaFin]);
             })
@@ -1279,9 +1278,9 @@ class GrupoController extends Controller
                 $placeholders = implode(',', array_fill(0, count($sedesSeleccionadas), '?'));
                 $query->whereRaw('
                     COALESCE(
-                        (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo 
-                        WHERE grupo_id = grupos.id AND created_at <= ? 
-                        ORDER BY id DESC LIMIT 1), 
+                        (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo
+                        WHERE grupo_id = grupos.id AND created_at <= ?
+                        ORDER BY id DESC LIMIT 1),
                         sede_id
                     ) IN ('.$placeholders.')
                 ', array_merge([$fechaFin.' 23:59:59'], $sedesSeleccionadas));
@@ -1291,9 +1290,9 @@ class GrupoController extends Controller
                     $placeholders = implode(',', array_fill(0, count($tiposSeleccionados), '?'));
                     $query->whereRaw('
                         COALESCE(
-                            (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                            WHERE grupo_id = grupos.id AND created_at <= ? 
-                            ORDER BY id DESC LIMIT 1), 
+                            (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                            WHERE grupo_id = grupos.id AND created_at <= ?
+                            ORDER BY id DESC LIMIT 1),
                             tipo_grupo_id
                         ) IN ('.$placeholders.')
                     ', array_merge([$fechaFin.' 23:59:59'], $tiposSeleccionados));
@@ -1313,8 +1312,8 @@ class GrupoController extends Controller
         $gruposBaja = Grupo::where('fecha_apertura', '<=', $fechaFin)
             ->where(function ($query) use ($fechaFin) {
                 $query->whereRaw('
-                    (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                    WHERE grupo_id = grupos.id AND fecha <= ? 
+                    (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                    WHERE grupo_id = grupos.id AND fecha <= ?
                     ORDER BY id DESC LIMIT 1) IS TRUE
                 ', [$fechaFin]);
             })
@@ -1322,9 +1321,9 @@ class GrupoController extends Controller
                 $placeholders = implode(',', array_fill(0, count($sedesSeleccionadas), '?'));
                 $query->whereRaw('
                     COALESCE(
-                        (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo 
-                        WHERE grupo_id = grupos.id AND created_at <= ? 
-                        ORDER BY id DESC LIMIT 1), 
+                        (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo
+                        WHERE grupo_id = grupos.id AND created_at <= ?
+                        ORDER BY id DESC LIMIT 1),
                         sede_id
                     ) IN ('.$placeholders.')
                 ', array_merge([$fechaFin.' 23:59:59'], $sedesSeleccionadas));
@@ -1334,9 +1333,9 @@ class GrupoController extends Controller
                     $placeholders = implode(',', array_fill(0, count($tiposSeleccionados), '?'));
                     $query->whereRaw('
                         COALESCE(
-                            (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                            WHERE grupo_id = grupos.id AND created_at <= ? 
-                            ORDER BY id DESC LIMIT 1), 
+                            (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                            WHERE grupo_id = grupos.id AND created_at <= ?
+                            ORDER BY id DESC LIMIT 1),
                             tipo_grupo_id
                         ) IN ('.$placeholders.')
                     ', array_merge([$fechaFin.' 23:59:59'], $tiposSeleccionados));
@@ -1353,9 +1352,9 @@ class GrupoController extends Controller
         $datosGraficaTipos = (clone $queryGruposHistoricos)
             ->select(DB::raw('
                 COALESCE(
-                    (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                    WHERE grupo_id = grupos.id AND created_at <= \''.$fechaFin.' 23:59:59\' 
-                    ORDER BY id DESC LIMIT 1), 
+                    (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                    WHERE grupo_id = grupos.id AND created_at <= \''.$fechaFin.' 23:59:59\'
+                    ORDER BY id DESC LIMIT 1),
                     tipo_grupo_id
                 ) as tipo_historico_id
             '), DB::raw('count(*) as total'))
@@ -1488,11 +1487,11 @@ class GrupoController extends Controller
         $queryGruposHistoricos = Grupo::where('fecha_apertura', '<=', $fechaFin)
             ->where(function ($query) use ($fechaFin) {
                 $query->whereRaw('
-                (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                 WHERE grupo_id = grupos.id AND fecha <= ? 
-                 ORDER BY id DESC LIMIT 1) IS NULL OR 
-                (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                 WHERE grupo_id = grupos.id AND fecha <= ? 
+                (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                 WHERE grupo_id = grupos.id AND fecha <= ?
+                 ORDER BY id DESC LIMIT 1) IS NULL OR
+                (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                 WHERE grupo_id = grupos.id AND fecha <= ?
                  ORDER BY id DESC LIMIT 1) IS FALSE
             ', [$fechaFin, $fechaFin]);
             })
@@ -1500,9 +1499,9 @@ class GrupoController extends Controller
                 $placeholders = implode(',', array_fill(0, count($sedesSeleccionadas), '?'));
                 $query->whereRaw('
                 COALESCE(
-                    (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo 
-                     WHERE grupo_id = grupos.id AND created_at <= ? 
-                     ORDER BY id DESC LIMIT 1), 
+                    (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo
+                     WHERE grupo_id = grupos.id AND created_at <= ?
+                     ORDER BY id DESC LIMIT 1),
                     sede_id
                 ) IN ('.$placeholders.')
             ', array_merge([$fechaFin.' 23:59:59'], $sedesSeleccionadas));
@@ -1512,9 +1511,9 @@ class GrupoController extends Controller
                     $placeholders = implode(',', array_fill(0, count($tiposSeleccionados), '?'));
                     $query->whereRaw('
                     COALESCE(
-                        (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                         WHERE grupo_id = grupos.id AND created_at <= ? 
-                         ORDER BY id DESC LIMIT 1), 
+                        (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                         WHERE grupo_id = grupos.id AND created_at <= ?
+                         ORDER BY id DESC LIMIT 1),
                         tipo_grupo_id
                     ) IN ('.$placeholders.')
                 ', array_merge([$fechaFin.' 23:59:59'], $tiposSeleccionados));
@@ -1532,17 +1531,17 @@ class GrupoController extends Controller
             'grupos.*',
             DB::raw("
             COALESCE(
-                (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo 
-                 WHERE grupo_id = grupos.id AND created_at <= '$fechaFin 23:59:59' 
-                 ORDER BY id DESC LIMIT 1), 
+                (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo
+                 WHERE grupo_id = grupos.id AND created_at <= '$fechaFin 23:59:59'
+                 ORDER BY id DESC LIMIT 1),
                 sede_id
             ) as sede_historica_id
         "),
             DB::raw("
             COALESCE(
-                (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                 WHERE grupo_id = grupos.id AND created_at <= '$fechaFin 23:59:59' 
-                 ORDER BY id DESC LIMIT 1), 
+                (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                 WHERE grupo_id = grupos.id AND created_at <= '$fechaFin 23:59:59'
+                 ORDER BY id DESC LIMIT 1),
                 tipo_grupo_id
             ) as tipo_historico_id
         "),
@@ -1564,8 +1563,8 @@ class GrupoController extends Controller
                     ->where('fecha_apertura', '<=', $fechaFin)
                     ->where(function ($query) use ($fechaFin) {
                         $query->whereRaw('
-                        (SELECT dado_baja FROM reportes_grupo_bajas_altas 
-                         WHERE grupo_id = grupos.id AND fecha <= ? 
+                        (SELECT dado_baja FROM reportes_grupo_bajas_altas
+                         WHERE grupo_id = grupos.id AND fecha <= ?
                          ORDER BY id DESC LIMIT 1) IS TRUE
                     ', [$fechaFin]);
                     })
@@ -1573,9 +1572,9 @@ class GrupoController extends Controller
                         $placeholders = implode(',', array_fill(0, count($sedesSeleccionadas), '?'));
                         $query->whereRaw('
                         COALESCE(
-                            (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo 
-                             WHERE grupo_id = grupos.id AND created_at <= ? 
-                             ORDER BY id DESC LIMIT 1), 
+                            (SELECT sede_id_nuevo FROM bitacora_sedes_del_grupo
+                             WHERE grupo_id = grupos.id AND created_at <= ?
+                             ORDER BY id DESC LIMIT 1),
                             sede_id
                         ) IN ('.$placeholders.')
                     ', array_merge([$fechaFin.' 23:59:59'], $sedesSeleccionadas));
@@ -1585,9 +1584,9 @@ class GrupoController extends Controller
                             $placeholders = implode(',', array_fill(0, count($tiposSeleccionados), '?'));
                             $query->whereRaw('
                             COALESCE(
-                                (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo 
-                                 WHERE grupo_id = grupos.id AND created_at <= ? 
-                                 ORDER BY id DESC LIMIT 1), 
+                                (SELECT tipo_grupo_id_nuevo FROM bitacora_tipos_grupo
+                                 WHERE grupo_id = grupos.id AND created_at <= ?
+                                 ORDER BY id DESC LIMIT 1),
                                 tipo_grupo_id
                             ) IN ('.$placeholders.')
                         ', array_merge([$fechaFin.' 23:59:59'], $tiposSeleccionados));
@@ -3088,7 +3087,7 @@ class GrupoController extends Controller
             $configuracion->fecha_creacion_grupo_obligatorio ? array_push($validarFecha, 'required') : '';
             $validacion = array_merge($validacion, ['fecha' => $validarFecha]);
         }
-     
+
         // telefono
         if ($configuracion->habilitar_telefono_grupo) {
             $validarTelefono = [];
@@ -3538,14 +3537,16 @@ class GrupoController extends Controller
                 $usuario = auth()->user();
                 $usuario_seleccionado = $usuario;
                 array_push($array_ids_usuarios, $usuario->id);
-                $mensaje = 'Ministerio del '.$usuario->tipoUsuario->nombre." <a href='/usuario/".$usuario->id."/perfil' target='_blank' >".$usuario->nombre(3).'</a>';
+                $tipoUsuarioNombre = $usuario->tipoUsuario ? $usuario->tipoUsuario->nombre : 'Sin tipo';
+                $mensaje = 'Ministerio del '.$tipoUsuarioNombre." <a href='/usuario/".$usuario->id."/perfil' target='_blank' >".$usuario->nombre(3).'</a>';
             }
             // // luego aca es si dieron click dentro de un nodo del grafico a un usuario o asistente
         } elseif ($tipo_nodo == 'A') {
             $tipoDeNodo = $tipoDeNodo.'-encargado';
             array_push($array_ids_usuarios, $id);
             $usuario = User::find($id);
-            $mensaje = 'Ministerio del '.$usuario->tipoUsuario->nombre." <a href='/usuario/".$usuario->id."/perfil' target='_blank' >".$usuario->nombre(3).'</a>';
+            $tipoUsuarioNombre = $usuario->tipoUsuario ? $usuario->tipoUsuario->nombre : 'Sin tipo';
+            $mensaje = 'Ministerio del '.$tipoUsuarioNombre." <a href='/usuario/".$usuario->id."/perfil' target='_blank' >".$usuario->nombre(3).'</a>';
             // // luego aca es si dieron click dentro de un nodo del grafico a un grupo
         } elseif ($tipo_nodo == 'G') {
             $tipoDeNodo = $tipoDeNodo.'-grupo';
@@ -3585,9 +3586,9 @@ class GrupoController extends Controller
                     $item = new stdClass;
                     $item->id = 'A-'.$usuario->id;
                     $item->image = $urlFoto;
-                    $item->title = $usuario->tipoUsuario->nombre.': '.$usuario->nombre(3);
+                    $item->title = ($usuario->tipoUsuario ? $usuario->tipoUsuario->nombre : 'Sin tipo').': '.$usuario->nombre(3);
                     $item->level = $contador;
-                    $item->color = $usuario->tipoUsuario->color;
+                    $item->color = $usuario->tipoUsuario ? $usuario->tipoUsuario->color : '#cccccc';
                     $item->shape = 'circularImage';
                     $item->size = 20;
                     $item->borderWidth = 5;

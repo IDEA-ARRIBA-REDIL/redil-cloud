@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class CentroDeCostosEgresos extends Model
 {
   use HasFactory;
+  protected $guarded = [];
 
   public function egresos() {
     return $this->hasMany(Egreso::class);

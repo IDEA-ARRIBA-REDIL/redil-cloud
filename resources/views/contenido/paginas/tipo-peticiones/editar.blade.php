@@ -121,14 +121,21 @@ $configData = Helper::appClasses();
         <h5 class="card-header text-black fw-semibold">Información principal</h5>
         <div class="card-body">
           <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
               <label for="nombre" class="form-label">Nombre *</label>
               <input type="text" name="nombre" id="nombre" class="form-control" value="{{ old('nombre', $tipoPeticion->nombre) }}" placeholder="Ej: Petición de Salud" required>
               @error('nombre')
               <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
               @enderror
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
+              <label for="icono" class="form-label">Icono (Clase CSS, ej. ti ti-heart)</label>
+              <input type="text" name="icono" id="icono" class="form-control" value="{{ old('icono', $tipoPeticion->icono) }}" placeholder="Ej: ti ti-heart">
+              @error('icono')
+              <div class="text-danger ti-12px mt-2"><i class="ti ti-circle-x"></i> {{ $message }}</div>
+              @enderror
+            </div>
+            <div class="col-md-4 mb-3">
               <label for="orden" class="form-label">Orden de visualización *</label>
               <input type="number" name="orden" id="orden" class="form-control" value="{{ old('orden', $tipoPeticion->orden) }}" placeholder="Ej: 1" required>
               @error('orden')
@@ -136,7 +143,7 @@ $configData = Helper::appClasses();
               @enderror
             </div>
             
-            <div class="col-12 mb-3">
+            <div class="col-md-12 mb-3">
               <label for="banner_email" class="form-label">Banner para el Email</label>
               
               @if ($tipoPeticion->banner_email)
@@ -316,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
             height: 600,
         });
 
-        var imgSrc = canvas.toDataURL('image/png');
+        var imgSrc = canvas.toDataURL('image/jpeg', 0.8);
         inputResultadoBanner.value = imgSrc;
 
         Swal.fire({

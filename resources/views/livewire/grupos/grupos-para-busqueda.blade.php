@@ -20,13 +20,13 @@
       @foreach($grupos as $grupo)
       <a href="{{ $redirect ? route($redirect, $grupo) : 'javascript:;'}}" @if($multiple) wire:click="seleccionarGrupos({{$grupo->id}})" @else wire:click="seleccionarGrupo({{$grupo->id}})" @endif class="dropdown-item d-flex align-items-center p-2 mb-1 border">
         <div class="flex-shrink-0 me-3">
-          <img src="{{ $grupo->tipoGrupo->imagen_url }}" alt="Icono {{ $grupo->tipoGrupo->nombre }}" class="rounded" style="width: 50px; height: 50px; object-fit: contain;padding: 4px;">
+          <img src="{{ $grupo->tipoGrupo?->imagen_url }}" alt="Icono {{ $grupo->tipoGrupo?->nombre }}" class="rounded" style="width: 50px; height: 50px; object-fit: contain;padding: 4px;">
         </div>
         <div class="flex-grow-1 me-2 text-black">
           <p class="fs-7 text-wrap m-0">{{ $grupo->nombre }}</p>
-          <p class="fs-7 text-wrap fw-bold m-0">ID: {{ $grupo->id }} | {{ $grupo->tipoGrupo->nombre }}</p>
+          <p class="fs-7 text-wrap fw-bold m-0">ID: {{ $grupo->id }} | {{ $grupo->tipoGrupo?->nombre ?? 'Sin tipo' }}</p>
           @foreach ($grupo->encargados as $encargado)
-          <p class="fs-7 text-wrap m-0 mb-1"> <span class="badge px-1" style="background-color: {{$encargado->tipoUsuario->color}}"><i class="fs-6 {{ $encargado->tipoUsuario->icono }}"></i></span> {{ $encargado->nombre(3) }}</p>
+          <p class="fs-7 text-wrap m-0 mb-1"> <span class="badge px-1" style="background-color: {{$encargado->tipoUsuario?->color}}"><i class="fs-6 {{ $encargado->tipoUsuario?->icono }}"></i></span> {{ $encargado->nombre(3) }}</p>
           @endforeach
         </div>
       </a>
@@ -66,14 +66,14 @@
       @foreach($gruposSeleccionados as $grupoSel)
       <div wire:key="{{ $grupoSel->id }}-grupo" class="dropdown-item w-100 mx-0 d-flex p-2 mt-1 border flex-grow-1">
         <div class="flex-fill d-flex align-items-center">
-          <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSel->tipoGrupo->color }}">
+          <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSel->tipoGrupo?->color ?? '#6c757d' }}">
             <i class="ti ti-users-group text-white" style="font-size: 4.0rem !important"></i>
           </div>
           <div class="flex-grow-1 me-2">
             <p class="fs-5 text-wrap m-0">{{ $grupoSel->nombre }}</p>
-            <p class="fs-6 text-wrap fw-bold m-0">ID: {{ $grupoSel->id }} | {{ $grupoSel->tipoGrupo->nombre }}</p>
+            <p class="fs-6 text-wrap fw-bold m-0">ID: {{ $grupoSel->id }} | {{ $grupoSel->tipoGrupo?->nombre ?? 'Sin tipo' }}</p>
             @foreach ($grupoSel->encargados as $encargado)
-            <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1" style="background-color: {{$encargado->tipoUsuario->color}}"><i class="fs-6 {{ $encargado->tipoUsuario->icono }}"></i></span> {{ $encargado->nombre(3) }}</p>
+            <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1" style="background-color: {{$encargado->tipoUsuario?->color}}"><i class="fs-6 {{ $encargado->tipoUsuario?->icono }}"></i></span> {{ $encargado->nombre(3) }}</p>
             @endforeach
           </div>
         </div>
@@ -93,7 +93,7 @@
           @if($estiloSeleccion == 'pequeno')
           <div class="dropdown-item w-100 m-0 d-flex p-1 mt-1 border flex-grow-1">
             <div class="flex-fill d-flex align-items-center">
-              <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSeleccionado->tipoGrupo->color }}">
+              <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSeleccionado->tipoGrupo?->color ?? '#6c757d' }}">
                 <i class="ti ti-users-group text-white" style="font-size: 1.6rem !important"></i>
               </div>
               <div class="flex-grow-1 me-2">
@@ -111,14 +111,14 @@
         @else
         <div class="dropdown-item w-100 mx-0 d-flex p-2 mt-1 border  flex-grow-1">
           <div class="flex-fill d-flex align-items-center">
-            <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSeleccionado->tipoGrupo->color }}">
+            <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSeleccionado->tipoGrupo?->color ?? '#6c757d' }}">
               <i class="ti ti-users-group text-white" style="font-size: 4.0rem !important"></i>
             </div>
             <div class="flex-grow-1 me-2">
               <p class="fs-5 text-wrap m-0">{{ $grupoSeleccionado->nombre }}</p>
-              <p class="fs-6 text-wrap fw-bold m-0">ID: {{ $grupoSeleccionado->id }} | {{ $grupoSeleccionado->tipoGrupo->nombre }}</p>
+              <p class="fs-6 text-wrap fw-bold m-0">ID: {{ $grupoSeleccionado->id }} | {{ $grupoSeleccionado->tipoGrupo?->nombre ?? 'Sin tipo' }}</p>
               @foreach ($grupoSeleccionado->encargados as $encargado)
-              <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1" style="background-color: {{$encargado->tipoUsuario->color}}"><i class="fs-6 {{ $encargado->tipoUsuario->icono }}"></i></span> {{ $encargado->nombre(3) }}</p>
+              <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1" style="background-color: {{$encargado->tipoUsuario?->color}}"><i class="fs-6 {{ $encargado->tipoUsuario?->icono }}"></i></span> {{ $encargado->nombre(3) }}</p>
               @endforeach
             </div>
           </div>

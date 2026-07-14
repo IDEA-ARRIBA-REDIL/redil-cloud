@@ -13,7 +13,7 @@ class TenantSeeder extends Seeder
      */
     public function run(): void
     {
-        $tenants = ['crecer', 'mcmtulua', 'tierranueva'];
+        $tenants = ['crecer'];
         $centralDomain = env('CENTRAL_DOMAIN', 'redilcloud');
 
         $this->command->info("Dominio central configurado: {$centralDomain}");

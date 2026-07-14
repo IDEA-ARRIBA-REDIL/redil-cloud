@@ -9,6 +9,8 @@ class CentroDeCostosIngresos extends Model
 {
     use HasFactory;
 
+    protected $guarded = [];
+
     public function ingresos() {
       return $this->hasMany(Ingreso::class);
     }

@@ -15,6 +15,7 @@ class Aula extends Model
   
     use HasFactory, SoftDeletes;
      protected $table = 'aulas';
+     protected $guarded = [];
 
     /**
      * Un aula tiene muchos horarios base.

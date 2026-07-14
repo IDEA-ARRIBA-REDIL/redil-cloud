@@ -46,6 +46,7 @@ class TipoPeticionesController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:100',
             'orden' => 'required|integer',
+            'icono' => 'nullable|string|max:100',
             'mensaje_parte_1' => 'nullable|string',
             'mensaje_parte_2' => 'nullable|string',
             'banner_email_recortado' => 'nullable|string',
@@ -55,7 +56,7 @@ class TipoPeticionesController extends Controller
         $tipoPeticion = TipoPeticion::create($request->except(['banner_email_recortado', 'versiculos_peticion']));
 
         if ($request->filled('banner_email_recortado')) {
-            $nombreBanner = 'banner-email-'.$tipoPeticion->id.'.png';
+            $nombreBanner = 'banner-email-'.$tipoPeticion->id.'.jpg';
             $directorio = 'img/email/peticiones';
 
             $imageData = $request->input('banner_email_recortado');
@@ -86,6 +87,7 @@ class TipoPeticionesController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:100',
             'orden' => 'required|integer',
+            'icono' => 'nullable|string|max:100',
             'mensaje_parte_1' => 'nullable|string',
             'mensaje_parte_2' => 'nullable|string',
             'banner_email_recortado' => 'nullable|string',
@@ -95,7 +97,7 @@ class TipoPeticionesController extends Controller
         $tipoPeticion->update($request->except(['banner_email_recortado', 'versiculos_peticion']));
 
         if ($request->filled('banner_email_recortado')) {
-            $nombreBanner = 'banner-email-'.$tipoPeticion->id.'.png';
+            $nombreBanner = 'banner-email-'.$tipoPeticion->id.'.jpg';
             $directorio = 'img/email/peticiones';
 
             // Eliminar anterior si existe

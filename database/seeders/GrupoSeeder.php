@@ -15,7 +15,7 @@ class GrupoSeeder extends Seeder
     {
         Grupo::firstOrCreate([
             'id' => 1,
-            'nombre' => 'Team Principal',
+            'nombre' => 'IGLESIA MANANTIAL DE VIDA ETERNA',
             'dado_baja' => 0,
             'tipo_grupo_id' => 1,
             'sede_id' => 2,
@@ -27,8 +27,8 @@ class GrupoSeeder extends Seeder
         ]);
 
         Grupo::firstOrCreate([
-            'id' => 2,
-            'nombre' => 'Team A',
+            'id' => 27,
+            'nombre' => 'GRUPO PRINCIPAL SEDE BOSA',
             'dado_baja' => 0,
             'tipo_grupo_id' => 1,
             'sede_id' => 2,
@@ -41,7 +41,7 @@ class GrupoSeeder extends Seeder
 
         Grupo::firstOrCreate([
             'id' => 3,
-            'nombre' => 'Team B',
+            'nombre' => 'GRUPOS PRINCIPAL SEDE SABANA',
             'dado_baja' => 0,
             'tipo_grupo_id' => 1,
             'sede_id' => 2,
@@ -53,7 +53,7 @@ class GrupoSeeder extends Seeder
 
         Grupo::firstOrCreate([
             'id' => 4,
-            'nombre' => 'Team A1',
+            'nombre' => 'GRUPO DE CUIDADO A',
             'dado_baja' => 0,
             'tipo_grupo_id' => 2,
             'sede_id' => 2,
@@ -135,9 +135,12 @@ class GrupoSeeder extends Seeder
         DB::table('encargados_grupo')->updateOrInsert(
             ['grupo_id' => 1, 'user_id' => 2]
         );
+        DB::table('encargados_grupo')->updateOrInsert(
+            ['grupo_id' => 1, 'user_id' => 3]
+        );
 
         DB::table('encargados_grupo')->updateOrInsert(
-            ['grupo_id' => 2, 'user_id' => 3]
+            ['grupo_id' => 27, 'user_id' => 14636]
         );
 
         DB::table('encargados_grupo')->updateOrInsert(
@@ -145,24 +148,16 @@ class GrupoSeeder extends Seeder
         );
 
         DB::table('encargados_grupo')->updateOrInsert(
-            ['grupo_id' => 4, 'user_id' => 6]
+            ['grupo_id' => 4, 'user_id' => 5]
         );
 
         // integrantes_grupo
-        DB::table('integrantes_grupo')->updateOrInsert(
-            ['grupo_id' => 1, 'user_id' => 3]
-        );
-
         DB::table('integrantes_grupo')->updateOrInsert(
             ['grupo_id' => 1, 'user_id' => 4]
         );
 
         DB::table('integrantes_grupo')->updateOrInsert(
-            ['grupo_id' => 2, 'user_id' => 5]
-        );
-
-        DB::table('integrantes_grupo')->updateOrInsert(
-            ['grupo_id' => 3, 'user_id' => 5]
+            ['grupo_id' => 1, 'user_id' => 14636]
         );
 
         DB::table('integrantes_grupo')->updateOrInsert(
@@ -170,15 +165,23 @@ class GrupoSeeder extends Seeder
         );
 
         DB::table('integrantes_grupo')->updateOrInsert(
-            ['grupo_id' => 4, 'user_id' => 7]
+            ['grupo_id' => 3, 'user_id' => 6]
         );
 
-       /* DB::table('integrantes_grupo')->updateOrInsert(
-            ['grupo_id' => 4, 'user_id' => 9]
-        );*/
+        DB::table('integrantes_grupo')->updateOrInsert(
+            ['grupo_id' => 2, 'user_id' => 7]
+        );
 
-       /* DB::table('integrantes_grupo')->updateOrInsert(
-            ['grupo_id' => 4, 'user_id' => 11]
-        );*/
+        DB::table('integrantes_grupo')->updateOrInsert(
+            ['grupo_id' => 4, 'user_id' => 8]
+        );
+
+        /* DB::table('integrantes_grupo')->updateOrInsert(
+             ['grupo_id' => 4, 'user_id' => 9]
+         );*/
+
+        /* DB::table('integrantes_grupo')->updateOrInsert(
+             ['grupo_id' => 4, 'user_id' => 11]
+         );*/
     }
 }

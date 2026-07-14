@@ -17,7 +17,7 @@ class DefaultMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $mailData, $iglesia;
+        public $mailData, $iglesia, $configuracion;
 
     protected $pdfData;
     protected $pdfFilename;
@@ -34,11 +34,7 @@ class DefaultMail extends Mailable
       $this->pdfFilename = $pdfFilename;
 
       $this->iglesia = Iglesia::find(1);
-
-      if (!isset($mailData->banner)) {
-          $this->mailData->banner = Storage::disk('global_media')->url('emails/default.png');
-      }
-
+      $this->configuracion = Configuracion::find(1);
     }
 
 
@@ -59,6 +55,9 @@ class DefaultMail extends Mailable
     {
         return new Content(
             view: 'emails.default-mail',
+            with: [
+                'versiculo' => \App\Models\VersiculoDiario::inRandomOrder()->first(),
+            ]
         );
     }
 

@@ -76,7 +76,7 @@ $configData = Helper::appClasses();
                   <span class="align-middle me-sm-1 me-0 ">Nueva petición</span>
                 </a>
               @else
-                <a href="/" class="btn btn-primary rounded-pill px-10 py-3" >
+                <a href="{{ session('peticion_retorno_url', '/') }}" class="btn btn-primary rounded-pill px-10 py-3" >
                   <span class="align-middle me-sm-1 me-0 ">Volver</span>
                 </a>
                 <a href="{{ route('peticion.publica.nueva') }}" class="btn btn-outline-secondary rounded-pill px-10 py-3" >

@@ -26,7 +26,8 @@ class TenantDatabaseSeeder extends Seeder
     {
         $this->call(EntidadRelacionadaSeeder::class);
         $this->call(TipoUsuarioSeeder::class);
-        $this->call(EstadoCivilSeeder::class);
+        $this->call(EstadoCivilSeeder::class);        
+        $this->call(TipoSedeSeeder::class);
         $this->call(SedeSeeder::class);
         $this->call([
             RoleSeeder::class,
@@ -43,7 +44,6 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(ServicioServidorGrupoSeeder::class);
         $this->call(FormularioUsuarioSeeder::class);
         $this->call(IglesiaSeeder::class);
-        $this->call(TipoSedeSeeder::class);
         $this->call(GrupoExcluidoSeeder::class);
         $this->call(RangoEdadSeeder::class);
         $this->call(TipoVinculacionSeeder::class);
@@ -220,13 +220,14 @@ class TenantDatabaseSeeder extends Seeder
         // $this->call(NuevoSeederEjemplo::class); TipoCargoCursoSeeder
         $this->call(BloqueClasificacionAsistenteSeeder::class);
         $this->call(EstructuraGruposPruebaSeeder::class);
+        $this->call(BosaDataSeeder::class);
         $this->call(CursoItemTipoSeeder::class);
         $this->call(CarreraSeeder::class);
         $this->call(CategoriaCursoSeeder::class);
         $this->call(TipoCargoCursoSeeder::class);
         $this->call(CursoDemoSeeder::class);
         $this->call(VersiculoDiarioSeeder::class);
-        $this->call(BitacoraIntegranteGrupoSeeder::class);
+        // $this->call(BitacoraIntegranteGrupoSeeder::class);
         $this->call(IglesiaInfantilSeeder::class);
         $this->call(TipoServiciosSeeder::class);
         $this->call(FormularioActividadPruebaSeeder::class);

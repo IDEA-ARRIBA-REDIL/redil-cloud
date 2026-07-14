@@ -16,16 +16,11 @@ class Sede extends Model
 
     protected $table = 'sedes';
 
-    protected $fillable = [
-        'id',
-        'nombre',
-    ];
-
-     /**
-     * Get the sede's photo URL.
-     */
     protected $guarded = [];
 
+    /**
+     * Get the sede's photo URL.
+     */
     public function getFotoUrlAttribute(): string
     {
         if ($this->foto && $this->foto !== '' && $this->foto !== 'sede.png' && $this->foto !== 'default.png') {

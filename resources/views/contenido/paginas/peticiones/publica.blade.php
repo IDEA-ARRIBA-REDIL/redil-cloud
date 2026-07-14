@@ -10,11 +10,106 @@ $configData = Helper::appClasses();
 @section('page-style')
   @vite([
     'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
-    'resources/assets/vendor/libs/select2/select2.scss',
   ])
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
   <style>
-    body {
-      overflow-x: hidden;
+    @font-face{font-family:'BrittanySignature';src:url('https://res.cloudinary.com/difwue7wa/raw/upload/v1780004789/brittany-signature-script.regular_t6h0ni.ttf') format('truetype');font-weight:normal;font-style:normal;font-display:swap}
+    @font-face{font-family:'CreatoDisplay';src:url('https://res.cloudinary.com/difwue7wa/raw/upload/v1780005392/CreatoDisplay-Light_yumiiz.otf') format('truetype');font-weight:300;font-display:swap}
+    @font-face{font-family:'CreatoDisplay';src:url('https://res.cloudinary.com/difwue7wa/raw/upload/v1780005138/CreatoDisplay-Regular_lwbfti.otf') format('truetype');font-weight:400;font-display:swap}
+    @font-face{font-family:'CreatoDisplay';src:url('https://res.cloudinary.com/difwue7wa/raw/upload/v1780005427/CreatoDisplay-ExtraBold_ps2j04.otf') format('truetype');font-weight:800;font-display:swap}
+    @font-face{font-family:'CreatoDisplay';src:url('https://res.cloudinary.com/difwue7wa/raw/upload/v1780005466/CreatoDisplay-Black_ikfdg1.otf') format('truetype');font-weight:900;font-display:swap}
+
+    :root{
+      /* tema claro — secciones blancas del sistema Manantial */
+      --page:#f3f3f1;--card:#ffffff;--field:#f3f3f1;--field-focus:#ebebe8;
+      --ink:#040407;--ink-mute:rgba(4,4,7,.56);--ink-dim:rgba(4,4,7,.36);
+      --border:rgba(4,4,7,.12);--border-soft:rgba(4,4,7,.07);
+      --b:#0089c4;--b2:#0077ad;--bline:#0099d9;--bsoft:rgba(0,153,217,.08);
+      --err:#d23b3b;
+      --cd:'CreatoDisplay',sans-serif;--sc:'BrittanySignature',cursive;--sa:'DM Sans',sans-serif;
+      --radius:14px;
+    }
+    
+    body{background:var(--page) !important;color:var(--ink) !important;font-family:var(--sa) !important;min-height:100vh;overflow-x:hidden}
+    
+    header{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:24px clamp(20px,5vw,60px)}
+    .back{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-mute);transition:color .25s;text-decoration:none}
+    .back:hover{color:var(--ink)}
+    .back svg{width:16px;height:16px}
+    .logo-mini{font-family:var(--cd);font-weight:900;font-size:15px;letter-spacing:.06em;color:var(--ink)}
+    .logo-mini span{color:var(--b)}
+
+    .hero{position:relative;z-index:2;text-align:center;padding:18px 24px 8px}
+    .eyebrow{font-size:11px;letter-spacing:.22em;color:var(--b2);font-weight:700;text-transform:uppercase;margin-bottom:14px}
+    .hero h1{font-family:var(--cd);font-weight:900;text-transform:uppercase;font-size:clamp(30px,5.4vw,46px);line-height:1.05;letter-spacing:-.01em;color:var(--ink)}
+    .hero h1 .sc{font-family:var(--sc);font-weight:400;text-transform:none;color:var(--b2);font-size:1.4em;display:inline-block;margin:0 .08em;vertical-align:-.08em}
+    .hero p{max-width:480px;margin:18px auto 0;color:var(--ink-mute);font-size:15.5px;line-height:1.65}
+
+    main{position:relative;z-index:2;display:flex;justify-content:center;padding:36px 20px 80px}
+    .main-card{width:100%;max-width:560px;background:var(--card);border:1px solid var(--border-soft);border-radius:var(--radius);padding:clamp(24px,4vw,44px);box-shadow:0 1px 2px rgba(4,4,7,.03),0 18px 50px -28px rgba(4,4,7,.18)}
+
+    /* SECCION TITLE entre peticion y datos */
+    .section-title{font-family:var(--cd);font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:30px 0 16px;padding-top:24px;border-top:1px solid var(--border-soft)}
+
+    /* TOGGLE NUEVO / YA TENGO CUENTA */
+    .mode-toggle{display:flex;background:var(--field);border-radius:10px;padding:4px;margin-bottom:22px}
+    .mode-btn{flex:1;border:none;background:transparent;padding:10px 12px;font-family:var(--sa);font-size:13.5px;font-weight:600;color:var(--ink-mute);border-radius:7px;cursor:pointer;transition:all .2s}
+    .mode-btn.active{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(4,4,7,.1)}
+
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .subpanel{display:none}
+    .subpanel.active{display:block;animation:fade .3s ease}
+
+    .field{margin-bottom:18px}
+    .field label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ink)}
+    .field label .opt{color:var(--ink-dim);font-weight:400}
+    .field input, .field textarea, .field select{width:100%;background:var(--field) !important;border:1px solid var(--border) !important;border-radius:10px !important;padding:13px 14px !important;color:var(--ink) !important;font-family:var(--sa) !important;font-size:15px !important;transition:border-color .25s,background .25s}
+    .field input::placeholder,.field textarea::placeholder{color:var(--ink-dim) !important}
+    .field input:focus, .field textarea:focus, .field select:focus{border-color:var(--bline) !important;background:var(--card) !important;outline:none !important}
+    .field textarea{resize:vertical;min-height:110px;line-height:1.5}
+    
+    .field small.err{display:none;color:var(--err);font-size:12.5px;margin-top:6px}
+    .field.invalid input, .field.invalid select, .field.invalid textarea{border-color:var(--err) !important}
+    .field.invalid small.err{display:block}
+
+    .login-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;font-size:13px}
+    .chk{display:flex;align-items:center;gap:7px;color:var(--ink-mute);cursor:pointer}
+    .chk input{width:15px;height:15px;accent-color:var(--bline)}
+    .forgot{color:var(--b2);font-weight:600}
+    .forgot:hover{text-decoration:underline}
+
+    .motivos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+    .motivo{position:relative}
+    .motivo input{position:absolute;opacity:0;inset:0;cursor:pointer;width:100%;height:100%;margin:0;z-index:2}
+    .motivo .card-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:10px;padding:16px 12px;text-align:center;transition:all .2s;background:var(--field);min-height:88px}
+    .motivo .card-inner svg, .motivo .card-inner i{width:20px;height:20px;font-size:20px;margin-bottom:8px;stroke:var(--ink-mute);color:var(--ink-mute);transition:stroke .2s, color .2s;flex-shrink:0;fill:none}
+    .motivo .card-inner span{display:block;font-size:13px;color:var(--ink-mute);font-weight:500;line-height:1.3}
+    
+    .motivo input:checked + .card-inner{border-color:var(--bline);background:var(--bsoft)}
+    .motivo input:checked + .card-inner svg{stroke:var(--b2)}
+    .motivo input:checked + .card-inner i{color:var(--b2)}
+    .motivo input:checked + .card-inner span{color:var(--ink);font-weight:700}
+    .motivo input:focus-visible + .card-inner{outline:2px solid var(--bline);outline-offset:2px}
+
+    .row-btns{display:flex;gap:12px;margin-top:8px}
+    .btn{width:100%;padding:15px 20px;border-radius:10px;font-family:var(--sa);font-weight:700;font-size:14.5px;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s}
+    .btn-primary{background:var(--b);color:#fff}
+    .btn-primary:hover{background:var(--b2)}
+    .btn-primary:disabled{background:var(--border);color:var(--ink-dim);cursor:not-allowed}
+    
+    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:none;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .btn-primary.loading .spinner{display:inline-block}
+    .btn-primary.loading .btn-text{opacity:.7}
+
+    .account-note{text-align:center;margin-top:18px;font-size:13px;color:var(--ink-mute)}
+    .account-note a{color:var(--b2);font-weight:600;border-bottom:1px solid transparent}
+    .account-note a:hover{border-color:var(--b2)}
+
+    @media(max-width:520px){
+      .motivos{grid-template-columns:1fr}
+      header{padding:18px 18px}
     }
   </style>
 @endsection
@@ -22,93 +117,143 @@ $configData = Helper::appClasses();
 @section('vendor-script')
   @vite([
     'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
-    'resources/assets/vendor/libs/select2/select2.js',
   ])
 @endsection
 
 @section('page-script')
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-  <script type="module">
-    $(document).ready(function() {
-      $('#tipo_de_peticion').select2({
-        width: '100%',
-        allowClear: true,
-        placeholder: 'Ninguno'
-      });
-    });
-  </script>
-
   <script>
     function sinComillas(e) {
-      tecla = (document.all) ? e.keyCode : e.which;
-      patron =/[\x5C'"]/;
-      te = String.fromCharCode(tecla);
+      var tecla = (document.all) ? e.keyCode : e.which;
+      var patron =/[\x5C'"]/;
+      var te = String.fromCharCode(tecla);
       return !patron.test(te);
     }
   </script>
 
   <script type="module">
     $(document).ready(function() {
-      $('input[name="tengo_cuenta"]').change(function() {
-        if ($(this).val() == '1') {
-          $('#seccion_invitado').fadeOut('fast', function() {
-            $('#seccion_login').fadeIn('fast');
-          });
-        } else {
-          $('#seccion_login').fadeOut('fast', function() {
-            $('#seccion_invitado').fadeIn('fast');
-          });
-        }
+      const modeNew = $('#modeNew');
+      const modeLogin = $('#modeLogin');
+      const newFields = $('#newFields');
+      const loginFields = $('#loginFields');
+      const tengoCuentaInput = $('#tengo_cuenta_input');
+      const submitText = $('.btnGuardarText');
+
+      modeNew.on('click', function() {
+        tengoCuentaInput.val('0');
+        modeNew.addClass('active').attr('aria-selected', 'true');
+        modeLogin.removeClass('active').attr('aria-selected', 'false');
+        newFields.addClass('active');
+        loginFields.removeClass('active');
+        submitText.text('Enviar petición');
+      });
+
+      modeLogin.on('click', function() {
+        tengoCuentaInput.val('1');
+        modeLogin.addClass('active').attr('aria-selected', 'true');
+        modeNew.removeClass('active').attr('aria-selected', 'false');
+        loginFields.addClass('active');
+        newFields.removeClass('active');
+        submitText.text('Iniciar sesión y enviar');
       });
     });
   </script>
 
   <script type="module">
-    $('#formulario').submit(function(e){
-
+    $('#formulario').submit(function(e) {
       // Limpiar errores previos
+      $('.field').removeClass('invalid');
       $('.custom-error').remove();
+      $('#motivoErr').hide();
+      
       let isValid = true;
-      let esInvitado = {{ auth()->check() ? 'false' : '$(\'input[name="tengo_cuenta"]:checked\').val() == "0"' }};
+      let esInvitado = {{ auth()->check() ? 'false' : '$(\'#tengo_cuenta_input\').val() == "0"' }};
+      let esLogin = {{ auth()->check() ? 'false' : '$(\'#tengo_cuenta_input\').val() == "1"' }};
+
+      // 1. Validar Motivo
+      let tipoPeticion = $('input[name="tipo_de_petición"]:checked').val();
+      if (!tipoPeticion) {
+        $('#f-motivo').addClass('invalid');
+        $('#motivoErr').show();
+        isValid = false;
+      }
+
+      // 2. Validar Descripción
+      let descripcion = $('#descripcion').val().trim();
+      if (descripcion.length <= 3) {
+        $('#f-detalle').addClass('invalid');
+        isValid = false;
+      }
 
       if (esInvitado) {
         // Validar Nombre
         let nombreExterno = $('#nombre_externo').val().trim();
-        if (!nombreExterno) {
-          $('#nombre_externo').parent().append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
+        if (nombreExterno.length <= 1) {
+          $('#f-nombre').addClass('invalid');
           isValid = false;
+        }
+
+        // Validar Email
+        let emailExterno = $('#email_externo').val().trim();
+        if (!emailExterno || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailExterno)) {
+          $('#f-email').addClass('invalid');
+          isValid = false;
+        }
+
+        // Validar Género
+        let generoExterno = $('#genero_externo').val();
+        if (generoExterno === "" || generoExterno === null) {
+          $('#f-genero').addClass('invalid');
+          isValid = false;
+        }
+
+        // Validar País
+        let paisId = $('#pais_id').val();
+        if (!paisId) {
+          $('#f-pais').addClass('invalid');
+          isValid = false;
+        }
+
+        // Validar reCAPTCHA
+        if (typeof grecaptcha !== 'undefined') {
+          let recaptchaResponse = grecaptcha.getResponse();
+          if (recaptchaResponse.length === 0) {
+            $('#container_recaptcha').after('<div class="text-danger form-label custom-error small mt-1">Por favor, verifica que no eres un robot.</div>');
+            isValid = false;
+          }
         }
       }
 
-      // Validar Tipo de petición
-      let tipoPeticion = $('#tipo_de_peticion').val();
-      if (!tipoPeticion) {
-        $('#container_tipo_peticion').append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
-        isValid = false;
-      }
+      if (esLogin) {
+        // Validar Email de Login
+        let emailLogin = $('#email_login').val().trim();
+        if (!emailLogin || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLogin)) {
+          $('#f-loginEmail').addClass('invalid');
+          isValid = false;
+        }
 
-      // Validar Descripción
-      let descripcion = $('#descripcion').val().trim();
-      if (!descripcion) {
-        $('#descripcion').parent().append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
-        isValid = false;
-      }
-
-      // Validar reCAPTCHA
-      if (esInvitado && typeof grecaptcha !== 'undefined') {
-        let recaptchaResponse = grecaptcha.getResponse();
-        if (recaptchaResponse.length === 0) {
-          $('#container_recaptcha').append('<div class="text-danger form-label custom-error mt-1">Por favor, verifica que no eres un robot.</div>');
+        // Validar Contraseña de Login
+        let passwordLogin = $('#password_login').val();
+        if (!passwordLogin) {
+          $('#f-loginPass').addClass('invalid');
           isValid = false;
         }
       }
 
       if (!isValid) {
         e.preventDefault();
+        // llevar al usuario al primer campo invalido visible
+        const firstInvalid = $('.field.invalid, #motivoErr:visible');
+        if (firstInvalid.length > 0) {
+          $('html, body').animate({
+            scrollTop: firstInvalid.first().offset().top - 100
+          }, 300);
+        }
         return false;
       }
 
-      $('.btnGuardar').attr('disabled','disabled').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...');
+      $('#submitBtn').addClass('loading').attr('disabled', 'disabled');
 
       Swal.fire({
         title: "Espera un momento",
@@ -123,203 +268,166 @@ $configData = Helper::appClasses();
 @endsection
 
 @section('content')
-<div class="min-vh-100 bg-body">
-
-
-
-   <nav class="navbar navbar-expand-lg navbar-light bg-menu-theme p-3 row justify-content-md-center shadow-none border-bottom">
-    <div class="col-3 text-start">
-      @auth
-        <a href="{{ route('dashboard') }}" class="btn rounded-pill waves-effect waves-light text-white">
-          <span class="ti-xs ti ti-home mx-2"></span>
-          <span class="d-none d-md-inline-block fw-normal">Ir a plataforma</span>
-        </a>
-      @endauth
-    </div>
-    <div class="col-6 pl-5 text-center">
-      <h5 id="tituloPrincipal" class="text-white my-auto fw-normal">Petición de oración</h5>
-    </div>
-    <div class="col-3 text-end">
-      @auth
-        <form method="POST" action="{{ route('logout') }}" class="d-inline">
-          @csrf
-          <input type="hidden" name="redirect" value="{{ route('peticion.publica.nueva') }}">
-          <button type="submit" class="btn rounded-pill waves-effect waves-light text-white" style="background: transparent; border: none;">
-            <span class="d-none d-md-inline-block fw-normal">Cerrar sesión</span>
-            <span class="ti-xs ti ti-logout mx-2"></span>
-          </button>
-        </form>
-      @else
-        <a href="{{ url()->previous() }}" type="button" class="btn rounded-pill waves-effect waves-light text-white">
-          <span class="d-none d-md-inline-block fw-normal">Salir</span>
-          <span class="ti-xs ti ti-x mx-2"></span>
-        </a>
-      @endauth
-    </div>
-  </nav>
-
-  <div class="container my-5" style="padding-bottom: 100px;">
-    <div class="col-12 col-sm-10 offset-sm-1 col-lg-8 offset-lg-2 mt-4">
-
-      @include('layouts.status-msn')
-
-      @auth
-        <h4 class="fw-semibold text-black ps-0 mb-5 text-center">Hola {{ auth()->user()->primer_nombre }}, escribe tu petición</h4>
-      @else
-        <h4 class="fw-semibold text-black ps-0 mb-5 text-center">Envíanos tu petición de oración</h4>
-      @endauth
-
-        @guest
-
-          <div class="col-12 mb-4">
-            <div class="card shadow-sm" >
-              <div class="card-body">
-                
-              <label class="form-label">¿Tienes una cuenta creada?</label>
-              <div class="row">
-                <div class="col-md-6 mb-md-0 mb-2">
-                  <div class="form-check custom-option custom-option-basic rounded-3 shadow-sm border checked">
-                    <label class="form-check-label custom-option-content p-3" for="tengo_cuenta_no">
-                      <span class="custom-option-header m-0 pb-0">
-                        <span class="h6 mb-0 d-flex align-items-center text-black"><i class="ti ti-user-plus me-3 text-black" style="color: black !important;"></i> Persona no registrada</span>
-                        <input name="tengo_cuenta" class="form-check-input" type="radio" value="0" id="tengo_cuenta_no" checked />
-                      </span>
-                    </label>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-check custom-option custom-option-basic rounded-3 shadow-sm border">
-                    <label class="form-check-label custom-option-content p-3" for="tengo_cuenta_si">
-                      <span class="custom-option-header m-0 pb-0">
-                        <span class="h6 mb-0 d-flex align-items-center text-black"><i class="ti ti-user-check me-3 text-black" style="color: black !important;"></i> Persona registrada</span>
-                        <input name="tengo_cuenta" class="form-check-input" type="radio" value="1" id="tengo_cuenta_si" />
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              </div>
-            </div>
-          </div>
-        @endguest
-
-        <hr>
-
-        <div id="seccion_login" style="display: none;" class="mb-5">
-        
-              <p class="mb-4 text-black">Inicia sesión para que tu petición quede asociada a tu cuenta.</p>
-              @livewire('auth.inline-login')
-         
-        </div>
-
-        <form id="formulario" role="form" class="forms-sample" method="POST" action="{{ route('peticion.publica.crear') }}" enctype="multipart/form-data">
-          @csrf
-          <input type="hidden" name="es_externo" value="{{ auth()->check() ? '0' : '1' }}">
-
-        <!-- Información principal -->
-        <div id="seccion_invitado" class="card mb-5 shadow-sm" style="display: {{ auth()->check() ? 'none' : 'block' }};">
-          <div class="card-header pb-1">
-             <h6 class="card-title mb-0 fw-semibold">
-              Tus datos de contacto
-            </h6>
-          </div>
-          <div class="card-body">
-            <div class="row mt-3">
-
-              <div id="campos_externos" class="col-12">
-                <div class="mb-3">
-                    <label class="form-label" for="nombre_externo">Nombre completo</label>
-                    <input type="text" id="nombre_externo" name="nombre_externo" class="form-control" value="{{ old('nombre_externo') }}" placeholder="Ej: Juan Pérez">
-                </div>
-                <div class="row">
-                    <div class="mb-3 col-md-6">
-                        <label class="form-label" for="email_externo">Email</label>
-                        <input type="email" id="email_externo" name="email_externo" class="form-control" value="{{ old('email_externo') }}" placeholder="ejemplo@correo.com">
-                    </div>
-                    <div class="mb-3 col-md-6">
-                        <label class="form-label" for="telefono_externo">Teléfono</label>
-                        <input type="text" id="telefono_externo" name="telefono_externo" class="form-control" value="{{ old('telefono_externo') }}" placeholder="Ej: +573001234567">
-                    </div>
-                </div> 
-                <div class="row">
-                    <div class="mb-3 col-md-6">
-                        <label class="form-label" for="genero_externo">Género</label>
-                        <select id="genero_externo" name="genero_externo" class="form-select">
-                            <option value="0" {{ old('genero_externo') == '0' ? 'selected' : '' }}>Hombre</option>
-                            <option value="1" {{ old('genero_externo') == '1' ? 'selected' : '' }}>Mujer</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 col-md-6">
-                        <label class="form-label" for="pais_id">País</label>
-                        <select id="pais_id" name="pais_id" class="form-select">
-                            @foreach($paises as $pais)
-                                <option value="{{ $pais->id }}" {{ old('pais_id', 1) == $pais->id ? 'selected' : '' }}>{{ $pais->nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Detalles de la petición -->
-        <div class="card mb-5 shadow-sm" >
-          <div class="card-header pb-1">
-             <h6 class="card-title mb-0 fw-semibold">
-              Detalles de la petición
-            </h6>
-          </div>
-          <div class="card-body">
-            <div class="row mt-3">
-
-              <!-- Tipos de petición -->
-              <div class="mb-3 col-12 mb-md-3" id="container_tipo_peticion">
-                <label class="form-label" for="tipo_de_peticion">
-                  ¿Cuál es el motivo de tu petición?
-                </label>
-                <select id="tipo_de_peticion" name="tipo_de_petición" class="select2 form-select" data-allow-clear="true">
-                  <option value="" selected>Selecciona un motivo...</option>
-                  @foreach ($tiposPeticiones as $tipoPeticion)
-                  <option value="{{$tipoPeticion->id}}" {{ old('tipo_de_petición') == $tipoPeticion->id ? 'selected' : '' }}>{{$tipoPeticion->nombre}}</option>
-                  @endforeach
-                </select>
-                @if($errors->has('tipo_de_petición')) <div class="text-danger form-label">{{ $errors->first('tipo_de_petición') }}</div> @endif
-              </div>
-
-              <!--  Escribe la petición -->
-              <div class="mb-3 col-12 mb-md-3">
-                <label class="form-label" for="descripcion">
-                  Describe tu petición
-                </label>
-                <textarea onkeypress="return sinComillas(event)" id="descripcion" name="descripción" class="form-control" rows="5" spellcheck="false" data-ms-editor="true" placeholder="Escribe aquí lo que necesites..."></textarea>
-                @if($errors->has('descripción')) <div class="text-danger form-label">{{ $errors->first('descripción') }}</div> @endif
-              </div>
-
-              @guest
-              <!-- reCAPTCHA -->
-              <div class="mb-3 col-12 mt-2 mb-md-3 d-flex flex-column align-items-start" id="container_recaptcha">
-                <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
-                @if($errors->has('g-recaptcha-response')) <div class="text-danger form-label mt-1">{{ $errors->first('g-recaptcha-response') }}</div> @endif
-              </div>
-              @endguest
-
-            </div>
-          </div>
-        </div>
-
-
-         <div class="w-100 fixed-bottom py-4 px-6 px-sm-0 border-top shadow-lg" style="background-color: #f8f7fa; z-index: 1040;">
-          <div class="col-12 col-sm-8 offset-sm-2 col-lg-6 offset-lg-3 d-grid gap-2 d-sm-flex justify-content-sm-end">
-             <button type="submit" class="btn btnGuardar btn-primary rounded-pill px-7 py-2" >
-              <span class="align-middle me-sm-1 me-0"> Enviar petición </span>
-            </button>
-          </div>
-        </div>
-
-      </form>
-
-    </div>
+<header>
+  @auth
+    <a class="back" href="{{ route('dashboard') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Ir a plataforma
+    </a>
+  @else
+    <a class="back" href="{{ session('peticion_retorno_url', url()->previous()) }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Volver
+    </a>
+  @endauth
+  
+  <div class="logo-mini">
+    @if ($configuracion && $configuracion->logo_personalizado && $configuracion->logo_app)
+      <img src="{{ tenant_asset('img/branding/'.$configuracion->logo_app) }}" alt="Logo" style="height: 24px; vertical-align: middle;">
+    @else
+      MANANTIAL<span>.</span>
+    @endif
   </div>
-</div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Queremos orar por ti</div>
+  <h1>Cuéntanos <span class="sc">qué</span><br>necesita tu corazón</h1>
+  <p>No estás solo en esto. Nuestro equipo de oración recibe cada petición y la lleva delante de Dios esta misma semana.</p>
+</section>
+
+<main>
+  <div class="card main-card">
+    
+    @include('layouts.status-msn')
+
+    <form id="formulario" role="form" method="POST" action="{{ route('peticion.publica.crear') }}" enctype="multipart/form-data" novalidate>
+      @csrf
+      <input type="hidden" name="es_externo" value="{{ auth()->check() ? '0' : '1' }}">
+
+      <!-- 1. Motivos de Petición -->
+      <div class="field @error('tipo_de_petición') invalid @enderror" id="f-motivo">
+        <label>¿Cuál es el motivo de tu petición?</label>
+        <div class="motivos" id="container_tipo_peticion_wrapper">
+          @foreach ($tiposPeticiones as $tipoPeticion)
+            @php
+              $iconDb = $tipoPeticion->icono ?: 'ti ti-help-circle';
+            @endphp
+            <label class="motivo">
+              <input type="radio" name="tipo_de_petición" value="{{ $tipoPeticion->id }}" {{ old('tipo_de_petición') == $tipoPeticion->id ? 'checked' : '' }} required>
+              <span class="card-inner">
+                  <i class="{{ $iconDb }}"></i>
+                <span>{{ $tipoPeticion->nombre }}</span>
+              </span>
+            </label>
+          @endforeach
+        </div>
+        <small class="err" id="motivoErr" style="@error('tipo_de_petición') display:block; @else display:none; @enderror color:var(--err)">
+          @error('tipo_de_petición') {{ $message }} @else Selecciona un motivo para continuar. @enderror
+        </small>
+      </div>
+
+      <!-- 2. Detalles (Cuéntanos más) -->
+      <div class="field @error('descripción') invalid @enderror" id="f-detalle">
+        <label for="descripcion">Cuéntanos más</label>
+        <textarea onkeypress="return sinComillas(event)" id="descripcion" name="descripción" placeholder="Comparte lo que quieras que sepamos. Esto es completamente confidencial." required>{{ old('descripción') }}</textarea>
+        <small class="err">@error('descripción') {{ $message }} @else Escribe brevemente tu petición para que podamos orar con propósito. @enderror</small>
+      </div>
+
+      @guest
+        <!-- 3. Tus Datos (Switch Capsule & Inputs) -->
+        <div class="section-title">Tus datos</div>
+
+        <div class="mode-toggle" role="tablist">
+          <button type="button" class="mode-btn {{ old('tengo_cuenta', '0') == '0' ? 'active' : '' }}" id="modeNew" role="tab" aria-selected="{{ old('tengo_cuenta', '0') == '0' ? 'true' : 'false' }}">Soy nuevo</button>
+          <button type="button" class="mode-btn {{ old('tengo_cuenta') == '1' ? 'active' : '' }}" id="modeLogin" role="tab" aria-selected="{{ old('tengo_cuenta') == '1' ? 'true' : 'false' }}">Ya tengo cuenta</button>
+          <input type="hidden" name="tengo_cuenta" id="tengo_cuenta_input" value="{{ old('tengo_cuenta', '0') }}">
+        </div>
+
+        <!-- PERSONA NO REGISTRADA -->
+        <div class="subpanel {{ old('tengo_cuenta', '0') == '0' ? 'active' : '' }}" id="newFields">
+          <div class="field @error('nombre_externo') invalid @enderror" id="f-nombre">
+            <label for="nombre_externo">Nombre completo</label>
+            <input type="text" id="nombre_externo" name="nombre_externo" placeholder="Ej. María Fernández" autocomplete="name" value="{{ old('nombre_externo') }}" required>
+            <small class="err">@error('nombre_externo') {{ $message }} @else Cuéntanos tu nombre para poder orar por ti. @enderror</small>
+          </div>
+
+          <div class="field @error('email_externo') invalid @enderror" id="f-email">
+            <label for="email_externo">Correo electrónico</label>
+            <input type="email" id="email_externo" name="email_externo" placeholder="tucorreo@ejemplo.com" autocomplete="email" value="{{ old('email_externo') }}" required>
+            <small class="err">@error('email_externo') {{ $message }} @else Escribe un correo válido — te avisaremos cuando oremos por ti. @enderror</small>
+          </div>
+
+          <div class="field @error('telefono_externo') invalid @enderror" id="f-telefono">
+            <label for="telefono_externo">Teléfono <span class="opt">(opcional)</span></label>
+            <input type="tel" id="telefono_externo" name="telefono_externo" placeholder="+57 300 000 0000" autocomplete="tel" value="{{ old('telefono_externo') }}">
+            <small class="err">@error('telefono_externo') {{ $message }} @enderror</small>
+          </div>
+
+          <div class="field @error('genero_externo') invalid @enderror" id="f-genero">
+            <label for="genero_externo">Género</label>
+            <select id="genero_externo" name="genero_externo" class="form-select" required>
+              <option value="" disabled {{ old('genero_externo') === null ? 'selected' : '' }}>Selecciona tu género</option>
+              <option value="0" {{ old('genero_externo') == '0' ? 'selected' : '' }}>Hombre</option>
+              <option value="1" {{ old('genero_externo') == '1' ? 'selected' : '' }}>Mujer</option>
+            </select>
+            <small class="err">@error('genero_externo') {{ $message }} @else El género es obligatorio. @enderror</small>
+          </div>
+
+          <div class="field @error('pais_id') invalid @enderror" id="f-pais">
+            <label for="pais_id">País</label>
+            <select id="pais_id" name="pais_id" class="form-select" required>
+              @foreach($paises as $pais)
+                <option value="{{ $pais->id }}" {{ old('pais_id', 1) == $pais->id ? 'selected' : '' }}>{{ $pais->nombre }}</option>
+              @endforeach
+            </select>
+            <small class="err">@error('pais_id') {{ $message }} @else El país es obligatorio. @enderror</small>
+          </div>
+
+          <!-- reCAPTCHA -->
+          <div class="mb-4 mt-2 d-flex flex-column align-items-start" id="container_recaptcha">
+            <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+            @if($errors->has('g-recaptcha-response')) 
+              <div class="text-danger form-label small mt-1" style="color:var(--err)">{{ $errors->first('g-recaptcha-response') }}</div> 
+            @endif
+          </div>
+        </div>
+
+        <!-- PERSONA REGISTRADA -->
+        <div class="subpanel {{ old('tengo_cuenta') == '1' ? 'active' : '' }}" id="loginFields">
+          <div class="field @error('email_login') invalid @enderror" id="f-loginEmail">
+            <label for="email_login">Correo electrónico</label>
+            <input type="email" id="email_login" name="email_login" placeholder="tucorreo@ejemplo.com" autocomplete="email" value="{{ old('email_login') }}" required>
+            <small class="err">@error('email_login') {{ $message }} @else Escribe el correo con el que te registraste. @enderror</small>
+          </div>
+          <div class="field @error('password_login') invalid @enderror" id="f-loginPass">
+            <label for="password_login">Contraseña</label>
+            <input type="password" id="password_login" name="password_login" placeholder="••••••••" autocomplete="current-password" required>
+            <small class="err">@error('password_login') {{ $message }} @else Escribe tu contraseña para continuar. @enderror</small>
+          </div>
+          <div class="login-row">
+            <label class="chk"><input type="checkbox" name="remember_login" id="remember_login" {{ old('remember_login') ? 'checked' : '' }}> Recordarme</label>
+            <a class="forgot" href="{{ route('password.request') }}">¿Olvidaste tu contraseña?</a>
+          </div>
+          <p class="account-note">¿No tienes cuenta? <a href="{{ route('register') }}">Regístrate aquí</a></p>
+        </div>
+      @endguest
+
+      <div class="row-btns">
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <span class="spinner"></span>
+          <span class="btn-text btnGuardarText">
+            @auth
+              Enviar petición
+            @else
+              {{ old('tengo_cuenta') == '1' ? 'Iniciar sesión y enviar' : 'Enviar petición' }}
+            @endauth
+          </span>
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+</main>
 @endsection
