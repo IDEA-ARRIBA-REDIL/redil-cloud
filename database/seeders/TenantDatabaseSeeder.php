@@ -26,7 +26,7 @@ class TenantDatabaseSeeder extends Seeder
     {
         $this->call(EntidadRelacionadaSeeder::class);
         $this->call(TipoUsuarioSeeder::class);
-        $this->call(EstadoCivilSeeder::class);        
+        $this->call(EstadoCivilSeeder::class);
         $this->call(TipoSedeSeeder::class);
         $this->call(SedeSeeder::class);
         $this->call([
@@ -237,5 +237,6 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(PostSeeder::class);
         $this->call(TipoNotificacionSeeder::class);
         $this->call(InformesPersonalizadosSeeder::class);
+        $this->call(AsistentesEscuelaSeeder::class);
     }
 }
