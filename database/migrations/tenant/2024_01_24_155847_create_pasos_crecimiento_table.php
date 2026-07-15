@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pasos_crecimiento', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre', 50);
+            $table->string('nombre', 100);
             $table->smallInteger('orden')->nullable();
             $table->string('descripcion', 200)->nullable();
             $table->integer('seccion_paso_crecimiento_id'); // / este es para el informe consolidado de conectate solo manantial

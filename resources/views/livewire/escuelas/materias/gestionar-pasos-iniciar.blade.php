@@ -3,16 +3,16 @@
 
         <h5 class="fw-semibold text-primary mb-1">Agregar Paso al Iniciar</h5>
          <p class="text-dark small mb-3">Configura los pasos de crecimiento que el usuario se deben cambiar al iniciar  esta materia</p>
-        <div class="col-12 col-md-5">
-            <select wire:model="pasoSeleccionado" class="form-select">
+        <div class="col-12 col-md-5" wire:ignore>
+            <select id="select-materia-paso-iniciar" class="form-select select2 border-1">
                 <option value="">Seleccionar Paso...</option>
                 @foreach($pasosDisponibles as $paso)
                     <option value="{{ $paso->id }}">{{ $paso->nombre }}</option>
                 @endforeach
             </select>
         </div>
-        <div class="col-12 col-md-5">
-            <select wire:model="estadoSeleccionado" class="form-select">
+        <div class="col-12 col-md-5" wire:ignore>
+            <select id="select-materia-estado-iniciar" class="form-select select2 border-1">
                 <option value="">Seleccionar Estado...</option>
                 @foreach($estadosDisponibles as $estado)
                     <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
@@ -20,7 +20,7 @@
             </select>
         </div>
         <div class="col-12 col-md-2">
-            <button wire:click="agregarPaso" class="btn btn-outline-secondary rounded-pill w-100">
+            <button type="button" wire:click="agregarPaso" class="btn btn-outline-secondary rounded-pill w-100">
                 Agregar
             </button>
         </div>
@@ -71,8 +71,11 @@
                                     <span class="fw-medium text-dark">{{ $paso->nombre }}</span>
                                 </td>
                                 <td class="align-middle">
-                                    <span class="badge rounded-pill bg-{{ $paso->pivot->estadoPasoCrecimiento->color ?? 'success' }} text-white" style="font-weight: normal; padding: 0.5em 1em;">
-                                        {{ $paso->pivot->estadoPasoCrecimiento->nombre ?? 'N/A' }}
+                                    @php
+                                        $estado = collect($estadosDisponibles)->firstWhere('id', $paso->pivot->estado_paso_crecimiento_usuario_id);
+                                    @endphp
+                                    <span class="badge rounded-pill bg-{{ $estado->color ?? 'success' }} text-white" style="font-weight: normal; padding: 0.5em 1em;">
+                                        {{ $estado->nombre ?? 'N/A' }}
                                     </span>
                                 </td>
                                 <td class="text-center align-middle">
@@ -101,3 +104,63 @@
     @endif
     </div>
 </div>
+
+@script
+<script>
+    $(document).ready(function() {
+        // Init Select2 for Paso
+        $('#select-materia-paso-iniciar').select2({
+            width: '100%',
+            placeholder: 'Seleccionar Paso...',
+            allowClear: true
+        }).on('change', function (e) {
+            @this.set('pasoSeleccionado', $(this).val());
+        });
+
+        // Init Select2 for Estado
+        $('#select-materia-estado-iniciar').select2({
+            width: '100%',
+             placeholder: 'Seleccionar Estado...',
+            allowClear: true
+        }).on('change', function (e) {
+            @this.set('estadoSeleccionado', $(this).val());
+        });
+
+        // Listen for livewire events (e.g. after adding, reset select2)
+        Livewire.on('paso-agregado', () => {
+             $('#select-materia-paso-iniciar').val(null).trigger('change.select2');
+             $('#select-materia-estado-iniciar').val(null).trigger('change.select2');
+        });
+
+        window.confirmarEliminacionMateriaPasoIniciar = function(id) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¡No podrás revertir esto!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: '¡Sí, eliminar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    @this.call('eliminarPaso', id);
+                }
+            })
+        }
+
+        Livewire.on('msn', (data) => {
+            let msn = data.msn || (data[0] ? data[0].msn : null);
+            let icon = data.icon || (data[0] ? data[0].icon : 'info');
+
+            if (icon === 'success' && msn && msn.includes('eliminad')) {
+                Swal.fire(
+                    '¡Eliminado!',
+                    msn,
+                    'success'
+                )
+            }
+        });
+    });
+</script>
+@endscript

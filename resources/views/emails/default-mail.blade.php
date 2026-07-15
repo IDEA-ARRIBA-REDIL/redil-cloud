@@ -84,9 +84,9 @@
       </td>
     </tr>
 
-    <!-- ─── HERO BANNER ─── -->
+    <!-- ─── HERO BANNER ─── --> 
     @if(isset($mailData->banner) && $mailData->banner)
-    <tr>
+    <tr> 
       <td style="padding:0;line-height:0;">
         <img
           src="{{ Str::startsWith($mailData->banner, ['http://', 'https://']) ? $mailData->banner : url($mailData->banner) }}"
@@ -140,31 +140,11 @@
       </td>
     </tr>
 
-    <!-- ─── VERSÍCULO ─── -->
-    @if(isset($versiculo) && $versiculo)
+    <!-- ─── SECCIÓN ADICIONAL HTML ─── -->
+    @if(isset($mailData->htmlAdicional) && trim($mailData->htmlAdicional) !== '')
     <tr>
-      <td style="background-color:#F8F8F6;padding:36px 40px;text-align:center;">
-        <p style="font-family:Georgia,serif;font-size:40px;color:#0099d9;line-height:1;margin:0 0 4px 0;opacity:0.35;">"</p>
-        <p style="font-family:Georgia,'Times New Roman',serif;font-size:17px;color:#1A1A2E;line-height:1.75;font-style:italic;margin:0 0 14px 0;">
-          @if(isset($versiculo->texto_versiculo) && is_array($versiculo->texto_versiculo))
-            @php
-              $fullText = '';
-              foreach ($versiculo->texto_versiculo as $selection) {
-                if (isset($selection['versiculos']) && is_array($selection['versiculos'])) {
-                  foreach ($selection['versiculos'] as $v) {
-                    $fullText .= ($v['texto'] ?? '') . ' ';
-                  }
-                }
-              }
-            @endphp
-            {{ trim($fullText) }}
-          @else
-            {{ $versiculo->texto_versiculo }}
-          @endif
-        </p>
-        <p style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;color:#9CA3AF;letter-spacing:2px;text-transform:uppercase;margin:0;">
-          {{ $versiculo->cita_larga }}
-        </p>
+      <td style="background-color:#F8F8F6;padding:36px 40px;font-family:Arial,sans-serif;font-size:15px;color:#1A1A2E;line-height:1.75;text-align:left;">
+        {!! $mailData->htmlAdicional !!}
       </td>
     </tr>
     @endif

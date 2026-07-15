@@ -13,13 +13,9 @@ class TareaConsolidacionTipoConsejeriaSeeder extends Seeder
     public function run(): void
     {
         DB::table('tarea_consolidacion_tipo_consejeria')->updateOrInsert([
-            'tarea_consolidacion_id' => 2,
+            'tarea_consolidacion_id' => 6,
             'tipo_consejeria_id' => 4,
         ]);
 
-        DB::table('tarea_consolidacion_tipo_consejeria')->updateOrInsert([
-            'tarea_consolidacion_id' => 3,
-            'tipo_consejeria_id' => 4,
-        ]);
     }
 }

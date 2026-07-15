@@ -12,14 +12,22 @@ class SeccionPasoCrecimientoSeeder extends Seeder
      */
     public function run(): void
     {
-        SeccionPasoCrecimiento::firstOrCreate([
-            'nombre' => 'Seccion A',
-            'orden' => 1,
-        ]);
+        $secciones = [
+            'Primeros Pasos',
+            'Mi Camino Hacia La Libertad',
+            'Encuentros',
+            'Escuelas El Camino Warriors',
+            'Escuelas El Camino',
+            'Escuelas Especialización Cosmovisión Bíblica',
+            'Escuelas Especialización Maestros',
+            'Escuelas Especialización Interseción',
+        ];
 
-        SeccionPasoCrecimiento::firstOrCreate([
-            'nombre' => 'Seccion B',
-            'orden' => 2,
-        ]);
+        foreach ($secciones as $index => $seccion) {
+            SeccionPasoCrecimiento::firstOrCreate(
+                ['nombre' => $seccion],
+                ['orden'  => $index + 1]
+            );
+        }
     }
 }

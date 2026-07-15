@@ -88,8 +88,11 @@
                                         <span class="fw-medium text-dark">{{ $paso->nombre }}</span>
                                     </td>
                                     <td class="align-middle">
-                                        <span class="badge rounded-pill bg-{{ $paso->pivot->estadoPasoCrecimiento->color ?? 'success' }} text-white" style="font-weight: normal; padding: 0.5em 1em;">
-                                            {{ $paso->pivot->estadoPasoCrecimiento->nombre ?? 'N/A' }}
+                                        @php
+                                            $estado = collect($estados)->firstWhere('id', $paso->pivot->estado_paso_crecimiento_usuario_id);
+                                        @endphp
+                                        <span class="badge rounded-pill bg-{{ $estado->color ?? 'success' }} text-white" style="font-weight: normal; padding: 0.5em 1em;">
+                                            {{ $estado->nombre ?? 'N/A' }}
                                         </span>
                                     </td>
                                     <td class="text-center align-middle">

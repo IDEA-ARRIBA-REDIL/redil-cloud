@@ -12,36 +12,27 @@ class TareaConsolidacionSeeder extends Seeder
      */
     public function run(): void
     {
-        TareaConsolidacion::firstOrCreate(
-            ['nombre' => 'LLamada de amor'],
-            [
-                'descripcion' => '',
-                'orden' => 1,
-                'default' => true,
-            ]);
+        $tareas = [
+            'Canales de captación de nuevos',
+            'Llamado pastoral en cultos',
+            'Bienvenida nuevos creyentes',
+            'Seguimiento de cosecha',
+            'Café con Jesús',
+            'Visitas',
+            'Proceso de mentoreo camino hacia la libertad',
+            'Ceremonia de bautismo',
+            'Inscripción academia de formación el camino',
+        ];
 
-        TareaConsolidacion::firstOrCreate(
-            ['nombre' => 'Visita del pastor'],
-            [
-                'descripcion' => '',
-                'orden' => 2,
-                'default' => true,
-            ]);
-
-        TareaConsolidacion::firstOrCreate(
-            ['nombre' => 'Café con Jesús'],
-            [
-                'descripcion' => '',
-                'orden' => 3,
-                'default' => true,
-            ]);
-
-        TareaConsolidacion::firstOrCreate(
-            ['nombre' => 'Ofrecer los servicios'],
-            [
-                'descripcion' => '',
-                'orden' => 3,
-                'default' => false,
-            ]);
+        foreach ($tareas as $index => $tarea) {
+            TareaConsolidacion::firstOrCreate(
+                ['nombre' => $tarea],
+                [
+                    'descripcion' => '',
+                    'orden'       => $index + 1,
+                    'default'     => true,
+                ]
+            );
+        }
     }
 }

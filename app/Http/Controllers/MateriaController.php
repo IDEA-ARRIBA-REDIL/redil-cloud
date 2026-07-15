@@ -148,6 +148,18 @@ class MateriaController extends Controller
             $materia->tiene_dia_limite = $request->diaLimiteHabilitado;
         }
 
+        if ($request->input('cantidadReportesSemana') != '') {
+            $materia->cantidad_limite_reportes_semana = $request->input('cantidadReportesSemana');
+        } else {
+            $materia->cantidad_limite_reportes_semana = 0;
+        }
+
+        if ($request->diasPlazoReporte != '') {
+            $materia->dias_plazo_reporte = $request->diasPlazoReporte;
+        } else {
+            $materia->dias_plazo_reporte = 0;
+        }
+
         if ($request->habilitarAsistencias == 'on') {
             $materia->habilitar_asistencias = $request->habilitarAsistencias;
         }

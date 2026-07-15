@@ -16,6 +16,67 @@ $configData = Helper::appClasses();
     body {
       overflow-x: hidden;
     }
+    .motivos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .motivo {
+      position: relative;
+      cursor: pointer;
+    }
+    .motivo input {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      z-index: 2;
+    }
+    .motivo .card-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #dcdbe0;
+      border-radius: 10px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: all .2s;
+      background: #ffffff;
+      min-height: 90px;
+    }
+    .motivo .card-inner i {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: rgba(4, 4, 7, 0.56);
+      transition: color .2s;
+    }
+    .motivo .card-inner span {
+      display: block;
+      font-size: 13px;
+      color: rgba(4, 4, 7, 0.56);
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .motivo input:checked + .card-inner {
+      border-color: #2f855a;
+      background: rgba(47, 133, 90, 0.06);
+    }
+    .motivo input:checked + .card-inner i {
+      color: #2f855a;
+    }
+    .motivo input:checked + .card-inner span {
+      color: #000;
+      font-weight: 700;
+    }
+    .motivo input:focus-visible + .card-inner {
+      outline: 2px solid #2f855a;
+      outline-offset: 2px;
+    }
   </style>
 @endsection
 
@@ -27,16 +88,6 @@ $configData = Helper::appClasses();
 @endsection
 
 @section('page-script')
-  <script type="module">
-    $(document).ready(function() {
-      $('#tipo_de_peticion').select2({
-        width: '100%',
-        allowClear: true,
-        placeholder: 'Ninguno'
-      });
-    });
-  </script>
-
   <script>
     function sinComillas(e) {
       tecla = (document.all) ? e.keyCode : e.which;
@@ -83,7 +134,7 @@ $configData = Helper::appClasses();
       }
 
       // Validar Tipo de petición
-      let tipoPeticion = $('#tipo_de_peticion').val();
+      let tipoPeticion = $('input[name="tipo_de_petición"]:checked').val();
       if (!tipoPeticion) {
         $('#container_tipo_peticion').append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
         isValid = false;
@@ -234,20 +285,30 @@ $configData = Helper::appClasses();
                 <input type="hidden" name="es_externo" value="0">
               @endif
 
-              <!-- Tipos de petición -->
+              <!-- Tipos de petición (Cards) -->
               <div class="mb-3 col-12 mb-md-3" id="container_tipo_peticion">
-                <label class="form-label" for="tipo_de_peticion">
+                <label class="form-label">
                   ¿Qué tipo de petición es?
                 </label>
-                <select id="tipo_de_peticion" name="tipo_de_petición" class="select2 form-select" data-allow-clear="true">
-                  <option value="" selected>Selecciona un motivo...</option>
+                <div class="motivos">
                   @foreach ($tiposPeticiones as $tipoPeticion)
-                  <option value="{{$tipoPeticion->id}}" {{ old('tipo_de_petición') == $tipoPeticion->id ? 'selected' : '' }}>{{$tipoPeticion->nombre}}</option>
+                    @php
+                      $iconDb = $tipoPeticion->icono ?: 'ti ti-help-circle';
+                    @endphp
+                    <label class="motivo">
+                      <input type="radio" name="tipo_de_petición" value="{{ $tipoPeticion->id }}" {{ old('tipo_de_petición') == $tipoPeticion->id ? 'checked' : '' }}>
+                      <span class="card-inner">
+                        <i class="{{ $iconDb }}"></i>
+                        <span>{{ $tipoPeticion->nombre }}</span>
+                      </span>
+                    </label>
                   @endforeach
-                </select>
-                @if($errors->has('tipo_de_petición')) <div class="text-danger form-label">{{ $errors->first('tipo_de_petición') }}</div> @endif
+                </div>
+                @if($errors->has('tipo_de_petición')) 
+                  <div class="text-danger form-label mt-2">{{ $errors->first('tipo_de_petición') }}</div> 
+                @endif
               </div>
-              <!-- Tipos de petición -->
+              <!-- Tipos de petición (Cards) -->
 
               <!--  Escribe la petición -->
               <div class="mb-3 col-12 mb-md-3">

@@ -718,9 +718,43 @@ class PeticionController extends Controller
 
   public function exito(Peticion $peticion)
   {
+    if (session('peticion_reciente_id') != $peticion->id) {
+      if (auth()->check()) {
+        return redirect()->route('dashboard');
+      } else {
+        return redirect()->route('peticion.publica.nueva');
+      }
+    }
+
     return view('contenido.paginas.peticiones.mensaje-peticion-exitosa', [
       'peticion' => $peticion
     ]);
+  }
+
+  public function verificarCorreo(Request $request): \Illuminate\Http\JsonResponse
+  {
+    $email = trim($request->input('email'));
+    if (empty($email)) {
+      return response()->json(['exists' => false]);
+    }
+
+    $emailNorm = strtolower($email);
+    $user = User::whereRaw('LOWER(email) = ?', [$emailNorm])->first();
+
+    if ($user) {
+      $nombreCompleto = method_exists($user, 'nombre') ? $user->nombre(3) : trim($user->primer_nombre . ' ' . $user->segundo_nombre . ' ' . $user->primer_apellido . ' ' . $user->segundo_apellido);
+      return response()->json([
+        'exists' => true,
+        'user' => [
+          'id' => $user->id,
+          'nombre' => $nombreCompleto,
+          'email' => $user->email,
+          'foto_url' => $user->foto_url,
+        ]
+      ]);
+    }
+
+    return response()->json(['exists' => false]);
   }
 
   public function crear(Request $request)
@@ -733,40 +767,10 @@ class PeticionController extends Controller
       $crearPeticionOtros = $rolActivo ? $rolActivo->hasPermissionTo('peticiones.crear_peticion_otros') : false;
     }
 
-    // Si el usuario no está logueado y seleccionó "Ya tengo cuenta"
-    if (!auth()->check() && $request->tengo_cuenta == '1') {
-      $request->validate([
-        'email_login' => 'required|email',
-        'password_login' => 'required|string',
-      ], [
-        'email_login.required' => 'El correo electrónico es obligatorio para iniciar sesión.',
-        'email_login.email' => 'Por favor, ingresa un correo electrónico válido.',
-        'password_login.required' => 'La contraseña es obligatoria para iniciar sesión.',
-      ]);
-
-      // Verificar si el usuario está dado de baja (SoftDeleted)
-      $usuario = User::withTrashed()->where('email', $request->email_login)->first();
-
-      if ($usuario && $usuario->trashed() && Hash::check($request->password_login, $usuario->password)) {
-        return back()->withInput()->with('danger', 'Esta cuenta ha sido dada de baja. Para reactivarla haz clic <a href="' . route('auth.reactivar', ['email' => $usuario->email]) . '"><b>aquí</b></a>.');
-      }
-
-      // Intentar inicio de sesión
-      if (!Auth::attempt(['email' => $request->email_login, 'password' => $request->password_login], $request->filled('remember_login'))) {
-        return back()->withInput()->withErrors([
-          'email_login' => trans('auth.failed'),
-        ]);
-      }
-
-      // Regenerar sesión
-      session()->regenerate();
-      
-      // Actualizar la variable $user ahora que el usuario está logueado
-      $user = auth()->user();
-      if ($user) {
-        $rolActivo = $user->roles()->wherePivot('activo', true)->first();
-        $crearPeticionOtros = $rolActivo ? $rolActivo->hasPermissionTo('peticiones.crear_peticion_otros') : false;
-      }
+    $asociarUsuarioId = $request->input('asociar_usuario_id');
+    $usuarioAsociado = null;
+    if (!auth()->check() && $asociarUsuarioId) {
+      $usuarioAsociado = User::find($asociarUsuarioId);
     }
 
     // Reglas de validación para la petición
@@ -783,19 +787,24 @@ class PeticionController extends Controller
 
     // Si sigue sin estar autenticado (es decir, es un usuario externo)
     if (!auth()->check()) {
-      $reglas['nombre_externo'] = 'required|string|max:255';
-      $reglas['email_externo'] = 'required|email|max:255';
-      $reglas['telefono_externo'] = 'nullable|string|max:50';
-      $reglas['genero_externo'] = 'required|in:0,1';
-      $reglas['pais_id'] = 'required|integer';
-      $reglas['g-recaptcha-response'] = ['required', new \App\Rules\Recaptcha];
+      if ($usuarioAsociado) {
+        $reglas['g-recaptcha-response'] = ['required', new \App\Rules\Recaptcha];
+        $mensajes['g-recaptcha-response.required'] = 'Por favor, verifica que no eres un robot.';
+      } else {
+        $reglas['nombre_externo'] = 'required|string|max:255';
+        $reglas['email_externo'] = 'required|email|max:255';
+        $reglas['telefono_externo'] = 'nullable|string|max:50';
+        $reglas['genero_externo'] = 'required|in:0,1';
+        $reglas['pais_id'] = 'required|integer';
+        $reglas['g-recaptcha-response'] = ['required', new \App\Rules\Recaptcha];
 
-      $mensajes['nombre_externo.required'] = 'El nombre completo es obligatorio.';
-      $mensajes['email_externo.required'] = 'El correo electrónico es obligatorio.';
-      $mensajes['email_externo.email'] = 'Por favor, ingresa un correo electrónico válido.';
-      $mensajes['genero_externo.required'] = 'El género es obligatorio.';
-      $mensajes['pais_id.required'] = 'El país es obligatorio.';
-      $mensajes['g-recaptcha-response.required'] = 'Por favor, verifica que no eres un robot.';
+        $mensajes['nombre_externo.required'] = 'El nombre completo es obligatorio.';
+        $mensajes['email_externo.required'] = 'El correo electrónico es obligatorio.';
+        $mensajes['email_externo.email'] = 'Por favor, ingresa un correo electrónico válido.';
+        $mensajes['genero_externo.required'] = 'El género es obligatorio.';
+        $mensajes['pais_id.required'] = 'El país es obligatorio.';
+        $mensajes['g-recaptcha-response.required'] = 'Por favor, verifica que no eres un robot.';
+      }
     }
 
     $request->validate($reglas, $mensajes);
@@ -819,14 +828,22 @@ class PeticionController extends Controller
         $nombreDestino = $usuario->nombre(3);
       }
     } else {
-      // Es externo (invitado)
-      $peticion->nombre_externo = $request->nombre_externo;
-      $peticion->email_externo = $request->email_externo;
-      $peticion->telefono_externo = $request->telefono_externo;
-      $peticion->genero_externo = $request->genero_externo;
-      $peticion->pais_id = $request->pais_id;
-      $emailDestino = $request->email_externo;
-      $nombreDestino = $request->nombre_externo;
+      if ($usuarioAsociado) {
+        // Es un usuario registrado pero enviado de forma pública
+        $peticion->user_id = $usuarioAsociado->id;
+        $peticion->pais_id = $usuarioAsociado->pais_id;
+        $emailDestino = $usuarioAsociado->email;
+        $nombreDestino = method_exists($usuarioAsociado, 'nombre') ? $usuarioAsociado->nombre(3) : trim($usuarioAsociado->primer_nombre . ' ' . $usuarioAsociado->primer_apellido);
+      } else {
+        // Es externo (invitado)
+        $peticion->nombre_externo = $request->nombre_externo;
+        $peticion->email_externo = $request->email_externo;
+        $peticion->telefono_externo = $request->telefono_externo;
+        $peticion->genero_externo = $request->genero_externo;
+        $peticion->pais_id = $request->pais_id;
+        $emailDestino = $request->email_externo;
+        $nombreDestino = $request->nombre_externo;
+      }
     }
 
     $peticion->descripcion = $request->descripción;
@@ -871,6 +888,8 @@ class PeticionController extends Controller
         \Illuminate\Support\Facades\Log::error("Error enviando correo de creacion de peticion ID {$peticion->id}: " . $e->getMessage());
       }
     }
+
+    session()->flash('peticion_reciente_id', $peticion->id);
 
     return redirect()->route('peticion.exito', $peticion->id)->with('success', "La petición de <b>" . $nombreDestino . "</b> fue creada con éxito.");
   }

@@ -51,7 +51,7 @@
         <div class="col-12 col-md-6 mb-3  justify-content-start justify-content-md-end align-items-end">
             <div class="row mt-5">
 
-            
+
             <button style="max-width: 200px;" wire:click="abrirModalCrearPunto" type="button" class="btn btn-primary waves-effect col-sm-12  col-md-3 m-2  ">
                 <i class="ti ti-plus me-1"></i>
                 <span class="fw-semibold">Crear punto</span>

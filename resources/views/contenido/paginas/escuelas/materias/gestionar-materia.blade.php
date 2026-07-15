@@ -180,18 +180,33 @@
         });
 
         $(document).ready(function() {
-            // Mostrar/ocultar asistencias mínimas según el estado del toggle
-            if ($('#togglehabilitarAsistencias').is(':checked')) {
-                $('#cantidadReportesSemana').removeClass('d-none').show();
-            }
-
+            // Toggles visibility
             $('#togglehabilitarAsistencias').on('change', function() {
-                if ($('#togglehabilitarAsistencias').is(':checked')) {
-                    $('#containesAsistenciasMinimas').removeClass('d-none').show();
+                if ($(this).is(':checked')) {
+                    $('.row-asistencias').removeClass('d-none').show();
                 } else {
-                    $('#containesAsistenciasMinimas').addClass('d-none').hide();
+                    $('.row-asistencias').addClass('d-none').hide();
                 }
             });
+            // Initial state
+            if ($('#togglehabilitarAsistencias').is(':checked')) {
+                $('.row-asistencias').removeClass('d-none').show();
+            } else {
+                $('.row-asistencias').addClass('d-none').hide();
+            }
+
+            $('#togglehabilitarInasistencias').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#containesAsistenciasAlerta').removeClass('d-none').show();
+                } else {
+                    $('#containesAsistenciasAlerta').addClass('d-none').hide();
+                }
+            });
+            if ($('#togglehabilitarInasistencias').is(':checked')) {
+                $('#containesAsistenciasAlerta').removeClass('d-none').show();
+            } else {
+                $('#containesAsistenciasAlerta').addClass('d-none').hide();
+            }
         });
     </script>
 
@@ -266,24 +281,7 @@
                     form.submit();
                 }
             });
-
-            // Validación en tiempo real para asistencias
-            $('#togglehabilitarAsistencias').on('change', function() {
-                if ($(this).is(':checked')) {
-                    $('#containesAsistenciasMinimas').removeClass('d-none');
-                } else {
-                    $('#containesAsistenciasMinimas').addClass('d-none');
-                }
-            });
-
-            // Validación en tiempo real para inasistencias
-            $('#togglehabilitarInasistencias').on('change', function() {
-                if ($(this).is(':checked')) {
-                    $('#containesAsistenciasAlerta').removeClass('d-none');
-                } else {
-                    $('#containesAsistenciasAlerta').addClass('d-none');
-                }
-            });
+            // Eliminados los toggles duplicados de habilitarAsistencias e Inasistencias ya que se manejan arriba
         });
 
         /// validaciones de restricciones de reportes asistencias
@@ -537,7 +535,7 @@
                 <div class="card h-100 p-6">
                     <h5 class="mb-1 fw-semibold text-black">Configuración principal</h5>
                     <div class="row ">
-                        <div class="mb-3 col-12 col-md-12 ">
+                        <div class="mb-3 col-12 col-md-6 col-sm-12">
                             <label for="nombre" class="form-label">Nombre de la Materia</label>
                             <input value="{{ old('nombre', $materia->nombre) }}" type="text"
                                 class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre">
@@ -545,130 +543,109 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <div class="mb-3 col-md-6 col-sm-12 ">
+                            <label class="form-label">¿Habilitar asistencia?</label><br>
+                            <label class="switch switch-lg">
+                                <input type="checkbox" class="switch-input" id="togglehabilitarAsistencias"
+                                    name="habilitarAsistencias" @checked(old('habilitarAsistencias', $materia->habilitar_asistencias)) />
+                                <span class="switch-toggle-slider">
+                                    <span class="switch-on">Si</span>
+                                    <span class="switch-off">No</span>
+                                </span>
+                            </label>
+                            @error('habilitarAsistencias')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
 
                     @if (!$materia->nivel_id)
-                        <div class="row">
-                            <div id="" class="mb-3 col-12 col-md-6 ">
-                                <label for="limiteReportes" class="form-label">Limite reportes asistencia </label>
-                                <input value="{{ $materia->limite_reporte_asistencias }}" type="number" min="0"
-                                    class="form-control @error('limiteReportes') is-invalid @enderror" id="limiteReportes"
-                                    name="limiteReportes">
-                                @error('limiteReportes')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                        <div class="row-asistencias">
+                            <div class="row">
+                                <div id="containesAsistenciasMinimas" class="mb-3 col-md-6 col-sm-12">
+                                    <label for="asistenciasMinimas" class="form-label">Asistencias Mínimas (opcional)</label>
+                                    <input value="{{ old('asistenciasMinimas', $materia->asistencias_minimas) }}" type="number" min="0"
+                                        class="form-control @error('asistenciasMinimas') is-invalid @enderror"
+                                        id="asistenciasMinimas" name="asistenciasMinimas">
+                                    @error('asistenciasMinimas')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3 col-12 col-md-6 col-sm-12">
+                                    <label for="limiteReportes" class="form-label">Limite reportes asistencia </label>
+                                    <input value="{{ old('limiteReportes', $materia->limite_reporte_asistencias) }}" type="number" min="0"
+                                        class="form-control @error('limiteReportes') is-invalid @enderror" id="limiteReportes"
+                                        name="limiteReportes">
+                                    @error('limiteReportes')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="mb-3 col-md-6 col-sm-12">
+                                    <label class="form-label">¿Tiene día limite de reporte?</label><br>
+                                    <label class="switch switch-lg">
+                                        <input type="checkbox"
+                                            class="switch-input" id="diaLimiteHabilitado" name="diaLimiteHabilitado"
+                                            @checked(old('diaLimiteHabilitado', $materia->tiene_dia_limite)) />
+                                        <span class="switch-toggle-slider">
+                                            <span class="switch-on">Si</span>
+                                            <span class="switch-off">No</span>
+                                        </span>
+                                    </label>
+                                    @error('diaLimiteHabilitado')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div id="containerDiaLimiteReporte" class="mb-3 col-md-6 col-sm-12">
+                                    <label for="dia" class="form-label">Día limite reporte</label>
+                                    <select id="dia" name="dia" class="select2 form-select" data-allow-clear="true">
+                                        <option value="">Sin definir</option>
+                                        <option value="1" @selected(old('dia', $materia->dia_limite_reporte) == '1')>Lunes</option>
+                                        <option value="2" @selected(old('dia', $materia->dia_limite_reporte) == '2')>Martes</option>
+                                        <option value="3" @selected(old('dia', $materia->dia_limite_reporte) == '3')>Miércoles</option>
+                                        <option value="4" @selected(old('dia', $materia->dia_limite_reporte) == '4')>Jueves</option>
+                                        <option value="5" @selected(old('dia', $materia->dia_limite_reporte) == '5')>Viernes</option>
+                                        <option value="6" @selected(old('dia', $materia->dia_limite_reporte) == '6')>Sábado</option>
+                                        <option value="0" @selected(old('dia', $materia->dia_limite_reporte) == '0')>Domingo</option>
+                                    </select>
+                                    @if ($errors->has('dia'))
+                                        <div class="text-danger form-label">{{ $errors->first('dia') }}</div>
+                                    @endif
+                                </div>
+
+                                <div id="containerCantidadReportesSemana" class="mb-3 col-12 col-md-6 col-sm-12">
+                                    <label for="cantidadReportesSemana" class="form-label">Cantidad de reportes semana</label>
+                                    <input value="{{ old('cantidadReportesSemana', $materia->cantidad_limite_reportes_semana) }}" type="number" min="0"
+                                        class="form-control @error('cantidadReportesSemana') is-invalid @enderror"
+                                        id="cantidadReportesSemana" name="cantidadReportesSemana">
+                                    @error('cantidadReportesSemana')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div id="containerDiasPlazoReporte" class="mb-3 col-12 col-md-6 col-sm-12">
+                                    <label for="diasPlazoReporte" class="form-label">Días de plazo reporte</label>
+                                    <input value="{{ old('diasPlazoReporte', $materia->dias_plazo_reporte) }}" type="number" min="0"
+                                        class="form-control @error('diasPlazoReporte') is-invalid @enderror"
+                                        id="diasPlazoReporte" name="diasPlazoReporte">
+                                    @error('diasPlazoReporte')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
 
-
-                        <div style="    min-height: 75px;" class="row">
-
-
+                        <div style="min-height: 75px;" class="row">
                             <div class="col-md-6 col-sm-12">
-                                <label class="form-label">¿Tiene día limite de reporte?</label><br>
+                                <label for="habilitarInasistencias" class="form-label">¿Habilitar inasistencia?</label><br>
                                 <label class="switch switch-lg">
-                                    <input {{ $materia->tiene_dia_limite ? 'checked' : '' }} type="checkbox"
-                                        class="switch-input" id="diaLimiteHabilitado" name="diaLimiteHabilitado" />
-                                    <span class="switch-toggle-slider">
-                                        <span class="switch-on">Si</span>
-                                        <span class="switch-off">No</span>
-                                    </span>
-                                </label>
-                                @error('diaLimiteHabilitado')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-
-                            <div id="containerDiaLimiteReporte" class="mb-3 col-md-6  col-sm-12 ">
-                                <label for="dia" class="form-label">Día limite reporte</label><br>
-                                <select id="dia" name="dia" class="select2 form-select" data-allow-clear="true">
-                                    <option value="">Sin definir</option>
-                                    <option @if ($materia->dia_limite_reporte == '1') selected @endif value="1"
-                                        {{ old('dia') }}>Lunes</option>
-                                    <option @if ($materia->dia_limite_reporte == '2') selected @endif value="2"
-                                        {{ old('dia') }}>Martes</option>
-                                    <option @if ($materia->dia_limite_reporte == '3') selected @endif value="3"
-                                        {{ old('dia') }}>Miércoles</option>
-                                    <option @if ($materia->dia_limite_reporte == '4') selected @endif value="4"
-                                        {{ old('dia') }}>Jueves</option>
-                                    <option @if ($materia->dia_limite_reporte == '5') selected @endif value="5"
-                                        {{ old('dia') }}>Viernes</option>
-                                    <option @if ($materia->dia_limite_reporte == '6') selected @endif value="6"
-                                        {{ old('dia') }}>Sábado</option>
-                                    <option @if ($materia->dia_limite_reporte == '0') selected @endif value="0"
-                                        {{ old('dia') }}>Domingo</option>
-                                </select>
-                                @if ($errors->has('dia'))
-                                    <div class="text-danger form-label">{{ $errors->first('dia') }}</div>
-                                @endif
-                            </div>
-
-                            <div id="labelCantidadReportesSemana" class="mb-3  col-md-6  col-sm-12 ">
-                                <label for="cantidadReportesSemana" class="form-label">Cantidad de reportes
-                                    semana</label><br>
-                                <input value="{{ $materia->cantidad_limite_reportes_semana }}" type="number" min="0"
-                                    class="form-control @error('cantidadReportesSemana') is-invalid @enderror"
-                                    id="cantidadReportesSemana" name="cantidadReportesSemana">
-                                @error('cantidadReportesSemana')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div id="labeldiasPlazoReporte" class="mb-3  col-md-6  col-sm-12 ">
-                                <label for="diasPlazoReporte" class="form-label">dias de plazo reparto</label><br>
-                                <input value="{{ $materia->dias_plazo_reporte }}" type="number" min="0"
-                                    class="form-control @error('diasPlazoReporte') is-invalid @enderror"
-                                    id="diasPlazoReporte" name="diasPlazoReporte">
-                                @error('diasPlazoReporte')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-
-                        <div style="    min-height: 75px;" class="row">
-
-                            <div class="col-md-6  col-sm-12">
-                                <label for="togglehabilitarAsistencias" class="form-label">¿Habilitar
-                                    asistencia?</label><br>
-                                <label class="switch switch-lg">
-                                    <input {{ $materia->habilitar_asistencias ? 'checked' : '' }} type="checkbox"
-                                        class="switch-input" id="togglehabilitarAsistencias"
-                                        name="habilitarAsistencias" />
-                                    <span class="switch-toggle-slider">
-                                        <span class="switch-on">Si</span>
-                                        <span class="switch-off">No</span>
-                                    </span>
-                                </label>
-                                @error('habilitarAsistencias')
-                                    <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-
-                            <div id="containesAsistenciasMinimas"
-                                class="mb-3 {{ $materia->habilitar_asistencias ? '' : 'd-none' }} col-md-6  col-sm-12">
-                                <label for="asistenciasMinimas" class="form-label">Asistencias Mínimas
-                                    (opcional)</label><br>
-                                <input value="{{ $materia->asistencias_minimas }}" type="number" min="0"
-                                    class="form-control @error('asistenciasMinimas') is-invalid @enderror"
-                                    id="asistenciasMinimas" name="asistenciasMinimas">
-                                @error('asistenciasMinimas')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-
-                        <div style="    min-height: 75px;" class="row">
-
-                            <div style="margin-top: -12px;" class="col-6">
-                                <label for="habilitarInasistencias" class="form-label">¿Habilitar
-                                    inasistencia?</label><br>
-                                <label class="switch switch-lg">
-                                    <input {{ $materia->habilitar_inasistencias ? 'checked' : '' }} type="checkbox"
-                                        @checked(old('habilitarInasistencias')) class="switch-input"
-                                        id="togglehabilitarInasistencias" name="habilitarInasistencias" />
+                                    <input type="checkbox" class="switch-input" id="togglehabilitarInasistencias"
+                                        name="habilitarInasistencias" @checked(old('habilitarInasistencias', $materia->habilitar_inasistencias)) />
                                     <span class="switch-toggle-slider">
                                         <span class="switch-on">Si</span>
                                         <span class="switch-off">No</span>
@@ -678,11 +655,10 @@
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
-                            <div id="containesAsistenciasAlerta"
-                                class="mb-3  {{ $materia->habilitar_inasistencias ? '' : 'd-none' }}  col-md-6  col-sm-12">
-                                <label for="asistenciasAlerta" class="form-label">Cantidad inasistencia
-                                    (alerta)</label><br>
-                                <input value="{{ $materia->asistencias_minima_alerta }}" type="number" min="0"
+
+                            <div id="containesAsistenciasAlerta" class="mb-3 col-md-6 col-sm-12">
+                                <label for="cantidadInasistencias" class="form-label">Cantidad inasistencia (alerta)</label>
+                                <input value="{{ old('cantidadInasistencias', $materia->asistencias_minima_alerta) }}" type="number" min="0"
                                     class="form-control @error('cantidadInasistencias') is-invalid @enderror"
                                     id="cantidadInasistencias" name="cantidadInasistencias">
                                 @error('cantidadInasistencias')
@@ -692,30 +668,26 @@
                         </div>
 
                         <div class="row">
-
-                            <div class="mb-3  col-12 col-md-6 ">
-                                <label for="habilitarCalificaciones" class="form-label">¿Habilitar
-                                    calificaciones?</label><br>
+                            <div class="mb-3 col-12 col-md-6">
+                                <label for="habilitarCalificaciones" class="form-label">¿Habilitar calificaciones?</label><br>
                                 <label class="switch switch-lg">
-                                    <input type="checkbox" {{ $materia->habilitar_calificaciones ? 'checked' : '' }}
-                                        class="switch-input" id="togglehabilitarCalificaciones"
-                                        name="habilitarCalificaciones" />
+                                    <input type="checkbox" class="switch-input" id="togglehabilitarCalificaciones"
+                                        name="habilitarCalificaciones" @checked(old('habilitarCalificaciones', $materia->habilitar_calificaciones)) />
                                     <span class="switch-toggle-slider">
                                         <span class="switch-on">Si</span>
                                         <span class="switch-off">No</span>
                                     </span>
                                 </label>
-
                                 @error('habilitarCalificaciones')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
 
-                            <div class="mb-3   col-12 col-md-6">
+                            <div class="mb-3 col-12 col-md-6">
                                 <label for="habilitarTraslado" class="form-label">¿Habilitar traslado?</label><br>
                                 <label class="switch switch-lg">
-                                    <input type="checkbox" {{ $materia->habilitar_traslado ? 'checked' : '' }}
-                                        class="switch-input" id="togglehabilitarTraslado" name="habilitarTraslado" />
+                                    <input type="checkbox" class="switch-input" id="togglehabilitarTraslado"
+                                        name="habilitarTraslado" @checked(old('habilitarTraslado', $materia->habilitar_traslado)) />
                                     <span class="switch-toggle-slider">
                                         <span class="switch-on">Si</span>
                                         <span class="switch-off">No</span>
@@ -726,11 +698,11 @@
                                 @enderror
                             </div>
 
-                            <div class="mb-3  col-12 col-md-6">
+                            <div class="mb-3 col-12 col-md-6">
                                 <label for="obligatorio" class="form-label">¿Cáracter obligatorio?</label><br>
                                 <label class="switch switch-lg">
-                                    <input type="checkbox" {{ $materia->caracter_obligatorio ? 'checked' : '' }}
-                                        class="switch-input" id="toggleobligatorio" name="obligatorio" />
+                                    <input type="checkbox" class="switch-input" id="toggleobligatorio"
+                                        name="obligatorio" @checked(old('obligatorio', $materia->caracter_obligatorio)) />
                                     <span class="switch-toggle-slider">
                                         <span class="switch-on">Si</span>
                                         <span class="switch-off">No</span>
@@ -863,6 +835,12 @@
                     </div>
                     <div class="card-body pt-4">
                         <div class="row">
+                            {{-- 0. Procesos al Iniciar --}}
+                            <div class="col-12 mb-4">
+                                @livewire('escuelas.materias.gestionar-pasos-iniciar', ['materia' => $materia])
+                            </div>
+                            <hr class="my-4">
+
                             {{-- 1. Procesos Prerrequisito --}}
                             <div class="col-12 mb-4">
                                 @livewire('escuelas.materias.gestionar-pasos-requisito', ['materia' => $materia])

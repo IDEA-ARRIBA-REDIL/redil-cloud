@@ -94,9 +94,9 @@ $configData = Helper::appClasses();
 
     .row-btns{display:flex;gap:12px;margin-top:8px}
     .btn{width:100%;padding:15px 20px;border-radius:10px;font-family:var(--sa);font-weight:700;font-size:14.5px;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .25s}
-    .btn-primary{background:var(--b);color:#fff}
-    .btn-primary:hover{background:var(--b2)}
-    .btn-primary:disabled{background:var(--border);color:var(--ink-dim);cursor:not-allowed}
+    .btn-primary, #submitBtn{background:var(--b) !important;color:#fff !important;border:none !important;border-color:transparent !important;box-shadow:none !important}
+    .btn-primary:hover, #submitBtn:hover{background:var(--b2) !important;border:none !important;border-color:transparent !important}
+    .btn-primary:disabled, #submitBtn:disabled{background:var(--border) !important;color:var(--ink-dim) !important;cursor:not-allowed !important;border:none !important}
     
     .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:none;animation:spin .7s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -109,7 +109,62 @@ $configData = Helper::appClasses();
 
     @media(max-width:520px){
       .motivos{grid-template-columns:1fr}
-      header{padding:18px 18px}
+      header{padding:18px 18px} 
+    } 
+
+    .swal2-actions {
+      flex-direction: column !important;
+      gap: 10px !important;
+      width: 100% !important;
+      padding: 0 10px !important;
+      margin-top: 1.5rem !important;
+    }
+    .swal-btn-confirm {
+      width: 100% !important;
+      padding: 12px 20px !important;
+      border-radius: 10px !important;
+      font-family: var(--sa) !important;
+      font-weight: 700 !important;
+      font-size: 14.5px !important;
+      cursor: pointer !important;
+      border: none !important;
+      background: var(--b) !important;
+      color: #fff !important;
+      transition: background .25s !important;
+    }
+    .swal-btn-confirm:hover {
+      background: var(--b2) !important;
+    }
+    .swal-btn-deny {
+      width: 100% !important;
+      padding: 12px 20px !important;
+      border-radius: 10px !important;
+      font-family: var(--sa) !important;
+      font-weight: 700 !important;
+      font-size: 14.5px !important;
+      cursor: pointer !important;
+      border: 1px solid var(--border) !important;
+      background: transparent !important;
+      color: var(--ink-mute) !important;
+      transition: all .25s !important;
+    }
+    .swal-btn-deny:hover {
+      background: var(--field) !important;
+      color: var(--ink) !important;
+    }
+    .swal-btn-cancel {
+      background: transparent !important;
+      border: none !important;
+      color: var(--ink-dim) !important;
+      font-family: var(--sa) !important;
+      font-weight: 500 !important;
+      font-size: 13.5px !important;
+      cursor: pointer !important;
+      padding: 8px !important;
+    }
+    .swal-btn-cancel:hover {
+      color: var(--ink-mute) !important;
+      text-decoration: underline !important;
     }
   </style>
 @endsection
@@ -132,44 +187,36 @@ $configData = Helper::appClasses();
   </script>
 
   <script type="module">
-    $(document).ready(function() {
-      const modeNew = $('#modeNew');
-      const modeLogin = $('#modeLogin');
-      const newFields = $('#newFields');
-      const loginFields = $('#loginFields');
-      const tengoCuentaInput = $('#tengo_cuenta_input');
-      const submitText = $('.btnGuardarText');
+    let verified = false;
 
-      modeNew.on('click', function() {
-        tengoCuentaInput.val('0');
-        modeNew.addClass('active').attr('aria-selected', 'true');
-        modeLogin.removeClass('active').attr('aria-selected', 'false');
-        newFields.addClass('active');
-        loginFields.removeClass('active');
-        submitText.text('Enviar petición');
+    function enviarFormularioDirecto() {
+      verified = true;
+      $('#submitBtn').addClass('loading').attr('disabled', 'disabled');
+
+      Swal.fire({
+        title: "Espera un momento",
+        text: "Ya estamos guardando tu petición...",
+        icon: "info",
+        showCancelButton: false,
+        showConfirmButton: false,
+        showDenyButton: false
       });
 
-      modeLogin.on('click', function() {
-        tengoCuentaInput.val('1');
-        modeLogin.addClass('active').attr('aria-selected', 'true');
-        modeNew.removeClass('active').attr('aria-selected', 'false');
-        loginFields.addClass('active');
-        newFields.removeClass('active');
-        submitText.text('Iniciar sesión y enviar');
-      });
-    });
-  </script>
+      $('#formulario').submit();
+    }
 
-  <script type="module">
     $('#formulario').submit(function(e) {
+      if (verified) {
+        return true;
+      }
+
       // Limpiar errores previos
       $('.field').removeClass('invalid');
       $('.custom-error').remove();
       $('#motivoErr').hide();
       
       let isValid = true;
-      let esInvitado = {{ auth()->check() ? 'false' : '$(\'#tengo_cuenta_input\').val() == "0"' }};
-      let esLogin = {{ auth()->check() ? 'false' : '$(\'#tengo_cuenta_input\').val() == "1"' }};
+      let esInvitado = {{ auth()->check() ? 'false' : 'true' }};
 
       // 1. Validar Motivo
       let tipoPeticion = $('input[name="tipo_de_petición"]:checked').val();
@@ -186,7 +233,10 @@ $configData = Helper::appClasses();
         isValid = false;
       }
 
-      if (esInvitado) {
+      // Si ya asociamos un usuario, no necesitamos el resto de validaciones de invitado
+      let asociarUsuarioId = $('#asociar_usuario_id').val();
+
+      if (esInvitado && !asociarUsuarioId) {
         // Validar Nombre
         let nombreExterno = $('#nombre_externo').val().trim();
         if (nombreExterno.length <= 1) {
@@ -214,30 +264,16 @@ $configData = Helper::appClasses();
           $('#f-pais').addClass('invalid');
           isValid = false;
         }
+      }
 
-        // Validar reCAPTCHA
+      // reCAPTCHA es necesario siempre para invitados
+      if (esInvitado) {
         if (typeof grecaptcha !== 'undefined') {
           let recaptchaResponse = grecaptcha.getResponse();
           if (recaptchaResponse.length === 0) {
             $('#container_recaptcha').after('<div class="text-danger form-label custom-error small mt-1">Por favor, verifica que no eres un robot.</div>');
             isValid = false;
           }
-        }
-      }
-
-      if (esLogin) {
-        // Validar Email de Login
-        let emailLogin = $('#email_login').val().trim();
-        if (!emailLogin || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLogin)) {
-          $('#f-loginEmail').addClass('invalid');
-          isValid = false;
-        }
-
-        // Validar Contraseña de Login
-        let passwordLogin = $('#password_login').val();
-        if (!passwordLogin) {
-          $('#f-loginPass').addClass('invalid');
-          isValid = false;
         }
       }
 
@@ -253,15 +289,85 @@ $configData = Helper::appClasses();
         return false;
       }
 
+      e.preventDefault(); // Detener el envío por defecto para verificación AJAX
+
+      // Si ya está autenticado, enviar directamente
+      if (!esInvitado) {
+        enviarFormularioDirecto();
+        return;
+      }
+
+      // Si el usuario ya eligió enviar como invitado
+      if ($('#enviar_como_invitado').val() === '1' || asociarUsuarioId) {
+        enviarFormularioDirecto();
+        return;
+      }
+
+      // Verificar correo electrónico
+      let emailExterno = $('#email_externo').val().trim();
       $('#submitBtn').addClass('loading').attr('disabled', 'disabled');
 
-      Swal.fire({
-        title: "Espera un momento",
-        text: "Ya estamos guardando tu petición...",
-        icon: "info",
-        showCancelButton: false,
-        showConfirmButton: false,
-        showDenyButton: false
+      fetch("{{ route('peticion.publica.verificar-correo') }}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": "{{ csrf_token() }}"
+        },
+        body: JSON.stringify({ email: emailExterno })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.exists) {
+          // Restaurar botón de submit
+          $('#submitBtn').removeClass('loading').removeAttr('disabled');
+
+          // Mostrar SweetAlert2 con las 3 opciones
+          Swal.fire({
+            title: '¿Asociar esta petición a tu cuenta?',
+            html: `
+              <div class="text-center my-3" style="font-family: var(--sa);">
+                <img src="${data.user.foto_url}" class="rounded-circle mb-3 border border-2 border-primary" style="width: 80px; height: 80px; object-fit: cover;">
+                <h5 class="fw-bold mb-1" style="color: var(--ink); font-family: var(--cd);">${data.user.nombre}</h5>
+                <p class="text-muted small mb-0">${data.user.email}</p>
+              </div>
+              <p class="text-start mb-0" style="color: var(--ink-mute); font-size: 0.95rem; line-height: 1.5;">
+                Hemos detectado que este correo pertenece a una cuenta registrada. ¿Deseas enviar esta petición asociándola al usuario detectado o enviar esta petición como invitado?
+              </p>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonText: 'Sí, enviar a mi nombre',
+            denyButtonText: 'No, enviar como invitado',
+            cancelButtonText: 'Cancelar envío',
+            customClass: {
+              actions: 'swal2-actions',
+              confirmButton: 'swal-btn-confirm',
+              denyButton: 'swal-btn-deny',
+              cancelButton: 'swal-btn-cancel'
+            },
+            buttonsStyling: false
+          }).then((result) => {
+            if (result.isConfirmed) {
+              // Sí, enviar petición a nombre del usuario
+              $('#asociar_usuario_id').val(data.user.id);
+              enviarFormularioDirecto();
+            } else if (result.isDenied) {
+              // No, enviar petición como invitado
+              $('#enviar_como_invitado').val('1');
+              enviarFormularioDirecto();
+            }
+            // Si cancela, vuelve al formulario sin enviar
+          });
+        } else {
+          // No existe cuenta asociada, enviar directamente
+          enviarFormularioDirecto();
+        }
+      })
+      .catch(error => {
+        console.error("Error al verificar correo:", error);
+        // En caso de error, enviar como invitado directamente
+        enviarFormularioDirecto();
       });
     });
   </script>
@@ -335,94 +441,64 @@ $configData = Helper::appClasses();
       </div>
 
       @guest
-        <!-- 3. Tus Datos (Switch Capsule & Inputs) -->
+        <!-- 3. Tus Datos -->
         <div class="section-title">Tus datos</div>
 
-        <div class="mode-toggle" role="tablist">
-          <button type="button" class="mode-btn {{ old('tengo_cuenta', '0') == '0' ? 'active' : '' }}" id="modeNew" role="tab" aria-selected="{{ old('tengo_cuenta', '0') == '0' ? 'true' : 'false' }}">Soy nuevo</button>
-          <button type="button" class="mode-btn {{ old('tengo_cuenta') == '1' ? 'active' : '' }}" id="modeLogin" role="tab" aria-selected="{{ old('tengo_cuenta') == '1' ? 'true' : 'false' }}">Ya tengo cuenta</button>
-          <input type="hidden" name="tengo_cuenta" id="tengo_cuenta_input" value="{{ old('tengo_cuenta', '0') }}">
+        <input type="hidden" name="asociar_usuario_id" id="asociar_usuario_id" value="">
+        <input type="hidden" name="enviar_como_invitado" id="enviar_como_invitado" value="0">
+
+        <!-- Formulario Unificado -->
+        <div class="field @error('nombre_externo') invalid @enderror" id="f-nombre">
+          <label for="nombre_externo">Nombre completo</label>
+          <input type="text" id="nombre_externo" name="nombre_externo" placeholder="Ej. María Fernández" autocomplete="name" value="{{ old('nombre_externo', auth()->check() ? auth()->user()->name : '') }}" required>
+          <small class="err">@error('nombre_externo') {{ $message }} @else Cuéntanos tu nombre para poder orar por ti. @enderror</small>
         </div>
 
-        <!-- PERSONA NO REGISTRADA -->
-        <div class="subpanel {{ old('tengo_cuenta', '0') == '0' ? 'active' : '' }}" id="newFields">
-          <div class="field @error('nombre_externo') invalid @enderror" id="f-nombre">
-            <label for="nombre_externo">Nombre completo</label>
-            <input type="text" id="nombre_externo" name="nombre_externo" placeholder="Ej. María Fernández" autocomplete="name" value="{{ old('nombre_externo') }}" required>
-            <small class="err">@error('nombre_externo') {{ $message }} @else Cuéntanos tu nombre para poder orar por ti. @enderror</small>
-          </div>
-
-          <div class="field @error('email_externo') invalid @enderror" id="f-email">
-            <label for="email_externo">Correo electrónico</label>
-            <input type="email" id="email_externo" name="email_externo" placeholder="tucorreo@ejemplo.com" autocomplete="email" value="{{ old('email_externo') }}" required>
-            <small class="err">@error('email_externo') {{ $message }} @else Escribe un correo válido — te avisaremos cuando oremos por ti. @enderror</small>
-          </div>
-
-          <div class="field @error('telefono_externo') invalid @enderror" id="f-telefono">
-            <label for="telefono_externo">Teléfono <span class="opt">(opcional)</span></label>
-            <input type="tel" id="telefono_externo" name="telefono_externo" placeholder="+57 300 000 0000" autocomplete="tel" value="{{ old('telefono_externo') }}">
-            <small class="err">@error('telefono_externo') {{ $message }} @enderror</small>
-          </div>
-
-          <div class="field @error('genero_externo') invalid @enderror" id="f-genero">
-            <label for="genero_externo">Género</label>
-            <select id="genero_externo" name="genero_externo" class="form-select" required>
-              <option value="" disabled {{ old('genero_externo') === null ? 'selected' : '' }}>Selecciona tu género</option>
-              <option value="0" {{ old('genero_externo') == '0' ? 'selected' : '' }}>Hombre</option>
-              <option value="1" {{ old('genero_externo') == '1' ? 'selected' : '' }}>Mujer</option>
-            </select>
-            <small class="err">@error('genero_externo') {{ $message }} @else El género es obligatorio. @enderror</small>
-          </div>
-
-          <div class="field @error('pais_id') invalid @enderror" id="f-pais">
-            <label for="pais_id">País</label>
-            <select id="pais_id" name="pais_id" class="form-select" required>
-              @foreach($paises as $pais)
-                <option value="{{ $pais->id }}" {{ old('pais_id', 1) == $pais->id ? 'selected' : '' }}>{{ $pais->nombre }}</option>
-              @endforeach
-            </select>
-            <small class="err">@error('pais_id') {{ $message }} @else El país es obligatorio. @enderror</small>
-          </div>
-
-          <!-- reCAPTCHA -->
-          <div class="mb-4 mt-2 d-flex flex-column align-items-start" id="container_recaptcha">
-            <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
-            @if($errors->has('g-recaptcha-response')) 
-              <div class="text-danger form-label small mt-1" style="color:var(--err)">{{ $errors->first('g-recaptcha-response') }}</div> 
-            @endif
-          </div>
+        <div class="field @error('email_externo') invalid @enderror" id="f-email">
+          <label for="email_externo">Correo electrónico</label>
+          <input type="email" id="email_externo" name="email_externo" placeholder="tucorreo@ejemplo.com" autocomplete="email" value="{{ old('email_externo', auth()->check() ? auth()->user()->email : '') }}" required>
+          <small class="err">@error('email_externo') {{ $message }} @else Escribe un correo válido — te avisaremos cuando oremos por ti. @enderror</small>
         </div>
 
-        <!-- PERSONA REGISTRADA -->
-        <div class="subpanel {{ old('tengo_cuenta') == '1' ? 'active' : '' }}" id="loginFields">
-          <div class="field @error('email_login') invalid @enderror" id="f-loginEmail">
-            <label for="email_login">Correo electrónico</label>
-            <input type="email" id="email_login" name="email_login" placeholder="tucorreo@ejemplo.com" autocomplete="email" value="{{ old('email_login') }}" required>
-            <small class="err">@error('email_login') {{ $message }} @else Escribe el correo con el que te registraste. @enderror</small>
-          </div>
-          <div class="field @error('password_login') invalid @enderror" id="f-loginPass">
-            <label for="password_login">Contraseña</label>
-            <input type="password" id="password_login" name="password_login" placeholder="••••••••" autocomplete="current-password" required>
-            <small class="err">@error('password_login') {{ $message }} @else Escribe tu contraseña para continuar. @enderror</small>
-          </div>
-          <div class="login-row">
-            <label class="chk"><input type="checkbox" name="remember_login" id="remember_login" {{ old('remember_login') ? 'checked' : '' }}> Recordarme</label>
-            <a class="forgot" href="{{ route('password.request') }}">¿Olvidaste tu contraseña?</a>
-          </div>
-          <p class="account-note">¿No tienes cuenta? <a href="{{ route('register') }}">Regístrate aquí</a></p>
+        <div class="field @error('telefono_externo') invalid @enderror" id="f-telefono">
+          <label for="telefono_externo">Teléfono <span class="opt">(opcional)</span></label>
+          <input type="tel" id="telefono_externo" name="telefono_externo" placeholder="+57 300 000 0000" autocomplete="tel" value="{{ old('telefono_externo') }}">
+          <small class="err">@error('telefono_externo') {{ $message }} @enderror</small>
+        </div>
+
+        <div class="field @error('genero_externo') invalid @enderror" id="f-genero">
+          <label for="genero_externo">Género</label>
+          <select id="genero_externo" name="genero_externo" class="form-select" required>
+            <option value="" disabled {{ old('genero_externo') === null ? 'selected' : '' }}>Selecciona tu género</option>
+            <option value="0" {{ old('genero_externo') == '0' ? 'selected' : '' }}>Hombre</option>
+            <option value="1" {{ old('genero_externo') == '1' ? 'selected' : '' }}>Mujer</option>
+          </select>
+          <small class="err">@error('genero_externo') {{ $message }} @else El género es obligatorio. @enderror</small>
+        </div>
+
+        <div class="field @error('pais_id') invalid @enderror" id="f-pais">
+          <label for="pais_id">País</label>
+          <select id="pais_id" name="pais_id" class="form-select" required>
+            @foreach($paises as $pais)
+              <option value="{{ $pais->id }}" {{ old('pais_id', 1) == $pais->id ? 'selected' : '' }}>{{ $pais->nombre }}</option>
+            @endforeach
+          </select>
+          <small class="err">@error('pais_id') {{ $message }} @else El país es obligatorio. @enderror</small>
+        </div>
+
+        <!-- reCAPTCHA -->
+        <div class="mb-4 mt-2 d-flex flex-column align-items-start" id="container_recaptcha">
+          <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+          @if($errors->has('g-recaptcha-response')) 
+            <div class="text-danger form-label small mt-1" style="color:var(--err)">{{ $errors->first('g-recaptcha-response') }}</div> 
+          @endif
         </div>
       @endguest
 
       <div class="row-btns">
-        <button type="submit" class="btn btn-primary" id="submitBtn">
+        <button type="submit" class="btn btn-primary py-3" id="submitBtn">
           <span class="spinner"></span>
-          <span class="btn-text btnGuardarText">
-            @auth
-              Enviar petición
-            @else
-              {{ old('tengo_cuenta') == '1' ? 'Iniciar sesión y enviar' : 'Enviar petición' }}
-            @endauth
-          </span>
+          <span class="btn-text btnGuardarText">Enviar petición</span>
         </button>
       </div>
 
