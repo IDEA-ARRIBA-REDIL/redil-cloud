@@ -2,26 +2,23 @@
 
 namespace App\Notifications;
 
-use App\Models\Iglesia;
+use App\Mail\DefaultMail;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Mail\Mailable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\URL;
 
 class MiVerificacionDeCorreo extends Notification
 {
     use Queueable;
-
-    public $iglesia;
 
     /**
      * Create a new notification instance.
      */
     public function __construct()
     {
-        $this->iglesia = Iglesia::find(1);
+        //
     }
 
     /**
@@ -37,17 +34,26 @@ class MiVerificacionDeCorreo extends Notification
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $notifiable): Mailable
     {
         $verificationUrl = $this->verificationUrl($notifiable);
 
-        return (new MailMessage)
-          ->subject(Lang::get('Verifica tu correo'))
-          ->greeting(Lang::get('¡Hola!'))
-          ->line(Lang::get('Gracias por registrarte. Por favor, haz clic en el botón de abajo para verificar tu cuenta.'))
-          ->action(Lang::get('Verificar correo'), $verificationUrl)
-          ->line(Lang::get('Si no creaste esta cuenta, puedes ignorar este mensaje.'))
-          ->salutation(Lang::get('Saludos, ') . $this->iglesia->nombre); // <-- AÑADE ESTA LÍNEA
+        $mailData = new \stdClass;
+        $mailData->subject = Lang::get('Verifica tu correo');
+        $mailData->eyebrow = 'BIENVENIDA · ACTIVACIÓN DE CUENTA';
+        $mailData->titulo = Lang::get('¡Hola!');
+        $mailData->nombre = method_exists($notifiable, 'nombre') ? $notifiable->nombre(3) : ($notifiable->name ?? '');
+
+        $mailData->mensaje = Lang::get('Gracias por registrarte. Por favor, haz clic en el botón de abajo para verificar tu cuenta y comenzar a utilizar la plataforma.')
+            .'<p style="font-size:13px;color:#6B7280;line-height:1.5;margin-top:24px;margin-bottom:0;">'
+            .Lang::get('Si no creaste esta cuenta, puedes ignorar este mensaje de forma segura.')
+            .'</p>';
+
+        $mailData->actionUrl = $verificationUrl;
+        $mailData->actionText = Lang::get('Verificar correo electrónico →');
+
+        return (new DefaultMail($mailData))
+            ->to($notifiable->email);
     }
 
     /**
@@ -62,7 +68,7 @@ class MiVerificacionDeCorreo extends Notification
         ];
     }
 
-     protected function verificationUrl(object $notifiable): string
+    protected function verificationUrl(object $notifiable): string
     {
         // Este método no cambia
         return URL::temporarySignedRoute(

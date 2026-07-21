@@ -1,176 +1,233 @@
 <!DOCTYPE html>
-<html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <style>          
-        .group-list { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .group-list th, .group-list td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .group-list th { background-color: #f2f2f2; }
-        .btn:hover {
-            background:linear-gradient(to bottom, #dfdfdf 5%, #ededed 100%);
-            background-color:#dfdfdf;
-        }
-        .btn:active {
-            position:relative; 
-            top:1px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="format-detection" content="telephone=no,date=no,address=no,email=no" />
+  <title>Recordatorio: Reporte de grupo pendiente</title>
+  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+  <style type="text/css">
+    * { box-sizing: border-box; }
+    body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; display:block; }
+    body { margin:0 !important; padding:0 !important; background-color:#F0EFE9; }
+    a { color:inherit; text-decoration:none; }
+
+    @media only screen and (max-width:620px) {
+      .email-wrapper { width:100% !important; }
+      .card-pad      { padding:28px 20px !important; }
+      .btn-cta       { display:block !important; width:100% !important; text-align:center !important; }
+    }
+  </style>
 </head>
-<body>
-    <div style="height:100%;margin:0;padding:0;width:100%;background-color:#f8f7fa">
-      <center>
-        <table align="center" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="m_8975725914595533633bodyTable" style="border-collapse:collapse;height:100%;margin:0;padding:0;width:100%;background-color:#f8f7fa">
+<body style="margin:0;padding:0;background-color:#F0EFE9;">
+
+<!-- PREHEADER: texto invisible que aparece en preview del inbox -->
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;font-family:sans-serif;">
+  Tienes reportes de grupo pendientes por realizar esta semana.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0EFE9;">
+<tr><td align="center" style="padding:24px 16px 40px;">
+
+  <table role="presentation" class="email-wrapper" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+
+    <!-- ─── HEADER ─── -->
+    <tr>
+      <td style="background-color:#FFFFFF;border-radius:16px 16px 0 0;padding:20px 32px;border-bottom:1px solid #EBEBEB;text-align:center;">
+        @php
+          $iglesiaObj = $iglesia ?? \App\Models\Iglesia::first();
+        @endphp
+        @if($iglesiaObj && $iglesiaObj->logo_negro && Storage::exists("img/iglesia/".$iglesiaObj->logo_negro))
+          <img
+            src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo_negro) }}"
+            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
+            width="160"
+            style="display:inline-block;max-width:160px;height:auto;"
+          />
+        @elseif($iglesiaObj && $iglesiaObj->logo && Storage::exists("img/iglesia/".$iglesiaObj->logo))
+          <img
+            src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo) }}"
+            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
+            width="160"
+            style="display:inline-block;max-width:160px;height:auto;background-color:#040407;padding:4px;border-radius:4px;"
+          />
+        @else
+          <img
+            src="{{ Storage::disk('global_media')->url('logo_principal.png') }}"
+            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
+            width="160"
+            style="display:inline-block;max-width:160px;height:auto;"
+          />
+        @endif
+      </td>
+    </tr>
+
+    <!-- ─── CUERPO ─── -->
+    <tr>
+      <td style="background-color:#FFFFFF;padding:40px 32px;" class="card-pad">
+
+        <!-- Eyebrow -->
+        <p style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;color:#0099d9;letter-spacing:2.5px;text-transform:uppercase;margin:0 0 14px 0;">
+          RECORDATORIO · REPORTES PENDIENTES
+        </p>
+
+        <!-- Titular -->
+        <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;color:#040407;line-height:1.25;margin:0 0 20px 0;">
+          ¡Hola, {{ $encargado->nombre(3) }}!
+        </h1>
+
+        <!-- Párrafo de Contexto -->
+        <p style="font-family:Arial,sans-serif;font-size:15px;color:#374151;line-height:1.75;margin:0 0 24px 0;">
+          Esperamos que estés teniendo una semana bendecida. Te escribimos para recordarte que tienes reportes pendientes por realizar o finalizar para la semana en curso.
+        </p>
+
+        <!-- Subtítulo de Sección -->
+        <h3 style="font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;color:#040407;margin:0 0 12px 0;">
+          Tus grupos pendientes:
+        </h3>
+
+        <!-- Tabla Estilizada de Grupos -->
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="width: 100%; border-collapse: collapse; margin-bottom: 28px; border: 1px solid #EBEBEB;">
+          <thead>
+            <tr style="background-color: #F8F8F6;">
+              <th style="font-family: Arial, sans-serif; font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; text-align: left; border-bottom: 1px solid #EBEBEB;">Nombre del grupo</th>
+              <th style="font-family: Arial, sans-serif; font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; text-align: right; border-bottom: 1px solid #EBEBEB;">Estado actual</th>
+            </tr>
+          </thead>
           <tbody>
+            @foreach($gruposPendientes as $grupo)
             <tr>
-              <td align="center" valign="top" id="m_8975725914595533633bodyCell" style="height:100%;margin:0;padding:12px;width:100%;border-top:0">
-                <table border="0" cellpadding="0" cellspacing="0" width="100%" class="m_8975725914595533633templateContainer" style="border-collapse:collapse;border:0;max-width:600px!important">
-                  <tbody>
-                    <tr>
-                      <td valign="top" id="logo" style="background:#f8f7fa none no-repeat center/cover;background-color:#f8f7fa;background-image:none;background-repeat:no-repeat;background-position:center;background-size:cover;border-top:0;border-bottom:0;padding-top:15px;padding-bottom:12px">
-                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;border-collapse:collapse">
-                          <tbody>
-                            <tr>
-                              <td valign="top" style="padding:9px">
-                                <table align="left" width="100%" border="0" cellpadding="0" cellspacing="0" style="min-width:100%;border-collapse:collapse">
-                                  <tbody>
-                                    <tr>
-                                      <!-- logo -->
-                                      <td valign="top" style="padding-right:9px;padding-left:9px;padding-top:0;padding-bottom:0;text-align:center">
-                                        <a href="https://redil.com" title="" target="_blank">
-                                          @include('_partials.macros',["height"=>"40px", "width"=>"40px", "fill"=> "#3772e4" ])
-                                        </a>
-                                      </td>
-                                      <!-- /logo -->
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td valign="top" id="banner" style="background:#f8f7fa none no-repeat center/cover;background-color:#f8f7fa;background-image:none;background-repeat:no-repeat;background-position:center;background-size:cover;border-top:0;border-bottom:0;padding-top:9px;padding-bottom:0">
-                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;border-collapse:collapse">
-                          <tbody>
-                            <tr>
-                              <td valign="top" style="padding:0px">
-                                <table align="left" width="100%" border="0" cellpadding="0" cellspacing="0" style="min-width:100%;border-collapse:collapse">
-                                  <tbody>
-                                    <tr>
-                                      <td valign="top" style="padding-right:0px;padding-left:0px;padding-top:0;padding-bottom:0;text-align:center">
-
-                                     
-
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td valign="top" id="mensaje" style="background:#ffffff none no-repeat center/cover;background-color:#ffffff;background-image:none;background-repeat:no-repeat;background-position:center;background-size:cover;border-top:0;border-bottom:2px solid #eaeaea;padding: 15px">
-                        <!-- Saludo -->
-                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;border-collapse:collapse">
-                          <tbody>
-                            <tr>
-                              <td valign="top" style="padding-top:9px">
-
-                                <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%;min-width:100%;border-collapse:collapse" width="100%" class="m_8975725914595533633mcnTextContentContainer">
-                                  <tbody>
-                                    <tr>
-                                      <td valign="top" style="padding-top:10px;padding-right:18px;padding-bottom:20px;padding-left:18px;word-break:break-word;color:#202020;font-family:Helvetica;font-size:14px;line-height:150%;text-align:left">
-                                        <p style="font:15px/1.25em 'Century Gothic',Arial,Helvetica;color:#292929fa">¡Hola! <b style="color:#292929fa">{{$encargado->nombre(3)}}</b></p>
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                        <!-- /Saludo -->
-
-                        <!-- Mensaje -->
-                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;border-collapse:collapse">
-                          <tbody>
-                            <tr>
-                              <td valign="top" style="padding-top:0px">
-                                <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%;min-width:100%;border-collapse:collapse" width="100%" class="m_8975725914595533633mcnTextContentContainer">
-                                  <tbody>
-                                    <tr>
-
-                                      <td valign="top"  style="padding-top:0;padding-right:18px;padding-bottom:9px;padding-left:18px;word-break:break-word;color:#202020;font-family:'Public Sans',Helvetica;font-size:14px;line-height:150%;text-align:left">
-                                        
-
-                                          <p>Esperamos que estés teniendo una semana bendecida. Te escribimos para recordarte que tienes reportes pendientes por realizar o finalizar para la semana en curso.</p>
-
-                                          <h3>Tus grupos pendientes:</h3>
-                                          
-                                          <table class="group-list">
-                                              <thead>
-                                                  <tr>
-                                                      <th>Nombre del grupo</th>
-                                                      <th>Estado actual</th>
-                                                  </tr>
-                                              </thead>
-                                              <tbody>
-                                                  @foreach($gruposPendientes as $grupo)
-                                                  <tr>
-                                                      <td>{{ $grupo['nombre'] }}</td>
-                                                      <td>
-                                                          @if($grupo['estado'] == 'Borrador')
-                                                              <span style="color: #ffc107; font-weight: bold;">No finalizado</span>
-                                                          @else
-                                                              <span style="color: #dc3545; font-weight: bold;">No reportado</span>
-                                                          @endif
-                                                      </td>
-                                                  </tr>
-                                                  @endforeach
-                                              </tbody>
-                                          </table>
-
-                                          <p style="text-align: center;">
-                                              <a href="{{ url('/') }}" class="btn">Ir a reportar</a>
-                                          </p>
-                                      </td>
-
-
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                        <!-- /Mensaje -->
-                      </td>
-                    </tr>
-                    <tr>
-                      <td valign="top" id="m_8975725914595533633templateFooter" style="background:#f8f7fa none no-repeat center/cover;background-color:#f8f7fa;background-image:none;background-repeat:no-repeat;background-position:center;background-size:cover;border-top:0;border-bottom:0;padding-top:12px;padding-bottom:15px">
-                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;border-collapse:collapse">
-                          <tbody>
-                            <tr>
-                              <td valign="top" style="padding-top:9px">
-                                Este mensaje es un recordatorio automático, por favor no responder. Si ya reportaste los grupos, por favor ignora este correo.
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <td style="font-family: Arial, sans-serif; font-size: 14px; color: #374151; padding: 12px 16px; border-bottom: 1px solid #EBEBEB; text-align: left;">
+                {{ $grupo['nombre'] }}
+              </td>
+              <td style="font-family: Arial, sans-serif; font-size: 14px; padding: 12px 16px; border-bottom: 1px solid #EBEBEB; text-align: right;">
+                @if($grupo['estado'] == 'Borrador')
+                  <span style="display: inline-block; font-family: Arial, sans-serif; font-size: 10px; font-weight: 700; color: #854D0E; background-color: #FEF9C3; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.3px;">No finalizado</span>
+                @else
+                  <span style="display: inline-block; font-family: Arial, sans-serif; font-size: 10px; font-weight: 700; color: #991B1B; background-color: #FEE2E2; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.3px;">No reportado</span>
+                @endif
               </td>
             </tr>
+            @endforeach
           </tbody>
         </table>
-      </center>
-    </div>
+
+        <!-- CTA primario -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+          <tr>
+            <td style="border-radius:8px;background-color:#0099d9;">
+              <a href="{{ url('/') }}" class="btn-cta" style="display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;padding:14px 32px;border-radius:8px;letter-spacing:0.2px;">
+                Ir a reportar →
+              </a>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+
+    <!-- ─── FOOTER ─── -->
+    <tr>
+      <td style="background-color:#0A0A10;border-radius:0 0 16px 16px;padding:28px 32px;">
+
+        <!-- Logo -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+          <tr>
+            <td align="center">
+              @if($iglesiaObj && $iglesiaObj->logo && Storage::exists("img/iglesia/".$iglesiaObj->logo))
+                <img
+                  src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo) }}"
+                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
+                  width="140"
+                  style="display:inline-block;max-width:140px;height:auto;"
+                />
+              @elseif($iglesiaObj && $iglesiaObj->logo_negro && Storage::exists("img/iglesia/".$iglesiaObj->logo_negro))
+                <img
+                  src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo_negro) }}"
+                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
+                  width="140"
+                  style="display:inline-block;max-width:140px;height:auto;background-color:#FFFFFF;padding:4px;border-radius:4px;"
+                />
+              @else
+                <img
+                  src="{{ Storage::disk('global_media')->url('logo_principal.png') }}"
+                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
+                  width="140"
+                  style="display:inline-block;max-width:140px;height:auto;"
+                />
+              @endif
+            </td>
+          </tr>
+        </table>
+
+        <!-- Redes sociales -->
+        @if($iglesiaObj && ($iglesiaObj->instagram || $iglesiaObj->facebook || $iglesiaObj->youtube || $iglesiaObj->tiktok))
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin-bottom:22px;">
+          <tr>
+            @if($iglesiaObj->instagram)
+            <td style="padding:0 5px;">
+              <a href="{{ $iglesiaObj->instagram }}" target="_blank" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;text-decoration:none;vertical-align:middle;">
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/instagram-new.png" width="18" height="18" style="display:inline-block;vertical-align:middle;margin-top:-3px;" alt="Instagram">
+              </a>
+            </td>
+            @endif
+            @if($iglesiaObj->facebook)
+            <td style="padding:0 5px;">
+              <a href="{{ $iglesiaObj->facebook }}" target="_blank" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;text-decoration:none;vertical-align:middle;">
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/facebook-new.png" width="18" height="18" style="display:inline-block;vertical-align:middle;margin-top:-3px;" alt="Facebook">
+              </a>
+            </td>
+            @endif
+            @if($iglesiaObj->youtube)
+            <td style="padding:0 5px;">
+              <a href="{{ $iglesiaObj->youtube }}" target="_blank" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;text-decoration:none;vertical-align:middle;">
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/youtube-play.png" width="18" height="18" style="display:inline-block;vertical-align:middle;margin-top:-3px;" alt="YouTube">
+              </a>
+            </td>
+            @endif
+            @if($iglesiaObj->tiktok)
+            <td style="padding:0 5px;">
+              <a href="{{ $iglesiaObj->tiktok }}" target="_blank" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;text-decoration:none;vertical-align:middle;">
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/tiktok.png" width="18" height="18" style="display:inline-block;vertical-align:middle;margin-top:-3px;" alt="TikTok">
+              </a>
+            </td>
+            @endif
+          </tr>
+        </table>
+        @endif
+
+        <!-- Dirección -->
+        <p style="font-family:Arial,sans-serif;font-size:11px;color:#374151;text-align:center;line-height:1.9;margin:0 0 10px 0;">
+          {{ $iglesia->direccion ?? 'Calle 000 #00-00, Bogotá D.C., Colombia' }} &nbsp;·&nbsp; {{ $iglesia->email_soporte ?? '' }}
+        </p>
+
+        <!-- Legal -->
+        <p style="font-family:Arial,sans-serif;font-size:10px;color:#374151;text-align:center;margin:0 0 15px 0;line-height:1.9;">
+          Recibiste este mensaje porque haces parte de nuestra comunidad.<br/>
+          @if($iglesia && $iglesia->url_subdominio)
+            <a href="https://{{ $iglesia->url_subdominio }}" style="color:#4B5563;text-decoration:underline;">{{ $iglesia->url_subdominio }}</a>
+            &nbsp;·&nbsp;
+          @endif
+          <span style="color:#4B5563;">{{ $iglesiaObj->nombre }}</span>
+        </p>
+
+        <!-- Advertencia de Correo Automático -->
+        <p style="font-family:Arial,sans-serif;font-size:10px;color:#4B5563;text-align:center;margin:0;line-height:1.9;border-top:1px solid #1A1A24;padding-top:15px;opacity:0.85;">
+          Este mensaje es un recordatorio automático, por favor no responder.<br/>
+          Si ya reportaste tus grupos, por favor ignora este correo.
+        </p>
+
+      </td>
+    </tr>
+
+    <tr><td style="height:24px;"></td></tr>
+
+  </table>
+</td></tr>
+</table>
 </body>
 </html>

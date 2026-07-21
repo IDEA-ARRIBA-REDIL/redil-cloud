@@ -1690,7 +1690,6 @@ class PermisoSeeder extends Seeder
             'descripcion' => '',
             'name' => 'peticiones.boton_descargar_excel',
         ])->syncRoles([$superAdmin]);
-        
 
         // Padres
         Permission::firstOrCreate([
@@ -1716,8 +1715,6 @@ class PermisoSeeder extends Seeder
             'descripcion' => '',
             'name' => 'padres.opcion_modificar_hijo',
         ]);
-
-
 
         // Escuelas
         Permission::firstOrCreate([
@@ -2236,6 +2233,12 @@ class PermisoSeeder extends Seeder
             'titulo' => 'tab_calificacion_grilla',
             'descripcion' => 'Acceso al tab Calificación Grilla',
             'name' => 'escuelas.tab_calificacion_grilla',
+        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'tab_gestionar_item_maestro',
+            'descripcion' => 'Acceso al tab Gestionar Item Maestro',
+            'name' => 'escuelas.tab_gestionar_item_maestro',
         ])->syncRoles([$administrador, $superAdmin, $maestro]);
 
         Permission::firstOrCreate([

@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -15,13 +14,11 @@ class AlertaReportePendienteMail extends Mailable
     use Queueable, SerializesModels;
 
     public $encargado;
+
     public $gruposPendientes;
 
     /**
      * Create a new message instance.
-     *
-     * @param User $encargado
-     * @param array $gruposPendientes
      */
     public function __construct(User $encargado, array $gruposPendientes)
     {
@@ -45,7 +42,11 @@ class AlertaReportePendienteMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.reportes.alerta-pendiente'
+            view: 'emails.reportes.alerta-pendiente',
+            with: [
+                'iglesia' => \App\Models\Iglesia::find(1),
+                'configuracion' => \App\Models\Configuracion::find(1),
+            ]
         );
     }
 

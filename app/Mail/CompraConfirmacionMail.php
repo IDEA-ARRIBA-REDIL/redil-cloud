@@ -5,17 +5,15 @@ namespace App\Mail;
 use App\Models\Actividad;
 use App\Models\Compra;
 use App\Models\Inscripcion;
+use App\Models\Matricula;
 use App\Models\Pago;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Mail\Mailables\Attachment;
-
-use App\Models\Matricula; // Importar Matricula
+use Illuminate\Queue\SerializesModels; // Importar Matricula
 
 class CompraConfirmacionMail extends Mailable
 {
@@ -23,9 +21,13 @@ class CompraConfirmacionMail extends Mailable
 
     // Propiedades para todos los datos que necesitamos
     public Compra $compra;
+
     public Pago $pago;
+
     public Inscripcion $inscripcion;
+
     public Actividad $actividad;
+
     public ?Matricula $matricula; // Nueva propiedad opcional
 
     /**
@@ -43,7 +45,7 @@ class CompraConfirmacionMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Confirmación de Compra: ' . $this->actividad->nombre,
+            subject: 'Confirmación de Compra: '.$this->actividad->nombre,
         );
     }
 
@@ -52,11 +54,14 @@ class CompraConfirmacionMail extends Mailable
      */
     public function content(): Content
     {
-        // Pasamos 'compra' a la vista para poder usar sus datos en el mensaje.
+        // Pasamos datos relevantes a la vista de forma explícita
         return new Content(
             view: 'emails.mensaje-confirmacion-compra',
             with: [
                 'compra' => $this->compra,
+                'actividad' => $this->actividad,
+                'iglesia' => \App\Models\Iglesia::find(1),
+                'configuracion' => \App\Models\Configuracion::find(1),
             ],
         );
     }
@@ -76,7 +81,7 @@ class CompraConfirmacionMail extends Mailable
         ]);
 
         return [
-            Attachment::fromData(fn() => $pdf->output(), 'Ticket-Compra-' . $this->compra->id . '.pdf')
+            Attachment::fromData(fn () => $pdf->output(), 'Ticket-Compra-'.$this->compra->id.'.pdf')
                 ->withMime('application/pdf'),
         ];
     }

@@ -14,7 +14,8 @@ class IglesiaSeeder extends Seeder
     {
         Iglesia::firstOrCreate([
             'nombre' => 'Iglesia Manatial de Vida Eterna',
-            'logo' => 'logo manantial.png',
+            'logo' => 'logo_1784134587.png',
+            'logo_negro' => 'logo_negro_1784134587.png',
             'municipio_id' => 1089,
             'pais_id' => 45,
             'latitud' => '4.0747',
@@ -25,6 +26,10 @@ class IglesiaSeeder extends Seeder
             'telefono1' => '(305) 7341942',
             'email_soporte' => 'eventos@manantial.co',
             'url_subdominio' => 'redil.ubicalo.com',
+            'facebook' => 'https://www.facebook.com/software.redil',
+            'instagram' => 'https://www.instagram.com/software.redil',
+            'youtube' => 'https://www.youtube.com/@SoftwareRedil',
+            'tiktok' => 'https://www.tiktok.com/@softwareredil',
 
         ]);
     }

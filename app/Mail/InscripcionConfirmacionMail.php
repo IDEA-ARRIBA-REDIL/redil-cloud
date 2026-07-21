@@ -13,7 +13,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope; // <-- 1. Importa la clase Attachment
 use Illuminate\Queue\SerializesModels;           // <-- 2. Importa la clase PDF
-use Illuminate\Support\Facades\Storage; // <-- AÑADIR: Para construir la URL del banner.
+// <-- AÑADIR: Para construir la URL del banner.
 use stdClass; // <-- AÑADIR: Para crear el objeto $mailData.
 
 class InscripcionConfirmacionMail extends Mailable
@@ -50,11 +50,34 @@ class InscripcionConfirmacionMail extends Mailable
 
         // Construimos el mensaje principal en formato HTML
         $this->mailData->mensaje = '<p> Nos alegra que vayas a ser parte de nuestro <strong>'.$actividad->nombre.'</strong></p>'
-            .'<p>Adjunto encontrarás el código QR que debes presentar previo a tu ingreso..</p>';
+            .'<p>Adjunto encontrarás el código QR que debes presentar previo a tu ingreso.</p>';
 
         // Obtenemos la URL completa del banner de la actividad, si existe.
-
         $this->mailData->banner = $actividad->portada_url;
+
+        // 3. Formulario condicional
+        $this->mailData->htmlAdicional = '';
+        if ($actividad->elementos && $actividad->elementos->count() > 0) {
+            $urlFormulario = route('carrito.formulario', ['compra' => $inscripcion->compra_id, 'actividad' => $actividad->id]);
+            $this->mailData->htmlAdicional = '
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#F8F8F6;border:1px solid #EBEBEB;border-radius:8px;padding:20px;margin-top:16px;">
+              <tr>
+                <td style="font-family:Arial,sans-serif;font-size:14px;color:#374151;line-height:1.6;text-align:left;">
+                  <p style="margin:0 0 14px 0;font-weight:700;color:#040407;">¿Olvidaste completar algo?</p>
+                  <p style="margin:0 0 16px 0;font-size:13px;color:#4B5563;">Puedes actualizar o completar el formulario de tu inscripción en cualquier momento ingresando al siguiente enlace:</p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="border-radius:6px;background-color:#0099d9;">
+                        <a href="'.$urlFormulario.'" style="display:inline-block;font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#FFFFFF;padding:10px 24px;border-radius:6px;text-decoration:none;">
+                          Completar formulario →
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>';
+        }
     }
 
     public function envelope(): Envelope
@@ -71,7 +94,12 @@ class InscripcionConfirmacionMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.inscripciones',
+            view: 'emails.default-mail',
+            with: [
+                'mailData' => $this->mailData,
+                'iglesia' => $this->iglesia ?? \App\Models\Iglesia::find(1),
+                'configuracion' => \App\Models\Configuracion::find(1),
+            ],
         );
     }
 

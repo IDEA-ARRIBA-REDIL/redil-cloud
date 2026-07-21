@@ -113,6 +113,12 @@ $configData = Helper::appClasses();
           </div>
         </form>
 
+        @php
+          $iglesiaObj = \App\Models\Iglesia::first();
+          $tieneRedes = $iglesiaObj && ($iglesiaObj->facebook || $iglesiaObj->instagram || $iglesiaObj->youtube || $iglesiaObj->tiktok);
+        @endphp
+
+        @if($tieneRedes)
         {{-- Síguenos en redes --}}
         <div id="container-redes" class="mt-3">
           <div class="d-flex align-items-center gap-2 mb-3">
@@ -121,17 +127,29 @@ $configData = Helper::appClasses();
             <hr class="flex-grow-1 m-0" style="border-color: rgba(255,255,255,0.15);">
           </div>
           <div class="d-flex justify-content-center gap-2">
-            <a href="javascript:;" class="btn fs-5 p-1">
-              <i class="ti ti-brand-facebook" style="font-size: 28px; color: #fff;"></i>
-            </a>
-            <a href="javascript:;" class="btn fs-5 p-1">
-              <i class="ti ti-brand-instagram" style="font-size: 28px; color: #fff;"></i>
-            </a>
-            <a href="javascript:;" class="btn fs-5 p-1">
-              <i class="ti ti-brand-youtube" style="font-size: 28px; color: #fff;"></i>
-            </a>
+            @if($iglesiaObj->facebook)
+              <a href="{{ $iglesiaObj->facebook }}" target="_blank" class="btn fs-5 p-1">
+                <i class="ti ti-brand-facebook" style="font-size: 28px; color: #fff;"></i>
+              </a>
+            @endif
+            @if($iglesiaObj->instagram)
+              <a href="{{ $iglesiaObj->instagram }}" target="_blank" class="btn fs-5 p-1">
+                <i class="ti ti-brand-instagram" style="font-size: 28px; color: #fff;"></i>
+              </a>
+            @endif
+            @if($iglesiaObj->youtube)
+              <a href="{{ $iglesiaObj->youtube }}" target="_blank" class="btn fs-5 p-1">
+                <i class="ti ti-brand-youtube" style="font-size: 28px; color: #fff;"></i>
+              </a>
+            @endif
+            @if($iglesiaObj->tiktok)
+              <a href="{{ $iglesiaObj->tiktok }}" target="_blank" class="btn fs-5 p-1">
+                <i class="ti ti-brand-tiktok" style="font-size: 28px; color: #fff;"></i>
+              </a>
+            @endif
           </div>
         </div>
+        @endif
 
         {{-- Footer registro --}}
         <div id="container-footer" class="text-center mt-8">

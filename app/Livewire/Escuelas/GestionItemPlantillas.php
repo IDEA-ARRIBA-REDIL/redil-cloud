@@ -2,51 +2,75 @@
 
 namespace App\Livewire\Escuelas; // Namespace confirmado por el usuario
 
-use Livewire\Component;
-use App\Models\Materia;
-use App\Models\ItemPlantilla;
 use App\Models\CorteEscuela;
+use App\Models\ItemPlantilla;
+use App\Models\Materia;
 use App\Models\TipoItem;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB; // Para la transacción de duplicación
+use Illuminate\Validation\Rule;
+use Livewire\Component; // Para la transacción de duplicación
 
 class GestionItemPlantillas extends Component
 {
     public Materia $materia;
+
     public $itemPlantillas = [];
+
     public $cortesEscuela = [];
+
     public $tiposItem = [];
 
     // --- Propiedades para el formulario CREAR ---
     public $nombreCrear;
+
     public $corte_escuela_idCrear;
+
     public $tipo_item_idCrear;
+
     public $contenidoCrear;
+
     public $visible_predeterminadoCrear = true;
+
     public $entregable_predeterminadoCrear = false;
+
     public $porcentaje_sugeridoCrear;
+
     public $ordenCrear;
 
     // --- Propiedades para el formulario EDITAR ---
     public $itemIdEditar = null; // ID del item a editar
+
     public $nombreEditar;
+
     public $corte_escuela_idEditar;
+
     public $tipo_item_idEditar;
+
     public $contenidoEditar;
+
     public $visible_predeterminadoEditar = true;
+
     public $entregable_predeterminadoEditar = false;
+
     public $porcentaje_sugeridoEditar;
+
     public $ordenEditar;
 
     // --- Propiedades para el MODAL DUPLICAR MODELO ---
     public $materiasParaDuplicar = [];
+
     public $materiaIdFuenteParaDuplicar = null; // ID de la materia desde donde se copiarán los ítems
+
+    public function toJSON()
+    {
+        return [];
+    }
 
     /**
      * Define las reglas de validación dinámicamente.
      *
-     * @param string $mode Puede ser 'crear', 'editar', o 'duplicar'.
+     * @param  string  $mode  Puede ser 'crear', 'editar', o 'duplicar'.
      * @return array
      */
     protected function rules($mode = 'crear')
@@ -79,11 +103,12 @@ class GestionItemPlantillas extends Component
                     Rule::exists('materias', 'id')->where(function ($query) {
                         // Asegurar que la materia fuente pertenezca a la misma escuela y no sea la materia actual
                         $query->where('escuela_id', $this->materia->escuela_id)
-                              ->where('id', '!=', $this->materia->id);
+                            ->where('id', '!=', $this->materia->id);
                     }),
                 ],
             ];
         }
+
         return $rules;
     }
 
@@ -111,7 +136,7 @@ class GestionItemPlantillas extends Component
      * Se ejecuta cuando el componente se inicializa.
      * Carga la materia y los datos iniciales.
      *
-     * @param Materia $materia La instancia de la materia actual.
+     * @param  Materia  $materia  La instancia de la materia actual.
      */
     public function mount(Materia $materia)
     {
@@ -125,15 +150,15 @@ class GestionItemPlantillas extends Component
     public function cargarDatos()
     {
         $this->itemPlantillas = $this->materia->itemPlantillas()
-                                    ->with(['corteEscuela', 'tipoItem']) // Carga ansiosa de relaciones
-                                    ->orderBy('corte_escuela_id') // Ordenar por corte
-                                    ->orderBy('orden') // Luego por orden dentro del corte
-                                    ->get();
+            ->with(['corteEscuela', 'tipoItem']) // Carga ansiosa de relaciones
+            ->orderBy('corte_escuela_id') // Ordenar por corte
+            ->orderBy('orden') // Luego por orden dentro del corte
+            ->get();
 
         // Cargar cortes de la escuela de la materia actual
         $this->cortesEscuela = CorteEscuela::where('escuela_id', $this->materia->escuela_id)
-                                    ->orderBy('orden')
-                                    ->get();
+            ->orderBy('orden')
+            ->get();
 
         // Cargar todos los tipos de ítem disponibles
         $this->tiposItem = TipoItem::orderBy('nombre')->get();
@@ -149,7 +174,7 @@ class GestionItemPlantillas extends Component
         $this->reset([
             'nombreCrear', 'corte_escuela_idCrear', 'tipo_item_idCrear',
             'contenidoCrear', 'visible_predeterminadoCrear', 'entregable_predeterminadoCrear',
-            'porcentaje_sugeridoCrear', 'ordenCrear'
+            'porcentaje_sugeridoCrear', 'ordenCrear',
         ]);
         // Restablecer valores booleanos por defecto explícitamente
         $this->visible_predeterminadoCrear = true;
@@ -204,12 +229,11 @@ class GestionItemPlantillas extends Component
             $this->cargarDatos(); // Recargar la lista de ítems
 
         } catch (\Exception $e) {
-            Log::error('Error al crear ItemPlantilla: ' . $e->getMessage());
-            session()->flash('error', 'Ocurrió un error al crear el ítem: ' . $e->getMessage());
+            Log::error('Error al crear ItemPlantilla: '.$e->getMessage());
+            session()->flash('error', 'Ocurrió un error al crear el ítem: '.$e->getMessage());
             // No cerrar el offcanvas en caso de error para que el usuario pueda corregir
         }
     }
-
 
     // --- Métodos para Offcanvas EDITAR Ítem ---
 
@@ -221,18 +245,18 @@ class GestionItemPlantillas extends Component
         $this->reset([
             'itemIdEditar', 'nombreEditar', 'corte_escuela_idEditar', 'tipo_item_idEditar',
             'contenidoEditar', 'visible_predeterminadoEditar', 'entregable_predeterminadoEditar',
-            'porcentaje_sugeridoEditar', 'ordenEditar'
+            'porcentaje_sugeridoEditar', 'ordenEditar',
         ]);
-         // Restablecer valores booleanos por defecto explícitamente
-         $this->visible_predeterminadoEditar = true;
-         $this->entregable_predeterminadoEditar = false;
+        // Restablecer valores booleanos por defecto explícitamente
+        $this->visible_predeterminadoEditar = true;
+        $this->entregable_predeterminadoEditar = false;
         $this->resetErrorBag();
     }
 
     /**
      * Carga datos y abre el offcanvas para editar un ítem existente.
      *
-     * @param int $id El ID del ItemPlantilla a editar.
+     * @param  int  $id  El ID del ItemPlantilla a editar.
      */
     public function abrirOffcanvasEditar($id)
     {
@@ -252,7 +276,7 @@ class GestionItemPlantillas extends Component
 
             $this->dispatch('abrirOffcanvas', nombreModal: 'offcanvasEditarItem'); // Despacha evento para JS
         } else {
-             session()->flash('error', 'Ítem no encontrado o no pertenece a esta materia.');
+            session()->flash('error', 'Ítem no encontrado o no pertenece a esta materia.');
         }
     }
 
@@ -270,9 +294,10 @@ class GestionItemPlantillas extends Component
      */
     public function actualizarItem()
     {
-        if (!$this->itemIdEditar) {
-             session()->flash('error', 'No se ha seleccionado ningún ítem para editar.');
-             return;
+        if (! $this->itemIdEditar) {
+            session()->flash('error', 'No se ha seleccionado ningún ítem para editar.');
+
+            return;
         }
 
         $datosValidados = $this->validate($this->rules('editar'));
@@ -298,13 +323,13 @@ class GestionItemPlantillas extends Component
                 $this->cerrarOffcanvasEditar(); // Llama al método que despacha el evento JS
                 $this->cargarDatos(); // Recargar la lista de ítems
             } else {
-                 session()->flash('error', 'No se encontró el ítem para actualizar.');
+                session()->flash('error', 'No se encontró el ítem para actualizar.');
             }
 
         } catch (\Exception $e) {
-            Log::error('Error al actualizar ItemPlantilla ID ' . $this->itemIdEditar . ': ' . $e->getMessage());
-            session()->flash('error', 'Ocurrió un error al actualizar el ítem: ' . $e->getMessage());
-             // No cerrar el offcanvas en caso de error
+            Log::error('Error al actualizar ItemPlantilla ID '.$this->itemIdEditar.': '.$e->getMessage());
+            session()->flash('error', 'Ocurrió un error al actualizar el ítem: '.$e->getMessage());
+            // No cerrar el offcanvas en caso de error
         }
     }
 
@@ -313,122 +338,122 @@ class GestionItemPlantillas extends Component
      * Elimina una plantilla de ítem.
      * La confirmación se maneja vía JS con SweetAlert.
      *
-     * @param int $id El ID del ItemPlantilla a eliminar.
+     * @param  int  $id  El ID del ItemPlantilla a eliminar.
      */
     public function eliminarItem($id)
     {
-         $item = ItemPlantilla::where('id', $id)->where('materia_id', $this->materia->id)->first(); // Seguridad
-         if ($item) {
-             // **Validación Adicional (Opcional pero recomendada):**
-             // Verificar si esta plantilla ya ha sido usada para crear instancias (ItemCorteMateriaPeriodo)
-             // if ($item->itemInstancias()->exists()) { // Asumiendo que tienes la relación itemInstancias() en ItemPlantilla
-             //     session()->flash('error', "No se puede eliminar '{$item->nombre}' porque ya tiene instancias creadas en periodos.");
-             //     return;
-             // }
+        $item = ItemPlantilla::where('id', $id)->where('materia_id', $this->materia->id)->first(); // Seguridad
+        if ($item) {
+            // **Validación Adicional (Opcional pero recomendada):**
+            // Verificar si esta plantilla ya ha sido usada para crear instancias (ItemCorteMateriaPeriodo)
+            // if ($item->itemInstancias()->exists()) { // Asumiendo que tienes la relación itemInstancias() en ItemPlantilla
+            //     session()->flash('error', "No se puede eliminar '{$item->nombre}' porque ya tiene instancias creadas en periodos.");
+            //     return;
+            // }
 
-             try {
-                 $nombreItem = $item->nombre;
-                 $item->delete();
-                 session()->flash('success', "Plantilla de ítem '{$nombreItem}' eliminada correctamente.");
-                 $this->cargarDatos(); // Recargar lista
-             } catch (\Exception $e) {
-                 Log::error('Error al eliminar ItemPlantilla ID ' . $id . ': ' . $e->getMessage());
-                 session()->flash('error', 'Ocurrió un error al eliminar el ítem.');
-             }
-         } else {
-             session()->flash('error', 'Ítem no encontrado o no pertenece a esta materia.');
-         }
+            try {
+                $nombreItem = $item->nombre;
+                $item->delete();
+                session()->flash('success', "Plantilla de ítem '{$nombreItem}' eliminada correctamente.");
+                $this->cargarDatos(); // Recargar lista
+            } catch (\Exception $e) {
+                Log::error('Error al eliminar ItemPlantilla ID '.$id.': '.$e->getMessage());
+                session()->flash('error', 'Ocurrió un error al eliminar el ítem.');
+            }
+        } else {
+            session()->flash('error', 'Ítem no encontrado o no pertenece a esta materia.');
+        }
     }
 
-
     // --- INICIO: Métodos para MODAL DUPLICAR MODELO ---
-    
 
-     // --- Métodos para Modal Duplicar Modelo ---
-     public function abrirModalDuplicar()
-     {
-         $this->materiaIdFuenteParaDuplicar = null;
-         $this->resetErrorBag(); // Limpiar errores previos del modal
-         session()->forget('errorModalDuplicar'); // Limpiar mensaje de error específico del modal
- 
-         if ($this->materia->escuela_id) {
-             $this->materiasParaDuplicar = Materia::where('escuela_id', $this->materia->escuela_id)
-                 ->where('id', '!=', $this->materia->id) // Excluir la materia actual
-                 ->orderBy('nombre')
-                 ->get();
-         } else {
-             $this->materiasParaDuplicar = collect();
-             session()->flash('errorModalDuplicar', 'La materia actual no está asociada a una escuela, no se pueden listar otras materias.');
-         }
-         
-         $this->dispatch('abrirOffcanvas', nombreModal: 'modalDuplicarModelo');
-     }
- 
-     public function cerrarModalDuplicar()
-     {
-         $this->dispatch('cerrarOffcanvas', nombreModal: 'modalDuplicarModelo');
-         $this->materiaIdFuenteParaDuplicar = null;
-         $this->resetErrorBag();
-         session()->forget('errorModalDuplicar');
-     }
- 
-     public function duplicarModeloDeMateria()
-     {
-         $this->validate([
-             'materiaIdFuenteParaDuplicar' => 'required|exists:materias,id',
-         ], [
-             'materiaIdFuenteParaDuplicar.required' => 'Debes seleccionar una materia de origen.',
-             'materiaIdFuenteParaDuplicar.exists' => 'La materia de origen seleccionada no es válida.',
-         ]);
- 
-         $materiaFuente = Materia::find($this->materiaIdFuenteParaDuplicar);
- 
-         if (!$materiaFuente) {
-             session()->flash('errorModalDuplicar', 'Materia de origen no encontrada.');
-             // No cerrar el modal para que el usuario vea el error
-             return;
-         }
- 
-         $itemsFuente = ItemPlantilla::where('materia_id', $materiaFuente->id)->get();
- 
-         if ($itemsFuente->isEmpty()) {
-             session()->flash('errorModalDuplicar', "La materia de origen '{$materiaFuente->nombre}' no tiene plantillas de ítems para duplicar.");
-             // No cerrar el modal
-             return;
-         }
- 
-         DB::beginTransaction();
-         try {
-             $itemsDuplicadosConExito = 0;
-             foreach ($itemsFuente as $itemFuente) {
-                 // Opcional: Verificar si un ítem con el mismo nombre y corte ya existe en la materia destino
-                 // para evitar duplicados exactos si no se desea. Por ahora, se duplica directamente.
- 
-                 ItemPlantilla::create([
-                     'materia_id' => $this->materia->id, // ID de la materia actual (destino)
-                     'corte_escuela_id' => $itemFuente->corte_escuela_id,
-                     'tipo_item_id' => $itemFuente->tipo_item_id,
-                     'nombre' => $itemFuente->nombre, // Considerar añadir prefijo/sufijo si se necesita unicidad
-                     'contenido' => $itemFuente->contenido,
-                     'visible_predeterminado' => $itemFuente->visible_predeterminado,
-                     'entregable_predeterminado' => $itemFuente->entregable_predeterminado,
-                     'porcentaje_sugerido' => $itemFuente->porcentaje_sugerido,
-                     'orden' => $itemFuente->orden, // Considerar ajustar el orden si hay colisiones
-                 ]);
-                 $itemsDuplicadosConExito++;
-             }
-             DB::commit();
-             session()->flash('status', "Se han duplicado {$itemsDuplicadosConExito} plantilla(s) de ítems desde '{$materiaFuente->nombre}' a '{$this->materia->nombre}' exitosamente.");
-             $this->cerrarModalDuplicar();
-             $this->cargarItemPlantillas();
- 
-         } catch (\Exception $e) {
-             DB::rollBack();
-             Log::error("Error al duplicar modelo de ítems desde materia ID {$materiaFuente->id} a materia ID {$this->materia->id}: " . $e->getMessage());
-             session()->flash('errorModalDuplicar', 'Ocurrió un error al intentar duplicar el modelo. Por favor, inténtalo de nuevo.');
-             // No cerrar el modal
-         }
-     }
+    // --- Métodos para Modal Duplicar Modelo ---
+    public function abrirModalDuplicar()
+    {
+        $this->materiaIdFuenteParaDuplicar = null;
+        $this->resetErrorBag(); // Limpiar errores previos del modal
+        session()->forget('errorModalDuplicar'); // Limpiar mensaje de error específico del modal
+
+        if ($this->materia->escuela_id) {
+            $this->materiasParaDuplicar = Materia::where('escuela_id', $this->materia->escuela_id)
+                ->where('id', '!=', $this->materia->id) // Excluir la materia actual
+                ->orderBy('nombre')
+                ->get();
+        } else {
+            $this->materiasParaDuplicar = collect();
+            session()->flash('errorModalDuplicar', 'La materia actual no está asociada a una escuela, no se pueden listar otras materias.');
+        }
+
+        $this->dispatch('abrirOffcanvas', nombreModal: 'modalDuplicarModelo');
+    }
+
+    public function cerrarModalDuplicar()
+    {
+        $this->dispatch('cerrarOffcanvas', nombreModal: 'modalDuplicarModelo');
+        $this->materiaIdFuenteParaDuplicar = null;
+        $this->resetErrorBag();
+        session()->forget('errorModalDuplicar');
+    }
+
+    public function duplicarModeloDeMateria()
+    {
+        $this->validate([
+            'materiaIdFuenteParaDuplicar' => 'required|exists:materias,id',
+        ], [
+            'materiaIdFuenteParaDuplicar.required' => 'Debes seleccionar una materia de origen.',
+            'materiaIdFuenteParaDuplicar.exists' => 'La materia de origen seleccionada no es válida.',
+        ]);
+
+        $materiaFuente = Materia::find($this->materiaIdFuenteParaDuplicar);
+
+        if (! $materiaFuente) {
+            session()->flash('errorModalDuplicar', 'Materia de origen no encontrada.');
+
+            // No cerrar el modal para que el usuario vea el error
+            return;
+        }
+
+        $itemsFuente = ItemPlantilla::where('materia_id', $materiaFuente->id)->get();
+
+        if ($itemsFuente->isEmpty()) {
+            session()->flash('errorModalDuplicar', "La materia de origen '{$materiaFuente->nombre}' no tiene plantillas de ítems para duplicar.");
+
+            // No cerrar el modal
+            return;
+        }
+
+        DB::beginTransaction();
+        try {
+            $itemsDuplicadosConExito = 0;
+            foreach ($itemsFuente as $itemFuente) {
+                // Opcional: Verificar si un ítem con el mismo nombre y corte ya existe en la materia destino
+                // para evitar duplicados exactos si no se desea. Por ahora, se duplica directamente.
+
+                ItemPlantilla::create([
+                    'materia_id' => $this->materia->id, // ID de la materia actual (destino)
+                    'corte_escuela_id' => $itemFuente->corte_escuela_id,
+                    'tipo_item_id' => $itemFuente->tipo_item_id,
+                    'nombre' => $itemFuente->nombre, // Considerar añadir prefijo/sufijo si se necesita unicidad
+                    'contenido' => $itemFuente->contenido,
+                    'visible_predeterminado' => $itemFuente->visible_predeterminado,
+                    'entregable_predeterminado' => $itemFuente->entregable_predeterminado,
+                    'porcentaje_sugerido' => $itemFuente->porcentaje_sugerido,
+                    'orden' => $itemFuente->orden, // Considerar ajustar el orden si hay colisiones
+                ]);
+                $itemsDuplicadosConExito++;
+            }
+            DB::commit();
+            session()->flash('status', "Se han duplicado {$itemsDuplicadosConExito} plantilla(s) de ítems desde '{$materiaFuente->nombre}' a '{$this->materia->nombre}' exitosamente.");
+            $this->cerrarModalDuplicar();
+            $this->cargarItemPlantillas();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error al duplicar modelo de ítems desde materia ID {$materiaFuente->id} a materia ID {$this->materia->id}: ".$e->getMessage());
+            session()->flash('errorModalDuplicar', 'Ocurrió un error al intentar duplicar el modelo. Por favor, inténtalo de nuevo.');
+            // No cerrar el modal
+        }
+    }
     // --- FIN: Métodos para MODAL DUPLICAR MODELO ---
 
     /**
@@ -437,7 +462,9 @@ class GestionItemPlantillas extends Component
      * @return \Illuminate\View\View
      */
     public function render()
-    { $this->cargarDatos();
+    {
+        $this->cargarDatos();
+
         return view('livewire.escuelas.gestion-item-plantillas');
     }
 }

@@ -8,6 +8,7 @@ $configData = Helper::appClasses();
 
 
 @section('vendor-style')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.css') }}" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 @vite([
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
@@ -294,6 +295,67 @@ $configData = Helper::appClasses();
         });
     }
 
+    // Lógica de Cropper para el Logo Negro
+    var croppingLogoNegro = document.querySelector('#croppingLogoNegro'),
+        cropLogoNegroBtn = document.querySelector('.cropLogoNegro'),
+        croppedLogoNegroImg = document.querySelector('#preview-logo-negro'),
+        uploadLogoNegro = document.querySelector('#cropperLogoNegroUpload'),
+        inputLogoNegroResultado = document.querySelector('#logo-negro-recortado'),
+        cropperLogoNegro = '';
+
+    setTimeout(() => {
+        if (croppingLogoNegro) {
+            cropperLogoNegro = new Cropper(croppingLogoNegro, {
+                zoomable: true,
+                aspectRatio: 300 / 150,
+                cropBoxResizable: true,
+                viewMode: 1
+            });
+        }
+    }, 1000);
+
+    if (uploadLogoNegro) {
+        uploadLogoNegro.addEventListener('change', function(e) {
+            if (e.target.files.length) {
+                var fileType = e.target.files[0].type;
+                if (fileType.includes('image/')) {
+                    if (cropperLogoNegro && typeof cropperLogoNegro.destroy === 'function') {
+                        cropperLogoNegro.destroy();
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (e.target.result) {
+                            croppingLogoNegro.src = e.target.result;
+                            cropperLogoNegro = new Cropper(croppingLogoNegro, {
+                                zoomable: true,
+                                aspectRatio: 300 / 150,
+                                cropBoxResizable: true,
+                                viewMode: 1
+                            });
+                        }
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                } else {
+                    alert('El tipo de archivo seleccionado no es compatible.');
+                }
+            }
+        });
+    }
+
+    if (cropLogoNegroBtn) {
+        cropLogoNegroBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (cropperLogoNegro) {
+                let imgSrc = cropperLogoNegro.getCroppedCanvas({
+                    width: 300,
+                    height: 150
+                }).toDataURL('image/png');
+                croppedLogoNegroImg.src = imgSrc;
+                inputLogoNegroResultado.value = imgSrc;
+            }
+        });
+    }
+
     const formConfig = document.getElementById('formulario');
     if (formConfig) {
         formConfig.addEventListener('submit', function() {
@@ -486,6 +548,27 @@ $configData = Helper::appClasses();
                     @endif
                   </div>
                   <input type="hidden" id="logo-recortado" name="logo_base64">
+                </div>
+
+                <div class="col-md-4 col-sm-6 col-12 mb-3">
+                  <label class="form-label">Logo Negro (Fondo Claro) (300 x 150 px)</label>
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="position-relative d-inline-block">
+                      <img id="preview-logo-negro"
+                           src="{{ $configuracion->logo_app_negro ? tenant_asset('img/branding/'.$configuracion->logo_app_negro) : asset('assets/img/illustrations/page-pricing-enterprise.png') }}"
+                           alt="Logo negro actual"
+                           style="max-width: 150px; max-height: 75px; object-fit: contain; background: #f5f5f5; padding: 4px; border-radius: 4px;" class="rounded border shadow-sm">
+                      <button type="button"
+                              class="btn btn-sm btn-icon btn-primary rounded-circle position-absolute bottom-0 end-0 mb-n1 me-n1 shadow"
+                              data-bs-toggle="modal" data-bs-target="#modalLogoNegro">
+                        <i class="ti ti-camera"></i>
+                      </button>
+                    </div>
+                    @if($configuracion->logo_app_negro)
+                      <span class="badge bg-label-secondary">{{ basename($configuracion->logo_app_negro) }}</span>
+                    @endif
+                  </div>
+                  <input type="hidden" id="logo-negro-recortado" name="logo_negro_base64">
                 </div>
 
                 <div class="col-md-4 col-sm-6 col-12 mb-3">
@@ -1417,6 +1500,45 @@ $configData = Helper::appClasses();
                         <button type="button" class="btn btn-outline-secondary px-5 rounded-pill" data-bs-dismiss="modal"
                             aria-label="Close">Cerrar</button>
                         <button type="button" class="btn btn-primary rounded-pill cropLogo me-sm-3 me-1 px-5"
+                            data-bs-dismiss="modal">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Logo Negro -->
+    <div class="modal fade modal-img" id="modalLogoNegro" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-simple">
+            <div class="modal-content">
+                <div class="modal-body p-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="text-center mb-4 p-4">
+                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir logo negro</h3>
+                        <p class="text-black">Selecciona y recorta el logo negro para la aplicación (300x150 px)</p>
+                    </div>
+
+                    <div class="row px-4">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Paso #1 Selecciona el logo</label>
+                                <input class="form-control" type="file" id="cropperLogoNegroUpload" accept="image/*">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label fw-bold">Paso #2 Recorta el logo</label>
+                                <center style="background: #f5f5f5; padding: 10px; border-radius: 4px;">
+                                    <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100"
+                                        id="croppingLogoNegro" alt="cropper" style="max-height: 300px; object-fit: contain;">
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <div class="col-12 text-center">
+                        <button type="button" class="btn btn-outline-secondary px-5 rounded-pill" data-bs-dismiss="modal"
+                            aria-label="Close">Cerrar</button>
+                        <button type="button" class="btn btn-primary rounded-pill cropLogoNegro me-sm-3 me-1 px-5"
                             data-bs-dismiss="modal">Guardar</button>
                     </div>
                 </div>

@@ -20,9 +20,10 @@ return new class extends Migration
             $table->string('telefono2', 20)->nullable();
             $table->string('rhema', 20)->nullable();
             $table->string('texto_rhema', 255)->nullable();
-            $table->string('metas	character', 255)->nullable();
+            $table->string('metas_character', 255)->nullable();
             $table->date('fecha_apertura')->nullable();
-            $table->string('logo', 255);
+            $table->string('logo', 255)->nullable();
+            $table->string('logo_negro', 255)->nullable();
             $table->integer('configuracion_id')->default(1);
             $table->integer('continente_id')->nullable();
             $table->integer('pais_id')->nullable();
@@ -39,6 +40,10 @@ return new class extends Migration
             $table->text('email_soporte')->nullable();
             $table->string('latitud', 25)->nullable();
             $table->string('longitud', 25)->nullable();
+            $table->string('instagram', 255)->nullable();
+            $table->string('facebook', 255)->nullable();
+            $table->string('youtube', 255)->nullable();
+            $table->string('tiktok', 255)->nullable();
         });
     }
 

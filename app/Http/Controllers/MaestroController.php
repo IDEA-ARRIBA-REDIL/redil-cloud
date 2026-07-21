@@ -615,9 +615,64 @@ class MaestroController extends Controller
     public function gestionarAlumno(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado, User $alumno)
     {
         $configuracion = Configuracion::find(1);
+        $horarioAsignado->load([
+            'materiaPeriodo.materia',
+            'materiaPeriodo.periodo',
+        ]);
+
         $estadoAcademicoAlumno = EstadoAcademico::where('user_id', $alumno->id)
             ->where('horario_materia_periodo_id', $horarioAsignado->id)
-            ->first(); // Debería haber solo uno
+            ->first();
+
+        // 1. Reportes de asistencia reales del alumno para este horario
+        $reportesAsistencia = ReporteAsistenciaAlumnos::where('user_id', $alumno->id)
+            ->whereHas('reporteClase', function ($query) use ($horarioAsignado) {
+                $query->where('horario_materia_periodo_id', $horarioAsignado->id);
+            })
+            ->with(['reporteClase', 'motivoInasistencia'])
+            ->get();
+
+        $totalAsistenciasCumplidas = $reportesAsistencia->where('asistio', true)->count();
+        $totalClasesReportadas = $reportesAsistencia->count();
+
+        // 2. Ítems de evaluación del horario y respuestas/notas del alumno
+        $itemsEvaluacion = ItemCorteMateriaPeriodo::where('horario_materia_periodo_id', $horarioAsignado->id)
+            ->with(['cortePeriodo', 'respuestas' => function ($query) use ($alumno) {
+                $query->where('user_id', $alumno->id);
+            }])
+            ->orderBy('orden', 'asc')
+            ->get();
+
+        // 3. Historial de Escuelas real del alumno (solo escuelas con materias activas)
+        $escuelas = Escuela::whereHas('materias')
+            ->with(['materias' => function ($query) {
+                $query->orderBy('caracter_obligatorio', 'desc')
+                    ->orderBy('nombre', 'asc');
+            }])->get();
+
+        $materiasAprobadas = $alumno->materiasAprobadasRelacion()
+            ->get()
+            ->keyBy('materia_id');
+
+        foreach ($escuelas as $escuela) {
+            $totalObligatorias = $escuela->materias->where('caracter_obligatorio', true)->count();
+            $aprobadasObligatorias = 0;
+
+            foreach ($escuela->materias as $materia) {
+                $resultado = $materiasAprobadas->get($materia->id);
+                $materia->resultado = $resultado;
+
+                if ($materia->caracter_obligatorio && $resultado && $resultado->aprobado) {
+                    $aprobadasObligatorias++;
+                }
+            }
+
+            $escuela->progreso = $totalObligatorias > 0
+                ? round(($aprobadasObligatorias / $totalObligatorias) * 100)
+                : 0;
+            $escuela->total_obligatorias = $totalObligatorias;
+            $escuela->aprobadas_obligatorias = $aprobadasObligatorias;
+        }
 
         return view('contenido.paginas.escuelas.maestros.gestionar-alumno', [
             'maestro' => $maestro,
@@ -625,6 +680,11 @@ class MaestroController extends Controller
             'alumno' => $alumno,
             'horarioAsignado' => $horarioAsignado,
             'estadoAcademicoAlumno' => $estadoAcademicoAlumno,
+            'reportesAsistencia' => $reportesAsistencia,
+            'totalAsistenciasCumplidas' => $totalAsistenciasCumplidas,
+            'totalClasesReportadas' => $totalClasesReportadas,
+            'itemsEvaluacion' => $itemsEvaluacion,
+            'escuelas' => $escuelas,
         ]);
     }
 
@@ -745,19 +805,17 @@ class MaestroController extends Controller
         ]);
     }
 
-    public function reporteAsistencia(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado) // Variable renombrada aquí
+    public function reporteAsistencia(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado)
     {
         $configuracionGeneral = Configuracion::find(1);
 
-        // Usamos $horarioAsignado para cargar las relaciones
         $horarioAsignado->load([
             'materiaPeriodo.materia',
             'materiaPeriodo.periodo',
             'horarioBase',
-            'reportesAsistencia', // Necesario para el count()
+            'reportesAsistencia',
         ]);
 
-        // Usamos $horarioAsignado para obtener la información
         $nombreDeLaMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no disponible';
         $nombreDelDocente = $maestro->user?->nombre(3) ?? ($maestro->user?->name ?? 'Docente no asignado');
         $informacionDeLaClase = 'Periodo: '.($horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo N/A').
@@ -766,8 +824,9 @@ class MaestroController extends Controller
         $datosMateria = $horarioAsignado->materiaPeriodo?->materia;
         $periodo = $horarioAsignado->materiaPeriodo?->periodo;
         $fechaActual = Carbon::now();
-        $fechaActualSoloFecha = $fechaActual->copy()->startOfDay();
         $usuarioActivo = auth()->user();
+
+        $estadoFechas = $this->calcularEstadoFechasReporte($horarioAsignado, $periodo, $datosMateria);
 
         $inputFechaEsSoloLectura = false;
         $fechaPorDefectoParaInput = $fechaActual->format('Y-m-d');
@@ -776,136 +835,166 @@ class MaestroController extends Controller
         $botonNuevoReporteHabilitado = false;
         $limiteMinimoFechaPicker = null;
         $limiteMaximoFechaPicker = null;
+        $esSuperAdmin = $usuarioActivo && $usuarioActivo->hasPermissionTo('escuelas.reportar_asistencia_cualquier_dia');
 
         $numeroDiaDeLaClase = null;
-        // Usamos $horarioAsignado para obtener el día de la clase
         if ($horarioAsignado->horarioBase && isset($horarioAsignado->horarioBase->dia)) {
-            $numeroDiaDeLaClase = (int) $horarioAsignado->horarioBase->dia; // Asume 0-6 (Dom-Sab)
+            $numeroDiaDeLaClase = (int) $horarioAsignado->horarioBase->dia;
         }
 
-        if ($usuarioActivo && $usuarioActivo->hasPermissionTo('escuelas.reportar_asistencia_cualquier_dia')) {
+        if ($esSuperAdmin) {
             $inputFechaEsSoloLectura = false;
             $botonNuevoReporteHabilitado = true;
 
             if ($datosMateria && $datosMateria->tiene_dia_limite == true && $numeroDiaDeLaClase !== null) {
                 $aplicarFiltroPorDiaSemana = true;
                 $diaSemanaAVisualizarEnCalendario = $numeroDiaDeLaClase;
-            } else {
-                $aplicarFiltroPorDiaSemana = false;
-                // Si tiene permiso y no hay día límite, podría quererse establecer los límites del período aquí.
-                // if ($periodo) {
-                //     if ($periodo->fecha_inicio) $limiteMinimoFechaPicker = Carbon::parse($periodo->fecha_inicio)->format('Y-m-d');
-                //     if ($periodo->fecha_fin) $limiteMaximoFechaPicker = Carbon::parse($periodo->fecha_fin)->format('Y-m-d');
-                // }
+            }
+        } else {
+            $inputFechaEsSoloLectura = false;
 
+            // Basamos la habilidad de reportar en si tiene fechas pendientes
+            if (! empty($estadoFechas['pendientes'])) {
+                $botonNuevoReporteHabilitado = true;
+                // La fecha por defecto será la primera pendiente (usualmente la única de la semana)
+                $fechaPorDefectoParaInput = $estadoFechas['pendientes'][0];
+            } else {
+                $botonNuevoReporteHabilitado = false;
             }
 
-            return view('contenido.paginas.escuelas.maestros.reporte-asistencia-alumnos', [
-                'maestro' => $maestro,
-                'materiaAEvaluar' => $datosMateria,
-                'fechaDeHoy' => $fechaActual, // Pasando $fechaActual con este nombre de llave
-                'configuracionGeneral' => $configuracionGeneral,
-                'horarioAsignado' => $horarioAsignado, // Pasando la variable con su nombre original
-                'nombreMateria' => $nombreDeLaMateria, // Usando el nombre que coincide con tu vista
-                'informacionDeLaClase' => $informacionDeLaClase,
-                'botonNuevoReporteHabilitado' => $botonNuevoReporteHabilitado,
-                'inputFechaEsSoloLectura' => $inputFechaEsSoloLectura,
-                'fechaPorDefectoParaInput' => $fechaPorDefectoParaInput,
-                'aplicarFiltroPorDiaSemana' => $aplicarFiltroPorDiaSemana,
-                'diaSemanaAVisualizarEnCalendario' => $diaSemanaAVisualizarEnCalendario,
-                'limiteMinimoFechaPicker' => $limiteMinimoFechaPicker,
-                'diaSemanaAVisualizarEnCalendario' => $diaSemanaAVisualizarEnCalendario,
-                'limiteMinimoFechaPicker' => $limiteMinimoFechaPicker,
-                'limiteMaximoFechaPicker' => $limiteMaximoFechaPicker,
-                'rolActivo' => $usuarioActivo ? $usuarioActivo->roles()->wherePivot('activo', true)->first() : null,
-            ]);
-        } else {
-            $inputFechaEsSoloLectura = true;
+            if ($periodo) {
+                if ($periodo->fecha_inicio) {
+                    $limiteMinimoFechaPicker = Carbon::parse($periodo->fecha_inicio)->format('Y-m-d');
+                }
+                if ($periodo->fecha_fin) {
+                    $limiteMaximoFechaPicker = Carbon::parse($periodo->fecha_fin)->format('Y-m-d');
+                }
+            }
+        }
 
-            if ($datosMateria && $datosMateria->tiene_dia_limite) {
-                // Usamos $horarioAsignado para el conteo de reportes
-                if ($horarioAsignado->reportesAsistencia->count() < 1) {
-                    $domingoSemanaActual = $fechaActual->copy()->startOfWeek(Carbon::SUNDAY);
-                    $fechaCalculadaParaInputCarbon = $domingoSemanaActual->copy()->addDays($datosMateria->dia_limite_reporte)->startOfDay();
-                    $fechaPorDefectoParaInput = $fechaCalculadaParaInputCarbon->format('Y-m-d');
-                    $fechaActualSoloFecha = $fechaActualSoloFecha->format('Y-m-d');
+        return view('contenido.paginas.escuelas.maestros.reporte-asistencia-alumnos', [
+            'maestro' => $maestro,
+            'materiaAEvaluar' => $datosMateria,
+            'fechaDeHoy' => $fechaActual,
+            'configuracionGeneral' => $configuracionGeneral,
+            'horarioAsignado' => $horarioAsignado,
+            'nombreMateria' => $nombreDeLaMateria,
+            'informacionDeLaClase' => $informacionDeLaClase,
+            'botonNuevoReporteHabilitado' => $botonNuevoReporteHabilitado,
+            'inputFechaEsSoloLectura' => $inputFechaEsSoloLectura,
+            'fechaPorDefectoParaInput' => $fechaPorDefectoParaInput,
+            'aplicarFiltroPorDiaSemana' => $aplicarFiltroPorDiaSemana,
+            'diaSemanaAVisualizarEnCalendario' => $diaSemanaAVisualizarEnCalendario,
+            'limiteMinimoFechaPicker' => $limiteMinimoFechaPicker,
+            'limiteMaximoFechaPicker' => $limiteMaximoFechaPicker,
+            'esSuperAdmin' => $esSuperAdmin,
+            'estadoFechas' => $estadoFechas,
+            'rolActivo' => $usuarioActivo ? $usuarioActivo->roles()->wherePivot('activo', true)->first() : null,
+        ]);
+    }
 
-                    if ($fechaCalculadaParaInputCarbon->lt($fechaActualSoloFecha)) {
-                        $botonNuevoReporteHabilitado = false;
+    private function calcularEstadoFechasReporte(HorarioMateriaPeriodo $horarioAsignado, $periodo, $datosMateria)
+    {
+        $fechasCalculadas = [
+            'realizados' => [],
+            'omitidos' => [],
+            'pendientes' => [],
+            'futuros' => [],
+            'fechasPermitidasFlatpickr' => [],
+        ];
+
+        if (! $periodo || ! $periodo->fecha_inicio || ! $periodo->fecha_fin) {
+            return $fechasCalculadas;
+        }
+
+        $fechaInicioPeriodo = Carbon::parse($periodo->fecha_inicio)->startOfDay();
+        $fechaFinPeriodo = Carbon::parse($periodo->fecha_fin)->startOfDay();
+        $fechaActual = Carbon::now()->startOfDay();
+
+        $numeroDiaDeLaClase = null;
+        if ($horarioAsignado->horarioBase && isset($horarioAsignado->horarioBase->dia)) {
+            $numeroDiaDeLaClase = (int) $horarioAsignado->horarioBase->dia; // 0-6
+        }
+
+        if ($numeroDiaDeLaClase === null) {
+            return $fechasCalculadas;
+        }
+
+        $horarioAsignado->loadMissing('reportesAsistencia');
+        $reportesExistentes = $horarioAsignado->reportesAsistencia->pluck('fecha_clase_reportada')->map(function ($fecha) {
+            return Carbon::parse($fecha)->startOfDay()->format('Y-m-d');
+        })->toArray();
+
+        $limiteTotal = (isset($datosMateria->limite_reporte_asistencias) && $datosMateria->limite_reporte_asistencias > 0)
+            ? $datosMateria->limite_reporte_asistencias : 999;
+
+        $fechaIteracion = $fechaInicioPeriodo->copy();
+
+        // Ajustar al primer día de clase dentro del periodo
+        while ($fechaIteracion->dayOfWeek !== $numeroDiaDeLaClase && $fechaIteracion->lte($fechaFinPeriodo)) {
+            $fechaIteracion->addDay();
+        }
+
+        $cantidadTeorica = 0;
+
+        while ($fechaIteracion->lte($fechaFinPeriodo) && $cantidadTeorica < $limiteTotal) {
+            $fechaStr = $fechaIteracion->format('Y-m-d');
+            $cantidadTeorica++;
+
+            if (in_array($fechaStr, $reportesExistentes)) {
+                $fechasCalculadas['realizados'][] = $fechaStr;
+            } else {
+                $inicioSemanaIteracion = $fechaIteracion->copy()->startOfWeek(Carbon::SUNDAY);
+                $inicioSemanaActual = $fechaActual->copy()->startOfWeek(Carbon::SUNDAY);
+
+                if ($inicioSemanaIteracion->lt($inicioSemanaActual)) {
+                    $fechasCalculadas['omitidos'][] = $fechaStr;
+                } elseif ($inicioSemanaIteracion->eq($inicioSemanaActual)) {
+                    $vencido = false;
+                    // Lógica para determinar si el plazo de esta semana ya expiró
+                    if ($datosMateria && $datosMateria->tiene_dia_limite && isset($datosMateria->dia_limite_reporte)) {
+                        $fechaTope = $inicioSemanaActual->copy()->addDays((int) $datosMateria->dia_limite_reporte)->startOfDay();
+                        if ($fechaActual->gt($fechaTope)) {
+                            $vencido = true;
+                        }
+                    } elseif ($datosMateria && isset($datosMateria->dias_plazo_reporte)) {
+                        $fechaTope = $fechaIteracion->copy()->addDays((int) $datosMateria->dias_plazo_reporte)->startOfDay();
+                        if ($fechaActual->gt($fechaTope)) {
+                            $vencido = true;
+                        }
+                    }
+
+                    if ($vencido) {
+                        $fechasCalculadas['omitidos'][] = $fechaStr;
                     } else {
-                        $botonNuevoReporteHabilitado = true;
+                        $fechasCalculadas['pendientes'][] = $fechaStr;
+                        $fechasCalculadas['fechasPermitidasFlatpickr'][] = $fechaStr;
                     }
                 } else {
-                    $botonNuevoReporteHabilitado = false;
+                    $fechasCalculadas['futuros'][] = $fechaStr;
                 }
-            } elseif ($datosMateria && $datosMateria->tiene_dia_limite == false && isset($datosMateria->cantidad_limite_reportes_semana) && $datosMateria->cantidad_limite_reportes_semana == 1) {
-                // // aqui por ahora es solo para calcular las fechas minimas del periodo, para que no tenga la posibilidad de hacer un reporte extraño
-                // /// con fechas anteriores o futuras al periodo
-                $inputFechaEsSoloLectura = false;
-                $botonNuevoReporteHabilitado = true;
-                $aplicarFiltroPorDiaSemana = false;
-
-                if ($periodo) {
-                    if ($periodo->fecha_inicio) {
-                        $limiteMinimoFechaPicker = Carbon::parse($periodo->fecha_inicio)->format('Y-m-d');
-                    }
-                    if ($periodo->fecha_fin) {
-                        $limiteMaximoFechaPicker = Carbon::parse($periodo->fecha_fin)->format('Y-m-d');
-                    }
-                }
-                $fechaPorDefectoParaInput = $fechaActual->format('Y-m-d');
-            } else {
-                $inputFechaEsSoloLectura = false;
-                $botonNuevoReporteHabilitado = true;
-                $aplicarFiltroPorDiaSemana = false;
-
-                if ($periodo) {
-                    if ($periodo->fecha_inicio) {
-                        $limiteMinimoFechaPicker = Carbon::parse($periodo->fecha_inicio)->format('Y-m-d');
-                    }
-                    if ($periodo->fecha_fin) {
-                        $limiteMaximoFechaPicker = Carbon::parse($periodo->fecha_fin)->format('Y-m-d');
-                    }
-                }
-                $fechaPorDefectoParaInput = $fechaActual->format('Y-m-d');
             }
 
-            return view('contenido.paginas.escuelas.maestros.reporte-asistencia-alumnos', [
-                'maestro' => $maestro,
-                'materiaAEvaluar' => $datosMateria,
-                'fechaDeHoy' => $fechaActual, // Pasando $fechaActual con este nombre de llave
-                'configuracionGeneral' => $configuracionGeneral,
-                'horarioAsignado' => $horarioAsignado, // Pasando la variable con su nombre original
-                'nombreMateria' => $nombreDeLaMateria, // Usando el nombre que coincide con tu vista
-                'informacionDeLaClase' => $informacionDeLaClase,
-                'botonNuevoReporteHabilitado' => $botonNuevoReporteHabilitado,
-                'inputFechaEsSoloLectura' => $inputFechaEsSoloLectura,
-                'fechaPorDefectoParaInput' => $fechaPorDefectoParaInput,
-                'aplicarFiltroPorDiaSemana' => $aplicarFiltroPorDiaSemana,
-                'diaSemanaAVisualizarEnCalendario' => $diaSemanaAVisualizarEnCalendario,
-                'limiteMinimoFechaPicker' => $limiteMinimoFechaPicker,
-                'limiteMaximoFechaPicker' => $limiteMaximoFechaPicker,
-                'rolActivo' => $usuarioActivo ? $usuarioActivo->roles()->wherePivot('activo', true)->first() : null,
-            ]);
+            $fechaIteracion->addWeek();
         }
+
+        return $fechasCalculadas;
     }
 
     private function verificarCondicionesParaCrearReporte(
         Request $peticionHttp,
-        HorarioMateriaPeriodo $horarioAsignado, // Asegúrate que 'reportesAsistencia' esté cargado o se cargue aquí
+        HorarioMateriaPeriodo $horarioAsignado,
         $usuarioActivo,
         $datosMateria,
         $periodo
     ): array {
-        // Obtenemos la fecha que el usuario intenta reportar, normalizada al inicio del día
-        $fechaClaseReportadaCarbon = Carbon::parse($peticionHttp->input('fecha_clase_reportada'))->startOfDay();
-        $fechaActual = Carbon::now();
-        $fechaActualSoloFecha = $fechaActual->copy()->startOfDay();
+        $fechaClaseReportadaStr = Carbon::parse($peticionHttp->input('fecha_clase_reportada'))->startOfDay()->format('Y-m-d');
+
+        $estadoFechas = $this->calcularEstadoFechasReporte($horarioAsignado, $periodo, $datosMateria);
 
         // --- RESTRICCIÓN GENERAL: LÍMITE DE CANTIDAD TOTAL DE REPORTES POR MATERIA ---
-        // Esta se aplica a todos, antes de las reglas específicas de permisos.
         if ($datosMateria && isset($datosMateria->limite_reporte_asistencias) && $datosMateria->limite_reporte_asistencias > 0) {
-            $horarioAsignado->loadMissing('reportesAsistencia'); // Cargar si no está ya cargada
+            $horarioAsignado->loadMissing('reportesAsistencia');
             $cantidadReportesExistentesTotal = $horarioAsignado->reportesAsistencia->count();
 
             if ($cantidadReportesExistentesTotal >= $datosMateria->limite_reporte_asistencias) {
@@ -915,19 +1004,13 @@ class MaestroController extends Controller
                 ];
             }
         }
-        // --- FIN DE LA NUEVA RESTRICCIÓN GENERAL ---
 
-        // Si la restricción general anterior no falló, continuamos con las reglas específicas de permisos.
-
-        // --- REGLAS PARA USUARIOS CON PERMISO 'escuelas.reportar_asistencia_cualquier_dia' ---
         if ($usuarioActivo && $usuarioActivo->hasPermissionTo('escuelas.reportar_asistencia_cualquier_dia')) {
-            // --- NUEVA RESTRICCIÓN: LÍMITE DE REPORTES SEMANALES (para la semana de la fecha_clase_reportada) ---
             if ($datosMateria && isset($datosMateria->cantidad_limite_reportes_semana) && $datosMateria->cantidad_limite_reportes_semana > 0) {
-                $inicioSemanaDelReporte = $fechaClaseReportadaCarbon->copy()->startOfWeek(Carbon::SUNDAY);
-                $finSemanaDelReporte = $fechaClaseReportadaCarbon->copy()->endOfWeek(Carbon::SATURDAY);
+                $inicioSemanaDelReporte = Carbon::parse($fechaClaseReportadaStr)->startOfWeek(Carbon::SUNDAY);
+                $finSemanaDelReporte = Carbon::parse($fechaClaseReportadaStr)->endOfWeek(Carbon::SATURDAY);
 
-                // Contamos cuántos reportes ya existen para el horarioAsignado DENTRO de esa semana específica
-                $horarioAsignado->loadMissing('reportesAsistencia'); // Asegurar que la relación esté cargada
+                $horarioAsignado->loadMissing('reportesAsistencia');
                 $cantidadReportesEnLaSemanaDelReporte = $horarioAsignado->reportesAsistencia()
                     ->where('fecha_clase_reportada', '>=', $inicioSemanaDelReporte->toDateString())
                     ->where('fecha_clase_reportada', '<=', $finSemanaDelReporte->toDateString())
@@ -936,139 +1019,26 @@ class MaestroController extends Controller
                 if ($cantidadReportesEnLaSemanaDelReporte >= $datosMateria->cantidad_limite_reportes_semana) {
                     return [
                         'puedeCrear' => false,
-                        'mensajeError' => "Se ha alcanzado el límite de {$datosMateria->cantidad_limite_reportes_semana} reportes permitidos para la semana del {$inicioSemanaDelReporte->format('d/m/Y')} al {$finSemanaDelReporte->format('d/m/Y')}.",
+                        'mensajeError' => "Se ha alcanzado el límite de {$datosMateria->cantidad_limite_reportes_semana} reportes permitidos para la semana seleccionada.",
                     ];
                 }
             }
-            // --- FIN NUEVA RESTRICCIÓN SEMANAL ---
 
             return ['puedeCrear' => true, 'mensajeError' => null];
         } else {
-            // --- REGLAS PARA USUARIOS SIN EL PERMISO ESPECIAL ---
-            // (La validación de unicidad del reporte para esta fecha/horario también fue cubierta por Rule::unique)
-
-            // Validación adicional si la materia tiene 'tiene_dia_limite'
-            if ($datosMateria && $datosMateria->tiene_dia_limite && isset($datosMateria->dia_limite_reporte)) {
-
-                // REGLA ESPECÍFICA (más estricta que la general si aplica):
-                // Para estos usuarios, si tiene_dia_limite es true, solo pueden crear UN reporte en total.
-                // Esta lógica viene de tu implementación anterior para $botonNuevoReporteHabilitado.
-                // Nos aseguramos de que reportesAsistencia esté cargado.
-                $horarioAsignado->loadMissing('reportesAsistencia');
-                if ($horarioAsignado->reportesAsistencia->count() >= 1) {
-                    return ['puedeCrear' => false, 'mensajeError' => 'Solo se permite un reporte de asistencia para este curso y condiciones. Ya existe uno.'];
-                }
-
-                // ASUNCIÓN: $datosMateria->dia_limite_reporte es Dom=0, Lun=1, ..., Sáb=6
-                // Esta convención debe ser consistente.
-                $domingoSemanaActual = $fechaActual->copy()->startOfWeek(Carbon::SUNDAY);
-                $diaLimiteConfiguradoMateria = (int) $datosMateria->dia_limite_reporte;
-                $fechaCalculadaLimiteReporteSemanal = $domingoSemanaActual->copy()->addDays($diaLimiteConfiguradoMateria)->startOfDay();
-
-                if ($fechaActualSoloFecha->gt($fechaCalculadaLimiteReporteSemanal)) { // Si hoy > fecha límite de reporte de la semana
-                    return [
-                        'puedeCrear' => false,
-                        'mensajeError' => 'El plazo para registrar asistencias (según el día límite de la materia para la semana actual) ha vencido.',
-                    ];
-                }
-            } else {
-                // --- REGLAS PARA USUARIOS SIN EL PERMISO ESPECIAL ---
-                $numeroDiaDeLaClase = null;
-                if ($horarioAsignado->horarioBase && isset($horarioAsignado->horarioBase->dia)) {
-                    $numeroDiaDeLaClase = (int) $horarioAsignado->horarioBase->dia; // Asume 0-6 (Dom-Sab)
-                }
-
-                if ($datosMateria && $datosMateria->tiene_dia_limite && isset($datosMateria->dia_limite_reporte)) {
-                    // Subcaso: Sin permiso Y la materia SÍ tiene día límite semanal
-                    $horarioAsignado->loadMissing('reportesAsistencia');
-                    if ($horarioAsignado->reportesAsistencia->count() >= 1) {
-                        return ['puedeCrear' => false, 'mensajeError' => 'Solo se permite un reporte de asistencia para este curso y condiciones. Ya existe uno.'];
-                    }
-                    $domingoSemanaActual = $fechaActual->copy()->startOfWeek(Carbon::SUNDAY);
-                    $diaLimiteConfiguradoMateria = (int) $datosMateria->dia_limite_reporte;
-                    $fechaCalculadaLimiteReporteSemanal = $domingoSemanaActual->copy()->addDays($diaLimiteConfiguradoMateria)->startOfDay();
-                    if ($fechaActualSoloFecha->gt($fechaCalculadaLimiteReporteSemanal)) {
-                        return ['puedeCrear' => false, 'mensajeError' => 'El plazo para registrar asistencias (según el día límite de la materia para la semana actual) ha vencido.'];
-                    }
-                } else {
-                    // --- INICIO DEL NUEVO BLOQUE DE RESTRICCIONES ---
-                    // Subcaso: Sin permiso Y la materia NO tiene día límite semanal
-
-                    // 1. Verificar límite de reportes por semana
-                    if ($datosMateria && isset($datosMateria->cantidad_limite_reportes_semana) && $datosMateria->cantidad_limite_reportes_semana > 0) {
-                        $inicioSemanaDeFechaSeleccionada = $fechaClaseReportadaCarbon->copy()->startOfWeek(Carbon::SUNDAY);
-                        $finSemanaDeFechaSeleccionada = $fechaClaseReportadaCarbon->copy()->endOfWeek(Carbon::SATURDAY);
-                        $horarioAsignado->loadMissing('reportesAsistencia');
-                        $cantidadReportesEnSemanaDeFechaSeleccionada = $horarioAsignado->reportesAsistencia()
-                            ->where('fecha_clase_reportada', '>=', $inicioSemanaDeFechaSeleccionada->toDateString())
-                            ->where('fecha_clase_reportada', '<=', $finSemanaDeFechaSeleccionada->toDateString())
-                            ->count();
-
-                        if ($cantidadReportesEnSemanaDeFechaSeleccionada >= $datosMateria->cantidad_limite_reportes_semana) {
-                            return [
-                                'puedeCrear' => false,
-                                'mensajeError' => "Se ha alcanzado el límite de {$datosMateria->cantidad_limite_reportes_semana} reportes permitidos para la semana del {$inicioSemanaDeFechaSeleccionada->format('d/m/Y')} al {$finSemanaDeFechaSeleccionada->format('d/m/Y')}.",
-                            ];
-                        }
-                    }
-
-                    // 2. Lógica especial si cantidad_limite_reportes_semana es exactamente 1
-                    if (
-                        $datosMateria && isset($datosMateria->cantidad_limite_reportes_semana) && $datosMateria->cantidad_limite_reportes_semana == 1
-                        && $numeroDiaDeLaClase !== null && isset($datosMateria->dias_plazo_reporte)
-                    ) {
-
-                        $inicioSemanaDeFechaSeleccionada = $fechaClaseReportadaCarbon->copy()->startOfWeek(Carbon::SUNDAY);
-                        $fechaCorrectaDeReporte = $inicioSemanaDeFechaSeleccionada->copy()->addDays($numeroDiaDeLaClase)->startOfDay();
-
-                        $diasPlazo = (int) $datosMateria->dias_plazo_reporte;
-                        $fechaTopeParaReportar = $fechaCorrectaDeReporte->copy()->addDays($diasPlazo)->startOfDay();
-
-                        // 2.C.1: ¿La fecha seleccionada es la "Fecha Correcta de Reporte"?
-                        if (! $fechaClaseReportadaCarbon->eq($fechaCorrectaDeReporte)) {
-                            return [
-                                'puedeCrear' => false,
-                                'mensajeError' => 'La fecha del reporte para esta clase y semana debería ser el '.$fechaCorrectaDeReporte->isoFormat('dddd D [de] MMMM').'. Por favor, seleccione la fecha correcta.',
-                            ];
-                        }
-
-                        // 2.C.2: ¿Es hoy demasiado tarde para reportar la "Fecha Correcta de Reporte"?
-                        // (Esta validación solo se alcanza si la fecha seleccionada ES la correcta)
-                        if ($fechaActualSoloFecha->gt($fechaTopeParaReportar)) {
-                            return [
-                                'puedeCrear' => false,
-                                'mensajeError' => 'El plazo para registrar la asistencia del '.$fechaCorrectaDeReporte->isoFormat('dddd D [de] MMMM').' (fecha tope para reportar: '.$fechaTopeParaReportar->isoFormat('dddd D').') ha vencido.',
-                            ];
-                        }
-                    } elseif ($datosMateria->cantidad_limite_reportes_semana > 1 && isset($datosMateria->dias_plazo_reporte)) {
-                        // --- INICIO NUEVA LÓGICA PARA cantidad_limite_reportes_semana > 1 ---
-
-                        // 3. Validar Plazo para Reportar la fecha seleccionada
-                        $diasPlazo = (int) $datosMateria->dias_plazo_reporte;
-                        // La fecha tope es la fecha de la clase que se está reportando + los días de plazo
-                        $fechaTopeParaReportarClaseSeleccionada = $fechaClaseReportadaCarbon->copy()->addDays($diasPlazo)->startOfDay();
-
-                        if ($fechaActualSoloFecha->gt($fechaTopeParaReportarClaseSeleccionada)) {
-                            return [
-                                'puedeCrear' => false,
-                                'mensajeError' => 'El plazo para registrar la asistencia de la clase del '.$fechaClaseReportadaCarbon->isoFormat('dddd D [de] MMMM').' (fecha tope para reportar: '.$fechaTopeParaReportarClaseSeleccionada->isoFormat('D/MMM').') ha vencido.',
-                            ];
-                        }
-
-                        // 4. Validar que la fecha seleccionada no sea futura
-                        if ($fechaClaseReportadaCarbon->gt($fechaActualSoloFecha)) {
-                            return [
-                                'puedeCrear' => false,
-                                'mensajeError' => 'No se pueden crear reportes para fechas futuras. Por favor, seleccione una fecha válida.',
-                            ];
-                        }
-                        // --- FIN NUEVA LÓGICA ---
-                        // --- FIN DEL NUEVO BLOQUE DE RESTRICCIONES ---
-                    }
-                }
+            // Maestro Regular: Validamos estrictamente contra el estado calculado del periodo
+            if (in_array($fechaClaseReportadaStr, $estadoFechas['omitidos'])) {
+                return ['puedeCrear' => false, 'mensajeError' => 'El plazo para registrar esta asistencia ha vencido (fecha omitida del periodo).'];
             }
 
-            // Si no se activó ninguna de las restricciones anteriores para este tipo de usuario, pueden crear.
+            if (in_array($fechaClaseReportadaStr, $estadoFechas['futuros'])) {
+                return ['puedeCrear' => false, 'mensajeError' => 'No se pueden crear reportes para fechas futuras de clase.'];
+            }
+
+            if (! in_array($fechaClaseReportadaStr, $estadoFechas['fechasPermitidasFlatpickr'])) {
+                return ['puedeCrear' => false, 'mensajeError' => 'La fecha seleccionada no es válida, está fuera del periodo o el plazo expiró.'];
+            }
+
             return ['puedeCrear' => true, 'mensajeError' => null];
         }
     }

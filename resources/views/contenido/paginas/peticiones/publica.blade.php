@@ -37,8 +37,6 @@ $configData = Helper::appClasses();
     .back{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-mute);transition:color .25s;text-decoration:none}
     .back:hover{color:var(--ink)}
     .back svg{width:16px;height:16px}
-    .logo-mini{font-family:var(--cd);font-weight:900;font-size:15px;letter-spacing:.06em;color:var(--ink)}
-    .logo-mini span{color:var(--b)}
 
     .hero{position:relative;z-index:2;text-align:center;padding:18px 24px 8px}
     .eyebrow{font-size:11px;letter-spacing:.22em;color:var(--b2);font-weight:700;text-transform:uppercase;margin-bottom:14px}
@@ -388,18 +386,19 @@ $configData = Helper::appClasses();
   @endauth
   
   <div class="logo-mini">
-    @if ($configuracion && $configuracion->logo_personalizado && $configuracion->logo_app)
-      <img src="{{ tenant_asset('img/branding/'.$configuracion->logo_app) }}" alt="Logo" style="height: 24px; vertical-align: middle;">
-    @else
-      MANANTIAL<span>.</span>
-    @endif
+    <span class="app-brand-logo demo p-0">
+        @include('_partials.logo_iglesia', [
+            'width' => '120px',
+            'logo_negro' => true
+        ])
+    </span>
   </div>
 </header>
 
 <section class="hero">
   <div class="eyebrow">Queremos orar por ti</div>
   <h1>Cuéntanos <span class="sc">qué</span><br>necesita tu corazón</h1>
-  <p>No estás solo en esto. Nuestro equipo de oración recibe cada petición y la lleva delante de Dios esta misma semana.</p>
+  <p class="text-black">No estás solo en esto. Nuestro equipo de oración recibe cada petición y la lleva delante de Dios esta misma semana.</p>
 </section>
 
 <main>
@@ -421,9 +420,9 @@ $configData = Helper::appClasses();
             @endphp
             <label class="motivo">
               <input type="radio" name="tipo_de_petición" value="{{ $tipoPeticion->id }}" {{ old('tipo_de_petición') == $tipoPeticion->id ? 'checked' : '' }} required>
-              <span class="card-inner">
+              <span class="card-inner text-black">
                   <i class="{{ $iconDb }}"></i>
-                <span>{{ $tipoPeticion->nombre }}</span>
+                <span class="text-black">{{ $tipoPeticion->nombre }}</span>
               </span>
             </label>
           @endforeach
@@ -442,7 +441,7 @@ $configData = Helper::appClasses();
 
       @guest
         <!-- 3. Tus Datos -->
-        <div class="section-title">Tus datos</div>
+        <div class="section-title text-black">Tus datos</div>
 
         <input type="hidden" name="asociar_usuario_id" id="asociar_usuario_id" value="">
         <input type="hidden" name="enviar_como_invitado" id="enviar_como_invitado" value="0">

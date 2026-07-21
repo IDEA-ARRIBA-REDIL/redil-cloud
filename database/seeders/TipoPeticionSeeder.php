@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\TipoPeticion;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use App\Models\TipoPeticion;
 
 class TipoPeticionSeeder extends Seeder
 {
@@ -37,6 +37,7 @@ class TipoPeticionSeeder extends Seeder
             $this->command->info("Icono {$icono} asignado al tipo de petición {$tipo->nombre}.");
 
             $tipo->icono = $icono;
+            $tipo->banner_email = null;
             $tipo->save();
         }
     }

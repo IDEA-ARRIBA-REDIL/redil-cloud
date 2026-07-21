@@ -130,6 +130,400 @@ Route::get('/test-notificacion', function () {
     return 'Inicia sesión primero.';
 });
 
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE RECORDATORIO DE REPORTES
+Route::get('/test-alerta-reporte', function () {
+    $user = auth()->user() ?? \App\Models\User::first();
+    if (!$user) {
+        return 'No hay usuarios en la base de datos para simular la prueba.';
+    }
+
+    $gruposPendientes = [
+        [
+            'nombre' => 'Grupo de Crecimiento Jóvenes (Simulado)',
+            'estado' => 'Pendiente', // Cualquier estado distinto a Borrador se traduce como "No reportado"
+        ],
+        [
+            'nombre' => 'Grupo de Matrimonios Manantial (Simulado)',
+            'estado' => 'Borrador', // Se traduce como "No finalizado"
+        ],
+    ];
+
+    // Al retornar el mailable directamente desde la ruta, Laravel lo renderiza en el navegador como HTML
+    return new \App\Mail\AlertaReportePendienteMail($user, $gruposPendientes);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE CONFIRMACIÓN DE COMPRA
+Route::get('/test-confirmacion-compra', function () {
+    $actividad = \App\Models\Actividad::first();
+    if (!$actividad) {
+        $actividad = new \App\Models\Actividad([
+            'nombre' => 'Congreso Nacional de Liderazgo (Simulado)',
+        ]);
+    }
+
+    $compra = \App\Models\Compra::first();
+    if (!$compra) {
+        $compra = new \App\Models\Compra();
+        // Seteamos la propiedad directamente para la simulación
+        $compra->nombre_comprador = 'Juan';
+        $compra->apellido_comprador = 'Pérez';
+    }
+
+    // Asegurar que nombre_completo_comprador devuelva algo si es una instancia simulada
+    if (!isset($compra->nombre_completo_comprador) || !$compra->nombre_completo_comprador) {
+        $compra->nombre_completo_comprador = ($compra->nombre_comprador ?? 'Juan') . ' ' . ($compra->apellido_comprador ?? 'Pérez');
+    }
+
+    $pago = \App\Models\Pago::first() ?? new \App\Models\Pago();
+    $inscripcion = \App\Models\Inscripcion::first() ?? new \App\Models\Inscripcion();
+    $matricula = \App\Models\Matricula::first();
+
+    return new \App\Mail\CompraConfirmacionMail($compra, $pago, $inscripcion, $actividad, $matricula);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE CONFIRMACIÓN DE COMPRA DE CURSOS
+Route::get('/test-confirmacion-compra-curso', function () {
+    $carrito = \App\Models\CarritoCursoUser::first();
+    if (!$carrito) {
+        $carrito = new \App\Models\CarritoCursoUser();
+        // Simulamos los items y total del carrito para el renderizado
+        $carrito->items = [
+            [
+                'nombre' => 'Teología Sistémica Avanzada (Simulado)',
+                'precio' => 150000,
+            ],
+            [
+                'nombre' => 'Liderazgo Eficaz en el Siglo XXI (Simulado)',
+                'precio' => 120000,
+            ],
+        ];
+        $carrito->total = 270000;
+    }
+
+    return new \App\Mail\CompraCursoConfirmacionMail($carrito, 'Juan Pérez', '12345678', '3001234567');
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE NOTIFICACIÓN DE CAMBIO DE CORREO
+Route::get('/test-notificacion-codigo', function () {
+    $user = auth()->user() ?? new \App\Models\User([
+        'nombre' => 'Juan Pérez',
+        'email' => 'juan.perez@prueba.com',
+    ]);
+    
+    $notification = new \App\Notifications\EnviarCodigoCambioCorreo('485902');
+    
+    // toMail() devuelve una instancia de DefaultMail. Laravel la renderizará como HTML en pantalla.
+    return $notification->toMail($user);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE CONFIRMACIÓN DE INSCRIPCIÓN
+Route::get('/test-confirmacion-inscripcion', function () {
+    $actividad = \App\Models\Actividad::first();
+    if (!$actividad) {
+        $actividad = new \App\Models\Actividad([
+            'nombre' => 'Congreso Nacional de Liderazgo (Simulado)',
+            'portada' => 'img/email/peticiones/peticiones.jpg',
+        ]);
+    }
+    
+    $inscripcion = \App\Models\Inscripcion::first();
+    if (!$inscripcion) {
+        $inscripcion = new \App\Models\Inscripcion();
+        $inscripcion->id = 1;
+        $inscripcion->compra_id = 99;
+        
+        // Simulamos la relacion compra para obtener el nombre de comprador de respaldo
+        $compra = new \App\Models\Compra();
+        $compra->nombre_completo_comprador = 'Juan Pérez';
+        $inscripcion->setRelation('compra', $compra);
+    }
+    
+    // Forzamos la relación elementos para simular que hay preguntas pendientes del formulario en el test
+    if (!$actividad->elementos || $actividad->elementos->count() == 0) {
+        $actividad->setRelation('elementos', collect([new \stdClass()]));
+    }
+
+    return new \App\Mail\InscripcionConfirmacionMail($inscripcion, $actividad);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE MATERIA FINALIZADA
+Route::get('/test-materia-finalizada', function () {
+    $materiaPeriodo = \App\Models\MateriaPeriodo::first();
+    if (!$materiaPeriodo) {
+        $materiaPeriodo = new \App\Models\MateriaPeriodo();
+        
+        $materia = new \App\Models\Materia(['nombre' => 'Introducción a las Sagradas Escrituras (Simulado)']);
+        $periodo = new \App\Models\Periodo(['nombre' => 'Primer Trimestre 2026 (Simulado)']);
+        
+        $materiaPeriodo->setRelation('materia', $materia);
+        $materiaPeriodo->setRelation('periodo', $periodo);
+    }
+    
+    // Fallbacks si es un registro real sin relaciones sembradas
+    if (!$materiaPeriodo->materia) {
+        $materiaPeriodo->setRelation('materia', new \App\Models\Materia(['nombre' => 'Materia Ficticia']));
+    }
+    if (!$materiaPeriodo->periodo) {
+        $materiaPeriodo->setRelation('periodo', new \App\Models\Periodo(['nombre' => 'Periodo Ficticio']));
+    }
+
+    return new \App\Mail\MateriaFinalizadaMail($materiaPeriodo);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE VERIFICACIÓN DE CUENTA
+Route::get('/test-verificacion-correo', function () {
+    $user = auth()->user() ?? new \App\Models\User([
+        'nombre' => 'Juan Pérez',
+        'email' => 'juan.perez@prueba.com',
+    ]);
+    
+    $notification = new \App\Notifications\MiVerificacionDeCorreo();
+    
+    // toMail() devuelve una instancia de DefaultMail. Laravel la renderizará como HTML en pantalla.
+    return $notification->toMail($user);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE CITAS DE CONSEJERÍA
+Route::get('/test-notificacion-cita', function () {
+    $cita = \App\Models\CitaConsejeria::first();
+    if (!$cita) {
+        $cita = new \App\Models\CitaConsejeria();
+        $cita->fecha_hora_inicio = now()->addDays(2)->setTime(10, 0);
+        $cita->medio = 2; // virtual
+        $cita->enlace_virtual = 'https://meet.google.com/abc-defg-hij';
+        $cita->notas_paciente = 'Necesito consejería familiar para mejorar la comunicación en mi hogar.';
+        
+        $paciente = new \App\Models\User(['nombre' => 'Juan Pérez', 'email' => 'juan.perez@prueba.com']);
+        $cita->setRelation('user', $paciente);
+        
+        $consejeroUser = new \App\Models\User(['nombre' => 'Andrés Londoño']);
+        $consejero = new \App\Models\Consejero();
+        $consejero->setRelation('usuario', $consejeroUser);
+        $cita->setRelation('consejero', $consejero);
+        
+        $tipo = new \App\Models\TipoConsejeria(['nombre' => 'Familiar']);
+        $cita->setRelation('tipoConsejeria', $tipo);
+    }
+    
+    // Fallbacks si es un registro real sin relaciones sembradas
+    if (!$cita->user) {
+        $cita->setRelation('user', new \App\Models\User(['nombre' => 'Paciente Ficticio', 'email' => 'paciente@prueba.com']));
+    }
+    if (!$cita->consejero || !$cita->consejero->usuario) {
+        $consejeroUser = new \App\Models\User(['nombre' => 'Consejero Ficticio']);
+        $consejero = new \App\Models\Consejero();
+        $consejero->setRelation('usuario', $consejeroUser);
+        $cita->setRelation('consejero', $consejero);
+    }
+    if (!$cita->tipoConsejeria) {
+        $cita->setRelation('tipoConsejeria', new \App\Models\TipoConsejeria(['nombre' => 'General']));
+    }
+    if (!$cita->fecha_hora_inicio) {
+        $cita->fecha_hora_inicio = now()->addDays(2);
+    }
+
+    $icsContenido = "BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR";
+
+    return new \App\Mail\NotificacionCitaConsejero($cita, $icsContenido, false);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE CONFIRMACIÓN DE CITA DEL PACIENTE
+Route::get('/test-confirmacion-cita-paciente', function () {
+    $cita = \App\Models\CitaConsejeria::first();
+    if (!$cita) {
+        $cita = new \App\Models\CitaConsejeria();
+        $cita->fecha_hora_inicio = now()->addDays(2)->setTime(10, 0);
+        $cita->medio = 2; // virtual
+        $cita->enlace_virtual = 'https://meet.google.com/abc-defg-hij';
+        $cita->notas_paciente = 'Necesito consejería familiar para mejorar la comunicación en mi hogar.';
+        
+        $paciente = new \App\Models\User(['nombre' => 'Juan Pérez', 'email' => 'juan.perez@prueba.com']);
+        $cita->setRelation('user', $paciente);
+        
+        $consejeroUser = new \App\Models\User(['nombre' => 'Andrés Londoño']);
+        $consejero = new \App\Models\Consejero();
+        $consejero->setRelation('usuario', $consejeroUser);
+        $cita->setRelation('consejero', $consejero);
+        
+        $tipo = new \App\Models\TipoConsejeria(['nombre' => 'Familiar']);
+        $cita->setRelation('tipoConsejeria', $tipo);
+    }
+    
+    // Fallbacks si es un registro real sin relaciones sembradas
+    if (!$cita->user) {
+        $cita->setRelation('user', new \App\Models\User(['nombre' => 'Paciente Ficticio', 'email' => 'paciente@prueba.com']));
+    }
+    if (!$cita->consejero || !$cita->consejero->usuario) {
+        $consejeroUser = new \App\Models\User(['nombre' => 'Consejero Ficticio']);
+        $consejero = new \App\Models\Consejero();
+        $consejero->setRelation('usuario', $consejeroUser);
+        $cita->setRelation('consejero', $consejero);
+    }
+    if (!$cita->tipoConsejeria) {
+        $cita->setRelation('tipoConsejeria', new \App\Models\TipoConsejeria(['nombre' => 'General']));
+    }
+    if (!$cita->fecha_hora_inicio) {
+        $cita->fecha_hora_inicio = now()->addDays(2);
+    }
+
+    $icsContenido = "BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR";
+
+    return new \App\Mail\NotificacionCitaPaciente($cita, $icsContenido, false);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE REACTIVACIÓN DE CUENTA
+Route::get('/test-reactivacion-cuenta', function () {
+    $user = auth()->user() ?? new \App\Models\User([
+        'nombre' => 'Juan Pérez',
+        'email' => 'juan.perez@prueba.com',
+    ]);
+    
+    $notification = new \App\Notifications\NotificacionReactivacionCuenta('https://redil.cloud/reactivacion/firma-temporal-de-prueba');
+    
+    // toMail() devuelve una instancia de DefaultMail. Laravel la renderizará como HTML en pantalla.
+    return $notification->toMail($user);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE PERIODO FINALIZADO
+Route::get('/test-periodo-finalizado', function () {
+    $periodo = \App\Models\Periodo::first();
+    if (!$periodo) {
+        $periodo = new \App\Models\Periodo(['nombre' => 'Primer Trimestre 2026 (Simulado)']);
+    }
+
+    return new \App\Mail\PeriodoFinalizadoMail($periodo);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE RECORDATORIO DE FORMULARIO PENDIENTE
+Route::get('/test-recordatorio-formulario', function () {
+    $actividad = \App\Models\Actividad::first();
+    if (!$actividad) {
+        $actividad = new \App\Models\Actividad([
+            'nombre' => 'Encuentro de Crecimiento (Simulado)',
+            'portada' => 'img/email/peticiones/peticiones.jpg',
+        ]);
+    }
+    
+    $mailData = new \stdClass();
+    $mailData->subject = 'Recordatorio: Información Pendiente para ' . $actividad->nombre;
+    $mailData->nombre = 'Juan Pérez';
+    $mailData->mensaje = '<p>Te escribimos para recordarte que aún tienes datos pendientes por completar para tu participación en la actividad <strong>' . $actividad->nombre . '</strong>.</p>'
+        . '<p>Es muy importante que ingreses al enlace de abajo para completar el formulario correspondiente y asegurar que contemos con toda tu información a tiempo.</p>';
+    $mailData->actionUrl = url('/dashboard');
+    $mailData->actionText = 'Completar Formulario Ahora →';
+
+    return new \App\Mail\RecordatorioFormularioMail($mailData, $actividad);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE TRASLADO APROBADO
+Route::get('/test-traslado-aprobado', function () {
+    $solicitud = \App\Models\TrasladoMatriculaLog::first();
+    if (!$solicitud) {
+        $solicitud = new \App\Models\TrasladoMatriculaLog();
+        
+        $user = new \App\Models\User(['nombre' => 'Juan Pérez']);
+        $solicitud->setRelation('user', $user);
+        
+        $materia = new \App\Models\Materia(['nombre' => 'Teología Sistémica I (Simulado)']);
+        $materiaPeriodo = new \App\Models\MateriaPeriodo();
+        $materiaPeriodo->setRelation('materia', $materia);
+        
+        $horarioMateriaPeriodo = new \App\Models\HorarioMateriaPeriodo();
+        $horarioMateriaPeriodo->setRelation('materiaPeriodo', $materiaPeriodo);
+        
+        $matricula = new \App\Models\Matricula();
+        $matricula->setRelation('horarioMateriaPeriodo', $horarioMateriaPeriodo);
+        $solicitud->setRelation('matricula', $matricula);
+        
+        $sede = new \App\Models\Sede(['nombre' => 'Sede Principal (Simulado)']);
+        $aula = new \App\Models\Aula();
+        $aula->setRelation('sede', $sede);
+        
+        $horarioBase = new \App\Models\HorarioBase([
+            'dia_semana' => 'Sábado',
+            'hora_inicio' => '08:00:00',
+        ]);
+        $horarioBase->setRelation('aula', $aula);
+        
+        $horarioDestino = new \App\Models\HorarioMateriaPeriodo();
+        $horarioDestino->setRelation('horarioBase', $horarioBase);
+        $solicitud->setRelation('horarioDestino', $horarioDestino);
+    }
+    
+    // Fallbacks si es un registro real sin relaciones sembradas
+    if (!$solicitud->user) {
+        $solicitud->setRelation('user', new \App\Models\User(['nombre' => 'Usuario Ficticio']));
+    }
+    if (!$solicitud->matricula || !$solicitud->matricula->horarioMateriaPeriodo || !$solicitud->matricula->horarioMateriaPeriodo->materiaPeriodo || !$solicitud->matricula->horarioMateriaPeriodo->materiaPeriodo->materia) {
+        $materia = new \App\Models\Materia(['nombre' => 'Materia Ficticia']);
+        $materiaPeriodo = new \App\Models\MateriaPeriodo();
+        $materiaPeriodo->setRelation('materia', $materia);
+        $horarioMateriaPeriodo = new \App\Models\HorarioMateriaPeriodo();
+        $horarioMateriaPeriodo->setRelation('materiaPeriodo', $materiaPeriodo);
+        $matricula = $solicitud->matricula ?? new \App\Models\Matricula();
+        $matricula->setRelation('horarioMateriaPeriodo', $horarioMateriaPeriodo);
+        $solicitud->setRelation('matricula', $matricula);
+    }
+    if (!$solicitud->horarioDestino || !$solicitud->horarioDestino->horarioBase || !$solicitud->horarioDestino->horarioBase->aula || !$solicitud->horarioDestino->horarioBase->aula->sede) {
+        $sede = new \App\Models\Sede(['nombre' => 'Sede Ficticia']);
+        $aula = new \App\Models\Aula();
+        $aula->setRelation('sede', $sede);
+        $horarioBase = new \App\Models\HorarioBase([
+            'dia_semana' => 'Sábado',
+            'hora_inicio' => '08:00:00',
+        ]);
+        $horarioBase->setRelation('aula', $aula);
+        $horarioDestino = new \App\Models\HorarioMateriaPeriodo();
+        $horarioDestino->setRelation('horarioBase', $horarioBase);
+        $solicitud->setRelation('horarioDestino', $horarioDestino);
+    }
+
+    return new \App\Mail\TrasladoAprobado($solicitud);
+});
+
+// RUTA TEMPORAL PARA PROBAR EL CORREO DE TRASLADO RECHAZADO
+Route::get('/test-traslado-rechazado', function () {
+    $solicitud = \App\Models\TrasladoMatriculaLog::first();
+    if (!$solicitud) {
+        $solicitud = new \App\Models\TrasladoMatriculaLog();
+        $solicitud->motivo_rechazo = 'No contamos con cupos disponibles en el aula seleccionada para el horario solicitado de los sábados.';
+        
+        $user = new \App\Models\User(['nombre' => 'Juan Pérez']);
+        $solicitud->setRelation('user', $user);
+        
+        $materia = new \App\Models\Materia(['nombre' => 'Teología Sistémica I (Simulado)']);
+        $materiaPeriodo = new \App\Models\MateriaPeriodo();
+        $materiaPeriodo->setRelation('materia', $materia);
+        
+        $horarioMateriaPeriodo = new \App\Models\HorarioMateriaPeriodo();
+        $horarioMateriaPeriodo->setRelation('materiaPeriodo', $materiaPeriodo);
+        
+        $matricula = new \App\Models\Matricula();
+        $matricula->setRelation('horarioMateriaPeriodo', $horarioMateriaPeriodo);
+        $solicitud->setRelation('matricula', $matricula);
+    }
+    
+    // Fallbacks si es un registro real sin relaciones sembradas
+    if (!$solicitud->user) {
+        $solicitud->setRelation('user', new \App\Models\User(['nombre' => 'Usuario Ficticio']));
+    }
+    if (!$solicitud->matricula || !$solicitud->matricula->horarioMateriaPeriodo || !$solicitud->matricula->horarioMateriaPeriodo->materiaPeriodo || !$solicitud->matricula->horarioMateriaPeriodo->materiaPeriodo->materia) {
+        $materia = new \App\Models\Materia(['nombre' => 'Materia Ficticia']);
+        $materiaPeriodo = new \App\Models\MateriaPeriodo();
+        $materiaPeriodo->setRelation('materia', $materia);
+        $horarioMateriaPeriodo = new \App\Models\HorarioMateriaPeriodo();
+        $horarioMateriaPeriodo->setRelation('materiaPeriodo', $materiaPeriodo);
+        $matricula = $solicitud->matricula ?? new \App\Models\Matricula();
+        $matricula->setRelation('horarioMateriaPeriodo', $horarioMateriaPeriodo);
+        $solicitud->setRelation('matricula', $matricula);
+    }
+    if (!$solicitud->motivo_rechazo) {
+        $solicitud->motivo_rechazo = 'No contamos con cupos disponibles para la videollamada virtual de este grupo.';
+    }
+
+    return new \App\Mail\TrasladoRechazado($solicitud);
+});
+
 Route::get('/dashboard', function () {
     $usuario = auth()->user();
     $rolActivo = $usuario->roles()->wherePivot('activo', true)->first();

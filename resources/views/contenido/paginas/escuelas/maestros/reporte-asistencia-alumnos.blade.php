@@ -9,25 +9,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 @section('page-style')
     @vite(['resources/assets/vendor/scss/pages/page-profile.scss', 'resources/assets/vendor/libs/select2/select2.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss', 'resources/assets/vendor/libs/bootstrap-select/bootstrap-select.scss'])
-    <style>
-        .module-nav-link {
-            font-size: 12px !important;
-            padding: 0.6rem 0.8rem !important;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            border-radius: 0.375rem;
-            border: 1px solid transparent;
-        }
-
-        .module-nav-link.active {
-            background-color: var(--bs-primary) !important;
-            color: var(--bs-white) !important;
-            border-color: var(--bs-primary) !important;
-        }
-
-        .module-nav-link:not(.active):hover {
-            background-color: var(--bs-gray-200);
-        }
-    </style>
 @endsection
 
 @section('vendor-script')
@@ -48,65 +29,90 @@
             </div>
 
         </div>
-        {{-- Barra de Navegación del Módulo --}}
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card mb-0 p-0 border-0 shadow-sm">
-                    <ul class="nav nav-pills nav-fill justify-content-start flex-column flex-md-row gap-1 px-2 py-1">
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_dashboard_general'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.dashboardClase', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.dashboardClase') ? 'active' : '' }}">
-                                <i class="mdi mdi-view-dashboard-outline me-1"></i> Dashboard general
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_calificacion_detallada'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.calificacionMultiple', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.calificacionMultiple') ? 'active' : '' }}">
-                                <i class="mdi mdi-table-edit me-1"></i> Calificación detallada
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_reportes_asistencia'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.reporteAsistencia', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.reporteAsistencia') ? 'active' : '' }}">
-                                <i class="mdi mdi-calendar-check-outline me-1"></i> Reportes de asistencia
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_recursos_alumnos'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.recursosAlumnos', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.recursosAlumnos') ? 'active' : '' }}">
-                                <i class="mdi mdi-folder-multiple-outline me-1"></i> Recursos alumnos
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.gestionarItems', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.gestionarItems') ? 'active' : '' }}">
-                                <i class="mdi mdi-list-box-outline me-1"></i> Gestionar Items
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_calificacion_grilla'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.calificacionGrilla', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.calificacionGrilla') ? 'active' : '' }}">
-                                <i class="mdi mdi-grid me-1"></i> Calificación Grilla
-                            </a>
-                        </li>
-                        @endif
-                    </ul>
+
+        @include('contenido.paginas.escuelas.maestros.nav-modulo')
+        {{-- INICIO CUADRO INFORMATIVO DE REPORTES --}}
+        <div class="row mb-3 px-4">
+            <div class="col-12">
+                <div class="accordion" id="accordionReportes">
+                    <div class="accordion-item shadow-sm border-0">
+                        <h2 class="accordion-header" id="headingReportes">
+                            <button class="accordion-button collapsed border-top" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseReportes" aria-expanded="false" aria-controls="collapseReportes">
+                                <i class="mdi mdi-information-outline me-2 text-primary"></i>
+                                <strong>Informe de reportes propios del periodo</strong>
+                                @if(count($estadoFechas['omitidos']) > 0)
+                                    <span class="badge bg-danger text-white ms-2">{{ count($estadoFechas['omitidos']) }} Omitidos</span>
+                                @endif
+                            </button>
+                        </h2>
+                        <div id="collapseReportes" class="accordion-collapse collapse" aria-labelledby="headingReportes"
+                            data-bs-parent="#accordionReportes">
+                            <div class="accordion-body p-5 border ">
+                                <div class="row ">
+                                    {{-- Reportes Omitidos --}}
+                                    <div class="col-md-4 mb-3">
+                                        <h6 class="text-danger"><i class="mdi mdi-alert-circle-outline"></i> Omitidos (Plazo Vencido)</h6>
+                                        @if(count($estadoFechas['omitidos']) > 0)
+                                            <ul class="list-group list-group-flush border" style="max-height: 200px; overflow-y: auto;">
+                                                @foreach($estadoFechas['omitidos'] as $fecha)
+                                                    <li class="list-group-item px-2 py-1 text-danger" style="font-size: 0.85rem;">
+                                                        {{ \Carbon\Carbon::parse($fecha)->isoFormat('D [de] MMMM YYYY') }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <p class="text-muted small">No hay reportes omitidos.</p>
+                                        @endif
+                                    </div>
+
+                                    {{-- Reportes Realizados --}}
+                                    <div class="col-md-4 mb-3">
+                                        <h6 class="text-success"><i class="mdi mdi-check-circle-outline"></i> Realizados</h6>
+                                        @if(count($estadoFechas['realizados']) > 0)
+                                            <ul class="list-group list-group-flush border" style="max-height: 200px; overflow-y: auto;">
+                                                @foreach($estadoFechas['realizados'] as $fecha)
+                                                    <li class="list-group-item px-2 py-1 text-success" style="font-size: 0.85rem;">
+                                                        {{ \Carbon\Carbon::parse($fecha)->isoFormat('D [de] MMMM YYYY') }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <p class="text-muted small">No hay reportes realizados aún.</p>
+                                        @endif
+                                    </div>
+
+                                    {{-- Reportes Futuros --}}
+                                    <div class="col-md-4 mb-3">
+                                        <h6 class="text-info"><i class="mdi mdi-calendar-clock"></i> Próximos/Pendientes</h6>
+                                        @if(count($estadoFechas['futuros']) > 0 || count($estadoFechas['pendientes']) > 0)
+                                            <ul class="list-group list-group-flush border" style="max-height: 200px; overflow-y: auto;">
+                                                @foreach($estadoFechas['pendientes'] as $fecha)
+                                                    <li class="list-group-item px-2 py-1 text-warning fw-bold" style="font-size: 0.85rem;">
+                                                        {{ \Carbon\Carbon::parse($fecha)->isoFormat('D [de] MMMM YYYY') }} (Pendiente)
+                                                    </li>
+                                                @endforeach
+                                                @foreach($estadoFechas['futuros'] as $fecha)
+                                                    <li class="list-group-item px-2 py-1 text-info" style="font-size: 0.85rem;">
+                                                        {{ \Carbon\Carbon::parse($fecha)->isoFormat('D [de] MMMM YYYY') }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <p class="text-muted small">No hay fechas futuras programadas.</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        {{-- FIN CUADRO INFORMATIVO --}}
+
         <div class="row mb-3  ps-4 ">
-            {{-- BOTÓN Y MODAL PARA CREAR NUEVO REPORTE DE ASISTENCIA (Esto permanece como lo tenías) --}}
+            {{-- BOTÓN Y MODAL PARA CREAR NUEVO REPORTE DE ASISTENCIA --}}
 
             <button type="button" class="col-md-3 btn btn-primary waves-effect waves-light rounded-pill"
                 data-bs-toggle="modal" data-bs-target="#modalCrearNuevoReporteAsistencia"
@@ -180,7 +186,30 @@
 
     {{-- Script para mostrar notificaciones (ej. con Toastr o SweetAlert) --}}
     @push('scripts')
-        <script></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const esSuperAdmin = @json($esSuperAdmin);
+                const fechasPermitidas = @json($estadoFechas['fechasPermitidasFlatpickr'] ?? []);
+
+                let flatpickrConfig = {
+                    dateFormat: "Y-m-d",
+                    defaultDate: "{{ $fechaPorDefectoParaInput }}",
+                };
+
+                if (!esSuperAdmin) {
+                    if (fechasPermitidas.length > 0) {
+                        flatpickrConfig.enable = fechasPermitidas;
+                    } else {
+                        // Si no hay fechas permitidas, bloquear todo.
+                        // Configuramos minDate mayor a maxDate para bloquear la selección
+                        flatpickrConfig.minDate = "today";
+                        flatpickrConfig.maxDate = "2000-01-01";
+                    }
+                }
+
+                flatpickr("#fecha_clase_reportada", flatpickrConfig);
+            });
+        </script>
     @endpush
 
 @endsection

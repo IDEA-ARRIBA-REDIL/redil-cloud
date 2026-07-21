@@ -72,7 +72,7 @@
                                         @endif
                                         @if( $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_materia'))
                                             <li>
-                                               <form action="{{ route('materias.eliminar', $materia->id) }}" method="POST" class="form-eliminar-materia">
+                                               <form action="{{ route('materias.eliminar', $materia->id) }}" method="POST">
                                                     @csrf
                                                     @method('POST')
                                                     <button type="submit" class="dropdown-item"
@@ -166,39 +166,4 @@
     </div>
 
 
-@endsection
-
-@section('page-script')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const deleteForms = document.querySelectorAll('.form-eliminar-materia');
-        deleteForms.forEach(form => {
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const btnSubmit = this.querySelector('button[type="submit"]');
-                const nombreMateria = btnSubmit ? btnSubmit.getAttribute('data-nombre') : 'esta materia';
-
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    html: `¿Estás seguro de que deseas eliminar la materia <strong>${nombreMateria}</strong>?<br>Esta acción no se puede deshacer.`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar',
-                    customClass: {
-                        confirmButton: 'btn btn-danger me-3',
-                        cancelButton: 'btn btn-label-secondary'
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-            });
-        });
-    });
-</script>
 @endsection

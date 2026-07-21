@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\Models\Periodo;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -19,7 +18,7 @@ class PeriodoFinalizadoMail extends Mailable
     /**
      * Create a new message instance.
      *
-     * @param Periodo $periodo El periodo que se acaba de procesar.
+     * @param  Periodo  $periodo  El periodo que se acaba de procesar.
      */
     public function __construct(Periodo $periodo)
     {
@@ -32,7 +31,7 @@ class PeriodoFinalizadoMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Proceso de Finalización de Periodo Completado',
+            subject: 'Proceso de finalización de periodo completado',
         );
     }
 
@@ -41,9 +40,34 @@ class PeriodoFinalizadoMail extends Mailable
      */
     public function content(): Content
     {
-        // Usaremos una vista de Markdown para un correo simple y elegante.
+        $mailData = new \stdClass;
+        $mailData->subject = 'Proceso de finalización de periodo completado';
+        $mailData->eyebrow = 'ACADÉMICO · PERIODO FINALIZADO';
+        $mailData->titulo = 'Proceso de periodo completado';
+
+        $periodoNombre = $this->periodo?->nombre ?? 'Periodo';
+
+        $mailData->mensaje = '<p>Te informamos que el proceso de finalización para el periodo académico:</p>'
+            .'<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#F8F8F6;border:1px solid #EBEBEB;border-radius:8px;padding:16px;margin:16px 0 20px 0;">'
+            .'  <tr>'
+            .'    <td style="font-family:Arial,sans-serif;font-size:14px;color:#374151;line-height:1.6;">'
+            .'      <strong>Periodo Académico:</strong> '.$periodoNombre
+            .'    </td>'
+            .'  </tr>'
+            .'</table>'
+            .'<p>ha concluido exitosamente.</p>'
+            .'<p>Ya puedes consultar los resultados y el estado final de los alumnos en el sistema.</p>';
+
+        $mailData->actionUrl = url('/dashboard');
+        $mailData->actionText = 'Consultar en el sistema →';
+
         return new Content(
-            markdown: 'emails.periodo-finalizado',
+            view: 'emails.default-mail',
+            with: [
+                'mailData' => $mailData,
+                'iglesia' => \App\Models\Iglesia::find(1),
+                'configuracion' => \App\Models\Configuracion::find(1),
+            ],
         );
     }
 

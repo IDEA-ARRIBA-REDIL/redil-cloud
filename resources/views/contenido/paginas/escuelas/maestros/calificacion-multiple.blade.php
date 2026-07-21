@@ -39,33 +39,12 @@
             max-width: 80px;
             /* Ancho para input de nota */
             margin: 0 auto 0.5rem auto;
-            /* Centrar input y margen inferior */
+            /* Ancho máximo para el input de nota */
         }
 
-
-
-        .item-calificacion-actions a,
-        .item-calificacion-actions button {
-            font-size: 0.8rem;
+        .accordion-toggle-btn {
+            font-size: 1.2rem;
             padding: 0.25rem 0.5rem;
-        }
-
-        .module-nav-link {
-            font-size: 12px !important;
-            padding: 0.6rem 0.8rem !important;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            border-radius: 0.375rem;
-            border: 1px solid transparent;
-        }
-
-        .module-nav-link.active {
-            background-color: var(--bs-primary) !important;
-            color: var(--bs-white) !important;
-            border-color: var(--bs-primary) !important;
-        }
-
-        .module-nav-link:not(.active):hover {
-            background-color: var(--bs-gray-200);
         }
     </style>
 @endsection
@@ -103,33 +82,6 @@
                     console.log(
                         `Calificar Alumno ID: ${alumnoId}, Item ID: ${itemId}, Nota: ${notaValor}`
                     );
-                    // Aquí iría la lógica AJAX para guardar la nota
-                    // Ejemplo:
-                    // fetch('/ruta/para/guardar/nota/item', {
-                    //     method: 'POST',
-                    //     headers: {
-                    //         'Content-Type': 'application/json',
-                    //         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    //     },
-                    //     body: JSON.stringify({
-                    //         alumno_id: alumnoId,
-                    //         item_id: itemId,
-                    //         nota: notaValor,
-                    //         horario_asignado_id: '{{ $horarioAsignado->id }}' // Pasar el ID del horario
-                    //     })
-                    // })
-                    // .then(response => response.json())
-                    // .then(data => {
-                    //     if(data.success) {
-                    //         Swal.fire('¡Guardado!', data.message || 'La nota ha sido guardada.', 'success');
-                    //     } else {
-                    //         Swal.fire('Error', data.message || 'No se pudo guardar la nota.', 'error');
-                    //     }
-                    // })
-                    // .catch(error => {
-                    //     console.error('Error:', error);
-                    //     Swal.fire('Error', 'Ocurrió un problema de conexión.', 'error');
-                    // });
                     Swal.fire({
                         icon: 'success',
                         title: 'Nota',
@@ -171,62 +123,7 @@
         </div>
 
 
-        {{-- Barra de Navegación del Módulo --}}
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card mb-0 p-0 border-0 shadow-sm">
-                    <ul class="nav nav-pills nav-fill justify-content-start flex-column flex-md-row gap-1 px-2 py-1">
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_dashboard_general'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.dashboardClase', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.dashboardClase') ? 'active' : '' }}">
-                                <i class="mdi mdi-view-dashboard-outline me-1"></i> Dashboard general
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_calificacion_detallada'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.calificacionMultiple', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.calificacionMultiple') ? 'active' : '' }}">
-                                <i class="mdi mdi-table-edit me-1"></i> Calificación detallada
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_reportes_asistencia'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.reporteAsistencia', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.reporteAsistencia') ? 'active' : '' }}">
-                                <i class="mdi mdi-calendar-check-outline me-1"></i> Reportes de asistencia
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_recursos_alumnos'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.recursosAlumnos', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.recursosAlumnos') ? 'active' : '' }}">
-                                <i class="mdi mdi-folder-multiple-outline me-1"></i> Recursos alumnos
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.gestionarItems', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.gestionarItems') ? 'active' : '' }}">
-                                <i class="mdi mdi-list-box-outline me-1"></i> Gestionar Items
-                            </a>
-                        </li>
-                        @endif
-                        @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_calificacion_grilla'))
-                        <li class="nav-item">
-                            <a href="{{ route('maestros.calificacionGrilla', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
-                                class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.calificacionGrilla') ? 'active' : '' }}">
-                                <i class="mdi mdi-grid me-1"></i> Calificación Grilla
-                            </a>
-                        </li>
-                        @endif
-                    </ul>
-                </div>
-            </div>
+        @include('contenido.paginas.escuelas.maestros.nav-modulo')    </div>
         </div>
 
         {{-- Contenido Principal: Acordeón de Alumnos --}}

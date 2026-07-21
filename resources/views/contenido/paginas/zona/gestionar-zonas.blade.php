@@ -8,6 +8,7 @@
 
 
 @section('vendor-style')
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.css') }}" />
     @vite([
       'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
       'resources/assets/vendor/libs/select2/select2.scss'

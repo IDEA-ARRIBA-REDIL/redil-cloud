@@ -2,9 +2,11 @@
 
 namespace App\Notifications;
 
+use App\Mail\DefaultMail;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Mail\Mailable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Lang;
 
 class NotificacionReactivacionCuenta extends Notification
 {
@@ -20,7 +22,6 @@ class NotificacionReactivacionCuenta extends Notification
     /**
      * Crea una nueva instancia de la notificación.
      *
-     * @param string $urlFirmada
      * @return void
      */
     public function __construct(string $urlFirmada)
@@ -43,18 +44,24 @@ class NotificacionReactivacionCuenta extends Notification
      * Construye y envía el correo electrónico, en idioma español con las instrucciones.
      *
      * @param  mixed  $notifiable
-     * @return \Illuminate\Notifications\Messages\MailMessage
      */
-    public function toMail($notifiable)
+    public function toMail($notifiable): Mailable
     {
-        return (new MailMessage)
-                    ->subject('Reactivación de tu cuenta - REDIL Cloud')
-                    ->greeting('Hola ' . $notifiable->name . '!')
-                    ->line('Has recibido este correo electrónico porque tu cuenta está dada de baja y se ha solicitado su reactivación.')
-                    ->line('Si tú hiciste la solicitud, haz clic en el botón a continuación para restaurar tu cuenta y poder ingresar de nuevo:')
-                    ->action('Reactivar Mi Cuenta', $this->urlFirmada)
-                    ->line('Por temas de seguridad, este enlace expirará en 30 minutos.')
-                    ->line('Si no pediste reactivar tu cuenta, puedes ignorar de forma segura este mensaje, nadie más accederá sin conocer tu contraseña.')
-                    ->salutation('Saludos desde el equipo de ' . config('app.name') . '.');
+        $mailData = new \stdClass;
+        $mailData->subject = Lang::get('Reactivación de tu cuenta');
+        $mailData->eyebrow = 'SEGURIDAD · RESTAURACIÓN DE CUENTA';
+        $mailData->titulo = Lang::get('Reactivación de tu cuenta');
+        $mailData->nombre = method_exists($notifiable, 'nombre') ? $notifiable->nombre(3) : ($notifiable->name ?? '');
+
+        $mailData->mensaje = Lang::get('Has recibido este correo electrónico porque tu cuenta se encuentra dada de baja y se ha solicitado su reactivación.<br><br>Si tú realizaste esta solicitud, por favor haz clic en el botón de abajo para restaurar tu cuenta e ingresar nuevamente:')
+            .'<p style="font-size:13px;color:#6B7280;line-height:1.5;margin-top:24px;margin-bottom:0;">'
+            .Lang::get('Por motivos de seguridad, este enlace de reactivación expirará en 30 minutos.<br><br>Si tú no solicitaste reactivar tu cuenta, puedes ignorar este mensaje de forma segura. Tu cuenta permanecerá inactiva.')
+            .'</p>';
+
+        $mailData->actionUrl = $this->urlFirmada;
+        $mailData->actionText = Lang::get('Reactivar mi cuenta →');
+
+        return (new DefaultMail($mailData))
+            ->to($notifiable->email);
     }
 }

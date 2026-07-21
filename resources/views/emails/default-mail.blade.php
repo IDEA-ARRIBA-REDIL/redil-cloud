@@ -66,17 +66,27 @@
     <!-- ─── HEADER ─── -->
     <tr>
       <td style="background-color:#FFFFFF;border-radius:16px 16px 0 0;padding:20px 32px;border-bottom:1px solid #EBEBEB;text-align:center;">
-        @if($configuracion && $configuracion->logo_app && Storage::exists("img/branding/".$configuracion->logo_app))
+        @php
+          $iglesiaObj = $iglesia ?? \App\Models\Iglesia::first();
+        @endphp
+        @if($iglesiaObj && $iglesiaObj->logo_negro && Storage::exists("img/iglesia/".$iglesiaObj->logo_negro))
           <img
-            src="{{ tenant_asset('img/branding/'.$configuracion->logo_app) }}"
-            alt="{{ $iglesia->nombre ?? config('app.name') }}"
+            src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo_negro) }}"
+            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
             width="160"
             style="display:inline-block;max-width:160px;height:auto;"
           />
+        @elseif($iglesiaObj && $iglesiaObj->logo && Storage::exists("img/iglesia/".$iglesiaObj->logo))
+          <img
+            src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo) }}"
+            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
+            width="160"
+            style="display:inline-block;max-width:160px;height:auto;background-color:#040407;padding:4px;border-radius:4px;"
+          />
         @else
           <img
-            src="{{ Storage::disk('global_media')->url('logo_principal.png') }}"
-            alt="{{ $iglesia->nombre ?? config('app.name') }}"
+            src="{{ Storage::disk('global_media')->url('logo_principal_negro.png') }}"
+            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
             width="160"
             style="display:inline-block;max-width:160px;height:auto;"
           />
@@ -93,10 +103,10 @@
           alt="{{ $iglesia->nombre ?? 'Iglesia' }}"
           width="600"
           class="hero-img"
-          style="width:100%;max-width:600px;height:280px;object-fit:cover;display:block;"
+          style="width:100%;max-width:600px;height:280Microsoft.QuickAction.Bluetoothpx;object-fit:cover;display:block;"
         />
       </td>
-    </tr>
+    </tr> 
     @endif
 
     <!-- ─── CUERPO ─── -->
@@ -180,17 +190,24 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
           <tr>
             <td align="center">
-              @if($configuracion && $configuracion->logo_app && Storage::exists("img/branding/".$configuracion->logo_app))
+              @if($iglesiaObj && $iglesiaObj->logo && Storage::exists("img/iglesia/".$iglesiaObj->logo))
                 <img
-                  src="{{ tenant_asset('img/branding/'.$configuracion->logo_app) }}"
-                  alt="{{ $iglesia->nombre ?? config('app.name') }}"
+                  src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo) }}"
+                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
                   width="140"
                   style="display:inline-block;max-width:140px;height:auto;"
+                />
+              @elseif($iglesiaObj && $iglesiaObj->logo_negro && Storage::exists("img/iglesia/".$iglesiaObj->logo_negro))
+                <img
+                  src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo_negro) }}"
+                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
+                  width="140"
+                  style="display:inline-block;max-width:140px;height:auto;background-color:#FFFFFF;padding:4px;border-radius:4px;"
                 />
               @else
                 <img
                   src="{{ Storage::disk('global_media')->url('logo_principal.png') }}"
-                  alt="{{ $iglesia->nombre ?? config('app.name') }}"
+                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
                   width="140"
                   style="display:inline-block;max-width:140px;height:auto;"
                 />
@@ -200,39 +217,54 @@
         </table>
 
         <!-- Redes sociales (Indicadas) -->
+        @if($iglesiaObj && ($iglesiaObj->instagram || $iglesiaObj->facebook || $iglesiaObj->youtube || $iglesiaObj->tiktok))
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin-bottom:22px;">
           <tr>
+            @if($iglesiaObj->instagram)
             <td style="padding:0 5px;">
-              <a href="#" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;">
-                <span style="font-family:Arial,sans-serif;font-size:12px;color:#6B7280;font-weight:700;">IG</span>
+              <a href="{{ $iglesiaObj->instagram }}" target="_blank" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;text-decoration:none;vertical-align:middle;">
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/instagram-new.png" width="18" height="18" style="display:inline-block;vertical-align:middle;margin-top:-3px;" alt="Instagram">
               </a>
             </td>
+            @endif
+            @if($iglesiaObj->facebook)
             <td style="padding:0 5px;">
-              <a href="#" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;">
-                <span style="font-family:Arial,sans-serif;font-size:12px;color:#6B7280;font-weight:700;">YT</span>
+              <a href="{{ $iglesiaObj->facebook }}" target="_blank" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;text-decoration:none;vertical-align:middle;">
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/facebook-new.png" width="18" height="18" style="display:inline-block;vertical-align:middle;margin-top:-3px;" alt="Facebook">
               </a>
             </td>
+            @endif
+            @if($iglesiaObj->youtube)
             <td style="padding:0 5px;">
-              <a href="#" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;">
-                <span style="font-family:Arial,sans-serif;font-size:12px;color:#6B7280;font-weight:700;">FB</span>
+              <a href="{{ $iglesiaObj->youtube }}" target="_blank" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;text-decoration:none;vertical-align:middle;">
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/youtube-play.png" width="18" height="18" style="display:inline-block;vertical-align:middle;margin-top:-3px;" alt="YouTube">
               </a>
             </td>
+            @endif
+            @if($iglesiaObj->tiktok)
+            <td style="padding:0 5px;">
+              <a href="{{ $iglesiaObj->tiktok }}" target="_blank" style="display:inline-block;width:32px;height:32px;border-radius:50%;background-color:#1A1A24;text-align:center;line-height:32px;text-decoration:none;vertical-align:middle;">
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/tiktok.png" width="18" height="18" style="display:inline-block;vertical-align:middle;margin-top:-3px;" alt="TikTok">
+              </a>
+            </td>
+            @endif
           </tr>
         </table>
+        @endif
 
         <!-- Dirección -->
-        <p style="font-family:Arial,sans-serif;font-size:11px;color:#374151;text-align:center;line-height:1.7;margin:0 0 10px 0;">
-          {{ $iglesia->direccion ?? 'Calle 000 #00-00, Bogotá D.C., Colombia' }} &nbsp;·&nbsp; {{ $iglesia->email_soporte ?? 'info@manantial.co' }}
+        <p style="font-family:Arial,sans-serif;font-size:11px;color:#374151;text-align:center;line-height:1.9;margin:0 0 10px 0;">
+          {{ $iglesia->direccion ?? 'Calle 000 #00-00, Bogotá D.C., Colombia' }} &nbsp;·&nbsp; {{ $iglesia->email_soporte ?? '' }}
         </p>
 
         <!-- Legal -->
-        <p style="font-family:Arial,sans-serif;font-size:10px;color:#374151;text-align:center;margin:0;line-height:1.7;">
+        <p style="font-family:Arial,sans-serif;font-size:10px;color:#374151;text-align:center;margin:0;line-height:1.9;">
           Recibiste este mensaje porque haces parte de nuestra comunidad.<br/>
           @if($iglesia && $iglesia->url_subdominio)
             <a href="https://{{ $iglesia->url_subdominio }}" style="color:#4B5563;text-decoration:underline;">{{ $iglesia->url_subdominio }}</a>
             &nbsp;·&nbsp;
           @endif
-          <span style="color:#4B5563;">{{ config('app.name') }}</span>
+          <span style="color:#4B5563;">{{ $iglesiaObj->nombre }}</span>
         </p>
 
       </td>
