@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\TipoPeticion;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\TipoPeticion;
 
 class TipoPeticionSeeder extends Seeder
 {

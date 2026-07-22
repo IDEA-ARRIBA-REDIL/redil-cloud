@@ -9,18 +9,13 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class RecordatorioFormularioMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $mailData;
-
-    public $iglesia;
-
-    public $version;
-
-    public $actividad;
+    public $mailData, $iglesia, $version, $actividad;
 
     public function __construct($mailData, $actividad)
     {
@@ -29,7 +24,7 @@ class RecordatorioFormularioMail extends Mailable
         $this->iglesia = Iglesia::find(1);
         $configuracion = Configuracion::find(1);
 
-        if (! isset($this->mailData->banner)) {
+        if (!isset($this->mailData->banner)) {
             $this->mailData->banner = $actividad->portada_url;
         }
     }
@@ -44,7 +39,7 @@ class RecordatorioFormularioMail extends Mailable
     public function content(): Content
     {
         // Seteamos eyebrow por defecto si no viene en el mailData
-        if (! isset($this->mailData->eyebrow)) {
+        if (!isset($this->mailData->eyebrow)) {
             $this->mailData->eyebrow = 'RECORDATORIO · FORMULARIO PENDIENTE';
         }
 

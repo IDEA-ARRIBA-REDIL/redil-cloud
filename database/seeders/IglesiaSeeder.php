@@ -15,7 +15,7 @@ class IglesiaSeeder extends Seeder
         Iglesia::firstOrCreate([
             'nombre' => 'Iglesia Manatial de Vida Eterna',
             'logo' => 'logo_1784134587.png',
-            'logo_negro' => 'logo_negro_1784134587.png',
+            'logo_negro' => 'logo_negro_1784134587.png', 
             'municipio_id' => 1089,
             'pais_id' => 45,
             'latitud' => '4.0747',

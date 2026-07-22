@@ -125,10 +125,13 @@ class MaestroController extends Controller
         // 5. EJECUCIÓN FINAL DE LA CONSULTA
         $maestros = $queryMaestros->latest('created_at')->paginate(16);
 
-        // --- CAMBIO SOLICITADO: Filtrar roles que tengan el permiso 'escuelas.es_maestro' ---
-
-        // Usamos el scope de Spatie 'permission' para filtrar los roles que tienen ese permiso asignado.
-        $rolesMaestro = Role::permission('escuelas.es_maestro')->get();
+        // Obtenemos los roles de maestro (por bandera es_maestro, permiso o nombre)
+        $rolesMaestro = Role::where('es_maestro', true)
+            ->orWhereHas('permissions', function ($query) {
+                $query->where('name', 'escuelas.es_maestro');
+            })
+            ->orWhere('name', 'Maestro')
+            ->get();
 
         // 6. DEVOLVER LA VISTA CON TODOS LOS DATOS
         return view('contenido.paginas.escuelas.maestros.gestionar-maestros', [
@@ -149,7 +152,7 @@ class MaestroController extends Controller
     {
         // El nombre del input del Livewire es 'buscador-usuario'
         $validados = $request->validate([
-            'buscador-usuario' => ['required', 'integer', \Illuminate\Validation\Rule::unique('maestros', 'user_id')],
+            'buscador-usuario' => ['required', 'integer', \Illuminate\Validation\Rule::unique('maestros', 'user_id')->whereNull('deleted_at')],
             'descripcion' => 'nullable|string|max:1000',
             'activo' => 'required|boolean',
             'role_id' => 'required|integer|exists:roles,id', // Validación mejorada
@@ -169,31 +172,47 @@ class MaestroController extends Controller
             $usuario = User::findOrFail($request->input('buscador-usuario'));
 
             // --- LÓGICA DE ASIGNACIÓN DE ROL MEJORADA ---
-            // Verificamos si el usuario ya tiene este rol (aunque sea con activo=0)
+            // Verificamos si el usuario ya tiene algún rol activo en el sistema
+            $tieneRolActivo = $usuario->roles()->wherePivot('activo', true)->exists();
+
             if ($usuario->roles()->where('roles.id', $request->role_id)->exists()) {
-                // Si existe, actualizamos el pivot para activarlo
-                $usuario->roles()->updateExistingPivot($request->role_id, [
-                    'activo' => 1,
-                    // 'dependiente' => 0, // Opcional: si quisieras resetearlo
-                    // 'model_type' no es necesario en updateExistingPivot si la relación ya resuelve la llave compuesta,
-                    // pero Laravel estándar no maneja 'model_type' en la PK compuesta bien con belongsToMany puro.
-                    // Sin embargo, updateExistingPivot usa los IDs definidos en la relación.
-                ]);
+                // Si el usuario ya tiene el rol asignado, solo lo activamos si NO tiene ningún rol activo actualmente
+                if (! $tieneRolActivo) {
+                    $usuario->roles()->updateExistingPivot($request->role_id, [
+                        'activo' => 1,
+                    ]);
+                }
             } else {
-                // Si no existe, lo adjuntamos con los campos extra
+                // Si no tiene el rol, se lo adjuntamos:
+                // - activo = 1 si el usuario NO tiene ningún rol activo actualmente
+                // - activo = 0 si el usuario YA tiene otro rol activo (para no inactivar su rol actual)
                 $usuario->roles()->attach($request->role_id, [
-                    'activo' => 1,
+                    'activo' => $tieneRolActivo ? 0 : 1,
                     'dependiente' => 0,
-                    'model_type' => 'App\Models\User', // NECESARIO porque la tabla pivote lo requiere y es parte de la PK
+                    'model_type' => 'App\Models\User',
                 ]);
             }
 
-            Maestro::create([
-                // Usamos la clave correcta del request
-                'user_id' => $request->input('buscador-usuario'),
-                'descripcion' => $request->descripcion,
-                'activo' => $request->activo,
-            ]);
+            app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+            // Buscar si ya existe un registro de Maestro (incluyendo eliminados lógicamente)
+            $maestroExistente = Maestro::withTrashed()->where('user_id', $request->input('buscador-usuario'))->first();
+
+            if ($maestroExistente) {
+                if ($maestroExistente->trashed()) {
+                    $maestroExistente->restore();
+                }
+                $maestroExistente->update([
+                    'descripcion' => $request->descripcion,
+                    'activo' => $request->activo,
+                ]);
+            } else {
+                Maestro::create([
+                    'user_id' => $request->input('buscador-usuario'),
+                    'descripcion' => $request->descripcion,
+                    'activo' => $request->activo,
+                ]);
+            }
 
             DB::commit();
 
@@ -209,7 +228,7 @@ class MaestroController extends Controller
     }
 
     /**
-     * Elimina un maestro específico y desvincula su rol de maestro asociado al usuario.
+     * Elimina lógicamente un maestro específico y desvincula sus roles de maestro asociados.
      * NO elimina el registro del usuario.
      *
      * @return \Illuminate\Http\RedirectResponse
@@ -232,15 +251,21 @@ class MaestroController extends Controller
 
             // 2. Verifica si el usuario existe antes de intentar quitar roles
             if ($usuario) {
-                // ----> CORRECCIÓN: Lógica para quitar el rol <----
-
-                // a) Encuentra TODOS los roles marcados como 'es_maestro' que tenga el usuario.
-                //    Esto es más seguro si un usuario pudiera tener varios roles de maestro (aunque sea raro).
-                $rolesMaestroParaQuitar = $usuario->roles()->where('es_maestro', true)->pluck('id');
+                // a) Encuentra TODOS los roles marcados como 'es_maestro', con permiso 'escuelas.es_maestro' o nombre 'Maestro'
+                $rolesMaestroParaQuitar = $usuario->roles()
+                    ->where(function ($query) {
+                        $query->where('es_maestro', true)
+                            ->orWhereHas('permissions', function ($q) {
+                                $q->where('name', 'escuelas.es_maestro');
+                            })
+                            ->orWhere('name', 'Maestro');
+                    })
+                    ->pluck('roles.id');
 
                 // b) Si se encontraron roles de maestro, desvincúlalos (detach).
                 if ($rolesMaestroParaQuitar->isNotEmpty()) {
                     $usuario->roles()->detach($rolesMaestroParaQuitar);
+                    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
                     Log::info("Roles de maestro [IDs: {$rolesMaestroParaQuitar->implode(',')}] desvinculados del usuario ID {$usuario->id} al eliminar maestro ID {$maestro->id}.");
                 } else {
                     Log::info("Usuario ID {$usuario->id} no tenía roles marcados como 'es_maestro' al eliminar maestro ID {$maestro->id}.");
@@ -249,14 +274,14 @@ class MaestroController extends Controller
                 Log::warning("No se encontró usuario asociado al maestro ID {$maestro->id} durante la eliminación. No se pudieron quitar roles.");
             }
 
-            // 3. Elimina el registro del Maestro (Soft Delete o Hard Delete según tu modelo)
+            // 3. Elimina lógicamente el registro del Maestro (Soft Delete)
             $maestro->delete();
 
             // 4. Si todo salió bien, confirma la transacción
             DB::commit();
 
-            return redirect()->route('maestros.gestionar') // Asegúrate que 'maestros.gestionar' sea tu ruta correcta
-                ->with('mensaje_success', "Maestro '{$nombreUsuario}' eliminado y rol desvinculado correctamente.");
+            return redirect()->route('maestros.gestionar')
+                ->with('mensaje_success', "Maestro '{$nombreUsuario}' eliminado lógicamente y rol desvinculado correctamente.");
         } catch (\Exception $e) {
             // 5. Si algo falla, revierte la transacción
             DB::rollBack();

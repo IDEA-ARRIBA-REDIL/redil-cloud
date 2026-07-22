@@ -103,6 +103,42 @@
                 });
             });
 
+            // --- Alertas SweetAlert2 para Errores y Notificaciones ---
+            @if (session('mensaje_error') || session('error') || session('danger'))
+                Swal.fire({
+                    title: 'Error al procesar asesor',
+                    text: "{!! addslashes(session('mensaje_error') ?? session('error') ?? session('danger')) !!}",
+                    icon: 'error',
+                    confirmButtonText: 'Entendido',
+                    customClass: {
+                        confirmButton: 'btn btn-primary rounded-pill'
+                    },
+                    buttonsStyling: false
+                });
+            @elseif (session('mensaje_exito') || session('mensaje_success') || session('success') || session('status'))
+                Swal.fire({
+                    title: '¡Operación Exitosa!',
+                    text: "{!! addslashes(session('mensaje_exito') ?? session('mensaje_success') ?? session('success') ?? session('status')) !!}",
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    customClass: {
+                        confirmButton: 'btn btn-primary rounded-pill'
+                    },
+                    buttonsStyling: false
+                });
+            @elseif ($errors->any())
+                Swal.fire({
+                    title: 'Atención: Datos incompletos',
+                    html: "{!! addslashes(implode('<br>', $errors->all())) !!}",
+                    icon: 'warning',
+                    confirmButtonText: 'Corregir',
+                    customClass: {
+                        confirmButton: 'btn btn-primary rounded-pill'
+                    },
+                    buttonsStyling: false
+                });
+            @endif
+
         });
     </script>
 @endsection

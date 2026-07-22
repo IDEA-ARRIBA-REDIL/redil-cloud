@@ -3,28 +3,27 @@
 namespace App\Http\Controllers;
 
 // Importaciones necesarias
+use App\Mail\CompraConfirmacionMail;
+use App\Models\Actividad;
+use App\Models\ActividadCategoria;
+use App\Models\Caja;
+use App\Models\Compra;
+use App\Models\Configuracion;
+use App\Models\HistorialModificacionPago; // Asegúrate de tener Logo
+use App\Models\Iglesia;
+use App\Models\Moneda;
+use App\Models\Pago;
+use App\Models\TipoPago;
+use App\Models\User; // ¡Asegúrate de que estén todas!
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Log; // Asegúrate de tener Logo
-use App\Models\Caja;
-use App\Models\Actividad;
-use App\Models\User;
-use App\Models\Configuracion;
-use App\Models\ActividadCategoria; // ¡Asegúrate de que estén todas!
-use App\Models\TipoPago;
-use App\Models\Moneda;
-use App\Models\Compra;
-
-use App\Models\Pago;
-use App\Models\HistorialModificacionPago;
-use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
-use App\Models\Iglesia; // Asumiendo que tienes este model
-
+use Illuminate\View\View; // Asumiendo que tienes este model
 // Imports de Correo
-use App\Mail\CompraConfirmacionMail; // El Mailable para el ticket
+use Milon\Barcode\Facades\DNS2DFacade as DNS2D; // El Mailable para el ticket
 
 class TaquillaController extends Controller
 {
@@ -126,7 +125,7 @@ class TaquillaController extends Controller
     {
         $monedaPrincipal = Moneda::where('default', true)->first() ?? Moneda::find(1);
         $esEscuela = $actividad->tipo->tipo_escuelas;
-        $esAbono = $actividad->tipo->permite_abonos && !$esEscuela;
+        $esAbono = $actividad->tipo->permite_abonos && ! $esEscuela;
 
         //
         return view('contenido.paginas.taquillas.procesar-venta', [
@@ -191,7 +190,7 @@ class TaquillaController extends Controller
                 ));
             }
         } catch (\Exception $e) {
-            Log::error("Fallo al enviar correo de ticket para Compra #{$compra->id}: " . $e->getMessage());
+            Log::error("Fallo al enviar correo de ticket para Compra #{$compra->id}: ".$e->getMessage());
             // No detenemos al usuario, la compra fue exitosa, solo falló el email.
         }
 
@@ -226,7 +225,6 @@ class TaquillaController extends Controller
         ]);
     }
 
-
     /**
      * Muestra el historial de modificaciones (Auditoría).
      */
@@ -239,76 +237,64 @@ class TaquillaController extends Controller
      * Solicita la anulación de una compra.
      * Estado 5: Pendiente de Anulación.
      */
+    /**
+     * Registra una solicitud de anulación para una compra.
+     * Estado 5: Pendiente de Anulación.
+     */
     public function solicitarAnulacion(Request $request, Compra $compra)
     {
         $request->validate([
             'motivo' => 'required|string|min:5|max:255',
+            'caja_id' => 'nullable|integer|exists:cajas,id',
         ]);
 
-        // 1. Validar Horario de la Caja
-        // Obtenemos la caja asociada al usuario actual o la del registro (asumimos la del registro para validar si esa caja está abierta)
-        // Pero la regla dice "si se ha pasado de esos horarios no le debe dejar crear registros... y tampoco la opcion de solicitar anulacion"
-        // Verificamos la caja activa del usuario o la caja donde se hizo la compra?
-        // Generalmente es la caja donde está operando el cajero AHORA.
-        // Asumiremos que el cajero tiene una caja asignada y activa.
-        // Buscamos la caja abierta del usuario actual
-        $cajaActual = Caja::where('user_id', Auth::id())->where('estado', 1)->first();
+        // 1. Identificar la caja activa específica enviada desde la vista o asociada al pago
+        $cajaId = $request->input('caja_id');
 
-        if (!$cajaActual) {
-             return back()->with('error', 'No tienes una caja asignada o abierta para realizar esta acción.');
+        if ($cajaId) {
+            $cajaActual = Caja::find($cajaId);
+        } else {
+            $registroCajaId = $compra->pagos()->first()?->registro_caja_id;
+            $cajaActual = $registroCajaId
+                ? Caja::find($registroCajaId)
+                : Caja::where('user_id', Auth::id())->where('estado', true)->first();
         }
 
+        if (! $cajaActual || ! $cajaActual->estado) {
+            return back()->with('error', 'No se identificó una caja activa u abierta para realizar esta acción.');
+        }
+
+        // 2. Validar si la CAJA ESPECÍFICA permite modificar/anular registros
+        if (! $cajaActual->permite_modificar_registros) {
+            return back()->with('error', "La caja '{$cajaActual->nombre}' no tiene habilitado el permiso para modificar o anular registros.");
+        }
+
+        // 3. Validar Horario de Operación de la Caja especificada
         $horaActual = now()->format('H:i:s');
-        
         if ($cajaActual->hora_apertura && $cajaActual->hora_cierre) {
-            if ($horaActual < $cajaActual->hora_apertura || $horaActual > $cajaActual->hora_cierre) {
-                return back()->with('error', 'Fuera del horario permitido para esta caja (' . $cajaActual->hora_apertura . ' - ' . $cajaActual->hora_cierre . ').');
+            $apertura = Carbon::parse($cajaActual->hora_apertura)->format('H:i:s');
+            $cierre = Carbon::parse($cajaActual->hora_cierre)->format('H:i:s');
+
+            if ($horaActual < $apertura || $horaActual > $cierre) {
+                $hApertura = Carbon::parse($cajaActual->hora_apertura)->format('g:i A');
+                $hCierre = Carbon::parse($cajaActual->hora_cierre)->format('g:i A');
+
+                return back()->with('error', "Operación no permitida: La caja '{$cajaActual->nombre}' se encuentra fuera de su horario de atención ({$hApertura} - {$hCierre}).");
             }
         }
 
-        // 2. Cambiar estado a Pendiente de Anulación (5)
-        // Guardamos el motivo en algún lugar? 
-        // La tabla compras no tiene campo motivo_anulacion. 
-        // Podríamos guardarlo en historial_modificacion_pagos como un registro preliminar o en una tabla de solicitudes.
-        // O agregamos un campo a compras.
-        // El prompt dice: "crear el registro en la tabla historial_modificacion_pagos... cuando esto se anule".
-        // Pero para la solicitud, ¿dónde guardamos el motivo?
-        // Asumiremos que se guarda en una nota o campo temporal, o creamos el registro en historial con estado "Pendiente"?
-        // El prompt dice: "un input de tipo text obligatorio donde se describa el motivo...".
-        // Para no modificar la tabla compras (no se pidió), usaremos el historial pero con un flag o estado?
-        // O mejor, agregamos el motivo a la sesión flash o asumimos que el admin lo verá al autorizar?
-        // Espera, el admin necesita ver el motivo.
-        // Vamos a guardar el motivo en el campo `listado_carrito` (json) temporalmente o creamos un registro en historial con valor_nuevo NULL y un estado especial?
-        // Mejor: Creamos el registro en HistorialModificacionPago con un estado "Pendiente" si tuviéramos campo estado.
-        // Como no tenemos, usaremos la tabla `compras` campo `listado_carrito` para appendear metadata o asumimos que el usuario quiere que agregue el campo motivo?
-        // "ahora en la base de datos existen dos campos...". No mencionó campo motivo en compra.
-        // Voy a guardar el motivo en una nueva tabla `solicitudes_anulacion`? No pidió nueva tabla.
-        // Voy a guardar el motivo en `historial_modificacion_pagos` PERO asociado a la compra y sin pago_id específico aun?
-        // La tabla historial requiere pago_id.
-        // Ok, voy a agregar una columna `motivo_anulacion` a la tabla `compras` en una migración rápida, es lo más limpio.
-        // O REUSAR `listado_carrito` si es JSON.
-        // El usuario dijo: "haz todo el procedimiento bien comentareado".
-        // Voy a asumir que puedo agregar una columna `motivo_anulacion` a `compras`.
-        // PERO NO PUEDO HACER MIGRACIONES SI LA BD FALLA.
-        // Así que usaré una tabla existente o un campo existente.
-        // `listado_carrito` es string 500.
-        // Voy a crear el registro en `HistorialModificacionPago` DE UNA VEZ con el motivo, y cuando se autorice, se confirma?
-        // No, el historial es de "modificaciones realizadas".
-        // Voy a guardar el motivo en cache o sesión? No.
-        // Voy a asumir que el motivo se pasa al admin verbalmente? No.
-        // Voy a guardar el motivo en el campo `observacion` si existe? No.
-        // DECISIÓN: Guardaré el motivo concatenado en el campo `listado_carrito` temporalmente con un prefijo "SOLICITUD_ANULACION:".
-        
-        $compra->estado = 5; // Pendiente de Anulación
-        // Guardamos el motivo en el campo listado_carrito temporalmente (hack seguro si es JSON o texto)
-        // O mejor, creamos un registro en historial con pago_id null (si la FK lo permite). La FK de pago_id es constrained? Sí.
-        // Entonces no puedo usar historial sin pago.
-        // Voy a usar `listado_carrito` para guardar "MOTIVO_ANULACION: ...".
-        $currentCarrito = $compra->listado_carrito;
-        $compra->listado_carrito = $currentCarrito . " | MOTIVO_ANULACION: " . $request->motivo;
+        // 4. Validar estado actual de la compra
+        if (in_array($compra->estado, [4, 5, 6])) {
+            return back()->with('error', 'La compra ya se encuentra anulada o con una solicitud de anulación en curso.');
+        }
+
+        // 5. Cambiar estado a Pendiente de Anulación (5) y registrar motivo
+        $compra->estado = 5;
+        $currentCarrito = $compra->listado_carrito ?? '';
+        $compra->listado_carrito = trim($currentCarrito).' | MOTIVO_ANULACION: '.$request->motivo;
         $compra->save();
 
-        return back()->with('success', 'Solicitud de anulación enviada correctamente.');
+        return back()->with('success', "Solicitud de anulación enviada correctamente a la administración desde '{$cajaActual->nombre}'.");
     }
 
     /**
@@ -322,13 +308,13 @@ class TaquillaController extends Controller
 
         if ($request->filled('caja_id')) {
             // Filtrar por caja del primer pago
-            $query->whereHas('pagos', function($q) use ($request) {
+            $query->whereHas('pagos', function ($q) use ($request) {
                 $q->where('caja_id', $request->caja_id);
             });
         }
 
         if ($request->filled('punto_pago_id')) {
-             $query->whereHas('pagos.caja', function($q) use ($request) {
+            $query->whereHas('pagos.caja', function ($q) use ($request) {
                 $q->where('punto_de_pago_id', $request->punto_pago_id);
             });
         }
@@ -336,7 +322,7 @@ class TaquillaController extends Controller
         if ($request->filled('fecha')) {
             $fechas = explode(' to ', $request->fecha);
             if (count($fechas) == 2) {
-                $query->whereBetween('created_at', [$fechas[0] . ' 00:00:00', $fechas[1] . ' 23:59:59']);
+                $query->whereBetween('created_at', [$fechas[0].' 00:00:00', $fechas[1].' 23:59:59']);
             } else {
                 $query->whereDate('created_at', $fechas[0]);
             }
@@ -344,9 +330,9 @@ class TaquillaController extends Controller
 
         if ($request->filled('busqueda')) {
             $busqueda = $request->busqueda;
-            $query->where(function($q) use ($busqueda) {
+            $query->where(function ($q) use ($busqueda) {
                 $q->where('identificacion_comprador', 'like', "%$busqueda%")
-                  ->orWhere('nombre_completo_comprador', 'like', "%$busqueda%");
+                    ->orWhere('nombre_completo_comprador', 'like', "%$busqueda%");
             });
         }
 
@@ -367,8 +353,7 @@ class TaquillaController extends Controller
      */
     public function autorizarAnulacion(Request $request, Compra $compra)
     {
-        
-   
+
         DB::transaction(function () use ($compra, $request) {
             // 1. Cargar relaciones necesarias
             $compra->load('inscripciones', 'pagos', 'actividad');

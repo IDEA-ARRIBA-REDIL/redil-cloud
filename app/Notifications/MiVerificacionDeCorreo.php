@@ -2,12 +2,14 @@
 
 namespace App\Notifications;
 
-use App\Mail\DefaultMail;
+use App\Models\Iglesia;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Mail\DefaultMail;
 use Illuminate\Mail\Mailable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Lang;
 
 class MiVerificacionDeCorreo extends Notification
 {
@@ -38,16 +40,16 @@ class MiVerificacionDeCorreo extends Notification
     {
         $verificationUrl = $this->verificationUrl($notifiable);
 
-        $mailData = new \stdClass;
+        $mailData = new \stdClass();
         $mailData->subject = Lang::get('Verifica tu correo');
         $mailData->eyebrow = 'BIENVENIDA · ACTIVACIÓN DE CUENTA';
         $mailData->titulo = Lang::get('¡Hola!');
         $mailData->nombre = method_exists($notifiable, 'nombre') ? $notifiable->nombre(3) : ($notifiable->name ?? '');
-
+        
         $mailData->mensaje = Lang::get('Gracias por registrarte. Por favor, haz clic en el botón de abajo para verificar tu cuenta y comenzar a utilizar la plataforma.')
-            .'<p style="font-size:13px;color:#6B7280;line-height:1.5;margin-top:24px;margin-bottom:0;">'
-            .Lang::get('Si no creaste esta cuenta, puedes ignorar este mensaje de forma segura.')
-            .'</p>';
+            . '<p style="font-size:13px;color:#6B7280;line-height:1.5;margin-top:24px;margin-bottom:0;">'
+            . Lang::get('Si no creaste esta cuenta, puedes ignorar este mensaje de forma segura.')
+            . '</p>';
 
         $mailData->actionUrl = $verificationUrl;
         $mailData->actionText = Lang::get('Verificar correo electrónico →');
@@ -68,7 +70,7 @@ class MiVerificacionDeCorreo extends Notification
         ];
     }
 
-    protected function verificationUrl(object $notifiable): string
+     protected function verificationUrl(object $notifiable): string
     {
         // Este método no cambia
         return URL::temporarySignedRoute(

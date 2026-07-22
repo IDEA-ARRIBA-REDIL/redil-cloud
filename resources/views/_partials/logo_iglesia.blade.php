@@ -13,4 +13,6 @@
 
 @if($iglesiaObj && $iglesiaObj->$logoCampo && Storage::exists("img/iglesia/".$iglesiaObj->$logoCampo))  
 	<img style="{{ $styleAttr }}" class="church-logo" src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->$logoCampo) }}">
+@else
+	<img style="{{ $styleAttr }}" class="church-logo" src="{{ Storage::disk('global_media')->url($usarNegro ? 'logo_principal_negro.png' : 'logo_principal.png') }}">
 @endif

@@ -13,7 +13,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope; // <-- 1. Importa la clase Attachment
 use Illuminate\Queue\SerializesModels;           // <-- 2. Importa la clase PDF
-// <-- AÑADIR: Para construir la URL del banner.
+use Illuminate\Support\Facades\Storage; // <-- AÑADIR: Para construir la URL del banner.
 use stdClass; // <-- AÑADIR: Para crear el objeto $mailData.
 
 class InscripcionConfirmacionMail extends Mailable
@@ -68,7 +68,7 @@ class InscripcionConfirmacionMail extends Mailable
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td style="border-radius:6px;background-color:#0099d9;">
-                        <a href="'.$urlFormulario.'" style="display:inline-block;font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#FFFFFF;padding:10px 24px;border-radius:6px;text-decoration:none;">
+                        <a href="' . $urlFormulario . '" style="display:inline-block;font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#FFFFFF;padding:10px 24px;border-radius:6px;text-decoration:none;">
                           Completar formulario →
                         </a>
                       </td>

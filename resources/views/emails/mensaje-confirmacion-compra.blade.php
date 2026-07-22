@@ -24,6 +24,9 @@
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#F0EFE9;">
+@php
+  $iglesiaObj = $iglesia ?? \App\Models\Iglesia::first();
+@endphp
 
 <!-- PREHEADER: texto invisible que aparece en preview del inbox -->
 <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;font-family:sans-serif;">
@@ -37,32 +40,8 @@
 
     <!-- ─── HEADER ─── -->
     <tr>
-      <td style="background-color:#FFFFFF;border-radius:16px 16px 0 0;padding:20px 32px;border-bottom:1px solid #EBEBEB;text-align:center;">
-        @php
-          $iglesiaObj = $iglesia ?? \App\Models\Iglesia::first();
-        @endphp
-        @if($iglesiaObj && $iglesiaObj->logo_negro && Storage::exists("img/iglesia/".$iglesiaObj->logo_negro))
-          <img
-            src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo_negro) }}"
-            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
-            width="160"
-            style="display:inline-block;max-width:160px;height:auto;"
-          />
-        @elseif($iglesiaObj && $iglesiaObj->logo && Storage::exists("img/iglesia/".$iglesiaObj->logo))
-          <img
-            src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo) }}"
-            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
-            width="160"
-            style="display:inline-block;max-width:160px;height:auto;background-color:#040407;padding:4px;border-radius:4px;"
-          />
-        @else
-          <img
-            src="{{ Storage::disk('global_media')->url('logo_principal.png') }}"
-            alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
-            width="160"
-            style="display:inline-block;max-width:160px;height:auto;"
-          />
-        @endif
+      <td align="center" style="background-color:#FFFFFF;border-radius:16px 16px 0 0;padding:20px 32px;border-bottom:1px solid #EBEBEB;">
+        @include('_partials.logo_iglesia', ['logo_negro' => true, 'width' => '160px'])
       </td>
     </tr>
 
@@ -111,28 +90,7 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
           <tr>
             <td align="center">
-              @if($iglesiaObj && $iglesiaObj->logo && Storage::exists("img/iglesia/".$iglesiaObj->logo))
-                <img
-                  src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo) }}"
-                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
-                  width="140"
-                  style="display:inline-block;max-width:140px;height:auto;"
-                />
-              @elseif($iglesiaObj && $iglesiaObj->logo_negro && Storage::exists("img/iglesia/".$iglesiaObj->logo_negro))
-                <img
-                  src="{{ tenant_asset('img/iglesia/'.$iglesiaObj->logo_negro) }}"
-                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
-                  width="140"
-                  style="display:inline-block;max-width:140px;height:auto;background-color:#FFFFFF;padding:4px;border-radius:4px;"
-                />
-              @else
-                <img
-                  src="{{ Storage::disk('global_media')->url('logo_principal.png') }}"
-                  alt="{{ $iglesiaObj->nombre ?? config('app.name') }}"
-                  width="140"
-                  style="display:inline-block;max-width:140px;height:auto;"
-                />
-              @endif
+              @include('_partials.logo_iglesia', ['logo_negro' => false, 'width' => '140px'])
             </td>
           </tr>
         </table>

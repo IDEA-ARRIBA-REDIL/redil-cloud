@@ -53,7 +53,10 @@ class RoleSeeder extends Seeder
 
         // / roles para escuelas
         $alumno = Role::firstOrCreate(['name' => 'Alumno'], ['icono' => 'ti ti-user-square-rounded', 'dependiente' => false]);
-        $maestro = Role::firstOrCreate(['name' => 'Maestro'], ['icono' => 'ti ti-user-square', 'dependiente' => false]);
+        $maestro = Role::firstOrCreate(['name' => 'Maestro'], ['icono' => 'ti ti-user-square', 'dependiente' => false, 'es_maestro' => true]);
+        if (! $maestro->es_maestro) {
+            $maestro->update(['es_maestro' => true]);
+        }
         $coordinador = Role::firstOrCreate(['name' => 'Coordinador'], ['icono' => 'ti ti ti-user-pentagon', 'dependiente' => false]);
         $administrador = Role::firstOrCreate(['name' => 'Administrativo'], ['icono' => 'ti ti ti-user-pentagon', 'dependiente' => false]);
 

@@ -2946,5 +2946,14 @@ class PermisoSeeder extends Seeder
             'descripcion' => 'Permite ver el dashboard de estadísticas de los planes lectores',
             'name' => 'planes_lectores.dashboard',
         ])->syncRoles([$superAdmin]);
+
+        // /
+
+        Permission::firstOrCreate([
+            'titulo' => 'item_hitos',
+            'descripcion' => 'Permite ver las opciones para crear y gestionar los hitos',
+            'name' => 'hitos.dashboard',
+        ])->syncRoles([$superAdmin]);
+
     }
 }

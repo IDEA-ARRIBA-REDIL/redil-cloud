@@ -1031,6 +1031,66 @@
             "created_at": "2017-12-02T20:14:39",
             "updated_at": "2026-07-15T10:45:43",
             "iglesia_id": 1
-        }
+        },
+        {
+        "id" : 56006,
+        "email" : "julian7dez@gmail.com",
+        "privilegios" : "4",
+        "password" : "$2y$10$VF9JTICSAUIrPcPPUXeyReb1ss5UgGEUFB4J8g.Crkz8iF7HZbxzq",
+        "remember_token" : "eqDUKFE0ChQa6SVqp2LC80TvEB95JWMLQ8PlCIgRqgZwxq4fcRrhZTktzrPC",
+        "asistente_id" : 56017,
+        "activo" : true,
+        "created_at" : "2017-08-18T16:12:58.000Z",
+        "updated_at" : "2026-05-03T13:31:09.000Z",
+        "iglesia_id" : 1
+    },
+    {
+        "id" : 20828,
+        "email" : "paolitasalcedot@gmail.com",
+        "privilegios" : "10",
+        "password" : "$2y$10$g96.WSHFNyIFG21AqtnuCOv0WLMaVuPZmMVWFSUx6FGaFSUJn5H9a",
+        "remember_token" : "EUDLoidSkKKJ8zfbjWZi4cDIfk93JdqGqtjFdSGskxtsRUTnSuqHsfUNTbTj",
+        "asistente_id" : 20828,
+        "activo" : true,
+        "created_at" : "2016-10-24T17:10:46.000Z",
+        "updated_at" : "2026-07-05T00:09:13.000Z",
+        "iglesia_id" : 1
+    },
+    {
+        "id" : 7197,
+        "email" : "gianreno93@hotmail.com",
+        "privilegios" : "4",
+        "password" : "$2y$10$JotJcZN9LPaT.GpUvT8.yehXnabS1ggG1IhPHAwe79pUUcLWzp89q",
+        "remember_token" : "gy4fPrQm3QaxbhLCNNKIF8qexEuveRIMoQQ8u28h4C3ItwzfMu6gb54Eaeii",
+        "asistente_id" : 7197,
+        "activo" : true,
+        "created_at" : "2016-10-24T17:10:46.000Z",
+        "updated_at" : "2026-06-05T00:24:38.000Z",
+        "iglesia_id" : 1
+    },
+    {
+        "id" : 14476,
+        "email" : "famr0429@gmail.com",
+        "privilegios" : "4",
+        "password" : "$2y$10$LhjiHktfxAcZhW2VI7vDlOebvZVS9yzvwsm6KJkufOwhvDs1bjvhW",
+        "remember_token" : "rfx3EXTc6vQjfJQF66woea1rQpV49o2GCRKgdmVj6cxEX0VcsoIErvedLMB8",
+        "asistente_id" : 14476,
+        "activo" : true,
+        "created_at" : "2016-10-24T17:10:46.000Z",
+        "updated_at" : "2026-07-19T14:19:25.000Z",
+        "iglesia_id" : 1
+    },
+    {
+        "id" : 67957,
+        "email" : "caritofenix84@hotmail.com",
+        "privilegios" : "4",
+        "password" : "$2y$10$EHcciFOfTrmhk0kM\/nDzDOkxrmIgtwczD2aCMGZFN6wcTVXxBI\/jO",
+        "remember_token" : "RoGtZJqntd3vsFY84aoEuxhc2OngyIDNElHDhIsoreGsf1AVo9TE0AoLlmkS",
+        "asistente_id" : 69076,
+        "activo" : true,
+        "created_at" : "2017-12-03T01:14:39.000Z",
+        "updated_at" : "2026-07-15T15:45:43.000Z",
+        "iglesia_id" : 1
+    }
     ]
 }

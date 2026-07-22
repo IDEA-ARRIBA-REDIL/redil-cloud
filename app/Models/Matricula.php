@@ -30,7 +30,7 @@ class Matricula extends Model
         'sede_id',
         'trasladado',
         'fecha_bloqueo',
-        'bloqueado'
+        'bloqueado',
     ];
 
     protected $casts = [
@@ -91,7 +91,7 @@ class Matricula extends Model
 
     public function materialSede(): BelongsTo
     {
-        return $this->belongsTo(SedeDestinatario::class, 'material_sede_id');
+        return $this->belongsTo(Sede::class, 'material_sede_id');
     }
 
     public function escuela(): BelongsTo

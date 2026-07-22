@@ -2,29 +2,27 @@
 
 namespace App\Livewire\Taquilla;
 
-use Livewire\Component;
-use App\Models\User;
+use App\Mail\InscripcionConfirmacionMail;
 use App\Models\Actividad;
 use App\Models\ActividadCategoria;
 use App\Models\Caja;
-use App\Models\Sede; // Importación agregada
-use App\Models\Moneda;
-use App\Models\TipoPago;
-use App\Models\HorarioMateriaPeriodo;
 use App\Models\Compra;
-use App\Models\Pago;
-use App\Models\Matricula;
+use App\Models\HorarioMateriaPeriodo; // Importación agregada
 use App\Models\Inscripcion;
+use App\Models\Matricula;
 use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
-use App\Models\ActividadCarritoCompra;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-use App\Mail\InscripcionConfirmacionMail;
-use Illuminate\Support\Facades\Mail;
+use App\Models\Moneda;
+use App\Models\Pago;
+use App\Models\Sede;
+use App\Models\TipoPago;
+use App\Models\User;
 use Carbon\Carbon;
 use Exception;
-use Livewire\Attributes\Validate; // Para validación
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Livewire\Attributes\Validate;
+use Livewire\Component; // Para validación
 
 class ProcesarMatriculaEscuela extends Component
 {
@@ -32,21 +30,23 @@ class ProcesarMatriculaEscuela extends Component
     /**
      * El usuario que paga (Padre/Comprador).
      * Recibido desde 'procesar-venta.blade.php'
-     *
      */
     public User $comprador;
 
     /**
      * El usuario que asiste (Hijo/Inscrito).
      * RENOMBRADO: 'usuario' ahora es 'inscrito' para mayor claridad.
-     *
      */
     public User $inscrito;
 
     public $prueba;
+
     public Actividad $actividad;
+
     public Caja $cajaActiva;
+
     public ActividadCategoria $categoria; // La materia/categoría seleccionada
+
     public Moneda $moneda;
 
     // --- DATOS DEL "FORMULARIO" ---
@@ -54,27 +54,36 @@ class ProcesarMatriculaEscuela extends Component
 
     // 1. Lógica de Sede/Horario (de EscuelasCarrito)
     public $sedes = [];
+
     public $tiposAula = [];
+
     public $horarios = [];
 
     #[Validate('required', message: 'Debes seleccionar una sede.')]
     public $sedeSeleccionada = null;
+
     public $tipoAulaSeleccionado = null;
+
     #[Validate('required', message: 'Debes seleccionar un horario.')]
     public $horarioSeleccionado = null;
 
     // 2. Lógica de Campos Adicionales (de la maqueta)
     public $camposAdicionales = []; // Array para wire:model
+
     public $camposAdicionalesModelo; // Para cargar la colección
 
     // 3. Lógica de Pagos Divididos (de la maqueta)
     public $tiposPagoDisponibles = [];
+
     public $pagos = []; // Array de pagos añadidos (ej: [['tipo_pago_id' => 1, 'valor' => 50000], ...])
+
     public $valorRestante = 0;
 
     // Propiedades para añadir un nuevo pago
     public $nuevoPagoValor;
+
     public $nuevoPagoTipoId;
+
     public $nuevoPagoVoucher = '';
 
     /**
@@ -90,7 +99,6 @@ class ProcesarMatriculaEscuela extends Component
     #[Validate('required', message: 'Debes seleccionar una sede para el material.')]
     public $materialSedeId = null;
     // ===============================
-
 
     /**
      * MÉTODO MOUNT (Constructor)
@@ -118,19 +126,15 @@ class ProcesarMatriculaEscuela extends Component
 
         $materiaPeriodoId = $this->categoria->materia_periodo_id;
         $this->sedes = HorarioMateriaPeriodo::getSedesForMateriaPeriodo($materiaPeriodoId)
-            ->map(fn($sede) => ['id' => $sede->id, 'nombre' => $sede->nombre])
+            ->map(fn ($sede) => ['id' => $sede->id, 'nombre' => $sede->nombre])
             ->all();
 
         $this->camposAdicionalesModelo = $this->actividad->camposAdicionales;
 
-        $periodo = $this->categoria->materiaPeriodo->periodo;
-        if ($periodo && method_exists($periodo, 'sedes')) {
-            $this->sedesDelPeriodo = $periodo->sedes()->get();
-        } else {
-            Log::warning('Modelo Periodo (ID: ' . $periodo->id . ') no tiene relación "sedes". Cargando todas las sedes.');
-            $this->sedesDelPeriodo = Sede::orderBy('nombre')->get();
-        }
-        $this->materialSedeId = $this->sedesDelPeriodo->firstWhere('id', 2)?->id ?? $this->sedesDelPeriodo->first()?->id;
+        // Carga TODAS las sedes posibles para la entrega/envío de material
+        $this->sedesDelPeriodo = Sede::orderBy('nombre')->get();
+        $this->materialSedeId = $this->sedesDelPeriodo->firstWhere('id', $this->sedeSeleccionada)?->id
+            ?? $this->sedesDelPeriodo->first()?->id;
     }
     // ===================================================================
     // LÓGICA DE DROPDOWNS DEPENDIENTES (Sede -> TipoAula -> Horario)
@@ -140,20 +144,21 @@ class ProcesarMatriculaEscuela extends Component
     public function updatedSedeSeleccionada($sedeId)
     {
         $this->reset(['tipoAulaSeleccionado', 'horarioSeleccionado', 'tiposAula', 'horarios']);
-        if (!$sedeId) {
+        if (! $sedeId) {
             $this->tiposAula = [];
+
             return;
         }
 
         // Carga los tipos de aula (Virtual, Presencial)
         $this->tiposAula = HorarioMateriaPeriodo::query()
             ->where('materia_periodo_id', $this->categoria->materia_periodo_id)
-            ->whereHas('horarioBase.aula', fn($q) => $q->where('sede_id', $sedeId))
+            ->whereHas('horarioBase.aula', fn ($q) => $q->where('sede_id', $sedeId))
             ->with('horarioBase.aula.tipo')
             ->get()
             ->pluck('horarioBase.aula.tipo')
             ->unique('id')
-            ->map(fn($tipo) => ['id' => $tipo->id, 'nombre' => $tipo->nombre])
+            ->map(fn ($tipo) => ['id' => $tipo->id, 'nombre' => $tipo->nombre])
             ->values()->all();
     }
 
@@ -164,13 +169,12 @@ class ProcesarMatriculaEscuela extends Component
         // Si el tipoId se resetea (ej. al cambiar de sede), limpiamos los horarios
         if (empty($tipoId)) {
             $this->horarios = [];
+
             return;
         }
 
         // Carga los horarios finales disponibles (tu misma lógica)
         //
-
-
 
         $this->horarios = HorarioMateriaPeriodo::query()
             ->where('materia_periodo_id', $this->categoria->materia_periodo_id)
@@ -181,7 +185,7 @@ class ProcesarMatriculaEscuela extends Component
             })
             ->with(['horarioBase.aula', 'maestros.user'])
             ->get()
-            ->map(fn($h) => $this->formatHorarioForAlpine($h))
+            ->map(fn ($h) => $this->formatHorarioForAlpine($h))
             ->all();
     }
 
@@ -195,6 +199,7 @@ class ProcesarMatriculaEscuela extends Component
         $aula = $horario->horarioBase->aula->nombre ?? 'N/D';
         $maestro = $horario->maestros->first()?->user->nombre(2) ?? 'Por asignar';
         $label = "{$dia} | {$ini} - {$fin} | Aula: {$aula} | Maestro: {$maestro} | Cupos: {$horario->cupos_disponibles}";
+
         return ['id' => $horario->id, 'label' => $label];
     }
 
@@ -213,10 +218,12 @@ class ProcesarMatriculaEscuela extends Component
         // Validaciones de valor (sin cambios)
         if ($valor <= 0) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'El valor debe ser mayor a cero.');
+
             return;
         }
         if ($valor > $this->valorRestante) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'El valor no puede ser mayor que el restante.');
+
             return;
         }
 
@@ -233,6 +240,7 @@ class ProcesarMatriculaEscuela extends Component
             $this->dispatch('notificacion', tipo: 'error', mensaje: "El método de pago '{$tipoPago->nombre}' requiere un código de voucher.");
             // Usamos 'addError' para mostrar el error debajo del campo
             $this->addError('nuevoPagoVoucher', 'El código es obligatorio para este método de pago.');
+
             return;
         }
         $this->resetErrorBag('nuevoPagoVoucher'); // Limpiamos el error si pasa
@@ -281,10 +289,12 @@ class ProcesarMatriculaEscuela extends Component
         // 2. Validación de Pago
         if ($this->precioTotal > 0 && $this->valorRestante > 0) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Aún falta dinero por pagar.');
+
             return;
         }
         if ($this->precioTotal > 0 && count($this->pagos) == 0) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Debe añadir al menos un método de pago.');
+
             return;
         }
 
@@ -303,6 +313,7 @@ class ProcesarMatriculaEscuela extends Component
                             titulo: '¡Caja Llena!',
                             mensaje: "La caja ya ha alcanzado su tope de dinero para {$tipoPago->nombre}. Debe solicitar una recolección antes de recibir más pagos de este tipo."
                         );
+
                         return;
                     }
                 }
@@ -320,6 +331,7 @@ class ProcesarMatriculaEscuela extends Component
             if ($horario->cupos_disponibles <= 0) {
                 DB::rollBack();
                 $this->dispatch('notificacion', tipo: 'error', mensaje: 'Lo sentimos, los cupos para este horario se han agotado.');
+
                 return;
             }
 
@@ -335,7 +347,7 @@ class ProcesarMatriculaEscuela extends Component
                 'identificacion_comprador' => $this->comprador->identificacion,
                 'telefono_comprador' => $this->comprador->telefono_movil,
                 'email_comprador' => $this->comprador->email,
-                'metodo_pago_id' => 0
+                'metodo_pago_id' => 0,
             ]);
 
             // 6. Crear la Inscripción (¡A nombre del INSCRITO!)
@@ -398,7 +410,6 @@ class ProcesarMatriculaEscuela extends Component
                 }
             }
 
-
             // 10. Actualizar Cupos
             $horario->decrement('cupos_disponibles');
 
@@ -415,8 +426,8 @@ class ProcesarMatriculaEscuela extends Component
             return redirect()->route('taquilla.compraFinalizada', $compra);
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Error al procesar matrícula en taquilla: ' . $e->getMessage());
-            $this->dispatch('notificacion', tipo: 'error', mensaje: 'Error al procesar la matrícula: ' . $e->getMessage());
+            Log::error('Error al procesar matrícula en taquilla: '.$e->getMessage());
+            $this->dispatch('notificacion', tipo: 'error', mensaje: 'Error al procesar la matrícula: '.$e->getMessage());
         }
     }
 
@@ -427,7 +438,6 @@ class ProcesarMatriculaEscuela extends Component
     /**
      * ¡NUEVO HELPER!
      * Valida los campos adicionales requeridos.
-     *
      */
     private function validarCamposAdicionales()
     {
@@ -437,17 +447,15 @@ class ProcesarMatriculaEscuela extends Component
         foreach ($this->camposAdicionalesModelo as $campo) {
             //
             if ($campo->obligatorio) {
-                $reglas['camposAdicionales.' . $campo->id] = 'required';
-                $mensajes['camposAdicionales.' . $campo->id . '.required'] = "El campo '{$campo->nombre}' es obligatorio.";
+                $reglas['camposAdicionales.'.$campo->id] = 'required';
+                $mensajes['camposAdicionales.'.$campo->id.'.required'] = "El campo '{$campo->nombre}' es obligatorio.";
             }
         }
 
-        if (!empty($reglas)) {
+        if (! empty($reglas)) {
             $this->validate($reglas, $mensajes);
         }
     }
-
-
 
     /**
      * ¡HELPER MODIFICADO!
@@ -465,10 +473,11 @@ class ProcesarMatriculaEscuela extends Component
                 Mail::to($emailDestinatario)->send(new InscripcionConfirmacionMail($inscripcion, $actividad));
             }
         } catch (Exception $e) {
-            Log::error("Fallo al enviar correo para inscripción #{$inscripcion->id}: " . $e->getMessage());
+            Log::error("Fallo al enviar correo para inscripción #{$inscripcion->id}: ".$e->getMessage());
             $this->dispatch('notificacion', tipo: 'warning', mensaje: 'Matrícula registrada, pero falló el envío de correo.');
         }
     }
+
     // (Método render (SIN CAMBIOS))
     public function render()
     {

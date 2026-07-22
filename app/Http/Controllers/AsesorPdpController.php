@@ -20,9 +20,11 @@ class AsesorPdpController extends Controller
         $configuracion = Configuracion::find(1);
 
         // OBTENCIÓN DE DATOS PARA FILTROS
-        // ¡ASUNCIÓN! Asumo que tienes roles marcados con 'es_cajero' o 'es_encargado'
-        // Igual que tenías 'es_maestro' en tu tabla 'roles'.
+        // Se buscan roles marcados para PDP, con fallback a todos los roles si no hay ninguno marcado.
         $rolesAsesor = Role::where('es_cajero_pdp', true)->orWhere('es_encargado_pdp', true)->get();
+        if ($rolesAsesor->isEmpty()) {
+            $rolesAsesor = Role::all();
+        }
 
         // INICIALIZACIÓN DE FILTROS
         $tagsBusqueda = [];
@@ -34,7 +36,7 @@ class AsesorPdpController extends Controller
         ]);
 
         // CONSTRUCCIÓN DE LA CONSULTA BASE
-        $queryAsesores = AsesorPdp::query()->with('user'); // ¡Cambiado!
+        $queryAsesores = AsesorPdp::query()->with('user');
 
         // APLICACIÓN DE FILTROS
 
@@ -61,7 +63,7 @@ class AsesorPdpController extends Controller
             $banderaFiltros = true;
         }
 
-        // ¡NUEVO FILTRO! Por tipo de asesor
+        // Por tipo de asesor
         if (! empty($filtros['filtro_tipo_asesor'])) {
             if ($filtros['filtro_tipo_asesor'] == 'cajero') {
                 $queryAsesores->where('es_cajero', true);
@@ -74,71 +76,102 @@ class AsesorPdpController extends Controller
         }
 
         // EJECUCIÓN FINAL DE LA CONSULTA
-        $asesores = $queryAsesores->latest('created_at')->paginate(16); // ¡Cambiado!
+        $asesores = $queryAsesores->latest('created_at')->paginate(16);
 
         // DEVOLVER LA VISTA
-        return view('contenido.paginas.puntos-de-pago.gestionar-asesores', [ // ¡Ruta cambiada!
-            'asesores' => $asesores, // ¡Cambiado!
+        return view('contenido.paginas.puntos-de-pago.gestionar-asesores', [
+            'asesores' => $asesores,
             'configuracion' => $configuracion,
             'tagsBusqueda' => $tagsBusqueda,
             'banderaFiltros' => $banderaFiltros,
-            'rolesAsesor' => $rolesAsesor, // ¡Cambiado!
+            'rolesAsesor' => $rolesAsesor,
             'filtrosActuales' => $filtros,
         ]);
     }
 
     /**
-     * Guarda un nuevo asesor.
+     * Guarda o actualiza un asesor.
      */
     public function guardar(Request $request)
     {
         $validados = $request->validate([
-            'buscador-usuario' => 'required|integer',
+            'buscador-usuario' => 'required|integer|exists:users,id',
             'descripcion' => 'nullable|string|max:1000',
             'activo' => 'required|boolean',
-            'role_id' => 'required|integer',
-            // ¡NUEVOS CAMPOS!
+            'role_id' => 'required|integer|exists:roles,id',
             'es_cajero' => 'nullable|boolean',
             'es_encargado' => 'nullable|boolean',
         ], [
-            'buscador-usuario.required' => 'Debes seleccionar un usuario.',
-
+            'buscador-usuario.required' => 'Debes seleccionar un usuario de la lista.',
+            'buscador-usuario.exists' => 'El usuario seleccionado no existe en el sistema.',
             'role_id.required' => 'Debes seleccionar un rol para el asesor.',
+            'role_id.exists' => 'El rol seleccionado no es válido.',
         ]);
 
         try {
-            $usuario = User::find($request->input('buscador-usuario'));
+            $userId = (int) $request->input('buscador-usuario');
+            $usuario = User::findOrFail($userId);
 
-            // Asigna el ROL al usuario (idéntico al flujo de maestro)
-            $usuario->roles()->attach($request->role_id, [
-                'activo' => 0,
-                'dependiente' => 0,
-                'model_type' => 'App\Models\User',
+            // Asigna el ROL al usuario (previniendo duplicados)
+            $usuario->roles()->syncWithoutDetaching([
+                $request->role_id => [
+                    'activo' => 0,
+                    'dependiente' => 0,
+                    'model_type' => 'App\Models\User',
+                ],
             ]);
 
-            // Crea el registro en la tabla 'asesores_pdp'
-            AsesorPdp::create([
-                'user_id' => $request->input('buscador-usuario'),
-                'descripcion' => $request->descripcion,
-                'activo' => $request->activo,
-                // ¡NUEVOS CAMPOS!
-                'es_cajero' => $request->boolean('es_cajero'), // .boolean() convierte 'on'/1 a true, null a false
-                'es_encargado' => $request->boolean('es_encargado'),
-            ]);
+            // Determinar banderas de tipo
+            $esCajero = $request->boolean('es_cajero');
+            $esEncargado = $request->boolean('es_encargado');
+
+            // Si no se marcó ninguno explícitamente, asignamos cajero por defecto
+            if (! $esCajero && ! $esEncargado) {
+                $esCajero = true;
+            }
+
+            // Buscar si ya existe el registro (incluyendo trashed) para evitar violaciones a la clave única user_id
+            $asesorExistente = AsesorPdp::withTrashed()->where('user_id', $userId)->first();
+
+            if ($asesorExistente) {
+                if ($asesorExistente->trashed()) {
+                    $asesorExistente->restore();
+                }
+                $asesorExistente->update([
+                    'descripcion' => $request->descripcion,
+                    'activo' => (bool) $request->activo,
+                    'es_cajero' => $esCajero || $asesorExistente->es_cajero,
+                    'es_encargado' => $esEncargado || $asesorExistente->es_encargado,
+                ]);
+                $mensaje = "El asesor '{$usuario->nombre(3)}' ya estaba registrado y sus permisos/datos fueron actualizados correctamente.";
+            } else {
+                AsesorPdp::create([
+                    'user_id' => $userId,
+                    'descripcion' => $request->descripcion,
+                    'activo' => (bool) $request->activo,
+                    'es_cajero' => $esCajero,
+                    'es_encargado' => $esEncargado,
+                ]);
+                $mensaje = "Asesor '{$usuario->nombre(3)}' creado correctamente.";
+            }
 
             return redirect()->route('asesores_pdp.gestionar')
-                ->with('mensaje_exito', 'Asesor creado correctamente.');
+                ->with('mensaje_exito', $mensaje)
+                ->with('success', $mensaje);
         } catch (\Exception $e) {
-            Log::error('Error al crear asesor: '.$e->getMessage());
+            Log::error('Error al crear/actualizar asesor: '.$e->getMessage());
 
-            return back()->with('mensaje_error', 'Ocurrió un error al crear el asesor. Inténtalo de nuevo.')
+            $errorMsg = 'No se pudo guardar el asesor: '.$e->getMessage();
+
+            return back()
+                ->with('mensaje_error', $errorMsg)
+                ->with('error', $errorMsg)
                 ->withInput();
         }
     }
 
     /**
      * Elimina un asesor y desvincula su rol.
-     * NOTA: Se realiza una eliminación física (forceDelete) y se quitan los roles asociados.
      */
     public function eliminar(Request $request)
     {
@@ -149,11 +182,9 @@ class AsesorPdpController extends Controller
         try {
             $asesor = AsesorPdp::with('user')->findOrFail($asesorId);
             $usuario = $asesor->user;
-            $nombreUsuario = optional($usuario)->nombre(3) ?? 'Asesor ID '.$asesor->id;
+            $nombreUsuario = optional($usuario)->nombre(3) ?? 'Asesor ID '.$asesorId;
 
             if ($usuario) {
-                // 1. Identificar roles de 'cajero' o 'encargado' que tiene el usuario
-                // Se buscan roles con los flags 'es_cajero_pdp' o 'es_encargado_pdp'
                 $rolesAsesorParaQuitar = $usuario->roles()
                     ->where(function ($q) {
                         $q->where('es_cajero_pdp', true)
@@ -161,26 +192,29 @@ class AsesorPdpController extends Controller
                     })
                     ->pluck('id');
 
-                // 2. Desvincular los roles encontrados
-                // Esto retira los permisos de asesor al usuario
                 if ($rolesAsesorParaQuitar->isNotEmpty()) {
                     $usuario->roles()->detach($rolesAsesorParaQuitar);
                 }
             }
 
-            // 3. Eliminar físicamente el registro de la tabla 'asesores_pdp'
-            // Se usa forceDelete() para borrarlo definitivamente de la BD, no solo SoftDelete.
             $asesor->forceDelete();
 
             DB::commit();
 
+            $msg = "Asesor '{$nombreUsuario}' eliminado y rol desvinculado correctamente.";
+
             return redirect()->route('asesores_pdp.gestionar')
-                ->with('mensaje_success', "Asesor '{$nombreUsuario}' eliminado y rol desvinculado correctamente.");
+                ->with('mensaje_success', $msg)
+                ->with('success', $msg);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Error al eliminar asesor ID {$asesorId}: ".$e->getMessage());
 
-            return back()->with('mensaje_error', 'Ocurrió un error al eliminar el asesor.');
+            $errorMsg = 'Error al eliminar el asesor: '.$e->getMessage();
+
+            return back()
+                ->with('mensaje_error', $errorMsg)
+                ->with('error', $errorMsg);
         }
     }
 
@@ -193,12 +227,19 @@ class AsesorPdpController extends Controller
             $asesor->activo = true;
             $asesor->save();
 
+            $msg = "El asesor '{$asesor->user->nombre(3)}' ha sido activado.";
+
             return redirect()->route('asesores_pdp.gestionar')
-                ->with('mensaje_exito', "El asesor '{$asesor->user->nombre(3)}' ha sido activado.");
+                ->with('mensaje_exito', $msg)
+                ->with('success', $msg);
         } catch (\Exception $e) {
             Log::error("Error al activar asesor ID {$asesor->id}: ".$e->getMessage());
 
-            return back()->with('mensaje_error', 'Ocurrió un error al activar el asesor.');
+            $errorMsg = 'Ocurrió un error al activar el asesor: '.$e->getMessage();
+
+            return back()
+                ->with('mensaje_error', $errorMsg)
+                ->with('error', $errorMsg);
         }
     }
 
@@ -211,12 +252,19 @@ class AsesorPdpController extends Controller
             $asesor->activo = false;
             $asesor->save();
 
+            $msg = "El asesor '{$asesor->user->nombre(3)}' ha sido desactivado.";
+
             return redirect()->route('asesores_pdp.gestionar')
-                ->with('mensaje_exito', "El asesor '{$asesor->user->nombre(3)}' ha sido desactivado.");
+                ->with('mensaje_exito', $msg)
+                ->with('success', $msg);
         } catch (\Exception $e) {
             Log::error("Error al desactivar asesor ID {$asesor->id}: ".$e->getMessage());
 
-            return back()->with('mensaje_error', 'Ocurrió un error al desactivar el asesor.');
+            $errorMsg = 'Ocurrió un error al desactivar el asesor: '.$e->getMessage();
+
+            return back()
+                ->with('mensaje_error', $errorMsg)
+                ->with('error', $errorMsg);
         }
     }
 }

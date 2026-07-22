@@ -125,7 +125,7 @@
                             <div class="d-flex flex-column col-12 col-md-6">
                                 <small class="text-dark"><i class="ti ti-user me-2"></i>Asesor:</small>
                                 <small class="fw-semibold text-black">
-                                    {{ $solicitud->pagos->first()->caja->usuario->name ?? 'N/A' }}
+                                    {{ optional(optional(optional($solicitud->pagos->first())->caja)->usuario)->nombre(3) ?? 'N/A' }}
                                 </small>
                             </div>
                         </div>

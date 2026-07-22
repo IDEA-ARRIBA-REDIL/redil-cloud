@@ -80,22 +80,22 @@ class IglesiaController extends Controller
                 $extension = strtolower($type[1]);
             }
 
-            $fileName = 'logo_'.time().'.'.$extension;
+            $fileName = 'logo_' . time() . '.' . $extension;
 
-            Storage::put($pathIglesia.'/'.$fileName, $decodificado);
+            Storage::put($pathIglesia . '/' . $fileName, $decodificado);
 
-            if ($iglesia->logo && Storage::exists($pathIglesia.'/'.$iglesia->logo)) {
-                Storage::delete($pathIglesia.'/'.$iglesia->logo);
+            if ($iglesia->logo && Storage::exists($pathIglesia . '/' . $iglesia->logo)) {
+                Storage::delete($pathIglesia . '/' . $iglesia->logo);
             }
 
             $iglesia->logo = $fileName;
         } elseif ($request->hasFile('logoFile')) {
             $file = $request->file('logoFile');
-            $fileName = 'logo_'.time().'.'.$file->getClientOriginalExtension();
+            $fileName = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
             $file->storeAs($pathIglesia, $fileName);
 
-            if ($iglesia->logo && Storage::exists($pathIglesia.'/'.$iglesia->logo)) {
-                Storage::delete($pathIglesia.'/'.$iglesia->logo);
+            if ($iglesia->logo && Storage::exists($pathIglesia . '/' . $iglesia->logo)) {
+                Storage::delete($pathIglesia . '/' . $iglesia->logo);
             }
 
             $iglesia->logo = $fileName;
@@ -112,29 +112,28 @@ class IglesiaController extends Controller
                 $extension = strtolower($type[1]);
             }
 
-            $fileName = 'logo_negro_'.time().'.'.$extension;
+            $fileName = 'logo_negro_' . time() . '.' . $extension;
 
-            Storage::put($pathIglesia.'/'.$fileName, $decodificado);
+            Storage::put($pathIglesia . '/' . $fileName, $decodificado);
 
-            if ($iglesia->logo_negro && Storage::exists($pathIglesia.'/'.$iglesia->logo_negro)) {
-                Storage::delete($pathIglesia.'/'.$iglesia->logo_negro);
+            if ($iglesia->logo_negro && Storage::exists($pathIglesia . '/' . $iglesia->logo_negro)) {
+                Storage::delete($pathIglesia . '/' . $iglesia->logo_negro);
             }
 
             $iglesia->logo_negro = $fileName;
         } elseif ($request->hasFile('logoNegroFile')) {
             $file = $request->file('logoNegroFile');
-            $fileName = 'logo_negro_'.time().'.'.$file->getClientOriginalExtension();
+            $fileName = 'logo_negro_' . time() . '.' . $file->getClientOriginalExtension();
             $file->storeAs($pathIglesia, $fileName);
 
-            if ($iglesia->logo_negro && Storage::exists($pathIglesia.'/'.$iglesia->logo_negro)) {
-                Storage::delete($pathIglesia.'/'.$iglesia->logo_negro);
+            if ($iglesia->logo_negro && Storage::exists($pathIglesia . '/' . $iglesia->logo_negro)) {
+                Storage::delete($pathIglesia . '/' . $iglesia->logo_negro);
             }
 
             $iglesia->logo_negro = $fileName;
         }
 
         $iglesia->save();
-
         return back()->with('success', 'Iglesia actualizada correctamente');
     }
 }

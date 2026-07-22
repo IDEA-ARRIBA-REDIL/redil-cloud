@@ -386,7 +386,11 @@ class GestionarRolesPrivilegios extends Component
     $item->etiqueta = 'consejeria.';
     $bloques[] = $item;
 
-    
+    $item = new \stdClass();
+    $item->nombre = 'Hitos';
+    $item->etiqueta = 'hitos.';
+    $bloques[] = $item;
+
 
     return $bloques;
   }
