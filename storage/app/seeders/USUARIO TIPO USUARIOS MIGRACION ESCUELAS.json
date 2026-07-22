@@ -1,885 +1,976 @@
 {
-"usuario_tipo_usuario": [
-	{
-		"id" : 232867,
-		"usuario_id" : 16875,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-03-01T13:49:38.000Z",
-		"updated_at" : "2025-03-01T13:49:38.000Z"
-	},
-	{
-		"id" : 102916,
-		"usuario_id" : 91023,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-20T01:03:46.000Z",
-		"updated_at" : "2020-06-20T01:03:46.000Z"
-	},
-	{
-		"id" : 87020,
-		"usuario_id" : 82197,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-05-05T00:42:44.000Z"
-	},
-	{
-		"id" : 749,
-		"usuario_id" : 1623,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:54:17.000Z"
-	},
-	{
-		"id" : 2754,
-		"usuario_id" : 2423,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:54:29.000Z"
-	},
-	{
-		"id" : 4076,
-		"usuario_id" : 2100,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:54:37.000Z"
-	},
-	{
-		"id" : 4457,
-		"usuario_id" : 4967,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:54:39.000Z"
-	},
-	{
-		"id" : 4513,
-		"usuario_id" : 3878,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:54:40.000Z"
-	},
-	{
-		"id" : 5634,
-		"usuario_id" : 7892,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:54:58.000Z"
-	},
-	{
-		"id" : 7876,
-		"usuario_id" : 9167,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:55:12.000Z"
-	},
-	{
-		"id" : 147449,
-		"usuario_id" : 3864,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2022-11-17T14:22:32.000Z",
-		"updated_at" : "2022-11-17T14:22:32.000Z"
-	},
-	{
-		"id" : 10084,
-		"usuario_id" : 11106,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:55:33.000Z"
-	},
-	{
-		"id" : 14255,
-		"usuario_id" : 13676,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:55:59.000Z"
-	},
-	{
-		"id" : 14960,
-		"usuario_id" : 16568,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:56:16.000Z"
-	},
-	{
-		"id" : 16973,
-		"usuario_id" : 16600,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:56:28.000Z"
-	},
-	{
-		"id" : 21231,
-		"usuario_id" : 21902,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:57:11.000Z"
-	},
-	{
-		"id" : 21836,
-		"usuario_id" : 21068,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:57:15.000Z"
-	},
-	{
-		"id" : 22390,
-		"usuario_id" : 24281,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:57:19.000Z"
-	},
-	{
-		"id" : 22749,
-		"usuario_id" : 23362,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:57:22.000Z"
-	},
-	{
-		"id" : 22788,
-		"usuario_id" : 23886,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:57:22.000Z"
-	},
-	{
-		"id" : 23311,
-		"usuario_id" : 23409,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:57:27.000Z"
-	},
-	{
-		"id" : 27609,
-		"usuario_id" : 28772,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:58:08.000Z"
-	},
-	{
-		"id" : 29689,
-		"usuario_id" : 32431,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:58:37.000Z"
-	},
-	{
-		"id" : 32201,
-		"usuario_id" : 34201,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:58:58.000Z"
-	},
-	{
-		"id" : 32458,
-		"usuario_id" : 35234,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:59:11.000Z"
-	},
-	{
-		"id" : 33505,
-		"usuario_id" : 38412,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:59:20.000Z"
-	},
-	{
-		"id" : 34317,
-		"usuario_id" : 36248,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T21:59:28.000Z"
-	},
-	{
-		"id" : 59010,
-		"usuario_id" : 59829,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T22:05:07.000Z"
-	},
-	{
-		"id" : 76912,
-		"usuario_id" : 81834,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-02-07T22:10:41.000Z"
-	},
-	{
-		"id" : 91802,
-		"usuario_id" : 66681,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2019-08-01T14:27:06.000Z"
-	},
-	{
-		"id" : 98144,
-		"usuario_id" : 52182,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2020-02-27T18:37:08.000Z"
-	},
-	{
-		"id" : 99525,
-		"usuario_id" : 19553,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2020-03-24T20:20:45.000Z"
-	},
-	{
-		"id" : 99527,
-		"usuario_id" : 16606,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2020-03-24T20:38:05.000Z"
-	},
-	{
-		"id" : 101887,
-		"usuario_id" : 21002,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2020-06-04T05:00:00.000Z",
-		"updated_at" : "2020-05-24T20:20:17.000Z"
-	},
-	{
-		"id" : 113675,
-		"usuario_id" : 104460,
-		"tipo_usuario_id" : 41,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2021-04-23T02:50:10.000Z",
-		"updated_at" : "2021-04-23T02:50:10.000Z"
-	},
-	{
-		"id" : 117412,
-		"usuario_id" : 105934,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2021-06-27T16:17:47.000Z",
-		"updated_at" : "2021-06-27T16:17:47.000Z"
-	},
-	{
-		"id" : 117436,
-		"usuario_id" : 35889,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2021-06-27T17:52:45.000Z",
-		"updated_at" : "2021-06-27T17:52:45.000Z"
-	},
-	{
-		"id" : 117606,
-		"usuario_id" : 54795,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2021-06-30T02:32:23.000Z",
-		"updated_at" : "2021-06-30T02:32:23.000Z"
-	},
-	{
-		"id" : 120099,
-		"usuario_id" : 104870,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2021-08-05T22:25:00.000Z",
-		"updated_at" : "2021-08-05T22:25:00.000Z"
-	},
-	{
-		"id" : 122862,
-		"usuario_id" : 20823,
-		"tipo_usuario_id" : 48,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2021-08-26T18:56:08.000Z",
-		"updated_at" : "2021-08-26T18:56:08.000Z"
-	},
-	{
-		"id" : 274241,
-		"usuario_id" : 38936,
-		"tipo_usuario_id" : 46,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-03-13T16:39:19.000Z",
-		"updated_at" : "2026-03-13T16:39:19.000Z"
-	},
-	{
-		"id" : 127336,
-		"usuario_id" : 99561,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2022-01-26T19:14:41.000Z",
-		"updated_at" : "2022-01-26T19:14:41.000Z"
-	},
-	{
-		"id" : 133059,
-		"usuario_id" : 20823,
-		"tipo_usuario_id" : 51,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2022-04-13T16:53:18.000Z",
-		"updated_at" : "2022-04-13T16:53:18.000Z"
-	},
-	{
-		"id" : 133518,
-		"usuario_id" : 4715,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2022-04-25T15:07:02.000Z",
-		"updated_at" : "2022-04-25T15:07:02.000Z"
-	},
-	{
-		"id" : 154941,
-		"usuario_id" : 92737,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2023-03-03T19:24:47.000Z",
-		"updated_at" : "2023-03-03T19:24:47.000Z"
-	},
-	{
-		"id" : 156708,
-		"usuario_id" : 44916,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2023-03-21T19:55:18.000Z",
-		"updated_at" : "2023-03-21T19:55:18.000Z"
-	},
-	{
-		"id" : 154909,
-		"usuario_id" : 20188,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2023-03-03T14:09:01.000Z",
-		"updated_at" : "2023-03-03T14:09:01.000Z"
-	},
-	{
-		"id" : 274682,
-		"usuario_id" : 38938,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-03-16T14:12:45.000Z",
-		"updated_at" : "2026-03-16T14:12:45.000Z"
-	},
-	{
-		"id" : 234716,
-		"usuario_id" : 107934,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-03-03T02:54:45.000Z",
-		"updated_at" : "2025-03-03T02:54:45.000Z"
-	},
-	{
-		"id" : 140628,
-		"usuario_id" : 21249,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2022-07-29T18:01:42.000Z",
-		"updated_at" : "2022-07-29T18:01:42.000Z"
-	},
-	{
-		"id" : 156869,
-		"usuario_id" : 8756,
-		"tipo_usuario_id" : 46,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2023-03-24T21:12:10.000Z",
-		"updated_at" : "2023-03-24T21:12:10.000Z"
-	},
-	{
-		"id" : 144322,
-		"usuario_id" : 88567,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2022-08-30T23:09:18.000Z",
-		"updated_at" : "2022-08-30T23:09:18.000Z"
-	},
-	{
-		"id" : 151367,
-		"usuario_id" : 8891,
-		"tipo_usuario_id" : 45,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2023-02-10T18:01:49.000Z",
-		"updated_at" : "2023-02-10T18:01:49.000Z"
-	},
-	{
-		"id" : 151369,
-		"usuario_id" : 91005,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2023-02-10T18:04:54.000Z",
-		"updated_at" : "2023-02-10T18:04:54.000Z"
-	},
-	{
-		"id" : 190090,
-		"usuario_id" : 104870,
-		"tipo_usuario_id" : 72,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2021-08-05T22:25:00.000Z",
-		"updated_at" : "2021-08-05T22:25:00.000Z"
-	},
-	{
-		"id" : 232421,
-		"usuario_id" : 20510,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-02-27T22:54:33.000Z",
-		"updated_at" : "2025-02-27T22:54:33.000Z"
-	},
-	{
-		"id" : 232425,
-		"usuario_id" : 81835,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-02-27T23:12:14.000Z",
-		"updated_at" : "2025-02-27T23:12:14.000Z"
-	},
-	{
-		"id" : 168258,
-		"usuario_id" : 15737,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2023-08-02T20:13:58.000Z",
-		"updated_at" : "2023-08-02T20:13:58.000Z"
-	},
-	{
-		"id" : 275098,
-		"usuario_id" : 8675,
-		"tipo_usuario_id" : 10,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2026-03-20T16:08:24.000Z",
-		"updated_at" : "2026-03-20T16:08:24.000Z"
-	},
-	{
-		"id" : 275705,
-		"usuario_id" : 8675,
-		"tipo_usuario_id" : 83,
-		"dependiente" : true,
-		"activo" : false,
-		"created_at" : "2026-03-25T14:26:49.000Z",
-		"updated_at" : "2026-03-25T14:26:49.000Z"
-	},
-	{
-		"id" : 215106,
-		"usuario_id" : 10103,
-		"tipo_usuario_id" : 45,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2024-09-24T15:56:29.000Z",
-		"updated_at" : "2024-09-24T15:56:29.000Z"
-	},
-	{
-		"id" : 215336,
-		"usuario_id" : 59149,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2024-09-27T16:25:33.000Z",
-		"updated_at" : "2024-09-27T16:25:33.000Z"
-	},
-	{
-		"id" : 275916,
-		"usuario_id" : 20715,
-		"tipo_usuario_id" : 10,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2026-03-27T17:01:46.000Z",
-		"updated_at" : "2026-03-27T17:01:46.000Z"
-	},
-	{
-		"id" : 215118,
-		"usuario_id" : 6201,
-		"tipo_usuario_id" : 45,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2024-09-24T16:41:03.000Z",
-		"updated_at" : "2024-09-24T16:41:03.000Z"
-	},
-	{
-		"id" : 275546,
-		"usuario_id" : 14981,
-		"tipo_usuario_id" : 41,
-		"dependiente" : true,
-		"activo" : false,
-		"created_at" : "2026-03-24T15:59:56.000Z",
-		"updated_at" : "2026-03-24T15:59:56.000Z"
-	},
-	{
-		"id" : 275562,
-		"usuario_id" : 20715,
-		"tipo_usuario_id" : 83,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-03-24T16:32:42.000Z",
-		"updated_at" : "2026-03-24T16:32:42.000Z"
-	},
-	{
-		"id" : 276793,
-		"usuario_id" : 1724,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-04-07T13:42:10.000Z",
-		"updated_at" : "2026-04-07T13:42:10.000Z"
-	},
-	{
-		"id" : 257120,
-		"usuario_id" : 8654,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-09-26T12:18:53.000Z",
-		"updated_at" : "2025-09-26T12:18:53.000Z"
-	},
-	{
-		"id" : 256443,
-		"usuario_id" : 15339,
-		"tipo_usuario_id" : 45,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-09-17T14:27:35.000Z",
-		"updated_at" : "2025-09-17T14:27:35.000Z"
-	},
-	{
-		"id" : 244914,
-		"usuario_id" : 16517,
-		"tipo_usuario_id" : 45,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-06-13T15:27:20.000Z",
-		"updated_at" : "2025-06-13T15:27:20.000Z"
-	},
-	{
-		"id" : 279068,
-		"usuario_id" : 32049,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : false,
-		"created_at" : "2026-05-03T13:34:30.000Z",
-		"updated_at" : "2026-05-03T13:34:30.000Z"
-	},
-	{
-		"id" : 259660,
-		"usuario_id" : 44957,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : false,
-		"created_at" : "2025-10-25T15:33:23.000Z",
-		"updated_at" : "2025-10-25T15:33:23.000Z"
-	},
-	{
-		"id" : 259661,
-		"usuario_id" : 44957,
-		"tipo_usuario_id" : 72,
-		"dependiente" : false,
-		"activo" : true,
-		"created_at" : "2025-10-25T15:33:23.000Z",
-		"updated_at" : "2025-10-25T15:33:23.000Z"
-	},
-	{
-		"id" : 278746,
-		"usuario_id" : 6838,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-04-29T14:08:38.000Z",
-		"updated_at" : "2026-04-29T14:08:38.000Z"
-	},
-	{
-		"id" : 260078,
-		"usuario_id" : 32840,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-11-04T22:14:32.000Z",
-		"updated_at" : "2025-11-04T22:14:32.000Z"
-	},
-	{
-		"id" : 260079,
-		"usuario_id" : 32555,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-11-04T22:14:44.000Z",
-		"updated_at" : "2025-11-04T22:14:44.000Z"
-	},
-	{
-		"id" : 259829,
-		"usuario_id" : 4646,
-		"tipo_usuario_id" : 45,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2025-10-29T17:44:40.000Z",
-		"updated_at" : "2025-10-29T17:44:40.000Z"
-	},
-	{
-		"id" : 278757,
-		"usuario_id" : 4288,
-		"tipo_usuario_id" : 45,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-04-29T14:32:17.000Z",
-		"updated_at" : "2026-04-29T14:32:17.000Z"
-	},
-	{
-		"id" : 262898,
-		"usuario_id" : 32049,
-		"tipo_usuario_id" : 52,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2025-12-30T15:35:44.000Z",
-		"updated_at" : "2025-12-30T15:35:44.000Z"
-	},
-	{
-		"id" : 279707,
-		"usuario_id" : 14392,
-		"tipo_usuario_id" : 48,
-		"dependiente" : true,
-		"activo" : false,
-		"created_at" : "2026-05-11T01:19:18.000Z",
-		"updated_at" : "2026-05-11T01:19:18.000Z"
-	},
-	{
-		"id" : 279708,
-		"usuario_id" : 14392,
-		"tipo_usuario_id" : 10,
-		"dependiente" : false,
-		"activo" : true,
-		"created_at" : "2026-05-11T01:19:18.000Z",
-		"updated_at" : "2026-05-11T01:19:18.000Z"
-	},
-	{
-		"id" : 278798,
-		"usuario_id" : 90312,
-		"tipo_usuario_id" : 44,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-04-29T18:34:26.000Z",
-		"updated_at" : "2026-04-29T18:34:26.000Z"
-	},
-	{
-		"id" : 266150,
-		"usuario_id" : 6391,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-02-06T16:10:57.000Z",
-		"updated_at" : "2026-02-06T16:10:57.000Z"
-	},
-	{
-		"id" : 266155,
-		"usuario_id" : 19006,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-02-06T16:15:15.000Z",
-		"updated_at" : "2026-02-06T16:15:15.000Z"
-	},
-	{
-		"id" : 266163,
-		"usuario_id" : 15342,
-		"tipo_usuario_id" : 46,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-02-06T16:58:45.000Z",
-		"updated_at" : "2026-02-06T16:58:45.000Z"
-	},
-	{
-		"id" : 282512,
-		"usuario_id" : 8675,
-		"tipo_usuario_id" : 54,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2026-06-17T15:44:36.000Z",
-		"updated_at" : "2026-06-17T15:44:36.000Z"
-	},
-	{
-		"id" : 282513,
-		"usuario_id" : 8675,
-		"tipo_usuario_id" : 6,
-		"dependiente" : false,
-		"activo" : true,
-		"created_at" : "2026-06-17T15:44:36.000Z",
-		"updated_at" : "2026-06-17T15:44:36.000Z"
-	},
-	{
-		"id" : 283249,
-		"usuario_id" : 5322,
-		"tipo_usuario_id" : 83,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-06-24T17:46:54.000Z",
-		"updated_at" : "2026-06-24T17:46:54.000Z"
-	},
-	{
-		"id" : 267989,
-		"usuario_id" : 38931,
-		"tipo_usuario_id" : 43,
-		"dependiente" : true,
-		"activo" : true,
-		"created_at" : "2026-02-17T15:58:33.000Z",
-		"updated_at" : "2026-02-17T15:58:33.000Z"
-	},
-	{
-		"id" : 284112,
-		"usuario_id" : 14981,
-		"tipo_usuario_id" : 10,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2026-07-07T13:01:13.000Z",
-		"updated_at" : "2026-07-07T13:01:13.000Z"
-	},
-	{
-		"id" : 284313,
-		"usuario_id" : 14981,
-		"tipo_usuario_id" : 54,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2026-07-08T15:44:17.000Z",
-		"updated_at" : "2026-07-08T15:44:17.000Z"
-	},
-	{
-		"id" : 284314,
-		"usuario_id" : 14981,
-		"tipo_usuario_id" : 6,
-		"dependiente" : false,
-		"activo" : true,
-		"created_at" : "2026-07-08T15:44:17.000Z",
-		"updated_at" : "2026-07-08T15:44:17.000Z"
-	},
-	{
-		"id" : 284906,
-		"usuario_id" : 32049,
-		"tipo_usuario_id" : 10,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2026-07-14T13:35:55.000Z",
-		"updated_at" : "2026-07-14T13:35:55.000Z"
-	},
-	{
-		"id" : 284945,
-		"usuario_id" : 4670,
-		"tipo_usuario_id" : 6,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2026-07-14T19:01:40.000Z",
-		"updated_at" : "2026-07-14T19:01:40.000Z"
-	},
-	{
-		"id" : 284947,
-		"usuario_id" : 4670,
-		"tipo_usuario_id" : 48,
-		"dependiente" : true,
-		"activo" : false,
-		"created_at" : "2026-07-14T19:02:16.000Z",
-		"updated_at" : "2026-07-14T19:02:16.000Z"
-	},
-	{
-		"id" : 284948,
-		"usuario_id" : 4670,
-		"tipo_usuario_id" : 10,
-		"dependiente" : false,
-		"activo" : true,
-		"created_at" : "2026-07-14T19:02:16.000Z",
-		"updated_at" : "2026-07-14T19:02:16.000Z"
-	},
-	{
-		"id" : 284968,
-		"usuario_id" : 32049,
-		"tipo_usuario_id" : 54,
-		"dependiente" : false,
-		"activo" : false,
-		"created_at" : "2026-07-14T20:08:29.000Z",
-		"updated_at" : "2026-07-14T20:08:29.000Z"
-	},
-	{
-		"id" : 284969,
-		"usuario_id" : 32049,
-		"tipo_usuario_id" : 6,
-		"dependiente" : false,
-		"activo" : true,
-		"created_at" : "2026-07-14T20:08:29.000Z",
-		"updated_at" : "2026-07-14T20:08:29.000Z"
-	}
-]}
+    "usuario_tipo_usuario": [
+        {
+            "id": 232867,
+            "usuario_id": 16875,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-03-01T13:49:38.000Z",
+            "updated_at": "2025-03-01T13:49:38.000Z"
+        },
+        {
+            "id": 102916,
+            "usuario_id": 91023,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-20T01:03:46.000Z",
+            "updated_at": "2020-06-20T01:03:46.000Z"
+        },
+        {
+            "id": 87020,
+            "usuario_id": 82197,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-05-05T00:42:44.000Z"
+        },
+        {
+            "id": 749,
+            "usuario_id": 1623,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:54:17.000Z"
+        },
+        {
+            "id": 2754,
+            "usuario_id": 2423,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:54:29.000Z"
+        },
+        {
+            "id": 4076,
+            "usuario_id": 2100,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:54:37.000Z"
+        },
+        {
+            "id": 4457,
+            "usuario_id": 4967,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:54:39.000Z"
+        },
+        {
+            "id": 4513,
+            "usuario_id": 3878,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:54:40.000Z"
+        },
+        {
+            "id": 5634,
+            "usuario_id": 7892,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:54:58.000Z"
+        },
+        {
+            "id": 7876,
+            "usuario_id": 9167,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:55:12.000Z"
+        },
+        {
+            "id": 147449,
+            "usuario_id": 3864,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2022-11-17T14:22:32.000Z",
+            "updated_at": "2022-11-17T14:22:32.000Z"
+        },
+        {
+            "id": 10084,
+            "usuario_id": 11106,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:55:33.000Z"
+        },
+        {
+            "id": 14255,
+            "usuario_id": 13676,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:55:59.000Z"
+        },
+        {
+            "id": 14960,
+            "usuario_id": 16568,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:56:16.000Z"
+        },
+        {
+            "id": 16973,
+            "usuario_id": 16600,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:56:28.000Z"
+        },
+        {
+            "id": 21231,
+            "usuario_id": 21902,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:57:11.000Z"
+        },
+        {
+            "id": 21836,
+            "usuario_id": 21068,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:57:15.000Z"
+        },
+        {
+            "id": 22390,
+            "usuario_id": 24281,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:57:19.000Z"
+        },
+        {
+            "id": 22749,
+            "usuario_id": 23362,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:57:22.000Z"
+        },
+        {
+            "id": 22788,
+            "usuario_id": 23886,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:57:22.000Z"
+        },
+        {
+            "id": 23311,
+            "usuario_id": 23409,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:57:27.000Z"
+        },
+        {
+            "id": 27609,
+            "usuario_id": 28772,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:58:08.000Z"
+        },
+        {
+            "id": 29689,
+            "usuario_id": 32431,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:58:37.000Z"
+        },
+        {
+            "id": 32201,
+            "usuario_id": 34201,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:58:58.000Z"
+        },
+        {
+            "id": 32458,
+            "usuario_id": 35234,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:59:11.000Z"
+        },
+        {
+            "id": 33505,
+            "usuario_id": 38412,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:59:20.000Z"
+        },
+        {
+            "id": 34317,
+            "usuario_id": 36248,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T21:59:28.000Z"
+        },
+        {
+            "id": 59010,
+            "usuario_id": 59829,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T22:05:07.000Z"
+        },
+        {
+            "id": 76912,
+            "usuario_id": 81834,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-02-07T22:10:41.000Z"
+        },
+        {
+            "id": 91802,
+            "usuario_id": 66681,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2019-08-01T14:27:06.000Z"
+        },
+        {
+            "id": 98144,
+            "usuario_id": 52182,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2020-02-27T18:37:08.000Z"
+        },
+        {
+            "id": 99525,
+            "usuario_id": 19553,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2020-03-24T20:20:45.000Z"
+        },
+        {
+            "id": 99527,
+            "usuario_id": 16606,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2020-03-24T20:38:05.000Z"
+        },
+        {
+            "id": 101887,
+            "usuario_id": 21002,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2020-06-04T05:00:00.000Z",
+            "updated_at": "2020-05-24T20:20:17.000Z"
+        },
+        {
+            "id": 113675,
+            "usuario_id": 104460,
+            "tipo_usuario_id": 41,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2021-04-23T02:50:10.000Z",
+            "updated_at": "2021-04-23T02:50:10.000Z"
+        },
+        {
+            "id": 117412,
+            "usuario_id": 105934,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2021-06-27T16:17:47.000Z",
+            "updated_at": "2021-06-27T16:17:47.000Z"
+        },
+        {
+            "id": 117436,
+            "usuario_id": 35889,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2021-06-27T17:52:45.000Z",
+            "updated_at": "2021-06-27T17:52:45.000Z"
+        },
+        {
+            "id": 117606,
+            "usuario_id": 54795,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2021-06-30T02:32:23.000Z",
+            "updated_at": "2021-06-30T02:32:23.000Z"
+        },
+        {
+            "id": 120099,
+            "usuario_id": 104870,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2021-08-05T22:25:00.000Z",
+            "updated_at": "2021-08-05T22:25:00.000Z"
+        },
+        {
+            "id": 122862,
+            "usuario_id": 20823,
+            "tipo_usuario_id": 48,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2021-08-26T18:56:08.000Z",
+            "updated_at": "2021-08-26T18:56:08.000Z"
+        },
+        {
+            "id": 274241,
+            "usuario_id": 38936,
+            "tipo_usuario_id": 46,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-03-13T16:39:19.000Z",
+            "updated_at": "2026-03-13T16:39:19.000Z"
+        },
+        {
+            "id": 127336,
+            "usuario_id": 99561,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2022-01-26T19:14:41.000Z",
+            "updated_at": "2022-01-26T19:14:41.000Z"
+        },
+        {
+            "id": 133059,
+            "usuario_id": 20823,
+            "tipo_usuario_id": 51,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2022-04-13T16:53:18.000Z",
+            "updated_at": "2022-04-13T16:53:18.000Z"
+        },
+        {
+            "id": 133518,
+            "usuario_id": 4715,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2022-04-25T15:07:02.000Z",
+            "updated_at": "2022-04-25T15:07:02.000Z"
+        },
+        {
+            "id": 154941,
+            "usuario_id": 92737,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2023-03-03T19:24:47.000Z",
+            "updated_at": "2023-03-03T19:24:47.000Z"
+        },
+        {
+            "id": 156708,
+            "usuario_id": 44916,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2023-03-21T19:55:18.000Z",
+            "updated_at": "2023-03-21T19:55:18.000Z"
+        },
+        {
+            "id": 154909,
+            "usuario_id": 20188,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2023-03-03T14:09:01.000Z",
+            "updated_at": "2023-03-03T14:09:01.000Z"
+        },
+        {
+            "id": 274682,
+            "usuario_id": 38938,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-03-16T14:12:45.000Z",
+            "updated_at": "2026-03-16T14:12:45.000Z"
+        },
+        {
+            "id": 234716,
+            "usuario_id": 107934,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-03-03T02:54:45.000Z",
+            "updated_at": "2025-03-03T02:54:45.000Z"
+        },
+        {
+            "id": 140628,
+            "usuario_id": 21249,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2022-07-29T18:01:42.000Z",
+            "updated_at": "2022-07-29T18:01:42.000Z"
+        },
+        {
+            "id": 156869,
+            "usuario_id": 8756,
+            "tipo_usuario_id": 46,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2023-03-24T21:12:10.000Z",
+            "updated_at": "2023-03-24T21:12:10.000Z"
+        },
+        {
+            "id": 144322,
+            "usuario_id": 88567,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2022-08-30T23:09:18.000Z",
+            "updated_at": "2022-08-30T23:09:18.000Z"
+        },
+        {
+            "id": 151367,
+            "usuario_id": 8891,
+            "tipo_usuario_id": 45,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2023-02-10T18:01:49.000Z",
+            "updated_at": "2023-02-10T18:01:49.000Z"
+        },
+        {
+            "id": 151369,
+            "usuario_id": 91005,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2023-02-10T18:04:54.000Z",
+            "updated_at": "2023-02-10T18:04:54.000Z"
+        },
+        {
+            "id": 190090,
+            "usuario_id": 104870,
+            "tipo_usuario_id": 72,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2021-08-05T22:25:00.000Z",
+            "updated_at": "2021-08-05T22:25:00.000Z"
+        },
+        {
+            "id": 232421,
+            "usuario_id": 20510,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-02-27T22:54:33.000Z",
+            "updated_at": "2025-02-27T22:54:33.000Z"
+        },
+        {
+            "id": 232425,
+            "usuario_id": 81835,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-02-27T23:12:14.000Z",
+            "updated_at": "2025-02-27T23:12:14.000Z"
+        },
+        {
+            "id": 168258,
+            "usuario_id": 15737,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2023-08-02T20:13:58.000Z",
+            "updated_at": "2023-08-02T20:13:58.000Z"
+        },
+        {
+            "id": 275098,
+            "usuario_id": 8675,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-03-20T16:08:24.000Z",
+            "updated_at": "2026-03-20T16:08:24.000Z"
+        },
+        {
+            "id": 275705,
+            "usuario_id": 8675,
+            "tipo_usuario_id": 83,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2026-03-25T14:26:49.000Z",
+            "updated_at": "2026-03-25T14:26:49.000Z"
+        },
+        {
+            "id": 215106,
+            "usuario_id": 10103,
+            "tipo_usuario_id": 45,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2024-09-24T15:56:29.000Z",
+            "updated_at": "2024-09-24T15:56:29.000Z"
+        },
+        {
+            "id": 215336,
+            "usuario_id": 59149,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2024-09-27T16:25:33.000Z",
+            "updated_at": "2024-09-27T16:25:33.000Z"
+        },
+        {
+            "id": 275916,
+            "usuario_id": 20715,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-03-27T17:01:46.000Z",
+            "updated_at": "2026-03-27T17:01:46.000Z"
+        },
+        {
+            "id": 215118,
+            "usuario_id": 6201,
+            "tipo_usuario_id": 45,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2024-09-24T16:41:03.000Z",
+            "updated_at": "2024-09-24T16:41:03.000Z"
+        },
+        {
+            "id": 275546,
+            "usuario_id": 14981,
+            "tipo_usuario_id": 41,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2026-03-24T15:59:56.000Z",
+            "updated_at": "2026-03-24T15:59:56.000Z"
+        },
+        {
+            "id": 275562,
+            "usuario_id": 20715,
+            "tipo_usuario_id": 83,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-03-24T16:32:42.000Z",
+            "updated_at": "2026-03-24T16:32:42.000Z"
+        },
+        {
+            "id": 276793,
+            "usuario_id": 1724,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-04-07T13:42:10.000Z",
+            "updated_at": "2026-04-07T13:42:10.000Z"
+        },
+        {
+            "id": 257120,
+            "usuario_id": 8654,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-09-26T12:18:53.000Z",
+            "updated_at": "2025-09-26T12:18:53.000Z"
+        },
+        {
+            "id": 256443,
+            "usuario_id": 15339,
+            "tipo_usuario_id": 45,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-09-17T14:27:35.000Z",
+            "updated_at": "2025-09-17T14:27:35.000Z"
+        },
+        {
+            "id": 244914,
+            "usuario_id": 16517,
+            "tipo_usuario_id": 45,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-06-13T15:27:20.000Z",
+            "updated_at": "2025-06-13T15:27:20.000Z"
+        },
+        {
+            "id": 279068,
+            "usuario_id": 32049,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2026-05-03T13:34:30.000Z",
+            "updated_at": "2026-05-03T13:34:30.000Z"
+        },
+        {
+            "id": 259660,
+            "usuario_id": 44957,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2025-10-25T15:33:23.000Z",
+            "updated_at": "2025-10-25T15:33:23.000Z"
+        },
+        {
+            "id": 259661,
+            "usuario_id": 44957,
+            "tipo_usuario_id": 72,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2025-10-25T15:33:23.000Z",
+            "updated_at": "2025-10-25T15:33:23.000Z"
+        },
+        {
+            "id": 278746,
+            "usuario_id": 6838,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-04-29T14:08:38.000Z",
+            "updated_at": "2026-04-29T14:08:38.000Z"
+        },
+        {
+            "id": 260078,
+            "usuario_id": 32840,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-11-04T22:14:32.000Z",
+            "updated_at": "2025-11-04T22:14:32.000Z"
+        },
+        {
+            "id": 260079,
+            "usuario_id": 32555,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-11-04T22:14:44.000Z",
+            "updated_at": "2025-11-04T22:14:44.000Z"
+        },
+        {
+            "id": 259829,
+            "usuario_id": 4646,
+            "tipo_usuario_id": 45,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2025-10-29T17:44:40.000Z",
+            "updated_at": "2025-10-29T17:44:40.000Z"
+        },
+        {
+            "id": 278757,
+            "usuario_id": 4288,
+            "tipo_usuario_id": 45,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-04-29T14:32:17.000Z",
+            "updated_at": "2026-04-29T14:32:17.000Z"
+        },
+        {
+            "id": 262898,
+            "usuario_id": 32049,
+            "tipo_usuario_id": 52,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2025-12-30T15:35:44.000Z",
+            "updated_at": "2025-12-30T15:35:44.000Z"
+        },
+        {
+            "id": 279707,
+            "usuario_id": 14392,
+            "tipo_usuario_id": 48,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2026-05-11T01:19:18.000Z",
+            "updated_at": "2026-05-11T01:19:18.000Z"
+        },
+        {
+            "id": 279708,
+            "usuario_id": 14392,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2026-05-11T01:19:18.000Z",
+            "updated_at": "2026-05-11T01:19:18.000Z"
+        },
+        {
+            "id": 278798,
+            "usuario_id": 90312,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-04-29T18:34:26.000Z",
+            "updated_at": "2026-04-29T18:34:26.000Z"
+        },
+        {
+            "id": 266150,
+            "usuario_id": 6391,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-02-06T16:10:57.000Z",
+            "updated_at": "2026-02-06T16:10:57.000Z"
+        },
+        {
+            "id": 266155,
+            "usuario_id": 19006,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-02-06T16:15:15.000Z",
+            "updated_at": "2026-02-06T16:15:15.000Z"
+        },
+        {
+            "id": 266163,
+            "usuario_id": 15342,
+            "tipo_usuario_id": 46,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-02-06T16:58:45.000Z",
+            "updated_at": "2026-02-06T16:58:45.000Z"
+        },
+        {
+            "id": 282512,
+            "usuario_id": 8675,
+            "tipo_usuario_id": 54,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-06-17T15:44:36.000Z",
+            "updated_at": "2026-06-17T15:44:36.000Z"
+        },
+        {
+            "id": 282513,
+            "usuario_id": 8675,
+            "tipo_usuario_id": 6,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2026-06-17T15:44:36.000Z",
+            "updated_at": "2026-06-17T15:44:36.000Z"
+        },
+        {
+            "id": 283249,
+            "usuario_id": 5322,
+            "tipo_usuario_id": 83,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-06-24T17:46:54.000Z",
+            "updated_at": "2026-06-24T17:46:54.000Z"
+        },
+        {
+            "id": 267989,
+            "usuario_id": 38931,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-02-17T15:58:33.000Z",
+            "updated_at": "2026-02-17T15:58:33.000Z"
+        },
+        {
+            "id": 284112,
+            "usuario_id": 14981,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-07-07T13:01:13.000Z",
+            "updated_at": "2026-07-07T13:01:13.000Z"
+        },
+        {
+            "id": 284313,
+            "usuario_id": 14981,
+            "tipo_usuario_id": 54,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-07-08T15:44:17.000Z",
+            "updated_at": "2026-07-08T15:44:17.000Z"
+        },
+        {
+            "id": 284314,
+            "usuario_id": 14981,
+            "tipo_usuario_id": 6,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2026-07-08T15:44:17.000Z",
+            "updated_at": "2026-07-08T15:44:17.000Z"
+        },
+        {
+            "id": 284906,
+            "usuario_id": 32049,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-07-14T13:35:55.000Z",
+            "updated_at": "2026-07-14T13:35:55.000Z"
+        },
+        {
+            "id": 284945,
+            "usuario_id": 4670,
+            "tipo_usuario_id": 6,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-07-14T19:01:40.000Z",
+            "updated_at": "2026-07-14T19:01:40.000Z"
+        },
+        {
+            "id": 284947,
+            "usuario_id": 4670,
+            "tipo_usuario_id": 48,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2026-07-14T19:02:16.000Z",
+            "updated_at": "2026-07-14T19:02:16.000Z"
+        },
+        {
+            "id": 284948,
+            "usuario_id": 4670,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2026-07-14T19:02:16.000Z",
+            "updated_at": "2026-07-14T19:02:16.000Z"
+        },
+        {
+            "id": 284968,
+            "usuario_id": 32049,
+            "tipo_usuario_id": 54,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-07-14T20:08:29.000Z",
+            "updated_at": "2026-07-14T20:08:29.000Z"
+        },
+        {
+            "id": 284969,
+            "usuario_id": 32049,
+            "tipo_usuario_id": 6,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2026-07-14T20:08:29.000Z",
+            "updated_at": "2026-07-14T20:08:29.000Z"
+        },
+        {
+            "id": 251409,
+            "usuario_id": 67957,
+            "tipo_usuario_id": 46,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2025-08-03T22:09:30",
+            "updated_at": "2025-08-03T22:09:30"
+        },
+        {
+            "id": 214701,
+            "usuario_id": 7197,
+            "tipo_usuario_id": 45,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2024-09-19T16:17:57",
+            "updated_at": "2024-09-19T16:17:57"
+        },
+        {
+            "id": 275523,
+            "usuario_id": 20828,
+            "tipo_usuario_id": 44,
+            "dependiente": true,
+            "activo": true,
+            "created_at": "2026-03-24T08:14:15",
+            "updated_at": "2026-03-24T08:14:15"
+        },
+        {
+            "id": 282068,
+            "usuario_id": 56006,
+            "tipo_usuario_id": 43,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2026-06-12T10:20:32",
+            "updated_at": "2026-06-12T10:20:32"
+        },
+        {
+            "id": 282069,
+            "usuario_id": 56006,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2026-06-12T10:20:33",
+            "updated_at": "2026-06-12T10:20:33"
+        },
+        {
+            "id": 283486,
+            "usuario_id": 14476,
+            "tipo_usuario_id": 83,
+            "dependiente": true,
+            "activo": false,
+            "created_at": "2026-06-28T09:07:07",
+            "updated_at": "2026-06-28T09:07:07"
+        },
+        {
+            "id": 285420,
+            "usuario_id": 14476,
+            "tipo_usuario_id": 6,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-07-19T13:06:02",
+            "updated_at": "2026-07-19T13:06:02"
+        },
+        {
+            "id": 285421,
+            "usuario_id": 14476,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2026-07-19T13:06:02",
+            "updated_at": "2026-07-19T13:06:02"
+        },
+        {
+            "id": 285570,
+            "usuario_id": 67957,
+            "tipo_usuario_id": 6,
+            "dependiente": false,
+            "activo": false,
+            "created_at": "2026-07-21T08:33:53",
+            "updated_at": "2026-07-21T08:33:53"
+        },
+        {
+            "id": 285571,
+            "usuario_id": 67957,
+            "tipo_usuario_id": 10,
+            "dependiente": false,
+            "activo": true,
+            "created_at": "2026-07-21T08:33:53",
+            "updated_at": "2026-07-21T08:33:53"
+        }
+    ]
+}
