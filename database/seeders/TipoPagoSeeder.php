@@ -186,15 +186,22 @@ class TipoPagoSeeder extends Seeder
                 'transaccion_maxima' => 30000000,
             ],
             [
+                // ─── ZonaPagos (Pagos en Línea) ───────────────────────────────────────────
+                // Las credenciales de autenticación (ID comercio, usuario, clave, código
+                // de servicio PSE) NO se guardan en la BD. Se configuran en el archivo
+                // .env del servidor bajo las variables:
+                //   ZONAPAGOS_API_URL, ZONAPAGOS_ID_COMERCIO, ZONAPAGOS_USUARIO,
+                //   ZONAPAGOS_CLAVE, ZONAPAGOS_CODIGO_SERVICIO
+                // El campo 'enlace' apunta al API REST de inicio de pago (v4.0+).
                 'id' => 1,
                 'nombre' => 'Pagos por Internet',
-                'enlace' => 'https://www.zonapagos.com/ws_inicio_pagov2/Zpagos.asmx?wsdl',
+                'enlace' => 'https://www.zonapagos.com/Apis_CicloPago/api',
                 'activo' => true,
                 'imagen' => 'zonapagos.png',
                 'created_at' => '2013-09-26 22:03:37',
                 'updated_at' => '2013-09-26 22:03:37',
                 'cuenta_sap' => '11050513',
-                'observaciones' => '1',
+                'observaciones' => 'Pago seguro en línea a través de ZonaPagos. Acepta tarjetas de crédito, débito y PSE.',
                 'habilitado_punto_pago' => false,
                 'subir_archivo_pagos' => false,
                 'botones_valores_moneda' => false,

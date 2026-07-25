@@ -7,12 +7,12 @@ description: Carga el contexto y memoria del Agente de Matrículas (Admin y Estu
 3. Read `app/Services/MatriculaService.php` to understand availability logic.
 4. Read `app/Livewire/Matricula/MatriculaModal.php` (Manual) and `app/Livewire/Carrito/EscuelasCarrito.php` (Self-service).
 5. Adopt the persona: "Expert in Enrollment Systems (Matriculas & academic logic)".
-6. Confirm to the user: "📑 **Agente de Matrículas Activado**. Conozco los flujos de Taquilla, Carrito y Gestión Administrativa de inscripciones."
+6. Confirm to the user: "📑 **Agente de Matrículas Activado**. Conozco los flujos de Taquilla, Carrito, Sonda ZonaPagos, SoftDeletes y Gestión Administrativa de inscripciones."
 
 ### Arquitectura de Matrículas
 
-*   **Matrícula (Pago)**: `app/Models/Matricula.php` maneja la referencia de pago y el periodo.
-*   **Estado Académico (Seguimiento)**: `app/Models/MatriculaHorarioMateriaPeriodo.php` maneja si el alumno está cursando o aprobó.
+*   **Matrícula (Pago)**: `app/Models/Matricula.php` maneja la referencia de pago, el periodo y cuenta con el trait `SoftDeletes` (`deleted_at` y `deleted_by`).
+*   **Estado Académico (Seguimiento)**: `app/Models/MatriculaHorarioMateriaPeriodo.php` maneja si el alumno está cursando o aprobó (tabla física: `matricula_horario_materia_periodo`).
 *   **Aprobaciones Históricas**: `app/Models/MateriaAprobadaUsuario.php` (materias) y la tabla `niveles_aprobado_usuario` (niveles) manejan homologaciones y aprobaciones permanentes.
 *   **Horario específico**: `app/Models/HorarioMateriaPeriodo.php` es la instancia de clase con cupos limitados.
 
@@ -22,36 +22,44 @@ description: Carga el contexto y memoria del Agente de Matrículas (Admin y Estu
 2.  **Integridad**: No se puede eliminar ni trasladar a un alumno que ya tenga **Asistencia** (`ReporteAsistenciaAlumnos`) o **Notas** (`AlumnoRespuestaItem`).
 3.  **Cupos**: Se usa `lockForUpdate` del horario antes de decrementar cupos en la transacción.
 4.  **Crecimiento**: Al matricularse (vía `MatriculaModal`), se asignan automáticamente los pasos de crecimiento marcados como "Al iniciar" en la configuración de la materia.
+5.  **SoftDeletes y Trazabilidad Contable**: Al cancelar o eliminar una matrícula desde el módulo administrativo o por rechazo en ZonaPagos, la matrícula no se borra físicamente. En su lugar, se desvinculan los pivotes de clase (`matricula_horario_materia_periodo`) para liberar el cupo, y se registra la fecha (`deleted_at`) y el usuario responsable (`deleted_by`) para auditoría.
 
 ### Flujos Soportados
 
 *   **Taquilla/Admin**: `Livewire\Taquilla\ProcesarMatriculaEscuela` y `Livewire\Matricula\MatriculaModal`.
 *   **Auto-servicio**: `Livewire\Carrito\EscuelasCarrito`.
+*   **Sonda de Verificación y Barrido**: `Console\Commands\VerificarPagosPendientes`.
 *   **Traslados**: `Livewire\Matricula\TrasladoModal` (Admin) y `Livewire\Matricula\SolicitarTraslado` (Estudiante).
 *   **Por Niveles**: `Http\Controllers\MatriculaNivelController` y `Livewire\Matricula\MatriculaNivelModal`.
+*   **Gestión e Historial de Eliminadas**: `Http\Controllers\MatriculaController` (`gestionar`, `eliminarMatricula`, `historialEliminadas`).
 
-### Especificaciones de Matrícula por Niveles
+### Especificaciones de Eliminación de Matrículas y SoftDeletes
 
-1.  **Filtrado por Periodo**: Las materias se cargan vía `MateriaPeriodo` para asegurar que solo se inscriban ítems activos en el periodo actual.
-2.  **Validación Previa**: Se debe invocar `MatriculaService::getReporteDisponibilidadNiveles` antes de abrir el modal para validar prerrequisitos y bloqueos.
-3.  **Transaccionalidad**: El `MatriculaNivelService` envuelve la creación de `MatriculaNivel`, múltiples `Matricula` individuales y `MatriculaHorarioMateriaPeriodo` en una sola transacción con `lockForUpdate`.
-4.  **Automatización de Pasos**: Al completar la inscripción por nivel, el sistema asigna automáticamente los pasos de crecimiento configurados como "Al iniciar" en cada materia.
-5.  **Verificación de Aprobación**: El sistema debe verificar la aprobación tanto en `matriculas_nivel` (flujo normal) como en `niveles_aprobado_usuario` (homologaciones/histórico) para determinar si un nivel está "APROBADO".
+1.  **Eliminación Administrativa**:
+    *   Método: `MatriculaController::eliminarMatricula($matricula, $user)`.
+    *   Verificación de Permisos: Requiere `escuelas.opcion_eliminar_materia` o `escuelas.opcion_eliminar_matricula`.
+    *   Auto-Reparación en cPanel: Comprueba que existan las columnas `deleted_at` y `deleted_by` en la tabla `matriculas` en caliente.
+    *   Alertas Diferenciadas (SweetAlert2): Si la matrícula posee compra/pago registrado por PSE ($XX.XXX), despliega una advertencia especial notificando que el registro contable se preservará en el historial.
+2.  **Vista del Historial de Eliminadas**:
+    *   Ruta: `/matriculas/historial-eliminadas/{user?}` (`matriculas.historialEliminadas`).
+    *   Buscador Multi-Campo: Filtra por **Identificación del estudiante**, **Nombres/Apellidos**, **#ID Matrícula**, **Nombre del Periodo** y **Nombre de Materia**.
+    *   Filtro por Periodo Académico (Select Desplegable) y opción de limpiar filtros.
+    *   Visualización de usuario responsable (`deleted_by`), fecha/hora exacta de cancelación y referencia contable de compra/pago.
 
-41. ### Automatización de Roles y Efectos (Nuevo)
-42. 
-43. 1.  **Cambio de Rol al Iniciar**:
-44.     *   Al matricular a un estudiante via `MatriculaNivelService` (Niveles) o `MatriculaModal` (Materias), el sistema actualiza automáticamente el `tipo_usuario_id` del alumno al `tipo_usuario_inicial_id` configurado en el nivel/materia respectivo.
-45. 2.  **Trait `AplicaEfectosAprobacion`**: Centraliza los efectos secundarios de la culminación de materias (`ServicioValidacionPeriodo` y `ServicioValidacionMateriaPeriodo`).
-46.     *   **Tareas de Consolidación**: Actualiza el estado de las tareas configuradas como "al culminar".
-47.     *   **Pasos de Crecimiento**: Registra o actualiza el progreso en `CrecimientoUsuario`.
-48.     *   **Roles y Tipos de Usuario**: Cambia el rol al `tipo_usuario_objetivo_id` de la materia, validando siempre la jerarquía por puntaje (no degrada rangos).
-49. 3.  **Aprobación Automática de Nivel**:
-50.     *   Dentro del trait, tras aprobar una materia, el sistema verifica si el alumno ha completado **todas las materias obligatorias** de su nivel asociado.
-51.     *   Si se completa el nivel, se crea el registro en `niveles_aprobado_usuario` y se aplica el cambio de rol al Tipo de Usuario Objetivo del nivel.
-52. 
-53. ### Gestión de Imágenes y Portadas
-54. 
-55. *   **Materias**: Almacenadas en `[tenant]/img/materias/`. Fallback: `storage/global/img/escuelas/default.png`.
-56. *   **Niveles (Grados)**: Almacenados en `[tenant]/img/niveles/`. Fallback: `storage/global/img/escuelas/default.png`.
-57. *   **Rutas de Sistema**: Siempre usar `Storage::url($configuracion->ruta_almacenamiento . $path)` para archivos del tenant y `asset()` para archivos globales.
+### Automatización de Roles y Efectos
+
+1.  **Cambio de Rol al Iniciar**:
+    *   Al matricular a un estudiante vía `MatriculaNivelService` (Niveles) o `MatriculaModal` (Materias), el sistema actualiza automáticamente el `tipo_usuario_id` del alumno al `tipo_usuario_inicial_id` configurado en el nivel/materia respectivo.
+2.  **Trait `AplicaEfectosAprobacion`**: Centraliza los efectos secundarios de la culminación de materias (`ServicioValidacionPeriodo` y `ServicioValidacionMateriaPeriodo`).
+    *   **Tareas de Consolidación**: Actualiza el estado de las tareas configuradas como "al culminar".
+    *   **Pasos de Crecimiento**: Registra o actualiza el progreso en `CrecimientoUsuario`.
+    *   **Roles y Tipos de Usuario**: Cambia el rol al `tipo_usuario_objetivo_id` de la materia, validando siempre la jerarquía por puntaje (no degrada rangos).
+3.  **Aprobación Automática de Nivel**:
+    *   Dentro del trait, tras aprobar una materia, el sistema verifica si el alumno ha completado **todas las materias obligatorias** de su nivel asociado.
+    *   Si se completa el nivel, se crea el registro en `niveles_aprobado_usuario` y se aplica el cambio de rol al Tipo de Usuario Objetivo del nivel.
+
+### Gestión de Imágenes y Portadas
+
+*   **Materias**: Almacenadas en `[tenant]/img/materias/`. Fallback: `storage/global/img/escuelas/default.png`.
+*   **Niveles (Grados)**: Almacenados en `[tenant]/img/niveles/`. Fallback: `storage/global/img/escuelas/default.png`.
+*   **Rutas de Sistema**: Siempre usar `Storage::url($configuracion->ruta_almacenamiento . $path)` para archivos del tenant y `asset()` para archivos globales.

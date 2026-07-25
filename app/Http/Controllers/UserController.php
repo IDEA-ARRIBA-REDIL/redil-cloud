@@ -1932,6 +1932,7 @@ class UserController extends Controller
             $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         }
         $validacion = [];
+        $mensajes = [];
 
         $campos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
             ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
@@ -1977,6 +1978,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
+            
+            if ($formulario->validar_edad) {
+                $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
+                $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
+                
+                $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
+                $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
+                
+                $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
+                $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
+            }
+            
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -2292,12 +2305,9 @@ class UserController extends Controller
         }
 
         // Validacion de datos
-        $request->validate($validacion, [
+        $request->validate($validacion, array_merge([
             'message.required' => 'The message field is required.',
-        ]);
-
-        // Validacion de datos
-        $request->validate($validacion);
+        ], $mensajes));
 
         // Foto default
         $usuario->foto = $request->genero == 0 ? 'default-m.png' : 'default-f.png';
@@ -2814,6 +2824,7 @@ class UserController extends Controller
             $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         }
         $validacion = [];
+        $mensajes = [];
 
         $campos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
             ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
@@ -2857,6 +2868,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
+            
+            if ($formulario->validar_edad) {
+                $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
+                $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
+                
+                $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
+                $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
+                
+                $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
+                $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
+            }
+            
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -3136,7 +3159,7 @@ class UserController extends Controller
         }
 
         // Validacion de datos
-        $request->validate($validacion);
+        $request->validate($validacion, $mensajes);
 
         if ($usuario->save()) {
             // $usuario->foto= $request->genero == 0 ? "default-m.png" : "default-f.png";
@@ -3342,6 +3365,7 @@ class UserController extends Controller
 
         $formulario = FormularioUsuario::find($formulario);
         $validacion = [];
+        $mensajes = [];
 
         $campos = $campos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
             ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
@@ -3386,6 +3410,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
+            
+            if ($formulario->validar_edad) {
+                $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
+                $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
+                
+                $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
+                $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
+                
+                $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
+                $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
+            }
+            
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -3657,7 +3693,7 @@ class UserController extends Controller
         }
 
         // Validacion de datos
-        $request->validate($validacion);
+        $request->validate($validacion, $mensajes);
 
         if ($usuario->save()) {
             // $usuario->foto= $request->genero == 0 ? "default-m.png" : "default-f.png";

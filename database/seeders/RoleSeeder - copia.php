@@ -15,7 +15,7 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         // RolAdmistrador
-        $superAdmin = Role::create(['name' => 'Super Administrador', 'icono' => 'ti ti-key', 'dependiente' => false]);
+        $superAdmin = Role::create(['name' => 'Super Administrador Prueba', 'icono' => 'ti ti-key', 'dependiente' => false]);
 
         // creo relacion create_privilegios_tipo_grupo_rol
         ModelsRole::find(1)->privilegiosTiposGrupo()->attach(3, ['asignar_asistente' => false, 'desvincular_asistente' => true, 'asignar_encargado' => false, 'desvincular_encargado' => true]);
@@ -42,7 +42,7 @@ class RoleSeeder extends Seeder
         $usuario1->roles()->attach($superAdmin->id, ['activo' => 1, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
 
         // RolPastor
-        $pastor = Role::create(['name' => 'Pastor', 'icono' => 'ti ti-user-shield', 'dependiente' => true]);
+        $pastor = Role::create(['name' => 'Pastor Prueba', 'icono' => 'ti ti-user-shield', 'dependiente' => true]);
 
         $usuario2 = \App\Models\User::create([
             'pais_id' => 45,
@@ -67,7 +67,7 @@ class RoleSeeder extends Seeder
         $usuario2->iglesiaEncargada()->attach(2798);
 
         // RolLider
-        $lider = Role::create(['name' => 'Lider', 'icono' => 'ti ti-user-star', 'dependiente' => true]);
+        $lider = Role::create(['name' => 'Lider Prueba', 'icono' => 'ti ti-user-star', 'dependiente' => true]);
 
         // creo relacion create_privilegios_tipo_grupo_rol
         ModelsRole::find(3)->privilegiosTiposGrupo()->attach(2, ['asignar_asistente' => true, 'desvincular_asistente' => true, 'asignar_encargado' => false, 'desvincular_encargado' => false]);
@@ -186,7 +186,7 @@ class RoleSeeder extends Seeder
         $usuario6->roles()->attach($lider->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
 
         // RolOveja
-        $oveja = Role::create(['name' => 'Oveja', 'icono' => 'ti ti-mood-heart', 'dependiente' => true]);
+        $oveja = Role::create(['name' => 'Oveja Prueba', 'icono' => 'ti ti-mood-heart', 'dependiente' => true]);
 
         $usuario7 = \App\Models\User::create([
             'pais_id' => 45,
@@ -353,16 +353,16 @@ class RoleSeeder extends Seeder
         $usuario12->roles()->attach($superAdmin->id, ['activo' => 1, 'dependiente' => 0, 'model_type' => 'App\Models\User']);
 
         // RolNuevo
-        $nuevo = Role::create(['name' => 'Nuevo', 'icono' => 'ti ti-paper-bag', 'dependiente' => true]);
+        $nuevo = Role::create(['name' => 'Nuevo Prueba', 'icono' => 'ti ti-paper-bag', 'dependiente' => true]);
 
         // RolEmpleado
-        $oveja = Role::create(['name' => 'Empleado', 'icono' => 'ti ti-brand-ctemplar', 'dependiente' => true]);
+        $oveja = Role::create(['name' => 'Empleado Prueba', 'icono' => 'ti ti-brand-ctemplar', 'dependiente' => true]);
 
         // RolDesarrollador
-        $desarrollador = Role::create(['name' => 'Desarrollador', 'icono' => 'ti ti-anchor', 'dependiente' => true]);
+        $desarrollador = Role::create(['name' => 'Desarrollador Prueba', 'icono' => 'ti ti-anchor', 'dependiente' => true]);
 
         // RolDP
-        $pdp = Role::create(['name' => 'PDP', 'icono' => 'ti ti-paperclip', 'dependiente' => false]);
+        $pdp = Role::create(['name' => 'PDP Prueba', 'icono' => 'ti ti-paperclip', 'dependiente' => false]);
 
         // Personas
         Permission::create([
@@ -1951,10 +1951,10 @@ class RoleSeeder extends Seeder
 
         // / roles para escuelas
 
-        $alumno = Role::create(['name' => 'Alumno', 'icono' => 'ti ti-user-square-rounded', 'dependiente' => false]);
-        $maestro = Role::create(['name' => 'Maestro', 'icono' => 'ti ti-user-square', 'dependiente' => false]);
-        $coordinador = Role::create(['name' => 'Coordinador', 'icono' => 'ti ti ti-user-pentagon', 'dependiente' => false]);
-        $administrador = Role::create(['name' => 'Administrativo', 'icono' => 'ti ti ti-user-pentagon', 'dependiente' => false]);
+        $alumno = Role::create(['name' => 'Alumno Prueba', 'icono' => 'ti ti-user-square-rounded', 'dependiente' => false]);
+        $maestro = Role::create(['name' => 'Maestro Prueba', 'icono' => 'ti ti-user-square', 'dependiente' => false]);
+        $coordinador = Role::create(['name' => 'Coordinador Prueba', 'icono' => 'ti ti ti-user-pentagon', 'dependiente' => false]);
+        $administrador = Role::create(['name' => 'Administrativo Prueba', 'icono' => 'ti ti ti-user-pentagon', 'dependiente' => false]);
 
         $usuario5->roles()->attach($alumno->id, ['activo' => 0, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
         $usuario1->roles()->attach($administrador->id, ['activo' => 0, 'dependiente' => 1, 'model_type' => 'App\Models\User']);

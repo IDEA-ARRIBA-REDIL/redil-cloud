@@ -14,20 +14,20 @@ class PermisoSeeder extends Seeder
     public function run(): void
     {
         // 1. Buscar los roles que necesitaremos
-        $superAdmin = Role::findByName('Super Administrador');
-        $pastor = Role::findByName('Pastor');
-        $lider = Role::findByName('Lider');
-        $oveja = Role::findByName('Oveja');
-        $nuevo = Role::findByName('Nuevo');
-        $alumno = Role::findByName('Alumno');
-        $maestro = Role::findByName('Maestro');
-        $administrador = Role::findByName('Administrativo');
-        $consejero = Role::findByName('Consejero');
-        $consolidadorMedellin = Role::findByName('Consolidador Medellin');
-        $consolidadorBogota = Role::findByName('Consolidador Bogota');
-        $cajero = Role::findByName('Cajero PDP');
-        $intercesor = Role::findByName('Intercesor');
-        // $coordinador = Role::findByName('Coordinador');
+        $superAdmin = Role::findByName('Super Administrador Prueba');
+        $pastor = Role::findByName('Pastor Prueba');
+        $lider = Role::findByName('Lider Prueba');
+        $oveja = Role::findByName('Oveja Prueba');
+        $nuevo = Role::findByName('Nuevo Prueba');
+        $alumno = Role::findByName('Alumno Prueba');
+        $maestro = Role::findByName('Maestro Prueba');
+        $administrador = Role::findByName('Administrativo Prueba');
+        $consejero = Role::findByName('Consejero Prueba');
+        $consolidadorMedellin = Role::findByName('Consolidador Medellin Prueba');
+        $consolidadorBogota = Role::findByName('Consolidador Bogota Prueba');
+        $cajero = Role::findByName('Cajero PDP Prueba');
+        $intercesor = Role::findByName('Intercesor Prueba');
+        // $coordinador = Role::findByName('Coordinador Prueba');
 
         // Personas
         Permission::firstOrCreate([
@@ -60,7 +60,7 @@ class PermisoSeeder extends Seeder
             'name' => 'personas.subitem_lista_asistentes',
         ])->syncRoles([$superAdmin]);
 
-        /* Crear privilegios de ver secciones del perfil del usuario en su pestaña */
+        // Crear privilegios de ver secciones del perfil del usuario en su pestaña 
 
         Permission::firstOrCreate([
             'titulo' => 'ver_perfil_asistente',
@@ -134,7 +134,7 @@ class PermisoSeeder extends Seeder
             'name' => 'personas.perfil.hitos_autogestion',
         ]);
 
-        /* fin Crear privilegios de ver secciones del perfil del usuario en su pestaña */
+        // fin Crear privilegios de ver secciones del perfil del usuario en su pestaña 
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_modificar_asistente',
@@ -1791,7 +1791,7 @@ class PermisoSeeder extends Seeder
         ])->syncRoles([$administrador, $superAdmin]);
 
         Permission::firstOrCreate([
-            'titulo' => 'escuelas.reportar_asistencia_cualquier_dia',
+            'titulo' => 'reportar_asistencia_cualquier_dia',
             'descripcion' => '',
             'name' => 'escuelas.reportar_asistencia_cualquier_dia',
         ])->syncRoles([$administrador, $superAdmin]);
@@ -2428,7 +2428,7 @@ class PermisoSeeder extends Seeder
         ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
-            'titulo' => 'subitem_roles',
+            'titulo' => 'subitem_zonas',
             'descripcion' => '',
             'name' => 'configuraciones.subitem_zonas',
         ])->syncRoles([$superAdmin]);
@@ -2955,5 +2955,338 @@ class PermisoSeeder extends Seeder
             'name' => 'hitos.dashboard',
         ])->syncRoles([$superAdmin]);
 
+        // Asignación de permisos a los nuevos roles provenientes de todos_tipo_usuarios.json
+        $this->asignarPermisosARolesJson();
+    }
+
+    /**
+     * Ruta relativa a storage/app para el archivo JSON de tipos de usuario (roles).
+     */
+    protected string $tipoUsuariosPath = 'seeders/todos_tipo_usuarios.json';
+
+    /**
+     * Diccionario de equivalencias: 'permiso_nuevo_spatie (titulo o name)' => 'atributo_viejo_json'
+     */
+    protected array $mapaEquivalencias = [
+        // ==========================================
+        // 1. PERMISOS QUE CAMBIARON DE NOMBRE
+        // 'permiso_nuevo_spatie' => 'atributo_viejo'
+        // ==========================================
+        'ver_perfil_asistente' => 'opcion_ver_perfil_asistente',
+        'nuevo_reporte_reunion' => 'subitem_nuevo_reporte_reunion',
+        'privilegio_actualizar_estado_aprobado_asistentes' => 'privilegio_actualizar_estado_aprobado_asistente',
+        'subitem_excluir_asistentes_grupos' => 'item_excluir_asistentes_grupos',
+        'opcion_descargar_informe_reservas_reporte_reunion' => 'opcion_descargar_informe_asistencias_reservas_reporte_reunion',
+        'subitem_dashboard_peticiones' => 'subitem_panel_peticiones',
+
+        // ==========================================
+        // 2. PERMISOS QUE SE MANTIENEN EXACTAMENTE IGUAL
+        // 'permiso_nuevo_spatie' => 'permiso_nuevo_spatie'
+        // ==========================================
+        'lista_asistentes_todos' => 'lista_asistentes_todos',
+        'lista_asistentes_solo_ministerio' => 'lista_asistentes_solo_ministerio',
+        'item_asistentes' => 'item_asistentes',
+        'subitem_nuevo_asistente' => 'subitem_nuevo_asistente',
+        'subitem_lista_asistentes' => 'subitem_lista_asistentes',
+        'opcion_modificar_asistente' => 'opcion_modificar_asistente',
+        'opcion_cambiar_contrasena_asistente' => 'opcion_cambiar_contrasena_asistente',
+        'opcion_eliminar_asistente' => 'opcion_eliminar_asistente',
+        'opcion_dar_de_baja_asistente' => 'opcion_dar_de_baja_asistente',
+        'opcion_geoasignar_asistente' => 'opcion_geoasignar_asistente',
+        'opcion_dar_de_alta_asistente' => 'opcion_dar_de_alta_asistente',
+        'opcion_modificar_informacion_congregacional' => 'opcion_modificar_informacion_congregacional',
+        'panel_tipos_asistente' => 'panel_tipos_asistente',
+        'panel_procesos_asistente' => 'panel_procesos_asistente',
+        'panel_asignar_grupo_al_asistente' => 'panel_asignar_grupo_al_asistente',
+        'pestana_actualizar_asistente' => 'pestana_actualizar_asistente',
+        'pestana_informacion_congregacional' => 'pestana_informacion_congregacional',
+        'autogestion_pestana_informacion_congregacional' => 'autogestion_pestana_informacion_congregacional',
+        'pestana_geoasignacion' => 'pestana_geoasignacion',
+        'ajax_obtiene_asistentes_solo_ministerio' => 'ajax_obtiene_asistentes_solo_ministerio',
+        'mostrar_todos_los_grupos_en_geoasignacion' => 'mostrar_todos_los_grupos_en_geoasignacion',
+        'ver_campo_reservado_visible' => 'ver_campo_reservado_visible',
+        'ver_panel_asignar_tipo_usuario' => 'ver_panel_asignar_tipo_usuario',
+        'ver_campo_informacion_opcional' => 'ver_campo_informacion_opcional',
+        'privilegio_crear_asistentes_aprobados' => 'privilegio_crear_asistentes_aprobados',
+        'privilegio_modificar_asistentes_desaprobados' => 'privilegio_modificar_asistentes_desaprobados',
+        'subitem_lista_sin_aprobar' => 'subitem_lista_sin_aprobar',
+        'editar_tipos_asistente' => 'editar_tipos_asistente',
+        'editar_procesos_asistente' => 'editar_procesos_asistente',
+        'eliminar_asistentes_forzadamente' => 'eliminar_asistentes_forzadamente',
+        'lista_grupos_todos' => 'lista_grupos_todos',
+        'lista_grupos_solo_ministerio' => 'lista_grupos_solo_ministerio',
+        'item_grupos' => 'item_grupos',
+        'subitem_lista_grupos' => 'subitem_lista_grupos',
+        'subitem_nuevo_grupo' => 'subitem_nuevo_grupo',
+        'subitem_lista_informes_grupo' => 'subitem_lista_informes_grupo',
+        'subitem_mapa_grupos' => 'subitem_mapa_grupos',
+        'subitem_grafico_ministerio' => 'subitem_grafico_ministerio',
+        'opcion_ver_perfil_grupo' => 'opcion_ver_perfil_grupo',
+        'opcion_modificar_grupo' => 'opcion_modificar_grupo',
+        'opcion_dar_de_baja_alta_grupo' => 'opcion_dar_de_baja_alta_grupo',
+        'opcion_eliminar_grupo' => 'opcion_eliminar_grupo',
+        'pestana_actualizar_grupo' => 'pestana_actualizar_grupo',
+        'pestana_anadir_lideres_grupo' => 'pestana_anadir_lideres_grupo',
+        'pestana_anadir_integrantes_grupo' => 'pestana_anadir_integrantes_grupo',
+        'pestana_georreferencia_grupo' => 'pestana_georreferencia_grupo',
+        'ajax_obtiene_grupos_solo_ministerio' => 'ajax_obtiene_grupos_solo_ministerio',
+        'mapa_grupos_todos' => 'mapa_grupos_todos',
+        'mapa_grupos_solo_ministerio' => 'mapa_grupos_solo_ministerio',
+        'grafico_ministerio_todos' => 'grafico_ministerio_todos',
+        'grafico_ministerio_solo_ministerio' => 'grafico_ministerio_solo_ministerio',
+        'mostar_modal_informe_asignacion_de_lideres' => 'mostar_modal_informe_asignacion_de_lideres',
+        'mostar_modal_informe_asignacion_de_asistentes' => 'mostar_modal_informe_asignacion_de_asistentes',
+        'mostar_modal_informe_desvinculacion_de_lideres' => 'mostar_modal_informe_desvinculacion_de_lideres',
+        'mostar_modal_informe_desvinculacion_de_asistentes' => 'mostar_modal_informe_desvinculacion_de_asistentes',
+        'privilegio_asignar_asistente_todo_tipo_asistente_a_un_grupo' => 'privilegio_asignar_asistente_todo_tipo_asistente_a_un_grupo',
+        'opcion_desvincular_asistentes_grupos' => 'opcion_desvincular_asistentes_grupos',
+        'opcion_excluir_grupo' => 'opcion_excluir_grupo',
+        'visible_seccion_campos_extra_grupo' => 'visible_seccion_campos_extra_grupo',
+        'lista_reportes_grupo_todos' => 'lista_reportes_grupo_todos',
+        'lista_reportes_grupo_solo_ministerio' => 'lista_reportes_grupo_solo_ministerio',
+        'subitem_lista_reportes_grupo' => 'subitem_lista_reportes_grupo',
+        'subitem_nuevo_reporte_grupo' => 'subitem_nuevo_reporte_grupo',
+        'ver_boton_aprobar_desaprobar_reporte_grupo' => 'ver_boton_aprobar_desaprobar_reporte_grupo',
+        'ver_opciones_reporte_grupo' => 'ver_opciones_reporte_grupo',
+        'opcion_aprobar_reporte_grupo' => 'opcion_aprobar_reporte_grupo',
+        'opcion_desaprobar_reporte_grupo' => 'opcion_desaprobar_reporte_grupo',
+        'opcion_ver_perfil_reporte_grupo' => 'opcion_ver_perfil_reporte_grupo',
+        'opcion_actualizar_reporte_grupo' => 'opcion_actualizar_reporte_grupo',
+        'opcion_eliminar_reporte_grupo' => 'opcion_eliminar_reporte_grupo',
+        'privilegio_reportar_grupo_cualquier_fecha' => 'privilegio_reportar_grupo_cualquier_fecha',
+        'panel_ingresos_en_lista_reportes_grupo' => 'panel_ingresos_en_lista_reportes_grupo',
+        'boton_configurar_semanas_informes_reportes_grupo' => 'boton_configurar_semanas_informes_reportes_grupo',
+        'cierre_caja_ingresos_reportes_grupo' => 'cierre_caja_ingresos_reportes_grupo',
+        'lista_reuniones_todas' => 'lista_reuniones_todas',
+        'lista_reuniones_solo_ministerio' => 'lista_reuniones_solo_ministerio',
+        'item_reuniones' => 'item_reuniones',
+        'subitem_lista_reuniones' => 'subitem_lista_reuniones',
+        'subitem_nueva_reunion' => 'subitem_nueva_reunion',
+        'subitem_informes_reunion' => 'subitem_informes_reunion',
+        'crea_reuniones_para_todas_las_sedes' => 'crea_reuniones_para_todas_las_sedes',
+        'opcion_ver_perfil_reunion' => 'opcion_ver_perfil_reunion',
+        'opcion_modificar_reunion' => 'opcion_modificar_reunion',
+        'opcion_dar_de_baja_alta_reunion' => 'opcion_dar_de_baja_alta_reunion',
+        'opcion_eliminar_reunion' => 'opcion_eliminar_reunion',
+        'lista_reportes_reunion_todos' => 'lista_reportes_reunion_todos',
+        'lista_reportes_reunion_solo_ministerio' => 'lista_reportes_reunion_solo_ministerio',
+        'subitem_lista_reportes_reunion' => 'subitem_lista_reportes_reunion',
+        'opcion_ver_perfil_reporte_reunion' => 'opcion_ver_perfil_reporte_reunion',
+        'opcion_modificar_reporte_reunion' => 'opcion_modificar_reporte_reunion',
+        'opcion_anadir_asistentes_reporte_reunion' => 'opcion_anadir_asistentes_reporte_reunion',
+        'opcion_eliminar_reporte_reunion' => 'opcion_eliminar_reporte_reunion',
+        'opcion_anadir_asistentes_reservas_reunion' => 'opcion_anadir_asistentes_reservas_reunion',
+        'opcion_subitem_anadir_servidores_reporte_reunion' => 'opcion_subitem_anadir_servidores_reporte_reunion',
+        'opcion_descargar_informe_servidores_reporte_reunion' => 'opcion_descargar_informe_servidores_reporte_reunion',
+        'opcion_descargar_informe_visualizaciones_reporte_reunion' => 'opcion_descargar_informe_visualizaciones_reporte_reunion',
+        'ajax_obtiene_todos_los_asistentes_para_reportar_reunion' => 'ajax_obtiene_todos_los_asistentes_para_reportar_reunion',
+        'privilegio_anadir_asistente_reporte_reunion_cualquier_fecha' => 'privilegio_anadir_asistente_reporte_reunion_cualquier_fecha',
+        'subitem_iglesia_infantil' => 'subitem_iglesia_infantil',
+        'ver_conteo_preliminar_reuniones' => 'ver_conteo_preliminar_reuniones',
+        'lista_sedes_todas' => 'lista_sedes_todas',
+        'lista_sedes_solo_ministerio' => 'lista_sedes_solo_ministerio',
+        'item_sedes' => 'item_sedes',
+        'subitem_lista_sedes' => 'subitem_lista_sedes',
+        'subitem_nueva_sede' => 'subitem_nueva_sede',
+        'opcion_ver_perfil_sede' => 'opcion_ver_perfil_sede',
+        'opcion_modificar_sede' => 'opcion_modificar_sede',
+        'opcion_dar_de_baja_sede' => 'opcion_dar_de_baja_sede',
+        'opcion_eliminar_sede' => 'opcion_eliminar_sede',
+        'crear_banners_videos_sede' => 'crear_banners_videos_sede',
+        'lista_ingresos_todos' => 'lista_ingresos_todos',
+        'lista_ingresos_solo_ministerio' => 'lista_ingresos_solo_ministerio',
+        'item_ingresos' => 'item_ingresos',
+        'subitem_informes_por_persona_ingresos' => 'subitem_informes_por_persona_ingresos',
+        'subitem_informes_por_grupo_ingresos' => 'subitem_informes_por_grupo_ingresos',
+        'subitem_informes_por_reunion_ingresos' => 'subitem_informes_por_reunion_ingresos',
+        'subitem_informe_sumatoria_ingresos_reportes_grupo' => 'subitem_informe_sumatoria_ingresos_reportes_grupo',
+        'opcion_ver_perfil_ingreso' => 'opcion_ver_perfil_ingreso',
+        'opcion_modificar_ingreso' => 'opcion_modificar_ingreso',
+        'opcion_eliminar_ingreso' => 'opcion_eliminar_ingreso',
+        'subitem_informes_donaciones_online' => 'subitem_informes_donaciones_online',
+        'subitem_nueva_ofrenda' => 'subitem_nueva_ofrenda',
+        'privilegio_ver_todos_los_ingresos_informes_donaciones_online' => 'privilegio_ver_todos_los_ingresos_informes_donaciones_online',
+        'opcion_descargar_informe_excel_informe_ingresos_persona' => 'opcion_descargar_informe_excel_informe_ingresos_persona',
+        'opcion_descargar_informe_pdf_informe_ingresos_persona' => 'opcion_descargar_informe_pdf_informe_ingresos_persona',
+        'ver_tema' => 'ver_tema',
+        'editar_tema' => 'editar_tema',
+        'ver_configuracion_iglesia' => 'ver_configuracion_iglesia',
+        'crear_banners_videos_iglesia' => 'crear_banners_videos_iglesia',
+        'item_actividades' => 'item_actividades',
+        'subitem_nueva_actividad' => 'subitem_nueva_actividad',
+        'subitem_historial_carga_de_achivo' => 'subitem_historial_carga_de_achivo',
+        'subitem_informe_inscripciones' => 'subitem_informe_inscripciones',
+        'subitem_informe_compras' => 'subitem_informe_compras',
+        'subitem_informe_pagos' => 'subitem_informe_pagos',
+        'pestana_actualizar_actividad' => 'pestana_actualizar_actividad',
+        'pestana_categorias_actividad' => 'pestana_categorias_actividad',
+        'pestana_anadir_encargados_actividad' => 'pestana_anadir_encargados_actividad',
+        'pestana_anadir_asistencias_actividad' => 'pestana_anadir_asistencias_actividad',
+        'pestana_multimedia_actividad' => 'pestana_multimedia_actividad',
+        'ver_opciones_actividad' => 'ver_opciones_actividad',
+        'opcion_actualizar_actividad' => 'opcion_actualizar_actividad',
+        'opcion_categorias_actividad' => 'opcion_categorias_actividad',
+        'opcion_anadir_encargados_actividad' => 'opcion_anadir_encargados_actividad',
+        'opcion_anadir_asistencias_actividad' => 'opcion_anadir_asistencias_actividad',
+        'opcion_multimediar_actividad' => 'opcion_multimediar_actividad',
+        'ver_boton_exportar_excel_informe_compras' => 'ver_boton_exportar_excel_informe_compras',
+        'ver_filtros_informe_compras' => 'ver_filtros_informe_compras',
+        'ver_columna_compra_informe_compra' => 'ver_columna_compra_informe_compra',
+        'ver_boton_exportar_excel_informe_pagos' => 'ver_boton_exportar_excel_informe_pagos',
+        'ver_filtros_informe_pagos' => 'ver_filtros_informe_pagos',
+        'ver_columna_compra_informe_pagos' => 'ver_columna_compra_informe_pagos',
+        'ver_boton_exportar_excel_informe_inscripciones' => 'ver_boton_exportar_excel_informe_inscripciones',
+        'ver_filtros_informe_inscripciones' => 'ver_filtros_informe_inscripciones',
+        'ver_columna_compra_informe_inscripciones' => 'ver_columna_compra_informe_inscripciones',
+        'lista_asistentes_todos_informe_inscripciones' => 'lista_asistentes_todos_informe_inscripciones',
+        'lista_asistentes_todos_informe_compras' => 'lista_asistentes_todos_informe_compras',
+        'lista_asistentes_todos_informe_pagos' => 'lista_asistentes_todos_informe_pagos',
+        'ver_boton_cargar_archivo_historial_carga_de_archivo' => 'ver_boton_cargar_archivo_historial_carga_de_archivo',
+        'pestana_abonos_actividad' => 'pestana_abonos_actividad',
+        'pestana_novedades_actividad' => 'pestana_novedades_actividad',
+        'opcion_novedades_actividad' => 'opcion_novedades_actividad',
+        'opcion_abonos_actividad' => 'opcion_abonos_actividad',
+        'ver_todas_las_actividades' => 'ver_todas_las_actividades',
+        'sub_item_configuracion_general_web_checking' => 'sub_item_configuracion_general_web_checking',
+        'ver_web_checkin' => 'ver_web_checkin',
+        'item_puntos_de_pago' => 'item_puntos_de_pago',
+        'subitem_lista_punto_de_pago' => 'subitem_lista_punto_de_pago',
+        'subitem_lista_cajas' => 'subitem_lista_cajas',
+        'subitem_nueva_persona_punto_de_pago' => 'subitem_nueva_persona_punto_de_pago',
+        'subitem_compras_de_actividades_punto_de_pago' => 'subitem_compras_de_actividades_punto_de_pago',
+        'subitem_donaciones_punto_de_pago' => 'subitem_donaciones_punto_de_pago',
+        'ver_boton_nuevo_punto_de_pago' => 'ver_boton_nuevo_punto_de_pago',
+        'opcion_modificar_punto_de_pago' => 'opcion_modificar_punto_de_pago',
+        'opcion_eliminar_punto_de_pago' => 'opcion_eliminar_punto_de_pago',
+        'opcion_dar_de_alta_punto_de_pago' => 'opcion_dar_de_alta_punto_de_pago',
+        'opcion_dar_de_baja_punto_de_pago' => 'opcion_dar_de_baja_punto_de_pago',
+        'ver_boton_nueva_caja' => 'ver_boton_nueva_caja',
+        'opcion_historial_de_cierres_caja' => 'opcion_historial_de_cierres_caja',
+        'opcion_registros_de_caja' => 'opcion_registros_de_caja',
+        'opcion_dar_de_alta_caja' => 'opcion_dar_de_alta_caja',
+        'opcion_cierre_de_caja' => 'opcion_cierre_de_caja',
+        'opcion_desactivar_caja' => 'opcion_desactivar_caja',
+        'opcion_activar_caja' => 'opcion_activar_caja',
+        'opcion_dar_de_baja_caja' => 'opcion_dar_de_baja_caja',
+        'subitem_abonos_de_actividades_punto_de_pago' => 'subitem_abonos_de_actividades_punto_de_pago',
+        'lista_cajas_todas' => 'lista_cajas_todas',
+        'opcion_anular_registro_caja' => 'opcion_anular_registro_caja',
+        'item_informes' => 'item_informes',
+        'privilegio_administrar_informes' => 'privilegio_administrar_informes',
+        'item_peticiones' => 'item_peticiones',
+        'subitem_mis_peticiones' => 'subitem_mis_peticiones',
+        'subitem_gestionar_peticiones' => 'subitem_gestionar_peticiones',
+        'subitem_nueva_peticion' => 'subitem_nueva_peticion',
+        'item_padres' => 'item_padres',
+        'subitem_lista_hijos' => 'subitem_lista_hijos',
+        'subitem_nuevo_hijo' => 'subitem_nuevo_hijo',
+        'opcion_modificar_hijo' => 'opcion_modificar_hijo',
+        'item_familiar' => 'item_familiar',
+        'subitem_gentionar_relaciones' => 'subitem_gentionar_relaciones',
+        'opcion_modificar_relacion_familiar' => 'opcion_modificar_relacion_familiar',
+        'opcion_eliminar_relacion_familiar' => 'opcion_eliminar_relacion_familiar',
+        'ver_boton_nueva_relacion_familiar' => 'ver_boton_nueva_relacion_familiar',
+        'dashboard_mostrar_calendario' => 'dashboard_mostrar_calendario',
+        'ver_banners_videos_todos' => 'ver_banners_videos_todos',
+        'ver_video_software_redil_defecto' => 'ver_video_software_redil_defecto',
+        'ver_cronograma_desarrollo' => 'ver_cronograma_desarrollo',
+        'editar_item_etapas_crecimiento' => 'editar_item_etapas_crecimiento',
+        'ver_item_etapas_crecimiento' => 'ver_item_etapas_crecimiento',
+    ];
+
+    /**
+     * Recorre los roles del JSON todos_tipo_usuarios.json y asigna permisos según la matriz de equivalencias.
+     */
+    private function asignarPermisosARolesJson(): void
+    {
+        $rolesJson = $this->loadJson($this->tipoUsuariosPath);
+
+        if (empty($rolesJson)) {
+            return;
+        }
+
+        $permissionsByTitulo = Permission::all()->keyBy('titulo');
+        $permissionsByName = Permission::all()->keyBy('name');
+
+        $updatedRolesCount = 0;
+
+        foreach ($rolesJson as $item) {
+            $nombreRol = trim($item['nombre'] ?? $item['name'] ?? '');
+
+            if (empty($nombreRol)) {
+                continue;
+            }
+
+            $role = Role::where('name', $nombreRol)->first();
+
+            if (! $role) {
+                continue;
+            }
+
+            $permisosToSync = [];
+
+            foreach ($this->mapaEquivalencias as $permisoKey => $campoViejo) {
+                $val = $item[$campoViejo] ?? null;
+                $isActivo = ($val === true || $val === 1 || $val === '1' || $val === 'true');
+
+                if ($isActivo) {
+                    $permission = $permissionsByTitulo->get($permisoKey) ?? $permissionsByName->get($permisoKey);
+
+                    if ($permission && ! in_array($permission->id, array_column($permisosToSync, 'id'))) {
+                        $permisosToSync[] = $permission;
+                    }
+                }
+            }
+
+            if (! empty($permisosToSync)) {
+                $role->syncPermissions($permisosToSync);
+                $updatedRolesCount++;
+            }
+        }
+
+        if ($this->command) {
+            $this->command->info("✔️ Permisos asignados a {$updatedRolesCount} roles provenientes del JSON ({$this->tipoUsuariosPath}).");
+        }
+    }
+
+    /**
+     * Carga y decodifica un archivo JSON ubicado en storage/app.
+     */
+    private function loadJson(string $path): ?array
+    {
+        $fullPath = base_path('storage/app/'.$path);
+
+        if (! file_exists($fullPath)) {
+            if ($this->command) {
+                $this->command->warn("🟡 Archivo JSON no encontrado: {$path}");
+            }
+
+            return null;
+        }
+
+        $content = file_get_contents($fullPath);
+        $json = json_decode($content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            if ($this->command) {
+                $this->command->error("❌ Error al decodificar JSON ({$path}): ".json_last_error_msg());
+            }
+
+            return null;
+        }
+
+        if (is_array($json)) {
+            if (array_is_list($json)) {
+                return $json;
+            }
+
+            foreach ($json as $value) {
+                if (is_array($value)) {
+                    return $value;
+                }
+            }
+        }
+
+        return null;
     }
 }

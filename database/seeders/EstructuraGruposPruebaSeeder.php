@@ -195,7 +195,7 @@ class EstructuraGruposPruebaSeeder extends Seeder
 
             
         // Crear 4 Asistentes (Nivel 3 - Bisnietos)
-        $oveja = Role::findByName('Oveja');
+        $oveja = Role::findByName('Oveja Prueba');
         for ($k = 1; $k <= 3; $k++) {
             $asistenteN3 = User::create([
                 'email' => "asistente.nivel3.$k@reporte.com", // Emails únicos

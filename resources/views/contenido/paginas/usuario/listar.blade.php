@@ -529,6 +529,14 @@ $configData = Helper::appClasses();
           </div>
 
           <div class="d-flex flex-column mb-2">
+
+            <div class="border my-10">
+              
+            @foreach ($persona->roles()->get() as $role)
+              <span class="fw-bold text-black">{{ $role->name }}</span>
+            @endforeach
+            </div>
+
             <span class="fw-bold text-black">Encargados</span>
             @if($persona->encargadosDirectos()->count() > 0)
               @foreach($persona->encargadosDirectos() as $encargado)

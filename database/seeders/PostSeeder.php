@@ -24,7 +24,7 @@ class PostSeeder extends Seeder
 
         // Buscamos un usuario administrador para asignar las publicaciones
         $admin = User::whereHas('roles', function($q) {
-            $q->where('name', 'Super Administrador')->orWhere('name', 'Pastor');
+            $q->where('name', 'Super Administrador Prueba')->orWhere('name', 'Pastor Prueba');
         })->first() ?? User::first();
 
         if (!$admin) {

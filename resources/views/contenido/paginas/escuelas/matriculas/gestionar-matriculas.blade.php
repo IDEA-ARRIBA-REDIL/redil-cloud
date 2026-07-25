@@ -60,6 +60,42 @@
                 }, 1500);
             });
 
+            @if (session('error'))
+                Swal.fire({
+                    title: 'No se pudo eliminar la matrícula',
+                    text: "{!! addslashes(session('error')) !!}",
+                    icon: 'error',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                });
+            @endif
+
+            @if (session('success'))
+                Swal.fire({
+                    title: '¡Operación Exitosa!',
+                    text: "{!! addslashes(session('success')) !!}",
+                    icon: 'success',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                });
+            @endif
+
+            @if (session('warning'))
+                Swal.fire({
+                    title: 'Advertencia',
+                    text: "{!! addslashes(session('warning')) !!}",
+                    icon: 'warning',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                });
+            @endif
+
             // Captura del ID del estudiante desde el buscador Livewire
             Livewire.on('usuarioBuscadoSeleccionado', eventData => {
                 const estudianteId = eventData.usuarioId;
@@ -146,6 +182,44 @@
                 }
             });
         }
+
+        function confirmarEliminacionMatricula(url, tienePago, valorPago) {
+            let title = '¿Deseas eliminar esta matrícula?';
+            let text = 'La matrícula será cancelada y enviada al historial de eliminadas, liberando el cupo en el horario.';
+            let icon = 'warning';
+
+            if (tienePago) {
+                title = '⚠️ ¡Atención: Pago Registrado!';
+                text = `Esta matrícula cuenta con un pago/compra registrado ($${valorPago}). Si la eliminas, la matrícula será cancelada y liberará el cupo, preservando el registro contable en el historial. ¿Deseas continuar?`;
+                icon = 'warning';
+            }
+
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar matrícula',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    confirmButton: 'btn btn-danger me-3',
+                    cancelButton: 'btn btn-label-secondary'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    let form = document.getElementById('formEliminarMatriculaAccion');
+                    if (!form) {
+                        form = document.createElement('form');
+                        form.id = 'formEliminarMatriculaAccion';
+                        form.method = 'GET';
+                        document.body.appendChild(form);
+                    }
+                    form.action = url;
+                    form.submit();
+                }
+            });
+        }
     </script>
 @endsection
 
@@ -211,7 +285,78 @@
         </div>
     </form>
 
-    {{-- PASO 3: LISTADO DE DISPONIBILIDAD (MATERIAS O NIVELES) --}}
+    {{-- PASO 3: TABLA DE MATRÍCULAS REGISTRADAS DEL ESTUDIANTE --}}
+    @if ($usuarioSeleccionado && $matriculasDelAlumno->isNotEmpty())
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-label-info border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="ti ti-receipt me-2 text-info"></i>Matrículas Registradas de {{ $usuarioSeleccionado->nombre(3) }} ({{ $matriculasDelAlumno->count() }})
+                    </h5>
+                </div>
+                <div class="table-responsive text-nowrap">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th># ID</th>
+                                <th>Materia / Nivel</th>
+                                <th>Periodo & Aula</th>
+                                <th>Estado Pago</th>
+                                <th>Valor</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($matriculasDelAlumno as $matItem)
+                                @php
+                                    $nomMateria = $matItem->horarioMateriaPeriodo?->materiaPeriodo?->materia?->nombre ?? 'Inscripción de Escuela';
+                                    $nomPeriodo = $matItem->periodo?->nombre ?? 'Periodo Activo';
+                                    $nomAula = $matItem->horarioMateriaPeriodo?->horarioBase?->aula?->nombre ?? 'Sin Aula';
+                                    $tienePagoMat = ($matItem->valor_pagado > 0 || $matItem->estado_pago_matricula === 'pagada' || ($matItem->estadoPago && $matItem->estadoPago->estado_final_inscripcion));
+                                    $valPagoMat = number_format($matItem->valor_pagado ?? $matItem->valor_a_pagar ?? 0, 0, ',', '.');
+                                    $urlEliminarMat = route('matriculas.eliminarMatricula', ['matricula' => $matItem->id, 'user' => $usuarioActivo->id]);
+                                    $tienePermisoEliminar = $rolActivo && ($rolActivo->hasPermissionTo('escuelas.opcion_eliminar_materia') || $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_matricula') || $rolActivo->hasPermissionTo('escuelas.subitem_gestionar_matriculas'));
+                                @endphp
+                                <tr>
+                                    <td><span class="badge bg-label-dark font-monospace">#{{ $matItem->id }}</span></td>
+                                    <td>
+                                        <span class="fw-bold text-dark d-block">{{ $nomMateria }}</span>
+                                        <small class="text-muted"><i class="ti ti-school me-1"></i>{{ $matItem->escuela?->nombre ?? 'Escuela' }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-label-primary mb-1">{{ $nomPeriodo }}</span>
+                                        <small class="d-block text-muted"><i class="ti ti-building me-1"></i>Aula: {{ $nomAula }}</small>
+                                    </td>
+                                    <td>
+                                        @if ($matItem->estado_pago_matricula === 'pagada' || ($matItem->estadoPago && $matItem->estadoPago->estado_final_inscripcion))
+                                            <span class="badge bg-label-success"><i class="ti ti-check me-1"></i>Pagada</span>
+                                        @else
+                                            <span class="badge bg-label-warning"><i class="ti ti-clock me-1"></i>{{ ucfirst($matItem->estado_pago_matricula ?? 'Pendiente') }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-dark">${{ $valPagoMat }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        @if ($tienePermisoEliminar)
+                                            <button type="button" class="btn btn-outline-danger btn-sm me-2"
+                                                onclick="confirmarEliminacionMatricula('{{ $urlEliminarMat }}', {{ $tienePagoMat ? 'true' : 'false' }}, '{{ $valPagoMat }}')">
+                                                <i class="ti ti-trash me-1"></i> Eliminar Matrícula
+                                            </button>
+                                        @else
+                                            <span class="badge bg-label-secondary"><i class="ti ti-lock me-1"></i>Sin permiso</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- PASO 4: LISTADO DE DISPONIBILIDAD (MATERIAS O NIVELES) --}}
     @if ($usuarioSeleccionado && $escuelaSeleccionada)
         <div class="col-12">
             <div class="card shadow-sm border-0">
@@ -310,9 +455,33 @@
                                             @endphp
 
                                             @if ($estaMatriculado)
-                                                <div class="text-center py-2 bg-label-info rounded">
-                                                    <span class="fw-bold"><i class="ti ti-circle-check me-1"></i>
-                                                        Matriculado</span>
+                                                @php
+                                                    $matObj = $esNivel
+                                                        ? $matriculasDelAlumno->first(function($m) use ($item) {
+                                                            return $m->escuela_id == $item->escuela_id || $m->horarioMateriaPeriodo?->materiaPeriodo?->nivel_id == $item->id;
+                                                          })
+                                                        : $matriculasDelAlumno->first(function($m) use ($item) {
+                                                            return $m->horarioMateriaPeriodo?->materiaPeriodo?->materia_id == $item->id;
+                                                          });
+                                                    if (!$matObj && $estaMatriculado) {
+                                                        $matObj = $matriculasDelAlumno->first();
+                                                    }
+                                                    $tienePermisoEliminar = $rolActivo && ($rolActivo->hasPermissionTo('escuelas.opcion_eliminar_materia') || $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_matricula') || $rolActivo->hasPermissionTo('escuelas.subitem_gestionar_matriculas'));
+                                                    $tienePago = $matObj && ($matObj->valor_pagado > 0 || $matObj->estado_pago_matricula === 'pagada' || ($matObj->estadoPago && $matObj->estadoPago->estado_final_inscripcion));
+                                                    $valorPago = $matObj ? ($matObj->valor_pagado ?? $matObj->valor_a_pagar ?? 0) : 0;
+                                                    $urlEliminar = $matObj ? route('matriculas.eliminarMatricula', ['matricula' => $matObj->id, 'user' => $usuarioActivo->id]) : '#';
+                                                @endphp
+
+                                                <div class="d-flex flex-column gap-2">
+                                                    <div class="text-center py-2 bg-label-success rounded">
+                                                        <span class="fw-bold"><i class="ti ti-circle-check me-1"></i> Matriculado</span>
+                                                    </div>
+                                                    @if ($tienePermisoEliminar && $matObj)
+                                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                                            onclick="confirmarEliminacionMatricula('{{ $urlEliminar }}', {{ $tienePago ? 'true' : 'false' }}, '{{ number_format($valorPago, 0, ',', '.') }}')">
+                                                            <i class="ti ti-trash me-1"></i> Eliminar Matrícula
+                                                        </button>
+                                                    @endif
                                                 </div>
                                             @elseif ($row->estado == 'DISPONIBLE')
                                                 @if ($esNivel)

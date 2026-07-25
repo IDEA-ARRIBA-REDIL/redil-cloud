@@ -192,38 +192,30 @@ class MateriaController extends Controller
         }
 
         // Materias prerrequisito
-
         $this->guardarRelaciones($materia, $request);
+
+        // Guardar relaciones de Livewire agregadas durante el modo draft (creación de materia)
+        $this->guardarPasosIniciarList($materia, $request->pasos_iniciar);
+        $this->guardarPasosCulminadosList($materia, $request->pasos_culminados);
+        $this->guardarTareasPrerrequisito($materia, $request->tareas_prerrequisito);
+        $this->guardarTareasCulminadas($materia, $request->tareas_culminadas);
         $this->guardarProcesosPrerrequisito($materia, $request->proceso_prerrequisito);
 
         return redirect()->route('materias.gestionar', $materia)->with('success', 'Materia creada exitosamente');
     }
 
-    private function guardarRelaciones(Materia $materia, Request $request)
+    private function guardarRelaciones(Materia $materia, Request $request): void
     {
-        // Limpiar relaciones existentes SOLO para 'al_iniciar' (1)
-        // Dejamos 'al_culminar' (0) intactos porque los gestiona Livewire
-        $materia->pasosCrecimiento()->wherePivot('al_iniciar', 1)->detach();
-
-        // Guardar paso al iniciar (Lista)
-        $this->guardarPasosIniciarList($materia, $request->pasos_iniciar);
-
-        // Guardar paso al culminar
-        if ($request->paso_culminar_id) {
-            $this->procesarPaso($materia, $request->paso_culminar_id, false);
-        }
-
-        // Materias prerrequisito
+        // Materias prerrequisito: sigue viniendo del select múltiple del formulario principal
         $materia->prerrequisitosMaterias()->sync($request->materias_prerrequisito ?? []);
 
-        // Tareas Prerrequisito
-        $this->guardarTareasPrerrequisito($materia, $request->tareas_prerrequisito);
-
-        // Tareas Culminadas
-        $this->guardarTareasCulminadas($materia, $request->tareas_culminadas);
-
-        // Pasos Culminados (Lista)
-        $this->guardarPasosCulminadosList($materia, $request->pasos_culminados);
+        // NOTA: Los siguientes elementos son gestionados de forma independiente
+        // por sus respectivos componentes Livewire y NO deben modificarse aquí:
+        //   - Pasos al iniciar      → GestionarPasosIniciar
+        //   - Pasos al culminar     → GestionarPasosCulminados
+        //   - Procesos prerrequisito → GestionarPasosRequisito
+        //   - Tareas prerrequisito  → GestionarTareasRequisito
+        //   - Tareas culminadas     → GestionarTareasCulminadas
     }
 
     private function guardarPasosIniciarList(Materia $materia, $pasos)

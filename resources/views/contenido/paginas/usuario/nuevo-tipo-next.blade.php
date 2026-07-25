@@ -363,7 +363,7 @@ $configData = Helper::appClasses();
 
         // Listener para el scroll
         modalBody.addEventListener('scroll', () => {
-          if (modalBody.scrollTop + modalBody.clientHeight >= modalBody.scrollHeight) {
+          if (modalBody.scrollTop + modalBody.clientHeight >= modalBody.scrollHeight - 3) {
             btnAceptar.disabled = false;
           }
         });

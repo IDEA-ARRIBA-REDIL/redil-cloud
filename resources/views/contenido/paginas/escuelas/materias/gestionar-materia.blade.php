@@ -171,16 +171,7 @@
 
     <script>
         $(document).ready(function() {
-            $('.select2').select2({
-                width: '100px',
-                allowClear: true,
-                placeholder: 'Ninguno'
-            });
-
-        });
-
-        $(document).ready(function() {
-            // Toggles visibility
+            // Toggles visibility de asistencias
             $('#togglehabilitarAsistencias').on('change', function() {
                 if ($(this).is(':checked')) {
                     $('.row-asistencias').removeClass('d-none').show();
@@ -188,13 +179,13 @@
                     $('.row-asistencias').addClass('d-none').hide();
                 }
             });
-            // Initial state
             if ($('#togglehabilitarAsistencias').is(':checked')) {
                 $('.row-asistencias').removeClass('d-none').show();
             } else {
                 $('.row-asistencias').addClass('d-none').hide();
             }
 
+            // Toggle visibility de inasistencias
             $('#togglehabilitarInasistencias').on('change', function() {
                 if ($(this).is(':checked')) {
                     $('#containesAsistenciasAlerta').removeClass('d-none').show();
@@ -210,215 +201,90 @@
         });
     </script>
 
-
     <script>
         $(document).ready(function() {
-            // Función para validación antes de enviar el formulario
-            $('#formEditarMateria').on('submit', function(e) {
-                e.preventDefault();
-                let form = this;
-                let errors = [];
-
-                // Validación 1: Asistencias mínimas si está habilitado
-                if ($('#togglehabilitarAsistencias').is(':checked')) {
-                    let asistencias = $('#asistenciasMinimas').val();
-                    if (asistencias === '' || asistencias < 0) {
-                        errors.push('Debe ingresar un valor válido (≥0) para asistencias mínimas');
-                    }
-                }
-
-                // Validación 2: Alertas de inasistencia si está habilitado
-                if ($('#togglehabilitarInasistencias').is(':checked')) {
-                    let alerta = $('#cantidadInasistencias').val();
-                    if (alerta === '' || alerta < 0) {
-                        errors.push('Debe ingresar un valor válido (≥0) para alerta de inasistencias');
-                    }
-                }
-
-                // Validación 3: Al menos calificaciones o asistencias habilitadas
-                if (!$('#togglehabilitarCalificaciones').is(':checked') &&
-                    !$('#togglehabilitarAsistencias').is(':checked')) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error de configuración',
-                        text: 'Debe habilitar al menos Calificaciones o Asistencias',
-                        confirmButtonText: 'Entendido'
-                    });
-                    return false;
-                }
-
-                // Mostrar errores si existen
-                if (errors.length > 0) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Errores de validación',
-                        html: errors.join('<br>'),
-                        confirmButtonText: 'Entendido'
-                    });
-                    return false;
-                }
-
-                // Validación de pasos de crecimiento
-                let pasoInicio = $('[name="paso_iniciar_id"]').val();
-                // Removed pasoFin validation as it is now livewire
-
-                if (!pasoInicio) {
-                    Swal.fire({
-                        title: '¿Está seguro?',
-                        text: "Está creando o editando una materia sin paso de inicio relacionado",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Continuar',
-                        cancelButtonText: 'Cancelar'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            form.submit();
-                        }
-                    });
-                } else {
-                    form.submit();
-                }
+            // Inicializar Select2 en todos los selects de la página
+            $('.select2').select2({
+                allowClear: true,
+                placeholder: 'Ninguno'
             });
-            // Eliminados los toggles duplicados de habilitarAsistencias e Inasistencias ya que se manejan arriba
-        });
 
-        /// validaciones de restricciones de reportes asistencias
-        $(document).ready(function() {
-            // --- INICIO: Lógica para campos de límite de reporte ---
-
-            // Seleccionar los elementos del DOM
+            // --- Lógica para campos de límite de reporte ---
             const switchDiaLimite = $('#diaLimiteHabilitado');
             const selectDia = $('#dia');
             const inputCantidadReportesSemana = $('#cantidadReportesSemana');
             const inputDiasPlazoReporte = $('#diasPlazoReporte');
 
-            // Contenedores de los campos para mostrar/ocultar o modificar etiquetas si es necesario
-            // (Ajusta estos selectores si los labels están fuera o si quieres manipularlos de otra forma)
-            const containerDia = $(
-                '#containesAsistenciasMinimas'
-            ); // Parece que reutilizas este ID, sería mejor uno específico para el día
-            const labelCantidadReportesSemana = $(
-                '#labelCantidadReportesSemana label'); // Asumiendo que el label está dentro
-            const labelDiasPlazoReporte = $('#labeldiasPlazoReporte label'); // Asumiendo que el label está dentro
-
-            // Función para actualizar el estado y la obligatoriedad de los campos
             function actualizarCamposLimiteReporte() {
                 if (switchDiaLimite.is(':checked')) {
-                    // Caso 1: tiene_dia_limite es TRUE
-                    // Hacer 'dia' obligatorio y habilitado
-                    selectDia.prop('disabled', false);
-                    selectDia.prop('required', true);
-                    // Podrías añadir una clase o texto para indicar que es obligatorio visualmente
-                    // Ejemplo: $('label[for="dia"]').addClass('required-field-label');
-
-                    // Hacer 'cantidadReportesSemana' y 'diasPlazoReporte' no obligatorios, deshabilitados y limpiar
-                    inputCantidadReportesSemana.prop('disabled', true);
-                    inputCantidadReportesSemana.prop('required', false);
-                    inputCantidadReportesSemana.val(''); // Limpiar valor
-                    // Ejemplo: labelCantidadReportesSemana.removeClass('required-field-label');
-
-                    inputDiasPlazoReporte.prop('disabled', true);
-                    inputDiasPlazoReporte.prop('required', false);
-                    inputDiasPlazoReporte.val(''); // Limpiar valor
-                    // Ejemplo: labelDiasPlazoReporte.removeClass('required-field-label');
-
-                    // Asegurarse que el contenedor del select de día esté visible
-                    // (Si usas 'd-none' para ocultar, asegúrate que el ID 'containesAsistenciasMinimas' sea el correcto para el día)
-                    $('#containesAsistenciasMinimas').removeClass(
-                        'd-none'); // Este ID parece ser de otro campo, revisa tu HTML.
-                    // Si el campo 'dia' ya es visible, no necesitas esto.
-
+                    selectDia.prop('disabled', false).prop('required', true);
+                    inputCantidadReportesSemana.prop('disabled', true).prop('required', false).val('');
+                    inputDiasPlazoReporte.prop('disabled', true).prop('required', false).val('');
                 } else {
-                    // Caso 2: tiene_dia_limite es FALSE
-                    // Hacer 'dia' no obligatorio, deshabilitado y limpiar
-                    selectDia.prop('disabled', true);
-                    selectDia.prop('required', false);
-                    selectDia.val('').trigger('change'); // Limpiar valor y refrescar select2 si aplica
-                    // Ejemplo: $('label[for="dia"]').removeClass('required-field-label');
-                    // Opcional: Ocultar el contenedor del select de día
-                    // $('#containesAsistenciasMinimas').addClass('d-none'); // Revisa si este es el contenedor correcto.
-
-                    // Hacer 'cantidadReportesSemana' y 'diasPlazoReporte' obligatorios y habilitados
-                    inputCantidadReportesSemana.prop('disabled', false);
-                    inputCantidadReportesSemana.prop('required', true);
-                    // Ejemplo: labelCantidadReportesSemana.addClass('required-field-label');
-
-                    inputDiasPlazoReporte.prop('disabled', false);
-                    inputDiasPlazoReporte.prop('required', true);
-                    // Ejemplo: labelDiasPlazoReporte.addClass('required-field-label');
+                    selectDia.prop('disabled', true).prop('required', false).val('').trigger('change');
+                    inputCantidadReportesSemana.prop('disabled', false).prop('required', true);
+                    inputDiasPlazoReporte.prop('disabled', false).prop('required', true);
                 }
             }
 
-            // Ejecutar la función al cargar la página para establecer el estado inicial
             actualizarCamposLimiteReporte();
-
-            // Ejecutar la función cada vez que el switch cambie
             switchDiaLimite.on('change', function() {
                 actualizarCamposLimiteReporte();
             });
 
-            // --- FIN: Lógica para campos de límite de reporte ---
-
-            // --- AJUSTE A TU VALIDACIÓN DE FORMULARIO EXISTENTE ---
+            // --- Validación del formulario principal ---
+            // Nota: los pasos y tareas se gestionan directamente en BD a través de los
+            // componentes Livewire; no dependen del submit del formulario principal.
             $('#formEditarMateria').on('submit', function(e) {
-                // Tu código de validación existente...
                 let errors = [];
 
-                // Validación 1: Asistencias mínimas si está habilitado (ya lo tienes)
+                // Validación: Asistencias mínimas
                 if ($('#togglehabilitarAsistencias').is(':checked')) {
                     let asistencias = $('#asistenciasMinimas').val();
-                    if (asistencias === '' || asistencias < 0) {
+                    if (asistencias === '' || parseInt(asistencias) < 0) {
                         errors.push('Debe ingresar un valor válido (≥0) para asistencias mínimas');
                     }
                 }
 
-                // Validación 2: Alertas de inasistencia si está habilitado (ya lo tienes)
+                // Validación: Alertas de inasistencia
                 if ($('#togglehabilitarInasistencias').is(':checked')) {
                     let alerta = $('#cantidadInasistencias').val();
-                    if (alerta === '' || alerta < 0) {
+                    if (alerta === '' || parseInt(alerta) < 0) {
                         errors.push('Debe ingresar un valor válido (≥0) para alerta de inasistencias');
                     }
                 }
 
-                // NUEVA VALIDACIÓN: Campos de límite de reporte según el switch
+                // Validación: Campos de límite de reporte
                 if (switchDiaLimite.is(':checked')) {
-                    // Si 'diaLimiteHabilitado' está activo, 'dia' es obligatorio
-                    if (!selectDia.val()) { // Si el valor es vacío o null
+                    if (!selectDia.val()) {
                         errors.push('Debe seleccionar un día límite para el reporte.');
                     }
                 } else {
-                    // Si 'diaLimiteHabilitado' está inactivo, 'cantidadReportesSemana' y 'diasPlazoReporte' son obligatorios
                     let reportesSemana = inputCantidadReportesSemana.val();
-                    if (!reportesSemana || parseInt(reportesSemana) <
-                        0) { // O la validación que necesites, ej. >= 0 o >= 1
+                    if (!reportesSemana || parseInt(reportesSemana) < 0) {
                         errors.push('Debe ingresar una cantidad válida para reportes por semana (ej. ≥0).');
                     }
-
                     let diasPlazo = inputDiasPlazoReporte.val();
-                    if (!diasPlazo || parseInt(diasPlazo) < 0) { // O la validación que necesites
-                        errors.push(
-                            'Debe ingresar una cantidad válida para días de plazo de reporte (ej. ≥0).');
+                    if (!diasPlazo || parseInt(diasPlazo) < 0) {
+                        errors.push('Debe ingresar una cantidad válida para días de plazo de reporte (ej. ≥0).');
                     }
                 }
 
-                // Validación 3: Al menos calificaciones o asistencias habilitadas (ya lo tienes)
+                // Validación: Al menos calificaciones o asistencias habilitadas
                 if (!$('#togglehabilitarCalificaciones').is(':checked') &&
                     !$('#togglehabilitarAsistencias').is(':checked')) {
+                    e.preventDefault();
                     Swal.fire({
                         icon: 'error',
                         title: 'Error de configuración',
                         text: 'Debe habilitar al menos Calificaciones o Asistencias',
                         confirmButtonText: 'Entendido'
                     });
-                    e.preventDefault(); // Detener envío
                     return false;
                 }
 
-                // Mostrar errores si existen
                 if (errors.length > 0) {
-                    e.preventDefault(); // Detener envío del formulario
+                    e.preventDefault();
                     Swal.fire({
                         icon: 'error',
                         title: 'Errores de validación',
@@ -427,28 +293,11 @@
                     });
                     return false;
                 }
-
-                // Validación de pasos de crecimiento (ya lo tienes)
-                let pasoInicio = $('[name="paso_iniciar_id"]').val();
-                let pasoFin = $('[name="paso_culminar_id"]').val();
-
-                if (!pasoInicio && !pasoFin) {
-                    // No prevenir el default aquí, solo mostrar la advertencia
-                    // y dejar que el usuario decida si continuar o no.
-                    // El e.preventDefault() debe estar DENTRO del then((result)) si result.isConfirmed es false
-                } else {
-                    // Si hay pasos, o si no hay y el usuario confirma, se envía.
-                    // No necesitas un form.submit() explícito aquí si no hay confirmación pendiente.
-                }
-
-                // Si todo está bien, el formulario se enviará.
-                // Si necesitas la confirmación de SweetAlert para los pasos, asegúrate
-                // de que el e.preventDefault() esté al inicio del submit handler,
-                // y luego llames a form.submit() explícitamente solo cuando todo sea válido Y confirmado.
             });
         });
     </script>
 @endsection
+
 
 @section('content')
     <!-- PORTADA -->

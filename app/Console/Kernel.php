@@ -21,16 +21,14 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
      * @return void
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
-
-        // 2. Aquí se programa la ejecución de tu comando.
-        // Se ejecutará cada siete minutos.
-
+        // Programar la Sonda de ZonaPagos para ejecutarse cada 5 minutos
+        $schedule->command('pagos:verificar-zonapagos')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
     }
 
     /**
@@ -40,7 +38,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__ . '/Commands');
+        $this->load(__DIR__.'/Commands');
 
         require base_path('routes/console.php');
     }

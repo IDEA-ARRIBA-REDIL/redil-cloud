@@ -2,121 +2,216 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
-use App\Models\Pago;
 use App\Models\EstadoPago;
 use App\Models\Matricula;
+use App\Models\Pago;
 use App\Services\ZonaPagosService;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
+/**
+ * Sonda de ZonaPagos (Cron Job).
+ *
+ * Según el manual de ZonaPagos (sección 7.3.2), el comercio debe ejecutar este proceso
+ * cada 10-15 minutos para verificar transacciones que están en estado pendiente.
+ *
+ * Además, incluye una función dedicada para limpiar matrículas de pagos anulados/rechazados.
+ */
 class VerificarPagosPendientes extends Command
 {
     protected $signature = 'pagos:verificar-zonapagos';
-    protected $description = 'Verifica el estado de los pagos pendientes de ZonaPagos y los actualiza en cascada.';
 
-    public function handle()
+    protected $description = 'Verifica el estado de los pagos pendientes en ZonaPagos y ejecuta la limpieza dedicada de matrículas en pagos anulados/rechazados.';
+
+    public function handle(): int
+    {
+        if (function_exists('tenancy') && ! tenancy()->initialized) {
+            $tenants = \App\Models\Tenant::all();
+            $this->info("Sonda ZonaPagos: Ejecutando verificación en {$tenants->count()} inquilino(s).");
+
+            foreach ($tenants as $tenant) {
+                $this->info("=== Inquilino: {$tenant->id} ===");
+                $tenant->run(function () {
+                    $this->ejecutarVerificacionInquilino();
+                });
+            }
+
+            return 0;
+        }
+
+        return $this->ejecutarVerificacionInquilino();
+    }
+
+    public function ejecutarVerificacionInquilino(): int
     {
         try {
-            Log::info('Sonda ZonaPagos: Iniciando verificación.');
-            $this->info('Sonda ZonaPagos: Iniciando verificación.');
+            Log::info('Sonda ZonaPagos: Iniciando ejecución en inquilino.');
+            $this->info('Sonda ZonaPagos: Iniciando ejecución en inquilino.');
 
-            // He vuelto a tu lógica original para buscar pagos pendientes, es más robusta.
-            $pagosPendientes = Pago::whereHas('estadoPago', function ($query) {
-                $query->where('estado_pendiente', true);
-            })->whereHas('tipoPago', function ($query) {
-                $query->where('key_reservada', 'zona');
-            })->get();
+            // 1. Proceso para pagos PENDIENTES (Consultar pasarela ZonaPagos)
+            $contadorActualizados = $this->verificarPagosPendientesZonaPagos();
 
-            if ($pagosPendientes->isEmpty()) {
-                Log::info('Sonda ZonaPagos: No se encontraron pagos pendientes.');
-                $this->info('Sonda ZonaPagos: No se encontraron pagos pendientes.');
-                return 0;
-            }
+            // 2. NUEVA FUNCIÓN DEDICADA SEPARADA: Proceso exclusivo para limpiar matrículas de pagos ANULADOS / RECHAZADOS
+            $contadorLimpiadas = $this->limpiarMatriculasDePagosAnulados();
 
-            $this->info("Sonda ZonaPagos: Se encontraron {$pagosPendientes->count()} pagos pendientes para verificar.");
-            $zonaPagosService = new ZonaPagosService();
-            $contadorActualizados = 0;
+            $mensaje = "Sonda ZonaPagos: Proceso finalizado. Se actualizaron {$contadorActualizados} pagos pendientes y se eliminaron {$contadorLimpiadas} matrículas de pagos anulados.";
+            Log::info($mensaje);
+            $this->info($mensaje);
 
-            foreach ($pagosPendientes as $pago) {
-                if (!$pago->compra) {
-                    Log::warning("Sonda ZonaPagos: El Pago ID {$pago->id} no tiene una compra asociada. Se omite.");
-                    continue;
-                }
-
-                $this->info("--> Verificando Pago ID: {$pago->id}");
-                $resultado = $zonaPagosService->verificarPago($pago);
-
-                if (!$resultado['success']) {
-                    Log::error("Sonda ZonaPagos: Error al verificar Pago ID: {$pago->id}. Mensaje: " . ($resultado['message'] ?? 'Error desconocido'));
-                    continue;
-                }
-
-                $datosTransaccion = $zonaPagosService->parsearRespuestaVerificacion($resultado['data']['str_res_pago']);
-                $codigoEstadoExterno = $datosTransaccion['int_estado_pago'] ?? null;
-
-                if ($codigoEstadoExterno) {
-                    $nuevoEstado = EstadoPago::where('id_codigo_externo', $codigoEstadoExterno)
-                        ->where('tipo_pago_id', $pago->tipo_pago_id)
-                        ->first();
-
-                    if ($nuevoEstado && !$nuevoEstado->estado_pendiente && $nuevoEstado->id !== $pago->estado_pago_id) {
-                        $pago->update(['estado_pago_id' => $nuevoEstado->id]);
-                        $this->info("    - Pago ID: {$pago->id} actualizado a '{$nuevoEstado->nombre}'.");
-                        $contadorActualizados++;
-
-                        if ($nuevoEstado->estado_final_inscripcion) {
-                            $compra = $pago->compra;
-                            $compra->update(['estado' => 3]); // 3 = PAGADA
-                            $this->info("    - Compra ID: {$compra->id} actualizada a 'PAGADA'.");
-
-                            // --- INICIO DE LA CORRECCIÓN Y LÓGICA ROBUSTA ---
-                            // 1. Obtenemos el valor del campo opcional.
-                            $valorOpcional1 = $datosTransaccion['str_campo1'] ?? null;
-
-                            // 2. "Normalizamos" el valor: quitamos espacios y lo ponemos en mayúsculas.
-                            $tipoCompra = $valorOpcional1 ? strtoupper(trim($valorOpcional1)) : null;
-
-                            $this->info("    -> Tipo de compra detectado: '{$tipoCompra}'");
-                            Log::info("Tipo de compra para Pago ID {$pago->id}: '{$tipoCompra}'");
-
-                            // 3. Comparamos el valor normalizado. Esta comparación es mucho más segura.
-                            if ($tipoCompra === 'ESCUELAS') {
-                                $this->info("    -> Coincide con ESCUELAS. Actualizando matrícula...");
-                                $matricula = Matricula::where('referencia_pago', $pago->id)->first();
-                                if ($matricula) {
-                                    $matricula->update(['estado_pago_matricula' => 'pagada']);
-                                    $this->info("        - Matrícula ID: {$matricula->id} actualizada a 'pagada'.");
-                                } else {
-                                    $this->warn("        - ADVERTENCIA: No se encontró la matrícula para el Pago ID {$pago->id}.");
-                                }
-                            } else {
-                                // Lógica para inscripciones normales
-                                if ($compra->inscripciones->isNotEmpty()) {
-                                    $compra->inscripciones()->update(['estado' => true]);
-                                    $this->info("    - Se actualizaron {$compra->inscripciones->count()} inscripciones asociadas.");
-                                }
-                            }
-                            // --- FIN DE LA CORRECCIÓN ---
-                        }
-                    } else {
-                        $this->info("    - El estado del Pago ID: {$pago->id} no ha cambiado.");
-                    }
-                }
-            }
-
-            Log::info("Sonda ZonaPagos: Proceso finalizado. Se actualizaron {$contadorActualizados} registros.");
-            $this->info("Sonda ZonaPagos: Proceso finalizado. Se actualizaron {$contadorActualizados} registros.");
         } catch (Throwable $e) {
-            Log::error('Sonda ZonaPagos: Error fatal en la ejecución.', [
+            Log::error('Sonda ZonaPagos: Error fatal.', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
             ]);
-            $this->error('Ocurrió un error fatal. Revisa el archivo de log de Laravel.');
+            $this->error('Error fatal en la Sonda. Revisa el log de Laravel.');
+
             return 1;
         }
 
         return 0;
+    }
+
+    /**
+     * FUNCIÓN 1: Consulta a ZonaPagos el estado de los pagos que continúan en estado pendiente.
+     */
+    public function verificarPagosPendientesZonaPagos(): int
+    {
+        $pagosPendientes = Pago::whereHas('estadoPago', function ($query) {
+            $query->where('estado_pendiente', true);
+        })
+            ->whereHas('tipoPago', function ($query) {
+                $query->where('key_reservada', 'zona');
+            })
+            ->where('updated_at', '<=', now()->subMinutes(7))
+            ->with('compra.inscripciones', 'tipoPago')
+            ->get();
+
+        if ($pagosPendientes->isEmpty()) {
+            $this->info('    - No se encontraron pagos pendientes por consultar en pasarela.');
+
+            return 0;
+        }
+
+        $this->info("    - {$pagosPendientes->count()} pagos pendientes encontrados para verificar con ZonaPagos.");
+        $zonaPagosService = new ZonaPagosService;
+        $contadorActualizados = 0;
+
+        foreach ($pagosPendientes as $pago) {
+            if (! $pago->compra) {
+                Log::warning("Sonda ZonaPagos: Pago ID {$pago->id} sin compra asociada. Se omite.");
+
+                continue;
+            }
+
+            $this->info("--> Verificando Pago ID: {$pago->id}");
+
+            $resultado = $zonaPagosService->verificarPago($pago);
+
+            if (! $resultado['success']) {
+                Log::error("Sonda ZonaPagos: Error al verificar Pago ID {$pago->id}: ".($resultado['message'] ?? 'desconocido'));
+
+                continue;
+            }
+
+            $strResPago = $resultado['data']['str_res_pago'] ?? '';
+            $datosTransaccion = $zonaPagosService->parsearRespuestaVerificacion($strResPago);
+            $codigoEstadoExterno = $datosTransaccion['int_estado_pago'] ?? null;
+
+            if (! $codigoEstadoExterno) {
+                $this->info("    - Pago ID {$pago->id}: no se pudo extraer el código de estado. Se omite.");
+
+                continue;
+            }
+
+            $nuevoEstado = EstadoPago::where('id_codigo_externo', $codigoEstadoExterno)
+                ->where('tipo_pago_id', $pago->tipo_pago_id)
+                ->first();
+
+            if (! $nuevoEstado) {
+                Log::error("Sonda ZonaPagos: No existe EstadoPago para código externo '{$codigoEstadoExterno}' y TipoPago ID {$pago->tipo_pago_id}.");
+
+                continue;
+            }
+
+            if ($nuevoEstado->id === $pago->estado_pago_id) {
+                $this->info("    - Pago ID {$pago->id}: sin cambio de estado.");
+
+                continue;
+            }
+
+            if ($nuevoEstado->estado_pendiente) {
+                $pago->touch();
+
+                continue;
+            }
+
+            $referenciaPago = $datosTransaccion['int_n_pago'] ?: $datosTransaccion['int_ped_numero'] ?: null;
+
+            $pago->update([
+                'estado_pago_id' => $nuevoEstado->id,
+                'referencia_pago' => $referenciaPago,
+                'gateway_response' => $resultado['data'],
+            ]);
+
+            $this->info("    - Pago ID {$pago->id} actualizado a '{$nuevoEstado->nombre}'.");
+            Log::info("Sonda ZonaPagos: Pago ID {$pago->id} actualizado a '{$nuevoEstado->nombre}'.");
+            $contadorActualizados++;
+
+            if ($nuevoEstado->estado_final_inscripcion) {
+                $compra = $pago->compra;
+                $compra->update(['estado' => 3]);
+
+                $tipoCompra = strtoupper(trim($datosTransaccion['str_campo1'] ?? ''));
+
+                if ($tipoCompra === 'ESCUELAS') {
+                    $matricula = $pago->matricula;
+
+                    if ($matricula) {
+                        $matricula->update(['estado_pago_matricula' => 'pagada']);
+                        $this->info("    - Matrícula ID {$matricula->id} actualizada a 'pagada'.");
+                    }
+                } elseif ($compra->inscripciones->isNotEmpty()) {
+                    $compra->inscripciones()->update(['estado' => true]);
+                }
+            } elseif ($nuevoEstado->estado_anulado_inscripcion || (! $nuevoEstado->estado_pendiente && ! $nuevoEstado->estado_final_inscripcion)) {
+                Matricula::limpiarMatriculasDePagoFallido($pago);
+                $this->info("    - Matrícula/Reserva liberada para Pago ID {$pago->id} por rechazo/anulación.");
+            }
+        }
+
+        return $contadorActualizados;
+    }
+
+    /**
+     * FUNCIÓN 2 SEPARADA EXCLUSIVA:
+     * Consulta directamente la tabla de matrículas por su ID y elimina tabla por tabla
+     * absolutamente cualquier matrícula borrador o no pagada (estado_pago_matricula != 'pagada').
+     * Sin restricciones ni condicionales complejas.
+     */
+    public function limpiarMatriculasDePagosAnulados(): int
+    {
+        $this->info('--> Ejecutando limpieza directa tabla por tabla de matrículas no pagadas/anuladas...');
+
+        // Consultamos todas las matrículas cuyo estado_pago_matricula NO sea 'pagada' (incluyendo nulos, pendientes, rechazadas, etc.)
+        $matriculasNoPagadas = Matricula::where(function ($q) {
+            $q->whereNull('estado_pago_matricula')
+                ->orWhere('estado_pago_matricula', '!=', 'pagada');
+        })->get();
+
+        $contadorLimpiadas = 0;
+
+        foreach ($matriculasNoPagadas as $mat) {
+            // Eliminar tabla por tabla por el ID de la matrícula
+            $eliminado = Matricula::eliminarMatriculaCompletaPorId($mat->id);
+            if ($eliminado) {
+                $contadorLimpiadas++;
+                $this->info("    - [LIMPIEZA DIRECTA TABLA POR TABLA]: Matrícula ID {$mat->id} eliminada de todas las tablas.");
+                Log::info("Limpieza Directa: Matrícula ID {$mat->id} eliminada de todas las tablas exitosamente.");
+            }
+        }
+
+        return $contadorLimpiadas;
     }
 }

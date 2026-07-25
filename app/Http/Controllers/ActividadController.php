@@ -32,7 +32,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Storage;
 use stdClass;
 
 class ActividadController extends Controller
@@ -1739,46 +1738,66 @@ class ActividadController extends Controller
             // a) Buscamos si ya existe una COMPRA para el usuario en esta actividad.
             $compraExistente = Compra::where('user_id', $usuario->id)
                 ->where('actividad_id', $actividad->id)
-                ->with('pagos.estadoPago', 'pagos.moneda') // Precargamos relaciones para usarlas en la vista
+                ->with('pagos.estadoPago', 'pagos.moneda')
+                ->latest('id')
                 ->first();
+
+            $pagoExistente = $compraExistente?->pagos()->latest('id')->first();
+            $estadoPagoObj = $pagoExistente?->estadoPago;
+
+            // Determinamos flags precisos sobre el estado del pago
+            $pagoConfirmado = ($compraExistente?->estado == 3) || ($estadoPagoObj?->estado_final_inscripcion == true);
+            $pagoPendiente = ! $pagoConfirmado && ($estadoPagoObj?->estado_pendiente == true);
+            $pagoAnuladoOFallido = ($compraExistente != null) && ! $pagoConfirmado && ! $pagoPendiente;
 
             // b) Buscamos las inscripciones. Pueden estar asociadas a una compra o ser gratuitas.
             if ($compraExistente) {
-                // Si hay compra, las inscripciones están vinculadas a ella.
                 $inscripcionesExistentes = Inscripcion::where('compra_id', $compraExistente->id)->get();
             } else {
-                // Si no hay compra, buscamos inscripciones gratuitas (sin compra_id).
                 $inscripcionesExistentes = Inscripcion::where('user_id', $usuario->id)
                     ->whereNull('compra_id')
                     ->whereHas('categoriaActividad', fn ($q) => $q->where('actividad_id', $actividad->id))
                     ->get();
             }
 
-            // c) Si la actividad es de tipo "escuela" y hay una compra, buscamos la matrícula existente.
-            if ($actividad->tipo->tipo_escuelas && $compraExistente) {
-                // Se busca la matrícula a través de la referencia de pago.
-                $pagosIds = $compraExistente->pagos->pluck('id');
+            // c) Si la actividad es de tipo "escuela", buscamos la matrícula correspondiente.
+            if ($actividad->tipo->tipo_escuelas) {
+                $pagosIds = $compraExistente ? $compraExistente->pagos->pluck('id') : collect([]);
                 $matriculaExistente = \App\Models\Matricula::where('user_id', $usuario->id)
-                    ->whereIn('referencia_pago', $pagosIds)
+                    ->where(function ($q) use ($pagosIds) {
+                        if ($pagosIds->isNotEmpty()) {
+                            $q->whereIn('referencia_pago', $pagosIds);
+                        } else {
+                            $q->where('user_id', auth()->id());
+                        }
+                    })
                     ->with([
                         'horarioMateriaPeriodo.horarioBase.aula.sede',
                         'horarioMateriaPeriodo.materiaPeriodo.materia',
                     ])
+                    ->latest('id')
                     ->first();
+
+                if ($matriculaExistente) {
+                    if ($matriculaExistente->estado_pago_matricula === 'pagada') {
+                        $pagoConfirmado = true;
+                        $pagoPendiente = false;
+                        $pagoAnuladoOFallido = false;
+                    } elseif ($matriculaExistente->estado_pago_matricula === 'pendiente' && $pagoPendiente) {
+                        $pagoPendiente = true;
+                    }
+                }
             }
 
-            // --- Validación de Requisitos para Comprar ---
-            // Solo validamos si el usuario AÚN NO tiene una compra o inscripción.
-            if (! $compraExistente && $inscripcionesExistentes->isEmpty()) {
-                // NUEVA LÓGICA: Validar todas las categorías para mostrar estado detallado
-
+            // --- Validación de Requisitos para Comprar / Matricularse ---
+            // Solo omitimos la comprobación de requisitos si el pago ya está CONFIRMADO o PENDIENTE.
+            // Si el intento fue anulado/fallido o no hay compra, permitimos validar requisitos para volver a intentar.
+            if (! $pagoConfirmado && ! $pagoPendiente) {
                 if ($actividad->restriccion_por_categoria) {
                     $actividadEstados = collect([]);
-                    // Se llama a un método que valida las categorías disponibles para el usuario y sus dependientes
                     $categoriasEstado = $actividad->validarCategoriasParaPerfil($usuario);
                     $hayDisponibles = $categoriasEstado->contains('estado', 'DISPONIBLE');
                 } else {
-                    // Si no hay restricción por categoría, validamos el acceso general para el grupo
                     $actividadEstados = $actividad->validarCategoriasGeneralParaPerfil($usuario);
                     $categoriasEstado = collect([]);
                     $hayDisponibles = $actividadEstados->contains('estado', 'DISPONIBLE');
@@ -1786,8 +1805,7 @@ class ActividadController extends Controller
             }
         }
 
-        // Si hay un error en la sesión (por ejemplo, de una redirección), lo capturamos.
-        // Esto tiene prioridad sobre otros mensajes para mostrar el feedback más reciente.
+        // Si hay un error en la sesión, lo capturamos.
         if (session()->has('error')) {
             $mensajesError = session('error');
         }
@@ -1795,7 +1813,6 @@ class ActividadController extends Controller
         $video = ActividadVideo::where('actividad_id', $actividad->id)->first();
 
         // --- 3. PREPARAR Y RETORNAR LA VISTA ---
-        // Pasamos todas las variables, tanto las generales como las del historial del usuario.
         return view('contenido.paginas.actividades.perfil-actividad', [
             'actividad' => $actividad,
             'configuracion' => $configuracion,
@@ -1806,23 +1823,25 @@ class ActividadController extends Controller
             // Todas las categorías para la pestaña "Precios"
             'categoriasActividad' => $actividad->categorias()->orderBy('id', 'asc')->get(),
 
-            // Categorías que el usuario tiene permitido comprar (para el botón de la derecha)
+            // Categorías que el usuario tiene permitido comprar
             'categoriasCompra' => $categoriasCompra,
 
-            // Variables del Historial del Usuario
+            // Variables del Historial del Usuario y Banderas de Pago
             'compraExistente' => $compraExistente,
             'inscripcionesExistentes' => $inscripcionesExistentes,
             'matriculaExistente' => $matriculaExistente,
             'esActividadDePago' => $esActividadDePago,
+            'pagoConfirmado' => $pagoConfirmado ?? false,
+            'pagoPendiente' => $pagoPendiente ?? false,
+            'pagoAnuladoOFallido' => $pagoAnuladoOFallido ?? false,
+            'pagoExistente' => $pagoExistente ?? null,
+            'estadoPagoObj' => $estadoPagoObj ?? null,
             'video' => $video,
-            // NUEVAS VARIABLES
             'categoriasEstado' => $categoriasEstado ?? collect(),
             'actividadEstados' => $actividadEstados ?? collect(),
-            'hayDisponibles' => $hayDisponibles ?? true, // Por defecto true si no hay usuario logueado
+            'hayDisponibles' => $hayDisponibles ?? true,
         ]);
     }
-
-
 
     public function uploadPortada(Request $request): \Illuminate\Http\JsonResponse
     {
@@ -1887,7 +1906,7 @@ class ActividadController extends Controller
     public function eliminarPortada(Actividad $actividad): \Illuminate\Http\RedirectResponse
     {
         if ($actividad->portada && $actividad->portada !== 'default.png') {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete('img/actividades/banners/' . $actividad->portada);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete('img/actividades/banners/'.$actividad->portada);
             $actividad->portada = 'default.png';
             $actividad->save();
         }

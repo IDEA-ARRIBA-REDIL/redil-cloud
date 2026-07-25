@@ -310,29 +310,6 @@
                     e.preventDefault();
                     return false;
                 }
-
-                let pasoInicio = $('[name="paso_iniciar_id"]').val();
-                let pasoFin = $('[name="paso_culminar_id"]').val();
-
-                if (!pasoInicio && !pasoFin) {
-                    e.preventDefault();
-                    Swal.fire({
-                        title: '¿Está seguro?',
-                        text: "Está creando una materia sin pasos de crecimiento relacionados",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Continuar',
-                        cancelButtonText: 'Cancelar'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            form.submit();
-                        }
-                    });
-                } else {
-                    // form.submit(); // Let default action proceed
-                }
             });
         });
     </script>
@@ -623,37 +600,6 @@
                         @error('materias_prerrequisito')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                    </div>
-
-
-
-                    <h5 class="mb-4 mt-4 fw-semibold">Configuración de Pasos y Tareas</h5>
-
-
-                    <div class="col-12 mb-3">
-
-                        <div class="p-3 border rounded">
-
-                            <div class="col-12 col-md-12 mb-4">
-                                @livewire('escuelas.materias.gestionar-pasos-iniciar', ['materia' => new \App\Models\Materia()])
-                            </div>
-                            <hr class="my-4">
-
-                            <!-- Livewire Components with Draft Mode -->
-                            @livewire('escuelas.materias.gestionar-pasos-requisito', ['materia' => new \App\Models\Materia()])
-
-                            <hr class="my-4">
-
-                            @livewire('escuelas.materias.gestionar-pasos-culminados', ['materia' => new \App\Models\Materia()])
-
-                            <hr class="my-4">
-
-                            @livewire('escuelas.materias.gestionar-tareas-requisito', ['materia' => new \App\Models\Materia()])
-
-                            <hr class="my-4">
-
-                            @livewire('escuelas.materias.gestionar-tareas-culminadas', ['materia' => new \App\Models\Materia()])
-                        </div>
                     </div>
                 </div>
             </div>

@@ -78,6 +78,20 @@ class EscuelasCarrito extends Component
         $this->primeraVez = $primeraVez;
         $this->categoriasHabilitadas = $categoriasHabilitadas ?? collect();
 
+        // Limpiar de forma preventiva matrículas borrador/no pagadas del usuario tabla por tabla
+        if (auth()->check()) {
+            $mats = Matricula::where('user_id', auth()->id())
+                ->where(function ($q) {
+                    $q->whereNull('estado_pago_matricula')
+                        ->orWhere('estado_pago_matricula', '!=', 'pagada');
+                })
+                ->get();
+
+            foreach ($mats as $mat) {
+                Matricula::eliminarMatriculaCompletaPorId($mat->id);
+            }
+        }
+
         // Inicializar propiedades para la vista
         $this->monedasActividad = $actividad->monedas;
         $this->monedaSeleccionada = $this->monedasActividad->isNotEmpty() ? $this->monedasActividad->first()->id : 0;

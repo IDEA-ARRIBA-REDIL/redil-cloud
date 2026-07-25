@@ -74,8 +74,8 @@ class CarritoController extends Controller
             'lng' => -74.08175, // Longitud de Bogotá
         ];
 
-        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-        $usuario = User::find($rolActivo->pivot->model_id);
+        $usuario = auth()->user();
+        $rolActivo = $usuario?->roles()->wherePivot('activo', true)->first() ?? $usuario?->roles()->first();
 
         if (count($actividad->destinatarios) > 0) {
             $contador = 1;
@@ -148,7 +148,7 @@ class CarritoController extends Controller
         }
 
         $configuracion = Configuracion::find(1);
-        $rolActivo = $usuario->roles()->wherePivot('activo', true)->first();
+        $rolActivo = $usuario?->roles()->wherePivot('activo', true)->first() ?? $usuario?->roles()->first();
 
         if (count($actividad->elementos) > 0) {
             $contador = 1;
@@ -225,8 +225,8 @@ class CarritoController extends Controller
         }
 
         if (Auth::check()) {
-            $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-            $usuario = User::find($rolActivo->pivot->model_id);
+            $usuario = auth()->user();
+            $rolActivo = $usuario?->roles()->wherePivot('activo', true)->first() ?? $usuario?->roles()->first();
         }
         $moneda = Moneda::find($compra->moneda_id);
 
@@ -452,11 +452,11 @@ class CarritoController extends Controller
         // Verificamos si hay un archivo o una imagen para borrar del disco.
         if ($respuesta->url_archivo) {
             // Borramos el archivo físico del disco 'public'.
-            Storage::delete('archivos/actividades/' . $respuesta->url_archivo);
+            Storage::delete('archivos/actividades/'.$respuesta->url_archivo);
         }
         if ($respuesta->url_foto) {
             // Borramos la imagen física del disco 'public'.
-            Storage::delete('img/actividades/respuesta-formularios/' . $respuesta->url_foto);
+            Storage::delete('img/actividades/respuesta-formularios/'.$respuesta->url_foto);
         }
 
         // Eliminamos el registro de la respuesta de la base de datos.
@@ -531,8 +531,8 @@ class CarritoController extends Controller
         }
         // Obtener las respuestas del formulario para la compra actual
         if (Auth::check()) {
-            $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-            $usuario = User::find($rolActivo->pivot->model_id);
+            $usuario = auth()->user();
+            $rolActivo = $usuario?->roles()->wherePivot('activo', true)->first() ?? $usuario?->roles()->first();
         }
 
         return view(
@@ -588,8 +588,8 @@ class CarritoController extends Controller
         // --- Lógica para el QR (sin cambios) ---
 
         if (Auth::check()) {
-            $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-            $usuario = User::find($rolActivo->pivot->model_id);
+            $usuario = auth()->user();
+            $rolActivo = $usuario?->roles()->wherePivot('activo', true)->first() ?? $usuario?->roles()->first();
         }
 
         if (isset($usuario)) {
@@ -697,9 +697,9 @@ class CarritoController extends Controller
         $configuracion = Configuracion::find(1);
 
         if (Auth::check()) {
-            $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-            $usuario = User::find($rolActivo->pivot->model_id);
-            $emailDestinatario = $inscripcion->user->email;
+            $usuario = auth()->user();
+            $rolActivo = $usuario?->roles()->wherePivot('activo', true)->first() ?? $usuario?->roles()->first();
+            $emailDestinatario = $usuario->email;
         } else {
             $emailDestinatario = $inscripcion->compra->email_comprado;
         }
@@ -920,30 +920,28 @@ class CarritoController extends Controller
                 }
             }
 
-            $pdf = PDF::loadView('contenido.paginas.carrito.compra-finalizada', [
+            $pdf = PDF::loadView('pdf.comprobante-pago', [
                 'pago' => $pago,
+                'matricula' => $matricula,
                 'configuracion' => $configuracion,
+                'iglesia' => $iglesia,
                 'titulo' => $titulo,
                 'mensaje' => $mensaje,
                 'colorEncabezado' => $colorEncabezado,
-                'icono' => null, // Quizás omitir icono en PDF si da problemas
                 'datosParaQr' => $datosParaQr,
-                'datosAbono' => $datosAbono,
-                'iglesia' => $iglesia,
-                'esPdf' => true, // Flag útil para la vista
             ]);
 
-            // Configurar opciones para evitar problemas con rutas de fuentes (especialmente en local vs prod)
+            // Configurar opciones para renderizado óptimo de 1 sola página y UTF-8
             $pdf->setOptions([
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'sans-serif',
-                'fontDir' => sys_get_temp_dir(), // Usar directorio temporal del sistema
-                'fontCache' => sys_get_temp_dir(), // Usar directorio temporal del sistema
-                'chroot' => realpath(base_path()), // Permitir acceso a archivos del proyecto
+                'isHtml5ParserEnabled' => true,
+                'fontDir' => sys_get_temp_dir(),
+                'fontCache' => sys_get_temp_dir(),
+                'chroot' => realpath(base_path()),
             ]);
 
-            // Ajustes de papel si es necesario
-            // $pdf->setPaper('a4', 'portrait');
+            $pdf->setPaper('a4', 'portrait');
 
             return $pdf->download('Comprobante-Pago-'.$pago->id.'.pdf');
 

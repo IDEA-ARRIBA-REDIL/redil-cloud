@@ -78,6 +78,15 @@ class ValidarFormulario extends Component
       if ($campos->where('nombre_bd','fecha_nacimiento')->count() > 0) {
         $campoTemporal = $campos->where('nombre_bd','fecha_nacimiento')->first();
         $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'] ;
+        
+        if ($this->formulario->validar_edad) {
+          $fechaMax = \Carbon\Carbon::now()->subYears($this->formulario->edad_minima)->format('Y-m-d');
+          $fechaMin = \Carbon\Carbon::now()->subYears($this->formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
+          
+          $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
+          $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
+        }
+        
         $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
       }
 
@@ -379,7 +388,14 @@ class ValidarFormulario extends Component
         $validacion = array_merge($validacion, [$campoExtra->name_id => $validarCampoExtra]);
       }
 
-      $validator = Validator::make($dataSeccion, $validacion);
+      $mensajes = [];
+      if ($campos->where('nombre_bd','fecha_nacimiento')->count() > 0 && $this->formulario->validar_edad) {
+        $campoTemporal = $campos->where('nombre_bd','fecha_nacimiento')->first();
+        $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $this->formulario->edad_mensaje_error;
+        $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $this->formulario->edad_mensaje_error;
+      }
+
+      $validator = Validator::make($dataSeccion, $validacion, $mensajes);
 
       /* Reinincio de los mns error de los livewire */
       $this->dispatch('mostrarMensajeError',

@@ -11,7 +11,7 @@
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme-escuelas">
       <div style="padding-left: 20px !important;" class="app-brand mt-5 demo p-0 mb-3">
-            <a href="{{ url('/') }}" class="app-brand-link">              
+            <a href="{{ url('/') }}" class="app-brand-link">
                 @include('_partials.macros', [
                     'width' => '120px'
                 ])
@@ -140,6 +140,14 @@
                         <li class="menu-item">
                             <a href="{{ route('matriculas.solicitarTraslado', $user) }}" class="menu-link">
                                 <div>Solicitar traslado</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($rolActivo->hasPermissionTo('escuelas.subitem_historial_matriculas') || $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_matricula') || $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_materia'))
+                        <li class="menu-item">
+                            <a href="{{ route('matriculas.historialEliminadas', $user) }}" class="menu-link">
+                                <div>Eliminadas / Canceladas</div>
                             </a>
                         </li>
                     @endif

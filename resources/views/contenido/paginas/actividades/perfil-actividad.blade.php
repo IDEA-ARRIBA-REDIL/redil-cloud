@@ -253,60 +253,184 @@ $configData = Helper::appClasses();
                                     </div>
                                     @if ($compraExistente)
                                     <div class="tab-pane fade" id="navs-mi-compra" role="tabpanel">
-                                        <h5 class="fw-bold">Resumen de tu Compra</h5>
-                                        <hr>
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold mb-0 text-primary">
+                                                <i class="ti ti-receipt-2 me-1"></i> Resumen de tu Compra
+                                            </h5>
+                                            <span class="badge bg-label-primary px-3 py-2 fs-6">
+                                                ID Compra: #{{ $compraExistente->id }}
+                                            </span>
+                                        </div>
 
-                                        {{-- Detalles Generales de la Compra --}}
-                                        <p class="text-black fw-semibold">ID de compra: #{{ $compraExistente->id }}</p>
-                                        <p class="text-black fw-semibold">Fecha: {{ Carbon\Carbon::parse($compraExistente->fecha)->format('d/m/Y') }}</p>
-                                        <p class="text-black fw-semibold">Valor total: {{ number_format($compraExistente->valor, 2) }} {{ $compraExistente->moneda->simbolo ?? '' }}</p>
-
-                                        {{-- Detalles de los Pagos --}}
-                                        <h6 class="fw-semibold mt-4">Historial de pagos</h6>
-                                        @forelse ($compraExistente->pagos as $pago)
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="text-black fw-semibold">Pago #{{ $pago->id }} - {{ Carbon\Carbon::parse($pago->fecha)->format('d/m/Y') }}</span>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="badge" style="background-color: {{ $pago->estadoPago->color ?? '#6c757d' }}; color: white !important;">
-                                                    {{ $pago->estadoPago->nombre ?? 'Desconocido' }}
-                                                </span>
-                                                <a href="{{ route('carrito.descargarComprobante', $pago->id) }}" class="btn btn-sm btn-outline-danger p-1" title="Descargar Comprobante PDF">
-                                                    <i class="ti ti-file-type-pdf"></i>
-                                                </a>
+                                        <!-- KPI Cards de la Compra -->
+                                        <div class="row g-3 mb-4">
+                                            <div class="col-sm-6 col-lg-4">
+                                                <div class="card border ">
+                                                    <div class="card-body p-3 d-flex align-items-center gap-3">
+                                                        <div class="avatar avatar-md bg-label-primary rounded p-2">
+                                                            <i class="ti ti-calendar fs-3"></i>
+                                                        </div>
+                                                        <div>
+                                                            <small class="text-black d-block">Fecha de Compra</small>
+                                                            <h6 class="fw-bold mb-0">{{ Carbon\Carbon::parse($compraExistente->fecha)->format('d/m/Y') }}</h6>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-lg-4">
+                                                <div class="card border ">
+                                                    <div class="card-body p-3 d-flex align-items-center gap-3">
+                                                        <div class="avatar avatar-md bg-label-success rounded p-2">
+                                                            <i class="ti ti-currency-dollar fs-3"></i>
+                                                        </div>
+                                                        <div>
+                                                            <small class="text-black d-block">Valor Total</small>
+                                                            <h6 class="fw-bold mb-0 text-success">$ {{ number_format($compraExistente->valor, 2, ',', '.') }} {{ $compraExistente->moneda->nombre_corto ?? 'COP' }}</h6>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-lg-4">
+                                                <div class="card border ">
+                                                    <div class="card-body p-3 d-flex align-items-center gap-3">
+                                                        <div class="avatar avatar-md bg-label-info rounded p-2">
+                                                            <i class="ti ti-credit-card fs-3"></i>
+                                                        </div>
+                                                        <div>
+                                                            <small class="text-black d-block">Total de Pagos</small>
+                                                            <h6 class="fw-bold mb-0">{{ $compraExistente->pagos->count() }} transaccion(es)</h6>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        @empty
-                                        <p class="text-muted">No se han registrado pagos para esta compra.</p>
-                                        @endforelse
-                                        <hr>
 
                                         {{-- Detalles Específicos (Matrícula o Inscripción) --}}
                                         @if ($actividad->tipo->tipo_escuelas && $matriculaExistente)
-                                        <h6 class="fw-semibold mt-4">Detalles de la matrícula</h6>
-                                        <p class="text-black fw-semibold">Materia: {{ $matriculaExistente->horarioMateriaPeriodo->materiaPeriodo->materia->nombre }}</p>
-                                        <p class="text-black fw-semibold">Estado matrícula: <span class="fw-bold">{{ ucfirst($matriculaExistente->estado_pago_matricula) }}</span></p>
-                                        <p class="text-black fw-semibold">Sede: {{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->aula->sede->nombre }}</p>
-                                        <p class="text-black fw-semibold">Aula: {{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->aula->nombre }}</p>
-                                        <p class="text-black fw-semibold">Horario:
-                                            {{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->dia_semana }} de
-                                            {{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->hora_inicio_formato }} a
-                                            {{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->hora_fin_formato }}
-                                        </p>
+                                        <div class="card border shadow-sm mb-4">
+                                            <div class="card-header bg-label-primary py-3 d-flex justify-content-between align-items-center">
+                                                <h6 class="fw-bold mb-0 text-white">
+                                                    <i class="ti ti-school me-2"></i> Información de Matrícula
+                                                </h6>
+                                                @php
+                                                    $badgeColor = match($matriculaExistente->estado_pago_matricula) {
+                                                        'pagada' => 'bg-success',
+                                                        'pendiente' => 'bg-warning',
+                                                        default => 'bg-secondary'
+                                                    };
+                                                @endphp
+                                                <span class="badge {{ $badgeColor }} text-uppercase text-white">
+                                                    {{ $matriculaExistente->estado_pago_matricula }}
+                                                </span>
+                                            </div>
+                                            <div class="card-body pt-3">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <small class="text-muted d-block">Materia</small>
+                                                        <span class="fw-semibold text-dark fs-6">{{ $matriculaExistente->horarioMateriaPeriodo->materiaPeriodo->materia->nombre ?? 'N/D' }}</span>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <small class="text-muted d-block">Sede de Clase</small>
+                                                        <span class="fw-semibold text-dark fs-6">{{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->aula->sede->nombre ?? 'N/D' }}</span>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <small class="text-muted d-block">Aula</small>
+                                                        <span class="fw-semibold text-dark fs-6">{{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->aula->nombre ?? 'N/D' }}</span>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <small class="text-muted d-block">Horario</small>
+                                                        <span class="fw-semibold text-dark fs-6">
+                                                            {{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->dia_semana }} de
+                                                            {{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->hora_inicio_formato }} a
+                                                            {{ $matriculaExistente->horarioMateriaPeriodo->horarioBase->hora_fin_formato }}
+                                                        </span>
+                                                    </div>
+                                                    @if($matriculaExistente->materialSede)
+                                                    <div class="col-12 mt-2 pt-2 border-top">
+                                                        <small class="text-muted d-block"><i class="ti ti-map-pin me-1"></i> Sede Entrega de Material</small>
+                                                        <span class="fw-bold text-primary fs-6">{{ $matriculaExistente->materialSede->nombre }}</span>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
                                         @elseif($inscripcionesExistentes->isNotEmpty())
-                                        <h6 class="fw-semibold mt-4">Detalles de la inscripción</h6>
-                                        @foreach ($inscripcionesExistentes as $inscripcion)
-
-                                        <p class="text-black fw-semibold">Estado:
-                                            @if($inscripcion->estado == 1)
-                                            Iniciada
-                                            @elseif($inscripcion->estado == 2)
-                                            Pendiente
-                                            @else
-                                            Finalizada
-                                            @endif
-                                        </p>
-                                        @endforeach
+                                        <div class="card border shadow-sm mb-4">
+                                            <div class="card-header bg-label-info py-3">
+                                                <h6 class="fw-bold mb-0 text-info">
+                                                    <i class="ti ti-user-check me-2"></i> Estado de Inscripción
+                                                </h6>
+                                            </div>
+                                            <div class="card-body pt-3">
+                                                @foreach ($inscripcionesExistentes as $inscripcion)
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="fw-semibold">Estado actual:</span>
+                                                    @if($inscripcion->estado == 1)
+                                                        <span class="badge bg-info">Iniciada</span>
+                                                    @elseif($inscripcion->estado == 2)
+                                                        <span class="badge bg-warning">Pendiente</span>
+                                                    @else
+                                                        <span class="badge bg-success">Finalizada</span>
+                                                    @endif
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                         @endif
+
+                                        {{-- Historial de Pagos --}}
+                                        <div class="card border shadow-sm">
+                                            <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+                                                <h6 class="fw-bold mb-0 text-dark">
+                                                    <i class="ti ti-history me-2"></i> Historial de Transacciones y Comprobantes
+                                                </h6>
+                                            </div>
+                                            <div class="table-responsive">
+                                                <table class="table align-middle table-hover mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Pago</th>
+                                                            <th>Fecha</th>
+                                                            <th>Valor</th>
+                                                            <th>Estado</th>
+                                                            <th class="text-end">Comprobante</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse ($compraExistente->pagos as $pagoItem)
+                                                        <tr>
+                                                            <td>
+                                                                <span class="fw-bold text-dark">#{{ $pagoItem->id }}</span>
+                                                            </td>
+                                                            <td>
+                                                                <small class="text-muted">{{ Carbon\Carbon::parse($pagoItem->fecha)->format('d/m/Y h:i A') }}</small>
+                                                            </td>
+                                                            <td>
+                                                                <span class="fw-semibold text-dark">$ {{ number_format($pagoItem->valor, 2, ',', '.') }} {{ $pagoItem->moneda->nombre_corto ?? '' }}</span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge" style="background-color: {{ $pagoItem->estadoPago->color ?? '#6c757d' }}; color: white !important;">
+                                                                    {{ $pagoItem->estadoPago->nombre ?? 'Desconocido' }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="text-end">
+                                                                <a href="{{ route('carrito.descargarComprobante', $pagoItem->id) }}" target="_blank" class="btn btn-sm btn-label-danger d-inline-flex align-items-center gap-1 shadow-sm px-3 rounded-pill" title="Descargar Recibo PDF en una sola página">
+                                                                    <i class="ti ti-file-type-pdf fs-5"></i>
+                                                                    <span>Descargar Recibo PDF</span>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        @empty
+                                                        <tr>
+                                                            <td colspan="5" class="text-center py-4 text-muted">
+                                                                <i class="ti ti-info-circle me-1"></i> No se han registrado pagos para esta compra.
+                                                            </td>
+                                                        </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                     @endif
                                 </div>
@@ -357,85 +481,135 @@ $configData = Helper::appClasses();
 
                 {{-- REGLA 3: Validación para Actividades de ESCUELAS --}}
                 @if ($actividad->tipo->tipo_escuelas)
-                @if ($compraExistente)
-                <div class="alert alert-success text-center">
-                    <h6 class="alert-heading mb-1"><i class="ti ti-check"></i> ¡Ya estás matriculado!</h6>
-                    <p class="mb-0 small">Puedes ver los detalles de tu matrícula en la pestaña "Mi compra".</p>
-                </div>
-                @elseif (isset($hayDisponibles) && !$hayDisponibles)
-                <div class="alert alert-danger">
-                    <h6>No cumples con los requisitos</h6>
-                    <p class="mb-0 small">No cumples con los requisitos para ninguna de las categorías disponibles.</p>
-                </div>
-                @else
-                <a class='btn btn-primary w-100' href="{{ route('carrito.escuelasCarrito', ['actividad' => $actividad, 'primeraVez' => true, 'compra' => 0]) }}">Gestionar matrícula</a>
-                @endif
+                    @if ($pagoConfirmado)
+                        <div class="alert alert-success text-center">
+                            <h6 class="alert-heading mb-1"><i class="ti ti-check"></i> ¡Ya estás matriculado!</h6>
+                            <p class="mb-0 small">Puedes ver los detalles de tu matrícula en la pestaña "Mis compras".</p>
+                        </div>
+                    @elseif ($pagoPendiente)
+                        <div class="alert alert-warning text-center">
+                            <h6 class="alert-heading mb-1"><i class="ti ti-clock"></i> Pago en proceso de verificación</h6>
+                            <p class="mb-2 small">
+                                Tienes un pago en proceso de verificación por la pasarela. Debes esperar a que se complete el proceso (suele tomar entre 7 y 30 minutos).
+                            </p>
+                            @if ($compraExistente)
+                                <a href="{{ route('carrito.checkout', ['compra' => $compraExistente, 'actividad' => $actividad]) }}" class="btn btn-warning btn-sm text-dark w-100 mt-1">
+                                    <i class="ti ti-refresh me-1"></i> Verificar Estado de Mi Pago
+                                </a>
+                            @endif
+                        </div>
+                    @else
+                        @if ($pagoAnuladoOFallido)
+                            <div class="alert alert-warning p-2 mb-3 small text-start">
+                                <i class="ti ti-alert-triangle me-1"></i> Tu intento de pago anterior no fue efectivo (Estado: {{ $estadoPagoObj->nombre ?? 'Anulado/Cancelado' }}). Puedes intentar matricularte nuevamente.
+                            </div>
+                        @endif
+
+                        @if (isset($hayDisponibles) && !$hayDisponibles)
+                            <div class="alert alert-danger">
+                                <h6>No cumples con los requisitos</h6>
+                                <p class="mb-0 small">No cumples con los requisitos para ninguna de las categorías disponibles.</p>
+                            </div>
+                        @else
+                            <a class='btn btn-primary w-100' href="{{ route('carrito.escuelasCarrito', ['actividad' => $actividad, 'primeraVez' => true, 'compra' => 0]) }}">Gestionar matrícula</a>
+                        @endif
+                    @endif
 
                 {{-- REGLA 3.1: Validación para Actividades de ABONOS --}}
                 @elseif ($actividad->tipo->permite_abonos)
-                <a class='btn btn-primary w-100' href="{{ route('carrito.iniciarProcesoAbono', ['actividad' => $actividad]) }}">Gestionar abono</a>
+                    @if ($pagoPendiente)
+                        <div class="alert alert-warning text-center">
+                            <h6 class="alert-heading mb-1"><i class="ti ti-clock"></i> Abono en proceso de verificación</h6>
+                            <p class="mb-2 small">Tienes un pago de abono pendiente por verificar por la pasarela.</p>
+                            @if ($compraExistente)
+                                <a href="{{ route('carrito.checkout', ['compra' => $compraExistente, 'actividad' => $actividad]) }}" class="btn btn-warning btn-sm text-dark w-100 mt-1">
+                                    <i class="ti ti-refresh me-1"></i> Verificar Estado de Mi Abono
+                                </a>
+                            @endif
+                        </div>
+                    @else
+                        <a class='btn btn-primary w-100' href="{{ route('carrito.iniciarProcesoAbono', ['actividad' => $actividad]) }}">Gestionar abono</a>
+                    @endif
 
                 {{-- REGLA 4: Validación para Actividades GENERALES (no escuelas, no abonos) --}}
                 @else
-                @if ($esActividadDePago)
-                {{-- 4a: La actividad tiene un costo --}}
-                @if ($compraExistente)
-                <div class="alert alert-success text-center">
-                    <h6 class="alert-heading mb-1"><i class="ti ti-check"></i> ¡Compra realizada!</h6>
-                    <p class="mb-0 small">Puedes ver los detalles en la pestaña "Mi compra".</p>
-                </div>
-                @elseif (isset($hayDisponibles) && !$hayDisponibles)
-                <div class="alert alert-danger mb-0">
-                    <h6 class="alert-heading mb-1"><i class="ti ti-ban"></i> Requisitos no cumplidos</h6>
-                    <p class="mb-1 small">No puedes comprar por los siguientes motivos 1:</p>
-                    <ul class="mb-0 ps-3 small text-start">
-                        @php
-                            $motivosVistos = [];
-                            $itemsErrores = $categoriasEstado->isNotEmpty() ? $categoriasEstado : $actividadEstados;
-                        @endphp
-                        @foreach($itemsErrores as $item)
-                            @foreach($item->motivos as $motivo)
-                                @if(!in_array($motivo, $motivosVistos))
-                                    <li>{{ $motivo }}</li>
-                                    @php $motivosVistos[] = $motivo; @endphp
+                    @if ($esActividadDePago)
+                        {{-- 4a: La actividad tiene un costo --}}
+                        @if ($pagoConfirmado)
+                            <div class="alert alert-success text-center">
+                                <h6 class="alert-heading mb-1"><i class="ti ti-check"></i> ¡Compra realizada!</h6>
+                                <p class="mb-0 small">Puedes ver los detalles en la pestaña "Mis compras".</p>
+                            </div>
+                        @elseif ($pagoPendiente)
+                            <div class="alert alert-warning text-center">
+                                <h6 class="alert-heading mb-1"><i class="ti ti-clock"></i> Pago en proceso de verificación</h6>
+                                <p class="mb-2 small">Tienes un pago en proceso de verificación. Por favor espera unos minutos.</p>
+                                @if ($compraExistente)
+                                    <a href="{{ route('carrito.checkout', ['compra' => $compraExistente, 'actividad' => $actividad]) }}" class="btn btn-warning btn-sm text-dark w-100 mt-1">
+                                        <i class="ti ti-refresh me-1"></i> Verificar Estado de Mi Pago
+                                    </a>
                                 @endif
-                            @endforeach
-                        @endforeach
-                    </ul>
-                </div>
-                @else
-                <a class='btn btn-primary w-100' href="{{ route('carrito.carrito', ['actividad' => $actividad]) }}">Comprar</a>
-                @endif
-                @else
-                {{-- 4b: La actividad es gratuita --}}
-                @if ($inscripcionesExistentes->isNotEmpty())
-                <div class="alert alert-success text-center">
-                    <h6 class="alert-heading mb-1"><i class="ti ti-check"></i> ¡Ya estás inscrito!</h6>
-                    <p class="mb-0 small">Gracias por registrarte.</p>
-                </div>
-                @elseif (isset($hayDisponibles) && !$hayDisponibles)
-                <div class="alert alert-danger mb-0">
-                    <h6 class="alert-heading mb-1"><i class="ti ti-ban"></i> Requisitos no cumplidos</h6>
-                    <p class="mb-1 small">No puedes inscribirte por los siguientes motivos 2:</p>
-                    <ul class="mb-0 ps-3 small text-start">
-                        @php
-                            $motivosVistos = [];
-                            $itemsErrores = $categoriasEstado->isNotEmpty() ? $categoriasEstado : $actividadEstados;
-                        @endphp
-                        @foreach($itemsErrores as $item)
-                            @foreach($item->motivos as $motivo)
-                                @if(!in_array($motivo, $motivosVistos))
-                                    <li>{{ $motivo }}</li>
-                                    @php $motivosVistos[] = $motivo; @endphp
-                                @endif
-                            @endforeach
-                        @endforeach
-                    </ul>
-                </div>
-                @else
-                <a class='btn btn-primary w-100' href="{{ route('carrito.carrito', ['actividad' => $actividad]) }}">Inscribirme</a>
-                @endif
-                @endif
+                            </div>
+                        @else
+                            @if ($pagoAnuladoOFallido)
+                                <div class="alert alert-warning p-2 mb-3 small text-start">
+                                    <i class="ti ti-alert-triangle me-1"></i> Tu intento de pago anterior no fue efectivo (Estado: {{ $estadoPagoObj->nombre ?? 'Anulado' }}). Puedes intentar comprar nuevamente.
+                                </div>
+                            @endif
+
+                            @if (isset($hayDisponibles) && !$hayDisponibles)
+                                <div class="alert alert-danger mb-0">
+                                    <h6 class="alert-heading mb-1"><i class="ti ti-ban"></i> Requisitos no cumplidos</h6>
+                                    <p class="mb-1 small">No puedes comprar por los siguientes motivos:</p>
+                                    <ul class="mb-0 ps-3 small text-start">
+                                        @php
+                                            $motivosVistos = [];
+                                            $itemsErrores = $categoriasEstado->isNotEmpty() ? $categoriasEstado : $actividadEstados;
+                                        @endphp
+                                        @foreach($itemsErrores as $item)
+                                            @foreach($item->motivos as $motivo)
+                                                @if(!in_array($motivo, $motivosVistos))
+                                                    <li>{{ $motivo }}</li>
+                                                    @php $motivosVistos[] = $motivo; @endphp
+                                                @endif
+                                            @endforeach
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @else
+                                <a class='btn btn-primary w-100' href="{{ route('carrito.carrito', ['actividad' => $actividad]) }}">Comprar</a>
+                            @endif
+                        @endif
+                    @else
+                        {{-- 4b: La actividad es gratuita --}}
+                        @if ($inscripcionesExistentes->isNotEmpty())
+                            <div class="alert alert-success text-center">
+                                <h6 class="alert-heading mb-1"><i class="ti ti-check"></i> ¡Ya estás inscrito!</h6>
+                                <p class="mb-0 small">Gracias por registrarte.</p>
+                            </div>
+                        @elseif (isset($hayDisponibles) && !$hayDisponibles)
+                            <div class="alert alert-danger mb-0">
+                                <h6 class="alert-heading mb-1"><i class="ti ti-ban"></i> Requisitos no cumplidos</h6>
+                                <p class="mb-1 small">No puedes inscribirte por los siguientes motivos:</p>
+                                <ul class="mb-0 ps-3 small text-start">
+                                    @php
+                                        $motivosVistos = [];
+                                        $itemsErrores = $categoriasEstado->isNotEmpty() ? $categoriasEstado : $actividadEstados;
+                                    @endphp
+                                    @foreach($itemsErrores as $item)
+                                        @foreach($item->motivos as $motivo)
+                                            @if(!in_array($motivo, $motivosVistos))
+                                                <li>{{ $motivo }}</li>
+                                                @php $motivosVistos[] = $motivo; @endphp
+                                            @endif
+                                        @endforeach
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @else
+                            <a class='btn btn-primary w-100' href="{{ route('carrito.carrito', ['actividad' => $actividad]) }}">Inscribirme</a>
+                        @endif
+                    @endif
                 @endif
 
                 @endif

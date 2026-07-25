@@ -3,21 +3,18 @@
 namespace App\Services;
 
 use App\Models\Actividad;
-use App\Models\User;
-use App\Models\Materia;
-use App\Models\Periodo;
-use App\Models\Matricula;
-use App\Models\MateriaAprobadaUsuario;
 use App\Models\AlumnoRespuestaItem;
-use App\Models\ReporteAsistenciaAlumnos;
-// CORRECCIÓN: Se ajusta el nombre del modelo a 'Calificaciones' (plural).
 use App\Models\Calificaciones;
+use App\Models\CorteMateriaPeriodo;
 use App\Models\ItemCorteMateriaPeriodo;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Collection;
+use App\Models\Materia;
+use App\Models\MateriaAprobadaUsuario;
+use App\Models\Matricula;
+use App\Models\ReporteAsistenciaAlumnos;
+use App\Models\User;
 
 /**
- * Servicio ValidadorEscuelas (Versión 2.2 - Final)
+ * Servicio ValidadorEscuelas (Versión 2.3 - Corregida)
  * Centraliza toda la lógica de negocio compleja para determinar si un usuario
  * puede matricularse en una o más materias de una actividad de tipo "Escuelas".
  * Es capaz de manejar validaciones para períodos cerrados (matrícula normal)
@@ -29,10 +26,6 @@ class ValidadorEscuelas
     /**
      * Método principal. Filtra las categorías de una actividad para mostrar solo las materias que el usuario
      * puede matricular secuencialmente, excluyendo las que ya aprobó o está cursando.
-     *
-     * @param Actividad $actividad
-     * @param User $usuario
-     * @return array
      */
     public function filtrarCategoriasDisponibles(Actividad $actividad, User $usuario): array
     {
@@ -41,42 +34,53 @@ class ValidadorEscuelas
             ->where('aprobado', true)
             ->pluck('materia_id')->toArray();
 
-        // Se obtienen las materias que el usuario está cursando AHORA en períodos activos.
+        // Se obtienen las materias que el usuario está cursando AHORA en períodos activos (excluyendo matrículas anuladas/rechazadas).
         $materiasEnCurso = Materia::whereHas('materiasPeriodo.horariosMateriaPeriodo.matriculasDeAlumnos', function ($query) use ($usuario) {
             $query->where('user_id', $usuario->id)
-                ->whereHas('periodo', fn($q) => $q->where('estado', true));
+                ->where('estado_pago_matricula', '!=', 'anulada')
+                ->where('estado_pago_matricula', '!=', 'rechazada')
+                ->whereHas('periodo', fn ($q) => $q->where('estado', true));
         })->get();
         $materiasEnCursoIds = $materiasEnCurso->pluck('id')->toArray();
-
 
         $categoriasDisponibles = collect();
         $primerErrorEncontrado = null;
 
         // 2. ITERAR Y VALIDAR CADA CATEGORÍA/MATERIA OFRECIDA
         foreach ($actividad->categorias as $categoria) {
-            if (!$categoria->materiaPeriodo?->materia) continue;
-
-            $materiaObjetivo = $categoria->materiaPeriodo->materia;
-
-            // --- NUEVA VALIDACIÓN: RESTRICCIONES DE CATEGORÍA (Género, Edad, Tipo Usuario, Procesos, Tareas) ---
-            $resCategoria = $actividad->validarUsuarioEnCategoria($usuario, $categoria);
-            if ($resCategoria->estado !== 'DISPONIBLE') {
-                if (is_null($primerErrorEncontrado)) {
-                    $primerErrorEncontrado = "Restricción en '{$categoria->nombre}': " . implode(', ', $resCategoria->motivos);
-                }
+            if (! $categoria->materiaPeriodo?->materia) {
                 continue;
             }
 
-            // --- NUEVA VALIDACIÓN: TAREAS REQUISITO DE LA MATERIA ---
+            $materiaObjetivo = $categoria->materiaPeriodo->materia;
+
+            // --- RESTRICCIONES DE CATEGORÍA (Género, Edad, Tipo Usuario, Sedes, Pasos Categoría, Tareas Categoría) ---
+            $resCategoria = $actividad->validarUsuarioEnCategoria($usuario, $categoria);
+            if ($resCategoria->estado !== 'DISPONIBLE') {
+                if (is_null($primerErrorEncontrado)) {
+                    $primerErrorEncontrado = "Restricción en '{$categoria->nombre}': ".implode(', ', $resCategoria->motivos);
+                }
+
+                continue;
+            }
+
+            // --- RESTRICCIONES DE PROCESOS (PASOS DE CRECIMIENTO) DE LA MATERIA OBJETIVO ---
+            $motivosProcesosMateria = [];
+            if (! $this->_validarProcesosPrerrequisitoMateria($usuario, $materiaObjetivo, $motivosProcesosMateria)) {
+                if (is_null($primerErrorEncontrado)) {
+                    $primerErrorEncontrado = implode('. ', $motivosProcesosMateria);
+                }
+
+                continue;
+            }
+
+            // --- TAREAS REQUISITO DE LA MATERIA OBJETIVO ---
             $motivosTareasMateria = [];
-            // Usamos el método interno de actividad si es accesible, o el global.
-            // Actividad tiene el helper _validarTareasRequisito pero es privado.
-            // Sin embargo, podemos usar validarUsuarioEnCategoria o implementar el check aquí.
-            // Mejor: Actividad tiene tareasRequisito relationship.
-            if (!$actividad->validarTareasRequisitoCualquiera($usuario, $materiaObjetivo->tareasRequisito, $motivosTareasMateria)) {
+            if (! $actividad->validarTareasRequisitoCualquiera($usuario, $materiaObjetivo->tareasRequisito, $motivosTareasMateria)) {
                 if (is_null($primerErrorEncontrado)) {
                     $primerErrorEncontrado = implode(', ', $motivosTareasMateria);
                 }
+
                 continue;
             }
 
@@ -87,45 +91,48 @@ class ValidadorEscuelas
 
             $prerrequisitos = $materiaObjetivo->prerrequisitosMaterias;
 
-            // REGLA 2: Si no tiene prerrequisitos, es una materia de inicio y siempre está disponible.
+            // REGLA 2: Si no tiene prerrequisitos de materia, está disponible (ya pasó procesos/tareas de la materia).
             if ($prerrequisitos->isEmpty()) {
                 $categoriasDisponibles->push($categoria);
+
                 continue;
             }
 
             // REGLA 3: Lógica secuencial.
-            $todosPrerrequisitosAprobados = $prerrequisitos->every(fn($req) => in_array($req->id, $materiasAprobadasIds));
-            $prerrequisitoEnCurso = $prerrequisitos->first(fn($req) => in_array($req->id, $materiasEnCursoIds));
+            $todosPrerrequisitosAprobados = $prerrequisitos->every(fn ($req) => in_array($req->id, $materiasAprobadasIds));
+            $prerrequisitoEnCurso = $prerrequisitos->first(fn ($req) => in_array($req->id, $materiasEnCursoIds));
 
             if ($todosPrerrequisitosAprobados) {
-                // Caso Post-Período: Ya aprobó todo lo necesario, puede matricular esta materia.
+                // Caso Post-Período: Ya aprobó todos los prerrequisitos académicos y cumple procesos/tareas.
                 $categoriasDisponibles->push($categoria);
             } elseif ($prerrequisitoEnCurso) {
-                // Caso Pre-Matrícula: Está cursando un prerrequisito.
+                // Caso Pre-Matrícula: Está cursando un prerrequisito en un período activo.
                 $otrosPrerrequisitos = $prerrequisitos->where('id', '!=', $prerrequisitoEnCurso->id);
-                $otrosAprobados = $otrosPrerrequisitos->every(fn($req) => in_array($req->id, $materiasAprobadasIds));
+                $otrosAprobados = $otrosPrerrequisitos->every(fn ($req) => in_array($req->id, $materiasAprobadasIds));
 
                 if ($otrosAprobados) {
                     $matriculaActiva = Matricula::where('user_id', $usuario->id)
-                        ->whereHas('horarioMateriaPeriodo.materiaPeriodo.materia', fn($q) => $q->where('id', $prerrequisitoEnCurso->id))
+                        ->whereHas('horarioMateriaPeriodo.materiaPeriodo.materia', fn ($q) => $q->where('id', $prerrequisitoEnCurso->id))
                         ->with('periodo')->latest('id')->first();
 
-                    $resultadoProgreso = $this->_validarProgresoEnTiempoReal($usuario, $prerrequisitoEnCurso, $matriculaActiva);
+                    if ($matriculaActiva) {
+                        $resultadoProgreso = $this->_validarProgresoEnTiempoReal($usuario, $prerrequisitoEnCurso, $matriculaActiva);
 
-                    if ($resultadoProgreso['elegible']) {
-                        $categoriasDisponibles->push($categoria);
-                    } elseif (is_null($primerErrorEncontrado)) {
-                        if (isset($resultadoProgreso['error_config'])) {
-                            $primerErrorEncontrado = $resultadoProgreso['error_config'];
-                        } else {
-                            $mensajeError = "Para matricular '{$materiaObjetivo->nombre}', tu progreso en '{$prerrequisitoEnCurso->nombre}' no es suficiente. ";
-                            if ($prerrequisitoEnCurso->habilitar_calificaciones) {
-                                $mensajeError .= " <b> Nota actual: " . number_format($resultadoProgreso['nota_actual'], 2) . " (requerida: " . number_format($resultadoProgreso['nota_requerida'], 2) . ").</b>";
+                        if ($resultadoProgreso['elegible']) {
+                            $categoriasDisponibles->push($categoria);
+                        } elseif (is_null($primerErrorEncontrado)) {
+                            if (isset($resultadoProgreso['error_config'])) {
+                                $primerErrorEncontrado = $resultadoProgreso['error_config'];
+                            } else {
+                                $mensajeError = "Para matricular '{$materiaObjetivo->nombre}', tu progreso en '{$prerrequisitoEnCurso->nombre}' no es suficiente. ";
+                                if ($prerrequisitoEnCurso->habilitar_calificaciones) {
+                                    $mensajeError .= ' <b> Nota actual: '.number_format($resultadoProgreso['nota_actual'], 2).' (requerida: '.number_format($resultadoProgreso['nota_requerida'], 2).').</b>';
+                                }
+                                if ($prerrequisitoEnCurso->habilitar_asistencias) {
+                                    $mensajeError .= "<b> Asistencias: {$resultadoProgreso['asistencias_actuales']} (requeridas: {$resultadoProgreso['asistencias_requeridas']}).</b>";
+                                }
+                                $primerErrorEncontrado = $mensajeError;
                             }
-                            if ($prerrequisitoEnCurso->habilitar_asistencias) {
-                                $mensajeError .= "<b> Asistencias: {$resultadoProgreso['asistencias_actuales']} (requeridas: {$resultadoProgreso['asistencias_requeridas']}).</b>";
-                            }
-                            $primerErrorEncontrado = $mensajeError;
                         }
                     }
                 }
@@ -140,11 +147,30 @@ class ValidadorEscuelas
             return ['success' => true, 'message' => null, 'categorias' => $categoriasDisponibles];
         }
 
-        return ['success'  => false, 'message'  => $primerErrorEncontrado, 'categorias' => collect()];
+        return ['success' => false, 'message' => $primerErrorEncontrado, 'categorias' => collect()];
     }
 
     /**
-     * Valida el progreso EN TIEMPO REAL de un estudiante en una materia.
+     * Valida si el usuario cumple con los Pasos de Crecimiento (procesos) requeridos por la materia objetivo.
+     */
+    private function _validarProcesosPrerrequisitoMateria(User $usuario, Materia $materia, array &$motivos): bool
+    {
+        $cumple = true;
+        foreach ($materia->procesosPrerrequisito as $procesoReq) {
+            $estadoRequerido = $procesoReq->pivot->estado_paso_crecimiento_usuario_id ?? $procesoReq->pivot->estado_proceso;
+            $pasoUsuario = $usuario->pasosCrecimiento()->where('paso_crecimiento_id', $procesoReq->id)->first();
+
+            if (! $pasoUsuario || $pasoUsuario->pivot->estado_id != $estadoRequerido) {
+                $cumple = false;
+                $motivos[] = "Necesitas haber completado el proceso '{$procesoReq->nombre}' para matricular '{$materia->nombre}'";
+            }
+        }
+
+        return $cumple;
+    }
+
+    /**
+     * Valida el progreso EN TIEMPO REAL de un estudiante en una materia prerrequisito.
      */
     private function _validarProgresoEnTiempoReal(User $usuario, Materia $materia, Matricula $matricula): array
     {
@@ -158,21 +184,20 @@ class ValidadorEscuelas
         if ($materia->habilitar_calificaciones) {
             $notaActual = $this->_calcularNotaActualPonderada($matricula);
 
-            // CORRECCIÓN: Se utiliza el modelo 'Calificaciones' (plural) como fue especificado.
             $calificacionAprobatoria = Calificaciones::where('sistema_calificacion_id', $matricula->periodo->sistema_calificaciones_id)
                 ->where('aprobado', true)->orderBy('nota_minima', 'asc')->first();
 
-            if (!$calificacionAprobatoria) {
+            if (! $calificacionAprobatoria) {
                 return [
                     'elegible' => false,
                     'nota_actual' => $notaActual,
                     'nota_requerida' => 0,
                     'asistencias_actuales' => 0,
                     'asistencias_requeridas' => $asistenciasRequeridas,
-                    'error_config' => 'Error de configuración: No se encontró una nota aprobatoria para el período.'
+                    'error_config' => 'Error de configuración: No se encontró una nota aprobatoria para el período.',
                 ];
             }
-            $notaRequerida = $calificacionAprobatoria->nota_minima;
+            $notaRequerida = (float) $calificacionAprobatoria->nota_minima;
 
             if ($notaActual < $notaRequerida) {
                 $aprobadoPorNota = false;
@@ -196,55 +221,77 @@ class ValidadorEscuelas
     }
 
     /**
-     * Valida si un usuario aprobó una materia consultando la tabla de resultados finales.
-     */
-    private function _validarResultadoFinal(User $usuario, Materia $materia): bool
-    {
-        return MateriaAprobadaUsuario::where('user_id', $usuario->id)
-            ->where('materia_id', $materia->id)
-            ->where('aprobado', true)
-            ->exists();
-    }
-
-    /**
-     * Helper de cálculo: Obtiene la nota ponderada actual de un estudiante.
+     * Helper de cálculo: Obtiene la nota acumulada normalizada sobre el peso evaluado a la fecha.
      */
     private function _calcularNotaActualPonderada(Matricula $matricula): float
     {
+        $horarioId = $matricula->horario_materia_periodo_id;
+        $usuarioId = $matricula->user_id;
+
         $horario = $matricula->horarioMateriaPeriodo()->with('materiaPeriodo.periodo.cortesPeriodo')->first();
-        if (!$horario) return 0.0;
+        if (! $horario || ! $horario->materiaPeriodo) {
+            return 0.0;
+        }
 
-        $cortesDelPeriodo = $horario->materiaPeriodo->periodo->cortesPeriodo;
-        $notaFinalPonderada = 0.0;
+        $cortesMateria = CorteMateriaPeriodo::where('materia_periodo_id', $horario->materia_periodo_id)->get();
+        if ($cortesMateria->isEmpty()) {
+            return 0.0;
+        }
 
-        foreach ($cortesDelPeriodo as $corte) {
-            $itemsDelCorte = ItemCorteMateriaPeriodo::where('corte_periodo_id', $corte->id)
-                ->where('horario_materia_periodo_id', $horario->id)
+        $sumaPonderadaFinal = 0.0;
+        $pesoTotalEvaluadoFinal = 0.0;
+
+        foreach ($cortesMateria as $corteMateria) {
+            $items = ItemCorteMateriaPeriodo::where('corte_periodo_id', $corteMateria->corte_periodo_id)
+                ->where('horario_materia_periodo_id', $horarioId)
                 ->get();
-            if ($itemsDelCorte->isEmpty()) continue;
 
-            $sumaNotasPonderadasDelCorte = 0.0;
-            foreach ($itemsDelCorte as $item) {
-                $calificacionEstudiante = AlumnoRespuestaItem::where('user_id', $matricula->user_id)
-                    ->where('item_corte_materia_periodo_id', $item->id)->first();
-                if ($calificacionEstudiante && !is_null($calificacionEstudiante->nota_obtenida)) {
-                    $sumaNotasPonderadasDelCorte += $calificacionEstudiante->nota_obtenida * ($item->porcentaje / 100);
+            if ($items->isEmpty()) {
+                continue;
+            }
+
+            $sumaPonderadaCorte = 0.0;
+            $pesoTotalItemsCorte = 0.0;
+            $hayNotasEnCorte = false;
+
+            foreach ($items as $item) {
+                $respuesta = AlumnoRespuestaItem::where('user_id', $usuarioId)
+                    ->where('item_corte_materia_periodo_id', $item->id)
+                    ->first();
+
+                if ($respuesta && ! is_null($respuesta->nota_obtenida)) {
+                    $sumaPonderadaCorte += ($respuesta->nota_obtenida * $item->porcentaje);
+                    $pesoTotalItemsCorte += $item->porcentaje;
+                    $hayNotasEnCorte = true;
                 }
             }
-            $porcentajeDelCorteEnLaMateria = $corte->porcentaje ?? 0;
-            $notaFinalPonderada += $sumaNotasPonderadasDelCorte * ($porcentajeDelCorteEnLaMateria / 100);
+
+            if ($hayNotasEnCorte && $pesoTotalItemsCorte > 0) {
+                // Nota del corte normalizada
+                $notaCorte = $sumaPonderadaCorte / $pesoTotalItemsCorte;
+
+                // Sumar al cálculo global usando el peso del corte en la materia
+                $sumaPonderadaFinal += ($notaCorte * $corteMateria->porcentaje);
+                $pesoTotalEvaluadoFinal += $corteMateria->porcentaje;
+            }
         }
-        return round($notaFinalPonderada, 2);
+
+        // CORRECCIÓN MATEMÁTICA: Normalizar sobre el total del porcentaje de cortes evaluados a la fecha
+        if ($pesoTotalEvaluadoFinal > 0) {
+            return round($sumaPonderadaFinal / $pesoTotalEvaluadoFinal, 2);
+        }
+
+        return 0.0;
     }
 
     /**
-     * Helper de cálculo: Cuenta las asistencias de un estudiante.
+     * Helper de cálculo: Cuenta las asistencias positivas de un estudiante.
      */
     private function _contarAsistenciasActuales(Matricula $matricula): int
     {
         return ReporteAsistenciaAlumnos::where('user_id', $matricula->user_id)
             ->where('asistio', true)
-            ->whereHas('reporteClase', fn($q) => $q->where('horario_materia_periodo_id', $matricula->horario_materia_periodo_id))
+            ->whereHas('reporteClase', fn ($q) => $q->where('horario_materia_periodo_id', $matricula->horario_materia_periodo_id))
             ->count();
     }
 }

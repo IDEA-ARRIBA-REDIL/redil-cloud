@@ -168,16 +168,21 @@
         }
 
         Livewire.on('msn', (data) => {
-            let msn = data.msn || (data[0] ? data[0].msn : null);
-            let icon = data.icon || (data[0] ? data[0].icon : 'info');
+            const payload = data[0] ?? data;
+            const texto   = payload.msnTexto  ?? payload.msn  ?? '';
+            const titulo  = payload.msnTitulo ?? '';
+            const icono   = payload.msnIcono  ?? payload.icon ?? 'info';
 
-            if (icon === 'success' && msn && msn.includes('eliminad')) {
-                Swal.fire(
-                    '¡Eliminado!',
-                    msn,
-                    'success'
-                )
-            }
+            Swal.fire({
+                icon: icono,
+                title: titulo || (icono === 'success' ? '¡Listo!' : icono === 'warning' ? 'Atención' : 'Información'),
+                text: texto,
+                toast: icono === 'success',
+                position: icono === 'success' ? 'top-end' : 'center',
+                showConfirmButton: icono !== 'success',
+                timer: icono === 'success' ? 2500 : undefined,
+                timerProgressBar: icono === 'success',
+            });
         });
     });
 </script>

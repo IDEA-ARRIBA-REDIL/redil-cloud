@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AlumnoRespuestaItem;
 use App\Models\Configuracion;
 use App\Models\Escuela;
 use App\Models\Matricula;
-use App\Models\ReporteAsistenciaAlumnos;
 use App\Models\User;
 use App\Services\MatriculaService;
 use Illuminate\Http\Request;
@@ -45,17 +43,16 @@ class MatriculaController extends Controller
         // -------------------------------------------------------------------------
         if ($usuarioSeleccionado && $escuelaSeleccionada) {
 
-            // 1. OBTENER MATRÍCULAS ACTUALES DEL ALUMNO
-            // Buscamos solo en periodos activos para saber qué está cursando actualmente.
+            // 1. OBTENER TODAS LAS MATRÍCULAS DEL ALUMNO
             $matriculasDelAlumno = Matricula::where('user_id', $usuarioSeleccionado->id)
-                ->whereHas('periodo', function ($query) {
-                    $query->where('estado', true);
-                })
                 ->with([
                     'periodo',
+                    'escuela',
+                    'estadoPago',
                     'horarioMateriaPeriodo.materiaPeriodo.materia',
                     'horarioMateriaPeriodo.horarioBase.aula.sede',
                 ])
+                ->latest('id')
                 ->get();
 
             // 2. BIFURCACIÓN DE LÓGICA: ¿Niveles o Materias?
@@ -98,58 +95,87 @@ class MatriculaController extends Controller
 
     public function eliminarMatricula(Matricula $matricula, User $user)
     {
-        // --- 1. VALIDACIÓN ---
-        // Necesitamos el ID del HorarioMateriaPeriodo para buscar en las otras tablas.
-        $horarioMateriaPeriodoId = $matricula->horario_materia_periodo_id;
+        $matriculaId = $matricula->id;
 
-        // Validar si el estado del pago permite la eliminación (no es final)
-        if ($matricula->estadoPago && $matricula->estadoPago->estado_final_inscripcion) {
-            return redirect()->back()->with('error', 'No se puede eliminar la matrícula porque el pago ya ha sido completado y finalizado.');
+        // 1. Desvincular de la clase (pivote horario/materia/periodo) para liberar el cupo
+        DB::table('matricula_horario_materia_periodo')->where('matricula_id', $matriculaId)->delete();
+
+        // 2. Registrar el usuario administrador que ejecutó la eliminación si existe la columna
+        if (\Illuminate\Support\Facades\Schema::hasColumn('matriculas', 'deleted_by')) {
+            $matricula->deleted_by = auth()->id();
+            $matricula->save();
         }
 
-        // Verificamos si existen notas para este alumno en este horario/clase.
-        $tieneNotas = AlumnoRespuestaItem::where('user_id', $matricula->user_id)
-            ->whereHas('itemCalificado', function ($query) use ($horarioMateriaPeriodoId) {
-                $query->where('horario_materia_periodo_id', $horarioMateriaPeriodoId);
-            })->exists();
+        // 3. Ejecutar Soft Delete
+        $matricula->delete();
 
-        // Verificamos si existen asistencias para este alumno en este horario/clase.
-        $tieneAsistencias = ReporteAsistenciaAlumnos::where('user_id', $matricula->user_id)
-            ->whereHas('reporteClase', function ($query) use ($horarioMateriaPeriodoId) {
-                $query->where('horario_materia_periodo_id', $horarioMateriaPeriodoId);
-            })->exists();
+        return redirect()->back()->with('success', "La matrícula ID #{$matriculaId} ha sido eliminada correctamente y enviada al historial.");
+    }
 
-        // Si tiene notas O asistencias, no se puede eliminar.
-        if ($tieneNotas || $tieneAsistencias) {
-            return redirect()->back()->with('error', 'No se puede eliminar la matrícula porque el alumno ya tiene notas o registros de asistencia asociados.');
+    /**
+     * Vista de Historial de Matrículas Eliminadas / Canceladas con buscador multi-campo.
+     */
+    public function historialEliminadas(Request $request, User $user)
+    {
+        $usuarioActivo = $user;
+        $rolActivo = auth()->user()->roles()->where('activo', true)->first();
+
+        if (! $rolActivo || (! $rolActivo->hasPermissionTo('escuelas.subitem_historial_matriculas') && ! $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_matricula') && ! $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_materia'))) {
+            abort(403, 'No tienes permisos para acceder al historial de matrículas eliminadas.');
         }
 
-        // --- 2. ELIMINACIÓN ---
-        // Usamos una transacción para asegurar que todo se elimine correctamente.
-        try {
-            DB::transaction(function () use ($matricula) {
-                // Buscamos la compra asociada
-                $compra = \App\Models\Compra::find($matricula->referencia_pago);
+        $query = Matricula::onlyTrashed()
+            ->with([
+                'user',
+                'periodo',
+                'horarioMateriaPeriodo.materiaPeriodo.materia',
+                'horarioMateriaPeriodo.horarioBase.aula.sede',
+                'escuela',
+                'deletedBy',
+                'estadoPago',
+                'compra.pagos',
+            ]);
 
-                // Eliminar relaciones de la compra si existe
-                if ($compra) {
-                    $compra->pagos()->delete();
-                    $compra->inscripciones()->delete();
-                    $compra->delete();
+        // Filtrar por término de búsqueda (Identificación, Nombre, #ID o Periodo)
+        if ($request->filled('buscar')) {
+            $buscar = trim((string) $request->query('buscar'));
+            $query->where(function ($q) use ($buscar) {
+                if (is_numeric($buscar)) {
+                    $q->orWhere('id', (int) $buscar);
                 }
-
-                // CAMBIO: Usamos el nuevo nombre de la relación que creaste.
-                $matricula->estadoAcademicoClase()->delete();
-
-                // Luego eliminamos la matrícula principal.
-                $matricula->delete();
+                $q->orWhereHas('user', function ($qUser) use ($buscar) {
+                    $qUser->where('identificacion', 'like', "%{$buscar}%")
+                        ->orWhere('primer_nombre', 'like', "%{$buscar}%")
+                        ->orWhere('segundo_nombre', 'like', "%{$buscar}%")
+                        ->orWhere('primer_apellido', 'like', "%{$buscar}%")
+                        ->orWhere('segundo_apellido', 'like', "%{$buscar}%")
+                        ->orWhere(DB::raw("CONCAT(primer_nombre, ' ', primer_apellido)"), 'like', "%{$buscar}%");
+                });
+                $q->orWhereHas('periodo', function ($qPeriodo) use ($buscar) {
+                    $qPeriodo->where('nombre', 'like', "%{$buscar}%");
+                });
+                $q->orWhereHas('horarioMateriaPeriodo.materiaPeriodo.materia', function ($qMateria) use ($buscar) {
+                    $qMateria->where('nombre', 'like', "%{$buscar}%");
+                });
             });
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Ocurrió un error al intentar eliminar la matrícula: '.$e->getMessage());
         }
 
-        // --- 3. RESPUESTA ---
-        return redirect()->back()->with('success', 'Matrícula y registros asociados eliminados correctamente.');
+        // Filtrar por periodo específico
+        if ($request->filled('periodo_id')) {
+            $query->where('periodo_id', $request->query('periodo_id'));
+        }
+
+        $matriculasEliminadas = $query->latest('deleted_at')->paginate(20)->withQueryString();
+        $periodos = \App\Models\Periodo::orderBy('nombre', 'desc')->get();
+
+        return view('contenido.paginas.escuelas.matriculas.historial-eliminadas', [
+            'usuarioActivo' => $usuarioActivo,
+            'rolActivo' => $rolActivo,
+            'matriculasEliminadas' => $matriculasEliminadas,
+            'periodos' => $periodos,
+            'buscar' => $request->query('buscar'),
+            'periodoId' => $request->query('periodo_id'),
+        ]);
     }
 
     public function gestionarTraslados(Request $request, User $user)

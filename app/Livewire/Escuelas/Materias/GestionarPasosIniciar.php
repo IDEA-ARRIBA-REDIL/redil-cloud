@@ -2,21 +2,25 @@
 
 namespace App\Livewire\Escuelas\Materias;
 
-use Livewire\Component;
+use App\Models\EstadoPasoCrecimientoUsuario;
 use App\Models\Materia;
 use App\Models\PasoCrecimiento;
-use App\Models\EstadoPasoCrecimientoUsuario;
 use Illuminate\Support\Collection;
+use Livewire\Component;
 
 class GestionarPasosIniciar extends Component
 {
-    public $materia;
+    public Materia $materia;
+
     public $pasosIniciar;
+
     public $pasoSeleccionado;
+
     public $estadoSeleccionado;
 
     // Draft Mode Properties
     public $draftMode = false;
+
     public $draftItems = [];
 
     protected $listeners = ['eliminarMateriaPasoIniciar'];
@@ -24,14 +28,14 @@ class GestionarPasosIniciar extends Component
     public function mount(Materia $materia)
     {
         $this->materia = $materia;
-        $this->draftMode = !$materia->exists;
+        $this->draftMode = ! $materia->exists;
 
         $this->cargarDatos();
     }
 
     public function cargarDatos()
     {
-        if (!$this->draftMode) {
+        if (! $this->draftMode) {
             $this->pasosIniciar = $this->materia->pasosCrecimiento()
                 ->wherePivot('al_iniciar', 1)
                 ->orderBy('materia_paso_crecimiento.indice')
@@ -45,7 +49,7 @@ class GestionarPasosIniciar extends Component
     {
         $this->validate([
             'pasoSeleccionado' => 'required',
-            'estadoSeleccionado' => 'required'
+            'estadoSeleccionado' => 'required',
         ]);
 
         if ($this->draftMode) {
@@ -54,9 +58,10 @@ class GestionarPasosIniciar extends Component
             $estadoModel = EstadoPasoCrecimientoUsuario::find($this->estadoSeleccionado);
 
             // Verificar duplicados en draft
-            foreach($this->draftItems as $item) {
+            foreach ($this->draftItems as $item) {
                 if ($item['paso_id'] == $this->pasoSeleccionado && $item['estado_id'] == $this->estadoSeleccionado) {
                     $this->dispatch('msn', msnTexto: 'Este paso ya está agregado al iniciar', msnIcono: 'warning');
+
                     return;
                 }
             }
@@ -67,7 +72,7 @@ class GestionarPasosIniciar extends Component
                 'estado_id' => $this->estadoSeleccionado,
                 'estado_nombre' => $estadoModel->nombre,
                 'estado_color' => $estadoModel->color ?? 'primary',
-                'temp_id' => uniqid()
+                'temp_id' => uniqid(),
             ];
 
         } else {
@@ -79,6 +84,7 @@ class GestionarPasosIniciar extends Component
 
             if ($exists) {
                 $this->dispatch('msn', msnTexto: 'Este paso ya está agregado al iniciar', msnIcono: 'warning');
+
                 return;
             }
 
@@ -116,10 +122,10 @@ class GestionarPasosIniciar extends Component
     public function eliminarPaso($pasoId)
     {
         if ($this->draftMode) {
-             // DRAFT MODE: Eliminar del array por temp_id
-             $this->draftItems = array_filter($this->draftItems, function($item) use ($pasoId) {
-                 return $item['temp_id'] != $pasoId;
-             });
+            // DRAFT MODE: Eliminar del array por temp_id
+            $this->draftItems = array_filter($this->draftItems, function ($item) use ($pasoId) {
+                return $item['temp_id'] != $pasoId;
+            });
         } else {
             // DB MODE
             $this->materia->pasosCrecimiento()->wherePivot('al_iniciar', 1)->detach($pasoId);
@@ -127,8 +133,8 @@ class GestionarPasosIniciar extends Component
             // Reordenar
             $pasos = $this->materia->pasosCrecimiento()->wherePivot('al_iniciar', 1)->orderBy('indice')->get();
             foreach ($pasos as $index => $paso) {
-                 $this->materia->pasosCrecimiento()->wherePivot('al_iniciar', 1)->updateExistingPivot($paso->id, [
-                    'indice' => $index + 1
+                $this->materia->pasosCrecimiento()->wherePivot('al_iniciar', 1)->updateExistingPivot($paso->id, [
+                    'indice' => $index + 1,
                 ]);
             }
             $this->cargarDatos();
@@ -147,7 +153,7 @@ class GestionarPasosIniciar extends Component
             'pasosDisponibles' => PasoCrecimiento::orderBy('nombre')->get(),
             'estadosDisponibles' => EstadoPasoCrecimientoUsuario::orderBy('nombre')->get(),
             'pasosIniciar' => $this->pasosIniciar, // Collection empty in draft mode for view logic if needed
-            'draftItems' => $this->draftItems
+            'draftItems' => $this->draftItems,
         ]);
     }
 }

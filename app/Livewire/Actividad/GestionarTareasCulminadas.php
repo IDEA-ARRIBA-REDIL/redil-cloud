@@ -2,39 +2,41 @@
 
 namespace App\Livewire\Actividad;
 
-use Livewire\Component;
 use App\Models\Actividad;
-use App\Models\TareaConsolidacion;
-use App\Models\EstadoTareaConsolidacion;
 use App\Models\ActividadTareaCulminada;
+use App\Models\EstadoTareaConsolidacion;
+use App\Models\TareaConsolidacion;
+use Livewire\Component;
 
 class GestionarTareasCulminadas extends Component
 {
     public Actividad $actividad;
-    
+
     // Propiedades para el formulario
     public $tareaSeleccionada = '';
+
     public $estadoSeleccionado = '';
-    
+
     // Datos para los selectores
     public $tareas = [];
+
     public $estados = [];
-    
+
     public function mount(Actividad $actividad)
     {
         $this->actividad = $actividad;
         $this->cargarDatos();
     }
-    
+
     public function cargarDatos()
     {
         // Cargar todas las tareas de consolidación
         $this->tareas = TareaConsolidacion::orderBy('orden')->get();
-        
+
         // Cargar todos los estados
         $this->estados = EstadoTareaConsolidacion::orderBy('puntaje')->get();
     }
-    
+
     public function agregarTarea()
     {
         $this->validate([
@@ -44,26 +46,27 @@ class GestionarTareasCulminadas extends Component
             'tareaSeleccionada.required' => 'Debes seleccionar una tarea.',
             'estadoSeleccionado.required' => 'Debes seleccionar un estado.',
         ]);
-        
+
         // Verificar que no exista ya esta combinación
         $existe = ActividadTareaCulminada::where('actividad_id', $this->actividad->id)
             ->where('tarea_consolidacion_id', $this->tareaSeleccionada)
             ->where('estado_tarea_consolidacion_id', $this->estadoSeleccionado)
             ->exists();
-        
+
         if ($existe) {
-            $this->dispatch('msn', 
+            $this->dispatch('msn',
                 msnTitulo: 'Tarea Duplicada',
                 msnTexto: 'Esta tarea con ese estado ya está agregada para culminar.',
                 msnIcono: 'warning'
             );
+
             return;
         }
-        
+
         // Obtener el siguiente índice
         $maxIndice = ActividadTareaCulminada::where('actividad_id', $this->actividad->id)
             ->max('indice') ?? 0;
-        
+
         // Crear la tarea a culminar
         ActividadTareaCulminada::create([
             'actividad_id' => $this->actividad->id,
@@ -71,48 +74,48 @@ class GestionarTareasCulminadas extends Component
             'estado_tarea_consolidacion_id' => $this->estadoSeleccionado,
             'indice' => $maxIndice + 1,
         ]);
-        
+
         // Resetear formulario
         $this->reset(['tareaSeleccionada', 'estadoSeleccionado']);
-        
+
         // Notificar éxito
         $this->dispatch('msn',
             msnTitulo: '¡Éxito!',
             msnTexto: 'Tarea a culminar agregada correctamente.',
             msnIcono: 'success'
         );
-        
+
         // Refrescar la lista
         $this->actividad->refresh();
     }
-    
+
     public function eliminarTarea($id)
     {
         $tarea = ActividadTareaCulminada::findOrFail($id);
-        
+
         // Verificar que pertenezca a esta actividad
         if ($tarea->actividad_id !== $this->actividad->id) {
             return;
         }
-        
+
         $tarea->delete();
-        
+
         $this->dispatch('msn',
             msnTitulo: 'Eliminada',
             msnTexto: 'Tarea a culminar eliminada correctamente.',
             msnIcono: 'success'
         );
-        
+
         $this->actividad->refresh();
     }
-    
+
     public function actualizarOrden($ordenes)
     {
         foreach ($ordenes as $item) {
             ActividadTareaCulminada::where('id', $item['id'])
                 ->update(['indice' => $item['orden']]);
         }
-        
+
         $this->actividad->refresh();
     }
 
@@ -122,7 +125,7 @@ class GestionarTareasCulminadas extends Component
             'tareasCulminadas' => $this->actividad->tareasCulminadas()
                 ->with(['tareaConsolidacion', 'estadoTarea'])
                 ->orderBy('indice')
-                ->get()
+                ->get(),
         ]);
     }
 }

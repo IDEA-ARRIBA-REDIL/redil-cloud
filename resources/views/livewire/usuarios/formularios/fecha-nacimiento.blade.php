@@ -5,8 +5,23 @@
     </label>
     <div class="input-group input-group-merge">
       <span class="input-group-text "><i class="ti ti-calendar"></i></span>
-      <input wire:click='bloquearBtnGuardar' wire:model.debounce="fecha" wire:click.outside="validarFecha()" id="fecha_nacimiento" value="{{ old($nameId, $fechaDefault) }}" placeholder="YYYY-MM-DD" name="{{ $nameId }}" class="fecha_nacimiento form-control fecha-picker" type="text" />
-
+      <input 
+        x-data 
+        x-init="flatpickr($el, { 
+          dateFormat: 'Y-m-d', 
+          disableMobile: true,
+          onChange: function(selectedDates, dateStr) {
+            $wire.set('fecha', dateStr);
+            $wire.validarFecha();
+          }
+        })" 
+        wire:click='bloquearBtnGuardar' 
+        id="fecha_nacimiento" 
+        value="{{ old($nameId, $fecha ? $fecha : $fechaDefault) }}" 
+        placeholder="YYYY-MM-DD" 
+        name="{{ $nameId }}" 
+        class="fecha_nacimiento form-control" 
+        type="text" />
     </div>
 
     @if($errors->has($nameId) || $mostrarError == true)

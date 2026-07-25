@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class AsistentesEscuelaSeeder extends Seeder
 {
@@ -17,25 +18,13 @@ class AsistentesEscuelaSeeder extends Seeder
 
     protected string $tipoUsuariosPath = 'seeders/USUARIO TIPO USUARIOS MIGRACION ESCUELAS.json';
 
-    /**
-     * Diccionario de mapeo: ID de tipo_usuario (Vision) => Nombre del Rol en Spatie (REDIL Cloud)
-     * Ajusta los valores de la derecha según los roles exactos definidos en RoleSeeder.
-     */
-    protected array $roleMapping = [
-        6 => 'Oveja',      // Conéctate
-        10 => 'PDP',        // Punto de Pago (o 'Cajero PDP')
-        41 => 'Nuevo',      // Nuevo y Amigo
-        43 => 'Oveja',      // Hermano Mayor
-        44 => 'Lider',      // Líder
-        45 => 'Lider',      // Supervisor Auxiliar
-        46 => 'Lider',      // Supervisor General
-        48 => 'Pastor',     // Pastor Distrital
-        51 => 'Oveja',      // MKids
-        52 => 'Consejero',  // Asesor
-        54 => 'Alumno',     // Academia
-        72 => 'Maestro',    // Maestro de Niños
-        83 => 'Lider',      // Figuras Ministeriales
-    ];
+    
+
+    protected string $tipoAsistentesPath = 'seeders/tipo_asistentes.json';
+
+    protected string $todosTipoUsuariosPath = 'seeders/todos_tipo_usuarios.json';
+
+    protected string $crecimientoAsistentesPath = 'seeders/crecimiento_asistentes.json';
 
     public function run(): void
     {
@@ -46,6 +35,39 @@ class AsistentesEscuelaSeeder extends Seeder
         $asistentes = $this->loadJson($this->asistentesPath, 'asistentes');
         $usuarios = $this->loadJson($this->usuariosPath, 'users');
         $tipoUsuarios = $this->loadJson($this->tipoUsuariosPath, 'usuario_tipo_usuario');
+        $todosTipoUsuarios = $this->loadJson($this->todosTipoUsuariosPath);
+
+        // Cargar tipo_asistentes.json (o fallback) para relacionar tipo_asistente_id con nombre
+        $tipoAsistentesJson = $this->loadJson($this->tipoAsistentesPath);
+        if (empty($tipoAsistentesJson)) {
+            $tipoAsistentesJson = $this->loadJson('seeders/tipo_asistentes_202507301621.json');
+        }
+
+        $tipoAsistenteIdNombreMap = [];
+        if (! empty($tipoAsistentesJson)) {
+            foreach ($tipoAsistentesJson as $item) {
+                $id = $item['id'] ?? null;
+                $nombre = trim($item['nombre'] ?? $item['name'] ?? '');
+                if ($id !== null && ! empty($nombre)) {
+                    $tipoAsistenteIdNombreMap[$id] = $nombre;
+                }
+            }
+        }
+
+        // Cargar registros actuales de tipo_usuarios en la BD por nombre
+        $tiposUsuariosDBMap = \App\Models\TipoUsuario::all()->keyBy(fn ($item) => trim($item->nombre));
+
+        // Construir diccionario dinámico: ID tipo_usuario viejo => Nombre del Rol en Spatie
+        $tipoUsuarioNombreMap = [];
+        if (! empty($todosTipoUsuarios)) {
+            foreach ($todosTipoUsuarios as $item) {
+                $id = $item['id'] ?? null;
+                $nombre = trim($item['nombre'] ?? $item['name'] ?? '');
+                if ($id !== null && ! empty($nombre)) {
+                    $tipoUsuarioNombreMap[$id] = $nombre;
+                }
+            }
+        }
 
         if ($asistentes === null || $usuarios === null || $tipoUsuarios === null) {
             return;
@@ -55,11 +77,15 @@ class AsistentesEscuelaSeeder extends Seeder
         $usuariosPorAsistenteId = collect($usuarios)->keyBy('asistente_id');
         $tipoUsuariosPorUsuarioId = collect($tipoUsuarios)->groupBy('usuario_id');
 
-        $this->command->info('📊 Datos cargados:');
-        $this->command->info("   Asistentes: {$asistentesMap->count()}");
-        $this->command->info("   Usuarios (con credenciales): {$usuariosPorAsistenteId->count()}");
-        $this->command->info('   Asignaciones tipo_usuario: '.collect($tipoUsuarios)->count());
-        $this->command->info('----------------------------------');
+        if ($this->command) {
+            $this->command->info('📊 Datos cargados:');
+            $this->command->info("   Asistentes: {$asistentesMap->count()}");
+            $this->command->info("   Usuarios (con credenciales): {$usuariosPorAsistenteId->count()}");
+            $this->command->info('   Asignaciones tipo_usuario: '.collect($tipoUsuarios)->count());
+            $this->command->info('   Map Mapeo Roles Dinámicos: '.count($tipoUsuarioNombreMap));
+            $this->command->info('   Map Tipo Asistentes Dinámicos: '.count($tipoAsistenteIdNombreMap));
+            $this->command->info('----------------------------------');
+        }
 
         $createdCount = 0;
         $skippedCount = 0;
@@ -79,25 +105,42 @@ class AsistentesEscuelaSeeder extends Seeder
                 $identificacion = trim($asistente['identificacion'] ?? '');
 
                 if ($identificacion && User::where('identificacion', $identificacion)->exists()) {
-                    $this->command->warn("🟡 OMITIDO (identificación ya existe): {$identificacion}");
+                    if ($this->command) {
+                        $this->command->warn("🟡 OMITIDO (identificación ya existe): {$identificacion}");
+                    }
                     $skippedCount++;
 
                     continue;
                 }
 
                 if ($email && User::where('email', $email)->exists()) {
-                    $this->command->warn("🟡 OMITIDO (email ya existe): {$email}");
+                    if ($this->command) {
+                        $this->command->warn("🟡 OMITIDO (email ya existe): {$email}");
+                    }
                     $skippedCount++;
 
                     continue;
                 }
 
-                // 1. Crear el User (se ignora el tipo_asistente_id del JSON como solicitaste)
+                // 1. Resolver el tipo_usuario_id legítimo para el User
+                $oldTipoAsistenteId = $asistente['tipo_asistente_id'] ?? $asistente['tipo_asistente'] ?? null;
+                $assignedTipoUsuarioId = $defaultTipoUsuarioId;
+
+                if ($oldTipoAsistenteId && isset($tipoAsistenteIdNombreMap[$oldTipoAsistenteId])) {
+                    $nombreTipoAsistente = $tipoAsistenteIdNombreMap[$oldTipoAsistenteId];
+                    $tipoUsuarioModel = $tiposUsuariosDBMap->get(trim($nombreTipoAsistente));
+
+                    if ($tipoUsuarioModel) {
+                        $assignedTipoUsuarioId = $tipoUsuarioModel->id;
+                    }
+                }
+
+                // 2. Crear el User
                 $user = User::create([
                     'asistente_id' => $asistenteId,
                     'email' => $email,
                     'email_verified_at' => now(),
-                    'password' => $usuarioVision['password'],
+                    'password' => Hash::make($identificacion),
                     'activo' => $usuarioVision['activo'] ?? false,
                     'primer_nombre' => trim($asistente['primer_nombre'] ?? ''),
                     'segundo_nombre' => trim($asistente['segundo_nombre'] ?? ''),
@@ -114,8 +157,8 @@ class AsistentesEscuelaSeeder extends Seeder
                     'estado_civil_id' => $asistente['estado_civil'] ?? null,
                     'fecha_ingreso' => $this->parseDate($asistente['fecha_ingreso']),
                     'indicaciones_medicas' => trim($asistente['indicaciones_medicas'] ?? ''),
-                    'foto' => $asistente['foto'] ?? 'default-m.png',
-                    'tipo_usuario_id' => $defaultTipoUsuarioId, // Valor dinámico obtenido de la BD
+                    'foto' => $asistente['genero'] == 1 ? 'default-f.png' : 'default-m.png',
+                    'tipo_usuario_id' => $assignedTipoUsuarioId,
                     'pais_id' => $asistente['pais_id'] ?? 45,
                     'sede_id' => $asistente['sede_id'] ?? 2,
                     'profesion_id' => $asistente['profesion'] ?? null,
@@ -137,30 +180,26 @@ class AsistentesEscuelaSeeder extends Seeder
                     'updated_at' => $this->parseDate($asistente['updated_at']) ?? now(),
                 ]);
 
-                // 2. Asignar Roles de Spatie (basados en la tabla vieja USUARIO TIPO USUARIO)
+                // Asignar Roles de Spatie
                 $tiposDelUsuario = $tipoUsuariosPorUsuarioId->get($usuarioVision['id'], collect());
 
                 $rolesAsignar = [];
                 foreach ($tiposDelUsuario as $tipoAsignado) {
                     $tipoUsuarioIdViejo = $tipoAsignado['tipo_usuario_id'] ?? null;
 
-                    if ($tipoUsuarioIdViejo && array_key_exists($tipoUsuarioIdViejo, $this->roleMapping)) {
-                        $rolNombre = $this->roleMapping[$tipoUsuarioIdViejo];
+                    if ($tipoUsuarioIdViejo && isset($tipoUsuarioNombreMap[$tipoUsuarioIdViejo])) {
+                        $rolNombre = $tipoUsuarioNombreMap[$tipoUsuarioIdViejo];
                         if (! in_array($rolNombre, $rolesAsignar)) {
                             $rolesAsignar[] = $rolNombre;
                         }
                     }
                 }
 
-                // Asignar los roles (Ojo: usando Spatie Permission normal o la tabla model_has_roles con activo)
-                foreach ($rolesAsignar as $index => $rolNombre) {
-                    // Para REDIL Cloud, la tabla pivot usa `activo` y `dependiente`
+                $rolesAttachCount = 0;
+                foreach ($rolesAsignar as $rolNombre) {
                     $roleModel = \Spatie\Permission\Models\Role::where('name', $rolNombre)->first();
                     if ($roleModel) {
-                        // El primer rol de la lista lo marcamos como activo
-                        $isActivo = ($index === 0) ? 1 : 0;
-
-                        // Validar si es rol dependiente en la BD
+                        $isActivo = ($rolesAttachCount === 0) ? 1 : 0;
                         $isDependiente = $roleModel->dependiente ? 1 : 0;
 
                         if (! $user->roles()->where('role_id', $roleModel->id)->exists()) {
@@ -169,14 +208,17 @@ class AsistentesEscuelaSeeder extends Seeder
                                 'dependiente' => $isDependiente,
                                 'model_type' => 'App\Models\User',
                             ]);
+                            $rolesAttachCount++;
                         }
                     }
                 }
 
-                // Si por alguna razón no se asignó ningún rol, podemos asignarle 'Oveja' u otro por defecto
-                if (empty($rolesAsignar)) {
-                    $roleModel = \Spatie\Permission\Models\Role::where('name', 'Oveja')->first();
-                    if ($roleModel) {
+                if ($rolesAttachCount === 0) {
+                    $roleModel = \Spatie\Permission\Models\Role::where('name', 'Oveja')->first()
+                        ?? \Spatie\Permission\Models\Role::where('name', 'Nuevo')->first()
+                        ?? \Spatie\Permission\Models\Role::where('dependiente', true)->first();
+
+                    if ($roleModel && ! $user->roles()->where('role_id', $roleModel->id)->exists()) {
                         $user->roles()->attach($roleModel->id, [
                             'activo' => 1,
                             'dependiente' => $roleModel->dependiente ? 1 : 0,
@@ -188,44 +230,136 @@ class AsistentesEscuelaSeeder extends Seeder
                 $createdCount++;
             } catch (\Exception $e) {
                 $nombre = ($asistente['primer_nombre'] ?? '').' '.($asistente['primer_apellido'] ?? '');
-                $this->command->error("🔴 Error para asistente_id={$asistenteId} ({$nombre}): ".$e->getMessage());
+                if ($this->command) {
+                    $this->command->error("🔴 Error para asistente_id={$asistenteId} ({$nombre}): ".$e->getMessage());
+                }
                 Log::error("AsistentesEscuelaSeeder - Error asistente_id={$asistenteId}: ".$e->getMessage());
                 $errorCount++;
             }
         }
 
-        $this->command->info('----------------------------------');
-        $this->command->info('📊 REPORTE FINAL:');
-        $this->command->info("✔️  Usuarios creados y roles asignados: {$createdCount}");
-        $this->command->info("🟡 Registros saltados (sin credenciales o duplicados): {$skippedCount}");
-        $this->command->info("🔴 Errores encontrados: {$errorCount}");
-        $this->command->info('----------------------------------');
+        // 3. Procesar migración de Crecimiento de Asistentes (crecimiento_asistentes.json)
+        $crecimientoAsistentes = $this->loadJson($this->crecimientoAsistentesPath, 'crecimiento_asistentes');
+
+        $crecimientoCreadoCount = 0;
+        $skippedPasoInexistenteCount = 0;
+        $skippedUserInexistenteCount = 0;
+
+        if (! empty($crecimientoAsistentes)) {
+            $pasosValidosMap = \App\Models\PasoCrecimiento::pluck('id', 'id')->toArray();
+            $usersMap = User::whereNotNull('asistente_id')->pluck('id', 'asistente_id')->toArray();
+
+            \App\Models\CrecimientoUsuario::withoutEvents(function () use (
+                $crecimientoAsistentes,
+                $pasosValidosMap,
+                $usersMap,
+                &$crecimientoCreadoCount,
+                &$skippedPasoInexistenteCount,
+                &$skippedUserInexistenteCount
+            ) {
+                foreach ($crecimientoAsistentes as $item) {
+                    $pasoCrecimientoId = $item['paso_crecimiento_id'] ?? null;
+                    $asistenteId = $item['asistente_id'] ?? null;
+
+                    if (! $pasoCrecimientoId || ! isset($pasosValidosMap[$pasoCrecimientoId])) {
+                        $skippedPasoInexistenteCount++;
+
+                        continue;
+                    }
+
+                    if (! $asistenteId || ! isset($usersMap[$asistenteId])) {
+                        $skippedUserInexistenteCount++;
+
+                        continue;
+                    }
+
+                    $userId = $usersMap[$asistenteId];
+                    $estadoId = (int) ($item['estado'] ?? 1);
+                    $fecha = $this->parseDate($item['fecha'] ?? null);
+                    $detalle = trim($item['detalle'] ?? '');
+
+                    $registro = \App\Models\CrecimientoUsuario::updateOrCreate(
+                        [
+                            'paso_crecimiento_id' => $pasoCrecimientoId,
+                            'user_id' => $userId,
+                        ],
+                        [
+                            'estado_id' => $estadoId,
+                            'fecha' => $fecha,
+                            'detalle' => $detalle,
+                            'created_at' => $this->parseDate($item['created_at'] ?? null) ?? now(),
+                            'updated_at' => $this->parseDate($item['updated_at'] ?? null) ?? now(),
+                        ]
+                    );
+
+                    if ($registro->wasRecentlyCreated) {
+                        $crecimientoCreadoCount++;
+                    }
+                }
+            });
+        }
+
+        if ($this->command) {
+            $this->command->info('----------------------------------');
+            $this->command->info('📊 REPORTE FINAL:');
+            $this->command->info("✔️  Usuarios creados y roles asignados: {$createdCount}");
+            $this->command->info("🟡 Registros saltados (sin credenciales o duplicados): {$skippedCount}");
+            $this->command->info("🔴 Errores de usuario encontrados: {$errorCount}");
+            if (! empty($crecimientoAsistentes)) {
+                $this->command->info("✔️  Crecimientos asignados a asistentes: {$crecimientoCreadoCount}");
+                $this->command->info("🟡 Crecimientos omitidos por paso no existente en v12: {$skippedPasoInexistenteCount}");
+                $this->command->info("🟡 Crecimientos omitidos por usuario no encontrado: {$skippedUserInexistenteCount}");
+            }
+            $this->command->info('----------------------------------');
+        }
     }
 
-    private function loadJson(string $path, string $rootKey): ?array
+    private function loadJson(string $path, ?string $rootKey = null): ?array
     {
         $fullPath = base_path('storage/app/'.$path);
 
         if (! file_exists($fullPath)) {
-            $this->command->error("❌ Archivo no encontrado: {$path}");
+            if ($this->command) {
+                $this->command->error("❌ Archivo no encontrado: {$path}");
+            }
 
             return null;
         }
 
         $json = json_decode(file_get_contents($fullPath), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->command->error("❌ Error al decodificar JSON ({$path}): ".json_last_error_msg());
+            if ($this->command) {
+                $this->command->error("❌ Error al decodificar JSON ({$path}): ".json_last_error_msg());
+            }
 
             return null;
         }
 
-        if (! isset($json[$rootKey]) || ! is_array($json[$rootKey])) {
-            $this->command->error("❌ Clave raíz '{$rootKey}' no encontrada en: {$path}");
+        if ($rootKey !== null) {
+            if (! isset($json[$rootKey]) || ! is_array($json[$rootKey])) {
+                if ($this->command) {
+                    $this->command->error("❌ Clave raíz '{$rootKey}' no encontrada en: {$path}");
+                }
 
-            return null;
+                return null;
+            }
+
+            return $json[$rootKey];
         }
 
-        return $json[$rootKey];
+        if (is_array($json)) {
+            if (array_is_list($json)) {
+                return $json;
+            }
+
+            foreach ($json as $value) {
+                if (is_array($value)) {
+                    return $value;
+                }
+            }
+        }
+
+        return null;
     }
 
     private function parseDate(?string $date): ?string

@@ -13,16 +13,16 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // 1. Buscar los roles que necesitaremos
-        $superAdmin = Role::findByName('Super Administrador');
-        $pastor = Role::findByName('Pastor');
-        $lider = Role::findByName('Lider');
-        $oveja = Role::findByName('Oveja');
-        $alumno = Role::findByName('Alumno');
-        $maestro = Role::findByName('Maestro');
-        $administrador = Role::findByName('Administrativo');
-        $consejero = Role::findByName('Consejero');
-        $consolidadorMedellin = Role::findByName('Consolidador Medellin');
-        $consolidadorBogota = Role::findByName('Consolidador Bogota');
+        $superAdmin = Role::findByName('Super Administrador Prueba');
+        $pastor = Role::findByName('Pastor Prueba');
+        $lider = Role::findByName('Lider Prueba');
+        $oveja = Role::findByName('Oveja Prueba');
+        $alumno = Role::findByName('Alumno Prueba');
+        $maestro = Role::findByName('Maestro Prueba');
+        $administrador = Role::findByName('Administrativo Prueba');
+        $consejero = Role::findByName('Consejero Prueba');
+        $consolidadorMedellin = Role::findByName('Consolidador Medellin Prueba');
+        $consolidadorBogota = Role::findByName('Consolidador Bogota Prueba');
 
         // 2. Crear usuarios y asignar roles
 

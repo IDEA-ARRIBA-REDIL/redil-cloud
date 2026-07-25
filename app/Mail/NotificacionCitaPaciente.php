@@ -54,7 +54,7 @@ class NotificacionCitaPaciente extends Mailable
             : 'Confirmación de consejería';
         $mailData->eyebrow = 'CONSEJERÍA · CONFIRMACIÓN DE CITA';
         $mailData->titulo = $this->esReprogramacion 
-            ? 'Reagendamiento de Cita' 
+            ? 'Reagendamiento de cita' 
             : '¡Tu cita está confirmada!';
         $mailData->nombre = $this->cita->user?->nombre(3);
 

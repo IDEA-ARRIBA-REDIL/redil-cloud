@@ -7,8 +7,44 @@
             <h3 class="fw-semibold p-0">Check Out</h3>
             <div class="ps-4 row">
 
-                <!-- Listado del carrito -->
                 @include('layouts.status-msn')
+
+                @if ($esperandoPagoZonaPagos)
+                    <div class="col-12 mb-4" wire:poll.4s="consultarEstadoPagoAuto">
+                        <div class="card border border-warning shadow text-center p-4">
+                            <div class="card-body">
+                                <div class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;" role="status">
+                                    <span class="visually-hidden">Procesando...</span>
+                                </div>
+                                <h4 class="fw-bold text-dark mb-2">
+                                    @if ($tienePagoEnProcesoZonaPagos)
+                                        Pago en proceso con ZonaPagos
+                                    @else
+                                        Procesando pago en ZonaPagos
+                                    @endif
+                                </h4>
+                                <p class="fs-6 text-muted mb-3">
+                                    @if ($tienePagoEnProcesoZonaPagos)
+                                        Ya realizaste una conexión a ZonaPagos y tienes un pago en proceso.<br>
+                                        <strong>Debes esperar hasta que el proceso de validación por parte de la pasarela se complete; hasta entonces debes esperar para realizar un nuevo intento. En general tarda entre 7 y 30 minutos, agradecemos tu espera.</strong><br>
+                                        <small class="text-secondary mt-1 d-block">Esta pantalla se actualizará automáticamente y te llevará a tu perfil una vez confirmado el resultado.</small>
+                                    @else
+                                        La pasarela de pagos se ha abierto en una <strong>nueva pestaña (ventana)</strong>.<br>
+                                        Por favor completa la transacción allá. Esta pantalla se actualizará automáticamente y te redirigirá a tu perfil al finalizar.
+                                    @endif
+                                </p>
+                                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                    <button wire:click="consultarEstadoPagoAuto" type="button" class="btn btn-outline-primary rounded-pill">
+                                        <i class="ti ti-refresh me-1"></i> Verificar Estado Ahora
+                                    </button>
+                                    <a href="{{ route('actividades.perfil', $actividad) }}" class="btn btn-secondary rounded-pill">
+                                        Ir al perfil de la actividad
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
                 <div class="col-xl-12 shadow  border-top-0 border-1 rounded col-lg-12 p-0 col-md-12 col-sm-12">
                     <div class="card ">
                         <div class="card-header pb-2">
@@ -425,7 +461,7 @@
                         Anterior
                     </a>
                     <button  style="width:160px" class="  m-sm-auto float-lg-end btn  ms-5 me-5 btn-primary rounded-pill btn-next btn-moviles" wire:click="procesarPago"
-                        @if($actividad->terminos_y_condiciones && !$aceptarTerminos) disabled @endif
+                        @if(($actividad->terminos_y_condiciones && !$aceptarTerminos) || $esperandoPagoZonaPagos) disabled @endif
                         class=" mt-3 me-5 rounded-pill btn btn-primary btn-next">
                         Pagar
                     </button>
@@ -437,7 +473,7 @@
                         Anterior Abono
                     </a>
                     <button style="width:160px" class="  m-sm-auto  float-lg-end btn  ms-5 me-5 btn-primary rounded-pill btn-next btn-moviles" wire:click="procesarPago"
-                        @if($actividad->terminos_y_condiciones && !$aceptarTerminos) disabled @endif
+                        @if(($actividad->terminos_y_condiciones && !$aceptarTerminos) || $esperandoPagoZonaPagos) disabled @endif
                         class=" mt-3 me-5 rounded-pill btn btn-primary btn-next">
                         Pagar Abono
                     </button>
@@ -529,6 +565,13 @@
             });
 
             document.addEventListener('livewire:initialized', () => {
+                Livewire.on('abrirPasarelaZonaPagos', (data) => {
+                    const url = data.url || (data[0] ? data[0].url : null);
+                    if (url) {
+                        window.open(url, '_blank');
+                    }
+                });
+
                 Livewire.on('mostrarMensaje', (data) => {
                     Swal.fire({
                         title: data[0].titulo,
