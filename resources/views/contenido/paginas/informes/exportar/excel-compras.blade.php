@@ -28,11 +28,32 @@
         @foreach($compras as $compra)
             @php
                 $inscritosNames = $compra->inscripciones->pluck('nombre_inscrito')->join(', ');
-                $categoriasNames = $compra->inscripciones->map(fn($i) => $i->categoriaActividad->nombre ?? '')->unique()->join(', ');
+
+                // Categoría de la compra obtenida prioritariamente desde los pagos de la compra
+                $categoriaNombre = '';
+                $pagoConCat = $compra->pagos->first(fn($p) => !empty($p->actividadCategoria?->nombre));
+                if ($pagoConCat) {
+                    $categoriaNombre = $pagoConCat->actividadCategoria->nombre;
+                }
+
+                if (empty($categoriaNombre) && $compra->categorias && $compra->categorias->isNotEmpty()) {
+                    $catCompra = $compra->categorias->first(fn($c) => !empty($c->actividadCategoria?->nombre));
+                    if ($catCompra) {
+                        $categoriaNombre = $catCompra->actividadCategoria->nombre;
+                    }
+                }
+
+                if (empty($categoriaNombre) && $compra->inscripciones && $compra->inscripciones->isNotEmpty()) {
+                    $insc = $compra->inscripciones->first(fn($i) => !empty($i->actividadCategoria?->nombre) || !empty($i->categoriaActividad?->nombre));
+                    if ($insc) {
+                        $categoriaNombre = $insc->actividadCategoria?->nombre ?? $insc->categoriaActividad?->nombre ?? '';
+                    }
+                }
+                $categoriasNames = $categoriaNombre;
 
                 $estadoNombre = $compra->estadoPago ? $compra->estadoPago->nombre : 'Sin Estado';
 
-                 if($compra->abonos->isNotEmpty() && $compra->estadoPago && $compra->estadoPago->estado_pendiente && $compra->actividad && $compra->actividad->tipo && $compra->actividad->tipo->permite_abonos) {
+                if($compra->abonos->isNotEmpty() && $compra->estadoPago && $compra->estadoPago->estado_pendiente && $compra->actividad && $compra->actividad->tipo && $compra->actividad->tipo->permite_abonos) {
                     $estadoNombre .= ' (Abonada)';
                 }
 
@@ -42,16 +63,10 @@
 
                 foreach($compra->inscripciones as $inscripcion) {
                     $userTarget = null;
-                    // Logic: If inscription user differs from buyer, use inscription user.
-                    // If same, use purchase user (or inscription user, which is same).
-                    // Basically, use inscription->user if available.
-
                     if ($inscripcion->user) {
                         $userTarget = $inscripcion->user;
                     } elseif ($compra->user) {
-                         // Fallback if inscripcion->user is missing but logic implies "self"
-                         // But technically inscripcion table has user_id.
-                         $userTarget = $compra->user;
+                        $userTarget = $compra->user;
                     }
 
                     if ($userTarget) {
@@ -70,7 +85,13 @@
                 $idsInscritosStr = implode(', ', $idsInscritos);
                 $edadesInscritosStr = implode(', ', $edadesInscritos);
 
-                // Payments
+                // Método de pago desde relacion de pagos
+                $metodosPagoStr = $compra->pagos->map(fn($p) => $p->tipoPago?->nombre)->filter()->unique()->join(', ');
+                if (empty($metodosPagoStr)) {
+                    $metodosPagoStr = 'N/A';
+                }
+
+                // Enumeración simple únicamente de los IDs de los pagos (ej: 2, 3)
                 $pagosInternos = $compra->pagos->pluck('id')->join(', ');
                 $pagosPasarela = $compra->pagos->pluck('referencia_pago')->filter()->join(', ');
 
@@ -84,7 +105,7 @@
                 <td>{{ $compra->identificacion_comprador }}</td>
                 <td>{{ $compra->email_comprador }}</td>
                 <td>{{ $compra->telefono_comprador }}</td>
-                <td>{{ $compra->metodoPago ? $compra->metodoPago->nombre : 'N/A' }}</td>
+                <td>{{ $metodosPagoStr }}</td>
                 <td>{{ $estadoNombre }}</td>
                 <td>{{ $compra->valor }}</td>
                 <td>{{ $nombreMoneda }}</td>

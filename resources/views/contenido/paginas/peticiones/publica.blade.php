@@ -187,6 +187,52 @@ $configData = Helper::appClasses();
   <script type="module">
     let verified = false;
 
+    function guardarProgresoFormulario() {
+      const data = {
+        tipo_de_peticion: $('input[name="tipo_de_petición"]:checked').val() || '',
+        descripcion: $('#descripcion').val() || '',
+        nombre_externo: $('#nombre_externo').val() || '',
+        email_externo: $('#email_externo').val() || '',
+        telefono_externo: $('#telefono_externo').val() || '',
+        genero_externo: $('#genero_externo').val() || '',
+        pais_id: $('#pais_id').val() || ''
+      };
+      sessionStorage.setItem('progreso_peticion_publica', JSON.stringify(data));
+    }
+
+    function restaurarProgresoFormulario() {
+      const stored = sessionStorage.getItem('progreso_peticion_publica');
+      if (stored) {
+        try {
+          const data = JSON.parse(stored);
+          if (data.tipo_de_peticion) {
+            $(`input[name="tipo_de_petición"][value="${data.tipo_de_peticion}"]`).prop('checked', true);
+          }
+          if (data.descripcion) {
+            $('#descripcion').val(data.descripcion);
+          }
+          if (data.nombre_externo) {
+            $('#nombre_externo').val(data.nombre_externo);
+          }
+          if (data.email_externo) {
+            $('#email_externo').val(data.email_externo);
+          }
+          if (data.telefono_externo) {
+            $('#telefono_externo').val(data.telefono_externo);
+          }
+          if (data.genero_externo) {
+            $('#genero_externo').val(data.genero_externo);
+          }
+          if (data.pais_id) {
+            $('#pais_id').val(data.pais_id);
+          }
+        } catch (e) {
+          console.error("Error al restaurar progreso:", e);
+        }
+        sessionStorage.removeItem('progreso_peticion_publica');
+      }
+    }
+
     function enviarFormularioDirecto() {
       verified = true;
       $('#submitBtn').addClass('loading').attr('disabled', 'disabled');
@@ -200,8 +246,15 @@ $configData = Helper::appClasses();
         showDenyButton: false
       });
 
+      // Guardar por si la petición HTTP tradicional falla con 419
+      guardarProgresoFormulario();
+
       $('#formulario').submit();
     }
+
+    $(document).ready(function() {
+      restaurarProgresoFormulario();
+    });
 
     $('#formulario').submit(function(e) {
       if (verified) {
@@ -214,7 +267,7 @@ $configData = Helper::appClasses();
       $('#motivoErr').hide();
       
       let isValid = true;
-      let esInvitado = {{ auth()->check() ? 'false' : 'true' }};
+      let esInvitado = true; // El formulario público siempre valida los datos de contacto
 
       // 1. Validar Motivo
       let tipoPeticion = $('input[name="tipo_de_petición"]:checked').val();
@@ -289,12 +342,6 @@ $configData = Helper::appClasses();
 
       e.preventDefault(); // Detener el envío por defecto para verificación AJAX
 
-      // Si ya está autenticado, enviar directamente
-      if (!esInvitado) {
-        enviarFormularioDirecto();
-        return;
-      }
-
       // Si el usuario ya eligió enviar como invitado
       if ($('#enviar_como_invitado').val() === '1' || asociarUsuarioId) {
         enviarFormularioDirecto();
@@ -313,8 +360,18 @@ $configData = Helper::appClasses();
         },
         body: JSON.stringify({ email: emailExterno })
       })
-      .then(response => response.json())
+      .then(response => {
+        if (response.status === 419 || response.status === 401) {
+          // El token CSRF o la sesión expiró/cambió.
+          guardarProgresoFormulario();
+          window.location.reload();
+          return null;
+        }
+        return response.json();
+      })
       .then(data => {
+        if (!data) return; // Detener flujo si se redirigió por 419
+
         if (data.exists) {
           // Restaurar botón de submit
           $('#submitBtn').removeClass('loading').removeAttr('disabled');
@@ -439,60 +496,59 @@ $configData = Helper::appClasses();
         <small class="err">@error('descripción') {{ $message }} @else Escribe brevemente tu petición para que podamos orar con propósito. @enderror</small>
       </div>
 
-      @guest
-        <!-- 3. Tus Datos -->
-        <div class="section-title text-black">Tus datos</div>
+      <!-- 3. Tus Datos -->
+      <div class="section-title text-black">Tus datos</div>
 
-        <input type="hidden" name="asociar_usuario_id" id="asociar_usuario_id" value="">
-        <input type="hidden" name="enviar_como_invitado" id="enviar_como_invitado" value="0">
+      <input type="hidden" name="asociar_usuario_id" id="asociar_usuario_id" value="">
+      <input type="hidden" name="enviar_como_invitado" id="enviar_como_invitado" value="0">
 
-        <!-- Formulario Unificado -->
-        <div class="field @error('nombre_externo') invalid @enderror" id="f-nombre">
-          <label for="nombre_externo">Nombre completo</label>
-          <input type="text" id="nombre_externo" name="nombre_externo" placeholder="Ej. María Fernández" autocomplete="name" value="{{ old('nombre_externo', auth()->check() ? auth()->user()->name : '') }}" required>
-          <small class="err">@error('nombre_externo') {{ $message }} @else Cuéntanos tu nombre para poder orar por ti. @enderror</small>
-        </div>
+      <!-- Formulario Unificado -->
+      <div class="field @error('nombre_externo') invalid @enderror" id="f-nombre">
+        <label for="nombre_externo">Nombre completo</label>
+        <input type="text" id="nombre_externo" name="nombre_externo" placeholder="Ej. María Fernández" autocomplete="name" value="{{ old('nombre_externo', auth()->check() ? auth()->user()->name : '') }}" required>
+        <small class="err">@error('nombre_externo') {{ $message }} @else Cuéntanos tu nombre para poder orar por ti. @enderror
+        </small>
+      </div>
 
-        <div class="field @error('email_externo') invalid @enderror" id="f-email">
-          <label for="email_externo">Correo electrónico</label>
-          <input type="email" id="email_externo" name="email_externo" placeholder="tucorreo@ejemplo.com" autocomplete="email" value="{{ old('email_externo', auth()->check() ? auth()->user()->email : '') }}" required>
-          <small class="err">@error('email_externo') {{ $message }} @else Escribe un correo válido — te avisaremos cuando oremos por ti. @enderror</small>
-        </div>
+      <div class="field @error('email_externo') invalid @enderror" id="f-email">
+        <label for="email_externo">Correo electrónico</label>
+        <input type="email" id="email_externo" name="email_externo" placeholder="tucorreo@ejemplo.com" autocomplete="email" value="{{ old('email_externo', auth()->check() ? auth()->user()->email : '') }}" required>
+        <small class="err">@error('email_externo') {{ $message }} @else Escribe un correo válido — te avisaremos cuando oremos por ti. @enderror</small>
+      </div>
 
-        <div class="field @error('telefono_externo') invalid @enderror" id="f-telefono">
-          <label for="telefono_externo">Teléfono <span class="opt">(opcional)</span></label>
-          <input type="tel" id="telefono_externo" name="telefono_externo" placeholder="+57 300 000 0000" autocomplete="tel" value="{{ old('telefono_externo') }}">
-          <small class="err">@error('telefono_externo') {{ $message }} @enderror</small>
-        </div>
+      <div class="field @error('telefono_externo') invalid @enderror" id="f-telefono">
+        <label for="telefono_externo">Teléfono <span class="opt">(opcional)</span></label>
+        <input type="tel" id="telefono_externo" name="telefono_externo" placeholder="+57 300 000 0000" autocomplete="tel" value="{{ old('telefono_externo') }}">
+        <small class="err">@error('telefono_externo') {{ $message }} @enderror</small>
+      </div>
 
-        <div class="field @error('genero_externo') invalid @enderror" id="f-genero">
-          <label for="genero_externo">Género</label>
-          <select id="genero_externo" name="genero_externo" class="form-select" required>
-            <option value="" disabled {{ old('genero_externo') === null ? 'selected' : '' }}>Selecciona tu género</option>
-            <option value="0" {{ old('genero_externo') == '0' ? 'selected' : '' }}>Hombre</option>
-            <option value="1" {{ old('genero_externo') == '1' ? 'selected' : '' }}>Mujer</option>
-          </select>
-          <small class="err">@error('genero_externo') {{ $message }} @else El género es obligatorio. @enderror</small>
-        </div>
+      <div class="field @error('genero_externo') invalid @enderror" id="f-genero">
+        <label for="genero_externo">Género</label>
+        <select id="genero_externo" name="genero_externo" class="form-select" required>
+          <option value="" disabled {{ old('genero_externo') === null ? 'selected' : '' }}>Selecciona tu género</option>
+          <option value="0" {{ old('genero_externo') == '0' ? 'selected' : '' }}>Hombre</option>
+          <option value="1" {{ old('genero_externo') == '1' ? 'selected' : '' }}>Mujer</option>
+        </select>
+        <small class="err">@error('genero_externo') {{ $message }} @else El género es obligatorio. @enderror</small>
+      </div>
 
-        <div class="field @error('pais_id') invalid @enderror" id="f-pais">
-          <label for="pais_id">País</label>
-          <select id="pais_id" name="pais_id" class="form-select" required>
-            @foreach($paises as $pais)
-              <option value="{{ $pais->id }}" {{ old('pais_id', 1) == $pais->id ? 'selected' : '' }}>{{ $pais->nombre }}</option>
-            @endforeach
-          </select>
-          <small class="err">@error('pais_id') {{ $message }} @else El país es obligatorio. @enderror</small>
-        </div>
+      <div class="field @error('pais_id') invalid @enderror" id="f-pais">
+        <label for="pais_id">País</label>
+        <select id="pais_id" name="pais_id" class="form-select" required>
+          @foreach($paises as $pais)
+            <option value="{{ $pais->id }}" {{ old('pais_id', 1) == $pais->id ? 'selected' : '' }}>{{ $pais->nombre }}</option>
+          @endforeach
+        </select>
+        <small class="err">@error('pais_id') {{ $message }} @else El país es obligatorio. @enderror</small>
+      </div>
 
-        <!-- reCAPTCHA -->
-        <div class="mb-4 mt-2 d-flex flex-column align-items-start" id="container_recaptcha">
-          <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
-          @if($errors->has('g-recaptcha-response')) 
-            <div class="text-danger form-label small mt-1" style="color:var(--err)">{{ $errors->first('g-recaptcha-response') }}</div> 
-          @endif
-        </div>
-      @endguest
+      <!-- reCAPTCHA -->
+      <div class="mb-4 mt-2 d-flex flex-column align-items-start" id="container_recaptcha">
+        <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+        @if($errors->has('g-recaptcha-response')) 
+          <div class="text-danger form-label small mt-1" style="color:var(--err)">{{ $errors->first('g-recaptcha-response') }}</div> 
+        @endif
+      </div>
 
       <div class="row-btns">
         <button type="submit" class="btn btn-primary py-3" id="submitBtn">

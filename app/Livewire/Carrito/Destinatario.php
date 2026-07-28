@@ -6,7 +6,7 @@ use App\Models\Actividad;
 use App\Models\Compra;
 use App\Models\Matricula;
 use App\Models\Pago;
-use App\Models\SedeDestinatario;
+use App\Models\Sede;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -32,7 +32,18 @@ class Destinatario extends Component
     public function mount(Actividad $actividad)
     {
         $this->actividad = $actividad;
-        $this->sedes = SedeDestinatario::all();
+        // Cargar TODAS las sedes de la iglesia desde la tabla principal 'sedes' (App\Models\Sede)
+        $this->sedes = Sede::with('barrio')->orderBy('nombre', 'asc')->get()->map(function ($sede) {
+            return [
+                'id' => $sede->id,
+                'nombre' => $sede->nombre,
+                'direccion' => $sede->direccion ?? '',
+                'barrio' => $sede->barrio->nombre ?? $sede->barrio_auxiliar ?? '',
+                'latitud' => $sede->latitud,
+                'longitud' => $sede->longitud,
+            ];
+        });
+
         $this->centro = [
             'lat' => 4.60971, // Latitud de Bogotá
             'lng' => -74.08175, // Longitud de Bogotá

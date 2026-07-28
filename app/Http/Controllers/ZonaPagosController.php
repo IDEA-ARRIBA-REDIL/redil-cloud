@@ -95,13 +95,21 @@ class ZonaPagosController extends Controller
 
         Log::info("ZonaPagos Callback: Pago ID {$pagoId} actualizado a '{$nuevoEstado->nombre}'.");
 
-        // Actualización en cascada si el pago fue EXITOSO
+        /**
+         * MAPEO DE ESTADOS DE LA COMPRA ($compra->estado / Foreign Key a estados_pago.id):
+         * -----------------------------------------------------------------------------
+         * 1 = Compra Pendiente / Borrador
+         * 2 = Compra Anulada / Cancelada
+         * 3 = Compra Pagada / Finalizada Exitosamente
+         * 4 = Compra Rechazada por Pasarela/Banco
+         * 5 = Compra Pendiente por Finalizar en Pasarela (PSE / ZonaPagos)
+         */
         if ($nuevoEstado->estado_final_inscripcion) {
             $compra = $pago->compra;
 
             if ($compra) {
-                $compra->update(['estado' => 3]); // 3 = PAGADA
-                Log::info("ZonaPagos Callback: Compra ID {$compra->id} actualizada a PAGADA.");
+                $compra->update(['estado' => 3]); // 3 = PAGADA / APROBADA
+                Log::info("ZonaPagos Callback: Compra ID {$compra->id} actualizada a PAGADA (estado = 3).");
             }
 
             // Detectar tipo de compra via str_campo1 (str_opcional1 enviado al iniciar pago)
@@ -123,6 +131,14 @@ class ZonaPagosController extends Controller
                 Log::info("ZonaPagos Callback: {$compra->inscripciones->count()} inscripciones actualizadas.");
             }
         } elseif ($nuevoEstado->estado_anulado_inscripcion || (! $nuevoEstado->estado_pendiente && ! $nuevoEstado->estado_final_inscripcion)) {
+            $compra = $pago->compra;
+
+            if ($compra) {
+                $compraEstadoNuevo = ($nuevoEstado->id == 2) ? 2 : 4;
+                $compra->update(['estado' => $compraEstadoNuevo]); // 4 = RECHAZADA, 2 = ANULADA
+                Log::info("ZonaPagos Callback: Compra ID {$compra->id} actualizada a estado = {$compraEstadoNuevo}.");
+            }
+
             // Si el pago fue RECHAZADO, ANULADO o CANCELADO → Liberar matrícula borrador, horario y cupos
             \App\Models\Matricula::limpiarMatriculasDePagoFallido($pago);
             Log::info("ZonaPagos Callback: Matrícula/Reserva liberada para Pago ID {$pago->id} por rechazo/anulación.");

@@ -78,13 +78,14 @@ class VerificarPagosPendientes extends Command
      */
     public function verificarPagosPendientesZonaPagos(): int
     {
+        // Se consultan TODOS los pagos en estado pendiente sin filtro de tiempo en updated_at,
+        // para que la Sonda verifique cualquier pago pendiente sin importar el tiempo transcurrido.
         $pagosPendientes = Pago::whereHas('estadoPago', function ($query) {
             $query->where('estado_pendiente', true);
         })
             ->whereHas('tipoPago', function ($query) {
                 $query->where('key_reservada', 'zona');
             })
-            ->where('updated_at', '<=', now()->subMinutes(7))
             ->with('compra.inscripciones', 'tipoPago')
             ->get();
 
@@ -159,9 +160,20 @@ class VerificarPagosPendientes extends Command
             Log::info("Sonda ZonaPagos: Pago ID {$pago->id} actualizado a '{$nuevoEstado->nombre}'.");
             $contadorActualizados++;
 
+            /**
+             * MAPEO DE ESTADOS DE LA COMPRA ($compra->estado / Foreign Key a estados_pago.id):
+             * -----------------------------------------------------------------------------
+             * 1 = Compra Pendiente / Borrador
+             * 2 = Compra Anulada / Cancelada
+             * 3 = Compra Pagada / Finalizada Exitosamente
+             * 4 = Compra Rechazada por Pasarela/Banco
+             * 5 = Compra Pendiente por Finalizar en Pasarela (PSE / ZonaPagos)
+             */
             if ($nuevoEstado->estado_final_inscripcion) {
                 $compra = $pago->compra;
-                $compra->update(['estado' => 3]);
+                if ($compra) {
+                    $compra->update(['estado' => 3]); // 3 = PAGADA / APROBADA
+                }
 
                 $tipoCompra = strtoupper(trim($datosTransaccion['str_campo1'] ?? ''));
 
@@ -172,10 +184,16 @@ class VerificarPagosPendientes extends Command
                         $matricula->update(['estado_pago_matricula' => 'pagada']);
                         $this->info("    - Matrícula ID {$matricula->id} actualizada a 'pagada'.");
                     }
-                } elseif ($compra->inscripciones->isNotEmpty()) {
+                } elseif ($compra && $compra->inscripciones->isNotEmpty()) {
                     $compra->inscripciones()->update(['estado' => true]);
                 }
             } elseif ($nuevoEstado->estado_anulado_inscripcion || (! $nuevoEstado->estado_pendiente && ! $nuevoEstado->estado_final_inscripcion)) {
+                $compra = $pago->compra;
+                if ($compra) {
+                    $compraEstadoNuevo = ($nuevoEstado->id == 2) ? 2 : 4;
+                    $compra->update(['estado' => $compraEstadoNuevo]); // 4 = RECHAZADA, 2 = ANULADA
+                }
+
                 Matricula::limpiarMatriculasDePagoFallido($pago);
                 $this->info("    - Matrícula/Reserva liberada para Pago ID {$pago->id} por rechazo/anulación.");
             }

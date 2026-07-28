@@ -166,80 +166,160 @@
     {{-- Grid de Resultados (Estilo Cards) --}}
     <div class="row equal-height-row g-4 mb-4">
         @forelse($compras as $compra)
+            @php
+                // 1. Categoría de la compra obtenida prioritariamente desde los pagos de la compra
+                $categoriaTexto = '';
+                $pagoConCat = $compra->pagos->first(fn($p) => !empty($p->actividadCategoria?->nombre));
+                if ($pagoConCat) {
+                    $categoriaTexto = $pagoConCat->actividadCategoria->nombre;
+                }
+
+                if (empty($categoriaTexto) && $compra->categorias && $compra->categorias->isNotEmpty()) {
+                    $catCompra = $compra->categorias->first(fn($c) => !empty($c->actividadCategoria?->nombre));
+                    if ($catCompra) {
+                        $categoriaTexto = $catCompra->actividadCategoria->nombre;
+                    }
+                }
+
+                if (empty($categoriaTexto) && $compra->inscripciones && $compra->inscripciones->isNotEmpty()) {
+                    $insc = $compra->inscripciones->first(fn($i) => !empty($i->actividadCategoria?->nombre) || !empty($i->categoriaActividad?->nombre));
+                    if ($insc) {
+                        $categoriaTexto = $insc->actividadCategoria?->nombre ?? $insc->categoriaActividad?->nombre ?? '';
+                    }
+                }
+
+                // 2. Filtrar únicamente pagos efectivos (excluir transacciones rechazadas/anuladas)
+                $pagosValidos = $compra->pagos->filter(function ($pago) {
+                    if (!$pago->estadoPago) return true;
+                    // Excluir si el estado del pago está anulado o rechazado
+                    return !$pago->estadoPago->estado_anulado_inscripcion;
+                });
+
+                $totalPagado = $pagosValidos->sum('valor');
+
+                // Si la compra está pagada/finalizada y no tenía abonos parciales, asegurar consistencia
+                if ($compra->estadoPago && $compra->estadoPago->estado_final_inscripcion && $totalPagado < $compra->valor) {
+                    $totalPagado = $compra->valor;
+                }
+
+                $porcentajePagado = $compra->valor > 0 ? ($totalPagado / $compra->valor) * 100 : 0;
+                $porcentajeVisual = min(100, max(0, $porcentajePagado));
+
+                // 3. Medios de pago únicos registrados en la compra
+                $mediosDePago = $compra->pagos->map(function ($pago) {
+                    return $pago->tipoPago?->nombre;
+                })->filter()->unique()->implode(', ');
+
+                if (empty($mediosDePago)) {
+                    $mediosDePago = 'N/A';
+                }
+            @endphp
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card h-100 border shadow-none">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <h5 class="mb-0 fw-bold text-dark lh-sm" title="{{ $compra->nombre_completo_comprador }}">
-                                {{ $compra->nombre_completo_comprador }}
-                            </h5>
+                    <div class="card-body p-4 d-flex flex-column justify-content-between">
+                        <div>
+                            {{-- Comprador & Estado --}}
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h5 class="mb-0 fw-bold text-dark lh-sm" title="{{ $compra->nombre_completo_comprador }}">
+                                    {{ $compra->nombre_completo_comprador }}
+                                </h5>
 
-                            @if($compra->estadoPago)
-                                <span class="badge rounded-pill text-white fs-9" style="background-color: {{ $compra->estadoPago->color }};">
-                                    {{ $compra->estadoPago->nombre }}
-                                </span>
-                            @else
-                                <span class="badge rounded-pill bg-secondary text-white">Sin Estado</span>
-                            @endif
-
-                        </div>
-  <p class="text-muted small mb-3">Identificación: {{ $compra->identificacion_comprador }}</p>
-
-
-                        <div class="mb-3 mt-3">
-                             <h6 class="fw-semibold mb-2 text-dark text-truncate" title="{{ $compra->actividad ? $compra->actividad->nombre : 'Actividad Desconocida' }}">
-                                {{ $compra->actividad ? $compra->actividad->nombre : 'Actividad Desconocida' }}
-                            </h6>
-                            <div style="background-color: #E8F3FF;" class=" rounded p-2 d-flex justify-content-between align-items-center rounded-pill">
-                                 <small class="text-dark fw-regular">Compra interna: #{{ $compra->id }}</small>
-
+                                @if($compra->estadoPago)
+                                    <span class="badge rounded-pill text-white fs-9" style="background-color: {{ $compra->estadoPago->color }};">
+                                        {{ $compra->estadoPago->nombre }}
+                                    </span>
+                                @else
+                                    <span class="badge rounded-pill bg-secondary text-white">Sin Estado</span>
+                                @endif
                             </div>
-                        </div>
+                            <p class="text-muted small mb-3">Identificación: {{ $compra->identificacion_comprador }}</p>
 
-                        <div class="row g-2">
-                             <div class="col-6">
-                                <small class="d-block text-dark">Fecha</small>
-                                <span class="fw-semibold text-dark">{{ \Carbon\Carbon::parse($compra->fecha)->format('Y-m-d') }}</span>
+                            {{-- Actividad & Categoría --}}
+                            <div class="mb-3 mt-2">
+                                <h6 class="fw-semibold mb-1 text-dark text-truncate" title="{{ $compra->actividad ? $compra->actividad->nombre : 'Actividad Desconocida' }}">
+                                    <i class="ti ti-calendar me-1 text-primary"></i>{{ $compra->actividad ? $compra->actividad->nombre : 'Actividad Desconocida' }}
+                                </h6>
+
+                                @if(!empty($categoriaTexto))
+                                    <div class="mb-2">
+                                        <span class="badge bg-label-primary text-wrap text-start" title="{{ $categoriaTexto }}">
+                                            <i class="ti ti-tag me-1"></i>Cat: {{ Str::limit($categoriaTexto, 35) }}
+                                        </span>
+                                    </div>
+                                @endif
+
+                                <div style="background-color: #E8F3FF;" class="rounded p-2 d-flex justify-content-between align-items-center rounded-pill px-3">
+                                    <small class="text-dark fw-semibold">Compra interna: #{{ $compra->id }}</small>
+                                    <small class="text-muted">{{ \Carbon\Carbon::parse($compra->fecha)->format('Y-m-d') }}</small>
+                                </div>
                             </div>
-                            <div class="col-6 mb-3">
-                                <small class="d-block text-dark">ID de pago</small>
-                                <span class="fw-bold text-dark">{{ $compra->id }}</span>
+
+                            {{-- Resumen de Valores --}}
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <small class="d-block text-muted">Valor Total</small>
+                                    <span class="fw-bold text-dark fs-6">${{ number_format($compra->valor, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="d-block text-muted">Medio(s) de pago</small>
+                                    <span class="fw-semibold text-dark small" title="{{ $mediosDePago }}">
+                                        {{ Str::limit($mediosDePago, 22) }}
+                                    </span>
+                                </div>
                             </div>
-                            <hr>
-                            <div class="col-6">
-                                <small class="d-block text-dark">Valor</small>
-                                <span class="fw-bold text-dark">${{ number_format($compra->valor, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="col-6">
-                                <small class="d-block text-dark">Medio de pago</small>
-                                <span class="fw-semibold text-dark" title="{{ $compra->metodoPago->nombre ?? '' }}">
-                                    {{ Str::limit($compra->metodoPago->nombre ?? 'N/A', 20) }}
-                                </span>
+
+                            {{-- Desglose de Pagos Registrados (Acordeón que inicia cerrado) --}}
+                            <div class="accordion accordion-flush mb-3" id="accordionPagos{{ $compra->id }}">
+                                <div class="accordion-item border rounded">
+                                    <h2 class="accordion-header" id="headingPagos{{ $compra->id }}">
+                                        <button class="accordion-button collapsed py-2 px-3 text-dark fw-semibold small bg-light rounded" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePagos{{ $compra->id }}" aria-expanded="false" aria-controls="collapsePagos{{ $compra->id }}">
+                                            <i class="ti ti-credit-card me-1 text-primary"></i> Pagos asociados ({{ $compra->pagos->count() }})
+                                        </button>
+                                    </h2>
+                                    <div id="collapsePagos{{ $compra->id }}" class="accordion-collapse collapse" aria-labelledby="headingPagos{{ $compra->id }}" data-bs-parent="#accordionPagos{{ $compra->id }}">
+                                        <div class="accordion-body p-2 bg-light rounded-bottom">
+                                            @forelse($compra->pagos as $pago)
+                                                <div class="d-flex align-items-center justify-content-between p-2 mb-1 bg-white rounded border-start border-3 border-primary shadow-xs">
+                                                    <div>
+                                                        <div class="fw-semibold text-dark small">
+                                                            Pago #{{ $pago->id }}
+                                                            @if($pago->tipoPago)
+                                                                <span class="text-muted fw-normal">({{ $pago->tipoPago->nombre }})</span>
+                                                            @endif
+                                                        </div>
+                                                        <small class="text-muted fs-tiny d-block">
+                                                            {{ $pago->created_at ? \Carbon\Carbon::parse($pago->created_at)->format('d/m/Y H:i') : '' }}
+                                                        </small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <span class="fw-bold text-dark d-block small">${{ number_format($pago->valor, 0, ',', '.') }}</span>
+                                                        @if($pago->estadoPago)
+                                                            <span class="badge rounded-pill text-white py-0 px-2 fs-tiny" style="background-color: {{ $pago->estadoPago->color }}; font-size: 10px;">
+                                                                {{ $pago->estadoPago->nombre }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @empty
+                                                <span class="text-muted small fst-italic d-block text-center py-1">Sin registros de pago individuales</span>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         {{-- Progreso de Pago --}}
-                        @php
-                            $permiteAbonos = $compra->actividad && $compra->actividad->tipo && $compra->actividad->tipo->permite_abonos;
-                            $pagosActivos = $compra->pagos;
-                            $totalPagado = $pagosActivos->sum('valor');
-                            $porcentajePagado = $compra->valor > 0 ? ($totalPagado / $compra->valor) * 100 : 0;
-                            // Ensure percentage doesn't exceed 100 visually if overpaid?
-                            $porcentajeVisual = min($porcentajePagado, 100);
-                        @endphp
-
-                        {{-- Always show progress for 'Abonos' or generally? The image shows progress. Let's show it if it allows abonos or if there is partial payment. --}}
-                        <hr>
-                         <div class="mt-3 text-start">
+                        <div class="mt-2 text-start pt-2 border-top">
                             <div class="d-flex justify-content-between mb-1">
-                                <small class="text-black fw-bold">Progreso:</small>
-                                <small class="fw-bold">{{ number_format($porcentajePagado, 0) }}%</small>
+                                <small class="text-black fw-bold">Progreso del pago:</small>
+                                <small class="fw-bold text-primary">{{ number_format($porcentajePagado, 0) }}%</small>
                             </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar" role="progressbar" style="width: {{ $porcentajeVisual }}%; background-color: #00BAD1;" aria-valuenow="{{ $porcentajeVisual }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress" style="height: 7px;">
+                                <div class="progress-bar rounded" role="progressbar" style="width: {{ $porcentajeVisual }}%; background-color: #00BAD1;" aria-valuenow="{{ $porcentajeVisual }}" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <div class="d-flex justify-content-between mt-1">
-                                <small class="text-dark fw-semibold">Pagado ${{ number_format($totalPagado, 0, ',', '.') }}</small>
+                                <small class="text-dark fw-semibold">Pagado: ${{ number_format($totalPagado, 0, ',', '.') }}</small>
                                 <small class="text-dark fw-semibold">Pend: ${{ number_format(max(0, $compra->valor - $totalPagado), 0, ',', '.') }}</small>
                             </div>
                         </div>
@@ -265,8 +345,9 @@
     <div class="mb-4">
          {{ $compras->links() }}
     </div>
+</div>
 
-    @push('scripts')
+@push('scripts')
 <script>
     document.addEventListener('livewire:initialized', () => {
 
@@ -326,4 +407,3 @@
     });
 </script>
 @endpush
-</div>

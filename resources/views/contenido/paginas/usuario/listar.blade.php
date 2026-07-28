@@ -533,7 +533,7 @@ $configData = Helper::appClasses();
             <div class="border my-10">
               
             @foreach ($persona->roles()->get() as $role)
-              <span class="fw-bold text-black">{{ $role->name }}</span>
+              <span class="fw-bold text-black">{{ $role->name }},</span>
             @endforeach
             </div>
 

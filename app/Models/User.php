@@ -83,7 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array<int, string>
      */
-    // protected $fillable = ['name', 'email', 'password', 'mostrar_modal_agregar_hijos', 'entidad_relacionada_id'];
+    //protected $fillable = ['name', 'email', 'password', 'mostrar_modal_agregar_hijos', 'entidad_relacionada_id'];
     protected $guarded = [];
 
     /**
@@ -1110,10 +1110,10 @@ class User extends Authenticatable implements MustVerifyEmail
                     $peticiones->where(function ($q) use ($sedesIds, $tiposIds, $verInvitados) {
                         $q->where(function ($sub) use ($sedesIds, $tiposIds) {
                             $sub->whereNotNull('peticiones.user_id');
-                            if (! empty($sedesIds)) {
+                            if (!empty($sedesIds)) {
                                 $sub->whereIn('users.sede_id', $sedesIds);
                             }
-                            if (! empty($tiposIds)) {
+                            if (!empty($tiposIds)) {
                                 $sub->whereIn('peticiones.tipo_peticion_id', $tiposIds);
                             }
                         });
@@ -1121,7 +1121,7 @@ class User extends Authenticatable implements MustVerifyEmail
                         if ($verInvitados) {
                             $q->orWhere(function ($sub) use ($tiposIds) {
                                 $sub->whereNull('peticiones.user_id');
-                                if (! empty($tiposIds)) {
+                                if (!empty($tiposIds)) {
                                     $sub->whereIn('peticiones.tipo_peticion_id', $tiposIds);
                                 }
                             });

@@ -67,10 +67,9 @@ Cuando este agente se activa:
 *   **Problema original:** `ZonaPagosController.php` tenía hardcodeado `estado_pago_id = 9` y `referencia_pago = 'xxx1111'`.
 *   **Solución:** El controller ahora consulta la API de Verificación, extrae el `int_estado_pago` (código externo) y busca el estado en `estados_pago` vía `id_codigo_externo`.
 
-### 🟡 8. Sonda (Cron Job) con Filtro de 7 Minutos
-*   **Problema original:** La Sonda consultaba todos los pagos pendientes sin importar la hora de creación, saturando la API.
-*   **Especificación del manual (§7.3.2):** *"El comercio debe esperar al menos 7 minutos antes de consultar por Sonda a ZonaPagos"*.
-*   **Solución:** `where('updated_at', '<=', now()->subMinutes(7))` agregado a la consulta Eloquent.
+### 🟡 8. Sonda (Cron Job) de Verificación Universal de Pagos
+*   **Ajuste de Consulta:** Se eliminó la restricción de 7 minutos (`updated_at <= subMinutes(7)`), permitiendo que la Sonda verifique **todos** los pagos en estado pendiente independientemente del tiempo transcurrido o la frecuencia del Cron.
+*   **Actualización de Compra:** Sincroniza automáticamente el estado de la `Compra` (`compras.estado`: 3 = Pagada, 4 = Rechazada, 2 = Anulada) y limpia las reservas/matrículas borrador en caso de pago fallido.
 
 ### 🟢 9. Alineación del `EstadoPagoSeeder` con ZonaPagos v5.0
 *   **Código 1001:** Se corrigió de "Pendiente" (naranja) a **"Error ACH-Banco (Rechazado)"** (rojo, `estado_anulado=true`, `estado_pendiente=false`).

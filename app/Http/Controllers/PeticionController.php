@@ -716,7 +716,7 @@ class PeticionController extends Controller
     ]);
   }
 
-  public function exito(Peticion $peticion)
+  public function exito(Request $request, Peticion $peticion)
   {
     if (session('peticion_reciente_id') != $peticion->id) {
       if (auth()->check()) {
@@ -726,8 +726,11 @@ class PeticionController extends Controller
       }
     }
 
+    $origen = $request->query('origen', 'interna');
+
     return view('contenido.paginas.peticiones.mensaje-peticion-exitosa', [
-      'peticion' => $peticion
+      'peticion' => $peticion,
+      'origen' => $origen
     ]);
   }
 
@@ -773,6 +776,9 @@ class PeticionController extends Controller
       $usuarioAsociado = User::find($asociarUsuarioId);
     }
 
+    // Detectar si la petición viene del formulario público o del panel administrativo.
+    $esPeticionPublica = $request->routeIs('peticion.publica.crear');
+
     // Reglas de validación para la petición
     $reglas = [
       'persona' => 'nullable|integer',
@@ -785,8 +791,8 @@ class PeticionController extends Controller
       'descripción.required' => 'La descripción de tu petición es obligatoria.',
     ];
 
-    // Si sigue sin estar autenticado (es decir, es un usuario externo)
-    if (!auth()->check()) {
+    // Si es petición pública
+    if ($esPeticionPublica) {
       if ($usuarioAsociado) {
         $reglas['g-recaptcha-response'] = ['required', new \App\Rules\Recaptcha];
         $mensajes['g-recaptcha-response.required'] = 'Por favor, verifica que no eres un robot.';
@@ -806,22 +812,24 @@ class PeticionController extends Controller
         $mensajes['g-recaptcha-response.required'] = 'Por favor, verifica que no eres un robot.';
       }
     } else {
-      // Si está autenticado y tiene el permiso de crear para otros
-      if ($crearPeticionOtros) {
-        if ($request->es_externo == '1') {
-          $reglas['nombre_externo'] = 'required|string|max:255';
-          $reglas['email_externo'] = 'nullable|email|max:255';
-          $reglas['telefono_externo'] = 'nullable|string|max:50';
-          $reglas['genero_externo'] = 'required|in:0,1';
-          $reglas['pais_id'] = 'required|integer';
+      // Si está autenticado y tiene el permiso de crear para otros (flujo administrativo)
+      if (auth()->check()) {
+        if ($crearPeticionOtros) {
+          if ($request->es_externo == '1') {
+            $reglas['nombre_externo'] = 'required|string|max:255';
+            $reglas['email_externo'] = 'nullable|email|max:255';
+            $reglas['telefono_externo'] = 'nullable|string|max:50';
+            $reglas['genero_externo'] = 'required|in:0,1';
+            $reglas['pais_id'] = 'required|integer';
 
-          $mensajes['nombre_externo.required'] = 'El nombre completo es obligatorio.';
-          $mensajes['email_externo.email'] = 'Por favor, ingresa un correo electrónico válido.';
-          $mensajes['genero_externo.required'] = 'El género es obligatorio.';
-          $mensajes['pais_id.required'] = 'El país es obligatorio.';
-        } else {
-          $reglas['persona'] = 'required|integer';
-          $mensajes['persona.required'] = 'Debes seleccionar a una persona de la lista.';
+            $mensajes['nombre_externo.required'] = 'El nombre completo es obligatorio.';
+            $mensajes['email_externo.email'] = 'Por favor, ingresa un correo electrónico válido.';
+            $mensajes['genero_externo.required'] = 'El género es obligatorio.';
+            $mensajes['pais_id.required'] = 'El país es obligatorio.';
+          } else {
+            $reglas['persona'] = 'required|integer';
+            $mensajes['persona.required'] = 'Debes seleccionar a una persona de la lista.';
+          }
         }
       }
     }
@@ -831,34 +839,9 @@ class PeticionController extends Controller
     $configuracion = Configuracion::find(1);
     $peticion = new Peticion;
 
-    if (auth()->check()) {
-      if ($crearPeticionOtros && $request->es_externo == '1') {
-        // Es externo (creado por admin para alguien no registrado)
-        $peticion->nombre_externo = $request->nombre_externo;
-        $peticion->email_externo = $request->email_externo;
-        $peticion->telefono_externo = $request->telefono_externo;
-        $peticion->genero_externo = $request->genero_externo;
-        $peticion->pais_id = $request->pais_id;
-        $emailDestino = $request->email_externo;
-        $nombreDestino = $request->nombre_externo;
-      } elseif ($crearPeticionOtros && $request->persona) {
-        // Es un usuario registrado
-        $usuario = User::find($request->persona);
-        $peticion->user_id = $usuario->id;
-        $peticion->pais_id = $usuario->pais_id;
-        $emailDestino = $usuario->email;
-        $nombreDestino = $usuario->nombre(3);
-      } else {
-        // La petición es para el usuario logueado
-        $usuario = auth()->user();
-        $peticion->user_id = $usuario->id;
-        $peticion->pais_id = $usuario->pais_id;
-        $emailDestino = $usuario->email;
-        $nombreDestino = $usuario->nombre(3);
-      }
-    } else {
+    if ($esPeticionPublica) {
       if ($usuarioAsociado) {
-        // Es un usuario registrado pero enviado de forma pública
+        // Es un usuario registrado que decidió asociar la petición a su cuenta
         $peticion->user_id = $usuarioAsociado->id;
         $peticion->pais_id = $usuarioAsociado->pais_id;
         $emailDestino = $usuarioAsociado->email;
@@ -872,6 +855,34 @@ class PeticionController extends Controller
         $peticion->pais_id = $request->pais_id;
         $emailDestino = $request->email_externo;
         $nombreDestino = $request->nombre_externo;
+      }
+    } else {
+      // Flujo administrativo
+      if (auth()->check()) {
+        if ($crearPeticionOtros && $request->es_externo == '1') {
+          // Es externo (creado por admin para alguien no registrado)
+          $peticion->nombre_externo = $request->nombre_externo;
+          $peticion->email_externo = $request->email_externo;
+          $peticion->telefono_externo = $request->telefono_externo;
+          $peticion->genero_externo = $request->genero_externo;
+          $peticion->pais_id = $request->pais_id;
+          $emailDestino = $request->email_externo;
+          $nombreDestino = $request->nombre_externo;
+        } elseif ($crearPeticionOtros && $request->persona) {
+          // Es un usuario registrado
+          $usuario = User::find($request->persona);
+          $peticion->user_id = $usuario->id;
+          $peticion->pais_id = $usuario->pais_id;
+          $emailDestino = $usuario->email;
+          $nombreDestino = $usuario->nombre(3);
+        } else {
+          // La petición es para el usuario logueado
+          $usuario = auth()->user();
+          $peticion->user_id = $usuario->id;
+          $peticion->pais_id = $usuario->pais_id;
+          $emailDestino = $usuario->email;
+          $nombreDestino = $usuario->nombre(3);
+        }
       }
     }
 
@@ -920,7 +931,7 @@ class PeticionController extends Controller
 
     session()->flash('peticion_reciente_id', $peticion->id);
 
-    return redirect()->route('peticion.exito', $peticion->id)->with('success', "La petición de <b>" . $nombreDestino . "</b> fue creada con éxito.");
+    return redirect()->route('peticion.exito', [$peticion->id, 'origen' => $esPeticionPublica ? 'publica' : 'interna'])->with('success', "La petición de <b>" . $nombreDestino . "</b> fue creada con éxito.");
   }
 
   public function eliminaciones(Request $request, $tipo)

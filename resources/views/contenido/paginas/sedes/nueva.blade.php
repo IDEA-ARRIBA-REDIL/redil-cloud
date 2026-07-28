@@ -249,6 +249,26 @@ $configData = Helper::appClasses();
           @endif
           <!-- Direccion -->
 
+          <!-- Latitud -->
+          <div class="mb-3 col-12 col-md-3">
+            <label class="form-label" for="latitud">
+              <i class="ti ti-map-pin me-1 text-primary"></i>Latitud GPS
+            </label>
+            <input id="latitud" name="latitud" value="{{ old('latitud') }}" type="text" class="form-control" placeholder="Ej: 4.609710" />
+            @if($errors->has('latitud')) <div class="text-danger form-label">{{ $errors->first('latitud') }}</div> @endif
+          </div>
+          <!-- /Latitud -->
+
+          <!-- Longitud -->
+          <div class="mb-3 col-12 col-md-3">
+            <label class="form-label" for="longitud">
+              <i class="ti ti-map-pin me-1 text-primary"></i>Longitud GPS
+            </label>
+            <input id="longitud" name="longitud" value="{{ old('longitud') }}" type="text" class="form-control" placeholder="Ej: -74.081750" />
+            @if($errors->has('longitud')) <div class="text-danger form-label">{{ $errors->first('longitud') }}</div> @endif
+          </div>
+          <!-- /Longitud -->
+
           <!-- Descripción -->
           <div class="mb-3 col-12">
             <label class="form-label" for="indicaciones_medicas">

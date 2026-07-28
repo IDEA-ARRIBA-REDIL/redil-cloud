@@ -68,18 +68,18 @@ $configData = Helper::appClasses();
 
           <div class=" mx-auto my-auto text-center">
             <div class="d-grid gap-2 d-sm-flex justify-content-center pt-3">
-              @if(auth()->check())
-                <a href="{{ route('dashboard') }}" class="btn btn-primary rounded-pill px-10 py-3" >
-                  <span class="align-middle me-sm-1 me-0 ">Ir al inicio</span>
-                </a>
-                <a href="{{ route('peticion.nueva') }}" class="btn btn-outline-secondary rounded-pill px-10 py-3" >
-                  <span class="align-middle me-sm-1 me-0 ">Nueva petición</span>
-                </a>
-              @else
+              @if($origen === 'publica')
                 <a href="{{ session('peticion_retorno_url', '/') }}" class="btn btn-primary rounded-pill px-10 py-3" >
                   <span class="align-middle me-sm-1 me-0 ">Volver</span>
                 </a>
                 <a href="{{ route('peticion.publica.nueva') }}" class="btn btn-outline-secondary rounded-pill px-10 py-3" >
+                  <span class="align-middle me-sm-1 me-0 ">Nueva petición</span>
+                </a>
+              @else
+                <a href="{{ route('dashboard') }}" class="btn btn-primary rounded-pill px-10 py-3" >
+                  <span class="align-middle me-sm-1 me-0 ">Ir al inicio</span>
+                </a>
+                <a href="{{ route('peticion.nueva') }}" class="btn btn-outline-secondary rounded-pill px-10 py-3" >
                   <span class="align-middle me-sm-1 me-0 ">Nueva petición</span>
                 </a>
               @endif

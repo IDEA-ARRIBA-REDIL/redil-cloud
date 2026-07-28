@@ -236,7 +236,7 @@
                   @csrf
                 </form>
                 <button type="button" 
-                        class="btn btn-outline-primary btn-sm w-100 rounded-pill" 
+                        class="btn btn-outline-primary btn-sm w-100 rounded-pill x" 
                         @click="$dispatch('ver-plan', {{ Js::from([
                             'id' => $plan->id,
                             'titulo' => $plan->titulo,

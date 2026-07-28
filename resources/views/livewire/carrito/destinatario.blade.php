@@ -12,7 +12,7 @@
 <style>
     .sede-item {
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: background-color 0.2s, border-color 0.2s;
         border-radius: 8px;
         padding: 10px;
         margin-bottom: 5px;
@@ -22,21 +22,36 @@
     }
     .sede-item.active {
         background-color: #e7f1ff;
-        border: 1px solid #0d6efd;
+        border: 1px solid #0d6efd !important;
     }
-    /* Estilos para el scroll vertical del listado */
+    /* Estilos adaptativos para contenedor y scroll vertical */
+    #sidebar {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 320px);
+        min-height: 420px;
+        max-height: 620px;
+    }
     #sidebar-list-container {
-        height: 700px;
+        flex: 1;
         overflow-y: auto;
+        padding-bottom: 30px;
     }
-    /* Ajuste para móviles: altura automática */
+    #mapsider {
+        height: calc(100vh - 320px);
+        min-height: 420px;
+        max-height: 620px;
+    }
+    /* Ajuste para móviles */
     @media (max-width: 768px) {
-        #sidebar-list-container {
-            height: 300px;
-            margin-bottom: 20px;
+        #sidebar {
+            height: 320px;
+            min-height: 320px;
+            margin-bottom: 15px;
         }
         #mapsider {
-            height: 400px !important;
+            height: 350px !important;
+            min-height: 350px !important;
         }
     }
 </style>
@@ -54,7 +69,7 @@
 <script>
 document.addEventListener('livewire:initialized', function() {
     const map = L.map('map').setView([{{ $centro['lat'] }}, {{ $centro['lng'] }}], 11);
-    const markers = [];
+    const markers = {};
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
@@ -69,49 +84,103 @@ document.addEventListener('livewire:initialized', function() {
         popupAnchor: [0, -32]
     });
 
-    // Función de centrado
-    window.centrarEnSede = (lat, lng, id) => {
-        // Solo mover mapa si hay coordenadas válidas
-        if (lat && lng) {
-            map.flyTo([lat, lng], 16, { duration: 1 });
-            const marker = markers.find(m =>
-                m.getLatLng().lat.toFixed(6) === Number(lat).toFixed(6) &&
-                m.getLatLng().lng.toFixed(6) === Number(lng).toFixed(6)
-            );
-            if (marker) marker.openPopup();
-        }
-
-        // Llamar al método Livewire siempre
-        @this.call('seleccionarSede', id);
-    };
-
     // Obtener sedes desde Livewire como JSON seguro
     const sedesData = @json($sedes);
 
-    // Iterar sobre los datos en JS
-    sedesData.forEach((sede, index) => {
+    // Renderizar únicamente las sedes que posean latitud y longitud válidas en el mapa
+    sedesData.forEach((sede) => {
         if (sede.latitud && sede.longitud) {
             const lat = parseFloat(sede.latitud);
             const lng = parseFloat(sede.longitud);
 
-            if (!isNaN(lat) && !isNaN(lng)) {
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
                 const marker = L.marker([lat, lng], {
                     icon: tablerIcon
                 }).bindPopup(`
-                    <div class="leaflet-popup-content">
-                        <h6>${sede.nombre}</h6>
-                        <p class="small">${sede.direccion || ''}</p>
-                        <button class="btn btn-sm btn-primary" onclick="centrarEnSede(${lat}, ${lng}, ${sede.id})">Seleccionar</button>
+                    <div class="leaflet-popup-content p-1">
+                        <h6 class="mb-1 fw-bold">${sede.nombre}</h6>
+                        <p class="small text-muted mb-2">${sede.direccion || ''}</p>
+                        <button class="btn btn-xs btn-primary w-100" onclick="solicitarSeleccionSede(${sede.id})">
+                            <i class="ti ti-check me-1"></i>Seleccionar Sede
+                        </button>
                     </div>
-                `).on('click', () => centrarEnSede(lat, lng, sede.id))
+                `).on('click', () => solicitarSeleccionSede(sede.id))
                 .addTo(map);
 
-                markers.push(marker);
+                markers[sede.id] = marker;
             }
         }
     });
 
-    setTimeout(() => map.invalidateSize(), 100);
+    // Función para centrar mapa si la sede posee coordenadas
+    window.centrarSedeEnMapa = (id) => {
+        const sede = sedesData.find(s => s.id == id);
+        if (sede && sede.latitud && sede.longitud) {
+            const lat = parseFloat(sede.latitud);
+            const lng = parseFloat(sede.longitud);
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                map.flyTo([lat, lng], 16, { duration: 1 });
+                if (markers[id]) {
+                    markers[id].openPopup();
+                }
+            }
+        }
+    };
+
+    // Función principal con validación SweetAlert2 al cambiar de sede
+    window.solicitarSeleccionSede = (targetId) => {
+        const currentSelectedId = @this.get('sedeSeleccionadaId');
+
+        // Si se selecciona la misma sede ya activa, solo centrar mapa si corresponde
+        if (currentSelectedId && currentSelectedId == targetId) {
+            centrarSedeEnMapa(targetId);
+            return;
+        }
+
+        const targetSede = sedesData.find(s => s.id == targetId);
+        if (!targetSede) return;
+
+        // Si ya había una sede elegida y es diferente, pedir confirmación vía SweetAlert2
+        if (currentSelectedId && currentSelectedId != targetId) {
+            const currentSede = sedesData.find(s => s.id == currentSelectedId);
+            const nombreActual = currentSede ? currentSede.nombre : 'otra sede';
+            const nombreNuevo = targetSede.nombre;
+
+            Swal.fire({
+                title: '¿Cambiar sede de entrega?',
+                html: `Actualmente tienes seleccionada la <strong>${nombreActual}</strong>.<br><br>¿Deseas cambiar tu sede de entrega a <strong>${nombreNuevo}</strong>?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="ti ti-check me-1"></i>Sí, cambiar',
+                cancelButtonText: '<i class="ti ti-x me-1"></i>Mantener actual',
+                customClass: {
+                    confirmButton: 'btn btn-primary me-2 rounded-pill',
+                    cancelButton: 'btn btn-label-secondary rounded-pill'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    confirmarCambioSede(targetId);
+                }
+            });
+        } else {
+            // Si no había selección previa, asignar directamente
+            confirmarCambioSede(targetId);
+        }
+    };
+
+    function confirmarCambioSede(id) {
+        @this.call('seleccionarSede', id);
+        centrarSedeEnMapa(id);
+    }
+
+    // Al iniciar, centrar en la sede preseleccionada si existe
+    const initialId = @this.get('sedeSeleccionadaId');
+    if (initialId) {
+        centrarSedeEnMapa(initialId);
+    }
+
+    setTimeout(() => map.invalidateSize(), 200);
 });
 </script>
 @endsection
@@ -136,7 +205,7 @@ document.addEventListener('livewire:initialized', function() {
   </nav>
 
   <!-- Secciones -->
-  <div class="col-12 col-sm-8 offset-sm-2 col-lg-8  offset-lg-2">
+  <div class="col-12 col-sm-8 offset-sm-2 col-lg-8 offset-lg-2" style="padding-bottom: 120px;">
     <div class="step row " id="step-1">
       <div class="p-4 col-12">
         <div class="d-flex align-items-start p-2 mt-1">
@@ -164,37 +233,46 @@ document.addEventListener('livewire:initialized', function() {
         </div>
         <div id="sidebar-list-container" class="p-3">
             @foreach($sedes as $sede)
-            <div class="sede-item border-bottom {{ $sedeSeleccionadaId == $sede->id ? 'active' : '' }}"
-                 wire:click="seleccionarSede({{ $sede->id }})"
-                 onclick="centrarEnSede({{ $sede->latitud ?? 'null' }}, {{ $sede->longitud ?? 'null' }}, {{ $sede->id }})">
-                <div class="d-flex align-items-center">
-                    <i class="ti ti-map-pin me-2 text-danger"></i>
-                    <div>
-                        <h6 class="mb-1">{{ $sede->nombre }}</h6>
-                        <p class="mb-1 small text-muted">{{ $sede->barrio }}</p>
+            @php
+                $sedeId = is_array($sede) ? $sede['id'] : $sede->id;
+                $sedeNombre = is_array($sede) ? $sede['nombre'] : $sede->nombre;
+                $sedeBarrio = is_array($sede) ? ($sede['barrio'] ?? $sede['direccion'] ?? '') : ($sede->barrio->nombre ?? $sede->barrio_auxiliar ?? $sede->direccion ?? '');
+                $lat = is_array($sede) ? ($sede['latitud'] ?? null) : ($sede->latitud ?? null);
+                $lng = is_array($sede) ? ($sede['longitud'] ?? null) : ($sede->longitud ?? null);
+                $tieneCoordenadas = !empty($lat) && !empty($lng) && (float)$lat != 0 && (float)$lng != 0;
+            @endphp
+            <div class="sede-item border-bottom {{ $sedeSeleccionadaId == $sedeId ? 'active' : '' }}"
+                 onclick="solicitarSeleccionSede({{ $sedeId }})">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="ti ti-map-pin me-2 {{ $tieneCoordenadas ? 'text-danger' : 'text-muted' }}"></i>
+                        <div>
+                            <h6 class="mb-1 fw-semibold">{{ $sedeNombre }}</h6>
+                            <p class="mb-0 small text-muted">{{ $sedeBarrio }}</p>
+                        </div>
                     </div>
+                    @if(!$tieneCoordenadas)
+                        <span class="badge bg-label-warning text-black fs-tiny" title="Esta sede no dispone de mapa">Sin GPS</span>
+                    @endif
                 </div>
             </div>
             @endforeach
         </div>
     </div>
-    <div  id="mapsider" style="height: 700px;" class="col-12 col-md-9">
-        <div id="map" wire:ignore class="border-0 shadow-sm w-100 h-100 m-10"></div>
+    <div id="mapsider" class="col-12 col-md-9">
+        <div id="map" wire:ignore class="border-0 shadow-sm w-100 h-100 rounded"></div>
     </div>
 
   </div>
 
-  <div class="w-100 fixed-bottom py-5 px-6 px-sm-0 border-top" style="background-color: #FFF">
-        <div class="col-12 col-sm-8 offset-sm-2 col-lg-8  offset-lg-2">
-            <a style="float:left;width:200px"
-                class=" w-40 btn  ms-5 me-5 btn-outline-secondary rounded-pill btn-next">
-                Anterior
+  <div class="w-100 fixed-bottom py-3 px-6 px-sm-0 border-top shadow-sm" style="background-color: #FFF; z-index: 1040;">
+        <div class="col-12 col-sm-8 offset-sm-2 col-lg-8 offset-lg-2 d-flex justify-content-between align-items-center">
+            <a class="btn btn-outline-secondary rounded-pill px-5">
+                <i class="ti ti-arrow-left me-1"></i> Anterior
             </a>
-            <button style="float:right;width:200px" wire:click="procesarPago"
-                class=" mt-3 me-5 rounded-pill btn btn-primary btn-next">
-                Pagar
+            <button wire:click="procesarPago" class="btn btn-primary rounded-pill px-5">
+                Pagar <i class="ti ti-arrow-right ms-1"></i>
             </button>
         </div>
   </div>
-  <br><br>
 </div>

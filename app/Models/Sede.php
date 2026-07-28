@@ -24,7 +24,7 @@ class Sede extends Model
     public function getFotoUrlAttribute(): string
     {
         if ($this->foto && $this->foto !== '' && $this->foto !== 'sede.png' && $this->foto !== 'default.png') {
-            return tenant_asset('img/sedes/' . $this->foto);
+            return tenant_asset('img/sedes/'.$this->foto);
         }
 
         return Storage::disk('global_media')->url('sedes/default.png');
@@ -50,6 +50,11 @@ class Sede extends Model
     public function tipo(): BelongsTo
     {
         return $this->belongsTo(TipoSede::class, 'tipo_sede_id');
+    }
+
+    public function barrio(): BelongsTo
+    {
+        return $this->belongsTo(Barrio::class, 'barrio_id');
     }
 
     // obtiene los usuarios de una sede
