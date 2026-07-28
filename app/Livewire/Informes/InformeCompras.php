@@ -299,7 +299,7 @@ class InformeCompras extends Component
             'actividad.tipo',
             'moneda',
             'destinatario',
-            'inscripciones.actividadCategoria',
+            'inscripciones.categoriaActividad',
             'pagos.tipoPago',
             'pagos.estadoPago',
             'pagos.actividadCategoria',
