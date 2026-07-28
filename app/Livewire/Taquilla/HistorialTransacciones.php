@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Taquilla;
 
+use App\Exports\HistorialTransaccionesCajaExport;
+use App\Models\Actividad;
 use App\Models\Caja;
 use App\Models\Compra;
 use App\Models\Pago;
+use App\Models\TipoPago;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
 
 class HistorialTransacciones extends Component
 {
@@ -18,6 +22,10 @@ class HistorialTransacciones extends Component
     public $fecha;
 
     public $busqueda = '';
+    
+    public $actividad_id = '';
+    
+    public $tipo_pago_id = '';
 
     protected $paginationTheme = 'bootstrap';
 
@@ -36,6 +44,16 @@ class HistorialTransacciones extends Component
     {
         $this->resetPage();
     }
+    
+    public function updatingActividadId()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingTipoPagoId()
+    {
+        $this->resetPage();
+    }
 
     public function anularCompra($compraId)
     {
@@ -51,6 +69,19 @@ class HistorialTransacciones extends Component
             ]);
         }
     }
+    
+    public function exportarExcel()
+    {
+        $filtros = [
+            'fecha' => $this->fecha,
+            'busqueda' => $this->busqueda,
+            'actividad_id' => $this->actividad_id,
+            'tipo_pago_id' => $this->tipo_pago_id,
+            'caja_id' => $this->cajaActiva->id
+        ];
+        
+        return Excel::download(new HistorialTransaccionesCajaExport($filtros), 'historial_caja_' . $this->cajaActiva->id . '_' . now()->format('Ymd_Hi') . '.xlsx');
+    }
 
     public function render()
     {
@@ -62,9 +93,16 @@ class HistorialTransacciones extends Component
         } else {
             $query->whereDate('fecha', $this->fecha);
         }
+        
+        if (!empty($this->actividad_id)) {
+            $query->where('actividad_id', $this->actividad_id);
+        }
 
         $transacciones = $query->whereHas('pagos', function ($q) {
             $q->where('registro_caja_id', $this->cajaActiva->id);
+            if (!empty($this->tipo_pago_id)) {
+                $q->where('tipo_pago_id', $this->tipo_pago_id);
+            }
         })
             ->when($this->busqueda, function ($q) {
                 $q->where(function ($subQ) {
@@ -86,6 +124,16 @@ class HistorialTransacciones extends Component
             $queryPagos->whereBetween('fecha', [$fechas[0].' 00:00:00', $fechas[1].' 23:59:59']);
         } else {
             $queryPagos->whereDate('fecha', $this->fecha);
+        }
+        
+        if (!empty($this->tipo_pago_id)) {
+            $queryPagos->where('tipo_pago_id', $this->tipo_pago_id);
+        }
+        
+        if (!empty($this->actividad_id)) {
+            $queryPagos->whereHas('compra', function($q) {
+                $q->where('actividad_id', $this->actividad_id);
+            });
         }
 
         $pagosCaja = $queryPagos->with(['compra.actividad', 'tipoPago'])->get();
@@ -137,6 +185,8 @@ class HistorialTransacciones extends Component
         return view('livewire.taquilla.historial-transacciones', [
             'transacciones' => $transacciones,
             'resumenFinanciero' => $resumenFinanciero,
+            'actividades' => Actividad::orderBy('created_at', 'desc')->get(),
+            'tiposPago' => TipoPago::where('activo', true)->get()
         ]);
     }
 }

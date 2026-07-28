@@ -303,6 +303,7 @@ class InformeCompras extends Component
             'pagos.tipoPago',
             'pagos.estadoPago',
             'pagos.actividadCategoria',
+            'pagos.caja',
             'categorias.actividadCategoria',
             'estadoPago',
         ])

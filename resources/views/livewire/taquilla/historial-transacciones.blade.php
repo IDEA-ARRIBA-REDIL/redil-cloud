@@ -2,21 +2,56 @@
     <div class=" mb-4">
         <div class="">
             <div class="row gx-3 gy-2 align-items-center">
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-3">
                     <label class="form-label" for="fecha">Fecha</label>
                     <input type="text" id="fecha" class="form-control fecha-picker" wire:model.live="fecha"
                         placeholder="YYYY-MM-DD" />
                 </div>
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="actividad_id">Actividad</label>
+                    <div wire:ignore>
+                        <select wire:model.live="actividad_id" x-data="{
+                                init() {
+                                    $(this.$refs.select).select2({
+                                        placeholder: 'Todas las actividades',
+                                        allowClear: true
+                                    });
+                                    $(this.$refs.select).on('change', () => {
+                                        @this.set('actividad_id', $(this.$refs.select).val());
+                                    });
+                                }
+                            }" x-ref="select" id="actividad_id" class="select2 form-select">
+                            <option value="">Todas las actividades</option>
+                            @foreach($actividades as $act)
+                                <option value="{{ $act->id }}">{{ $act->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="tipo_pago_id">Medio de Pago</label>
+                    <select class="form-select" wire:model.live="tipo_pago_id">
+                        <option value="">Todos los medios</option>
+                        @foreach($tiposPago as $tp)
+                            <option value="{{ $tp->id }}">{{ $tp->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
                     <label class="form-label" for="busqueda">Buscar</label>
                     <div class="input-group input-group-merge">
                         <span class="input-group-text" id="basic-addon-search31"><i class="ti ti-search"></i></span>
-                        <input type="text" class="form-control" placeholder="Buscar por nombre, cédula o email..."
+                        <input type="text" class="form-control" placeholder="Nombre, cédula..."
                             wire:model.live.debounce.500ms="busqueda" aria-label="Buscar..."
                             aria-describedby="basic-addon-search31" />
                     </div>
                 </div>
-
+                <div class="col-12 mt-3 text-end">
+                    <button class="btn btn-success" wire:click="exportarExcel" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="exportarExcel"><i class="ti ti-file-spreadsheet me-1"></i> Exportar a Excel</span>
+                        <span wire:loading wire:target="exportarExcel"><i class="ti ti-loader ti-spin me-1"></i> Exportando...</span>
+                    </button>
+                </div>
             </div>
         </div>
     @include('layouts.status-msn')
@@ -127,7 +162,7 @@
                 </div>
                 <div class="card-body mt-3">
                     @forelse ($resumenFinanciero['desgloseMetodosPago'] as $metodo)
-                        <div class="d-flex align-items-center justify-content-between p-2 mb-2 rounded bg-label-secondary">
+                        <div class="d-flex border align-items-center justify-content-between p-2 mb-2 rounded ">
                             <div class="d-flex align-items-center">
                                 <div class="avatar avatar-sm bg-white rounded p-1 me-2 shadow-sm text-center">
                                     <i class="ti ti-credit-card text-primary fs-4"></i>

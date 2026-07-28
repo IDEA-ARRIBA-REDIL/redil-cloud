@@ -288,8 +288,13 @@
                                                             @endif
                                                         </div>
                                                         <small class="text-muted fs-tiny d-block">
-                                                            {{ $pago->created_at ? \Carbon\Carbon::parse($pago->created_at)->format('d/m/Y H:i') : '' }}
+                                                            <i class="ti ti-calendar text-muted"></i> {{ $pago->created_at ? \Carbon\Carbon::parse($pago->created_at)->format('d/m/Y H:i') : '' }}
                                                         </small>
+                                                        @if($pago->caja)
+                                                            <small class="text-primary fs-tiny d-block" title="Procesado en taquilla">
+                                                                <i class="ti ti-cash-banknote"></i> Caja #{{ $pago->caja->id }} - {{ $pago->caja->nombre ?? 'Taquilla' }}
+                                                            </small>
+                                                        @endif
                                                     </div>
                                                     <div class="text-end">
                                                         <span class="fw-bold text-dark d-block small">${{ number_format($pago->valor, 0, ',', '.') }}</span>

@@ -1008,6 +1008,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/puntos-de-pago/{puntoDePago}/informe', [PuntoDePagoController::class, 'verInforme'])->name('puntos_de_pago.ver_informe'); // Nuevo reporte
     Route::get('/puntos-de-pago/gestionar', [PuntoDePagoController::class, 'gestionar'])->name('puntosDePago.gestionar');
     Route::get('/taquillas/gestionar', [CajaController::class, 'gestionar'])->name('taquillas.gestionar');
+    Route::get('/taquillas/{caja}/dashboard', [CajaController::class, 'dashboard'])->name('taquillas.dashboard');
 
     Route::controller(AsesorPdpController::class)->prefix('asesores-pdp')->name('asesores_pdp.')->group(function () {
         Route::get('/gestionar', 'gestionar')->name('gestionar');

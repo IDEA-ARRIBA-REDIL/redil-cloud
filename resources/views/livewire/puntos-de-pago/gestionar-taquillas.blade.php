@@ -150,6 +150,11 @@
                                                 Editar caja
                                             </a>
                                         </li>
+                                        <li>
+                                            <a class="dropdown-item text-primary" href="{{ route('taquillas.dashboard', $caja->id) }}">
+                                                <i class="ti ti-dashboard me-1"></i> Dashboard
+                                            </a>
+                                        </li>
                                         @if (!$caja->trashed())
                                             <li>
                                                 <a class="dropdown-item" href="javascript:void(0);"

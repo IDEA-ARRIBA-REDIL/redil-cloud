@@ -14,4 +14,11 @@ class CajaController extends Controller
             'tipo' => $tipo,
         ]);
     }
+
+    public function dashboard(\App\Models\Caja $caja)
+    {
+        return view('contenido.paginas.taquillas.dashboard', [
+            'caja' => $caja,
+        ]);
+    }
 }
