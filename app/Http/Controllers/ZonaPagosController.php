@@ -25,15 +25,37 @@ class ZonaPagosController extends Controller
      */
     public function handleCallback(Request $request)
     {
-        $pagoId = $request->input('id_pago');
-        Log::info('ZonaPagos Callback recibido.', ['id_pago' => $pagoId, 'query' => $request->all()]);
+        $idReferencia = $request->input('id_pago');
+        Log::info('ZonaPagos Callback recibido.', ['id_pago' => $idReferencia, 'query' => $request->all()]);
 
-        if (! $pagoId) {
+        if (! $idReferencia) {
             Log::error('ZonaPagos Callback: no se recibió id_pago.');
 
             return response()->json(['status' => 'error', 'message' => 'ID de pago no recibido.'], 400);
         }
 
+        // Enrutador inteligente basado en prefijos
+        if (str_starts_with($idReferencia, 'O-')) {
+            $ofrendaId = substr($idReferencia, 2);
+
+            return $this->procesarCallbackOfrenda($ofrendaId, $request);
+        } elseif (str_starts_with($idReferencia, 'P-') || str_starts_with($idReferencia, 'A-')) {
+            $pagoId = substr($idReferencia, 2);
+
+            return $this->procesarCallbackPago($pagoId, $request);
+        } else {
+            // Compatibilidad hacia atrás: si no tiene prefijo, asumimos que es un Pago de Actividad
+            Log::info("ZonaPagos Callback: id_pago '{$idReferencia}' sin prefijo. Procesando como Pago de Actividad por defecto.");
+
+            return $this->procesarCallbackPago($idReferencia, $request);
+        }
+    }
+
+    /**
+     * Lógica para procesar un callback correspondiente a un Pago (Actividad / Matrícula / etc.)
+     */
+    private function procesarCallbackPago($pagoId, Request $request)
+    {
         $pago = Pago::with('compra.inscripciones', 'tipoPago')->find($pagoId);
 
         if (! $pago) {
@@ -148,6 +170,24 @@ class ZonaPagosController extends Controller
             'status' => 'success',
             'pago_id' => $pagoId,
             'nuevo_estado' => $nuevoEstado->nombre,
+        ]);
+    }
+
+    /**
+     * Lógica para procesar un callback correspondiente a una Ofrenda.
+     */
+    private function procesarCallbackOfrenda($ofrendaId, Request $request)
+    {
+        Log::info("ZonaPagos Callback: Procesando Ofrenda ID {$ofrendaId}.");
+
+        // TODO: Implementar la lógica para ofrendas.
+        // Ej: $ofrenda = Ofrenda::find($ofrendaId);
+        // Verificar en ZonaPagos, buscar estado y actualizar.
+
+        return response()->json([
+            'status' => 'success',
+            'ofrenda_id' => $ofrendaId,
+            'message' => 'Callback de ofrenda recibido. Lógica pendiente de implementar.',
         ]);
     }
 

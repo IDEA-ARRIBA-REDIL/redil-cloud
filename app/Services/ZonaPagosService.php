@@ -88,7 +88,7 @@ class ZonaPagosService
                 'flt_total_con_iva' => (float) $pago->valor,
                 'flt_valor_iva' => 0,
                 // str_id_pago: identificador único de nuestra transacción (max 30 chars)
-                'str_id_pago' => (string) $pago->id,
+                'str_id_pago' => 'P-'.$pago->id,
                 'str_descripcion_pago' => $descripcion,
                 'str_email' => $email,
                 'str_id_cliente' => $identificacion,
@@ -182,8 +182,8 @@ class ZonaPagosService
             'int_id_comercio' => $this->idComercio,
             'str_usr_comercio' => $this->usuario,
             'str_pwd_comercio' => $this->clave,
-            // str_id_pago: el mismo ID que enviamos en iniciarPago
-            'str_id_pago' => (string) $pago->id,
+            // str_id_pago: el mismo ID que enviamos en iniciarPago (con prefijo P-)
+            'str_id_pago' => 'P-'.$pago->id,
             // int_no_pago: -1 indica que no filtramos por número de pago específico
             'int_no_pago' => -1,
         ];
