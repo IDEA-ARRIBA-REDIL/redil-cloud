@@ -599,6 +599,7 @@ Route::get('/pagos/zonapagos/verificar/{pago}', [ZonaPagosController::class, 've
 
 // / ruta de respuesta zonpagos api
 Route::get('/pagos/zonapagos/callback', [ZonaPagosController::class, 'handleCallback'])->name('zonapagos.handleCallback');
+Route::get('/pagos/zonapagos/retorno', [ZonaPagosController::class, 'retornoUsuario'])->name('zonapagos.retornoUsuario');
 // Ruta para verificar el estado de un pago de ZonaPagos
 
 // / actividades rutas publicas

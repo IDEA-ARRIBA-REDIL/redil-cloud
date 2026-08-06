@@ -52,6 +52,36 @@ class ZonaPagosController extends Controller
     }
 
     /**
+     * Enrutador visual para cuando el usuario hace clic en "Volver al comercio" en ZonaPagos.
+     * Lee el id_pago con prefijo y redirige a la vista final correspondiente.
+     */
+    public function retornoUsuario(Request $request)
+    {
+        $idReferencia = $request->input('id_pago');
+
+        if (! $idReferencia) {
+            // Si por alguna razón no llega, redirigir al home o dashboard
+            return redirect('/');
+        }
+
+        // Enrutador inteligente basado en prefijos
+        if (str_starts_with($idReferencia, 'O-')) {
+            $ofrendaId = substr($idReferencia, 2);
+
+            // TODO: Crear ruta para ofrenda finalizada cuando se desarrolle el módulo
+            // return redirect()->route('ofrendas.finalizada', ['ofrenda' => $ofrendaId]);
+            return redirect('/');
+        } elseif (str_starts_with($idReferencia, 'P-') || str_starts_with($idReferencia, 'A-')) {
+            $pagoId = substr($idReferencia, 2);
+
+            return redirect()->route('carrito.compraFinalizada', ['pago' => $pagoId]);
+        } else {
+            // Compatibilidad hacia atrás: sin prefijo asumimos que es Pago de Actividad
+            return redirect()->route('carrito.compraFinalizada', ['pago' => $idReferencia]);
+        }
+    }
+
+    /**
      * Lógica para procesar un callback correspondiente a un Pago (Actividad / Matrícula / etc.)
      */
     private function procesarCallbackPago($pagoId, Request $request)

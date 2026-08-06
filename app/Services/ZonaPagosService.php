@@ -121,7 +121,7 @@ class ZonaPagosService
                     // Código 104: URL de retorno personalizada para el cliente
                     // ZonaPagos redirige aquí cuando el usuario quiere "volver al comercio"
                     'int_codigo' => 104,
-                    'str_valor' => route('zonapagos.handleCallback'),
+                    'str_valor' => route('zonapagos.retornoUsuario'),
                 ],
             ],
         ];
