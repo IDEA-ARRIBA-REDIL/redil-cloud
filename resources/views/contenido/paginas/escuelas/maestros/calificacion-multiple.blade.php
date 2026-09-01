@@ -110,7 +110,7 @@
 
     {{-- Encabezado de la clasificacion detallada --}}
     <div class="row mb-3">
-        <div class="col-12 mb-6">
+        <div class="col-12 mb-3">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div>
                     <h4 class="mb-1 fw-semibold text-primary">
@@ -118,23 +118,17 @@
                     </h4>
                     <p class="mb-0 text-black"><small>{{ $infoClase }}</small></p>
                 </div>
-
             </div>
         </div>
+    </div>
 
+    @include('contenido.paginas.escuelas.maestros.nav-modulo')
 
-        @include('contenido.paginas.escuelas.maestros.nav-modulo')    </div>
+    {{-- Contenido Principal: Acordeón de Alumnos --}}
+    <div class="row">
+        <div class="col-12">
+            {{-- Renderizar el componente Livewire, pasándole el HorarioMateriaPeriodo --}}
+            @livewire('Maestros.CalificacionMultipleAlumnos', ['horarioAsignado' => $horarioAsignado])
         </div>
-
-        {{-- Contenido Principal: Acordeón de Alumnos --}}
-        <div class="row">
-            <div class="col-12">
-
-
-                {{-- Renderizar el componente Livewire, pasándole el HorarioMateriaPeriodo --}}
-                @livewire('Maestros.CalificacionMultipleAlumnos', ['horarioAsignado' => $horarioAsignado])
-
-
-            </div>
-        </div>
-    @endsection
+    </div>
+@endsection

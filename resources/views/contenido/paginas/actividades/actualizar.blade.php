@@ -643,7 +643,7 @@ $configData = Helper::appClasses();
 
                             <!-- habilitado para pdp (Estado inscripcion) -->
                             <div class="col-md-6 mb-3">
-                                <label for="estadoInscripcion" class="form-label">Ingresa una opción</label>
+                                <label for="estadoInscripcion" class="form-label">Estado de la inscripción</label>
                                 <select id="estadoInscripcion" name="estadoInscripcion" class="select2 form-select" data-placeholder="Selecciona una opción">
                                     <option @if ($actividad->estado_inscripcion_defecto == 1) selected @endif value="1" {{ old('estadoInscripcion') == 1 ? 'selected' : '' }}>
                                         Iniciada
@@ -668,7 +668,7 @@ $configData = Helper::appClasses();
                                 <div class="row">
                                      <!-- ¿Tiene invitados? -->
                                     <div class="mb-3 col-md-3">
-                                        <div class="small fw-medium mb-1">¿Invitados al grupo?</div>
+                                        <div class="small fw-medium mb-1">¿Invitados a la actividad?</div>
                                         <label class="switch switch-lg">
                                             <input id="tieneInvitados" name="tieneInvitados" type="checkbox" @checked(old('tieneInvitados', $actividad->tiene_invitados == true)) class="switch-input" />
                                             <span class="switch-toggle-slider">

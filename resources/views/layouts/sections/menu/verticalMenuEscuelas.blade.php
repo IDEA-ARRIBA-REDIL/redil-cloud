@@ -40,7 +40,12 @@
 
 
 
-        @if ($rolActivo->hasPermissionTo('escuelas.subitem_lista_escuelas'))
+        @if ($rolActivo->hasAnyPermission([
+            'escuelas.subitem_lista_escuelas',
+            'escuelas.subitem_nueva_escuela',
+            'escuelas.opcion_actualizar_escuela',
+            'escuelas.opcion_eliminar_escuela'
+        ]))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon ti ti-building-skyscraper"></i>
@@ -53,41 +58,33 @@
                             <div>Gestionar</div>
                         </a>
                     </li>
-
                 </ul>
-
-            </li>
             </li>
         @endif
 
-
-
-        @if ($rolActivo->hasPermissionTo('escuelas.item_aula'))
+        @if ($rolActivo->hasAnyPermission(['escuelas.item_aula', 'escuelas.gestionar_aulas']))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon ti ti-window"></i>
                     <div>Aulas </div>
                 </a>
 
-                @if ($rolActivo->hasPermissionTo('escuelas.gestionar_aulas'))
-                    <ul class="menu-sub">
-                        <li class="menu-item">
-                            <a href="{{ route('aulas.gestionar') }}" class="menu-link">
-                                <div>Gestionar</div>
-                            </a>
-                        </li>
-
-                    </ul>
-                @endif
-
+                <ul class="menu-sub">
+                    <li class="menu-item">
+                        <a href="{{ route('aulas.gestionar') }}" class="menu-link">
+                            <div>Gestionar</div>
+                        </a>
+                    </li>
+                </ul>
             </li>
         @endif
 
-
-
-
-
-        @if ($rolActivo->hasPermissionTo('escuelas.item_periodos'))
+        @if ($rolActivo->hasAnyPermission([
+            'escuelas.item_periodos',
+            'escuelas.subitem_lista_periodos',
+            'escuelas.opcion_modificar_periodo',
+            'escuelas.opcion_finalizar_periodo'
+        ]))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon ti ti-calendar-cog"></i>
@@ -101,11 +98,18 @@
                         </a>
                     </li>
                 </ul>
-
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('escuelas.item_matriculas'))
+        @if ($rolActivo->hasAnyPermission([
+            'escuelas.item_matriculas',
+            'escuelas.subitem_gestionar_matriculas',
+            'escuelas.subitem_gestionar_traslados',
+            'escuelas.subitem_gestionar_solicitudes_traslado',
+            'escuelas.subitem_gestionar_mis_solicitudes_traslado',
+            'escuelas.subitem_historial_matriculas',
+            'escuelas.opcion_eliminar_matricula'
+        ]))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon ti ti-receipt"></i>
@@ -144,41 +148,45 @@
                         </li>
                     @endif
 
-                    @if ($rolActivo->hasPermissionTo('escuelas.subitem_historial_matriculas') || $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_matricula') || $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_materia'))
+                    @if ($rolActivo->hasAnyPermission(['escuelas.subitem_historial_matriculas', 'escuelas.opcion_eliminar_matricula']))
                         <li class="menu-item">
                             <a href="{{ route('matriculas.historialEliminadas', $user) }}" class="menu-link">
                                 <div>Eliminadas / Canceladas</div>
                             </a>
                         </li>
                     @endif
-
-
-
                 </ul>
-
             </li>
         @endif
-        @if ($rolActivo->hasPermissionTo('escuelas.homologaciones'))
-            <li class="menu-item">
-                <a href="" class="menu-link menu-toggle">
-                    <i class=" menu-icon ti ti-list-check"></i>
-                    <div> Homologaciones </div>
+
+        @if ($rolActivo->hasAnyPermission(['escuelas.homologaciones', 'escuelas.subitem_homologaciones']))
+            <li class="menu-item {{ Route::is('escuelas.homologaciones*') ? 'active open' : '' }}">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon ti ti-list-check"></i>
+                    <div>Homologaciones</div>
                 </a>
 
                 <ul class="menu-sub">
-
-                    <li class="menu-item">
+                    <li class="menu-item {{ Route::is('escuelas.homologaciones') ? 'active' : '' }}">
                         <a href="{{ route('escuelas.homologaciones') }}" class="menu-link">
                             <div>Gestionar</div>
                         </a>
                     </li>
-
+                    <li class="menu-item {{ Route::is('escuelas.homologaciones.masivas') ? 'active' : '' }}">
+                        <a href="{{ route('escuelas.homologaciones.masivas') }}" class="menu-link">
+                            <div>Cargue masivo</div>
+                        </a>
+                    </li>
                 </ul>
             </li>
         @endif
 
-
-        @if ($rolActivo->hasPermissionTo('escuelas.calificaciones'))
+        @if ($rolActivo->hasAnyPermission([
+            'escuelas.calificaciones',
+            'escuelas.todas_las_calificaciones',
+            'escuelas.subitem_gestionar_calificaciones',
+            'escuelas.subitem_mis_calificaciones'
+        ]))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon ti ti-check"></i>
@@ -186,7 +194,7 @@
                 </a>
 
                 <ul class="menu-sub">
-                    @if ($rolActivo->hasPermissionTo('escuelas.subitem_gestionar_calificaciones'))
+                    @if ($rolActivo->hasAnyPermission(['escuelas.subitem_gestionar_calificaciones', 'escuelas.todas_las_calificaciones']))
                         <li class="menu-item">
                             <a href="{{ route('escuelas.historialCalificaciones') }}" class="menu-link">
                                 <div>Consultar</div>
@@ -203,7 +211,8 @@
                 </ul>
             </li>
         @endif
-        @if ($rolActivo->hasPermissionTo('escuelas.item_informes_escuelas'))
+
+        @if ($rolActivo->hasAnyPermission(['escuelas.item_informes_escuelas', 'escuelas.subitem_gestionar_asistencias']))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class=" menu-icon ti ti-file-analytics"></i>
@@ -222,8 +231,11 @@
             </li>
         @endif
 
-
-        @if ($rolActivo->hasPermissionTo('escuelas.subitem_recursos_generales'))
+        @if ($rolActivo->hasAnyPermission([
+            'escuelas.subitem_recursos_generales',
+            'escuelas.gestionar_recursos_generales',
+            'escuelas.mis_recursos_generales'
+        ]))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class=" menu-icon ti ti-file-zip"></i>
@@ -245,16 +257,16 @@
                             </a>
                         </li>
                     @endif
-
-
                 </ul>
-
             </li>
         @endif
 
-
-
-        @if ($rolActivo->hasPermissionTo('escuelas.item_maestros'))
+        @if ($rolActivo->hasAnyPermission([
+            'escuelas.item_maestros',
+            'escuelas.opcion_gestionar_maestro',
+            'escuelas.subitem_lista_maestros',
+            'escuelas.es_maestro'
+        ]))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon ti ti-user-screen"></i>
@@ -262,26 +274,25 @@
                 </a>
 
                 <ul class="menu-sub">
-                    @if ($rolActivo->hasPermissionTo('escuelas.opcion_gestionar_maestro'))
+                    @if ($rolActivo->hasAnyPermission(['escuelas.opcion_gestionar_maestro', 'escuelas.subitem_lista_maestros']))
                         <li class="menu-item">
                             <a href="{{ route('maestros.gestionar') }}" class="menu-link">
                                 <div>Gestionar</div>
                             </a>
                         </li>
                     @endif
-                    <li class="menu-item">
-                        <a href="{{ route('maestros.misHorarios', $user) }}" class="menu-link">
-                            <div>Mis horarios</div>
-                        </a>
-                    </li>
-
-
-
+                    @if ($rolActivo->hasAnyPermission(['escuelas.es_maestro', 'escuelas.item_maestros']))
+                        <li class="menu-item">
+                            <a href="{{ route('maestros.misHorarios', $user) }}" class="menu-link">
+                                <div>Mis horarios</div>
+                            </a>
+                        </li>
+                    @endif
                 </ul>
-
             </li>
         @endif
-        @if ($rolActivo->hasPermissionTo('escuelas.item_banners'))
+
+        @if ($rolActivo->hasAnyPermission(['escuelas.item_banners', 'escuelas.subitem_gestionar_banners']))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class=" menu-icon ti ti-photo-scan"></i>
@@ -299,7 +310,6 @@
                 </ul>
             </li>
         @endif
-
 
         <li class="menu-item">
             <a href="{{ url('/') }}" class="menu-link">

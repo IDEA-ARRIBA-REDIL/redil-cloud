@@ -49,7 +49,7 @@ class InformeSeeder extends Seeder
             'clasificaciones' => false,
             'visible_solo_administradores' => false,
             'informe_numerico' => false,
-            'tipo_informe_id' => 1,
+            'tipo_informe_id' => 3,
             'add_id_a_la_url' => true,
             'nombre_boton' => 'Ver',
         ]);
@@ -58,6 +58,20 @@ class InformeSeeder extends Seeder
             'nombre' => 'Informe de pagos',
             'descripcion' => 'Este informe muestra un reporte detallado de los pagos y abonos realizados.',
             'link' => 'informes.pagos',
+            'activo' => false,
+            'seleccione_dia_corte' => false,
+            'clasificaciones' => false,
+            'visible_solo_administradores' => false,
+            'informe_numerico' => false,
+            'tipo_informe_id' => 3,
+            'add_id_a_la_url' => true,
+            'nombre_boton' => 'Ver',
+        ]);
+
+        Informe::firstOrCreate([
+            'nombre' => 'Informe obreros',
+            'descripcion' => 'Este informe muestra un reporte detallado de los pagos y abonos realizados.',
+            'link' => 'informes-personalizados.obreros.show',
             'activo' => false,
             'seleccione_dia_corte' => false,
             'clasificaciones' => false,

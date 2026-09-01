@@ -58,6 +58,7 @@ class ServicioValidacionMateriaPeriodo
                 'materia_periodo_id' => $resultado->materia_periodo_id,
                 'periodo_id' => $periodo->id,
                 'nota_final' => $resultado->nota_final_calculada,
+                'creditos_aprobados' => $estadoFinal['aprobado'] ? $resultado->creditos : null,
                 'total_asistencias' => $resultado->total_asistencias,
                 'aprobado' => $estadoFinal['aprobado'],
                 'motivo_reprobacion' => $estadoFinal['motivo'],
@@ -77,7 +78,7 @@ class ServicioValidacionMateriaPeriodo
 
         $sql = "
             SELECT
-                mat.user_id, mp.id AS materia_periodo_id, mp.materia_id,
+                mat.user_id, mp.id AS materia_periodo_id, mp.materia_id, m.creditos,
                 m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas,
                 COALESCE(SUM(ari.nota_obtenida * (icp.porcentaje / 100.0) * (cp.porcentaje / 100.0)), 0) AS nota_final_calculada,
                 (
@@ -94,7 +95,7 @@ class ServicioValidacionMateriaPeriodo
             LEFT JOIN alumno_respuesta_items AS ari ON ari.item_corte_materia_periodo_id = icp.id AND ari.user_id = mat.user_id
             LEFT JOIN cortes_periodo AS cp ON icp.corte_periodo_id = cp.id
             WHERE mat.periodo_id = ? AND mp.id = ? AND mat.user_id IN ({$placeholders})
-            GROUP BY mat.user_id, mp.id, mp.materia_id, m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas;
+            GROUP BY mat.user_id, mp.id, mp.materia_id, m.creditos, m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas;
         ";
 
         return DB::select($sql, $bindings);

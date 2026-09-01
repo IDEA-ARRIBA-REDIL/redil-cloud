@@ -172,6 +172,14 @@
                             </div>
                             <div class="col-12 mb-3">
                                 <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="caracter_obligatorio" name="caracter_obligatorio" value="1" {{ old('caracter_obligatorio', $escuela->caracter_obligatorio) ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-semibold text-black" for="caracter_obligatorio">Carácter obligatorio</label>
+                                </div>
+                                <small class="form-text text-muted">Indica si esta escuela es de carácter obligatorio en la ruta formativa.</small>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="habilitada_consolidacion" name="habilitada_consolidacion" value="1" {{ old('habilitada_consolidacion', $escuela->habilitada_consolidacion) ? 'checked' : '' }}>
                                     <label class="form-check-label fw-semibold text-black" for="habilitada_consolidacion">Habilitar Consolidación</label>
                                 </div>

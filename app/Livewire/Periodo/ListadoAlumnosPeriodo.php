@@ -2,14 +2,14 @@
 
 namespace App\Livewire\Periodo;
 
-use App\Models\Periodo;
-use App\Models\User;
+use App\Exports\AlumnosPeriodoExport;
 use App\Models\Configuracion;
+use App\Models\Periodo;
 use App\Models\Sede;
-use Livewire\Component;
-use Livewire\WithPagination;
-use Livewire\Attributes\Rule; // Importar el atributo de validación
-use App\Exports\AlumnosPeriodoExport; // <-- Importa la nueva clase
+use App\Models\User;
+use Livewire\Attributes\Rule;
+use Livewire\Component; // Importar el atributo de validación
+use Livewire\WithPagination; // <-- Importa la nueva clase
 use Maatwebsite\Excel\Facades\Excel; // <-- Importa el Facade de Excel
 
 class ListadoAlumnosPeriodo extends Component
@@ -17,18 +17,20 @@ class ListadoAlumnosPeriodo extends Component
     use WithPagination;
 
     public Periodo $periodo;
+
     public $sedes;
+
     public $materiasPeriodo;
 
     public $filtroSedeMatricula = [];
-    public $filtroSedeAlumno = [];
-    protected $paginationTheme = 'bootstrap';
 
+    public $filtroSedeAlumno = [];
+
+    protected $paginationTheme = 'bootstrap';
 
     // La materia es obligatoria para la búsqueda
     #[Rule('required', message: 'Debe seleccionar una materia para buscar.')]
     public $filtroMateriaPeriodo = '';
-
 
     public function mount(Periodo $periodo)
     {
@@ -43,14 +45,13 @@ class ListadoAlumnosPeriodo extends Component
         // Si el campo es un array (selects múltiples)
         if (is_array($this->{$field})) {
             // Filtramos el array para quitar el valor que se quiere eliminar
-            $this->{$field} = array_filter($this->{$field}, fn($item) => $item != $value);
+            $this->{$field} = array_filter($this->{$field}, fn ($item) => $item != $value);
         } else {
             // Si es un campo simple, simplemente lo reseteamos
             $this->{$field} = '';
         }
         $this->resetPage();
     }
-
 
     public function limpiarFiltros()
     {
@@ -64,7 +65,7 @@ class ListadoAlumnosPeriodo extends Component
     public function exportarExcel()
     {
         // Preparamos un nombre de archivo dinámico
-        $fileName = 'alumnos-' . \Str::slug($this->periodo->nombre) . '-' . now()->format('Y-m-d') . '.xlsx';
+        $fileName = 'alumnos-'.\Str::slug($this->periodo->nombre).'-'.now()->format('Y-m-d').'.xlsx';
 
         // Retornamos la descarga, pasando los filtros actuales a la clase de exportación
         return Excel::download(
@@ -78,7 +79,6 @@ class ListadoAlumnosPeriodo extends Component
         );
     }
 
-
     // El método que se ejecuta al presionar el botón "Buscar"
     public function buscarMatriculas()
     {
@@ -87,14 +87,14 @@ class ListadoAlumnosPeriodo extends Component
         $this->resetPage(); // Reseteamos la paginación para la nueva búsqueda
     }
 
-
     public function render()
     {
         $configuracion = Configuracion::find(1);
 
         // 1. Iniciar con la consulta base: SIEMPRE trae a todos los alumnos matriculados en el periodo.
-        $alumnosQuery = User::query()->whereHas('matriculas', fn($q) => $q->where('periodo_id', $this->periodo->id));
-
+        $alumnosQuery = User::query()
+            ->with(['tipoUsuario'])
+            ->whereHas('matriculas', fn ($q) => $q->where('periodo_id', $this->periodo->id));
 
         $tagsBusqueda = []; // Array para guardar los tags
 
@@ -102,8 +102,8 @@ class ListadoAlumnosPeriodo extends Component
         //    ENTONCES aplicamos los filtros adicionales a la consulta base.
         if ($this->filtroMateriaPeriodo) {
             // Construir el Tag para la Materia
-            $tag = new \stdClass();
-            $tag->label = 'Materia: ' . $this->materiasPeriodo->find($this->filtroMateriaPeriodo)->materia->nombre;
+            $tag = new \stdClass;
+            $tag->label = 'Materia: '.$this->materiasPeriodo->find($this->filtroMateriaPeriodo)->materia->nombre;
             $tag->field = 'filtroMateriaPeriodo';
             $tag->value = $this->filtroMateriaPeriodo;
             $tagsBusqueda[] = $tag;
@@ -117,12 +117,12 @@ class ListadoAlumnosPeriodo extends Component
             });
 
             // FILTROS OPCIONALES DE SEDE (OR):
-            if (!empty($this->filtroSedeAlumno) || !empty($this->filtroSedeMatricula)) {
+            if (! empty($this->filtroSedeAlumno) || ! empty($this->filtroSedeMatricula)) {
                 $alumnosQuery->where(function ($query) {
-                    if (!empty($this->filtroSedeAlumno)) {
+                    if (! empty($this->filtroSedeAlumno)) {
                         $query->whereIn('sede_id', $this->filtroSedeAlumno);
                     }
-                    if (!empty($this->filtroSedeMatricula)) {
+                    if (! empty($this->filtroSedeMatricula)) {
                         $query->orWhereHas('matriculas', function ($matriculaQuery) {
                             $matriculaQuery->where('periodo_id', $this->periodo->id)
                                 ->whereHas('horarioMateriaPeriodo.horarioBase.aula.sede', function ($sedeQuery) {
@@ -135,8 +135,8 @@ class ListadoAlumnosPeriodo extends Component
 
             // Construir Tags para Sede de Alumno
             foreach ($this->filtroSedeAlumno as $sedeId) {
-                $tag = new \stdClass();
-                $tag->label = 'Sede Alumno: ' . $this->sedes->find($sedeId)->nombre;
+                $tag = new \stdClass;
+                $tag->label = 'Sede Alumno: '.$this->sedes->find($sedeId)->nombre;
                 $tag->field = 'filtroSedeAlumno';
                 $tag->value = $sedeId;
                 $tagsBusqueda[] = $tag;
@@ -144,8 +144,8 @@ class ListadoAlumnosPeriodo extends Component
 
             // Construir Tags para Sede de Matrícula
             foreach ($this->filtroSedeMatricula as $sedeId) {
-                $tag = new \stdClass();
-                $tag->label = 'Sede Matrícula: ' . $this->sedes->find($sedeId)->nombre;
+                $tag = new \stdClass;
+                $tag->label = 'Sede Matrícula: '.$this->sedes->find($sedeId)->nombre;
                 $tag->field = 'filtroSedeMatricula';
                 $tag->value = $sedeId;
                 $tagsBusqueda[] = $tag;

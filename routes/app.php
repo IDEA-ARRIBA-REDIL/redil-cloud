@@ -21,6 +21,7 @@ use App\Http\Controllers\FileViewerController;
 use App\Http\Controllers\FiltroConsolidacionController;
 use App\Http\Controllers\FinanzaController;
 use App\Http\Controllers\FormularioUsuarioController;
+use App\Http\Controllers\GamificacionController;
 use App\Http\Controllers\GestionarTipoDeGruposController;
 use App\Http\Controllers\GestionVideosController;
 use App\Http\Controllers\GrupoController;
@@ -696,6 +697,9 @@ Route::get('/peticion/{peticion}/exito', [PeticionController::class, 'exito'])->
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    // gamificacion
+    Route::get('/gamificacion', [GamificacionController::class, 'index'])->name('gamificacion.index');
+
     // Reuniones
     Route::get('/reunion/nueva', [ReunionesController::class, 'nueva'])->name('reuniones.nueva');
     Route::post('/reunion/crear', [ReunionesController::class, 'crear'])->name('reuniones.crear');
@@ -1179,6 +1183,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // // Homologaciones
     Route::get('/escuelas/homologaciones', [HomologacionController::class, 'index'])->name('escuelas.homologaciones');
+    Route::get('/escuelas/homologaciones/masivas', [HomologacionController::class, 'masivas'])->name('escuelas.homologaciones.masivas');
 
     // / Reportes escuelas
     // Ruta para mostrar el formulario de filtros del reporte
@@ -1213,6 +1218,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('maestros.reporteAsistencia');
     Route::get('/maestros/{maestro}/{horarioAsignado}/dashboard-clase', [MaestroController::class, 'dashboardClase'])
         ->name('maestros.dashboardClase');
+    Route::patch('/maestros/{maestro}/{horarioAsignado}/matriculas/{matricula}/bloquear', [MaestroController::class, 'bloquearMatricula'])
+        ->middleware('permission:escuelas.bloquear_matricula')
+        ->name('maestros.bloquearMatricula');
+    Route::get('/maestros/{maestro}/{horarioAsignado}/dashboard-clase/cortes/{cortePeriodo}/notas', [MaestroController::class, 'exportarNotasCorte'])
+        ->name('maestros.exportarNotasCorte');
 
     Route::get('/maestros/{maestro}/{horarioAsignado}/{alumno}/gestionar-alumno', [MaestroController::class, 'gestionarAlumno'])
         ->name('maestros.gestionarAlumno');
@@ -1296,24 +1306,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
     Route::patch('/posts/{post}/update', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}/destroy', [PostController::class, 'destroy'])->name('posts.destroy');
-
-    // ============================================
-    // HITOS - DEMO (rutas temporales para mostrar al cliente)
-    // ============================================
-    Route::prefix('hitos')->name('hitos.')->group(function () {
-        Route::get('/', function () {
-            return view('contenido.paginas.hitos.muro-demo');
-        })->name('muro');
-
-        Route::get('/crear', function () {
-            return view('contenido.paginas.hitos.crear');
-        })->name('crear');
-
-        Route::get('/gestionar', function () {
-            return view('contenido.paginas.hitos.muro-demo');
-        })->name('gestionar');
-    });
-    // ============================================
 
     // Planes Lectores
     Route::get('/planes-lectores/dashboard', [PlanLectorController::class, 'dashboard'])->name('planes-lectores.dashboard');
@@ -1553,6 +1545,51 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Notificaciones
     Route::get('/notificaciones', [NotificacionController::class, 'lista'])->name('notificaciones.lista');
     Route::get('/notificaciones/configuracion', [NotificacionController::class, 'configuracion'])->name('notificaciones.configuracion');
+
+    // --- Rutas del Módulo Hitos ---
+    Route::prefix('hitos')->name('hitos.')->group(function () {
+        // Muro del Feligrés (Línea de Vida interactiva)
+        Route::get('/muro', [\App\Http\Controllers\HitoController::class, 'muro'])->name('muro');
+
+        // Gestión Administrativa (CRUD)
+        Route::get('/', function () {
+            return view('contenido.paginas.hitos.gestionar');
+        })->name('index');
+
+        Route::get('/crear', function () {
+            return view('contenido.paginas.hitos.crear-editar');
+        })->name('crear');
+
+        Route::get('/{hitoId}/editar', function ($hitoId) {
+            return view('contenido.paginas.hitos.crear-editar', ['hitoId' => $hitoId]);
+        })->name('editar');
+
+        Route::get('/{hito}/asistencia', function (\App\Models\Hito $hito) {
+            return view('contenido.paginas.hitos.asistencias', ['hito' => $hito]);
+        })->name('asistencia');
+
+        Route::get('/denuncias', function () {
+            return view('contenido.paginas.hitos.denuncias');
+        })->name('denuncias');
+
+        // Endpoints de interacción y acciones
+        Route::post('/{hito}/like', [\App\Http\Controllers\HitoController::class, 'toggleLike'])->name('like');
+        Route::post('/{hito}/fotos', [\App\Http\Controllers\HitoController::class, 'subirFoto'])->name('subir-foto');
+        Route::post('/{hito}/denunciar', [\App\Http\Controllers\HitoController::class, 'denunciar'])->name('denunciar');
+        Route::post('/{hito}/migrar', [\App\Http\Controllers\HitoController::class, 'migrarRetroactivo'])->name('migrar');
+        Route::post('/{hito}/toggle-activo', [\App\Http\Controllers\HitoController::class, 'toggleActivo'])->name('toggle-activo');
+    });
+
+    // --- Tipos de Hitos (Configuración) ---
+    Route::prefix('tipo-hitos')->name('tipo-hitos.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\TipoHitosController::class, 'listarTipoHitos'])->name('listarTipoHitos');
+        Route::get('/crear', [\App\Http\Controllers\TipoHitosController::class, 'creacionTipoHitos'])->name('creacionTipoHitos');
+        Route::post('/guardar', [\App\Http\Controllers\TipoHitosController::class, 'crearTipoHitos'])->name('crearTipoHitos');
+        Route::get('/editar/{id}', [\App\Http\Controllers\TipoHitosController::class, 'actualizacionTipoHitos'])->name('actualizacionTipoHitos');
+        Route::put('/actualizar/{id}', [\App\Http\Controllers\TipoHitosController::class, 'actualizarTipoHitos'])->name('actualizarTipoHitos');
+        Route::delete('/eliminar/{id}', [\App\Http\Controllers\TipoHitosController::class, 'eliminarTipoHitos'])->name('eliminarTipoHitos');
+        Route::post('/cambiar-estado/{id}', [\App\Http\Controllers\TipoHitosController::class, 'toggleEstado'])->name('toggleEstado');
+    });
 });
 
 require __DIR__.'/auth.php';

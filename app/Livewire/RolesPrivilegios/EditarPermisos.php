@@ -1,18 +1,25 @@
 <?php
+
 namespace App\Livewire\RolesPrivilegios;
+
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+
 class EditarPermisos extends Component
 {
     public $role;
+
     public $rolActivo;
+
     public $search = '';
+
     public function mount(Role $role)
     {
         $this->role = $role;
         $this->rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
     }
+
     public function togglePermiso($permisoName, $estado)
     {
         if ($estado) {
@@ -25,9 +32,9 @@ class EditarPermisos extends Component
         // Limpiamos el caché de permisos de Spatie para que los cambios se apliquen de inmediato
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
+
     public function bloquesDePermisos()
     {
-        $bloques = [];
         $items = [
             'Personas' => 'personas.',
             'Grupos' => 'grupos.',
@@ -52,10 +59,11 @@ class EditarPermisos extends Component
             'Consejería' => 'consejeria.',
             'Cursos' => 'cursos.',
             'Versiculos' => 'versiculos.',
-            'Publicaciones' => 'publicaciones.',
+            'Publicaciones' => 'posts.',
             'Iglesia Infantil' => 'iglesia_infantil.',
             'Rueda de la vida' => 'rueda_de_la_vida.',
-            'Tiempo con Dios' => 'tiempo_con_dios.',
+            'Planes Lectores' => 'planes_lectores.',
+            'Hitos' => 'hitos.',
         ];
         foreach ($items as $nombre => $etiqueta) {
             $item = new \stdClass;
@@ -63,8 +71,10 @@ class EditarPermisos extends Component
             $item->etiqueta = $etiqueta;
             $bloques[] = $item;
         }
+
         return $bloques;
     }
+
     public function render()
     {
         $checkboxes = [];
@@ -122,6 +132,7 @@ class EditarPermisos extends Component
                 $checkboxes[] = $item;
             }
         }
+
         return view('livewire.roles-privilegios.editar-permisos', [
             'bloquesPermisos' => $checkboxes,
         ]);

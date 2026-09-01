@@ -148,7 +148,7 @@ class GrupoSeeder extends Seeder
         );
 
         DB::table('encargados_grupo')->updateOrInsert(
-            ['grupo_id' => 4, 'user_id' => 5]
+            ['grupo_id' => 4, 'user_id' => 6]
         );
 
         // integrantes_grupo
@@ -176,12 +176,12 @@ class GrupoSeeder extends Seeder
             ['grupo_id' => 4, 'user_id' => 8]
         );
 
-        /* DB::table('integrantes_grupo')->updateOrInsert(
-             ['grupo_id' => 4, 'user_id' => 9]
-         );*/
+        DB::table('integrantes_grupo')->updateOrInsert(
+            ['grupo_id' => 4, 'user_id' => 9]
+        );
 
-        /* DB::table('integrantes_grupo')->updateOrInsert(
-             ['grupo_id' => 4, 'user_id' => 11]
-         );*/
+        DB::table('integrantes_grupo')->updateOrInsert(
+            ['grupo_id' => 4, 'user_id' => 11]
+        );
     }
 }

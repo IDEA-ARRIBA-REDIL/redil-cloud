@@ -31,7 +31,7 @@ class ValidadorEscuelas
     {
         // 1. OBTENER ESTADO ACTUAL DEL ESTUDIANTE
         $materiasAprobadasIds = MateriaAprobadaUsuario::where('user_id', $usuario->id)
-            ->where('aprobado', true)
+            ->where('aprobado', MateriaAprobadaUsuario::ESTADO_APROBADO)
             ->pluck('materia_id')->toArray();
 
         // Se obtienen las materias que el usuario está cursando AHORA en períodos activos (excluyendo matrículas anuladas/rechazadas).

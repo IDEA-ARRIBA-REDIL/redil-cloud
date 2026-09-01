@@ -49,7 +49,7 @@
             </a>
         </li>
 
-        @if ($rolActivo->hasPermissionTo('personas.item_asistentes'))
+        @if ($rolActivo->hasAnyPermission(['personas.item_asistentes', 'personas.subitem_lista_asistentes', 'personas.subitem_nuevo_asistente']))
             <li class="menu-item {{ request()->routeIs('usuario.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle ">
                     <i class="menu-icon tf-icons ti ti-users"></i>
@@ -87,7 +87,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('consolidacion.item_consolidacion'))
+        @if ($rolActivo->hasAnyPermission(['consolidacion.item_consolidacion', 'consolidacion.subitem_lista_consolidacion', 'consolidacion.dashboard_consolidacion', 'consolidacion.reporte_desempeño']))
             <li class="menu-item {{ request()->routeIs('consolidacion.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle ">
                     <i class="menu-icon tf-icons ti ti-heart-handshake"></i>
@@ -124,7 +124,7 @@
         @endif
 
 
-        @if ($rolActivo->hasPermissionTo('consejeria.item_consejeria'))
+        @if ($rolActivo->hasAnyPermission(['consejeria.item_consejeria', 'consejeria.subitem_gestionar_consejeros', 'consejeria.subitem_nueva_cita', 'consejeria.subitem_mis_citas', 'consejeria.subitem_calendario_citas']))
             <li class="menu-item {{ request()->routeIs('consejeria.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle ">
                     <i class="menu-icon tf-icons ti ti-messages"></i>
@@ -165,9 +165,10 @@
                         </li>
                     @endif
                 </ul>
+            </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('familiar.item_familiar'))
+        @if ($rolActivo->hasAnyPermission(['familiar.item_familiar', 'familiar.subitem_gentionar_relaciones', 'familiar.subitem_informes']))
             <li class="menu-item">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-home-heart"></i>
@@ -212,7 +213,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('peticiones.item_peticiones'))
+        @if ($rolActivo->hasAnyPermission(['peticiones.item_peticiones', 'peticiones.subitem_nueva_peticion', 'peticiones.subitem_gestionar_peticiones', 'peticiones.subitem_dashboard_peticiones', 'peticiones.subitem_gestionar_intercesores']))
             <li class="menu-item {{ (request()->routeIs('peticion.*') || request()->routeIs('peticiones.*')) ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-notes"></i>
@@ -267,7 +268,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('grupos.item_grupos'))
+        @if ($rolActivo->hasAnyPermission(['grupos.item_grupos', 'grupos.subitem_lista_grupos', 'grupos.subitem_nuevo_grupo', 'reportes_grupos.subitem_lista_reportes_grupo', 'grupos.subitem_grafico_ministerio', 'grupos.subitem_mapa_grupos', 'grupos.subitem_excluir_asistentes_grupos', 'grupos.subitem_informe_administrativo_de_evidencia_de_grupos', 'grupos.subitem_dashboard', 'grupos.subitem_lista_informes_grupo']))
             <li class="menu-item {{ request()->routeIs('grupo.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-atom-2"></i>
@@ -351,7 +352,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('reuniones.item_reuniones'))
+        @if ($rolActivo->hasAnyPermission(['reuniones.item_reuniones', 'reuniones.subitem_lista_reuniones', 'reuniones.subitem_nueva_reunion', 'reporte_reuniones.subitem_lista_reportes_reunion', 'reporte_reuniones.subitem_proximas_reuniones']))
             <li
                 class="menu-item {{ request()->routeIs('reuniones.*') || request()->routeIs('reporteReunion.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
@@ -395,7 +396,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('iglesia_infantil.item_iglesia_infantil'))
+        @if ($rolActivo->hasAnyPermission(['iglesia_infantil.item_iglesia_infantil', 'iglesia_infantil.item_administracion', 'iglesia_infantil.subitem_checkin', 'iglesia_infantil.subitem_lista_turno']))
             <li class="menu-item {{ request()->routeIs('iglesiaInfantil.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-baby-carriage"></i>
@@ -430,7 +431,23 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('escuelas.item_escuelas'))
+        @if ($rolActivo->hasAnyPermission([
+            'escuelas.item_escuelas',
+            'escuelas.es_estudiante',
+            'escuelas.es_maestro',
+            'escuelas.es_administrativo',
+            'escuelas.subitem_lista_escuelas',
+            'escuelas.item_aula',
+            'escuelas.item_periodos',
+            'escuelas.item_matriculas',
+            'escuelas.subitem_gestionar_mis_solicitudes_traslado',
+            'escuelas.calificaciones',
+            'escuelas.subitem_mis_calificaciones',
+            'escuelas.subitem_recursos_generales',
+            'escuelas.mis_recursos_generales',
+            'escuelas.item_maestros',
+            'escuelas.item_banners'
+        ]))
             <li class="menu-item">
                 <a target="_blank" href="{{ route('escuelas.dashboard') }}" class="menu-link ">
                     <i class="menu-icon tf-icons ti ti-school"></i>
@@ -441,7 +458,7 @@
 
         {{-- Módulo Cursos --}}
 
-        @if ($rolActivo && $rolActivo->hasPermissionTo('cursos.item_cursos'))
+        @if ($rolActivo && $rolActivo->hasAnyPermission(['cursos.item_cursos', 'cursos.subitem_gestionar_cursos', 'cursos.subitem_campus_cursos', 'cursos.subitem_foro_cursos', 'cursos.dashboard_cursos', 'cursos.gestionar_tipos_cargo_cursos']))
             <li class="menu-item {{ request()->routeIs('cursos.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-device-laptop"></i>
@@ -488,7 +505,7 @@
         @endif
 
 
-        @if ($rolActivo->hasPermissionTo('sedes.item_sedes'))
+        @if ($rolActivo->hasAnyPermission(['sedes.item_sedes', 'sedes.subitem_lista_sedes', 'sedes.subitem_nueva_sede']))
             <li class="menu-item {{ request()->routeIs('sede.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-building"></i>
@@ -518,253 +535,258 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('actividades.item_actividades'))
+        @if ($rolActivo->hasAnyPermission(['actividades.item_actividades', 'actividades.subitem_listado_actividad', 'actividades.subitem_nueva_actividad']))
             <li class="menu-item {{ request()->routeIs('actividades.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-calendar-star"></i>
                     <div>Actividades </div>
                 </a>
-                @if ($rolActivo->hasPermissionTo('actividades.subitem_listado_actividad'))
-                    <ul class="menu-sub">
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('actividades.subitem_listado_actividad'))
                         <li class="menu-item {{ request()->routeIs('actividades.listado') ? 'active' : '' }}">
                             <a href="{{ route('actividades.index') }}" class="menu-link">
                                 <div>Listado</div>
                             </a>
                         </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('actividades.subitem_nueva_actividad'))
-            <li class="menu-item {{ request()->routeIs('actividades.nueva') ? 'active' : '' }}">
-                <a href="{{ route('actividades.nueva') }}" class="menu-link ">
-                    <div>Nueva</div>
-                </a>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('actividades.subitem_nueva_actividad'))
+                        <li class="menu-item {{ request()->routeIs('actividades.nueva') ? 'active' : '' }}">
+                            <a href="{{ route('actividades.nueva') }}" class="menu-link ">
+                                <div>Nueva</div>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
             </li>
         @endif
-    </ul>
-    </li>
-    @endif
 
-    @if ($rolActivo->hasPermissionTo('pdp.item_puntos_de_pago'))
-        <li
-            class="menu-item {{ request()->routeIs('puntosDePago.*') || request()->routeIs('taquillas.*') ? 'active open' : '' }}">
+        @if ($rolActivo->hasAnyPermission(['pdp.item_puntos_de_pago', 'pdp.gestionar_pdp', 'pdp.gestionar_taquillas', 'pdp.gestionar_asesores', 'pdp.gestionar_anulaciones', 'pdp.historial_anulaciones', 'pdp.mis_cajas']))
+            <li
+                class="menu-item {{ request()->routeIs('puntosDePago.*') || request()->routeIs('taquillas.*') ? 'active open' : '' }}">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-building-store"></i>
+                    <div>Puntos de pago</div>
+                </a>
+
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('pdp.gestionar_pdp'))
+                        <li class="menu-item {{ request()->routeIs('puntosDePago.gestionar') ? 'active' : '' }}">
+                            <a href="{{ route('puntosDePago.gestionar') }}" class="menu-link">
+                                <div>Gestionar puntos de pago</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('pdp.gestionar_taquillas'))
+                        <li class="menu-item {{ request()->routeIs('taquillas.gestionar') ? 'active' : '' }}">
+                            <a href="{{ route('taquillas.gestionar') }}" class="menu-link">
+                                <div>Gestionar taquillas</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('pdp.gestionar_asesores'))
+                        <li class="menu-item {{ request()->routeIs('asesores_pdp.gestionar') ? 'active' : '' }}">
+                            <a href="{{ route('asesores_pdp.gestionar') }}" class="menu-link">
+                                <div>Gestionar asesores</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('pdp.gestionar_anulaciones'))
+                        <li class="menu-item ">
+                            <a href="{{ route('taquilla.listarSolicitudesAnulacion') }}" class="menu-link">
+                                <div>Gestionar anulaciones</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('pdp.historial_anulaciones'))
+                        <li class="menu-item ">
+                            <a href="{{ route('taquilla.historialModificaciones') }}" class="menu-link">
+                                <div>Historial anulaciones</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('pdp.mis_cajas'))
+                        <li class="menu-item {{ request()->routeIs('taquilla.mis-cajas') ? 'active' : '' }}">
+                            <a href="{{ route('taquilla.mis-cajas') }}" class="menu-link">
+                                <div>Mis cajas</div>
+                            </a>
+                        </li>
+                    @endif
+
+
+
+                </ul>
+            </li>
+        @endif
+
+        @if ($rolActivo->hasPermissionTo('finanzas.item_finanzas'))
+            <li
+                class="menu-item {{ request()->routeIs('finanzas.*') || request()->routeIs('finanzas.*') ? 'active open' : '' }}">
+                <a href="" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-cash-banknote"></i>
+                    <div>Finanzas </div>
+                </a>
+
+                <ul class="menu-sub">
+                    <li class="menu-item {{ request()->routeIs('finanzas.ingreso') ? 'active' : '' }}">
+                        <a href="{{ route('finanzas.ingreso') }}" class="menu-link">
+                            <div>Crear ingreso</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('finanzas.gestionarIngresos') ? 'active' : '' }}">
+                        <a href="{{ route('finanzas.gestionarIngresos') }}" class="menu-link">
+                            <div>Gestionar ingreso</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('finanzas.egreso') ? 'active' : '' }}">
+                        <a href="{{ route('finanzas.egreso') }}" class="menu-link">
+                            <div>Crear egreso</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('finanzas.gestionarEgresos') ? 'active' : '' }}">
+                        <a href="{{ route('finanzas.gestionarEgresos') }}" class="menu-link">
+                            <div>Gestionar egreso</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ request()->routeIs('finanzas.estadisticas') ? 'active' : '' }}">
+                        <a href="{{ route('finanzas.estadisticas') }}" class="menu-link">
+                            <div>Estadisticas</div>
+                        </a>
+                    </li>
+                </ul>
+
+            </li>
+        @endif
+
+        @if ($rolActivo->hasAnyPermission(['temas.item_temas', 'temas.item_listado_temas', 'temas.item_nuevo_tema']))
+            <li class="menu-item">
+                <a href="" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-blockquote"></i>
+                    <div>Temas </div>
+                </a>
+
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('temas.item_listado_temas'))
+                        <li class="menu-item">
+                            <a href="{{ route('tema.lista') }}" class="menu-link">
+                                <div>Listado</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if ($rolActivo->hasPermissionTo('temas.item_nuevo_tema'))
+                        <li class="menu-item">
+                            <a href="{{ route('tema.nuevo') }}" class="menu-link">
+                                <div>Nuevo</div>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+            </li>
+        @endif
+
+        @if ($rolActivo->hasAnyPermission(['versiculos.item_versiculos', 'versiculos.subitem_gestionar_versiculos']))
+            <li class="menu-item {{ request()->routeIs('versiculos.*') ? 'active open' : '' }}">
+                <a href="" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-bible"></i>
+                    <div>Versículos </div>
+                </a>
+
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('versiculos.subitem_gestionar_versiculos'))
+                        <li class="menu-item {{ request()->routeIs('versiculos.index') ? 'active' : '' }}">
+                            <a href="{{ route('versiculos.index') }}" class="menu-link">
+                                <div>Gestionar versículos</div>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+            </li>
+        @endif
+
+        @if ($rolActivo->hasAnyPermission(['posts.item_publicaciones', 'posts.subitem_gestionar_publicaciones']))
+            <li class="menu-item {{ request()->routeIs('posts.*') ? 'active open' : '' }}">
+                <a href="" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-cards"></i>
+                    <div>Publicaciones </div>
+                </a>
+
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('posts.subitem_gestionar_publicaciones'))
+                        <li class="menu-item {{ request()->routeIs('posts.gestionar') ? 'active' : '' }}">
+                            <a href="{{ route('posts.gestionar') }}" class="menu-link">
+                                <div>Gestionar publicaciones</div>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+            </li>
+        @endif
+
+        {{-- ============================================
+             HITOS - DEMO (visible para mostrar al cliente)
+             ============================================ --}}
+        <li class="menu-item {{ request()->routeIs('hitos.*') ? 'active open' : '' }}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ti ti-building-store"></i>
-                <div>Puntos de pago</div>
+                <i class="menu-icon tf-icons ti ti-album"></i>
+                <div>Hitos </div>
             </a>
 
             <ul class="menu-sub">
-                @if ($rolActivo->hasPermissionTo('pdp.gestionar_pdp'))
-                    <li class="menu-item {{ request()->routeIs('puntosDePago.gestionar') ? 'active' : '' }}">
-                        <a href="{{ route('puntosDePago.gestionar') }}" class="menu-link">
-                            <div>Gestionar puntos de pago</div>
-                        </a>
-                    </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('pdp.gestionar_taquillas'))
-                    <li class="menu-item {{ request()->routeIs('taquillas.gestionar') ? 'active' : '' }}">
-                        <a href="{{ route('taquillas.gestionar') }}" class="menu-link">
-                            <div>Gestionar taquillas</div>
-                        </a>
-                    </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('pdp.gestionar_asesores'))
-                    <li class="menu-item {{ request()->routeIs('asesores_pdp.gestionar') ? 'active' : '' }}">
-                        <a href="{{ route('asesores_pdp.gestionar') }}" class="menu-link">
-                            <div>Gestionar asesores</div>
-                        </a>
-                    </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('pdp.gestionar_anulaciones'))
-                    <li class="menu-item ">
-                        <a href="{{ route('taquilla.listarSolicitudesAnulacion') }}" class="menu-link">
-                            <div>Gestionar anulaciones</div>
-                        </a>
-                    </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('pdp.historial_anulaciones'))
-                    <li class="menu-item ">
-                        <a href="{{ route('taquilla.historialModificaciones') }}" class="menu-link">
-                            <div>Historial anulaciones</div>
-                        </a>
-                    </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('pdp.mis_cajas'))
-                    <li class="menu-item {{ request()->routeIs('taquilla.mis-cajas') ? 'active' : '' }}">
-                        <a href="{{ route('taquilla.mis-cajas') }}" class="menu-link">
-                            <div>Mis cajas</div>
-                        </a>
-                    </li>
-                @endif
-
-
-
-            </ul>
-        </li>
-    @endif
-
-    @if ($rolActivo->hasPermissionTo('finanzas.item_finanzas'))
-        <li
-            class="menu-item {{ request()->routeIs('finanzas.*') || request()->routeIs('finanzas.*') ? 'active open' : '' }}">
-            <a href="" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ti ti-cash-banknote"></i>
-                <div>Finanzas </div>
-            </a>
-
-            <ul class="menu-sub">
-                <li class="menu-item {{ request()->routeIs('finanzas.ingreso') ? 'active' : '' }}">
-                    <a href="{{ route('finanzas.ingreso') }}" class="menu-link">
-                        <div>Crear ingreso</div>
+                <li class="menu-item {{ request()->routeIs('hitos.muro') ? 'active' : '' }}">
+                    <a href="{{ route('hitos.muro') }}" class="menu-link">
+                        <div>Mi Línea de Vida (Demo)</div>
                     </a>
                 </li>
-
-                <li class="menu-item {{ request()->routeIs('finanzas.gestionarIngresos') ? 'active' : '' }}">
-                    <a href="{{ route('finanzas.gestionarIngresos') }}" class="menu-link">
-                        <div>Gestionar ingreso</div>
+                <li class="menu-item {{ request()->routeIs('hitos.index') ? 'active' : '' }}">
+                    <a href="{{ route('hitos.index') }}" class="menu-link">
+                        <div>Gestión de Hitos</div>
                     </a>
                 </li>
-
-                <li class="menu-item {{ request()->routeIs('finanzas.egreso') ? 'active' : '' }}">
-                    <a href="{{ route('finanzas.egreso') }}" class="menu-link">
-                        <div>Crear egreso</div>
-                    </a>
-                </li>
-
-                <li class="menu-item {{ request()->routeIs('finanzas.gestionarEgresos') ? 'active' : '' }}">
-                    <a href="{{ route('finanzas.gestionarEgresos') }}" class="menu-link">
-                        <div>Gestionar egreso</div>
-                    </a>
-                </li>
-
-                <li class="menu-item {{ request()->routeIs('finanzas.estadisticas') ? 'active' : '' }}">
-                    <a href="{{ route('finanzas.estadisticas') }}" class="menu-link">
-                        <div>Estadisticas</div>
+                <li class="menu-item {{ request()->routeIs('hitos.crear') ? 'active' : '' }}">
+                    <a href="{{ route('hitos.crear') }}" class="menu-link">
+                        <div>Crear Hito</div>
                     </a>
                 </li>
             </ul>
-
         </li>
-    @endif
+        {{-- ============================================ --}}
 
-    @if ($rolActivo->hasPermissionTo('temas.item_temas'))
-        <li class="menu-item">
-            <a href="" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ti ti-blockquote"></i>
-                <div>Temas </div>
-            </a>
-
-            <ul class="menu-sub">
-                @if ($rolActivo->hasPermissionTo('temas.item_listado_temas'))
-                    <li class="menu-item">
-                        <a href="{{ route('tema.lista') }}" class="menu-link">
-                            <div>Listado</div>
-                        </a>
-                    </li>
-                @endif
-
-                @if ($rolActivo->hasPermissionTo('temas.item_nuevo_tema'))
-                    <li class="menu-item">
-                        <a href="{{ route('tema.nuevo') }}" class="menu-link">
-                            <div>Nuevo</div>
-                        </a>
-                    </li>
-                @endif
-            </ul>
-        </li>
-    @endif
-
-    @if ($rolActivo->hasPermissionTo('versiculos.item_versiculos'))
-        <li class="menu-item {{ request()->routeIs('versiculos.*') ? 'active open' : '' }}">
-            <a href="" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ti ti-bible"></i>
-                <div>Versículos </div>
-            </a>
-
-            <ul class="menu-sub">
-                @if ($rolActivo->hasPermissionTo('versiculos.subitem_gestionar_versiculos'))
-                    <li class="menu-item {{ request()->routeIs('versiculos.index') ? 'active' : '' }}">
-                        <a href="{{ route('versiculos.index') }}" class="menu-link">
-                            <div>Gestionar versículos</div>
-                        </a>
-                    </li>
-                @endif
-            </ul>
-        </li>
-    @endif
-
-    @if ($rolActivo->hasPermissionTo('posts.item_publicaciones'))
-        <li class="menu-item {{ request()->routeIs('posts.*') ? 'active open' : '' }}">
-            <a href="" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ti ti-cards"></i>
-                <div>Publicaciones </div>
-            </a>
-
-            <ul class="menu-sub">
-                @if ($rolActivo->hasPermissionTo('posts.subitem_gestionar_publicaciones'))
-                    <li class="menu-item {{ request()->routeIs('posts.gestionar') ? 'active' : '' }}">
-                        <a href="{{ route('posts.gestionar') }}" class="menu-link">
-                            <div>Gestionar publicaciones</div>
-                        </a>
-                    </li>
-                @endif
-            </ul>
-        </li>
-    @endif
-
-    {{-- ============================================
-         HITOS - DEMO (visible para mostrar al cliente)
-         ============================================ --}}
-    <li class="menu-item {{ request()->routeIs('hitos.*') ? 'active open' : '' }}">
-        <a href="" class="menu-link menu-toggle">
-            <i class="menu-icon tf-icons ti ti-album"></i>
-            <div>Hitos </div>
-        </a>
-
-        <ul class="menu-sub">
-            <li class="menu-item {{ request()->routeIs('hitos.muro') ? 'active' : '' }}">
-                <a href="{{ route('hitos.muro') }}" class="menu-link">
-                    <div>Mi muro </div>
+        @if ($rolActivo->hasAnyPermission(['planes_lectores.item_planes_lectores', 'planes_lectores.dashboard', 'planes_lectores.subitem_gestionar_planes_lectores', 'planes_lectores.mis_planes_lectores']))
+            <li class="menu-item {{ request()->routeIs('planes-lectores.*') ? 'active open' : '' }}">
+                <a href="" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-book"></i>
+                    <div>Plan Lector </div>
                 </a>
-            </li>
-            <li class="menu-item {{ request()->routeIs('hitos.crear') ? 'active' : '' }}">
-                <a href="{{ route('hitos.crear') }}" class="menu-link">
-                    <div>Crear hito </div>
-                </a>
-            </li>
-        </ul>
-    </li>
-    {{-- ============================================ --}}
 
-    @if ($rolActivo->hasPermissionTo('planes_lectores.item_planes_lectores'))
-        <li class="menu-item {{ request()->routeIs('planes-lectores.*') ? 'active open' : '' }}">
-            <a href="" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ti ti-book"></i>
-                <div>Plan Lector </div>
-            </a>
-
-            <ul class="menu-sub">
-                @if ($rolActivo->hasPermissionTo('planes_lectores.dashboard'))
-                    <li class="menu-item {{ request()->routeIs('planes-lectores.dashboard') ? 'active' : '' }}">
-                        <a href="{{ route('planes-lectores.dashboard') }}" class="menu-link">
-                            <div>Dashboard</div>
-                        </a>
-                    </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('planes_lectores.subitem_gestionar_planes_lectores'))
-                    <li class="menu-item {{ request()->routeIs('planes-lectores.gestionar') ? 'active' : '' }}">
-                        <a href="{{ route('planes-lectores.gestionar') }}" class="menu-link">
-                            <div>Gestionar</div>
-                        </a>
-                    </li>
-                @endif
-                @if ($rolActivo->hasPermissionTo('planes_lectores.mis_planes_lectores'))
-                    <li class="menu-item {{ request()->routeIs('planes-lectores.inicio') ? 'active' : '' }}">
-                        <a href="{{ route('planes-lectores.inicio') }}" class="menu-link">
-                            <div>Mis planes</div>
-                        </a>
-                    </li>
-                @endif
-            </ul>
-        </li>
-    @endif
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('planes_lectores.dashboard'))
+                        <li class="menu-item {{ request()->routeIs('planes-lectores.dashboard') ? 'active' : '' }}">
+                            <a href="{{ route('planes-lectores.dashboard') }}" class="menu-link">
+                                <div>Dashboard</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('planes_lectores.subitem_gestionar_planes_lectores'))
+                        <li class="menu-item {{ request()->routeIs('planes-lectores.gestionar') ? 'active' : '' }}">
+                            <a href="{{ route('planes-lectores.gestionar') }}" class="menu-link">
+                                <div>Gestionar</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('planes_lectores.mis_planes_lectores'))
+                        <li class="menu-item {{ request()->routeIs('planes-lectores.inicio') ? 'active' : '' }}">
+                            <a href="{{ route('planes-lectores.inicio') }}" class="menu-link">
+                                <div>Mis planes</div>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+            </li>
+        @endif
 
     @if ($rolActivo->hasPermissionTo('iglesia.item_iglesia'))
         <li class="menu-item">

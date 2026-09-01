@@ -12,6 +12,12 @@ class MateriaAprobadaUsuario extends Model
 
     protected $table = 'materias_aprobada_usuario';
 
+    public const ESTADO_REPROBADO = 0;
+
+    public const ESTADO_APROBADO = 1;
+
+    public const ESTADO_EN_PROCESO = 2;
+
     /**
      * Los atributos que se pueden asignar de forma masiva.
      */
@@ -22,12 +28,14 @@ class MateriaAprobadaUsuario extends Model
         'periodo_id',
         'aprobado',
         'nota_final',
+        'creditos_aprobados',
         'total_asistencias',
         'motivo_reprobacion',
         'es_homologacion',
         'observacion_homologacion',
         'sede_id',
         'fecha_homologacion',
+        'fecha_homologacion_aprobacion',
         'homologado_por_user_id',
     ];
 
@@ -35,10 +43,87 @@ class MateriaAprobadaUsuario extends Model
      * Los atributos que deben ser casteados a tipos nativos.
      */
     protected $casts = [
-        'aprobado' => 'boolean',
+        'aprobado' => 'integer',
         'nota_final' => 'decimal:2',
+        'creditos_aprobados' => 'integer',
         'total_asistencias' => 'integer',
+        'fecha_homologacion_aprobacion' => 'datetime',
     ];
+
+    public function esAprobado(): bool
+    {
+        return (int) $this->aprobado === self::ESTADO_APROBADO;
+    }
+
+    public function esEnProceso(): bool
+    {
+        return (int) $this->aprobado === self::ESTADO_EN_PROCESO;
+    }
+
+    public function esReprobado(): bool
+    {
+        return (int) $this->aprobado === self::ESTADO_REPROBADO;
+    }
+
+    protected static function booted()
+    {
+        static::saving(function ($materiaAprobada) {
+            if ((int) $materiaAprobada->aprobado === self::ESTADO_APROBADO) {
+                if (is_null($materiaAprobada->creditos_aprobados) && $materiaAprobada->materia_id) {
+                    $materia = $materiaAprobada->materia ?? Materia::find($materiaAprobada->materia_id);
+                    if ($materia && ! is_null($materia->creditos)) {
+                        $materiaAprobada->creditos_aprobados = $materia->creditos;
+                    }
+                }
+            } else {
+                $materiaAprobada->creditos_aprobados = null;
+            }
+        });
+
+        static::created(function ($materiaAprobada) {
+            if ((int) $materiaAprobada->aprobado === self::ESTADO_APROBADO) {
+                try {
+                    $materia = $materiaAprobada->materia;
+                    $fecha = $materiaAprobada->fecha_homologacion
+                        ? substr((string) $materiaAprobada->fecha_homologacion, 0, 10)
+                        : ($materiaAprobada->created_at ? $materiaAprobada->created_at->toDateString() : now()->toDateString());
+
+                    app(\App\Services\HitoTriggerService::class)->onMateriaAprobada(
+                        $materiaAprobada->user_id,
+                        $materiaAprobada->materia_id,
+                        $materia?->escuela_id,
+                        $materia?->nivel_id,
+                        $materiaAprobada->id,
+                        $fecha
+                    );
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Error disparando hito en MateriaAprobadaUsuario (created): '.$e->getMessage());
+                }
+            }
+        });
+
+        static::updated(function ($materiaAprobada) {
+            if ($materiaAprobada->isDirty('aprobado') && (int) $materiaAprobada->aprobado === self::ESTADO_APROBADO) {
+                try {
+                    $materia = $materiaAprobada->materia;
+                    $fecha = $materiaAprobada->fecha_homologacion
+                        ? substr((string) $materiaAprobada->fecha_homologacion, 0, 10)
+                        : ($materiaAprobada->updated_at ? $materiaAprobada->updated_at->toDateString() : now()->toDateString());
+
+                    app(\App\Services\HitoTriggerService::class)->onMateriaAprobada(
+                        $materiaAprobada->user_id,
+                        $materiaAprobada->materia_id,
+                        $materia?->escuela_id,
+                        $materia?->nivel_id,
+                        $materiaAprobada->id,
+                        $fecha
+                    );
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Error disparando hito en MateriaAprobadaUsuario (updated): '.$e->getMessage());
+                }
+            }
+        });
+    }
 
     // -----------------------------------------------------------------
     // RELACIONES

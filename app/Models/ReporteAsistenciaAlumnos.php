@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,6 +29,7 @@ class ReporteAsistenciaAlumnos extends Model
         'asistio',
         'motivo_inasistencia_id',
         'observaciones_alumno',
+        'auto_asistencia',
     ];
 
     /**
@@ -37,6 +39,7 @@ class ReporteAsistenciaAlumnos extends Model
      */
     protected $casts = [
         'asistio' => 'boolean',
+        'auto_asistencia' => 'boolean',
         // No hay 'fecha_clase_reportada' aquí, ya que está en la tabla maestra 'reportes_asistencia_clase'
     ];
 

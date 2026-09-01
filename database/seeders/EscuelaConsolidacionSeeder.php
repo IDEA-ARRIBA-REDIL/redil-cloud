@@ -63,8 +63,8 @@ class EscuelaConsolidacionSeeder extends Seeder
         // 2. ESCUELAS Y ESTRUCTURA ACADÉMICA
         // ---------------------------------------------------------
         $escuelasData = [
-            ['nombre' => 'CHL', 'descripcion' => 'Escuela de Consolidación CHL'],
-            ['nombre' => 'CHL WARRIORS', 'descripcion' => 'Escuela de Consolidación CHL WARRIORS'],
+            ['nombre' => 'CHL', 'descripcion' => 'Escuela de Consolidación CHL', 'caracter_obligatorio' => true],
+            ['nombre' => 'CHL WARRIORS', 'descripcion' => 'Escuela de Consolidación CHL WARRIORS', 'caracter_obligatorio' => false],
         ];
 
         // Guardamos referencias para matrículas posteriores
@@ -79,6 +79,7 @@ class EscuelaConsolidacionSeeder extends Seeder
                 'tipo_matricula' => 'materias_independientes',
                 'diploma_id' => 1,
                 'habilitada_consolidacion' => true,
+                'caracter_obligatorio' => $data['caracter_obligatorio'],
             ]);
 
             $escuelasMap[$data['nombre']] = $escuela;

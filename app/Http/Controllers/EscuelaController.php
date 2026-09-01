@@ -142,6 +142,7 @@ class EscuelaController extends Controller
         $escuela->descripcion = $request->descripcion;
         $escuela->tipo_matricula = $request->tipo_matricula;
         $escuela->habilitada_consolidacion = $request->has('habilitada_consolidacion');
+        $escuela->caracter_obligatorio = $request->has('caracter_obligatorio');
         $escuela->save();
 
         // 2. Crear los CortesEscuela asociados con porcentaje distribuido
@@ -220,6 +221,7 @@ class EscuelaController extends Controller
             'descripcion' => 'nullable|string',
             'tipo_matricula' => 'required|in:materias_independientes,niveles_agrupados',
             'habilitada_consolidacion' => 'nullable|boolean',
+            'caracter_obligatorio' => 'nullable|boolean',
         ]);
 
         $escuela->update([
@@ -227,6 +229,7 @@ class EscuelaController extends Controller
             'descripcion' => $request->descripcion,
             'tipo_matricula' => $request->tipo_matricula,
             'habilitada_consolidacion' => $request->has('habilitada_consolidacion'),
+            'caracter_obligatorio' => $request->has('caracter_obligatorio'),
         ]);
 
         // Actualizar portada (nombre del archivo subido via fetch async)

@@ -18,8 +18,8 @@ class EstructuraGruposPruebaSeeder extends Seeder
     public function run(): void
     {
         // 1. Roles
-       /* $lider = Role::findByName('Lider');
-        $oveja = Role::findByName('Oveja');
+        $lider = Role::findByName('Lider Prueba');
+        $oveja = Role::findByName('Oveja Prueba');
 
         // 2. Crear usuario Didier
         $didier = User::firstOrCreate(
@@ -191,9 +191,8 @@ class EstructuraGruposPruebaSeeder extends Seeder
                 // Generar Reportes Grupo N3
                 $this->generarReportesParaGrupo($grupoEvangelisticoN3);
             }
-        }*/
+        }
 
-            
         // Crear 4 Asistentes (Nivel 3 - Bisnietos)
         $oveja = Role::findByName('Oveja Prueba');
         for ($k = 1; $k <= 3; $k++) {
@@ -224,9 +223,9 @@ class EstructuraGruposPruebaSeeder extends Seeder
                 'email_verified_at' => now(),
             ]);
             $asistenteN3->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
-        
-        }   
-        
+
+        }
+
         for ($k = 1; $k <= 1; $k++) {
             $asistenteN3 = User::create([
                 'email' => "asistente.nivel3menor.$k@reporte.com", // Emails únicos
@@ -248,15 +247,15 @@ class EstructuraGruposPruebaSeeder extends Seeder
                 'sede_id' => 309,
                 'activo' => 1,
                 'asistente_id' => 1,
-                'estado_civil_id' => 1, 
+                'estado_civil_id' => 1,
                 'genero' => 0,
                 'fecha_nacimiento' => '2020-01-01',
                 'tipo_vinculacion_id' => 1,
                 'email_verified_at' => now(),
             ]);
             $asistenteN3->roles()->attach($oveja->id, ['activo' => 1, 'dependiente' => 1, 'model_type' => 'App\Models\User']);
-        
-        }   
+
+        }
     }
 
     /**

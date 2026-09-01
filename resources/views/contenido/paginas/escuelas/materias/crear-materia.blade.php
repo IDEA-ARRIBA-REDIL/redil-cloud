@@ -193,27 +193,25 @@
             const inputDiasPlazoReporte = $('#diasPlazoReporte');
 
             function actualizarCamposLimiteReporte() {
+                const asistenciasHabilitadas = $('#togglehabilitarAsistencias').is(':checked');
+
+                if (!asistenciasHabilitadas) {
+                    selectDia.prop('disabled', true).prop('required', false);
+                    inputCantidadReportesSemana.prop('disabled', true).prop('required', false);
+                    inputDiasPlazoReporte.prop('disabled', true).prop('required', false);
+                    return;
+                }
+
                 if (switchDiaLimite.is(':checked')) {
-                    selectDia.prop('disabled', false);
-                    selectDia.prop('required', true);
+                    selectDia.prop('disabled', false).prop('required', true);
 
-                    inputCantidadReportesSemana.prop('disabled', true);
-                    inputCantidadReportesSemana.prop('required', false);
-                    inputCantidadReportesSemana.val('');
-
-                    inputDiasPlazoReporte.prop('disabled', true);
-                    inputDiasPlazoReporte.prop('required', false);
-                    inputDiasPlazoReporte.val('');
+                    inputCantidadReportesSemana.prop('disabled', true).prop('required', false).val('');
+                    inputDiasPlazoReporte.prop('disabled', true).prop('required', false).val('');
                 } else {
-                    selectDia.prop('disabled', true);
-                    selectDia.prop('required', false);
-                    selectDia.val('').trigger('change');
+                    selectDia.prop('disabled', true).prop('required', false).val('').trigger('change');
 
-                    inputCantidadReportesSemana.prop('disabled', false);
-                    inputCantidadReportesSemana.prop('required', true);
-
-                    inputDiasPlazoReporte.prop('disabled', false);
-                    inputDiasPlazoReporte.prop('required', true);
+                    inputCantidadReportesSemana.prop('disabled', false).prop('required', true);
+                    inputDiasPlazoReporte.prop('disabled', false).prop('required', true);
                 }
             }
 
@@ -230,6 +228,7 @@
                 } else {
                     $('.row-asistencias').addClass('d-none').hide();
                 }
+                actualizarCamposLimiteReporte();
             });
             // Initial state
             if ($('#togglehabilitarAsistencias').is(':checked')) {
@@ -254,42 +253,40 @@
 
             // --- Form Submit Validation ---
             $('#formNuevaMateria').on('submit', function(e) {
-                let form = this;
                 let errors = [];
+                const asistenciasHabilitadas = $('#togglehabilitarAsistencias').is(':checked');
 
-                if ($('#togglehabilitarAsistencias').is(':checked')) {
+                if (asistenciasHabilitadas) {
                     let asistencias = $('#asistenciasMinimas').val();
-                    if (!asistencias || parseInt(asistencias) < 1) {
-                        errors.push('Debe ingresar un valor válido (≥1) para asistencias mínimas');
+                    if (asistencias !== '' && parseInt(asistencias) < 0) {
+                        errors.push('Debe ingresar un valor válido (≥0) para asistencias mínimas');
+                    }
+
+                    if (switchDiaLimite.is(':checked')) {
+                        if (!selectDia.val()) {
+                            errors.push('Debe seleccionar un día límite para el reporte.');
+                        }
+                    } else {
+                        let reportesSemana = inputCantidadReportesSemana.val();
+                        if (reportesSemana === '' || parseInt(reportesSemana) < 0) {
+                            errors.push('Debe ingresar una cantidad válida para reportes por semana (ej. ≥0).');
+                        }
+
+                        let diasPlazo = inputDiasPlazoReporte.val();
+                        if (diasPlazo === '' || parseInt(diasPlazo) < 0) {
+                            errors.push('Debe ingresar una cantidad válida para días de plazo de reporte (ej. ≥0).');
+                        }
                     }
                 }
 
                 if ($('#togglehabilitarInasistencias').is(':checked')) {
                     let alerta = $('#cantidadInasistencias').val();
-                    if (!alerta || parseInt(alerta) < 1) {
-                        errors.push('Debe ingresar un valor válido (≥1) para alerta de inasistencias');
+                    if (alerta !== '' && parseInt(alerta) < 0) {
+                        errors.push('Debe ingresar un valor válido (≥0) para alerta de inasistencias');
                     }
                 }
 
-                if (switchDiaLimite.is(':checked')) {
-                    if (!selectDia.val()) {
-                        errors.push('Debe seleccionar un día límite para el reporte.');
-                    }
-                } else {
-                    let reportesSemana = inputCantidadReportesSemana.val();
-                    if (!reportesSemana || parseInt(reportesSemana) < 0) {
-                        errors.push('Debe ingresar una cantidad válida para reportes por semana (ej. ≥0).');
-                    }
-
-                    let diasPlazo = inputDiasPlazoReporte.val();
-                    if (!diasPlazo || parseInt(diasPlazo) < 0) {
-                        errors.push(
-                            'Debe ingresar una cantidad válida para días de plazo de reporte (ej. ≥0).');
-                    }
-                }
-
-                if (!$('#togglehabilitarCalificaciones').is(':checked') &&
-                    !$('#togglehabilitarAsistencias').is(':checked')) {
+                if (!$('#togglehabilitarCalificaciones').is(':checked') && !asistenciasHabilitadas) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error de configuración',
@@ -320,7 +317,7 @@
         <div class="col-md-12">
             <div class="card mb-4 rounded rounded-3">
                 <img id="preview-foto" class="cropped-img card-img-top mb-2"
-                    src="{{ tenant_asset('img/materias/default.png') }}"
+                    src="{{ Storage::disk('global_media')->url('Banner-escuelas.png')  }}"
                     alt="Portada {{ $escuela->nombre }}">
                 <button type="button" style="background-color: rgba(255, 255, 255, 0.5);"
                     class="btn btn-sm rounded-pill waves-effect waves-light position-absolute bottom-1 end-0 mt-3 mx-6 text-white p-2"
@@ -351,8 +348,8 @@
                 <div class="card h-100 p-6">
                     <h5 class="mb-4">Configuración inicial</h5>
                     <div class="row ">
-                        <div class="mb-3 col-12 col-md-6  col-sm-12">
-                            <label for="nombre" class="form-label">Nombre de la materia</label>
+                        <div class="mb-3 col-12 col-md-4 col-sm-12">
+                            <label for="nombre" class="form-label">Nombre</label>
                             <input value="{{ old('nombre', '') }}" type="text"
                                 class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre">
                             @error('nombre')
@@ -360,7 +357,16 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3 col-md-6 col-sm-12 ">
+                        <div class="mb-3 col-12 col-md-4 col-sm-12">
+                            <label for="creditos" class="form-label">Créditos</label>
+                            <input value="{{ old('creditos', '') }}" type="number" min="0"
+                                class="form-control @error('creditos') is-invalid @enderror" id="creditos" name="creditos">
+                            @error('creditos')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3 col-md-4 col-sm-12">
                             <label class="form-label">¿Habilitar asistencia?</label><br>
                             <label class="switch switch-lg">
                                 <input type="checkbox" class="switch-input" id="togglehabilitarAsistencias"

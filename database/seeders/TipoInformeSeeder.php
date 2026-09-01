@@ -19,5 +19,9 @@ class TipoInformeSeeder extends Seeder
         TipoInforme::firstOrCreate([
             'nombre' => 'Personas',
         ]);
+
+        TipoInforme::firstOrCreate([
+            'nombre' => 'Actividades',
+        ]);
     }
 }

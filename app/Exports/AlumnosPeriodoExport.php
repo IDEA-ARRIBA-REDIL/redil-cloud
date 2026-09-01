@@ -11,8 +11,11 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class AlumnosPeriodoExport implements FromQuery, WithHeadings, WithMapping
 {
     protected $periodo;
+
     protected $filtroMateriaPeriodo;
+
     protected $filtroSedeAlumno;
+
     protected $filtroSedeMatricula;
 
     public function __construct(Periodo $periodo, $filtroMateriaPeriodo, array $filtroSedeAlumno, array $filtroSedeMatricula)
@@ -41,44 +44,65 @@ class AlumnosPeriodoExport implements FromQuery, WithHeadings, WithMapping
             'Aula',
             'Sede Matricula',
             'Sede Alumno',
-            'Sede Material',      // NUEVO
-            'Fecha Matrícula',    // NUEVO
-            'Método Pago',        // NUEVO
+            'Sede Material',
+            'Fecha Matrícula',
+            'Método Pago',
+            'Punto de Pago',
+            'Asesor',
         ];
     }
 
     /**
      * Transforma cada resultado de la consulta en una fila del Excel.
-     * @param Matricula $matricula
+     *
+     * @param  Matricula  $matricula
      */
     public function map($matricula): array
     {
-        // Lógica para obtener el método de pago desde la inscripción asociada a la actividad del periodo
-        $metodoPago = 'N/A';
+        $inscripcion = $matricula->user?->inscripciones?->first();
 
-        // Buscamos la inscripción que coincida con la actividad de este periodo (gracias al eager loading filtrado)
-        $inscripcion = $matricula->user->inscripciones->first();
+        // 1. Obtener Método de Pago (prioridad: matricula -> pago -> compra -> inscripcion)
+        $tipoPagoObjeto = $matricula->tipoPago
+            ?? $matricula->pago?->tipoPago
+            ?? $matricula->compra?->metodoPago
+            ?? $matricula->compra?->pagos?->first()?->tipoPago
+            ?? $inscripcion?->compra?->metodoPago
+            ?? $inscripcion?->compra?->pagos?->first()?->tipoPago;
 
-        if ($inscripcion && $inscripcion->compra && $inscripcion->compra->metodoPago) {
-            $metodoPago = $inscripcion->compra->metodoPago->nombre;
-        }
+        $metodoPago = $tipoPagoObjeto?->nombre ?? 'N/A';
+
+        // 2. Obtener Punto de Pago (prioridad: pago de matricula -> pagos de compra -> pagos de inscripción)
+        $pagoConCaja = $matricula->pago?->caja
+            ? $matricula->pago
+            : ($matricula->compra?->pagos?->first(fn ($p) => $p->caja !== null)
+                ?? $inscripcion?->compra?->pagos?->first(fn ($p) => $p->caja !== null));
+
+        $puntoDePago = $pagoConCaja?->caja?->puntoDePago?->nombre ?? 'N/A';
+
+        // 3. Obtener Asesor / Cajero (usuario de la caja)
+        $asesorUser = $pagoConCaja?->caja?->usuario;
+        $asesor = $asesorUser ? $asesorUser->nombre(3) : 'N/A';
 
         return [
-            $matricula->user->id,
-            $matricula->user->nombre(3),
-            $matricula->user->identificacion ?? 'N/A',
-            $matricula->user->email,
-            $matricula->user->telefono_movil ?? 'N/A',
+            $matricula->user?->id ?? 'N/A',
+            $matricula->user?->nombre(3) ?? 'N/A',
+            $matricula->user?->identificacion ?? 'N/A',
+            $matricula->user?->email ?? 'N/A',
+            $matricula->user?->telefono_movil ?? 'N/A',
             $matricula->bloqueado ? 'Si' : 'N/A',
             $matricula->traslados_log_count > 0 ? 'Si' : 'N/A',
-            $matricula->horarioMateriaPeriodo->materiaPeriodo->materia->nombre,
-            $matricula->horarioMateriaPeriodo->horarioBase->dia_semana . ' | ' . $matricula->horarioMateriaPeriodo->horarioBase->hora_inicio_formato . ' - ' . $matricula->horarioMateriaPeriodo->horarioBase->hora_fin_formato,
-            $matricula->horarioMateriaPeriodo->horarioBase->aula->nombre,
-            $matricula->horarioMateriaPeriodo->horarioBase->aula->sede->nombre,
-            $matricula->user->sede->nombre ?? 'N/A',
-            $matricula->materialSede->nombre ?? 'N/A',            // NUEVO
-            $matricula->fecha_matricula ? $matricula->fecha_matricula->format('d/m/Y') : 'N/A', // NUEVO
-            $metodoPago,                                          // NUEVO
+            $matricula->horarioMateriaPeriodo?->materiaPeriodo?->materia?->nombre ?? 'N/A',
+            $matricula->horarioMateriaPeriodo?->horarioBase
+                ? $matricula->horarioMateriaPeriodo->horarioBase->dia_semana.' | '.$matricula->horarioMateriaPeriodo->horarioBase->hora_inicio_formato.' - '.$matricula->horarioMateriaPeriodo->horarioBase->hora_fin_formato
+                : 'N/A',
+            $matricula->horarioMateriaPeriodo?->horarioBase?->aula?->nombre ?? 'N/A',
+            $matricula->horarioMateriaPeriodo?->horarioBase?->aula?->sede?->nombre ?? 'N/A',
+            $matricula->user?->sede?->nombre ?? 'N/A',
+            $matricula->materialSede?->nombre ?? 'N/A',
+            $matricula->fecha_matricula ? $matricula->fecha_matricula->format('d/m/Y') : 'N/A',
+            $metodoPago,
+            $puntoDePago,
+            $asesor,
         ];
     }
 
@@ -88,25 +112,36 @@ class AlumnosPeriodoExport implements FromQuery, WithHeadings, WithMapping
     public function query()
     {
         // 1. Identificar la Actividad vinculada al Periodo actual
-        // Asumimos que la Escuela crea una Actividad y la vincula al Periodo.
         $actividadId = \App\Models\Actividad::where('periodo_id', $this->periodo->id)->value('id');
 
-        // La consulta base se hace sobre las Matrículas para obtener una fila por inscripción.
+        // La consulta base se hace sobre las Matrículas
         $query = Matricula::query()
             ->with([
                 'user.sede',
-                'materialSede', // <-- Eager loading para la nueva columna Sede Material
+                'materialSede',
                 'horarioMateriaPeriodo.materiaPeriodo.materia',
                 'horarioMateriaPeriodo.horarioBase.aula.sede',
-                // Eager loading condicional complejo para obtener inscripciones de la actividad correcta
+                'tipoPago',
+                'pago.tipoPago',
+                'pago.caja.puntoDePago',
+                'pago.caja.usuario',
+                'compra.metodoPago',
+                'compra.pagos.tipoPago',
+                'compra.pagos.caja.puntoDePago',
+                'compra.pagos.caja.usuario',
                 'user.inscripciones' => function ($q) use ($actividadId) {
                     if ($actividadId) {
                         $q->whereHas('categoriaActividad', function ($qCat) use ($actividadId) {
                             $qCat->where('actividad_id', $actividadId);
                         });
                     }
-                    $q->with('compra.metodoPago');
-                }
+                    $q->with([
+                        'compra.metodoPago',
+                        'compra.pagos.tipoPago',
+                        'compra.pagos.caja.puntoDePago',
+                        'compra.pagos.caja.usuario',
+                    ]);
+                },
             ])
             ->withCount('trasladosLog')
             ->where('periodo_id', $this->periodo->id)
@@ -114,25 +149,21 @@ class AlumnosPeriodoExport implements FromQuery, WithHeadings, WithMapping
             ->select('matriculas.*')
             ->orderBy('users.primer_nombre');
 
-
         // REPLICAMOS LA LÓGICA DE FILTRADO DEL COMPONENTE LIVEWIRE
-
-        // Si se seleccionó una materia, se aplica como filtro principal
         if ($this->filtroMateriaPeriodo) {
             $query->whereHas('horarioMateriaPeriodo', function ($horarioQuery) {
                 $horarioQuery->where('materia_periodo_id', $this->filtroMateriaPeriodo);
             });
         }
 
-        // Si se seleccionó alguna sede (de alumno o de matrícula)
-        if (!empty($this->filtroSedeAlumno) || !empty($this->filtroSedeMatricula)) {
+        if (! empty($this->filtroSedeAlumno) || ! empty($this->filtroSedeMatricula)) {
             $query->where(function ($userOrMatriculaQuery) {
-                if (!empty($this->filtroSedeAlumno)) {
+                if (! empty($this->filtroSedeAlumno)) {
                     $userOrMatriculaQuery->whereIn('matriculas.user_id', function ($userQuery) {
                         $userQuery->select('id')->from('users')->whereIn('sede_id', $this->filtroSedeAlumno);
                     });
                 }
-                if (!empty($this->filtroSedeMatricula)) {
+                if (! empty($this->filtroSedeMatricula)) {
                     $userOrMatriculaQuery->orWhereHas('horarioMateriaPeriodo.horarioBase.aula.sede', function ($sedeQuery) {
                         $sedeQuery->whereIn('sedes.id', $this->filtroSedeMatricula);
                     });

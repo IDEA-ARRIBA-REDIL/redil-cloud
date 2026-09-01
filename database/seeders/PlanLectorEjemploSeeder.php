@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 use App\Models\PlanLector;
-use App\Models\PlanLectorDia;
-use App\Models\PlanLectorContenido;
 use App\Models\PlanLectorCategoria;
+use App\Models\PlanLectorContenido;
+use App\Models\PlanLectorDia;
 use App\Models\PlanLectorTipoContenido;
 use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class PlanLectorEjemploSeeder extends Seeder
 {
@@ -19,7 +19,7 @@ class PlanLectorEjemploSeeder extends Seeder
     public function run(): void
     {
         // Traer un administrador por defecto para asignarlo como autor
-        $autor = User::first(); 
+        $autor = User::first();
         $autorId = $autor ? $autor->id : 1;
 
         // Categorías existentes para asignar
@@ -39,7 +39,7 @@ class PlanLectorEjemploSeeder extends Seeder
             'imagen_url' => null,
             'estado' => true,
             'visible_todos' => true,
-            'genero' => 3
+            'genero' => 3,
         ]);
 
         // Asignar 2 categorías si existen
@@ -62,7 +62,7 @@ class PlanLectorEjemploSeeder extends Seeder
             'plan_lector_dia_id' => $dia1->id,
             'plan_lector_tipo_contenido_id' => $tipoContenidoTextoId,
             'orden' => 1,
-            'contenido' => '<p>Bienvenido al primer día de nuestro devocional.</p><p>A menudo, estamos tan ocupados con el ajetreo diario que nuestro corazón se vuelve terreno duro. En este día, te invitamos a pausar unos minutos y respirar la paz de Dios.</p>'
+            'contenido' => '<p>Bienvenido al primer día de nuestro devocional.</p><p>A menudo, estamos tan ocupados con el ajetreo diario que nuestro corazón se vuelve terreno duro. En este día, te invitamos a pausar unos minutos y respirar la paz de Dios.</p>',
         ]);
 
         // DÍA 2
@@ -71,7 +71,7 @@ class PlanLectorEjemploSeeder extends Seeder
             'plan_lector_dia_id' => $dia2->id,
             'plan_lector_tipo_contenido_id' => $tipoContenidoTextoId,
             'orden' => 1,
-            'contenido' => '<p>Ayer vimos la importancia de preparar la tierra de nuestra alma.</p><p>Hoy el gran desafío es apagar el ruido. Haz silencio hoy para escuchar Sus palabras de afirmación y amor sobre tu vida.</p>'
+            'contenido' => '<p>Ayer vimos la importancia de preparar la tierra de nuestra alma.</p><p>Hoy el gran desafío es apagar el ruido. Haz silencio hoy para escuchar Sus palabras de afirmación y amor sobre tu vida.</p>',
         ]);
 
         // DÍA 3
@@ -80,7 +80,7 @@ class PlanLectorEjemploSeeder extends Seeder
             'plan_lector_dia_id' => $dia3->id,
             'plan_lector_tipo_contenido_id' => $tipoContenidoTextoId,
             'orden' => 1,
-            'contenido' => '<p>Has llegado al último día de prueba de este devocional.</p><p>La lectura de la Palabra y la oración son esenciales, pero la meta de un corazón receptivo no es tener conocimiento bíblico escondido, sino aplicarlo a nuestra cotidianidad.</p>'
+            'contenido' => '<p>Has llegado al último día de prueba de este devocional.</p><p>La lectura de la Palabra y la oración son esenciales, pero la meta de un corazón receptivo no es tener conocimiento bíblico escondido, sino aplicarlo a nuestra cotidianidad.</p>',
         ]);
 
         // ---------------------------------------------------------------------
@@ -95,7 +95,7 @@ class PlanLectorEjemploSeeder extends Seeder
             'imagen_url' => null,
             'estado' => true,
             'visible_todos' => true,
-            'genero' => 3
+            'genero' => 3,
         ]);
 
         // Asignar 1 categoría si existe
@@ -109,7 +109,7 @@ class PlanLectorEjemploSeeder extends Seeder
             'plan_lector_dia_id' => $diaPlan2->id,
             'plan_lector_tipo_contenido_id' => $tipoContenidoTextoId,
             'orden' => 1,
-            'contenido' => '<p>La sabiduría no consiste solo en saber mucho, sino en saber cómo actuar. Hoy pide a Dios que guíe cada uno de tus pasos.</p>'
+            'contenido' => '<p>La sabiduría no consiste solo en saber mucho, sino en saber cómo actuar. Hoy pide a Dios que guíe cada uno de tus pasos.</p>',
         ]);
 
         // ---------------------------------------------------------------------
@@ -124,25 +124,25 @@ class PlanLectorEjemploSeeder extends Seeder
             'imagen_url' => null,
             'estado' => true,
             'visible_todos' => true,
-            'genero' => 3
+            'genero' => 3,
         ]);
 
         if ($cat2) {
             $plan3->categorias()->attach([$cat2->id]);
         }
 
-        for ($i = 1; $i <= 20; $i++) {
+        for ($i = 1; $i <= 10; $i++) {
             $diaTemp = PlanLectorDia::create([
-                'plan_lector_id' => $plan3->id, 
-                'dia' => $i, 
-                'titulo' => "Día $i: Perseverancia y Fe"
+                'plan_lector_id' => $plan3->id,
+                'dia' => $i,
+                'titulo' => "Perseverancia y Fe $i",
             ]);
 
             PlanLectorContenido::create([
                 'plan_lector_dia_id' => $diaTemp->id,
                 'plan_lector_tipo_contenido_id' => $tipoContenidoTextoId,
                 'orden' => 1,
-                'contenido' => "<p>Estás en el día <strong>$i</strong> de tu viaje por el desierto.</p><p>Recuerda que cada paso cuenta y que Dios está fortaleciendo tu espíritu en este proceso de disciplina diaria.</p>"
+                'contenido' => "<p>Estás en el día <strong>$i</strong> de tu viaje por el desierto.</p><p>Recuerda que cada paso cuenta y que Dios está fortaleciendo tu espíritu en este proceso de disciplina diaria.</p>",
             ]);
         }
 
@@ -150,17 +150,17 @@ class PlanLectorEjemploSeeder extends Seeder
         // 20 PLANES ADICIONALES: Para pruebas de paginación y volumen
         // ---------------------------------------------------------------------
         for ($j = 1; $j <= 20; $j++) {
-            $tituloPlan = "Plan de Prueba de Volumen #" . str_pad($j, 2, '0', STR_PAD_LEFT);
+            $tituloPlan = 'Plan de Prueba de Volumen #'.str_pad($j, 2, '0', STR_PAD_LEFT);
             $planPrueba = PlanLector::create([
                 'titulo' => $tituloPlan,
-                'slug' => Str::slug($tituloPlan . '-' . uniqid()),
+                'slug' => Str::slug($tituloPlan.'-'.uniqid()),
                 'descripcion' => "Este es un plan generado automáticamente para pruebas de volumen y paginación. Número de prueba: $j.",
                 'autor_id' => $autorId,
                 'calificacion' => rand(30, 50) / 10, // Calificación aleatoria entre 3.0 y 5.0
                 'imagen_url' => null,
                 'estado' => ($j % 5 !== 0), // Algunos desactivados
                 'visible_todos' => true,
-                'genero' => 3
+                'genero' => 3,
             ]);
 
             // Asignar una categoría aleatoria
@@ -171,19 +171,19 @@ class PlanLectorEjemploSeeder extends Seeder
 
             // Crear un día único para que sea funcional
             $diaPrueba = PlanLectorDia::create([
-                'plan_lector_id' => $planPrueba->id, 
-                'dia' => 1, 
-                'titulo' => 'Introducción a la Prueba'
+                'plan_lector_id' => $planPrueba->id,
+                'dia' => 1,
+                'titulo' => 'Introducción a la Prueba',
             ]);
 
             PlanLectorContenido::create([
                 'plan_lector_dia_id' => $diaPrueba->id,
                 'plan_lector_tipo_contenido_id' => $tipoContenidoTextoId,
                 'orden' => 1,
-                'contenido' => "<p>Contenido de prueba para el plan $j.</p>"
+                'contenido' => "<p>Contenido de prueba para el plan $j.</p>",
             ]);
         }
 
-        $this->command->info("¡Seeders de Planes Lectores (y 20 extras) creados satisfactoriamente!");
+        $this->command->info('¡Seeders de Planes Lectores (y 20 extras) creados satisfactoriamente!');
     }
 }

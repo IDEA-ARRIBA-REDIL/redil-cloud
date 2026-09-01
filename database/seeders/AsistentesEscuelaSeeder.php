@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AsistentesEscuelaSeeder extends Seeder
 {
@@ -17,8 +17,6 @@ class AsistentesEscuelaSeeder extends Seeder
     protected string $usuariosPath = 'seeders/USUARIOS MIGRACION ESCUELAS.json';
 
     protected string $tipoUsuariosPath = 'seeders/USUARIO TIPO USUARIOS MIGRACION ESCUELAS.json';
-
-    
 
     protected string $tipoAsistentesPath = 'seeders/tipo_asistentes.json';
 
@@ -278,7 +276,7 @@ class AsistentesEscuelaSeeder extends Seeder
                     $fecha = $this->parseDate($item['fecha'] ?? null);
                     $detalle = trim($item['detalle'] ?? '');
 
-                    $registro = \App\Models\CrecimientoUsuario::updateOrCreate(
+                    $registro = \App\Models\CrecimientoUsuario::firstOrCreate(
                         [
                             'paso_crecimiento_id' => $pasoCrecimientoId,
                             'user_id' => $userId,

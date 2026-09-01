@@ -212,6 +212,8 @@ $configData = Helper::appClasses();
           <i class="ti ti-user-cog"></i>
         </button>
         @endif
+
+        {{$informe->link}}
         <a @if($informe->add_id_a_la_url==TRUE) href="{{ route($informe->link, $informe->id) }}" @else href="{{ route($informe->link) }}" @endif class="my-auto btn btn-sm ms-1 rounded-pill btn-outline-secondary waves-effect">{{$informe->nombre_boton}} </a>
       </div>
 

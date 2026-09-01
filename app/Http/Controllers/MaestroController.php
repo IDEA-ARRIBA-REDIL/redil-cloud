@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\NotasCorteClaseExport;
 use App\Models\AlumnoRespuestaItem;
 use App\Models\BannerEscuela;
 use App\Models\Configuracion;
@@ -20,11 +21,15 @@ use App\Models\Role; // <--- IMPORTANTE
 use App\Models\Sede; // <--- IMPORTANTE
 use App\Models\User; // <--- IMPORTANTE
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; // Para transacciones si fuera necesario
 use Illuminate\Support\Facades\Log; // Para obtener el usuario autenticado
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule; // Para manejo de fechas
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 // Para los tags
 
@@ -404,7 +409,7 @@ class MaestroController extends Controller
 
         $horarioAsignado->load([
             'materiaPeriodo.materia:id,nombre',
-            'materiaPeriodo.periodo:id,nombre,fecha_inicio,fecha_fin',
+            'materiaPeriodo.periodo:id,nombre,fecha_inicio,fecha_fin,estado',
             'horarioBase.aula.sede',
         ]);
         $horarioId = $horarioAsignado->id;
@@ -503,7 +508,7 @@ class MaestroController extends Controller
             // --- Fin Cálculos ---
 
             // --- LÓGICA DE ESTADO MEJORADA Y CENTRALIZADA ---
-            $haAprobado = $promedioGeneralMateriaCalculado >= $notaMinimaAprobatoria;
+            $haAprobado = ! $estaBloqueado && $promedioGeneralMateriaCalculado >= $notaMinimaAprobatoria;
             $periodoFinalizado = $horarioAsignado->materiaPeriodo->periodo->fecha_fin->isPast();
             $estadoMateria = 'Cursando'; // Estado por defecto
 
@@ -540,6 +545,7 @@ class MaestroController extends Controller
             // Guardamos los datos para la tabla del dashboard
             $alumnosData->push([
                 'user_model' => $estado->user,
+                'matricula_model' => $estado->matricula,
                 'id_db' => $estado->user->id,
                 'nombre_completo' => $estado->user->nombre(4),
                 'promedios_por_corte' => $promediosPorCorteCalculados,
@@ -565,24 +571,136 @@ class MaestroController extends Controller
 
         $totalAlumnos = $estadosAcademicos->count(); // Usamos el conteo original de estados
 
-        // --- PREPARACIÓN DE DATOS PARA LOS GRÁFICOS ---
+        // --- 4. PREPARACIÓN DE DATOS PARA LOS GRÁFICOS EXISTENTES ---
         $datosGenero = [
             'categorias' => ['Hombres', 'Mujeres', 'Otros'],
             'series' => [['name' => 'Matriculados', 'data' => array_values($conteoGenero)]],
         ];
 
-        // --- CORRECCIÓN: Estructura final para el gráfico de aprobación ---
         $datosAprobacion = [
-            'categorias' => ['Aprobados', 'Reprobados', 'Cursando', 'Bloqueados'], // Añadida la categoría
+            'categorias' => ['Aprobados', 'Reprobados', 'Cursando', 'Bloqueados'],
             'series' => [[
                 'name' => 'Alumnos',
                 'data' => [
-                    $aprobadosCount,        // Suma de Aprobado + Aprobando
+                    $aprobadosCount,            // Suma de Aprobado + Aprobando
                     $reprobadosCount,
-                    $cursandoCount,         // Cursando (NO bloqueados)
-                    $matriculasBloqueadasCount, // El conteo directo de bloqueados
+                    $cursandoCount,             // Cursando (NO bloqueados)
+                    $matriculasBloqueadasCount, // Conteo de bloqueados
                 ],
             ]],
+        ];
+
+        // --- 5. PREPARACIÓN DE DATOS: EVOLUCIÓN DE ASISTENCIA SEMANAL (RANGO COMPLETO DEL PERIODO) ---
+        $periodoModel = $horarioAsignado->materiaPeriodo?->periodo;
+        $categoriasSemanasAsistencia = [];
+        $serieAsistencias = [];
+        $serieInasistencias = [];
+        $seriePorcentajes = [];
+        $totalReportesAsistencia = 0;
+
+        if ($periodoModel && $periodoModel->fecha_inicio && $periodoModel->fecha_fin) {
+            $fechaInicioPeriodo = Carbon::parse($periodoModel->fecha_inicio)->startOfDay();
+            $fechaFinPeriodo = Carbon::parse($periodoModel->fecha_fin)->endOfDay();
+
+            // 5.1 Cargar todos los reportes de asistencia de esta clase en el periodo con sus detalles
+            $reportesClase = ReporteAsistenciaClase::where('horario_materia_periodo_id', $horarioId)
+                ->whereBetween('fecha_clase_reportada', [$fechaInicioPeriodo->format('Y-m-d'), $fechaFinPeriodo->format('Y-m-d')])
+                ->with('detallesAsistencia')
+                ->orderBy('fecha_clase_reportada', 'asc')
+                ->get();
+
+            $totalReportesAsistencia = $reportesClase->count();
+
+            // 5.2 Iterar semana a semana (domingo a sábado) cubriendo todo el rango del periodo
+            $semanaCursorInicio = $fechaInicioPeriodo->copy()->startOfWeek(Carbon::SUNDAY);
+            $numeroSemana = 1;
+
+            while ($semanaCursorInicio->lte($fechaFinPeriodo)) {
+                $semanaCursorFin = $semanaCursorInicio->copy()->endOfWeek(Carbon::SATURDAY);
+
+                // Ajustar etiquetas al rango real del periodo
+                $etiquetaInicio = $semanaCursorInicio->lt($fechaInicioPeriodo) ? $fechaInicioPeriodo : $semanaCursorInicio;
+                $formatoEtiqueta = 'Sem '.$numeroSemana.' ('.$etiquetaInicio->locale('es')->isoFormat('D MMM').')';
+
+                // Filtrar reportes registrados en este bloque semanal
+                $reportesEnSemana = $reportesClase->filter(function ($rep) use ($semanaCursorInicio, $semanaCursorFin) {
+                    $fechaReporte = Carbon::parse($rep->fecha_clase_reportada)->startOfDay();
+
+                    return $fechaReporte->gte($semanaCursorInicio->startOfDay()) && $fechaReporte->lte($semanaCursorFin->endOfDay());
+                });
+
+                $totalPresentesSemana = 0;
+                $totalAusentesSemana = 0;
+
+                if ($reportesEnSemana->isNotEmpty()) {
+                    foreach ($reportesEnSemana as $rep) {
+                        $totalPresentesSemana += $rep->detallesAsistencia->where('asistio', true)->count();
+                        $totalAusentesSemana += $rep->detallesAsistencia->where('asistio', false)->count();
+                    }
+                }
+
+                $totalEvaluados = $totalPresentesSemana + $totalAusentesSemana;
+                $porcentajeSemana = $totalEvaluados > 0 ? round(($totalPresentesSemana / $totalEvaluados) * 100, 1) : 0;
+
+                $categoriasSemanasAsistencia[] = $formatoEtiqueta;
+                $serieAsistencias[] = $totalPresentesSemana;
+                $serieInasistencias[] = $totalAusentesSemana;
+                $seriePorcentajes[] = $porcentajeSemana;
+
+                $numeroSemana++;
+                $semanaCursorInicio->addWeek();
+            }
+        }
+
+        $datosAsistenciaSemanal = [
+            'categorias' => $categoriasSemanasAsistencia,
+            'series' => [
+                [
+                    'name' => 'Asistencias (Presentes)',
+                    'data' => $serieAsistencias,
+                ],
+                [
+                    'name' => 'Inasistencias (Ausentes)',
+                    'data' => $serieInasistencias,
+                ],
+            ],
+            'porcentajes' => $seriePorcentajes,
+            'totalReportes' => $totalReportesAsistencia,
+        ];
+
+        // --- 6. PREPARACIÓN DE DATOS: RANKING DE ALUMNOS POR NOTA PROMEDIO (MAYOR A MENOR) ---
+        $alumnosOrdenadosPorNota = $alumnosData->sortByDesc('promedio_final_materia')->values();
+
+        $nombresAlumnosRanking = [];
+        $notasAlumnosRanking = [];
+        $estadosAlumnosRanking = [];
+        $coloresAlumnosRanking = [];
+
+        foreach ($alumnosOrdenadosPorNota as $itemAlumno) {
+            $nombresAlumnosRanking[] = $itemAlumno['nombre_completo'];
+            $notasAlumnosRanking[] = $itemAlumno['promedio_final_materia'];
+            $estadosAlumnosRanking[] = $itemAlumno['estado_materia'];
+
+            if ($itemAlumno['ha_aprobado']) {
+                $coloresAlumnosRanking[] = '#71dd37'; // Aprobado / Aprobando (Verde)
+            } elseif ($itemAlumno['estado_materia'] === 'Bloqueado') {
+                $coloresAlumnosRanking[] = '#8592a3'; // Bloqueado (Gris)
+            } else {
+                $coloresAlumnosRanking[] = '#ff3e1d'; // Reprobado / Bajo nota mínima (Rojo)
+            }
+        }
+
+        $datosRankingNotas = [
+            'categorias' => $nombresAlumnosRanking,
+            'series' => [
+                [
+                    'name' => 'Nota promedio',
+                    'data' => $notasAlumnosRanking,
+                ],
+            ],
+            'estados' => $estadosAlumnosRanking,
+            'colores' => $coloresAlumnosRanking,
+            'notaMinima' => $notaMinimaAprobatoria,
         ];
 
         $nombreMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no disponible';
@@ -598,16 +716,66 @@ class MaestroController extends Controller
             'cortesDefinidos' => $cortesDefinidosParaVista,
             'nombreMateria' => $nombreMateria,
             'infoClase' => $infoClase,
-            // Aseguramos que datosGenero se envíe a la vista
             'datosGenero' => $datosGenero,
-            'datosAprobacion' => $datosAprobacion, // Datos para el gráfico de aprobación (corregido)
+            'conteoGenero' => $conteoGenero,                     // Conteo de hombres, mujeres y otros
+            'datosAprobacion' => $datosAprobacion,
+            'datosAsistenciaSemanal' => $datosAsistenciaSemanal, // Gráfico de asistencia semanal
+            'datosRankingNotas' => $datosRankingNotas,           // Datos de notas
+            'alumnosRanking' => $alumnosOrdenadosPorNota,       // Lista ordenada de alumnos para el ranking visual
             'totalAlumnos' => $totalAlumnos, // Total general
-            // Datos extra para validación de permisos en vista
-            // Datos extra para validación de permisos en vista
             'usuarioLogueado' => $usuarioActivo,
             'rolUsuarioLogueado' => $usuarioActivo ? $usuarioActivo->roles : null,
             'rolActivo' => $usuarioActivo ? $usuarioActivo->roles()->wherePivot('activo', true)->first() : null,
         ]);
+    }
+
+    /**
+     * Marca como bloqueada la matrícula de un alumno que desertó de la clase.
+     */
+    public function bloquearMatricula(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado, Matricula $matricula): RedirectResponse
+    {
+        $periodo = $horarioAsignado->materiaPeriodo()->with('periodo:id,estado')->firstOrFail()->periodo;
+
+        abort_unless(
+            $horarioAsignado->maestros()->whereKey($maestro->id)->exists()
+            && (int) $matricula->horario_materia_periodo_id === (int) $horarioAsignado->id
+            && (int) $matricula->periodo_id === (int) $periodo->id,
+            404
+        );
+
+        if (! $periodo->estado) {
+            return back()->with('mensaje_error', 'No es posible bloquear matrículas de un período finalizado.');
+        }
+
+        if ($matricula->bloqueado) {
+            return back()->with('mensaje_error', 'La matrícula de este alumno ya está bloqueada.');
+        }
+
+        $matricula->update([
+            'bloqueado' => true,
+            'fecha_bloqueo' => now(),
+        ]);
+
+        return redirect()->route('maestros.dashboardClase', compact('maestro', 'horarioAsignado'))
+            ->with('mensaje_exito', 'La matrícula fue bloqueada. El alumno quedará reprobado al finalizar el período.');
+    }
+
+    public function exportarNotasCorte(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado, CortePeriodo $cortePeriodo): BinaryFileResponse
+    {
+        $horarioAsignado->loadMissing('materiaPeriodo.materia', 'materiaPeriodo.periodo');
+
+        abort_unless((int) $cortePeriodo->periodo_id === (int) $horarioAsignado->materiaPeriodo?->periodo_id, 404);
+
+        $cortePeriodo->loadMissing('corteEscuela:id,nombre');
+        $notaMinimaAprobatoria = (float) (Configuracion::find(1)?->nota_aprobatoria ?? 3.0);
+        $nombreMateria = Str::slug($horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'clase');
+        $nombreCorte = Str::slug($cortePeriodo->corteEscuela?->nombre ?? 'corte');
+        $nombreArchivo = "notas-{$nombreMateria}-{$nombreCorte}-".now()->format('Y-m-d').'.xlsx';
+
+        return Excel::download(
+            new NotasCorteClaseExport($horarioAsignado, $cortePeriodo, $notaMinimaAprobatoria),
+            $nombreArchivo
+        );
     }
 
     public function gestionarClase(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado)

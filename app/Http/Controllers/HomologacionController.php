@@ -10,4 +10,9 @@ class HomologacionController extends Controller
     {
         return view('contenido.paginas.escuelas.homologaciones.gestionar-homologaciones');
     }
+
+    public function masivas(): View
+    {
+        return view('contenido.paginas.escuelas.homologaciones.homologaciones-masivas');
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FormularioUsuario;
 use App\Models\Role;
+use App\Models\Sede;
 use App\Models\TipoFormularioUsuario;
 use App\Models\TipoUsuario;
 use Illuminate\Http\Request;
@@ -31,11 +32,13 @@ class FormularioUsuarioController extends Controller
         $roles = Role::select('id', 'name', 'icono')->orderBy('name', 'asc')->get();
         $tipos = TipoFormularioUsuario::orderBy('nombre', 'asc')->get();
         $tiposUsuario = TipoUsuario::orderBy('nombre', 'asc')->get();
+        $sedes = Sede::orderBy('nombre', 'asc')->get();
 
         return view('contenido.paginas.formularios-usuarios.nuevo', [
             'roles' => $roles,
             'tipos' => $tipos,
             'tiposUsuario' => $tiposUsuario,
+            'sedes' => $sedes,
         ]);
     }
 
@@ -74,6 +77,7 @@ class FormularioUsuarioController extends Controller
         $formulario->mensaje_terminos_condiciones_detallado = $request->términosYCondicionesDetallado;
         $formulario->tipo_formulario_id = $request->tipoDeFormulario;
         $formulario->tipo_usuario_default_id = $request->tipoUsuarioPorDefecto;
+        $formulario->sede_default_id = $request->sedeDefault;
 
         if ($formulario->save()) {
             $formulario->roles()->attach($request->roles);
@@ -89,6 +93,7 @@ class FormularioUsuarioController extends Controller
 
         $rolesSeleccionados = $formulario->roles()->select('roles.id')->pluck('roles.id')->toArray();
         $tiposUsuario = TipoUsuario::orderBy('nombre', 'asc')->get();
+        $sedes = Sede::orderBy('nombre', 'asc')->get();
 
         return view('contenido.paginas.formularios-usuarios.modificar', [
             'roles' => $roles,
@@ -96,6 +101,7 @@ class FormularioUsuarioController extends Controller
             'tipos' => $tipos,
             'formulario' => $formulario,
             'tiposUsuario' => $tiposUsuario,
+            'sedes' => $sedes,
         ]);
     }
 
@@ -133,6 +139,7 @@ class FormularioUsuarioController extends Controller
         $formulario->mensaje_terminos_condiciones_detallado = $request->términosYCondicionesDetallado;
         $formulario->tipo_formulario_id = $request->tipoDeFormulario;
         $formulario->tipo_usuario_default_id = $request->tipoUsuarioPorDefecto;
+        $formulario->sede_default_id = $request->sedeDefault;
 
         if ($formulario->save()) {
             $formulario->roles()->sync($request->roles);

@@ -66,13 +66,13 @@ $configData = Helper::appClasses();
               <span style="color: white;" class="input-group-text input-login">
                 <i class="ti ti-mail"></i>
               </span>
-              <input
+              <input   
                 type="text"
                 class="form-control input-login"
                 id="email"
                 name="email"
                 value="{{ old('email', $emailDefault) }}"
-                placeholder="lider_d@redil.com"
+                placeholder="tucorreo@mail.com" 
                 autofocus
               >
             </div>
@@ -154,13 +154,11 @@ $configData = Helper::appClasses();
         {{-- Footer registro --}}
         <div id="container-footer" class="text-center mt-8">
           <p id="footer" class="mb-0">
-            <span class="titulo-descripcion">¿No tienes cuenta ?</span>
-            @foreach($formularios as $formulario)
-            <a href="{{ route('usuario.nuevoExterior', $formulario) }}" style="color: var(--bs-primary); text-decoration: none;">
-              {{ $formulario->label }}
-            </a>
-            @endforeach
-          </p>
+            <span class="titulo-descripcion">¿No tienes cuenta?</span>
+            <button type="button" class="btn btn-outline-primary rounded-pill btn-sm ms-2 px-3 py-1-5 fw-semibold titulo-descripcion" data-bs-toggle="modal" data-bs-target="#modalFormulariosExternos" style="transition: all 0.25s ease;">
+              Registrarse aquí
+            </button>
+          </p> 
         </div>
 
       </div>
@@ -176,6 +174,74 @@ $configData = Helper::appClasses();
     <!-- /Left Text -->
   </div>
 </div>
+
+<!-- Modal Formularios Externos Premium -->
+<div class="modal fade" id="modalFormulariosExternos" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(6px);">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 24px; background: rgba(18, 22, 33, 0.96); border: 1px solid rgba(255, 255, 255, 0.08) !important;">
+      <div class="modal-header border-0 pb-0 pt-6 px-6">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <div>
+            <h4 class="modal-title fw-bold text-white mb-1" id="modalFormulariosExternosTitle" style="letter-spacing: -0.5px;">
+              Formularios de Registro
+            </h4>
+            <p class="text-muted mb-0" style="font-size: 0.82rem;">Selecciona el formulario según tu necesidad</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="box-shadow: none;"></button>
+        </div>
+      </div>
+      <div class="modal-body p-6">
+        <div class="d-flex flex-column gap-3">
+          @foreach($formularios as $formulario)
+            <div class="card card-formulario-premium border-0 p-4" style="
+              border-radius: 16px; 
+              background: rgba(255, 255, 255, 0.03); 
+              border: 1px solid rgba(255, 255, 255, 0.05); 
+              transition: all 0.25s ease;
+            ">
+              <div class="d-flex flex-column justify-content-between h-100 gap-3">
+                <div>
+                  <h5 class="text-white fw-semibold mb-1" style="font-size: 1.05rem;">
+                    {{ $formulario->titulo ?? $formulario->label }}
+                  </h5>
+                  @if($formulario->descripcion)
+                    <p class="text-muted mb-0" style="font-size: 0.85rem; line-height: 1.4;">
+                      {{ $formulario->descripcion }}
+                    </p>
+                  @else
+                    <p class="text-muted mb-0" style="font-size: 0.85rem; font-style: italic;">
+                      Sin descripción disponible.
+                    </p>
+                  @endif
+                </div>
+                <div class="d-flex justify-content-end align-items-center">
+                  <a href="{{ route('usuario.nuevoExterior', $formulario) }}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 btn-comenzar" style="font-size: 0.82rem; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);">
+                    Comenzar <i class="ti ti-arrow-right ti-xs"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card-formulario-premium:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+.btn-comenzar {
+  transition: all 0.2s ease;
+}
+.btn-comenzar:hover {
+  transform: translateX(2px);
+}
+</style>
 
 {{-- ===== BOTÓN FLOTANTE INSTALAR APP (Solo Móvil) ===== --}}
 <style>

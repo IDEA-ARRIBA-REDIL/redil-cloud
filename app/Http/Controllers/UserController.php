@@ -21,7 +21,11 @@ use App\Models\Grupo;
 use App\Models\Iglesia;
 use App\Models\InformeGrupo;
 use App\Models\IntegranteGrupo;
+use App\Models\MateriaAprobadaUsuario;
+use App\Models\Matricula;
+use App\Models\MatriculaNivel;
 use App\Models\NivelAcademico;
+use App\Models\NivelAprobadoUsuario;
 use App\Models\Ocupacion;
 use App\Models\Pais;
 use App\Models\ParienteUsuario;
@@ -1502,13 +1506,13 @@ class UserController extends Controller
         $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
-        $formulario = $rolActivo->formularios()->where('tipo_formulario_id', '=', 5)->first();
+        $formularioAutoEditar = $rolActivo->formularios()->where('tipo_formulario_id', '=', 5)->first();
         $camposExtras = [];
-        if ($formulario) {
+        if ($formularioAutoEditar) {
 
             $camposExtras = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
                 ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
-                ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formulario->id)
+                ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formularioAutoEditar->id)
                 ->where('campos_formulario_usuario.es_campo_extra', true)
                 ->select('campos_formulario_usuario.*', 'campo_seccion_formulario_usuario.requerido', 'campo_seccion_formulario_usuario.class')
                 ->get();
@@ -1536,12 +1540,13 @@ class UserController extends Controller
         $sedes = Sede::orderBy('nombre', 'asc')->get();
         $tiposIdentificaciones = TipoIdentificacion::orderBy('nombre', 'asc')->get();
         $tiposDeEstadosCiviles = EstadoCivil::orderBy('nombre', 'asc')->get();
+        $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
         $sedes = Sede::orderBy('nombre', 'asc')->get();
         $tieneCampoPreguntaViveEn = [];
-        if ($formulario) {
+        if ($formularioAutoEditar) {
             $tieneCampoPreguntaViveEn = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
                 ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
-                ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formulario->id)
+                ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formularioAutoEditar->id)
                 ->where('nombre_bd', '=', 'pregunta_vives_en')
                 ->select('campos_formulario_usuario.*', 'campo_seccion_formulario_usuario.requerido')
                 ->first();
@@ -1575,8 +1580,9 @@ class UserController extends Controller
             'tiposDeSangres' => $tiposDeSangres,
             'tiposDeVinculacion' => $tiposDeVinculacion,
             'camposExtraAutogestion' => $camposExtraAutogestion,
-            'formulario' => $formulario,
+            'formularioAutoEditar' => $formularioAutoEditar,
             'tieneCampoPreguntaViveEn' => $tieneCampoPreguntaViveEn,
+            'entidadesRelacionadas' => $entidadesRelacionadas,
             'dataQr' => $dataQr,
         ]);
     }
@@ -1766,36 +1772,127 @@ class UserController extends Controller
         $rolActivo->verificacionDelPermiso('personas.subitem_lista_asistentes');
         $configuracion = Configuracion::first();
 
-        // Cargamos las escuelas con sus materias, ordenadas académicamente si es posible
-        // Y cargamos los resultados del usuario para esas materias
-        $escuelas = Escuela::with(['materias' => function ($query) {
-            $query->orderBy('caracter_obligatorio', 'desc')
-                ->orderBy('nombre', 'asc');
-        }])->get();
+        // 1. Cargamos todas las escuelas con sus materias y niveles
+        $todasLasEscuelas = Escuela::with([
+            'materias' => function ($query) {
+                $query->orderBy('caracter_obligatorio', 'desc')
+                    ->orderBy('nombre', 'asc');
+            },
+            'niveles' => function ($query) {
+                $query->orderBy('orden', 'asc')
+                    ->orderBy('nombre', 'asc');
+            },
+        ])->get();
 
+        // 2. Cargamos los resultados del usuario tanto para materias como para niveles
         $materiasAprobadas = $usuario->materiasAprobadasRelacion()
             ->get()
             ->keyBy('materia_id');
 
-        // Procesamos el progreso por escuela
+        $nivelesAprobados = $usuario->nivelesAprobados()
+            ->get()
+            ->keyBy('nivel_id');
+
+        // 3. Obtenemos las escuelas donde el usuario tiene al menos una matrícula o registro académico
+        $escuelasConMatriculaIds = Matricula::where('user_id', $usuario->id)
+            ->whereNotNull('escuela_id')
+            ->pluck('escuela_id')
+            ->toArray();
+
+        $escuelasConMatriculaNivelIds = MatriculaNivel::where('usuario_id', $usuario->id)
+            ->join('niveles_escuelas', 'matriculas_nivel.nivel_escuela_id', '=', 'niveles_escuelas.id')
+            ->pluck('niveles_escuelas.escuela_id')
+            ->toArray();
+
+        $escuelasConMateriaIds = MateriaAprobadaUsuario::where('user_id', $usuario->id)
+            ->join('materias', 'materias_aprobada_usuario.materia_id', '=', 'materias.id')
+            ->pluck('materias.escuela_id')
+            ->toArray();
+
+        $escuelasConNivelIds = NivelAprobadoUsuario::where('user_id', $usuario->id)
+            ->join('niveles_escuelas', 'niveles_aprobado_usuario.nivel_id', '=', 'niveles_escuelas.id')
+            ->pluck('niveles_escuelas.escuela_id')
+            ->toArray();
+
+        $escuelasConHistorialIds = array_unique(array_merge(
+            $escuelasConMatriculaIds,
+            $escuelasConMatriculaNivelIds,
+            $escuelasConMateriaIds,
+            $escuelasConNivelIds
+        ));
+
+        // 4. Filtramos las escuelas:
+        //    - Las obligatorias (caracter_obligatorio = true) se muestran SIEMPRE
+        //    - Las no obligatorias solo se muestran si el alumno tiene al menos una matrícula/registro en ella
+        $escuelasFiltradas = $todasLasEscuelas->filter(function ($escuela) use ($escuelasConHistorialIds) {
+            if ($escuela->caracter_obligatorio) {
+                return true;
+            }
+
+            return in_array($escuela->id, $escuelasConHistorialIds);
+        });
+
+        // 5. Ordenamos las escuelas: primero las obligatorias, y secundariamente por nombre
+        $escuelas = $escuelasFiltradas->sort(function ($a, $b) {
+            if ((bool) $a->caracter_obligatorio === (bool) $b->caracter_obligatorio) {
+                return strcasecmp($a->nombre, $b->nombre);
+            }
+
+            return $a->caracter_obligatorio ? -1 : 1;
+        })->values();
+
+        // 6. Procesamos el progreso por cada escuela visible
         foreach ($escuelas as $escuela) {
-            $totalObligatorias = $escuela->materias->where('caracter_obligatorio', true)->count();
+            // Determinamos si la escuela funciona por niveles o por materias directas
+            $esPorNiveles = ($escuela->tipo_matricula === 'niveles_agrupados' || ($escuela->tipo_matricula === null && $escuela->niveles->isNotEmpty()));
+            $escuela->es_por_niveles = $esPorNiveles;
+
+            $items = $esPorNiveles ? $escuela->niveles : $escuela->materias;
+            $historialMap = $esPorNiveles ? $nivelesAprobados : $materiasAprobadas;
+
+            $totalObligatorias = 0;
             $aprobadasObligatorias = 0;
+            $totalOpcionales = 0;
+            $aprobadasOpcionales = 0;
 
-            foreach ($escuela->materias as $materia) {
-                $resultado = $materiasAprobadas->get($materia->id);
-                $materia->resultado = $resultado;
+            foreach ($items as $item) {
+                $resultado = $historialMap->get($item->id);
+                $item->resultado = $resultado;
+                $esAprobado = ($resultado && (int) $resultado->aprobado === 1);
 
-                if ($materia->caracter_obligatorio && $resultado && $resultado->aprobado) {
-                    $aprobadasObligatorias++;
+                if ($item->caracter_obligatorio) {
+                    $totalObligatorias++;
+                    if ($esAprobado) {
+                        $aprobadasObligatorias++;
+                    }
+                } else {
+                    $totalOpcionales++;
+                    if ($esAprobado) {
+                        $aprobadasOpcionales++;
+                    }
                 }
             }
 
-            $escuela->progreso = $totalObligatorias > 0
-                ? round(($aprobadasObligatorias / $totalObligatorias) * 100)
-                : 0;
+            $totalItems = $totalObligatorias + $totalOpcionales;
+            $totalAprobadas = $aprobadasObligatorias + $aprobadasOpcionales;
+
+            // El progreso se calcula principalmente sobre las materias/niveles obligatorios requeridos
+            if ($totalObligatorias > 0) {
+                $progreso = round(($aprobadasObligatorias / $totalObligatorias) * 100);
+            } elseif ($totalItems > 0) {
+                // Si la escuela no tiene ninguna marcada como obligatoria, se calcula sobre el total
+                $progreso = round(($totalAprobadas / $totalItems) * 100);
+            } else {
+                $progreso = 0;
+            }
+
+            $escuela->progreso = $progreso;
             $escuela->total_obligatorias = $totalObligatorias;
             $escuela->aprobadas_obligatorias = $aprobadasObligatorias;
+            $escuela->total_opcionales = $totalOpcionales;
+            $escuela->aprobadas_opcionales = $aprobadasOpcionales;
+            $escuela->total_items = $totalItems;
+            $escuela->total_aprobadas = $totalAprobadas;
         }
 
         return view('contenido.paginas.usuario.perfil-historial-escuelas', [
@@ -1978,18 +2075,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-            
+
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-                
+
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-                
+
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-            
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -2683,9 +2780,16 @@ class UserController extends Controller
                 $usuario->rol_de_creacion_id = null;
             }
 
-            // Asigna la sede de quién lo crea en caso de no asignarle sede
-            if (! isset($usuario->sede_id)) {
-                $usuario->asignarSede();
+            // Asigna la sede según lógica:
+            // 1. Si ya tiene sede_id asignada (del formulario), se mantiene.
+            // 2. Si no, si el formulario tiene una sede_default_id configurada, se asigna.
+            // 3. Fallback: asignarSede() (heredado, la cual asigna la default global).
+            if (empty($usuario->sede_id)) {
+                if ($formulario->sede_default_id) {
+                    $usuario->sede_id = $formulario->sede_default_id;
+                } else {
+                    $usuario->asignarSede();
+                }
             }
 
             $usuario->save();
@@ -2868,18 +2972,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-            
+
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-                
+
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-                
+
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-            
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -3410,18 +3514,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-            
+
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-                
+
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-                
+
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-            
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }

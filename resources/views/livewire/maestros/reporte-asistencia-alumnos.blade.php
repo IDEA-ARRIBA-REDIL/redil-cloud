@@ -1,9 +1,18 @@
 <div>
     {{-- Sección de Listado de Reportes --}}
     <div class="card mb-4">
-        <div class="card-header">
+        <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
             <h5 class="mb-0">Reportes de Asistencia para:
                 {{ $horarioAsignado->materiaPeriodo->materia->nombre ?? 'Clase' }}</h5>
+            <button type="button" class="btn btn-sm btn-outline-success" wire:click="exportarTodosLosReportes"
+                wire:loading.attr="disabled" wire:target="exportarTodosLosReportes">
+                <span wire:loading.remove wire:target="exportarTodosLosReportes">
+                    <i class="ti ti-file-spreadsheet me-1"></i> Excel general
+                </span>
+                <span wire:loading wire:target="exportarTodosLosReportes">
+                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Generando...
+                </span>
+            </button>
         </div>
         <div class="card-body">
             @if ($reportesPaginados->isNotEmpty())
@@ -21,7 +30,7 @@
                 </div>
 
                 @foreach ($reportesPaginados as $reporte)
-                    <div class="report-item-card card mb-3 shadow-sm">
+                    <div wire:key="reporte-asistencia-{{ $reporte->id }}" class="report-item-card card mb-3 shadow-sm">
                         <div class="card-body">
                             <div class="row gy-3 align-items-center">
                                 {{-- Columna: Fecha Clase --}}
@@ -93,6 +102,16 @@
                                             Editar
                                         @endif
                                     </a>
+                                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill"
+                                        wire:click="exportarReporte({{ $reporte->id }})" wire:loading.attr="disabled"
+                                        wire:target="exportarReporte({{ $reporte->id }})">
+                                        <span wire:loading.remove wire:target="exportarReporte({{ $reporte->id }})">
+                                            <i class="ti ti-file-spreadsheet me-1"></i> Excel
+                                        </span>
+                                        <span wire:loading wire:target="exportarReporte({{ $reporte->id }})">
+                                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Generando...
+                                        </span>
+                                    </button>
                                 </div>
                             </div>
                         </div>

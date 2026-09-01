@@ -1,8 +1,14 @@
 # Estado Actual del Proyecto CRECER
 
-## Tareas Recientes (Memoria Implícita Recuperada)
-
+- **Nuevos Gráficos y Métricas en Dashboard de Clase de Maestros (Agosto 2026)**:
+  - **Asistencia Semanal del Periodo (`attendanceTrendChart`)**: Gráfico de líneas/área con ApexCharts en fila dedicada `col-12` que itera semana a semana cubriendo todo el rango del periodo académico, contrastando asistencias (presentes) e inasistencias (ausentes).
+  - **Ranking de Calificaciones (Leaderboard Table)**: Tabla/lista estilizada con scroll vertical suave, badges de podio (#1, #2, #3), avatares, barras de progreso y notas promedio destacadas ordenadas de mayor a menor.
+- **Escáner QR Continuo en Asistencias (Agosto 2026)**:
+  - **Reanudación Automática (`resumeScanner`)**: Corrección de bug donde el visor se quedaba congelado en "Scanner paused" tras registrar asistencia. Ahora se reanuda de forma inmediata tras cerrarse la alerta.
+  - **Feedback Visual (SweetAlert2)**: Se reparó el listener de `showAlert` que no disparaba la alerta de confirmación. Ahora muestra el nombre del participante/invitado tanto en registros exitosos como en alertas de asistencia previa ("¡Ya Registrado hoy!").
+  - **Escaneo Continuo**: Se optimizó `qr-scanner.blade.php` para mantener la cámara abierta y permitir la lectura fluida y consecutiva de múltiples códigos QR sin recargar la página.
 - **Corrección Paginador**: Se arregló el error `Class 'App\Http\Controllers\Paginator' not found` en `proximas-actividades.blade.php`.
+- **Corrección Relación `Inscripcion` / `User`**: Se corrigió y aseguró que la relación en `User` y el alias en `Inscripcion` utilicen explícitamente `user_id` en lugar del campo legacy `asistente_id` para evitar errores SQLSTATE[42703] en el listado de alumnos del periodo (`/periodos/{periodo}/alumnos`).
 - **Refactor Vista Actividad**: Se implementó diseño de acordeón y toggle de estado en `actualizar.blade.php`.
 - **Lógica de Periodos**:
   - **Escuelas**: (En proceso) Visualización ER completada.

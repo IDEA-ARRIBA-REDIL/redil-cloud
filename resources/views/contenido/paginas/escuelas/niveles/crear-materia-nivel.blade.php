@@ -208,6 +208,16 @@
                     @enderror
                 </div>
 
+                {{-- Campo Créditos --}}
+                <div class="mb-3">
+                    <label for="materia_creditos_rapido" class="form-label">Créditos (Opcional)</label>
+                    <input type="number" min="0" class="form-control" id="materia_creditos_rapido" name="creditos"
+                        placeholder="Ej: 3">
+                    @error('creditos', 'materiaRapida')
+                        <div class="text-danger">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 {{-- Campo Descripción Materia --}}
                 <div class="mb-3">
                     <label for="materia_descripcion_rapida" class="form-label">Descripción (Opcional)</label>

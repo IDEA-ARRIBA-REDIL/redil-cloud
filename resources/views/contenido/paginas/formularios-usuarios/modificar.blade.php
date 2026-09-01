@@ -123,6 +123,11 @@ $configData = Helper::appClasses();
       allowClear: true
   });
 
+  $("#sedeDefault").select2({
+      placeholder: 'Selecciona la sede por defecto',
+      allowClear: true
+  });
+
   $('#tipoDeFormulario').on('change', function() {
     var selectedOption = $(this).find(':selected');
     var esFormularioExterior = selectedOption.data('es-formulario-exterior');
@@ -338,6 +343,25 @@ $configData = Helper::appClasses();
             @endif
           </div>
           <!--  tipoUsuarioPorDefecto -->
+
+          <!--  sedeDefault -->
+          <div class="mb-3 col-12 col-md-4">
+            <label class="form-label" for="sedeDefault">
+              ¿Qué sede se asignará por defecto?
+            </label>
+            <select id="sedeDefault" name="sedeDefault" class="select2 form-select" data-allow-clear="true">
+              <option value="" selected>Ninguno</option>
+              @foreach ($sedes as $sede)
+              <option value="{{$sede->id}}" {{ old('sedeDefault', $formulario->sede_default_id) == $sede->id ? 'selected' : '' }}>{{$sede->nombre}}</option>
+              @endforeach
+            </select>
+            @if($errors->has('sedeDefault'))
+            <div class="text-danger ti-12px mt-2">
+              <i class="ti ti-circle-x"></i> {{ $errors->first('sedeDefault') }}
+            </div>
+            @endif
+          </div>
+          <!--  sedeDefault -->
 
         </div>
       </div>

@@ -31,7 +31,7 @@ class Inscripcion extends Model
         'email',                  // <-- ASEGÚRATE DE QUE ESTÉ AQUÍ
         'nombre_inscrito',
         'inscripcion_asociada',
-        'limite_invitados'
+        'limite_invitados',
     ];
 
     /**
@@ -48,6 +48,14 @@ class Inscripcion extends Model
      * Obtiene el usuario (asistente) al que pertenece la inscripción.
      */
     public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Alias para compatibilidad con código que use asistente().
+     */
+    public function asistente(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
@@ -83,7 +91,6 @@ class Inscripcion extends Model
     /**
      * Define la relación: Una inscripción tiene muchos registros de asistencia.
      */
-
     public function asistencias()
     {
         return $this->hasMany(ActividadAsistenciaInscripcion::class, 'inscripcion_id');

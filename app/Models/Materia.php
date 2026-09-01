@@ -16,6 +16,7 @@ class Materia extends Model
 
     protected $fillable = [
         'nombre',
+        'creditos',
         'nivel_id', // Considera cambiar a nivel_escuela_id si usas NivelEscuela
         'escuela_id',
         'habilitar_calificaciones',
@@ -30,6 +31,13 @@ class Materia extends Model
         'habilitar_inasistencias', // Añadido si usas $fillable estricto
         'tipo_usuario_objetivo_id', // NUEVO
         'tipo_usuario_inicial_id', // NUEVO INICIAL
+    ];
+
+    protected $casts = [
+        'creditos' => 'integer',
+        'habilitar_calificaciones' => 'boolean',
+        'habilitar_asistencias' => 'boolean',
+        'caracter_obligatorio' => 'boolean',
     ];
 
     // --- Relaciones existentes ---

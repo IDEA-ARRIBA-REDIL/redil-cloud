@@ -4,14 +4,12 @@
         use App\Models\User;
     @endphp
     {{-- Encabezado y Búsqueda --}}
-
-    <div class="row mb-3 ">
-        <div class="col-lg-1 col-sm-6">
-            <label for="busquedaAlumnoInputLivewire" class="  form-label mb-0">Buscar
-                alumno:</label>
+    <div class="row mb-4 align-items-center">
+        <div class="col-12 col-md-auto">
+            <label for="busquedaAlumnoInputLivewire" class="form-label mb-md-0 fw-medium">Buscar alumno:</label>
         </div>
-        <div class="col-lg-10 col-sm-6">
-            <input type="text" class="col-lg-5 col-sm-6 form-control" id="busquedaAlumnoInputLivewire"
+        <div class="col-12 col-md-6 col-lg-5">
+            <input type="text" class="form-control" id="busquedaAlumnoInputLivewire"
                 wire:model.live.debounce.300ms="busquedaAlumno" placeholder="Nombre, identificación o email...">
         </div>
     </div>

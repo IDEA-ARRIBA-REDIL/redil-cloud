@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ConfiguracionController extends Controller
 {
     /**
      * Muestra el dashboard de configuración.
-     *
-     * @return View
      */
     public function index(): View
     {
@@ -165,10 +162,31 @@ class ConfiguracionController extends Controller
                 'color' => 'bg-label-secondary',
                 'permission' => 'configuraciones.subitem_gestionar_videos',
             ],
+            [
+                'title' => 'Tipos de hitos',
+                'route' => 'tipo-hitos.listarTipoHitos',
+                'icon' => 'ti-trophy',
+                'color' => 'bg-label-secondary',
+                'permission' => ['hitos.gestionar', 'configuraciones.item_configuraciones'],
+            ],
         ];
 
         // Filtrar items por permisos
         $filteredItems = array_filter($items, function ($item) use ($rolActivo) {
+            if (! $rolActivo) {
+                return false;
+            }
+
+            if (is_array($item['permission'])) {
+                foreach ($item['permission'] as $perm) {
+                    if ($rolActivo->hasPermissionTo($perm)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             return $rolActivo->hasPermissionTo($item['permission']);
         });
 

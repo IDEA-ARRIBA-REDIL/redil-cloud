@@ -384,7 +384,7 @@
                 <div class="card h-100 p-6">
                     <h5 class="mb-1 fw-semibold text-black">Configuración principal</h5>
                     <div class="row ">
-                        <div class="mb-3 col-12 col-md-6 col-sm-12">
+                        <div class="mb-3 col-12 col-md-4 col-sm-12">
                             <label for="nombre" class="form-label">Nombre de la Materia</label>
                             <input value="{{ old('nombre', $materia->nombre) }}" type="text"
                                 class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre">
@@ -393,7 +393,16 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3 col-md-6 col-sm-12 ">
+                        <div class="mb-3 col-12 col-md-4 col-sm-12">
+                            <label for="creditos" class="form-label">Créditos</label>
+                            <input value="{{ old('creditos', $materia->creditos) }}" type="number" min="0"
+                                class="form-control @error('creditos') is-invalid @enderror" id="creditos" name="creditos">
+                            @error('creditos')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3 col-md-4 col-sm-12">
                             <label class="form-label">¿Habilitar asistencia?</label><br>
                             <label class="switch switch-lg">
                                 <input type="checkbox" class="switch-input" id="togglehabilitarAsistencias"

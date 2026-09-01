@@ -83,7 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array<int, string>
      */
-    //protected $fillable = ['name', 'email', 'password', 'mostrar_modal_agregar_hijos', 'entidad_relacionada_id'];
+    // protected $fillable = ['name', 'email', 'password', 'mostrar_modal_agregar_hijos', 'entidad_relacionada_id'];
     protected $guarded = [];
 
     /**
@@ -102,6 +102,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'fecha_nacimiento' => 'datetime',
+        'puntos' => 'integer',
     ];
 
     protected $appends = [
@@ -770,13 +771,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function asistenciasActividades()
     {
-        return $this->hasMany(ActividadAsistencia::class);
+        return $this->hasMany(ActividadAsistencia::class, 'user_id');
     }
 
     public function inscripciones()
     {
-        // Usamos 'asistente_id' como la llave foránea
-        return $this->hasMany(Inscripcion::class, 'asistente_id');
+        return $this->hasMany(Inscripcion::class, 'user_id');
     }
 
     // obtiene los formularios correspondientes al rol de usuario
@@ -980,6 +980,16 @@ class User extends Authenticatable implements MustVerifyEmail
                     'autor_id' => auth()->id() ?? $this->id,
                 ]);
 
+                // Disparar Hito Automático por Asignación a Grupo (si aplica)
+                $grupo = Grupo::find($grupo_id);
+                if ($grupo && $grupo->tipo_grupo_id) {
+                    app(\App\Services\HitoTriggerService::class)->onAsignacionGrupoIntegrante(
+                        $this->id,
+                        (int) $grupo->tipo_grupo_id,
+                        (int) $grupo->id
+                    );
+                }
+
                 return true;
             }
         }
@@ -1110,10 +1120,10 @@ class User extends Authenticatable implements MustVerifyEmail
                     $peticiones->where(function ($q) use ($sedesIds, $tiposIds, $verInvitados) {
                         $q->where(function ($sub) use ($sedesIds, $tiposIds) {
                             $sub->whereNotNull('peticiones.user_id');
-                            if (!empty($sedesIds)) {
+                            if (! empty($sedesIds)) {
                                 $sub->whereIn('users.sede_id', $sedesIds);
                             }
-                            if (!empty($tiposIds)) {
+                            if (! empty($tiposIds)) {
                                 $sub->whereIn('peticiones.tipo_peticion_id', $tiposIds);
                             }
                         });
@@ -1121,7 +1131,7 @@ class User extends Authenticatable implements MustVerifyEmail
                         if ($verInvitados) {
                             $q->orWhere(function ($sub) use ($tiposIds) {
                                 $sub->whereNull('peticiones.user_id');
-                                if (!empty($tiposIds)) {
+                                if (! empty($tiposIds)) {
                                     $sub->whereIn('peticiones.tipo_peticion_id', $tiposIds);
                                 }
                             });
@@ -2009,5 +2019,108 @@ class User extends Authenticatable implements MustVerifyEmail
     public function planesLectoresCreados(): HasMany
     {
         return $this->hasMany(PlanLector::class, 'autor_id');
+    }
+
+    /**
+     * Insignias obtenidas o en progreso por el usuario.
+     */
+    public function insignias(): BelongsToMany
+    {
+        return $this->belongsToMany(Insignia::class, 'insignia_user')
+            ->withPivot(['progreso_actual', 'completada', 'obtenida_el'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Transacciones de puntos (ganancias y gastos) del usuario.
+     */
+    public function transaccionesPuntos(): HasMany
+    {
+        return $this->hasMany(TransaccionPuntos::class, 'user_id');
+    }
+
+    /**
+     * Órdenes / Solicitudes de canje del usuario en la tienda.
+     */
+    public function solicitudesCanje(): HasMany
+    {
+        return $this->hasMany(SolicitudCanje::class, 'user_id');
+    }
+
+    /**
+     * Promueve al usuario a un nuevo Tipo de Usuario y actualiza sus roles jerárquicos
+     * basándose en el puntaje. Evita degradar si el tipo objetivo tiene menor puntaje a menos que se fuerce.
+     *
+     * @param  bool  $forzar  Si es true, omite la validación de puntaje y aplica el cambio directamente.
+     * @return bool True si fue actualizado/promovido, False si no se realizó ningún cambio.
+     */
+    public function promoverTipoUsuario(TipoUsuario|int $tipoUsuarioObjetivo, bool $forzar = false): bool
+    {
+        $tipoObjetivo = $tipoUsuarioObjetivo instanceof TipoUsuario
+            ? $tipoUsuarioObjetivo
+            : TipoUsuario::find($tipoUsuarioObjetivo);
+
+        if (! $tipoObjetivo) {
+            return false;
+        }
+
+        $puntajeActual = $this->tipoUsuario ? $this->tipoUsuario->puntaje : 0;
+        $puntajeObjetivo = $tipoObjetivo->puntaje;
+
+        if ($forzar || $puntajeActual <= $puntajeObjetivo) {
+            \Illuminate\Support\Facades\Log::info("User::promoverTipoUsuario: Promoviendo usuario ID {$this->id} a TipoUsuario ID {$tipoObjetivo->id} (Puntaje actual: {$puntajeActual}, Objetivo: {$puntajeObjetivo}, Forzar: ".($forzar ? 'true' : 'false').')');
+
+            $this->update(['tipo_usuario_id' => $tipoObjetivo->id]);
+
+            $nuevoRolId = $tipoObjetivo->id_rol_dependiente;
+
+            if ($nuevoRolId) {
+                DB::transaction(function () use ($nuevoRolId) {
+                    // Desactivar todos los roles actuales del usuario
+                    DB::table('model_has_roles')
+                        ->where('model_id', $this->id)
+                        ->where('model_type', get_class($this))
+                        ->update(['activo' => false]);
+
+                    // Obtener roles dependientes
+                    $rolesDependientesIds = Role::where('dependiente', true)->pluck('id');
+
+                    if ($rolesDependientesIds->isNotEmpty()) {
+                        DB::table('model_has_roles')
+                            ->where('model_id', $this->id)
+                            ->where('model_type', get_class($this))
+                            ->whereIn('role_id', $rolesDependientesIds)
+                            ->delete();
+                    }
+
+                    $existeRelacion = DB::table('model_has_roles')
+                        ->where('model_id', $this->id)
+                        ->where('role_id', $nuevoRolId)
+                        ->exists();
+
+                    if (! $existeRelacion) {
+                        DB::table('model_has_roles')->insert([
+                            'role_id' => $nuevoRolId,
+                            'model_type' => get_class($this),
+                            'model_id' => $this->id,
+                            'activo' => true,
+                        ]);
+                    } else {
+                        DB::table('model_has_roles')
+                            ->where('model_id', $this->id)
+                            ->where('role_id', $nuevoRolId)
+                            ->update(['activo' => true]);
+                    }
+                });
+
+                app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+            }
+
+            return true;
+        }
+
+        \Illuminate\Support\Facades\Log::info("User::promoverTipoUsuario: Usuario ID {$this->id} ya posee un puntaje mayor ({$puntajeActual}) que el objetivo ({$puntajeObjetivo}). No se realiza cambio.");
+
+        return false;
     }
 }

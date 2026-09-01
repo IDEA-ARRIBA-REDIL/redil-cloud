@@ -78,6 +78,7 @@ class ServicioValidacionPeriodo
                 'materia_periodo_id' => $resultado->materia_periodo_id,
                 'periodo_id' => $periodo->id,
                 'nota_final' => $resultado->nota_final_calculada,
+                'creditos_aprobados' => $estadoFinal['aprobado'] ? $resultado->creditos : null,
                 'total_asistencias' => $resultado->total_asistencias,
                 'aprobado' => $estadoFinal['aprobado'],
                 'motivo_reprobacion' => $estadoFinal['motivo'],
@@ -112,8 +113,8 @@ class ServicioValidacionPeriodo
 
         $sql = "
             SELECT
-                mat.user_id,
-                mp.id AS materia_periodo_id, mp.materia_id,
+                mat.user_id, mat.bloqueado AS matricula_bloqueada,
+                mp.id AS materia_periodo_id, mp.materia_id, m.creditos,
                 m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas,
                 COALESCE(SUM(ari.nota_obtenida * (icp.porcentaje / 100.0) * (cp.porcentaje / 100.0)), 0) AS nota_final_calculada,
                 (
@@ -131,7 +132,7 @@ class ServicioValidacionPeriodo
             LEFT JOIN cortes_periodo AS cp ON icp.corte_periodo_id = cp.id
             WHERE mat.periodo_id = ? AND mat.user_id IN ({$placeholders}) -- <-- AQUÍ FILTRAMOS POR EL LOTE DE ALUMNOS
             GROUP BY
-                mat.user_id, mp.id, mp.materia_id, m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas;
+                mat.user_id, mat.bloqueado, mp.id, mp.materia_id, m.creditos, m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas;
         ";
 
         // Los "bindings" son los valores que reemplazarán a los '?'.
@@ -143,10 +144,16 @@ class ServicioValidacionPeriodo
 
     /**
      * Aplica las reglas de negocio para determinar si un alumno aprueba.
-     * (Este método no necesita cambios)
      */
     private function determinarEstadoFinal(object $resultado, float $notaMinima): array
     {
+        if ((bool) $resultado->matricula_bloqueada) {
+            return [
+                'aprobado' => false,
+                'motivo' => 'MATRICULA_BLOQUEADA',
+            ];
+        }
+
         $aproboPorNota = true;
         $aproboPorAsistencia = true;
         $motivos = [];
@@ -202,7 +209,10 @@ class ServicioValidacionPeriodo
                 // Usamos una comparación no estricta para floats por posibles problemas de precisión.
                 if (
                     abs($registroExistente->nota_final - $dato['nota_final']) > 0.001 ||
-                    $registroExistente->total_asistencias != $dato['total_asistencias']
+                    $registroExistente->total_asistencias != $dato['total_asistencias'] ||
+                    (int) $registroExistente->aprobado !== (int) $dato['aprobado'] ||
+                    $registroExistente->motivo_reprobacion !== $dato['motivo_reprobacion'] ||
+                    $registroExistente->creditos_aprobados != $dato['creditos_aprobados']
                 ) {
                     // Si algo cambió, lo añadimos a la lista de registros a actualizar.
                     $paraActualizar[] = $dato;
@@ -237,6 +247,7 @@ class ServicioValidacionPeriodo
                         'nota_final' => $datoActualizar['nota_final'],
                         'total_asistencias' => $datoActualizar['total_asistencias'],
                         'aprobado' => $datoActualizar['aprobado'],
+                        'creditos_aprobados' => $datoActualizar['creditos_aprobados'],
                         'motivo_reprobacion' => $datoActualizar['motivo_reprobacion'],
                         'updated_at' => now(),
                     ]);

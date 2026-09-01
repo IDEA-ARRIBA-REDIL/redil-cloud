@@ -3473,23 +3473,29 @@ class GrupoController extends Controller
         ]);
     }
 
-    public function graficoDelMinisterio($id_nodo = 'U-logueado', $maximos_niveles = 3)
+    public function graficoDelMinisterio($id_nodo = 'U-logueado', $maximos_niveles = null)
     {
 
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('grupos.subitem_grafico_ministerio');
 
         $configuracion = Configuracion::find(1);
-        if ($maximos_niveles != 0) {
+        if ($maximos_niveles === null) {
             $maximos_niveles = $configuracion->maximos_niveles_grafico_ministerio;
         }
 
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $identificadores = explode('-', $id_nodo);
-        $tipo_nodo = $identificadores[0];
-        $tipoDeNodo = $identificadores[0];
-        $id = $identificadores[1];
+        if (count($identificadores) === 1) {
+            $tipo_nodo = 'A';
+            $tipoDeNodo = 'A';
+            $id = $identificadores[0];
+        } else {
+            $tipo_nodo = $identificadores[0];
+            $tipoDeNodo = $identificadores[0];
+            $id = $identificadores[1];
+        }
         $usuario_seleccionado = '';
         $grupo_seleccionado = '';
 
@@ -3498,30 +3504,13 @@ class GrupoController extends Controller
         $mensaje = '';
         $contador = 0;
 
-        $tamano_nodo_grupo = 50;
-        $tamano_nodo_general = 50;
-        $factor_vision = 10;
-        $inicio_fila = $factor_vision * -1;
-        $distancia_nodos_usuario = 0;
-        $distancia_nodos_grupo = 0;
         $nodos = [];
         $aristas = [];
-        $x_usuario = 0;
-        $x_grupo = 0;
-        $x = 0;
-        $y = 0;
-        $y_grupo = -750000;
         $array_ids_usuarios = [];
         $array_ids_grupos_dibujados = [];
         $array_ids_usuarios_dibujados = [];
         $array_aristas_usuario_grupo_dibujadas = [];
-        $array_aristas_grupo_usuario_dibujadas = [];
-
-        $id_nulo = 1;
-        $cantidad_usuarios_grupo = 0;
-
-        $nombre_grupo = '';
-        $tipo_dibujo_grupo = 'circle';
+        $leyenda = [];
 
         // / esto es para identificar de donde viene la primera consulta del grafico
         if ($tipo_nodo == 'U') { // este la primera vez que entra siempre sera por aca
@@ -3568,6 +3557,60 @@ class GrupoController extends Controller
             $mensaje = $mensaje.'<br> El índice actual del grupo <b>'.$grupo->nombre.'</b> que permite establecer su ubicación en el gráfico es: </a> <b>'.$grupo->indice_grafico_ministerial."</b>. Si deseas modificarlo, da click <a class='mostrar-div-indice-grupo' > aquí </a>";
         }
 
+        // --- Cálculo de la Cobertura Completa para KPIs ---
+        $kpi_array_ids_usuarios = $array_ids_usuarios;
+        $kpi_array_ids_usuarios_dibujados = [];
+        $kpi_array_ids_grupos_dibujados = [];
+        $kpi_contador_niveles = 0;
+        $kpi_maximos_niveles = 20;
+
+        while (count($kpi_array_ids_usuarios) > 0 && $kpi_contador_niveles < $kpi_maximos_niveles) {
+            $kpi_contador_niveles++;
+
+            $kpi_usuarios_ids = DB::table('users')
+                ->whereIn('id', $kpi_array_ids_usuarios)
+                ->pluck('id')
+                ->toArray();
+
+            $kpi_array_ids_usuarios = [];
+            $kpi_ids_grupos_temporal = [];
+
+            foreach ($kpi_usuarios_ids as $usrId) {
+                if (! in_array($usrId, $kpi_array_ids_usuarios_dibujados)) {
+                    $kpi_array_ids_usuarios_dibujados[] = $usrId;
+
+                    $gruposUsuario = DB::table('encargados_grupo')
+                        ->join('grupos', 'encargados_grupo.grupo_id', '=', 'grupos.id')
+                        ->where('encargados_grupo.user_id', $usrId)
+                        ->where('grupos.dado_baja', 0)
+                        ->pluck('grupos.id')
+                        ->toArray();
+
+                    $kpi_ids_grupos_temporal = array_merge($kpi_ids_grupos_temporal, $gruposUsuario);
+                }
+            }
+
+            $kpi_ids_grupos_temporal = array_unique($kpi_ids_grupos_temporal);
+
+            foreach ($kpi_ids_grupos_temporal as $grpId) {
+                if (! in_array($grpId, $kpi_array_ids_grupos_dibujados)) {
+                    $kpi_array_ids_grupos_dibujados[] = $grpId;
+
+                    $personasGrupo = DB::table('integrantes_grupo')
+                        ->where('integrantes_grupo.grupo_id', $grpId)
+                        ->pluck('integrantes_grupo.user_id')
+                        ->toArray();
+
+                    $kpi_array_ids_usuarios = array_merge($kpi_array_ids_usuarios, $personasGrupo);
+                }
+            }
+
+            $kpi_array_ids_usuarios = array_unique($kpi_array_ids_usuarios);
+        }
+
+        $totalPersonas = count($kpi_array_ids_usuarios_dibujados);
+        $totalGrupos = count($kpi_array_ids_grupos_dibujados);
+
         $contador_maximos_niveles = 0;
 
         while (count($array_ids_usuarios) > 0 && $contador_maximos_niveles < $maximos_niveles) {
@@ -3580,18 +3623,170 @@ class GrupoController extends Controller
             $idsGruposTemporal = [];
             foreach ($usuarios as $usuario) {
                 if (! in_array($usuario->id, $array_ids_usuarios_dibujados)) {
-                    $urlFoto = $usuario->foto_url;
 
-                    // / aqui se creo los
+                    // Comprobar si tiene foto configurada
+                    $tieneFoto = $usuario->foto && $usuario->foto !== '' && $usuario->foto !== 'default-m.png' && $usuario->foto !== 'default-f.png';
+
+                    $opciones_menu = [];
+
+                    // 1. Ver Perfil
+                    if (auth()->user()->can('verPerfilUsuarioPolitica', [$usuario, 'principal'])) {
+                        $opciones_menu[] = [
+                            'label' => 'Ver perfil',
+                            'url' => route('usuario.perfil', $usuario->id),
+                            'class' => '',
+                            'onclick' => '',
+                        ];
+                    }
+
+                    // 2. Agendar Cita
+                    if ($rolActivo->hasPermissionTo('consejeria.opcion_agendar_cita')) {
+                        $opciones_menu[] = [
+                            'label' => 'Agendar cita',
+                            'url' => route('consejeria.nuevaCita', $usuario->id),
+                            'class' => '',
+                            'onclick' => '',
+                        ];
+                    }
+
+                    // 3. Dar de Alta
+                    if ($rolActivo->hasPermissionTo('personas.opcion_dar_de_alta_asistente') && $usuario->trashed()) {
+                        $opciones_menu[] = [
+                            'label' => 'Dar de alta',
+                            'url' => 'javascript:void(0);',
+                            'class' => '',
+                            'onclick' => "darBajaAlta('{$usuario->id}', 'alta')",
+                        ];
+                    }
+
+                    // 4. Modificar (Formularios)
+                    if ($usuario->esta_aprobado) {
+                        $formularios = auth()->user()->formularios(2, $usuario->edad());
+                        foreach ($formularios as $form) {
+                            if (auth()->user()->can('modificarUsuarioPolitica', $form)) {
+                                $opciones_menu[] = [
+                                    'label' => $form->label,
+                                    'url' => route('usuario.modificar', [$form->id, $usuario->id]),
+                                    'class' => '',
+                                    'onclick' => '',
+                                ];
+                            }
+                        }
+                    } else {
+                        if ($rolActivo->hasPermissionTo('personas.privilegio_modificar_asistentes_desaprobados')) {
+                            $formularios = auth()->user()->formularios(2, $usuario->edad());
+                            foreach ($formularios as $form) {
+                                $opciones_menu[] = [
+                                    'label' => $form->label,
+                                    'url' => route('usuario.modificar', [$form->id, $usuario->id]),
+                                    'class' => '',
+                                    'onclick' => '',
+                                ];
+                            }
+                        }
+                    }
+
+                    // 5. Info Congregacional
+                    if (auth()->user()->can('informacionCongregacionalUsuarioPolitica', $usuario)) {
+                        $opciones_menu[] = [
+                            'label' => 'Info. congregacional',
+                            'url' => route('usuario.informacionCongregacional', ['formulario' => 0, 'usuario' => $usuario->id]),
+                            'class' => '',
+                            'onclick' => '',
+                        ];
+                    }
+
+                    // 6. Relaciones Familiares
+                    if (auth()->user()->can('relacionesFamiliaresUsuarioPolitica', $usuario)) {
+                        $opciones_menu[] = [
+                            'label' => 'Relaciones familiares',
+                            'url' => route('usuario.relacionesFamiliares', ['formulario' => 0, 'usuario' => $usuario->id]),
+                            'class' => '',
+                            'onclick' => '',
+                        ];
+                    }
+
+                    // 7. Geo Asignación
+                    if (auth()->user()->can('geoasignacionUsuarioPolitica', $usuario)) {
+                        $opciones_menu[] = [
+                            'label' => 'Geo asignación',
+                            'url' => route('usuario.geoAsignacion', ['formulario' => 0, 'usuario' => $usuario->id]),
+                            'class' => '',
+                            'onclick' => '',
+                        ];
+                    }
+
+                    // 8. Cambiar Contraseña
+                    if ($rolActivo->hasPermissionTo('personas.opcion_cambiar_contrasena_asistente')) {
+                        $opciones_menu[] = [
+                            'label' => 'Cambiar contraseña',
+                            'url' => '#',
+                            'class' => '',
+                            'onclick' => "event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', 'usuarios/{$usuario->id}/cambiar-contrasena'); var modal = new bootstrap.Modal(document.getElementById('modalCambioContrasena')); modal.show();",
+                        ];
+
+                        $opciones_menu[] = [
+                            'label' => 'Cambiar contraseña default',
+                            'url' => '#',
+                            'class' => '',
+                            'onclick' => "event.preventDefault(); var f = document.createElement('form'); f.method='POST'; f.action='".route('usuario.cambiarContrasenaDefault', ['usuario' => $usuario->id])."'; var csrf = document.createElement('input'); csrf.type='hidden'; csrf.name='_token'; csrf.value='".csrf_token()."'; f.appendChild(csrf); document.body.appendChild(f); f.submit();",
+                        ];
+                    }
+
+                    // 9. Código QR
+                    if ($rolActivo->hasPermissionTo('personas.opcion_descargar_qr')) {
+                        $opciones_menu[] = [
+                            'label' => 'Código QR',
+                            'url' => route('usuario.descargarCodigoQr', $usuario->id),
+                            'class' => '',
+                            'onclick' => '',
+                        ];
+                    }
+
+                    // 10. Dar de Baja
+                    if ($rolActivo->hasPermissionTo('personas.opcion_dar_de_baja_asistente') && ! $usuario->trashed()) {
+                        $opciones_menu[] = [
+                            'label' => 'Dar de baja',
+                            'url' => 'javascript:void(0);',
+                            'class' => 'text-danger',
+                            'onclick' => "darBajaAlta('{$usuario->id}', 'baja')",
+                        ];
+                    }
+
+                    // 11. Eliminar
+                    if ($rolActivo->hasPermissionTo('personas.opcion_eliminar_asistente') && ! $usuario->trashed()) {
+                        $opciones_menu[] = [
+                            'label' => 'Eliminar',
+                            'url' => 'javascript:void(0);',
+                            'class' => 'text-danger',
+                            'onclick' => "comprobarSiTieneRegistros('{$usuario->id}')",
+                        ];
+                    }
+
+                    // 12. Eliminación Forzada
+                    if ($rolActivo->hasPermissionTo('personas.eliminar_asistentes_forzadamente') && $usuario->trashed()) {
+                        $opciones_menu[] = [
+                            'label' => 'Eliminación forzada',
+                            'url' => 'javascript:void(0);',
+                            'class' => 'text-danger',
+                            'onclick' => "eliminacionForzada('{$usuario->id}')",
+                        ];
+                    }
+
                     $item = new stdClass;
                     $item->id = 'A-'.$usuario->id;
-                    $item->image = $urlFoto;
-                    $item->title = ($usuario->tipoUsuario ? $usuario->tipoUsuario->nombre : 'Sin tipo').': '.$usuario->nombre(3);
+                    $item->image = $tieneFoto ? $usuario->foto_url : null;
+                    $item->iniciales = $tieneFoto ? null : $usuario->inicialesNombre();
+                    $item->nombre = $usuario->nombre(3);
                     $item->level = $contador;
                     $item->color = $usuario->tipoUsuario ? $usuario->tipoUsuario->color : '#cccccc';
-                    $item->shape = 'circularImage';
-                    $item->size = 20;
-                    $item->borderWidth = 5;
+                    $item->tipo = 'A';
+                    $item->tipo_nombre = $usuario->tipoUsuario ? $usuario->tipoUsuario->nombre : 'Sin tipo';
+                    $item->tipo_icono = $usuario->tipoUsuario ? $usuario->tipoUsuario->icono : 'ti-user';
+                    $item->banner_url = $usuario->banner_url;
+                    $edadCalculada = $usuario->edad();
+                    $item->edad = $edadCalculada > 1 ? $edadCalculada.' años' : $edadCalculada.' año';
+                    $item->opciones_menu = $opciones_menu;
                     $nodos[] = $item;
 
                     array_push($array_ids_usuarios_dibujados, $usuario->id);
@@ -3607,15 +3802,16 @@ class GrupoController extends Controller
 
                     // aqui recorremos los grupos que dirije el usuario o persona que estoy recorriendo y le creo la arista que conecta la persona con los grupos que dirije
                     foreach ($gruposUsuario as $grupoUsuario) {
-                        if (! in_array("Ar-ag-'.$usuario->id.'_'.$grupoUsuario->id.'", $array_aristas_usuario_grupo_dibujadas)) {
+                        $aristaId = "Ar-ag-{$usuario->id}_{$grupoUsuario->id}";
+                        if (! in_array($aristaId, $array_aristas_usuario_grupo_dibujadas)) {
                             $item = new stdClass;
                             $item->from = 'A-'.$usuario->id;
                             $item->to = 'G-'.$grupoUsuario->id;
-                            // $item->color= '#000';
                             $item->width = 3;
+                            $item->color = $usuario->tipoUsuario ? $usuario->tipoUsuario->color : '#cccccc';
                             $aristas[] = $item;
 
-                            array_push($array_aristas_usuario_grupo_dibujadas, "Ar-ag-'.$usuario->id.'_'.$grupoUsuario->id.'");
+                            array_push($array_aristas_usuario_grupo_dibujadas, $aristaId);
                         }
                     }
                 } else {
@@ -3623,43 +3819,193 @@ class GrupoController extends Controller
                 }
             }
             // // aqui obtengo los grupos que dirije pero los voy a recorrer para graficar los nodos de los grupos
-            $grupos = Grupo::whereIn('grupos.id', $idsGruposTemporal)->select('id', 'tipo_grupo_id', 'nombre')->get();
+            $grupos = Grupo::whereIn('grupos.id', $idsGruposTemporal)->get();
 
             $contador = count($idsGruposTemporal) > 0 ? $contador + 1 : '';
 
             foreach ($grupos as $grupo) {
                 if (! in_array($grupo->id, $array_ids_grupos_dibujados)) {
-                    if (Sede::where('grupo_id', '=', $grupo->id)->select('sede.id')->count() > 0) {
-                        $nombre_grupo = 'Sede: '.Sede::where('grupo_id', '=', $grupo->id)->first()->nombre.' - '.$grupo->tipoGrupo->nombre.': '.$grupo->nombre;
-                        $tipo_dibujo_grupo = 'box';
-                    } else {
-                        $nombre_grupo = $grupo->tipoGrupo->nombre.': '.$grupo->nombre;
-                        $tipo_dibujo_grupo = 'circle';
+
+                    // Comprobar si tiene icono configurado
+                    $tieneIcono = $grupo->tipoGrupo->imagen && $grupo->tipoGrupo->imagen !== '' && $grupo->tipoGrupo->imagen !== 'indicador_general.png';
+
+                    // Calcular iniciales del tipo de grupo si no tiene icono
+                    $inicialesTipoGrupo = null;
+                    if (! $tieneIcono) {
+                        $palabras = explode(' ', $grupo->tipoGrupo->nombre);
+                        $iniciales = '';
+                        foreach ($palabras as $palabra) {
+                            if (trim($palabra) !== '') {
+                                $iniciales .= mb_substr($palabra, 0, 1);
+                            }
+                        }
+                        $inicialesTipoGrupo = strtoupper($iniciales);
                     }
+
+                    // Registrar en la leyenda
+                    if ($grupo->tipoGrupo) {
+                        $leyenda['grupo_'.$grupo->tipoGrupo->id] = [
+                            'nombre' => $grupo->tipoGrupo->nombre,
+                            'color' => $grupo->tipoGrupo->color ? $grupo->tipoGrupo->color : '#cccccc',
+                            'tipo' => 'grupo',
+                        ];
+                    }
+
+                    // Determinar si es una sede
+                    $esSede = Sede::where('grupo_id', '=', $grupo->id)->exists();
+
+                    // Obtener opciones del menú dropdown para el grupo
+                    $opciones_menu = [];
+
+                    if ($grupo->dado_baja == 0) {
+                        // 1. Perfil
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_ver_perfil_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Perfil',
+                                'url' => route('grupo.perfil.estadisticasGrupo', $grupo->id),
+                                'class' => '',
+                                'onclick' => '',
+                            ];
+                        }
+
+                        // 2. Modificar
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_modificar_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Modificar',
+                                'url' => route('grupo.modificar', $grupo->id),
+                                'class' => '',
+                                'onclick' => '',
+                            ];
+                        }
+
+                        // 3. Gestionar encargados
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_anadir_lideres_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Gestionar encargados',
+                                'url' => route('grupo.gestionarEncargados', $grupo->id),
+                                'class' => '',
+                                'onclick' => '',
+                            ];
+                        }
+
+                        // 4. Gestionar integrantes
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_anadir_integrantes_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Gestionar integrantes',
+                                'url' => route('grupo.gestionarIntegrantes', $grupo->id),
+                                'class' => '',
+                                'onclick' => '',
+                            ];
+                        }
+
+                        // 5. Gestionar Georeferencia
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_georreferencia_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Gestionar Georeferencia',
+                                'url' => route('grupo.georreferencia', $grupo->id),
+                                'class' => '',
+                                'onclick' => '',
+                            ];
+                        }
+
+                        // 6. Excluir grupo
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_excluir_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Excluir grupo',
+                                'url' => '#',
+                                'class' => '',
+                                'onclick' => "event.preventDefault(); var f = document.createElement('form'); f.method='POST'; f.action='".route('grupo.excluir', ['grupo' => $grupo->id])."'; var csrf = document.createElement('input'); csrf.type='hidden'; csrf.name='_token'; csrf.value='".csrf_token()."'; f.appendChild(csrf); document.body.appendChild(f); f.submit();",
+                            ];
+                        }
+
+                        // 7. Ver informes de evidencia
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_ver_informes_evidencia')) {
+                            $opciones_menu[] = [
+                                'label' => 'Ver informes de evidencia',
+                                'url' => route('grupo.informeEvidencia.listar', $grupo->id),
+                                'class' => '',
+                                'onclick' => '',
+                            ];
+                        }
+
+                        // 8. Dar de baja
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_dar_de_baja_alta_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Dar de baja',
+                                'url' => 'javascript:void(0);',
+                                'class' => 'text-danger',
+                                'onclick' => "darBajaAlta('{$grupo->id}', 'baja')",
+                            ];
+                        }
+
+                        // 9. Eliminar
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_eliminar_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Eliminar',
+                                'url' => 'javascript:void(0);',
+                                'class' => 'text-danger',
+                                'onclick' => "eliminacion('{$grupo->id}')",
+                            ];
+                        }
+                    } else {
+                        // Dar de alta
+                        if ($rolActivo->hasPermissionTo('grupos.opcion_dar_de_baja_alta_grupo')) {
+                            $opciones_menu[] = [
+                                'label' => 'Dar de alta',
+                                'url' => 'javascript:void(0);',
+                                'class' => '',
+                                'onclick' => "darBajaAlta('{$grupo->id}', 'alta')",
+                            ];
+                        }
+                    }
+
+                    // Formatear detalles de reunión
+                    $diaReunion = $grupo->dia ? \App\Helpers\Helpers::obtenerDiaDeLaSemana($grupo->dia, 'corto') : 'Día no indicado';
+                    $horaReunion = $grupo->hora ? Carbon::parse($grupo->hora)->format('g:i a') : '';
+                    $dia_reunion_formateado = $horaReunion ? "{$diaReunion}, {$horaReunion}" : $diaReunion;
+
+                    // Reportes del grupo
+                    $ultimoReporte = $grupo->ultimoReporteDelGrupo();
+                    $tiene_ultimo_reporte = isset($ultimoReporte->id);
+                    $fecha_ultimo_reporte = $tiene_ultimo_reporte ? $ultimoReporte->fecha : '';
+                    $al_dia = $tiene_ultimo_reporte ? $grupo->alDia() : false;
+
                     // aqui adentro creo el nodo del grupo
                     $item = new stdClass;
                     $item->id = 'G-'.$grupo->id;
-                    $item->color = $grupo->tipoGrupo->color;
-                    $item->title = $nombre_grupo;
+                    $item->color = $grupo->tipoGrupo->color ? $grupo->tipoGrupo->color : '#cccccc';
+                    $item->image = $tieneIcono ? $grupo->tipoGrupo->imagen_url : null;
+                    $item->iniciales = $inicialesTipoGrupo;
+                    $item->nombre = $grupo->nombre;
+                    $item->personas_count = $grupo->asistentes()->count();
                     $item->level = $contador;
-                    $item->shape = $tipo_dibujo_grupo;
-                    $item->size = 20;
+                    $item->tipo = 'G';
+                    $item->tipo_nombre = $grupo->tipoGrupo->nombre;
+                    $item->es_sede = $esSede;
+                    $item->banner_url = $grupo->portada_vinculada;
+                    $item->dia_reunion = $dia_reunion_formateado;
+                    $item->fecha_apertura = $grupo->fecha_apertura ? $grupo->fecha_apertura : 'No indicado';
+                    $item->tiene_ultimo_reporte = $tiene_ultimo_reporte;
+                    $item->fecha_ultimo_reporte = $fecha_ultimo_reporte;
+                    $item->al_dia = $al_dia;
+                    $item->opciones_menu = $opciones_menu;
                     $nodos[] = $item;
 
                     array_push($array_ids_grupos_dibujados, $grupo->id);
                     $personasGrupo = $grupo->asistentes()->orderBy('users.indice_grafico_ministerial', 'asc')->select('users.id')->pluck('users.id')->toArray();
                     foreach ($personasGrupo as $personaGrupoId) {
-                        if (! in_array("Ar-ga-'.$grupo->id.'_'.$personaGrupoId.'", $array_aristas_usuario_grupo_dibujadas)) {
+                        $aristaId = "Ar-ga-{$grupo->id}_{$personaGrupoId}";
+                        if (! in_array($aristaId, $array_aristas_usuario_grupo_dibujadas)) {
                             if (! in_array($personaGrupoId, $array_ids_usuarios)) {
                                 // /esta es la arista que conecta el grupo con las personas que asisten a ese grupo
                                 $item = new stdClass;
                                 $item->from = 'G-'.$grupo->id;
                                 $item->to = 'A-'.$personaGrupoId;
-                                $item->color = '{ color: "red" }';
+                                $item->color = $grupo->tipoGrupo->color ? $grupo->tipoGrupo->color : '#cccccc';
                                 $item->width = 3;
                                 $aristas[] = $item;
 
-                                array_push($array_aristas_usuario_grupo_dibujadas, "Ar-ga-'.$grupo->id.'_'.$personaGrupoId.'");
+                                array_push($array_aristas_usuario_grupo_dibujadas, $aristaId);
                             } else {
                                 array_push($array_ids_usuarios_no_dibujados, $personaGrupoId);
                             }
@@ -3691,6 +4037,9 @@ class GrupoController extends Controller
             'maximos_niveles' => $maximos_niveles,
             'configuracion' => $configuracion,
             'rolActivo' => $rolActivo,
+            'leyenda' => array_values($leyenda),
+            'totalPersonas' => $totalPersonas,
+            'totalGrupos' => $totalGrupos,
         ]);
     }
 

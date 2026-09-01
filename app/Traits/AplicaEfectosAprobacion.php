@@ -6,10 +6,8 @@ use App\Models\CrecimientoUsuario;
 use App\Models\Materia;
 use App\Models\MateriaAprobadaUsuario;
 use App\Models\NivelAprobadoUsuario;
-use App\Models\Role;
-use App\Models\TipoUsuario;
+use App\Models\TareaConsolidacionUsuario;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 trait AplicaEfectosAprobacion
@@ -24,7 +22,7 @@ trait AplicaEfectosAprobacion
     {
         // 1. Filtramos solo los registros APROBADOS
         $aprobados = array_filter($datosCalculados, function ($dato) {
-            return $dato['aprobado'] === true;
+            return (int) $dato['aprobado'] === MateriaAprobadaUsuario::ESTADO_APROBADO;
         });
 
         if (empty($aprobados)) {
@@ -62,15 +60,12 @@ trait AplicaEfectosAprobacion
 
             // --- A. Actualizar Tareas de Consolidación ---
             foreach ($materia->tareasCulminadas as $tareaConfig) {
-                DB::table('tarea_consolidacion_usuario')->updateOrInsert(
-                    [
-                        'user_id' => $userId,
-                        'tarea_consolidacion_id' => $tareaConfig->tarea_consolidacion_id,
-                    ],
-                    [
-                        'estado_tarea_consolidacion_id' => $tareaConfig->estado_tarea_consolidacion_id,
-                        'updated_at' => now(),
-                    ]
+                TareaConsolidacionUsuario::procesarTarea(
+                    userId: $userId,
+                    tareaConsolidacionId: $tareaConfig->tarea_consolidacion_id,
+                    estadoObjetivoId: $tareaConfig->estado_tarea_consolidacion_id,
+                    observaciones: 'Culminación automática por aprobación de la materia: '.$materia->nombre,
+                    fecha: now()
                 );
             }
 
@@ -79,32 +74,25 @@ trait AplicaEfectosAprobacion
                 $estadoObjetivoId = $pasoConfig->pivot->estado_paso_crecimiento_usuario_id;
 
                 if ($estadoObjetivoId) {
-                    CrecimientoUsuario::updateOrCreate(
-                        [
-                            'user_id' => $userId,
-                            'paso_crecimiento_id' => $pasoConfig->id,
-                        ],
-                        [
-                            'estado_id' => $estadoObjetivoId,
-                            'fecha' => now(),
-                            'detalle' => 'Culminación automática por aprobación de la materia: '.$materia->nombre,
-                        ]
+                    CrecimientoUsuario::procesarPaso(
+                        userId: $userId,
+                        pasoCrecimientoId: $pasoConfig->id,
+                        estadoObjetivoId: $estadoObjetivoId,
+                        detalle: 'Culminación automática por aprobación de la materia: '.$materia->nombre,
+                        fecha: now()
                     );
                 }
             }
 
-            // --- C. Actualizar Tipo de Usuario y Roles ---
-            if ($materia->tipo_usuario_objetivo_id) {
-                $usuario = User::with('tipoUsuario')->find($userId);
-                $tipoObjetivo = $materia->tipoUsuarioObjetivo;
+            $usuario = User::find($userId);
 
-                if ($usuario && $tipoObjetivo) {
-                    $this->actualizarTipoUsuarioYRoles($usuario, $tipoObjetivo);
-                }
+            // --- C. Actualizar Tipo de Usuario y Roles ---
+            if ($materia->tipo_usuario_objetivo_id && $usuario) {
+                $usuario->promoverTipoUsuario($materia->tipo_usuario_objetivo_id);
             }
 
             // --- D. Verificar Aprobación de Nivel (NUEVO) ---
-            if ($materia->nivel_id && isset($usuario)) {
+            if ($materia->nivel_id && $usuario) {
                 $nivel = $materia->nivel;
 
                 // 1. Verificar si ya tiene un registro de aprobación para este nivel
@@ -122,7 +110,7 @@ trait AplicaEfectosAprobacion
                         // 3. Contar cuántas de esas materias ha aprobado el usuario en su historial TOTAL
                         $aprobadasCount = MateriaAprobadaUsuario::where('user_id', $userId)
                             ->whereIn('materia_id', $materiasDelNivelIn)
-                            ->where('aprobado', true)
+                            ->where('aprobado', MateriaAprobadaUsuario::ESTADO_APROBADO)
                             ->count();
 
                         if ($aprobadasCount >= $materiasDelNivelIn->count()) {
@@ -133,77 +121,35 @@ trait AplicaEfectosAprobacion
                                 'user_id' => $userId,
                                 'nivel_id' => $nivel->id,
                                 'periodo_id' => $dato['periodo_id'],
-                                'aprobado' => true,
+                                'aprobado' => NivelAprobadoUsuario::ESTADO_APROBADO,
+                                'fecha_homologacion_aprobacion' => now(),
                                 'nota_final' => 0,
                             ]);
 
                             // b. Cambiar rol al objetivo del nivel si existe
                             if ($nivel->tipo_usuario_objetivo_id) {
-                                $tipoObjetivoNivel = $nivel->tipoUsuarioObjetivo;
-                                if ($tipoObjetivoNivel) {
-                                    $this->actualizarTipoUsuarioYRoles($usuario, $tipoObjetivoNivel);
-                                }
+                                $usuario->promoverTipoUsuario($nivel->tipo_usuario_objetivo_id);
                             }
                         }
                     }
                 }
             }
-            unset($usuario);
-        }
-    }
 
-    /**
-     * Helper para actualizar el tipo de usuario y sus roles de forma síncrona.
-     */
-    private function actualizarTipoUsuarioYRoles(User $usuario, TipoUsuario $tipoObjetivo): void
-    {
-        $puntajeActual = $usuario->tipoUsuario ? $usuario->tipoUsuario->puntaje : 0;
-        $puntajeObjetivo = $tipoObjetivo->puntaje;
-
-        if ($puntajeActual <= $puntajeObjetivo) {
-            Log::info("Trait Aprobación: Actualizando Tipo de Usuario para User ID {$usuario->id}. Objetivo: {$tipoObjetivo->id}");
-
-            $usuario->update(['tipo_usuario_id' => $tipoObjetivo->id]);
-
-            $nuevoRolId = $tipoObjetivo->id_rol_dependiente;
-
-            if ($nuevoRolId) {
-                DB::table('model_has_roles')
-                    ->where('model_id', $usuario->id)
-                    ->where('model_type', 'App\Models\User')
-                    ->update(['activo' => false]);
-
-                $rolesDependientesIds = Role::where('dependiente', true)->pluck('id');
-
-                if ($rolesDependientesIds->isNotEmpty()) {
-                    DB::table('model_has_roles')
-                        ->where('model_id', $usuario->id)
-                        ->where('model_type', 'App\Models\User')
-                        ->whereIn('role_id', $rolesDependientesIds)
-                        ->delete();
-                }
-
-                $existeRelacion = DB::table('model_has_roles')
-                    ->where('model_id', $usuario->id)
-                    ->where('role_id', $nuevoRolId)
-                    ->exists();
-
-                if (! $existeRelacion) {
-                    DB::table('model_has_roles')->insert([
-                        'role_id' => $nuevoRolId,
-                        'model_type' => 'App\Models\User',
-                        'model_id' => $usuario->id,
-                        'activo' => true,
-                    ]);
-                } else {
-                    DB::table('model_has_roles')
-                        ->where('model_id', $usuario->id)
-                        ->where('role_id', $nuevoRolId)
-                        ->update(['activo' => true]);
-                }
-
-                app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+            // --- E. Disparar Hitos Automáticos por Aprobación de Materia ---
+            try {
+                app(\App\Services\HitoTriggerService::class)->onMateriaAprobada(
+                    $userId,
+                    $materiaId,
+                    $materia->escuela_id,
+                    $materia->nivel_id,
+                    null,
+                    now()->toDateString()
+                );
+            } catch (\Throwable $e) {
+                Log::error('Error disparando hito en AplicaEfectosAprobacion: '.$e->getMessage());
             }
+
+            unset($usuario);
         }
     }
 }

@@ -60,7 +60,7 @@ class PermisoSeeder extends Seeder
             'name' => 'personas.subitem_lista_asistentes',
         ])->syncRoles([$superAdmin]);
 
-        // Crear privilegios de ver secciones del perfil del usuario en su pestaña 
+        // Crear privilegios de ver secciones del perfil del usuario en su pestaña
 
         Permission::firstOrCreate([
             'titulo' => 'ver_perfil_asistente',
@@ -134,7 +134,7 @@ class PermisoSeeder extends Seeder
             'name' => 'personas.perfil.hitos_autogestion',
         ]);
 
-        // fin Crear privilegios de ver secciones del perfil del usuario en su pestaña 
+        // fin Crear privilegios de ver secciones del perfil del usuario en su pestaña
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_modificar_asistente',
@@ -712,7 +712,7 @@ class PermisoSeeder extends Seeder
             'titulo' => 'boton_configurar_semanas_informes_reportes_grupo',
             'descripcion' => '',
             'name' => 'reportes_grupos.boton_configurar_semanas_informes_reportes_grupo',
-        ]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'cierre_caja_ingresos_reportes_grupo',
@@ -1550,7 +1550,7 @@ class PermisoSeeder extends Seeder
             'titulo' => 'privilegio_administrar_informes',
             'descripcion' => '',
             'name' => 'informes.privilegio_administrar_informes',
-        ]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'privilegio_configurar_semanas',
@@ -1729,158 +1729,159 @@ class PermisoSeeder extends Seeder
             'titulo' => 'opcion_eliminar_escuela',
             'descripcion' => '',
             'name' => 'escuelas.opcion_eliminar_escuela',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_actualizar_escuela',
             'descripcion' => '',
             'name' => 'escuelas.opcion_actualizar_escuela',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'panel_perfil_dashboard',
             'descripcion' => '',
             'name' => 'escuelas.panel_perfil_dashboard',
-        ])->syncRoles([$administrador]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'todas_las_calificaciones',
             'descripcion' => '',
             'name' => 'escuelas.todas_las_calificaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_lista_escuelas',
             'descripcion' => '',
             'name' => 'escuelas.subitem_lista_escuelas',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_nueva_escuela',
             'descripcion' => '',
             'name' => 'escuelas.subitem_nueva_escuela',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
+
         Permission::firstOrCreate([
             'titulo' => 'opcion_anadir_materia_escuela',
             'descripcion' => '',
             'name' => 'escuelas.opcion_anadir_materia_escuela',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'listar_opciones_materia',
             'descripcion' => '',
             'name' => 'escuelas.listar_opciones_materia',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_modificar_materia',
             'descripcion' => '',
             'name' => 'escuelas.opcion_modificar_materia',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_eliminar_materia',
             'descripcion' => '',
             'name' => 'escuelas.opcion_eliminar_materia',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_activar_materia',
             'descripcion' => '',
             'name' => 'escuelas.opcion_activar_materia',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'reportar_asistencia_cualquier_dia',
             'descripcion' => '',
             'name' => 'escuelas.reportar_asistencia_cualquier_dia',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
-        // aulas
+        // AULAS
 
         Permission::firstOrCreate([
             'titulo' => 'item_aula',
             'descripcion' => '',
             'name' => 'escuelas.item_aula',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'gestionar_aulas',
             'descripcion' => '',
             'name' => 'escuelas.gestionar_aulas',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
-        // / horarios administrativos
+        // HORARIOS ADMINISTRATIVOS
         Permission::firstOrCreate([
             'titulo' => 'item_horarios',
             'descripcion' => '',
             'name' => 'escuelas.item_horarios',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'gestionar_horarios',
             'descripcion' => '',
             'name' => 'escuelas.gestionar_horarios',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
-        // / periodos
+        // PERIODOS
 
         Permission::firstOrCreate([
             'titulo' => 'item_periodos',
             'descripcion' => '',
             'name' => 'escuelas.item_periodos',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_lista_periodos',
             'descripcion' => '',
             'name' => 'escuelas.subitem_lista_periodos',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_eliminar_periodo',
             'descripcion' => '',
             'name' => 'escuelas.opcion_eliminar_periodo',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_modificar_periodo',
             'descripcion' => '',
             'name' => 'escuelas.opcion_modificar_periodo',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_finalizar_periodo',
             'descripcion' => '',
             'name' => 'escuelas.opcion_finalizar_periodo',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
-        // /CALIFICACIONES
+        // CALIFICACIONES
 
         Permission::firstOrCreate([
             'titulo' => 'calificaciones',
             'descripcion' => '',
             'name' => 'escuelas.calificaciones',
-        ])->syncRoles([$administrador, $superAdmin, $lider]);
+        ])->syncRoles([$superAdmin, $lider, $alumno, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_calificaciones',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_calificaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_mis_calificaciones',
             'descripcion' => '',
             'name' => 'escuelas.subitem_mis_calificaciones',
-        ])->syncRoles([$administrador, $superAdmin, $lider]);
+        ])->syncRoles([$superAdmin, $lider, $alumno, $maestro]);
 
-        // /HOMOLGACIONES
+        // HOMOLOGACIONES
         Permission::firstOrCreate([
             'titulo' => 'homologaciones',
             'descripcion' => '',
             'name' => 'escuelas.homologaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         // MATRICULAS
 
@@ -1888,43 +1889,43 @@ class PermisoSeeder extends Seeder
             'titulo' => 'item_matriculas',
             'descripcion' => '',
             'name' => 'escuelas.item_matriculas',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin, $alumno]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_matriculas',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_matriculas',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_traslados',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_traslados',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_solicitudes_traslado',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_solicitudes_traslado',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_mis_solicitudes_traslado',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_mis_solicitudes_traslado',
-        ])->syncRoles([$alumno]);
+        ])->syncRoles([$alumno, $superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_eliminar_matricula',
             'descripcion' => '',
             'name' => 'escuelas.opcion_eliminar_matricula',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_historial_matriculas',
             'descripcion' => '',
             'name' => 'escuelas.subitem_historial_matriculas',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         // MAESTROS
 
@@ -1932,31 +1933,31 @@ class PermisoSeeder extends Seeder
             'titulo' => 'item_maestros',
             'descripcion' => '',
             'name' => 'escuelas.item_maestros',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_gestionar_maestro',
             'descripcion' => '',
             'name' => 'escuelas.opcion_gestionar_maestro',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_crear_maestro',
             'descripcion' => '',
             'name' => 'escuelas.opcion_crear_maestro',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_ver_perfil_maestro',
             'descripcion' => '',
             'name' => 'escuelas.opcion_ver_perfil_maestro',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_lista_maestros',
             'descripcion' => '',
             'name' => 'escuelas.subitem_lista_maestros',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         // BANNERS
 
@@ -1964,13 +1965,13 @@ class PermisoSeeder extends Seeder
             'titulo' => 'item_banners',
             'descripcion' => '',
             'name' => 'escuelas.item_banners',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_banners',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_banners',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         // INFORMES
 
@@ -1978,39 +1979,33 @@ class PermisoSeeder extends Seeder
             'titulo' => 'item_informes_escuelas',
             'descripcion' => '',
             'name' => 'escuelas.item_informes_escuelas',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_asistencias',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_asistencias',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
-        // / GENERALES ESCUELAS
+        // GENERALES ESCUELAS
 
         Permission::firstOrCreate([
             'titulo' => 'calificar_cualquier_fecha',
             'descripcion' => '',
             'name' => 'escuelas.calificar_cualquier_fecha',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'reportar_cualquier_fecha',
             'descripcion' => '',
             'name' => 'escuelas.reportar_cualquier_fecha',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'icono',
             'descripcion' => '',
             'name' => 'escuelas.icono',
-        ])->syncRoles([$administrador, $superAdmin]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'item_gestionar_banners',
-            'descripcion' => '',
-            'name' => 'escuelas.item_gestionar_banners',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'es_maestro',
@@ -2028,224 +2023,176 @@ class PermisoSeeder extends Seeder
             'titulo' => 'es_administrativo',
             'descripcion' => '',
             'name' => 'escuelas.es_administrativo',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_recursos_generales',
             'descripcion' => '',
             'name' => 'escuelas.subitem_recursos_generales',
-        ])->syncRoles([$administrador, $superAdmin, $alumno, $lider, $pastor, $oveja, $nuevo]);
+        ])->syncRoles([$superAdmin, $alumno, $maestro, $lider, $pastor, $oveja, $nuevo]);
 
         Permission::firstOrCreate([
             'titulo' => 'gestionar_recursos_generales',
             'descripcion' => '',
             'name' => 'escuelas.gestionar_recursos_generales',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'mis_recursos_generales',
             'descripcion' => '',
             'name' => 'escuelas.mis_recursos_generales',
-        ])->syncRoles([$alumno, $lider, $pastor, $oveja, $nuevo]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'subitem_homologaciones',
-            'descripcion' => '',
-            'name' => 'escuelas.subitem_homologaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'item_calificaciones',
-            'descripcion' => '',
-            'name' => 'escuelas.item_calificaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'subitem_historial_calificaciones',
-            'descripcion' => '',
-            'name' => 'escuelas.subitem_historial_calificaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$alumno, $maestro, $lider, $pastor, $oveja, $nuevo]);
 
         Permission::firstOrCreate([
             'titulo' => 'pestana_maestro',
             'descripcion' => '',
             'name' => 'escuelas.pestana_maestro',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'pestana_calificaciones',
             'descripcion' => '',
             'name' => 'escuelas.pestana_calificaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_materia_como_un_maestro',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_materia_como_un_maestro',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'auto_matricula',
             'descripcion' => '',
             'name' => 'escuelas.auto_matricula',
-        ])->syncRoles([$alumno]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'subitem_historial_homologaciones',
-            'descripcion' => '',
-            'name' => 'escuelas.subitem_historial_homologaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'subitem_nueva_homologacion',
-            'descripcion' => '',
-            'name' => 'escuelas.subitem_nueva_homologacion',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$alumno, $superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_mis_homologaciones',
             'descripcion' => '',
             'name' => 'escuelas.subitem_mis_homologaciones',
-        ])->syncRoles([$oveja]);
+        ])->syncRoles([$oveja, $superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'sub_item_bitacora_matriculas',
             'descripcion' => '',
             'name' => 'escuelas.sub_item_bitacora_matriculas',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'opcion_gestionar_pensum',
             'descripcion' => '',
             'name' => 'escuelas.opcion_gestionar_pensum',
-        ])->syncRoles([$administrador, $superAdmin]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'item_informes',
-            'descripcion' => '',
-            'name' => 'escuelas.item_informes',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'item_bitacoras',
             'descripcion' => '',
             'name' => 'escuelas.item_bitacoras',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'sub_bitacoras_item',
             'descripcion' => '',
             'name' => 'escuelas.sub_bitacoras_item',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'sub_bitacoras_calificaciones',
             'descripcion' => '',
             'name' => 'escuelas.sub_bitacoras_calificaciones',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'sub_bitacoras_asistencias',
             'descripcion' => '',
             'name' => 'escuelas.sub_bitacoras_asistencias',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'sub_bitacoras_gestion_asistencia',
             'descripcion' => '',
             'name' => 'escuelas.sub_bitacoras_gestion_asistencia',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'item_certificados',
             'descripcion' => '',
             'name' => 'escuelas.item_certificados',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_diplomas',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_diplomas',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_mis_certificados',
             'descripcion' => '',
             'name' => 'escuelas.subitem_mis_certificados',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'subitem_gestionar_certificados',
             'descripcion' => '',
             'name' => 'escuelas.subitem_gestionar_certificados',
-        ])->syncRoles([$administrador, $superAdmin]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'sub_item_nuevo_recurso_escuela',
-            'descripcion' => '',
-            'name' => 'escuelas.sub_item_nuevo_recurso_escuela',
-        ])->syncRoles([$administrador, $superAdmin]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'sub_item_mis_recursos',
-            'descripcion' => '',
-            'name' => 'escuelas.sub_item_mis_recursos',
-        ])->syncRoles([$alumno]);
-
-        Permission::firstOrCreate([
-            'titulo' => 'item_recursos',
-            'descripcion' => '',
-            'name' => 'escuelas.item_recursos',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
             'titulo' => 'habilitar_cierrar_corte',
             'descripcion' => '',
             'name' => 'escuelas.habilitar_cierrar_corte',
-        ])->syncRoles([$administrador, $superAdmin]);
+        ])->syncRoles([$superAdmin]);
 
         // Permisos para Tabs del Dashboard de Clase
         Permission::firstOrCreate([
             'titulo' => 'tab_dashboard_general',
             'descripcion' => 'Acceso al tab Dashboard General',
             'name' => 'escuelas.tab_dashboard_general',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'tab_calificacion_detallada',
             'descripcion' => 'Acceso al tab Calificación Detallada',
             'name' => 'escuelas.tab_calificacion_detallada',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'tab_reportes_asistencia',
             'descripcion' => 'Acceso al tab Reportes de Asistencia',
             'name' => 'escuelas.tab_reportes_asistencia',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'tab_recursos_alumnos',
             'descripcion' => 'Acceso al tab Recursos Alumnos',
             'name' => 'escuelas.tab_recursos_alumnos',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'tab_calificacion_grilla',
             'descripcion' => 'Acceso al tab Calificación Grilla',
             'name' => 'escuelas.tab_calificacion_grilla',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'tab_gestionar_item_maestro',
             'descripcion' => 'Acceso al tab Gestionar Item Maestro',
             'name' => 'escuelas.tab_gestionar_item_maestro',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
 
         Permission::firstOrCreate([
             'titulo' => 'tab_gestionar_items',
             'descripcion' => 'Acceso al tab Gestionar Items',
             'name' => 'escuelas.tab_gestionar_items',
-        ])->syncRoles([$administrador, $superAdmin, $maestro]);
+        ])->syncRoles([$superAdmin, $maestro]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'bloquear_matricula',
+            'descripcion' => 'Permite bloquear la matrícula de un alumno que desertó de una clase activa',
+            'name' => 'escuelas.bloquear_matricula',
+        ])->syncRoles([$superAdmin, $maestro]);
 
         // / FIN ESCUELAS
 
@@ -2949,10 +2896,82 @@ class PermisoSeeder extends Seeder
 
         // /
 
-        Permission::firstOrCreate([
+        Permission::updateOrCreate([
             'titulo' => 'item_hitos',
-            'descripcion' => 'Permite ver las opciones para crear y gestionar los hitos',
-            'name' => 'hitos.dashboard',
+            'descripcion' => 'Ítem del menú de hitos',
+            'name' => 'hitos.item_hitos',
+
+        ])->syncRoles([$superAdmin]);
+        Permission::updateOrCreate([
+            'titulo' => 'muro_hitos',
+            'descripcion' => 'Permite ver la línea de vida y el muro de hitos',
+            'name' => 'hitos.muro',
+
+        ])->syncRoles([$superAdmin]);
+        Permission::updateOrCreate([
+            'titulo' => 'subitem_gestionar_hitos',
+            'descripcion' => 'Subítem para gestionar y administrar todos los hitos',
+            'name' => 'hitos.gestionar',
+
+        ])->syncRoles([$superAdmin]);
+
+        Permission::updateOrCreate([
+            'titulo' => 'subitem_nuevo_hito',
+            'descripcion' => 'Subítem para crear nuevos hitos',
+            'name' => 'hitos.crear',
+
+        ])->syncRoles([$superAdmin]);
+
+        Permission::updateOrCreate([
+            'titulo' => 'opcion_modificar_hito',
+            'descripcion' => 'Opción para modificar o editar un hito existente',
+            'name' => 'hitos.editar',
+
+        ])->syncRoles([$superAdmin]);
+        Permission::updateOrCreate([
+            'titulo' => 'opcion_eliminar_hito',
+            'descripcion' => 'Opción para eliminar un hito',
+            'name' => 'hitos.eliminar',
+
+        ])->syncRoles([$superAdmin]);
+        Permission::updateOrCreate([
+            'titulo' => 'subitem_gestionar_denuncias',
+            'descripcion' => 'Permite ver y moderar denuncias de contenido en hitos',
+            'name' => 'hitos.gestionar_denuncias',
+
+        ])->syncRoles([$superAdmin]);
+        Permission::updateOrCreate([
+            'titulo' => 'subitem_gestionar_asistencia',
+            'descripcion' => 'Permite tomar y confirmar asistencia en hitos de actividades',
+            'name' => 'hitos.gestionar_asistencia',
+
+        ])->syncRoles([$superAdmin]);
+
+        Permission::updateOrCreate([
+            'titulo' => 'opcion_subir_fotos_hito',
+            'descripcion' => 'Permite al usuario subir fotos personales a los hitos',
+            'name' => 'hitos.subir_fotos',
+
+        ])->syncRoles([$superAdmin]);
+
+        Permission::updateOrCreate([
+            'titulo' => 'opcion_dar_like_hito',
+            'descripcion' => 'Permite interactuar dando me gusta a los hitos',
+            'name' => 'hitos.like',
+
+        ])->syncRoles([$superAdmin]);
+        Permission::updateOrCreate([
+            'titulo' => 'opcion_migrar_retroactivo_hito',
+            'descripcion' => 'Permite aplicar hitos automáticos retroactivamente a usuarios históricos',
+            'name' => 'hitos.migrar_retroactivo',
+
+        ])->syncRoles([$superAdmin]);
+
+        Permission::updateOrCreate([
+            'titulo' => 'ver_perfil_asistente_hitos',
+            'descripcion' => 'Permite ver la pestaña de hitos en el perfil del feligrés',
+            'name' => 'hitos.ver_perfil',
+
         ])->syncRoles([$superAdmin]);
 
         // Asignación de permisos a los nuevos roles provenientes de todos_tipo_usuarios.json

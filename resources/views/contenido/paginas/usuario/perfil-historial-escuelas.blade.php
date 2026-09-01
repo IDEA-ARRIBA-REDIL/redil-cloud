@@ -379,55 +379,88 @@
     <div class="col-12">
       <div class="accordion" id="accordionEscuelas">
         @foreach($escuelas as $escuela)
+          @php
+            $items = $escuela->es_por_niveles ? $escuela->niveles : $escuela->materias;
+            $tipoItemTexto = $escuela->es_por_niveles ? 'Nivel' : 'Materia';
+            $tipoItemPlural = $escuela->es_por_niveles ? 'Niveles' : 'Materias';
+          @endphp
           <div class="accordion-item card mb-3 border-0 shadow-sm overflow-hidden">
             <h2 class="accordion-header" id="heading{{ $escuela->id }}">
               <button class="accordion-button collapsed px-4 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $escuela->id }}" aria-expanded="false" aria-controls="collapse{{ $escuela->id }}">
                 <div class="d-flex flex-column w-100 me-3">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="h5 mb-0 fw-bold"><i class="ti ti-bookmark me-2 text-primary"></i>{{ $escuela->nombre }}</span>
-                    <span class="badge bg-label-primary px-3">{{ $escuela->aprobadas_obligatorias }} / {{ $escuela->total_obligatorias }} Obligatorias</span>
+                  <div class="d-flex flex-wrap justify-content-between align-items-center {{ $escuela->total_obligatorias > 0 ? 'mb-2' : '' }} gap-2">
+                    <span class="h5 mb-0 fw-bold text-truncate"><i class="ti ti-bookmark me-2 text-primary"></i>{{ $escuela->nombre }}</span>
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                      @if($escuela->total_obligatorias > 0)
+                        <span class="border border-success px-3 py-1 rounded-pill ">
+                          <i class="ti ti-check me-1 text-success"></i><b>{{ $escuela->aprobadas_obligatorias }}</b> de <b>{{ $escuela->total_obligatorias }}</b> {{ $escuela->es_por_niveles ? 'niveles obligatorios' : 'materias obligatorias' }}
+                        </span>
+                      @endif 
+
+                      @if($escuela->total_opcionales > 0)
+                        <span class="border border-info px-3 py-1 rounded-pill">
+                          <i class="ti ti-star me-1 text-info"></i><b>{{ $escuela->aprobadas_opcionales }}</b> de <b>{{ $escuela->total_opcionales }}</b> {{ $escuela->es_por_niveles ? 'niveles opcionales' : 'materias opcionales' }}
+                        </span>
+                      @endif
+                    </div>
                   </div>
-                  <div class="progress" style="height: 10px;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: {{ $escuela->progreso }}%;" aria-valuenow="{{ $escuela->progreso }}" aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
-                  <small class="text-black mt-1">Avance académico: {{ $escuela->progreso }}%</small>
+
+                  @if($escuela->total_obligatorias > 0)
+                    <div class="progress" style="height: 10px;">
+                      <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: {{ $escuela->progreso }}%;" aria-valuenow="{{ $escuela->progreso }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-1 flex-wrap gap-1">
+                      <small class="text-black">
+                        Avance académico: <span class="fw-bold">{{ $escuela->progreso }}%</span>
+                      </small>
+                    </div>
+                  @endif
                 </div>
               </button>
             </h2>
             <div id="collapse{{ $escuela->id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ $escuela->id }}" data-bs-parent="#accordionEscuelas">
               <div class="accordion-body p-4">
                 <div class="row g-3">
-                  @forelse($escuela->materias as $materia)
-                    <div class="col-12 col-xl-4 col-md-6 mb-4 ">
+                  @forelse($items as $item)
+                    <div class="col-12 col-xl-4 col-md-6 mb-4">
                         <div class="h-100 card border shadow">
                             <div class="card-header">
                                 <div class="d-flex align-items-start justify-content-between">
                                     <div class="d-flex align-items-center">
-                                        <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $materia->nombre }}</h5>
+                                        <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $item->nombre }}</h5>
                                     </div>
-                                    @if($materia->caracter_obligatorio)
-                                        <span class="badge bg-label-primary">Obligatoria</span>
+                                    @if($item->caracter_obligatorio)
+                                        <span class="border border-primary text-black rounded-pill px-3 py-1 fw-semibold">{{ $escuela->es_por_niveles ? 'Obligatorio' : 'Obligatoria' }}</span>
                                     @else
-                                        <span class="badge bg-label-warning">Opcional</span>
+                                        <span class="border border-info text-black rounded-pill px-3 py-1 fw-semibold">{{ $escuela->es_por_niveles ? 'Opcional' : 'Opcional' }}</span>
                                     @endif
                                 </div>
 
-                                @if($materia->resultado)
-                                    @if($materia->resultado->aprobado)
-                                        <span class="badge bg-label-success rounded-pill my-2">Aprobada</span>
+                                @if($item->resultado)
+                                    @if((int)$item->resultado->aprobado === 1)
+                                        <span class="badge bg-success rounded-pill text-white my-2">{{ $escuela->es_por_niveles ? 'Aprobado' : 'Aprobada' }}</span>
+                                    @elseif((int)$item->resultado->aprobado === 2)
+                                        <span class="badge bg-label-info rounded-pill text-white my-2">En proceso</span>
                                     @else
-                                        <span class="badge bg-label-danger rounded-pill my-2">Reprobada</span>
+                                        <span class="badge bg-label-danger rounded-pill text-white my-2">{{ $escuela->es_por_niveles ? 'Reprobado' : 'Reprobada' }}</span>
                                     @endif
                                 @else
-                                    <span class="badge bg-label-secondary rounded-pill my-2">Pendiente</span>
+                                    <span class="badge bg-label-secondary rounded-pill text-white my-2">Pendiente</span>
                                 @endif
 
                                 <div class="d-flex flex-row align-items-center mt-3">
                                     <div class="d-flex flex-column">
                                         <small class="text-muted"><i class="ti ti-bookmark text-black me-2"></i>Estado:</small>
                                         <small class="fw-semibold text-black">
-                                            @if($materia->resultado)
-                                                {{ $materia->resultado->aprobado ? 'Aprobado satisfactoriamente' : 'No aprobado' }}
+                                            @if($item->resultado)
+                                                @if((int)$item->resultado->aprobado === 1)
+                                                    Aprobado satisfactoriamente
+                                                @elseif((int)$item->resultado->aprobado === 2)
+                                                    En proceso de validación
+                                                @else
+                                                    No aprobado
+                                                @endif
                                             @else
                                                 Disponible para cursar
                                             @endif
@@ -437,13 +470,13 @@
                             </div>
 
                             <div class="card-body">
-                                @if($materia->resultado)
+                                @if($item->resultado)
                                     <div class="row justify-content-between mb-2">
                                         <div class="col-12 col-md-6 align-items-center">
                                             <div class="d-flex flex-column">
                                                 <small class="text-muted"><i class="ti ti-checklist text-black me-2"></i>Nota Final:</small>
                                                 <small class="fw-semibold text-black">
-                                                    {{ $materia->resultado->nota_final }}
+                                                    {{ $item->resultado->nota_final !== null ? number_format((float)$item->resultado->nota_final, 2) : '-' }}
                                                 </small>
                                             </div>
                                         </div>
@@ -451,10 +484,10 @@
                                             <div class="d-flex flex-column text-start">
                                                 <small class="text-muted"><i class="ti ti-calendar-event text-black me-2"></i>Fecha:</small>
                                                 <small class="fw-semibold text-black">
-                                                    @if($materia->resultado->es_homologacion)
-                                                        {{ \Carbon\Carbon::parse($materia->resultado->fecha_homologacion)->format('d/m/Y') }}
+                                                    @if($item->resultado->es_homologacion)
+                                                        {{ $item->resultado->fecha_homologacion ? \Carbon\Carbon::parse($item->resultado->fecha_homologacion)->format('d/m/Y') : ($item->resultado->created_at ? $item->resultado->created_at->format('d/m/Y') : '-') }}
                                                     @else
-                                                        {{ $materia->resultado->created_at->format('d/m/Y') }}
+                                                        {{ $item->resultado->created_at ? $item->resultado->created_at->format('d/m/Y') : '-' }}
                                                     @endif
                                                 </small>
                                             </div>
@@ -463,25 +496,27 @@
 
                                     <div class="row justify-content-between mb-2">
                                         <div class="col-12 align-items-center">
-                                            @if($materia->resultado->es_homologacion)
+                                            @if($item->resultado->es_homologacion)
                                                 <div class="d-flex flex-column">
                                                     <small class="text-muted"><i class="ti ti-certificate text-black me-2"></i>Observación:</small>
-                                                    <small class="fw-semibold text-black" title="{{ $materia->resultado->observacion_homologacion }}">
+                                                    <small class="fw-semibold text-black" title="{{ $item->resultado->observacion_homologacion }}">
                                                         Homologación
                                                     </small>
                                                 </div>
                                             @else
-                                                <div class="d-flex flex-column">
-                                                    <small class="text-muted"><i class="ti ti-user-check text-black me-2"></i>Asistencias:</small>
-                                                    <small class="fw-semibold text-black">{{ $materia->resultado->total_asistencias }}</small>
-                                                </div>
+                                                @if(isset($item->resultado->total_asistencias))
+                                                    <div class="d-flex flex-column">
+                                                        <small class="text-muted"><i class="ti ti-user-check text-black me-2"></i>Asistencias:</small>
+                                                        <small class="fw-semibold text-black">{{ $item->resultado->total_asistencias }}</small>
+                                                    </div>
+                                                @endif
                                             @endif
                                         </div>
                                     </div>
                                 @else
                                     <div class="alert alert-label-secondary mb-0 p-3 text-center">
                                         <i class="ti ti-clock mb-2 fs-4"></i><br>
-                                        <small class="fw-semibold">Aún no has cursado esta materia.</small>
+                                        <small class="fw-semibold">Aún no has cursado este {{ strtolower($tipoItemTexto) }}.</small>
                                     </div>
                                 @endif
                             </div>
@@ -491,7 +526,7 @@
                     <div class="col-12">
                         <div class="alert alert-info py-4 text-center">
                             <i class="ti ti-info-circle fs-1 mb-2"></i>
-                            <p class="mb-0">No hay materias registradas para esta escuela.</p>
+                            <p class="mb-0">No hay {{ strtolower($tipoItemPlural) }} registradas para esta escuela.</p>
                         </div>
                     </div>
                   @endforelse

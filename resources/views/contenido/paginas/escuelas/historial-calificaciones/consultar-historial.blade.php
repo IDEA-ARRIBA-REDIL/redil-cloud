@@ -74,9 +74,13 @@
                         </div>
                         <div>
                             @if($nivelInfo)
-                                @if($nivelInfo->aprobado)
+                                @if((int)$nivelInfo->aprobado === 1)
                                     <span class="badge bg-success border border-success text-white px-3 py-2 fs-6">
                                         <i class="ti ti-check me-1"></i> NIVEL APROBADO
+                                    </span>
+                                @elseif((int)$nivelInfo->aprobado === 2)
+                                    <span class="badge bg-warning border border-warning text-dark px-3 py-2 fs-6">
+                                        <i class="ti ti-clock me-1"></i> NIVEL EN PROCESO
                                     </span>
                                 @else
                                     <span class="badge bg-danger border border-danger text-white px-3 py-2 fs-6">
@@ -101,8 +105,10 @@
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <h5 class="fw-bold text-dark m-0 d-flex align-items-center">
                                                         <span class="me-2">{{ $registro->materia->nombre }}</span>
-                                                        @if($registro->aprobado)
+                                                        @if((int)$registro->aprobado === 1)
                                                             <i class="ti ti-circle-check-filled text-success ti-xs"></i>
+                                                        @elseif((int)$registro->aprobado === 2)
+                                                            <i class="ti ti-clock-filled text-warning ti-xs"></i>
                                                         @else
                                                             <i class="ti ti-circle-x-filled text-danger ti-xs"></i>
                                                         @endif
@@ -117,8 +123,10 @@
                                                     </div>
                                                 </div>
                                                 <div class="mt-1">
-                                                    @if($registro->aprobado)
+                                                    @if((int)$registro->aprobado === 1)
                                                         <span class="badge bg-label-success p-1 rounded">Aprobado</span>
+                                                    @elseif((int)$registro->aprobado === 2)
+                                                        <span class="badge bg-label-warning p-1 rounded">En proceso</span>
                                                     @else
                                                         <span class="badge bg-label-danger p-1 rounded">No aprobado</span>
                                                     @endif

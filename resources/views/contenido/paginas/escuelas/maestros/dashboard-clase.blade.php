@@ -76,7 +76,7 @@
 @section('content')
     @include('layouts.status-msn')
 
-    {{-- Encabezado (sin cambios) --}}
+    {{-- Encabezado --}}
     <div class="row mb-3">
         <div class="col-12">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -86,26 +86,53 @@
                     </h4>
                     <p class="mb-0 text-black"><small>{{ $infoClase }} </small></p>
                 </div>
-                <span class="badge bg-label-info fs-6">Total matriculados: {{ $totalAlumnos }}</span>
+                <div class="text-md-end text-start">
+                    <span class="badge bg-label-info fs-6 mb-1">Total matriculados: {{ $totalAlumnos }}</span>
+                    @php
+                        $hombresCount = $conteoGenero['hombres'] ?? 0;
+                        $mujeresCount = $conteoGenero['mujeres'] ?? 0;
+                        $otrosCount = $conteoGenero['otros'] ?? 0;
+                        $hombresPct = $totalAlumnos > 0 ? round(($hombresCount / $totalAlumnos) * 100) : 0;
+                        $mujeresPct = $totalAlumnos > 0 ? round(($mujeresCount / $totalAlumnos) * 100) : 0;
+                    @endphp
+                    <div class="d-flex flex-wrap justify-content-md-end align-items-center gap-2 mt-1">
+                        <span class="badge bg-label-primary fs-7">
+                            <i class="mdi mdi-gender-male me-1"></i>{{ $hombresCount }} Hombres ({{ $hombresPct }}%)
+                        </span>
+                        <span class="badge bg-label-danger fs-7">
+                            <i class="mdi mdi-gender-female me-1"></i>{{ $mujeresCount }} Mujeres ({{ $mujeresPct }}%)
+                        </span>
+                        @if ($otrosCount > 0)
+                            <span class="badge bg-label-secondary fs-7">
+                                {{ $otrosCount }} Otros
+                            </span>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     @include('contenido.paginas.escuelas.maestros.nav-modulo')
 
-    {{-- Gráficos (sin cambios) --}}
+    {{-- Fila 1 de Gráficos: Asistencia Semanal del Periodo (Ancho Completo) --}}
     <div class="row g-4 mb-4">
-        <div class="col-lg-6 col-md-12">
+        <div class="col-12">
             <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Distribución por género</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Niveles de asistencia por semana</h5>
+                    <span class="badge bg-label-primary">Periodo completo</span>
                 </div>
                 <div class="card-body">
-                    <div id="genderDistributionChart" class="chart-container"></div>
+                    <div id="attendanceTrendChart" class="chart-container"></div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-6 col-md-12">
+    </div>
+
+    {{-- Fila 2 de Gráficos: Aprobación y Ranking de Alumnos (2 Columnas col-lg-6) --}}
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6 col-md-12 col-12">
             <div class="card h-100">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Estado de aprobación (general)</h5>
@@ -115,15 +142,116 @@
                 </div>
             </div>
         </div>
+        <div class="col-lg-6 col-md-12 col-12">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center pb-2">
+                    <div>
+                        <h5 class="card-title mb-0">Ranking de calificaciones</h5>
+                        <small class="text-muted">Nota más alta a la más baja</small>
+                    </div>
+                    @if (!empty($alumnosRanking))
+                        <span class="badge bg-label-primary rounded-pill">{{ count($alumnosRanking) }} alumnos</span>
+                    @endif
+                </div>
+                <div class="card-body p-0" style="max-height: 380px; min-height: 380px; overflow-y: auto;">
+                    @if (!empty($alumnosRanking) && count($alumnosRanking) > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover table-borderless align-middle mb-0">
+                                <tbody>
+                                    @foreach ($alumnosRanking as $index => $itemAlumno)
+                                        @php
+                                            $posicion = $index + 1;
+                                            $nota = (float) ($itemAlumno['promedio_final_materia'] ?? 0);
+                                            $aprobado = $itemAlumno['ha_aprobado'] ?? false;
+                                            $estado = $itemAlumno['estado_materia'] ?? 'Cursando';
+                                            $nombres = explode(' ', $itemAlumno['nombre_completo'] ?? '');
+                                            $iniciales = !empty($nombres[0]) ? strtoupper(substr($nombres[0], 0, 1)) : '';
+                                            if (count($nombres) > 1 && !empty($nombres[1])) {
+                                                $iniciales .= strtoupper(substr($nombres[count($nombres) - 1], 0, 1));
+                                            } elseif (strlen($iniciales) == 1 && strlen($nombres[0]) > 1) {
+                                                $iniciales .= strtoupper(substr($nombres[0], 1, 1));
+                                            } else {
+                                                $iniciales = !empty($iniciales) ? $iniciales : 'NN';
+                                            }
+
+                                            $badgePosicionClass = match ($posicion) {
+                                                1 => 'bg-warning text-white shadow-sm',
+                                                2 => 'bg-secondary text-white shadow-sm',
+                                                3 => 'bg-label-warning text-warning border border-warning',
+                                                default => 'bg-label-secondary text-muted'
+                                            };
+
+                                            $badgeNotaClass = match (true) {
+                                                $estado === 'Bloqueado' => 'bg-label-secondary',
+                                                $aprobado => 'bg-label-success',
+                                                default => 'bg-label-danger'
+                                            };
+
+                                            $porcentajeBarra = min(100, max(0, ($nota / 5.0) * 100));
+                                            $colorBarra = $aprobado ? 'bg-success' : ($estado === 'Bloqueado' ? 'bg-secondary' : 'bg-danger');
+                                        @endphp
+                                        <tr class="border-bottom">
+                                            <td class="ps-3 pe-1 py-2 text-center" style="width: 36px;">
+                                                <span class="badge rounded-circle d-inline-flex align-items-center justify-content-center {{ $badgePosicionClass }}" style="width: 24px; height: 24px; font-size: 11px; font-weight: 700;">
+                                                    {{ $posicion }}
+                                                </span>
+                                            </td>
+                                            <td class="py-2 pe-2">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar avatar-xs me-2 flex-shrink-0">
+                                                        <span class="avatar-initial rounded-circle bg-label-primary fs-6">{{ $iniciales }}</span>
+                                                    </div>
+                                                    <div class="overflow-hidden" style="max-width: 140px;">
+                                                        <span class="d-block fw-semibold text-dark text-truncate small" title="{{ $itemAlumno['nombre_completo'] }}">
+                                                            {{ $itemAlumno['nombre_completo'] }}
+                                                        </span>
+                                                        <div class="progress mt-1" style="height: 4px; width: 100%;">
+                                                            <div class="progress-bar {{ $colorBarra }}" role="progressbar" style="width: {{ $porcentajeBarra }}%;" aria-valuenow="{{ $nota }}" aria-valuemin="0" aria-valuemax="5"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-end pe-3 py-2" style="width: 80px;">
+                                                <span class="badge {{ $badgeNotaClass }} fw-bold fs-7">
+                                                    {{ number_format($nota, 2) }}
+                                                </span>
+                                                <small class="d-block text-muted" style="font-size: 10px;">{{ $estado }}</small>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="d-flex justify-content-center align-items-center h-100 p-4 text-center">
+                            <div>
+                                <i class="mdi mdi-account-group-outline mdi-36px text-muted"></i>
+                                <p class="text-muted mt-2 mb-0 small">No hay calificaciones registradas.</p>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Tabla de Alumnos --}}
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
                     <h5 class="card-title mb-0"><i class="mdi mdi-account-details-outline me-2"></i>Resumen de
                         calificaciones</h5>
+                    @if ($cortesDefinidos->isNotEmpty())
+                        <div class="btn-group" role="group" aria-label="Exportar notas por corte">
+                            @foreach ($cortesDefinidos as $corte)
+                                <a href="{{ route('maestros.exportarNotasCorte', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'cortePeriodo' => $corte['id_db']]) }}"
+                                    class="btn btn-sm btn-outline-success">
+                                    <i class="ti ti-file-spreadsheet me-1"></i> Excel {{ $corte['nombre'] }}
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
                 <div class="card-body">
                     @if ($alumnosParaDashboard->isNotEmpty())
@@ -284,6 +412,20 @@
                                                         Perfil
 
                                                     </a>
+                                                    @can('escuelas.bloquear_matricula')
+                                                        @if (! $alumno['matricula_model']->bloqueado && $horarioAsignado->materiaPeriodo->periodo->estado)
+                                                            <form class="mt-1"
+                                                                action="{{ route('maestros.bloquearMatricula', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'matricula' => $alumno['matricula_model']]) }}"
+                                                                method="POST"
+                                                                onsubmit="return confirm('¿Deseas bloquear la matrícula de este alumno? Al finalizar el período quedará reprobado aunque cumpla las notas o asistencias.');">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <button type="submit" class="btn btn-outline-danger rounded-pill">
+                                                                    Bloquear
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    @endcan
                                                 </div>
                                             </div>
                                         </div>
@@ -360,108 +502,6 @@
             const successColor = getColor('--bs-success', '#71dd37');
             const dangerColor = getColor('--bs-danger', '#ff3e1d');
             const warningColor = getColor('--bs-warning', '#ffab00');
-
-            const genderChartEl = document.querySelector('#genderDistributionChart');
-            if (genderChartEl) {
-                const genderData = @json($datosGenero);
-                const hasValidGenderData = genderData && genderData.series && genderData.series[0] &&
-                    genderData.series[0].data &&
-                    genderData.series[0].data.reduce((a, b) => a + b, 0) > 0;
-                if (hasValidGenderData) {
-                    const genderChartConfig = {
-                        series: genderData.series[0].data,
-                        labels: genderData.categorias,
-                        chart: {
-                            type: 'pie',
-                            height: 380,
-                            toolbar: {
-                                show: false
-                            }
-                        },
-                        colors: [primaryColor, infoColor, secondaryColor],
-                        dataLabels: {
-                            enabled: true,
-                            formatter: function(val, opts) {
-                                const count = opts.w.globals.series[opts.seriesIndex];
-                                const label = opts.w.globals.labels[opts.seriesIndex];
-                                return `${label}: ${count} (${val.toFixed(1)}%)`;
-                            },
-                            style: {
-                                fontSize: '12px',
-                                colors: ['#333']
-                            },
-                            dropShadow: {
-                                enabled: true,
-                                top: 1,
-                                left: 1,
-                                blur: 1,
-                                color: '#000',
-                                opacity: 0.3
-                            }
-                        },
-                        legend: {
-                            show: true,
-                            position: 'bottom',
-                            horizontalAlign: 'center',
-                            labels: {
-                                colors: legendColor,
-                                useSeriesColors: false
-                            },
-                            markers: {
-                                width: 10,
-                                height: 10,
-                                offsetX: -5,
-                                offsetY: 0
-                            },
-                            itemMargin: {
-                                horizontal: 10,
-                                vertical: 5
-                            }
-                        },
-                        stroke: {
-                            width: 2,
-                            colors: [getColor('--bs-body-bg', '#ffffff')]
-                        },
-                        tooltip: {
-                            fillSeriesColor: true,
-                            y: {
-                                formatter: function(value, {
-                                    seriesIndex,
-                                    w
-                                }) {
-                                    const label = w.globals.labels[seriesIndex];
-                                    return `${label}: ${value}`;
-                                }
-                            }
-                        },
-                        responsive: [{
-                            breakpoint: 576,
-                            options: {
-                                chart: {
-                                    height: 320
-                                },
-                                legend: {
-                                    position: 'bottom',
-                                    itemMargin: {
-                                        vertical: 2
-                                    }
-                                },
-                                dataLabels: {
-                                    style: {
-                                        fontSize: '10px'
-                                    }
-                                }
-                            }
-                        }]
-                    };
-                    const genderChart = new ApexCharts(genderChartEl, genderChartConfig);
-                    genderChart.render();
-                } else {
-                    genderChartEl.innerHTML =
-                        `<div class="d-flex justify-content-center align-items-center h-100 text-center"><div><i class="mdi mdi-gender-male-female mdi-48px text-muted"></i><p class="text-muted mt-2 mb-0">No hay datos de género.</p></div></div>`;
-                }
-            }
-
             const approvalChartEl = document.querySelector('#approvalStatusChart');
             if (approvalChartEl) {
                 const approvalData = @json($datosAprobacion);
@@ -560,6 +600,143 @@
                 } else {
                     approvalChartEl.innerHTML =
                         `<div class="d-flex justify-content-center align-items-center h-100 text-center"><div><i class="mdi mdi-chart-bar mdi-48px text-muted"></i><p class="text-muted mt-2 mb-0">No hay datos de aprobación.</p></div></div>`;
+                }
+            }
+
+            // --- GRÁFICO 3: NIVELES DE ASISTENCIA SEMANAL (RANGO DEL PERIODO) ---
+            const attendanceChartEl = document.querySelector('#attendanceTrendChart');
+            if (attendanceChartEl) {
+                const attendanceData = @json($datosAsistenciaSemanal);
+                const hasAttendanceData = attendanceData && attendanceData.categorias && attendanceData.categorias.length > 0;
+
+                if (hasAttendanceData) {
+                    const attendanceChartConfig = {
+                        series: attendanceData.series,
+                        chart: {
+                            type: 'area',
+                            height: 380,
+                            toolbar: {
+                                show: false
+                            },
+                            dropShadow: {
+                                enabled: true,
+                                opacity: 0.08,
+                                blur: 4,
+                                left: 0,
+                                top: 2
+                            }
+                        },
+                        colors: [successColor, dangerColor],
+                        dataLabels: {
+                            enabled: false
+                        },
+                        stroke: {
+                            curve: 'smooth',
+                            width: [3, 2]
+                        },
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: [0.45, 0.25],
+                                opacityTo: [0.05, 0.05],
+                                stops: [0, 90, 100]
+                            }
+                        },
+                        markers: {
+                            size: 4,
+                            strokeWidth: 2,
+                            hover: {
+                                size: 6
+                            }
+                        },
+                        xaxis: {
+                            categories: attendanceData.categorias,
+                            labels: {
+                                style: {
+                                    colors: legendColor,
+                                    fontSize: '11px'
+                                },
+                                rotate: -30,
+                                rotateAlways: false
+                            },
+                            axisBorder: { show: false },
+                            axisTicks: { show: false }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: {
+                                    colors: legendColor,
+                                    fontSize: '12px'
+                                },
+                                formatter: function(val) {
+                                    return Math.round(val);
+                                }
+                            },
+                            title: {
+                                text: 'Número de alumnos',
+                                style: {
+                                    color: headingColor,
+                                    fontSize: '13px',
+                                    fontWeight: 500
+                                }
+                            },
+                            min: 0
+                        },
+                        grid: {
+                            borderColor: borderColor,
+                            strokeDashArray: 3,
+                            padding: {
+                                top: 0,
+                                bottom: -8,
+                                left: 10,
+                                right: 10
+                            }
+                        },
+                        legend: {
+                            show: true,
+                            position: 'top',
+                            horizontalAlign: 'right',
+                            labels: {
+                                colors: legendColor
+                            },
+                            markers: {
+                                width: 10,
+                                height: 10,
+                                offsetX: -3
+                            }
+                        },
+                        tooltip: {
+                            shared: true,
+                            intersect: false,
+                            y: {
+                                formatter: function(val) {
+                                    return val !== null && val !== undefined ? `${val} alumnos` : 'Sin datos';
+                                }
+                            }
+                        },
+                        responsive: [{
+                            breakpoint: 576,
+                            options: {
+                                chart: {
+                                    height: 320
+                                },
+                                xaxis: {
+                                    labels: {
+                                        rotate: -45,
+                                        style: {
+                                            fontSize: '10px'
+                                        }
+                                    }
+                                }
+                            }
+                        }]
+                    };
+                    const attendanceChart = new ApexCharts(attendanceChartEl, attendanceChartConfig);
+                    attendanceChart.render();
+                } else {
+                    attendanceChartEl.innerHTML =
+                        `<div class="d-flex justify-content-center align-items-center h-100 text-center"><div><i class="mdi mdi-calendar-blank-outline mdi-48px text-muted"></i><p class="text-muted mt-2 mb-0">No hay semanas configuradas para este periodo.</p></div></div>`;
                 }
             }
 

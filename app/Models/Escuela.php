@@ -17,7 +17,14 @@ class Escuela extends Model
         'descripcion',
         'tipo_matricula',
         'diploma_id',
-        'habilitada_consolidacion'];
+        'habilitada_consolidacion',
+        'caracter_obligatorio',
+    ];
+
+    protected $casts = [
+        'caracter_obligatorio' => 'boolean',
+        'habilitada_consolidacion' => 'boolean',
+    ];
 
     /**
      * Una escuela tiene muchas plantillas de cortes.

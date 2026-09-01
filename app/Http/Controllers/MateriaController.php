@@ -110,10 +110,11 @@ class MateriaController extends Controller
         // Validación de los campos
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:100',
+            'creditos' => 'nullable|integer|min:0',
             'descripción' => 'required|string',
             'nivel_id' => 'nullable|integer',
-            'asistenciasMinimas' => 'integer|min:0',
-            'asistenciasAlerta' => 'integer|min:0',
+            'asistenciasMinimas' => 'nullable|integer|min:0',
+            'asistenciasAlerta' => 'nullable|integer|min:0',
             'paso_iniciar_id' => 'nullable|string',
             'paso_culminar_id' => 'nullable|string',
             'proceso_prerrequisito' => 'nullable|array',
@@ -123,6 +124,8 @@ class MateriaController extends Controller
         ], [
             'nombre.required' => 'El nombre de la materia es obligatorio.',
             'nombre.max' => 'El nombre no puede tener más de 100 caracteres.',
+            'creditos.integer' => 'Los créditos deben ser un número entero.',
+            'creditos.min' => 'Los créditos no pueden ser un valor negativo.',
             'descripción.required' => 'La descripción es obligatoria.',
             'asistenciasMinimas.integer' => 'Las asistencias mínimas deben ser un número entero.',
             'asistenciasMinimas.min' => 'Las asistencias mínimas deben ser al menos 0.',
@@ -140,6 +143,7 @@ class MateriaController extends Controller
         $configuracion = Configuracion::find(1);
         $materia = new Materia;
         $materia->nombre = $request->nombre;
+        $materia->creditos = $request->input('creditos');
         $materia->descripcion = $request->descripción;
 
         $materia->limite_reporte_asistencias = $request->limiteReportes;
@@ -376,6 +380,7 @@ class MateriaController extends Controller
 
         $rules = [
             'nombre' => 'required|string|max:100',
+            'creditos' => 'nullable|integer|min:0',
             'descripción' => 'required|string',
             'nivel_id' => 'nullable|integer',
 
@@ -413,6 +418,8 @@ class MateriaController extends Controller
         $messages = [
             'nombre.required' => 'El nombre de la materia es obligatorio.',
             'nombre.max' => 'El nombre no puede tener más de 100 caracteres.',
+            'creditos.integer' => 'Los créditos deben ser un número entero.',
+            'creditos.min' => 'Los créditos no pueden ser un valor negativo.',
             'descripción.required' => 'La descripción es obligatoria.',
             'limiteReportes.required_with' => 'El campo Límite de reportes es obligatorio cuando se especifican asistencias mínimas o cantidad de inasistencias para alerta.',
             'limiteReportes.min' => 'El límite de reportes debe ser al menos 0.',
@@ -434,6 +441,7 @@ class MateriaController extends Controller
 
         // Actualizar campos básicos
         $materia->nombre = $validatedData['nombre'];
+        $materia->creditos = $validatedData['creditos'] ?? null;
         $materia->descripcion = $validatedData['descripción'] ?? $validatedData['descripcion']; // Ajusta según el nombre real
         $materia->nivel_id = $validatedData['nivel_id'] ?? null;
 

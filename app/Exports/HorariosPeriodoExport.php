@@ -5,11 +5,11 @@ namespace App\Exports;
 use App\Models\HorarioMateriaPeriodo;
 use App\Models\Periodo;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class HorariosPeriodoExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
+class HorariosPeriodoExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping
 {
     protected $periodo;
 
@@ -28,33 +28,44 @@ class HorariosPeriodoExport implements FromQuery, WithHeadings, WithMapping, Sho
             'Tipo de Aula',
             'Estado',
             'Maestro(s)',
+            'Teléfono(s) maestro(s)',
+            'Email(s) maestro(s)',
             'Alumnos Inscritos',
         ];
     }
 
     /**
      * Mapea los datos para cada fila del Excel.
-     * @param HorarioMateriaPeriodo $horario
+     *
+     * @param  HorarioMateriaPeriodo  $horario
      */
     public function map($horario): array
     {
         // === INICIO DE LA CORRECCIÓN ===
         // Usamos map() para iterar sobre la colección de maestros
         // y llamar de forma segura al método nombre() de cada usuario asociado.
-        $maestros = $horario->maestros->map(function ($maestro) {
-            // Verificamos que la relación user exista para evitar errores
-            return $maestro->user ? $maestro->user->nombre(3) : 'Error: Usuario no encontrado';
-        })->implode(', ');
+        $datosMaestros = $horario->maestros->map(function ($maestro): array {
+            return [
+                'nombre' => $maestro->user ? $maestro->user->nombre(3) : 'Usuario no encontrado',
+                'telefono' => $maestro->user?->telefono_movil ?? 'Sin teléfono',
+                'email' => $maestro->user?->email ?? 'Sin correo',
+            ];
+        });
+        $maestros = $datosMaestros->pluck('nombre')->implode(', ');
+        $telefonosMaestros = $datosMaestros->pluck('telefono')->implode(', ');
+        $emailsMaestros = $datosMaestros->pluck('email')->implode(', ');
         // === FIN DE LA CORRECCIÓN ===
 
         return [
             $horario->materiaPeriodo->materia->nombre,
-            $horario->horarioBase->dia_semana . ' | ' . $horario->horarioBase->hora_inicio_formato . ' - ' . $horario->horarioBase->hora_fin_formato,
+            $horario->horarioBase->dia_semana.' | '.$horario->horarioBase->hora_inicio_formato.' - '.$horario->horarioBase->hora_fin_formato,
             $horario->horarioBase->aula->sede->nombre ?? 'N/A',
             $horario->horarioBase->aula->nombre ?? 'N/A',
             $horario->horarioBase->aula->tipo->nombre ?? 'N/A',
             $horario->habilitado ? 'Si' : 'Inactivo',
             $maestros ?: 'Sin asignar', // Usamos la variable corregida
+            $telefonosMaestros ?: 'Sin asignar',
+            $emailsMaestros ?: 'Sin asignar',
             $horario->matriculas_de_alumnos_count,
         ];
     }
@@ -74,7 +85,7 @@ class HorariosPeriodoExport implements FromQuery, WithHeadings, WithMapping, Sho
                 'materiaPeriodo.materia',
                 'horarioBase.aula.sede',
                 'horarioBase.aula.tipo',
-                'maestros.user' // <-- Esta línea es clave para cargar la relación Maestro -> User
+                'maestros.user', // <-- Esta línea es clave para cargar la relación Maestro -> User
             ])
             ->withCount('matriculasDeAlumnos');
     }

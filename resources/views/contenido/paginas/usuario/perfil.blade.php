@@ -211,6 +211,7 @@
   });
 </script>
 
+
 <script type="module">
   $(".fecha-picker").flatpickr({
     dateFormat: "Y-m-d"
@@ -218,8 +219,8 @@
 
   $(document).ready(function() {
 
-    @if($formulario)
-      @foreach ($formulario->secciones()->orderBy('orden','asc')->get() as $seccion)
+    @if($formularioAutoEditar)
+      @foreach ($formularioAutoEditar->secciones()->orderBy('orden','asc')->get() as $seccion)
 
         $('#modalSeccion{{ $seccion->id }} .select2').each(function() {
           var placeholder = $(this).data('placeholder');
@@ -345,7 +346,7 @@
 
   @livewire('Usuarios.modal-baja-alta')
 
-  @livewire('Usuarios.Formularios.validar-formulario', ['formulario' => $formulario, 'usuario' => $usuario])
+  @livewire('Usuarios.Formularios.validar-formulario', ['formulario' => $formularioAutoEditar, 'usuario' => $usuario])
   <!-- Header -->
   <div class="row">
     <div class="col-12">
@@ -523,8 +524,8 @@
       </div>
     </div>
 
-    @if($formulario)
-    @foreach ($formulario->secciones()->orderBy('orden','asc')->get() as $seccion)
+    @if($formularioAutoEditar)
+    @foreach ($formularioAutoEditar->secciones()->orderBy('orden','asc')->get() as $seccion)
     <!-- seccion -->
     <div class="card card-action p-0">
       <div class="card-header  {{ $loop->first ? '' : 'collapsed' }} d-flex justify-content-between">
@@ -931,8 +932,8 @@
 
 
   @if( $usuario->id == auth()->user()->id )
-    @foreach ($formulario->secciones()->orderBy('orden','asc')->get() as $seccion)
-      <form id="formularioSeccion{{ $seccion->id }}"  role="form" class="forms-sample formulariosSecciones" method="POST" action="{{ route($formulario->tipo->action, [ 'formulario' => $formulario, 'seccion' => $seccion,'usuario' => $usuario]) }}"  enctype="multipart/form-data">
+    @foreach ($formularioAutoEditar->secciones()->orderBy('orden','asc')->get() as $seccion)
+      <form id="formularioSeccion{{ $seccion->id }}"  role="form" class="forms-sample formulariosSecciones" method="POST" action="{{ route($formularioAutoEditar->tipo->action, [ 'formulario' => $formularioAutoEditar, 'seccion' => $seccion,'usuario' => $usuario]) }}"  enctype="multipart/form-data">
         <div class="offcanvas offcanvas-end event-sidebar" tabindex="-1" id="modalSeccion{{ $seccion->id }}" aria-labelledby="modalSeccion{{ $seccion->id }}Label">
           <div class="offcanvas-header my-1 px-8">
             <h4 class="offcanvas-title fw-bold text-primary" id="modalSeccion{{ $seccion->id }}Label">{{ $seccion->titulo }}</h4>
@@ -1002,7 +1003,7 @@
                         'class' => 'col-12',
                         'label' => $campo->nombre,
                         'nameId' => $campo->name_id,
-                        'formulario' => $formulario
+                        'formulario' => $formularioAutoEditar
                       ])
                     @endif
                     <!-- fecha nacimiento -->

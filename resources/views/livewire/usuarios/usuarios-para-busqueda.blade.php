@@ -127,12 +127,11 @@
             alt="foto {{ $usuario->primer_nombre }}" class="rounded-circle w-px-75" />
         </div>
         <div class="flex-grow-1 me-2">
-          <p class="fs-6 text-wrap m-0 mt-1 fw-bold"> {{ $usuario->nombre(3) }}
-            {{ $usuario->deleted_at }}
+          <p class="fs-6 text-wrap m-0 mt-1 fw-semibold text-black"> {{ $usuario->nombre(3) }} 
           </p>
           <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1"
               style="background-color: {{ $usuario->tipoUsuario->color }}"><i
-                class="fs-6 {{ $usuario->tipoUsuario->icono }}"></i></span>
+                class="fs-6 text-black {{ $usuario->tipoUsuario->icono }}"></i></span>
             {{ $usuario->tipoUsuario->nombre }}
           </p>
         </div>
@@ -141,7 +140,7 @@
 
       @if ($usuarios->count() < $usuarios->total())
         <div wire:loading class="text-center">
-          <div class="spinner-border spinner-border-lg text-primary my-2" role="status">
+          <div class="spinner-border spinner-border-lg text-primary my-2" role="status"> 
             <span class="visually-hidden">Cargado...</span>
           </div>
         </div>

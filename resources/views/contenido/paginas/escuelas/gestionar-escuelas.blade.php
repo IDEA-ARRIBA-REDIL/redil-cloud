@@ -59,6 +59,9 @@
                                         {{ $escuela->nombre }}
                                     </h5>
                                     <div class="client-info"><span class="fw-medium"></span></div>
+                                    <div class="mt-2">
+                                       
+                                    </div>
                                 </div>
                             </div>
 
@@ -108,24 +111,33 @@
                     </div>
 
                     <div class="card-body">
-                        <div class="col-12 col-md-8">
+                        <div class="col-12 col-md-12">
                             <div class="d-flex flex-column mb-3">
-                                <div class="d-flex flex-row">
-                                    <i class="ti ti-notebook text-black"></i>
-                                    <div class="d-flex flex-column">
-                                        <small class="text-black ms-1">Tipo: </small>
+                                <div class="d-flex flex-row align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-notebook text-black me-1"></i>
+                                        <small class="text-black">Tipo: </small>
                                         @if ($escuela->tipo_matricula == 'materias_independientes')
-                                            <small class="fw-semibold ms-1 text-black ">Gestión por materias</small>
+                                            <small class="fw-semibold ms-1 text-black">Gestión por materias</small>
                                         @else
-                                            <small class="fw-semibold ms-1 text-black ">Gestión por grados</small>
+                                            <small class="fw-semibold ms-1 text-black">Gestión por niveles</small>
                                         @endif
                                     </div>
+
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-star text-black me-1"></i>
+                                        <small class="text-black">¿Obligatoria?: </small>
+
+                                         @if ($escuela->caracter_obligatorio)
+                                            <small class="fw-semibold ms-1 text-black">Sí</small>
+                                        @else
+                                            <small class="fw-semibold ms-1 text-black">No</small>
+                                        @endif
+                                    </div>
+                                  
                                 </div>
                             </div>
                         </div>
-
-
-
                     </div>
                 </div>
             </div>
@@ -140,13 +152,13 @@
             aria-labelledby="addEventSidebarLabel">
 
             <div class="offcanvas-header my-1">
-                <h4 class="offcanvas-title fw-bold text-primary" id="addEventSidebarLabel">Nueva Escuela</h4>
+                <h4 class="offcanvas-title fw-bold text-primary" id="addEventSidebarLabel">Nueva escuela</h4>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body pt-0">
                 {{-- Campo Nombre Escuela --}}
                 <div class="mb-3">
-                    <label for="nombre" class="form-label">Nombre Escuela</label>
+                    <label for="nombre" class="form-label">Nombre</label>
                     <input required type="text" class="form-control" id="nombre" name="nombre" required
                         placeholder="Ej: Escuela de Ciencias">
                 </div>
@@ -162,7 +174,7 @@
 
                 {{-- Campo Cantidad de Cortes --}}
                 <div class="mb-3">
-                    <label for="cortes" class="form-label">Cantidad de Cortes por Periodo</label>
+                    <label for="cortes" class="form-label">Cantidad de cortes por periodo</label>
                     <input required type="number" min="1" value="3" class="form-control" id="cortes"
                         name="cortes" required>
                     <small class="form-text text-muted">Número de evaluaciones principales (cortes, trimestres, etc.) que
@@ -172,7 +184,7 @@
                 {{-- Campo Nombre Base para Cortes --}}
                 <div class="mb-3">
                     {{-- Corregido type="number" a type="text" --}}
-                    <label for="nombreCortes" class="form-label">Nombre Base para Cortes</label>
+                    <label for="nombreCortes" class="form-label">Nombre base para cortes</label>
                     <input required type="text" class="form-control" id="nombreCortes" name="nombreCortes" required
                         value="Corte" placeholder="Ej: Corte, Trimestre, Bloque">
                     <small class="form-text text-muted">Este nombre se usará para generar los nombres individuales (Ej:
@@ -186,13 +198,23 @@
                         placeholder="Breve descripción de la escuela"></textarea>
                 </div>
 
+                {{-- Campo Carácter Obligatorio --}}
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="caracter_obligatorio"
+                            name="caracter_obligatorio" value="1">
+                        <label class="form-check-label fw-semibold text-black" for="caracter_obligatorio">Carácter obligatorio</label>
+                    </div>
+                    <small class="form-text text-muted">Indica si esta escuela es de carácter obligatorio en la ruta formativa.</small>
+                </div>
+
                 {{-- Campo Habilitar Consolidación --}}
                 <div class="mb-3">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="habilitada_consolidacion"
                             name="habilitada_consolidacion" value="1">
                         <label class="form-check-label fw-semibold text-black" for="habilitada_consolidacion">Habilitar
-                            Consolidación</label>
+                            consolidación</label>
                     </div>
                     <small class="form-text text-muted">Indica si esta escuela tendrá habilitada la opción de consolidación
                         para informes.</small>

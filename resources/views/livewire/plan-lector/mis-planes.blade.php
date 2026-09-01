@@ -232,22 +232,10 @@
               </div>
               
               <div class="mt-auto">
-                <form action="{{ route('planes-lectores.inscribirse', $plan->id) }}" method="POST" id="form-inscribirse-{{ $plan->id }}" class="d-none">
-                  @csrf
-                </form>
-                <button type="button" 
-                        class="btn btn-outline-primary btn-sm w-100 rounded-pill x" 
-                        @click="$dispatch('ver-plan', {{ Js::from([
-                            'id' => $plan->id,
-                            'titulo' => $plan->titulo,
-                            'descripcion' => $plan->descripcion,
-                            'imagen_url' => $urlImagenExplorar,
-                            'gradient' => $selectedGradientExplorar,
-                            'dias_count' => $plan->dias_count,
-                            'calificacion' => (float) $plan->calificacion
-                        ]) }})">
+                <a href="{{ route('planes-lectores.lectura', $plan->slug) }}" 
+                   class="btn btn-outline-primary btn-sm w-100 rounded-pill">
                   Ver plan
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -333,62 +321,6 @@
   </script>
   @endscript
 
-  <!-- Modal de Vista Previa -->
-  @teleport('body')
-  <div class="modal fade" id="modalDetallePlan" tabindex="-1" aria-hidden="true"
-       x-data="{ selectedPlan: null }"
-       x-on:ver-plan.window="selectedPlan = $event.detail; (new bootstrap.Modal($el)).show();">
-    <div class="modal-dialog modal-lg modal-dialog-centered" x-show="selectedPlan" x-cloak>
-      <div class="modal-content border-0 shadow-lg">
-        <template x-if="selectedPlan">
-          <div>
-            <div class="modal-header border-0 pb-0">
-              <h5 class="modal-title fw-semibold text-black fs-4" x-text="selectedPlan.titulo"></h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body pt-3">
-              <!-- Imagen Destacada -->
-              <div class="rounded-3 overflow-hidden mb-5 mt-3 shadow-sm" style="max-height: 400px;">
-                <template x-if="selectedPlan.imagen_url">
-                  <img :src="selectedPlan.imagen_url" class="w-100 h-100" style="object-fit: cover;" alt="Plan image">
-                </template>
-                <template x-if="!selectedPlan.imagen_url">
-                  <div :style="`background: ${selectedPlan.gradient};`" class="d-flex align-items-center justify-content-center text-white py-10" style="height: 300px;">
-                    <i class="ti ti-book fs-1" style="font-size: 80px !important;"></i>
-                  </div>
-                </template>
-              </div>
-
-              <!-- Info Bar -->
-              <div class="bg-light rounded-3 p-4 mb-5 d-flex flex-column flex-md-row justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                  <div class="me-4">
-                    <span class="text-black fw-bold fs-5 me-1" x-text="selectedPlan.dias_count"></span>
-                    <span class="text-black fs-5" x-text="selectedPlan.dias_count == 1 ? 'día' : 'días'"></span>
-                  </div>
-                  <div class="d-flex align-items-center border-start ps-4">
-                    <i class="ti ti-star-filled text-warning me-2 fs-4"></i>
-                    <span class="text-black fw-bold fs-5" x-text="parseFloat(selectedPlan.calificacion || 0).toFixed(1)"></span>
-                  </div>
-                </div>
-                <div class="mt-3 mt-md-0">
-                   <button type="button" class="btn btn-dark rounded-pill px-4 py-2 fw-semibold d-flex align-items-center" 
-                           @click="document.getElementById('form-inscribirse-' + selectedPlan.id).submit()">
-                     Comenzar plan <i class="ti ti-chevron-right ms-2"></i>
-                   </button>
-                </div> 
-              </div>              
-
-              <!-- Descripción -->
-              <div class="description-content px-1 mt-2 text-black fs-6" style="line-height:1.0;" x-html="selectedPlan.descripcion"></div>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
-  </div>
-  @endteleport
-
   <style>
     .card-plan-explorar {
       transition: transform 0.2s ease, shadow 0.2s ease;
@@ -397,16 +329,6 @@
     .card-plan-explorar:hover {
       transform: translateY(-5px);
       box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
-    }
-    .modal-content {
-      border-radius: 20px;
-    }
-    #modalDetallePlan .bg-light {
-      background-color: #f8f9fa !important;
-    }
-    #modalDetallePlan .btn-dark {
-      background-color: #2d3436;
-      border-color: #2d3436;
     }
 
     /* Ajuste responsivo para la paginación (Ocultar texto Anterior/Siguiente en móviles) */
