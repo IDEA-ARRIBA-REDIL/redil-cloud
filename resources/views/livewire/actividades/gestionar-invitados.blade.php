@@ -68,8 +68,13 @@
                         </div>
                         <div class="mb-3 ">
                             <label for="emailNuevoInvitado" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="emailNuevoInvitado" wire:model="emailNuevoInvitado" placeholder="correo@ejemplo.com">
+                            <input type="email" class="form-control" id="emailNuevoInvitado" wire:model="emailNuevoInvitado" placeholder="correo@ejemplo.com" autocomplete="off">
                             @error('emailNuevoInvitado') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="mb-3">
+                            <label for="emailConfirmacionNuevoInvitado" class="form-label">Confirmar email</label>
+                            <input type="email" class="form-control" id="emailConfirmacionNuevoInvitado" wire:model="emailConfirmacionNuevoInvitado" placeholder="correo@ejemplo.com" autocomplete="off">
+                            @error('emailConfirmacionNuevoInvitado') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
                     <div class="modal-footer">

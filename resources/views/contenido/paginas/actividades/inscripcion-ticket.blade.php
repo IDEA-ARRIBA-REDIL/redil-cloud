@@ -131,6 +131,19 @@
                 <div class="section-title">Actividad</div>
                 <div class="section-content">{{ $actividad->nombre }}</div>
             </div>
+            @if(!empty($respuestasAsistencia))
+                <div class="section">
+                    <div class="section-title">Información para asistencia</div>
+                    <table>
+                        @foreach($respuestasAsistencia as $respuestaAsistencia)
+                            <tr>
+                                <td><strong>{{ $respuestaAsistencia['titulo'] }}</strong></td>
+                                <td>{{ $respuestaAsistencia['valor'] }}</td>
+                            </tr>
+                        @endforeach
+                    </table>
+                </div>
+            @endif
             {{-- ... (resto de las secciones) ... --}}
             <div class="qr-section">
                 <img src="data:image/png;base64,{{ DNS2D::getBarcodePNG($datosParaQr, 'QRCODE', 6, 6) }}" alt="barcode" />

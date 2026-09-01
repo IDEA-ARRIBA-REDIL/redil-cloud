@@ -2,27 +2,25 @@
 
 namespace App\Livewire\Actividades;
 
-use App\Models\ActividadAsistenciaInscripcion; // Usamos el nuevo modelo
-use App\Models\Inscripcion;
+use App\Exports\AsistenciasActividadExport; // Usamos el nuevo modelo
 use App\Models\Actividad;
+use App\Models\ActividadAsistenciaInscripcion;
 use App\Models\CrecimientoUsuario;
+use App\Models\Inscripcion;
 use App\Models\TareaConsolidacionUsuario;
-use App\Models\HistorialTareaConsolidacionUsuario;
-use Livewire\Component;
-use Livewire\Attributes\On;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-
 use Carbon\Carbon;
-
-use App\Exports\AsistenciasActividadExport;
-use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\Attributes\On;
+use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AsistenciasActividad extends Component
 {
     public Actividad $actividad;
+
     public string $busqueda = '';
+
     // --- INICIO DE PROPIEDADES NUEVAS ---
     /**
      * Almacena la contraseña que el usuario ingresa en el modal.
@@ -39,10 +37,11 @@ class AsistenciasActividad extends Component
      * Indica si la actividad requiere una contraseña para acceder.
      */
     public bool $requiereContrasena = false;
+
     // --- FIN DE PROPIEDADES NUEVAS ---
     public array $asistenciasRegistradasHoy = []; // Renombrado para mayor claridad
-    public int $totalDiasActividad = 1; // Nueva propiedad para la duración del evento
 
+    public int $totalDiasActividad = 1; // Nueva propiedad para la duración del evento
 
     /**
      * MÉTODO EDITADO:
@@ -101,20 +100,25 @@ class AsistenciasActividad extends Component
             ->toArray();
     }
 
-
     /**
      * MÉTODO RECONSTRUIDO:
      * Maneja el escaneo del nuevo QR basado en JSON.
      */
     #[On('qrCodeScanned')]
-    public function handleSuccessfulScan($qrText)
+    public function handleSuccessfulScan($qrText): void
     {
         // 1. Decodificamos el JSON que viene del QR
         $datosQr = json_decode($qrText, true);
 
         // Validamos que el JSON sea válido y tenga las claves necesarias
-        if (json_last_error() !== JSON_ERROR_NONE || !isset($datosQr['tipo'], $datosQr['id'])) {
-            $this->dispatch('showAlert', ['title' => 'QR Inválido', 'text' => 'El formato del código QR no es correcto.', 'icon' => 'error']);
+        if (json_last_error() !== JSON_ERROR_NONE || ! isset($datosQr['tipo'], $datosQr['id'])) {
+            $this->dispatch('showAlert', [
+                'title' => 'QR Inválido',
+                'text' => 'El formato del código QR no es correcto.',
+                'icon' => 'error',
+                'interactive' => true,
+            ]);
+
             return;
         }
 
@@ -123,59 +127,59 @@ class AsistenciasActividad extends Component
         // 2. Usamos un switch para manejar los diferentes tipos de QR
         switch ($datosQr['tipo']) {
             case 'verificar_asistencia_inscripcion_usuario':
-
                 // Buscamos la inscripción del usuario para ESTA actividad
-                $inscripcion = Inscripcion::find($datosQr['id']);
-
+                $inscripcion = Inscripcion::with(['user', 'categoriaActividad.actividad'])->find($datosQr['id']);
                 break;
 
             case 'verificar_asistencia_inscripcion_invitado':
                 $inscripcionId = $datosQr['id'];
-                $inscripcion = Inscripcion::find($inscripcionId);
+                $inscripcion = Inscripcion::with(['categoriaActividad.actividad'])->find($inscripcionId);
                 // Verificamos que la inscripción encontrada pertenezca a la actividad actual
-                if ($inscripcion && $inscripcion->categoriaActividad->actividad_id != $this->actividad->id) {
+                if ($inscripcion && $inscripcion->categoriaActividad && $inscripcion->categoriaActividad->actividad_id != $this->actividad->id) {
                     $inscripcion = null; // No es válida si no es de esta actividad
                 }
                 break;
 
             default:
-                $this->dispatch('showAlert', ['title' => 'Tipo de QR Desconocido', 'text' => 'Este código QR no es para registro de asistencia.', 'icon' => 'warning']);
+                $this->dispatch('showAlert', [
+                    'title' => 'Tipo de QR Desconocido',
+                    'text' => 'Este código QR no es para registro de asistencia en actividades.',
+                    'icon' => 'warning',
+                    'interactive' => true,
+                ]);
+
                 return;
         }
 
         // 3. Validamos si se encontró una inscripción válida
-        if (!isset($inscripcion->id)) {
-            $this->dispatch('showIncorrectQrModal', [
+        if (! isset($inscripcion->id)) {
+            $this->dispatch('showAlert', [
                 'title' => 'QR no registrado',
-                'text'  => '<strong>Este codigo QR no esta registrado en nuestra plataforma, acercate a un personal administrativo para obtener mas información </strong>'
+                'html' => 'Este código QR no está registrado en nuestra plataforma. Por favor acércate al personal administrativo.',
+                'icon' => 'error',
+                'interactive' => true,
             ]);
-        } elseif ($inscripcion->categoriaActividad->actividad->id != $this->actividad->id) {
-            $inscripcionReal = Inscripcion::find($datosQr['id']);
-            $this->dispatch('showIncorrectQrModal', [
+        } elseif ($inscripcion->categoriaActividad && $inscripcion->categoriaActividad->actividad_id != $this->actividad->id) {
+            $inscripcionReal = Inscripcion::with('categoriaActividad.actividad')->find($datosQr['id']);
+            $nombreActividadReal = $inscripcionReal->categoriaActividad->actividad->nombre ?? 'otra actividad';
+            $detalles = $inscripcionReal->categoriaActividad->actividad->detalles_finales ?? '';
+            $this->dispatch('showAlert', [
                 'title' => 'QR de Otra Actividad',
-                'text'  => 'Este QR pertenece a la actividad: <strong>' . $inscripcionReal->categoriaActividad->actividad->nombre . ' sigue estas instrucciones:' . $inscripcionReal->categoriaActividad->actividad->detalles_finales . '</strong>'
+                'html' => 'Este QR pertenece a la actividad: <strong>'.e($nombreActividadReal).'</strong>'.($detalles ? '<br><small class="text-muted">'.e($detalles).'</small>' : ''),
+                'icon' => 'warning',
+                'interactive' => true,
             ]);
-            /*
-            $this->mount($this->actividad);
-            $this->cargarAsistencias(); */
-            // Recargamos el estado
-
         } else {
             // 4. Lógica de registro de asistencia (una por día)
             $this->registrarAsistencia($inscripcion);
-
-            // 5. La alerta se maneja dentro de registrarAsistencia para verificar respuestas de formulario
-            // $this->dispatch('showAlert', ['title' => '¡Asistencia Registrada!', 'text' => 'La asistencia se ha guardado correctamente.', 'icon' => 'success']);
         }
     }
-
-
 
     /**
      * MÉTODO AJUSTADO:
      * Ahora carga los IDs de INSCRIPCIÓN que ya tienen asistencia hoy.
      */
-    private function cargarAsistencias()
+    private function cargarAsistencias(): void
     {
         $this->asistenciasRegistradas = ActividadAsistenciaInscripcion::where('actividad_id', $this->actividad->id)
             ->whereDate('fecha', Carbon::today())
@@ -188,7 +192,7 @@ class AsistenciasActividad extends Component
      * MÉTODO AJUSTADO:
      * Ahora opera con el ID de la inscripción en lugar del ID del usuario.
      */
-    public function toggleAsistencia($inscripcionId)
+    public function toggleAsistencia($inscripcionId): void
     {
         if (isset($this->asistenciasRegistradasHoy[$inscripcionId])) {
             $this->eliminarAsistencia($inscripcionId);
@@ -204,213 +208,131 @@ class AsistenciasActividad extends Component
      * MÉTODO RECONSTRUIDO:
      * Registra la asistencia para una inscripción específica, solo si no existe una para el día de hoy.
      */
-    private function registrarAsistencia(Inscripcion $inscripcion)
+    private function registrarAsistencia(Inscripcion $inscripcion): void
     {
-        if (!$this->actividad->activa) {
+        if (! $this->actividad->activa) {
+            $this->dispatch('showAlert', [
+                'title' => 'Actividad Inactiva',
+                'text' => 'Esta actividad se encuentra inactiva o finalizada.',
+                'icon' => 'warning',
+                'interactive' => true,
+            ]);
+
             return;
         }
 
-        // --- Parte 1: Registro de la asistencia diaria (sin cambios) ---
+        $nombreAsistente = $inscripcion->user ? $inscripcion->user->nombre(3) : ($inscripcion->nombre_inscrito ?? 'Invitado');
+
+        // Verificamos si ya tenía asistencia registrada el día de hoy
+        $yaRegistradoHoy = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)
+            ->whereDate('fecha', Carbon::today())
+            ->exists();
+
+        if ($yaRegistradoHoy) {
+            $this->cargarAsistenciasDeHoy();
+            $this->dispatch('showAlert', [
+                'title' => '¡Ya Registrado!',
+                'text' => $nombreAsistente.' ya tiene asistencia registrada el día de hoy.',
+                'icon' => 'info',
+                'interactive' => false,
+            ]);
+
+            return;
+        }
+
+        // --- Parte 1: Registro de la asistencia diaria ---
         ActividadAsistenciaInscripcion::firstOrCreate(
             [
                 'inscripcion_id' => $inscripcion->id,
                 'fecha' => Carbon::today()->toDateString(),
             ],
             [
-                'actividad_id'   => $this->actividad->id,
-                'user_id'        => $inscripcion->user_id,
-                'compra_id'      => $inscripcion->compra_id,
+                'actividad_id' => $this->actividad->id,
+                'user_id' => $inscripcion->user_id,
+                'compra_id' => $inscripcion->compra_id,
             ]
         );
 
         // --- Parte 2: Lógica para Culminar Procesos de Crecimiento (Sistema Dinámico) ---
         $procesosACulminar = $this->actividad->procesosCulminados;
-        if ($procesosACulminar->isNotEmpty()) {
-            if ($inscripcion->user_id) {
-                $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
-                if ($totalAsistencias === 1) {
-                    foreach ($procesosACulminar as $proceso) {
-                        // Usar el nuevo campo FK dinámico si existe, sino usar el antiguo
-                        $estadoAsignar = $proceso->pivot->estado_paso_crecimiento_usuario_id ?? $proceso->pivot->estado;
-                        
-                        CrecimientoUsuario::firstOrCreate(
-                            [
-                                'user_id' => $inscripcion->user_id,
-                                'paso_crecimiento_id' => $proceso->id,
-                            ],
-                            [
-                                'estado_id' => $estadoAsignar,
-                                'fecha'     => Carbon::today(),
-                                'detalle'   => 'Asistencia ' . $this->actividad->nombre,
-                            ]
-                        );
-                    }
+        if ($procesosACulminar->isNotEmpty() && $inscripcion->user_id) {
+            $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
+            if ($totalAsistencias === 1) {
+                foreach ($procesosACulminar as $proceso) {
+                    $estadoAsignar = $proceso->pivot->estado_paso_crecimiento_usuario_id ?? $proceso->pivot->estado;
+                    CrecimientoUsuario::procesarPaso(
+                        userId: $inscripcion->user_id,
+                        pasoCrecimientoId: $proceso->id,
+                        estadoObjetivoId: $estadoAsignar,
+                        detalle: 'Asistencia '.$this->actividad->nombre,
+                        fecha: Carbon::today()
+                    );
                 }
             }
         }
 
-        // --- Parte 2.5: Lógica para Cambio de Tipo Usuario y Roles (NUEVO) ---
+        // --- Parte 2.5: Lógica para Cambio de Tipo Usuario y Roles ---
         if ($this->actividad->tipo_usuario_objetivo_id && $inscripcion->user_id) {
-            
-            // Log de depuración
-            Log::info("AsistenciaActividad: Iniciando lógica de cambio de tipo usuario/rol. Inscripcion ID: {$inscripcion->id}, User ID: {$inscripcion->user_id}");
-
             $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
-            Log::info("AsistenciaActividad: Total de asistencias encontradas: {$totalAsistencias}");
-            
-            // Solo ejecutar en la PRIMERA asistencia
             if ($totalAsistencias === 1) {
                 $usuario = \App\Models\User::find($inscripcion->user_id);
-                $tipoUsuarioObjetivo = $this->actividad->tipoUsuarioObjetivo;
-                $tipoUsuarioActual = $usuario->tipoUsuario;
-
-                // 1. Validar Jerarquía por Puntaje
-                $puntajeActual = $tipoUsuarioActual ? $tipoUsuarioActual->puntaje : 0;
-                $puntajeObjetivo = $tipoUsuarioObjetivo ? $tipoUsuarioObjetivo->puntaje : 0;
-
-                Log::info("AsistenciaActividad: Comparando puntajes. Actual: {$puntajeActual}, Objetivo: {$puntajeObjetivo}");
-
-                // SI el usuario tiene mayor rango (mayor puntaje) que el objetivo, NO hacemos nada.
-                // SI es igual o menor, procedemos al cambio (actualización o ascenso).
-                if ($puntajeActual <= $puntajeObjetivo) {
-                    Log::info("AsistenciaActividad: El puntaje objetivo es mayor o igual. Procediendo al cambio de Tipo Usuario.");
-                    
-                    // 2. Actualizar Tipo de Usuario
-                    $usuario->update(['tipo_usuario_id' => $tipoUsuarioObjetivo->id]);
-                    Log::info("AsistenciaActividad: Tipo de usuario actualizado a ID: {$tipoUsuarioObjetivo->id}");
-
-                    // 3. Gestión de Roles
-                    // "Desactivarroles dependientes, mantener independientes, activar nuevo rol"
-                    
-                    $nuevoRolId = $tipoUsuarioObjetivo->id_rol_dependiente;
-                    Log::info("AsistenciaActividad: ID del nuevo rol dependiente: " . ($nuevoRolId ?? 'NULO'));
-
-                    if ($nuevoRolId) {
-                        DB::transaction(function () use ($usuario, $nuevoRolId) {
-                            Log::info("AsistenciaActividad: Iniciando transacción para cambio de roles (Reemplazo total de roles dependientes).");
-
-                            // A. Desactivar ABSOLUTAMENTE TODOS los roles actuales para este usuario
-                            // Esto garantiza que solo quedará uno activo al final (Regla 3)
-                            DB::table('model_has_roles')
-                                ->where('model_id', $usuario->id)
-                                ->where('model_type', 'App\Models\User')
-                                ->update(['activo' => false]);
-                            Log::info("AsistenciaActividad: Todos los roles del usuario han sido desactivados.");
-
-                            // B. Obtener todos los IDs de roles "dependientes" (jerárquicos) en el sistema
-                            $rolesDependientesIds = \App\Models\Role::where('dependiente', true)
-                                ->pluck('id')
-                                ->toArray();
-
-                            // C. ELIMINAR (Detach) todas las conexiones del usuario con roles dependientes
-                            // Según la petición: "eliminar todos los registros de la tabla intermedia" (de roles dependientes)
-                            if (!empty($rolesDependientesIds)) {
-                                $deleted = DB::table('model_has_roles')
-                                    ->where('model_id', $usuario->id)
-                                    ->where('model_type', 'App\Models\User')
-                                    ->whereIn('role_id', $rolesDependientesIds)
-                                    ->delete();
-                                Log::info("AsistenciaActividad: Conexiones con roles dependientes eliminadas ({$deleted} registros).");
-                            }
-
-                            // D. Crear la nueva conexión vinculando al nuevo rol y activándolo
-                            // attach() creará el nuevo registro en model_has_has_roles
-                            $usuario->roles()->attach($nuevoRolId, [
-                                'activo' => true, 
-                                'model_type' => 'App\Models\User'
-                            ]);
-                            Log::info("AsistenciaActividad: Nuevo rol dependiente ID {$nuevoRolId} asignado y activado como ÚNICO activo.");
-                        });
-
-                        // Limpiar caché de permisos
-                        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-                        Log::info("AsistenciaActividad: Caché de permisos limpio. Proceso finalizado.");
-                    } else {
-                        Log::info("AsistenciaActividad: No hay rol nuevo para asignar (id_rol_dependiente nulo).");
-                    }
-                } else {
-                    Log::info("AsistenciaActividad: El usuario tiene un puntaje mayor. NO se realizan cambios.");
+                if ($usuario) {
+                    $usuario->promoverTipoUsuario($this->actividad->tipo_usuario_objetivo_id);
                 }
-            } else {
-                Log::info("AsistenciaActividad: No es la primera asistencia (Total: {$totalAsistencias}). No se realizan cambios.");
             }
         }
 
-        // --- Parte 3: Lógica para Culminar Tareas de Consolidación (NUEVO) ---
+        // --- Parte 3: Lógica para Culminar Tareas de Consolidación ---
         $tareasACulminar = $this->actividad->restriccion_por_categoria && $inscripcion->categoriaActividad
             ? $inscripcion->categoriaActividad->tareasCulminadas
             : $this->actividad->tareasCulminadas;
 
-        if ($tareasACulminar->isNotEmpty()) {
-            if ($inscripcion->user_id) {
-                $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
-                
-                // Solo ejecutar en la primera asistencia para evitar duplicados
-                if ($totalAsistencias === 1) {
-                    foreach ($tareasACulminar as $tarea) {
-                        // Buscar si ya existe una asignación de esta tarea al usuario
-                        $tareaUsuario = \App\Models\TareaConsolidacionUsuario::where('user_id', $inscripcion->user_id)
-                            ->where('tarea_consolidacion_id', $tarea->tarea_consolidacion_id)
-                            ->first();
-
-                        if ($tareaUsuario) {
-                            // Ya existe, actualizar el estado
-                            $tareaUsuario->update([
-                                'estado_tarea_consolidacion_id' => $tarea->estado_tarea_consolidacion_id,
-                                'fecha' => Carbon::today(),
-                            ]);
-                        } else {
-                            // No existe, crear nueva asignación
-                            \App\Models\TareaConsolidacionUsuario::create([
-                                'user_id' => $inscripcion->user_id,
-                                'tarea_consolidacion_id' => $tarea->tarea_consolidacion_id,
-                                'estado_tarea_consolidacion_id' => $tarea->estado_tarea_consolidacion_id,
-                                'fecha' => Carbon::today(),
-                            ]);
-                        }
-                        
-                        // Opcional: Registrar en historial
-                        \App\Models\HistorialTareaConsolidacionUsuario::create([
-                            'tarea_consolidacion_usuario_id' => \App\Models\TareaConsolidacionUsuario::where('user_id', $inscripcion->user_id)
-                                ->where('tarea_consolidacion_id', $tarea->tarea_consolidacion_id)
-                                ->first()->id,
-                            'fecha' => Carbon::today(),
-                            'detalle' => 'Asistencia confirmada en actividad: ' . $this->actividad->nombre,
-                            'usuario_creacion_id' => auth()->id() ?? $inscripcion->user_id,
-                        ]);
-                    }
+        if ($tareasACulminar->isNotEmpty() && $inscripcion->user_id) {
+            $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
+            if ($totalAsistencias === 1) {
+                foreach ($tareasACulminar as $tarea) {
+                    TareaConsolidacionUsuario::procesarTarea(
+                        userId: $inscripcion->user_id,
+                        tareaConsolidacionId: $tarea->tarea_consolidacion_id,
+                        estadoObjetivoId: $tarea->estado_tarea_consolidacion_id,
+                        observaciones: 'Asistencia confirmada en actividad: '.$this->actividad->nombre,
+                        fecha: Carbon::today()
+                    );
                 }
             }
         }
 
-        // --- INICIO DE LA CORRECCIÓN ---
-        // $this->mount($this->actividad); // <-- ELIMINADO
-        // $this->cargarAsistencias(); // <-- ELIMINADO (y era un typo)
-
         // Simplemente actualizamos el array que usa la vista para los botones
         $this->cargarAsistenciasDeHoy();
-        // --- FIN DE LA CORRECCIÓN ---
 
         // =========================================================================
         // NUEVA LÓGICA: Verificar y mostrar respuestas de formulario con 'visible_asistencia'
         // =========================================================================
         $this->_verificarYMostrarRespuestasAsistencia($inscripcion);
     }
-    
+
     /**
      * Muestra una alerta con las respuestas del formulario si hay elementos visibles en asistencia.
      */
-    private function _verificarYMostrarRespuestasAsistencia(Inscripcion $inscripcion)
+    private function _verificarYMostrarRespuestasAsistencia(Inscripcion $inscripcion): void
     {
+        $nombreAsistente = $inscripcion->user ? $inscripcion->user->nombre(3) : ($inscripcion->nombre_inscrito ?? 'Invitado');
+
         // 1. Obtener elementos de formulario con 'visible_asistencia' activado
         $elementosVisibles = $this->actividad->elementos()
             ->where('visible_asistencia', true)
             ->orderBy('orden', 'asc')
             ->get();
-            
+
         if ($elementosVisibles->isEmpty()) {
-             // Si no hay preguntas visibles, mostramos la alerta estándar de éxito
-            $this->dispatch('showAlert', ['title' => '¡Asistencia Registrada!', 'text' => 'La asistencia se ha guardado correctamente.', 'icon' => 'success']);
+            // Si no hay preguntas visibles, mostramos la alerta estándar de éxito con el nombre del participante
+            $this->dispatch('showAlert', [
+                'title' => '¡Asistencia Registrada!',
+                'text' => 'Se registró la asistencia de: '.$nombreAsistente,
+                'icon' => 'success',
+                'interactive' => false,
+            ]);
+
             return;
         }
 
@@ -423,27 +345,28 @@ class AsistenciasActividad extends Component
 
         // 3. Construir el mensaje HTML
         $htmlMensaje = '<div class="text-start">';
-        
+        $htmlMensaje .= '<p class="fw-bold mb-2 text-primary fs-5"><i class="ti ti-check me-1"></i>'.e($nombreAsistente).'</p>';
+
         foreach ($elementosVisibles as $elemento) {
             $respuesta = $respuestas->get($elemento->id);
             $valorTexto = $this->_obtenerTextoRespuesta($respuesta, $elemento);
-            
+
             $htmlMensaje .= '<div class="mb-2">';
-            $htmlMensaje .= '<strong class="d-block text-black">' . $elemento->titulo . '</strong>';
-            $htmlMensaje .= '<span class="text-black">' . $valorTexto . '</span>';
+            $htmlMensaje .= '<strong class="d-block text-black">'.e($elemento->titulo).'</strong>';
+            $htmlMensaje .= '<span class="text-black">'.$valorTexto.'</span>';
             $htmlMensaje .= '</div>';
             $htmlMensaje .= '<hr class="my-1 border-light">';
         }
-        
+
         $htmlMensaje .= '</div>';
-        
+
         // 4. Disparar SweetAlert personalizado
         $this->dispatch('showFormAlert', [
-            'title' => 'Información de Asistencia', 
-            'html' => $htmlMensaje, 
+            'title' => 'Información de Asistencia',
+            'html' => $htmlMensaje,
             'icon' => 'info',
             'interactive' => true, // Importante para que no se cierre solo
-            'confirmButtonText' => 'Cerrar' // Botón solicitado para dar tiempo de leer
+            'confirmButtonText' => 'Aceptar y continuar',
         ]);
     }
 
@@ -453,35 +376,35 @@ class AsistenciasActividad extends Component
     private function _obtenerTextoRespuesta($respuesta, $elemento)
     {
         $configuracion = \App\Models\Configuracion::find(1);
-        if (!$respuesta) {
+        if (! $respuesta) {
             return '<span class="text-danger fst-italic">Sin respuesta</span>';
         }
 
         switch ($elemento->tipoElemento->clase) {
-            case 'corta': 
+            case 'corta':
                 return e($respuesta->respuesta_texto_corto);
-            case 'larga': 
+            case 'larga':
                 return nl2br(e($respuesta->respuesta_texto_largo));
-            case 'si_no': 
+            case 'si_no':
                 return $respuesta->respuesta_si_no == 1 ? 'Sí' : 'No';
-            case 'unica_respuesta': 
+            case 'unica_respuesta':
                 // Idealmente buscar el texto de la opción si está disponible, sino mostrar el valor directo
-                return e($respuesta->respuesta_unica); 
-            case 'multiple_respuesta': 
+                return e($respuesta->respuesta_unica);
+            case 'multiple_respuesta':
                 return e($respuesta->respuesta_multiple);
-            case 'fecha': 
+            case 'fecha':
                 return e($respuesta->respuesta_fecha);
-            case 'numero': 
+            case 'numero':
                 return e($respuesta->respuesta_numero);
-            case 'moneda': 
-                return '$' . number_format($respuesta->respuesta_moneda ?? 0, 2);
-            case 'archivo': 
+            case 'moneda':
+                return '$'.number_format($respuesta->respuesta_moneda ?? 0, 2);
+            case 'archivo':
                 return $respuesta->url_archivo
-                    ? '<a href="' . tenant_asset('archivos/actividades/' . $respuesta->url_archivo) . '" target="_blank"><i class="fas fa-paperclip"></i> Ver Archivo</a>'
+                    ? '<a href="'.tenant_asset('archivos/actividades/'.$respuesta->url_archivo).'" target="_blank"><i class="fas fa-paperclip"></i> Ver Archivo</a>'
                     : 'Sin archivo';
-            case 'imagen': 
+            case 'imagen':
                 return $respuesta->url_foto
-                    ? '<a href="' . tenant_asset('img/actividades/respuesta-formularios/' . $respuesta->url_foto) . '" target="_blank"><i class="fas fa-image"></i> Ver Imagen</a>'
+                    ? '<a href="'.tenant_asset('img/actividades/respuesta-formularios/'.$respuesta->url_foto).'" target="_blank"><i class="fas fa-image"></i> Ver Imagen</a>'
                     : 'Sin imagen';
             default:
                 return 'Dato registrado';
@@ -489,9 +412,8 @@ class AsistenciasActividad extends Component
     }
 
     public function exportarAsistencias()
-
     {
-        $fileName = 'asistencias-' . Str::slug($this->actividad->nombre) . '.xlsx';
+        $fileName = 'asistencias-'.Str::slug($this->actividad->nombre).'.xlsx';
 
         return Excel::download(new AsistenciasActividadExport($this->actividad), $fileName);
     }
@@ -500,7 +422,6 @@ class AsistenciasActividad extends Component
      * MÉTODO AJUSTADO:
      * Elimina la asistencia de una inscripción para el día de hoy.
      */
-
     private function eliminarAsistencia(string $inscripcionId)
     {
         if ($this->actividad->activa) {
@@ -538,32 +459,37 @@ class AsistenciasActividad extends Component
                 // withCount es la clave: cuenta las asistencias de forma eficiente.
                 ->withCount('asistencias')
                 // Precargamos las relaciones para evitar consultas N+1.
-                ->with(['user', 'compra']);
+                ->with(['user', 'compra', 'inscripcionPrincipal.user', 'inscripcionPrincipal.compra']);
 
             // 4. Aplicar la lógica de búsqueda si el término no está vacío
             $terminoBusquedaLimpio = trim($this->busqueda);
 
-            if (!empty($terminoBusquedaLimpio)) {
-                $terminoBusqueda = '%' . $terminoBusquedaLimpio . '%';
+            if (! empty($terminoBusquedaLimpio)) {
+                $terminoBusqueda = '%'.$terminoBusquedaLimpio.'%';
 
                 $query->where(function ($q) use ($terminoBusqueda) {
 
-                    // A. Buscar en usuarios registrados (tabla 'users')
-                    $q->whereHas('user', function ($userQuery) use ($terminoBusqueda) {
-                        $userQuery->where('identificacion', 'like', $terminoBusqueda)
-                            ->orWhere(DB::raw("CONCAT(primer_nombre, ' ', primer_apellido)"), 'ilike', $terminoBusqueda);
-                    })
+                    // A. Buscar por el correo propio de la inscripción
+                    $q->where('email', 'ilike', $terminoBusqueda)
 
-                        // B. Buscar en invitados por 'nombre_inscrito' (tabla 'inscripciones')
+                    // B. Buscar en usuarios registrados (tabla 'users')
+                        ->orWhereHas('user', function ($userQuery) use ($terminoBusqueda) {
+                            $userQuery->where('identificacion', 'like', $terminoBusqueda)
+                                ->orWhere('email', 'ilike', $terminoBusqueda)
+                                ->orWhere(DB::raw("CONCAT(primer_nombre, ' ', primer_apellido)"), 'ilike', $terminoBusqueda);
+                        })
+
+                        // C. Buscar en invitados por 'nombre_inscrito' (tabla 'inscripciones')
                         ->orWhere(function ($guestQuery) use ($terminoBusqueda) {
                             $guestQuery->whereNull('user_id') // Asegurarnos de que es un invitado
                                 ->where('nombre_inscrito', 'ilike', $terminoBusqueda);
                         })
 
-                        // C. Buscar en invitados por datos de la compra (tabla 'compras')
+                        // D. Buscar por datos de la compra (tabla 'compras')
                         // (Esto sirve como respaldo si 'nombre_inscrito' estuviera vacío)
                         ->orWhereHas('compra', function ($compraQuery) use ($terminoBusqueda) {
                             $compraQuery->where('identificacion_comprador', 'like', $terminoBusqueda)
+                                ->orWhere('email_comprador', 'ilike', $terminoBusqueda)
                                 ->orWhere('nombre_completo_comprador', 'ilike', $terminoBusqueda);
                         });
                 });

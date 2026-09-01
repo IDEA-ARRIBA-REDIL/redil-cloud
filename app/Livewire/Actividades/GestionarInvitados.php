@@ -3,8 +3,10 @@
 namespace App\Livewire\Actividades;
 
 use App\Mail\DefaultMail;
+use App\Models\Actividad;
 use App\Models\Iglesia;
 use App\Models\Inscripcion;
+use App\Models\RespuestaElementoFormulario;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -30,6 +32,8 @@ class GestionarInvitados extends Component
     public $nombreNuevoInvitado = '';
 
     public $emailNuevoInvitado = '';
+
+    public $emailConfirmacionNuevoInvitado = '';
 
     /**
      * Se ejecuta al iniciar el componente.
@@ -57,12 +61,26 @@ class GestionarInvitados extends Component
     /**
      * Valida y guarda la inscripción de un nuevo invitado, y luego envía su correo de notificación.
      */
-    public function guardarInvitado()
+    public function guardarInvitado(): void
     {
         // PASO 1: Validar los datos del formulario del modal.
         $this->validate([
             'nombreNuevoInvitado' => 'required|string|min:3|max:255',
-            'emailNuevoInvitado' => 'required|email|max:255',
+            'emailNuevoInvitado' => [
+                'required',
+                'string',
+                'email:rfc',
+                'max:255',
+                "regex:/^[a-z0-9.!#$%&'*+\/=?^_{}|~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/",
+            ],
+            'emailConfirmacionNuevoInvitado' => [
+                'required',
+                'same:emailNuevoInvitado',
+            ],
+        ], [
+            'emailNuevoInvitado.regex' => 'El correo debe estar en minúsculas y no puede contener espacios.',
+            'emailConfirmacionNuevoInvitado.same' => 'Los correos electrónicos no coinciden.',
+            'emailConfirmacionNuevoInvitado.required' => 'Debes confirmar el correo electrónico.',
         ]);
 
         // PASO 2: Volver a verificar los cupos como medida de seguridad.
@@ -89,7 +107,7 @@ class GestionarInvitados extends Component
 
             // PASO 4: Refrescar la lista de invitados y limpiar el formulario.
             $this->cargarInvitados();
-            $this->reset(['nombreNuevoInvitado', 'emailNuevoInvitado']);
+            $this->reset(['nombreNuevoInvitado', 'emailNuevoInvitado', 'emailConfirmacionNuevoInvitado']);
             $this->dispatch('cerrarModalInvitado'); // Evento para que Alpine.js cierre el modal.
 
             // PASO 5: Si la inscripción se creó correctamente, se envía el correo.
@@ -168,7 +186,7 @@ class GestionarInvitados extends Component
     /**
      * Prepara y envía el correo de aprobación al invitado.
      */
-    private function _enviarCorreoInvitadoAprobado(Inscripcion $inscripcionInvitado)
+    private function _enviarCorreoInvitadoAprobado(Inscripcion $inscripcionInvitado): void
     {
         $inscripcionInvitado->load('inscripcionPrincipal.user', 'inscripcionPrincipal.compra', 'categoriaActividad');
         $principal = $inscripcionInvitado->inscripcionPrincipal;
@@ -195,6 +213,7 @@ class GestionarInvitados extends Component
     {
         $inscripcion->load('user', 'compra', 'categoriaActividad');
         $actividad = $inscripcion->categoriaActividad->actividad;
+        $inscripcionPrincipal = $inscripcion->inscripcionPrincipal;
         $iglesia = Iglesia::find(1);
 
         // La vista del PDF se encarga de la lógica del QR
@@ -202,9 +221,77 @@ class GestionarInvitados extends Component
             'inscripcion' => $inscripcion,
             'actividad' => $actividad,
             'iglesia' => $iglesia,
+            'respuestasAsistencia' => $this->_obtenerRespuestasVisiblesAsistencia($inscripcionPrincipal, $actividad),
         ]);
 
         return $pdf->output();
+    }
+
+    /**
+     * Obtiene las respuestas de la inscripción principal que fueron marcadas
+     * para mostrarse en el control de asistencia y en el ticket del invitado.
+     *
+     * @return array<int, array{titulo: string, valor: string}>
+     */
+    private function _obtenerRespuestasVisiblesAsistencia(?Inscripcion $inscripcionPrincipal, Actividad $actividad): array
+    {
+        if (! $inscripcionPrincipal) {
+            return [];
+        }
+
+        $elementos = $actividad->elementos()
+            ->with(['tipoElemento', 'opciones'])
+            ->where('visible_asistencia', true)
+            ->orderBy('orden')
+            ->get();
+
+        if ($elementos->isEmpty()) {
+            return [];
+        }
+
+        $respuestas = RespuestaElementoFormulario::query()
+            ->where('inscripcion_id', $inscripcionPrincipal->id)
+            ->whereIn('elemento_formulario_actividad_id', $elementos->pluck('id'))
+            ->get()
+            ->keyBy('elemento_formulario_actividad_id');
+
+        return $elementos
+            ->map(function ($elemento) use ($respuestas): ?array {
+                $respuesta = $respuestas->get($elemento->id);
+
+                if (! $respuesta) {
+                    return null;
+                }
+
+                $valor = match ($elemento->tipoElemento?->clase) {
+                    'corta' => $respuesta->respuesta_texto_corto,
+                    'larga' => $respuesta->respuesta_texto_largo,
+                    'si_no' => $respuesta->respuesta_si_no === null ? null : ($respuesta->respuesta_si_no ? 'Sí' : 'No'),
+                    'unica_respuesta' => $elemento->opciones->firstWhere('id', $respuesta->respuesta_unica)?->valor_texto,
+                    'multiple_respuesta' => $elemento->opciones
+                        ->whereIn('id', array_filter(explode(',', (string) $respuesta->respuesta_multiple)))
+                        ->pluck('valor_texto')
+                        ->implode(', '),
+                    'fecha' => $respuesta->respuesta_fecha,
+                    'numero' => $respuesta->respuesta_numero,
+                    'moneda' => $respuesta->respuesta_moneda,
+                    'archivo' => $respuesta->url_archivo,
+                    'imagen' => $respuesta->url_foto,
+                    default => null,
+                };
+
+                if ($valor === null || $valor === '') {
+                    return null;
+                }
+
+                return [
+                    'titulo' => $elemento->titulo,
+                    'valor' => (string) $valor,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     /**

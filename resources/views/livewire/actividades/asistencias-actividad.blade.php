@@ -55,7 +55,7 @@
                             <small class="text-muted">Hoy: {{ \Carbon\Carbon::today()->isoFormat('dddd DD') }}</small>
                         </div>
                     </div>
-                    
+
                     {{-- Lista --}}
                     <ul class="list-unstyled" style="max-height: 500px; overflow-y: auto;">
                         @forelse ($inscritos as $inscripcion)
@@ -74,6 +74,12 @@
                                                 @endif
                                             </div>
                                             <div>
+                                                @php
+                                                    $correoInscripcion = $inscripcion->email
+                                                        ?? $inscripcion->user?->email
+                                                        ?? $inscripcion->compra?->email_comprador
+                                                        ?? 'N/A';
+                                                @endphp
                                                 @if ($inscripcion->user_id)
                                                 <p class="mb-0 text-heading text-black fw-semibold">{{ $inscripcion->user->nombre(3) }}</p>
                                                 <small class="text-muted">ID: {{ $inscripcion->user->identificacion ?? 'N/A' }}</small>
@@ -81,9 +87,22 @@
                                                 <p class="mb-0 text-heading text-black fw-semibold">{{ $inscripcion->nombre_inscrito }}</p>
                                                 <small class="badge bg-label-secondary">Invitado</small>
                                                 @endif
+                                                <small class="d-block text-muted">Correo: {{ $correoInscripcion }}</small>
+                                                @if ($inscripcion->inscripcionPrincipal)
+                                                    @php
+                                                        $titular = $inscripcion->inscripcionPrincipal->user?->nombre(3)
+                                                            ?? $inscripcion->inscripcionPrincipal->nombre_inscrito
+                                                            ?? $inscripcion->inscripcionPrincipal->compra?->nombre_completo_comprador
+                                                            ?? 'Sin titular';
+                                                    @endphp
+                                                    <div class="small text-muted mt-1">
+                                                        Invitado de la inscripción principal #{{ $inscripcion->inscripcionPrincipal->id }}:
+                                                        {{ $titular }}
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
-                                        
+
                                         {{-- Columna de Asistencia y Botones --}}
                                         <div style="margin-left:-10px" class="col-5 text-end d-flex align-items-center justify-content-end">
                                             {{-- Conteo total de asistencias --}}
@@ -91,7 +110,7 @@
                                                 <span class="fw-bold fs-5">{{ $inscripcion->asistencias_count }}</span>
                                                 <span class="text-muted">/ {{ $totalDiasActividad }}</span>
                                             </div>
-                                            
+
                                             {{-- Lógica del botón de asistencia de HOY --}}
                                             @if (isset($asistenciasRegistradasHoy[$inscripcion->id]))
                                             {{-- Ya asistió hoy: Mostrar insignia --}}
@@ -100,8 +119,8 @@
                                             </span>
                                             @else
                                             {{-- No ha asistido hoy: Mostrar botón --}}
-                                            <button wire:click="toggleAsistencia({{ $inscripcion->id }})" 
-                                                    wire:loading.attr="disabled" 
+                                            <button wire:click="toggleAsistencia({{ $inscripcion->id }})"
+                                                    wire:loading.attr="disabled"
                                                     wire:target="toggleAsistencia({{ $inscripcion->id }})"
                                                     class="btn btn-secondary btn-sm rounded-pill">
                                                 Registrar
@@ -143,7 +162,7 @@
     {{-- ================================================================= --}}
 
 
-    
+
     {{-- ================================================================= --}}
     {{-- MODALES (Deben estar fuera del @if para que los scripts los encuentren) --}}
     {{-- ================================================================= --}}
@@ -165,8 +184,8 @@
     </div>
 
     {{-- 2. Modal de Contraseña de Asistencia (Nuevo) --}}
-    <div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true" 
-         wire:ignore.self 
+    <div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true"
+         wire:ignore.self
          data-bs-backdrop="static" {{-- No se puede cerrar haciendo clic fuera --}}
          data-bs-keyboard="false"> {{-- No se puede cerrar con 'Esc' --}}
         <div class="modal-dialog modal-dialog-centered">
@@ -176,13 +195,13 @@
                 </div>
                 <div class="modal-body">
                     <p>Esta actividad está protegida. Por favor, ingresa la contraseña para gestionar la asistencia.</p>
-                    
+
                     <form wire:submit.prevent="validarContrasena">
                         <div class="mb-3">
                             <label for="contrasenaIngresada" class="form-label">Contraseña</label>
-                            <input type="password" 
-                                   class="form-control @error('contrasenaIngresada') is-invalid @enderror" 
-                                   id="contrasenaIngresada" 
+                            <input type="password"
+                                   class="form-control @error('contrasenaIngresada') is-invalid @enderror"
+                                   id="contrasenaIngresada"
                                    wire:model="contrasenaIngresada"
                                    placeholder="****"
                                    autofocus>
