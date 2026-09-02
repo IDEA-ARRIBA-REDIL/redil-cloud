@@ -140,7 +140,7 @@ class Grupo extends Model
     {
         // CASO 1: El grupo tiene su propia portada (Banner)
         if ($this->portada && $this->portada != 'default.png') {
-            return tenant_asset('img/grupos/'.$this->portada);
+            return tenant_asset('img/grupos/' . $this->portada);
         }
 
         // CASO 2: No tiene portada el grupo, revisamos la del tipo de grupo

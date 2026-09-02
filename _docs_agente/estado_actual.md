@@ -96,6 +96,11 @@
     - **Interfaz de Evaluación**: Carga de forma independiente a los reproductores de lecciones. Extrae y mezcla (`shuffle`) aleatoriamente las preguntas estructuradas en `curso_pregunta` para el ítem activo en la vista, con navegación independiente ("círculos amarillos") en un solo panel para evitar la pérdida de contexto que sucedería al recargar la página. Usa validaciones asíncronas con SweetAlert.
   - **Seeders y Datos Dummy**: Creación de `CursoDemoSeeder` que inyecta cursos, módulos, lecciones y decenas de inscritos con progreso aleatorio para pruebas fidedignas de paginación e UI. (Se incluye un examen bíblico de prueba "Mentoreo Espiritual").
 
+  - **Módulo Hitos y Gestión de Permisos (Septiembre 2026)**:
+    - **Menú Vertical**: Se aplicó el control de acceso por permisos de Spatie en `verticalMenu.blade.php` para el ítem principal (`hitos.item_hitos`) y sus subítems (`hitos.muro`, `hitos.gestionar`, `hitos.crear`, `hitos.gestionar_denuncias`).
+    - **Optimización de Roles y Privilegios**: Se refactorizó `EditarPermisos.php` y `editar-permisos.blade.php` para indexar los IDs de permisos en memoria y evitar consultas repetidas por nombre y excepciones de caché (`PermissionDoesNotExist`).
+    - **Idempotencia de Seeders**: Se mejoró `PermisoSeeder.php` con `Role::firstOrCreate` y soporte para migración segura en entornos multi-tenant con `tenants:seed`.
+
 ## Plan Activo
 
 - [ ] Construir Agentes Modulares:

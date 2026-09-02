@@ -13,7 +13,6 @@ class GestionarAsistencias extends Component
     use WithPagination;
 
     public Hito $hito;
-
     public $search = '';
 
     protected $paginationTheme = 'bootstrap';
@@ -79,8 +78,8 @@ class GestionarAsistencias extends Component
         $usuarios = User::query()
             ->when($this->search, function ($q) {
                 $q->where(function ($sub) {
-                    $sub->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('email', 'like', '%'.$this->search.'%');
+                    $sub->where('name', 'like', '%' . $this->search . '%')
+                        ->orWhere('email', 'like', '%' . $this->search . '%');
                 });
             })
             ->orderBy('name')

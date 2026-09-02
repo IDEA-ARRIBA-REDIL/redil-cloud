@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 class HomologacionesMasivasImport implements ToArray, WithHeadingRow
 {
     /**
+     * @param  array  $rows
      * @return array
      */
     public function array(array $rows)

@@ -31,7 +31,7 @@ class HitoFoto extends Model
 
     public function getUrlAttribute(): string
     {
-        return tenant_asset('img/hitos/fotos/'.$this->ruta);
+        return tenant_asset('img/hitos/fotos/' . $this->ruta);
     }
 
     public function scopeAdmin($query)

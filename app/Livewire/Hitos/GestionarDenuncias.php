@@ -13,7 +13,6 @@ class GestionarDenuncias extends Component
     use WithPagination;
 
     public $filtroEstado = 'pendiente';
-
     public $observaciones = [];
 
     protected $paginationTheme = 'bootstrap';
@@ -59,7 +58,7 @@ class GestionarDenuncias extends Component
 
         $foto = HitoFoto::find($fotoId);
         if ($foto) {
-            Storage::disk('public')->delete('img/hitos/fotos/'.$foto->ruta);
+            Storage::disk('public')->delete('img/hitos/fotos/' . $foto->ruta);
             $foto->delete();
         }
 
@@ -80,7 +79,7 @@ class GestionarDenuncias extends Component
     public function render()
     {
         $denuncias = HitoDenuncia::with(['hito', 'foto', 'user', 'resueltoPor'])
-            ->when($this->filtroEstado, fn ($q) => $q->where('estado', $this->filtroEstado))
+            ->when($this->filtroEstado, fn($q) => $q->where('estado', $this->filtroEstado))
             ->orderBy('id', 'desc')
             ->paginate(10);
 

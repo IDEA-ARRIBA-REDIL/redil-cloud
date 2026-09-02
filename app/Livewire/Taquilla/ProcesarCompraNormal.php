@@ -2,23 +2,24 @@
 
 namespace App\Livewire\Taquilla;
 
-use App\Mail\InscripcionConfirmacionMail;
+use Livewire\Component;
+use App\Models\User;
 use App\Models\Actividad;
 use App\Models\ActividadCategoria;
 use App\Models\Caja;
-use App\Models\Compra;
-use App\Models\Inscripcion;
 use App\Models\Moneda;
-use App\Models\Pago;
 use App\Models\TipoPago;
-use App\Models\User;
-use Exception;
+use App\Models\Compra;
+use App\Models\Pago;
+use App\Models\Inscripcion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Mail\InscripcionConfirmacionMail;
 use Illuminate\Support\Facades\Mail;
-use Livewire\Component;
-
-// Para validación
+use Carbon\Carbon;
+use Exception;
+use Livewire\Attributes\Validate; // Para validación
 
 class ProcesarCompraNormal extends Component
 {
@@ -27,20 +28,19 @@ class ProcesarCompraNormal extends Component
 
     /**
      * El usuario que paga (Padre/Comprador).
+     * @var User
      */
     public User $comprador;
 
     /**
      * El usuario que asiste (Hijo/Inscrito).
+     * @var User
      */
     public User $inscrito;
 
     public Actividad $actividad;
-
     public Caja $cajaActiva;
-
     public ActividadCategoria $categoria;
-
     public Moneda $moneda;
 
     // --- DATOS DEL FORMULARIO ---
@@ -49,27 +49,21 @@ class ProcesarCompraNormal extends Component
     // 1. Lógica de Campos Adicionales
     //
     public $camposAdicionales = []; // Array para wire:model
-
     public $camposAdicionalesModelo; // Para cargar la colección
 
     // 2. Lógica de Pagos Divididos
     //
     public $tiposPagoDisponibles = [];
-
     public $pagos = []; // Array de pagos añadidos
-
     public $valorRestante = 0;
 
     // Propiedades para añadir un nuevo pago
     public $nuevoPagoValor;
-
     public $nuevoPagoTipoId;
-
     public $nuevoPagoVoucher = '';
 
     // --- NUEVAS PROPIEDADES PARA COMPRAS MÚLTIPLES ---
     public int $cantidad = 1;
-
     public float $precioUnitario = 0;
 
     /**
@@ -96,14 +90,12 @@ class ProcesarCompraNormal extends Component
     public function updatedCantidad($value)
     {
         // Validar límites básicos antes de recalcular
-        if ($value < 1) {
-            $this->cantidad = 1;
-        }
+        if ($value < 1) $this->cantidad = 1;
 
         // Validar límite por categoría
         if ($this->cantidad > ($this->categoria->limite_compras ?? 1)) {
             $this->cantidad = $this->categoria->limite_compras ?? 1;
-            $this->dispatch('notificacion', tipo: 'warning', mensaje: 'La cantidad máxima permitida para esta categoría es '.$this->cantidad);
+            $this->dispatch('notificacion', tipo: 'warning', mensaje: 'La cantidad máxima permitida para esta categoría es ' . $this->cantidad);
         }
 
         // Recalcular montos
@@ -138,12 +130,10 @@ class ProcesarCompraNormal extends Component
         // Validaciones de valor
         if ($valor <= 0) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'El valor debe ser mayor a cero.');
-
             return;
         }
         if ($valor > $this->valorRestante) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'El valor no puede ser mayor que el restante.');
-
             return;
         }
 
@@ -153,7 +143,6 @@ class ProcesarCompraNormal extends Component
         if ($tipoPago && $tipoPago->codigo_datafono && empty($this->nuevoPagoVoucher)) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: "El método de pago '{$tipoPago->nombre}' requiere un código de voucher.");
             $this->addError('nuevoPagoVoucher', 'El código es obligatorio para este método de pago.');
-
             return;
         }
         $this->resetErrorBag('nuevoPagoVoucher');
@@ -203,13 +192,11 @@ class ProcesarCompraNormal extends Component
         // 2. Validar Pago
         if ($this->precioTotal > 0 && $this->valorRestante > 0) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Aún falta dinero por pagar.');
-
             return;
         }
         // Si no es gratis, debe tener al menos un pago
         if ($this->precioTotal > 0 && count($this->pagos) == 0) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Debe añadir al menos un método de pago.');
-
             return;
         }
 
@@ -230,7 +217,6 @@ class ProcesarCompraNormal extends Component
                             titulo: '¡Caja Llena!',
                             mensaje: "La caja ya ha alcanzado su tope de dinero para {$tipoPago->nombre}. Debe solicitar una recolección antes de recibir más pagos de este tipo."
                         );
-
                         return;
                     }
                 }
@@ -252,7 +238,6 @@ class ProcesarCompraNormal extends Component
             if ($categoria->aforo > 0 && $categoria->aforo_ocupado >= $categoria->aforo) {
                 $this->dispatch('notificacion', tipo: 'error', mensaje: 'Los cupos se agotaron.');
                 DB::rollBack();
-
                 return;
             }
 
@@ -268,7 +253,7 @@ class ProcesarCompraNormal extends Component
                 'identificacion_comprador' => $this->comprador->identificacion,
                 'telefono_comprador' => $this->comprador->telefono_movil,
                 'email_comprador' => $this->comprador->email,
-                'metodo_pago_id' => 0,
+                'metodo_pago_id' => 0
             ]);
 
             // 6. Determinar número de registros de inscripción a crear
@@ -292,9 +277,7 @@ class ProcesarCompraNormal extends Component
                     'json_campos_adicionales' => json_encode($this->camposAdicionales),
                 ]);
 
-                if ($i === 0) {
-                    $inscripionPrincipal = $ins;
-                }
+                if ($i === 0) $inscripionPrincipal = $ins;
             }
 
             // 7. Crear los registros de Pagos (divididos)
@@ -340,13 +323,14 @@ class ProcesarCompraNormal extends Component
             return redirect()->route('taquilla.compraFinalizada', $compra);
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Error al procesar compra en taquilla: '.$e->getMessage());
-            $this->dispatch('notificacion', tipo: 'error', mensaje: 'Error al procesar la compra: '.$e->getMessage());
+            Log::error('Error al procesar compra en taquilla: ' . $e->getMessage());
+            $this->dispatch('notificacion', tipo: 'error', mensaje: 'Error al procesar la compra: ' . $e->getMessage());
         }
     }
 
     /**
      * Valida los campos adicionales requeridos.
+     *
      */
     private function validarCamposAdicionales()
     {
@@ -355,18 +339,19 @@ class ProcesarCompraNormal extends Component
 
         foreach ($this->camposAdicionalesModelo as $campo) {
             if ($campo->obligatorio) {
-                $reglas['camposAdicionales.'.$campo->id] = 'required';
-                $mensajes['camposAdicionales.'.$campo->id.'.required'] = "El campo '{$campo->nombre}' es obligatorio.";
+                $reglas['camposAdicionales.' . $campo->id] = 'required';
+                $mensajes['camposAdicionales.' . $campo->id . '.required'] = "El campo '{$campo->nombre}' es obligatorio.";
             }
         }
 
-        if (! empty($reglas)) {
+        if (!empty($reglas)) {
             $this->validate($reglas, $mensajes);
         }
     }
 
     /**
      * Envía el correo de confirmación.
+     *
      */
     private function _enviarCorreoDeConfirmacion(Inscripcion $inscripcion)
     {
@@ -378,7 +363,7 @@ class ProcesarCompraNormal extends Component
                 Mail::to($emailDestinatario)->send(new InscripcionConfirmacionMail($inscripcion, $actividad));
             }
         } catch (Exception $e) {
-            Log::error("Fallo al enviar correo para inscripción #{$inscripcion->id}: ".$e->getMessage());
+            Log::error("Fallo al enviar correo para inscripción #{$inscripcion->id}: " . $e->getMessage());
             $this->dispatch('notificacion', tipo: 'warning', mensaje: 'Compra registrada, pero falló el envío de correo.');
         }
     }

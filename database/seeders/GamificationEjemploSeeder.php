@@ -90,7 +90,7 @@ class GamificationEjemploSeeder extends Seeder
                         'completada' => true,
                         'obtenida_el' => now(),
                         'created_at' => now(),
-                        'updated_at' => now(),
+                        'updated_at' => now(), 
                     ]
                 );
             }

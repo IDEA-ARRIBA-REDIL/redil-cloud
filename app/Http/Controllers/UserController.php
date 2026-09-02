@@ -2075,18 +2075,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-
+            
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-
+                
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-
+                
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-
+            
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -2972,18 +2972,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-
+            
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-
+                
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-
+                
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-
+            
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -3514,18 +3514,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-
+            
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-
+                
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-
+                
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-
+            
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }

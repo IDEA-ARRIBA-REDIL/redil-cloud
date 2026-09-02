@@ -2,17 +2,13 @@
 
 namespace App\Livewire\Maestros;
 
-use App\Exports\AsistenciasClaseExport;
-use App\Models\HorarioMateriaPeriodo;
-use App\Models\Maestro;
-use App\Models\ReporteAsistenciaClase;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Models\ReporteAsistenciaClase;
+use App\Models\HorarioMateriaPeriodo;
+use App\Models\Maestro;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ReporteAsistenciaAlumnos extends Component
 {
@@ -21,7 +17,6 @@ class ReporteAsistenciaAlumnos extends Component
     // PROPIEDADES QUE SE MANTIENEN
     // Solo necesitamos las que identifican el contexto del listado.
     public HorarioMateriaPeriodo $horarioAsignado;
-
     public Maestro $maestro;
 
     // Listener para refrescar la lista si un reporte se crea desde otro lado.
@@ -33,37 +28,6 @@ class ReporteAsistenciaAlumnos extends Component
         $this->maestro = $maestro;
     }
 
-    public function exportarTodosLosReportes(): BinaryFileResponse
-    {
-        return $this->descargarExcel();
-    }
-
-    public function exportarReporte(int $reporteId): BinaryFileResponse
-    {
-        $reporte = ReporteAsistenciaClase::query()
-            ->where('horario_materia_periodo_id', $this->horarioAsignado->id)
-            ->findOrFail($reporteId);
-
-        return $this->descargarExcel($reporte);
-    }
-
-    private function descargarExcel(?ReporteAsistenciaClase $reporte = null): BinaryFileResponse
-    {
-        $materia = $this->horarioAsignado->loadMissing('materiaPeriodo.materia')->materiaPeriodo?->materia?->nombre ?? 'clase';
-        $nombreArchivo = 'asistencias-'.Str::slug($materia);
-
-        if ($reporte) {
-            $nombreArchivo .= '-'.Carbon::parse($reporte->fecha_clase_reportada)->format('Y-m-d');
-        } else {
-            $nombreArchivo .= '-todos-los-reportes';
-        }
-
-        return Excel::download(
-            new AsistenciasClaseExport($this->horarioAsignado, $reporte),
-            $nombreArchivo.'.xlsx'
-        );
-    }
-
     // -------------------------------------------------------------------------
     // SE HAN ELIMINADO LAS SIGUIENTES PROPIEDADES Y MÉTODOS:
     // - $reporteClaseSeleccionado, $alumnosDelHorario, $asistencias, $motivosInasistencia, $mostrarModalDetalles
@@ -72,10 +36,14 @@ class ReporteAsistenciaAlumnos extends Component
     // Toda esa lógica ahora vive en el nuevo componente 'EditarReporteAsistencia'.
     // -------------------------------------------------------------------------
 
+
     /**
      * MÉTODO QUE SE MANTIENE
      * Determina si el botón para editar un reporte debe estar habilitado.
      * Esta función es llamada desde la vista del componente (el bucle @foreach).
+     *
+     * @param ReporteAsistenciaClase $reporte
+     * @return bool
      */
     public function verificarSiSePuedeEditarReporte(ReporteAsistenciaClase $reporte): bool
     {
@@ -89,7 +57,7 @@ class ReporteAsistenciaAlumnos extends Component
         // --- Lógica para usuarios SIN permiso ---
         $reporte->loadMissing('horarioMateriaPeriodo.materiaPeriodo.materia');
         $datosMateria = $reporte->horarioMateriaPeriodo?->materiaPeriodo?->materia;
-        if (! $datosMateria) {
+        if (!$datosMateria) {
             return false;
         }
 
@@ -102,16 +70,13 @@ class ReporteAsistenciaAlumnos extends Component
             $diaLimiteConfiguradoMateria = (int) $datosMateria->dia_limite_reporte;
             $diasParaAlcanzarDiaLimite = ($diaLimiteConfiguradoMateria - $diaClaseReportadaNum + 7) % 7;
             $fechaTopeParaEdicion = $fechaClaseReportadaCarbon->copy()->addDays($diasParaAlcanzarDiaLimite);
-
             return $fechaActualSoloFecha->lte($fechaTopeParaEdicion); // Puede editar si hoy <= fecha tope
-        } elseif (! $datosMateria->tiene_dia_limite && isset($datosMateria->dias_plazo_reporte)) {
+        } else if (!$datosMateria->tiene_dia_limite && isset($datosMateria->dias_plazo_reporte)) {
             // Escenario B: Con días de plazo
             $diasPlazo = (int) $datosMateria->dias_plazo_reporte;
             $fechaTopeParaEdicion = $fechaClaseReportadaCarbon->copy()->addDays($diasPlazo);
-
             return $fechaActualSoloFecha->lte($fechaTopeParaEdicion); // Puede editar si hoy <= fecha tope
         }
-
         return false; // Por defecto, no se puede editar.
     }
 

@@ -177,17 +177,25 @@ class ConfiguracionController extends Controller
                 return false;
             }
 
-            if (is_array($item['permission'])) {
-                foreach ($item['permission'] as $perm) {
-                    if ($rolActivo->hasPermissionTo($perm)) {
-                        return true;
+            try {
+                if (is_array($item['permission'])) {
+                    foreach ($item['permission'] as $perm) {
+                        try {
+                            if ($rolActivo->hasPermissionTo($perm)) {
+                                return true;
+                            }
+                        } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
+                            continue;
+                        }
                     }
+
+                    return false;
                 }
 
+                return $rolActivo->hasPermissionTo($item['permission']);
+            } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
                 return false;
             }
-
-            return $rolActivo->hasPermissionTo($item['permission']);
         });
 
         return view('contenido.paginas.configuracion.index', [

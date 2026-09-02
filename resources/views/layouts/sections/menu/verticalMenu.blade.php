@@ -726,34 +726,45 @@
             </li>
         @endif
 
-        {{-- ============================================
-             HITOS - DEMO (visible para mostrar al cliente)
-             ============================================ --}}
-        <li class="menu-item {{ request()->routeIs('hitos.*') ? 'active open' : '' }}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ti ti-album"></i>
-                <div>Hitos </div>
-            </a>
+        @if ($rolActivo && $rolActivo->hasAnyPermission(['hitos.item_hitos', 'hitos.muro', 'hitos.gestionar', 'hitos.crear', 'hitos.gestionar_denuncias']))
+            <li class="menu-item {{ request()->routeIs('hitos.*') ? 'active open' : '' }}">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-album"></i>
+                    <div>Hitos </div>
+                </a>
 
-            <ul class="menu-sub">
-                <li class="menu-item {{ request()->routeIs('hitos.muro') ? 'active' : '' }}">
-                    <a href="{{ route('hitos.muro') }}" class="menu-link">
-                        <div>Mi Línea de Vida (Demo)</div>
-                    </a>
-                </li>
-                <li class="menu-item {{ request()->routeIs('hitos.index') ? 'active' : '' }}">
-                    <a href="{{ route('hitos.index') }}" class="menu-link">
-                        <div>Gestión de Hitos</div>
-                    </a>
-                </li>
-                <li class="menu-item {{ request()->routeIs('hitos.crear') ? 'active' : '' }}">
-                    <a href="{{ route('hitos.crear') }}" class="menu-link">
-                        <div>Crear Hito</div>
-                    </a>
-                </li>
-            </ul>
-        </li>
-        {{-- ============================================ --}}
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('hitos.muro'))
+                        <li class="menu-item {{ request()->routeIs('hitos.muro') ? 'active' : '' }}">
+                            <a href="{{ route('hitos.muro') }}" class="menu-link">
+                                <div>Mi Línea de Vida</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('hitos.gestionar'))
+                        <li class="menu-item {{ request()->routeIs('hitos.index') ? 'active' : '' }}">
+                            <a href="{{ route('hitos.index') }}" class="menu-link">
+                                <div>Gestión de Hitos</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('hitos.crear'))
+                        <li class="menu-item {{ request()->routeIs('hitos.crear') ? 'active' : '' }}">
+                            <a href="{{ route('hitos.crear') }}" class="menu-link">
+                                <div>Crear Hito</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('hitos.gestionar_denuncias'))
+                        <li class="menu-item {{ request()->routeIs('hitos.denuncias') ? 'active' : '' }}">
+                            <a href="{{ route('hitos.denuncias') }}" class="menu-link">
+                                <div>Moderar Denuncias</div>
+                            </a>
+                        </li>
+                    @endif
+                </ul>
+            </li>
+        @endif
 
         @if ($rolActivo->hasAnyPermission(['planes_lectores.item_planes_lectores', 'planes_lectores.dashboard', 'planes_lectores.subitem_gestionar_planes_lectores', 'planes_lectores.mis_planes_lectores']))
             <li class="menu-item {{ request()->routeIs('planes-lectores.*') ? 'active open' : '' }}">

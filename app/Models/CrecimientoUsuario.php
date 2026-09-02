@@ -42,7 +42,7 @@ class CrecimientoUsuario extends Pivot
                     $crecimiento->estado_id
                 );
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('Error disparando hito en CrecimientoUsuario: '.$e->getMessage());
+                \Illuminate\Support\Facades\Log::error("Error disparando hito en CrecimientoUsuario: " . $e->getMessage());
             }
         });
 
@@ -68,7 +68,7 @@ class CrecimientoUsuario extends Pivot
                         $crecimiento->estado_id
                     );
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::error('Error disparando hito en CrecimientoUsuario (update): '.$e->getMessage());
+                    \Illuminate\Support\Facades\Log::error("Error disparando hito en CrecimientoUsuario (update): " . $e->getMessage());
                 }
             }
         });
@@ -77,6 +77,14 @@ class CrecimientoUsuario extends Pivot
     /**
      * Registra la creación inicial o la actualización jerárquica de un Paso de Crecimiento para un usuario.
      * Solo actualiza si el estado objetivo tiene un puntaje superior al estado previo (evita degradación).
+     *
+     * @param  int  $userId
+     * @param  int  $pasoCrecimientoId
+     * @param  int  $estadoObjetivoId
+     * @param  string|null  $detalle
+     * @param  mixed  $fecha
+     * @param  int|null  $autorId
+     * @return self|null
      */
     public static function procesarPaso(
         int $userId,

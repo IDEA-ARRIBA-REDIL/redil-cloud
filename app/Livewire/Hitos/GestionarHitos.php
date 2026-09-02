@@ -13,13 +13,9 @@ class GestionarHitos extends Component
     use WithPagination;
 
     public $search = '';
-
     public $tipoFiltro = '';
-
     public $estadoFiltro = '';
-
     public $fecha_inicio = '';
-
     public $fecha_fin = '';
 
     protected $paginationTheme = 'bootstrap';
@@ -85,7 +81,7 @@ class GestionarHitos extends Component
             $this->dispatch('msn', [
                 'msnIcono' => 'error',
                 'msnTitulo' => 'Error',
-                'msnTexto' => 'No se pudo actualizar el estado: '.$e->getMessage(),
+                'msnTexto' => 'No se pudo actualizar el estado: ' . $e->getMessage(),
             ]);
         }
     }
@@ -110,7 +106,7 @@ class GestionarHitos extends Component
             $this->dispatch('msn', [
                 'msnIcono' => 'error',
                 'msnTitulo' => 'Error en Migración',
-                'msnTexto' => 'Ocurrió un error al migrar: '.$e->getMessage(),
+                'msnTexto' => 'Ocurrió un error al migrar: ' . $e->getMessage(),
             ]);
         }
     }
@@ -135,7 +131,7 @@ class GestionarHitos extends Component
             $this->dispatch('msn', [
                 'msnIcono' => 'error',
                 'msnTitulo' => 'Error',
-                'msnTexto' => 'No se pudo eliminar el hito: '.$e->getMessage(),
+                'msnTexto' => 'No se pudo eliminar el hito: ' . $e->getMessage(),
             ]);
         }
     }
@@ -165,7 +161,7 @@ class GestionarHitos extends Component
                     $sub->whereDate('fecha_evento', '>=', $this->fecha_inicio)
                         ->orWhere(function ($sub2) {
                             $sub2->whereNull('fecha_evento')
-                                ->whereDate('created_at', '>=', $this->fecha_inicio);
+                                 ->whereDate('created_at', '>=', $this->fecha_inicio);
                         });
                 });
             })
@@ -174,7 +170,7 @@ class GestionarHitos extends Component
                     $sub->whereDate('fecha_evento', '<=', $this->fecha_fin)
                         ->orWhere(function ($sub2) {
                             $sub2->whereNull('fecha_evento')
-                                ->whereDate('created_at', '<=', $this->fecha_fin);
+                                 ->whereDate('created_at', '<=', $this->fecha_fin);
                         });
                 });
             })

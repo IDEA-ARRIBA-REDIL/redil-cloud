@@ -133,8 +133,16 @@ class EditarPermisos extends Component
             }
         }
 
+        $this->role->loadMissing('permissions');
+        $this->rolActivo?->loadMissing('permissions');
+
+        $rolePermissionIds = $this->role->permissions->pluck('id')->flip()->toArray();
+        $rolActivoPermissionIds = $this->rolActivo ? $this->rolActivo->permissions->pluck('id')->flip()->toArray() : [];
+
         return view('livewire.roles-privilegios.editar-permisos', [
             'bloquesPermisos' => $checkboxes,
+            'rolePermissionIds' => $rolePermissionIds,
+            'rolActivoPermissionIds' => $rolActivoPermissionIds,
         ]);
     }
 }

@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class PlantillaHomologacionesMasivasExport implements FromCollection, ShouldAutoSize, WithHeadings, WithStyles
+class PlantillaHomologacionesMasivasExport implements FromCollection, WithHeadings, ShouldAutoSize, WithStyles
 {
     protected ?int $estado;
 
@@ -49,6 +49,8 @@ class PlantillaHomologacionesMasivasExport implements FromCollection, ShouldAuto
 
     /**
      * Encabezados oficiales requeridos para el cargue masivo.
+     *
+     * @return array
      */
     public function headings(): array
     {
@@ -63,6 +65,7 @@ class PlantillaHomologacionesMasivasExport implements FromCollection, ShouldAuto
     /**
      * Aplica estilos a la cabecera del archivo Excel.
      *
+     * @param  Worksheet  $sheet
      * @return array
      */
     public function styles(Worksheet $sheet)

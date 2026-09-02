@@ -11,7 +11,6 @@ class TransaccionPuntos extends Model
     use HasFactory;
 
     protected $table = 'transacciones_puntos';
-
     protected $guarded = [];
 
     protected $casts = [

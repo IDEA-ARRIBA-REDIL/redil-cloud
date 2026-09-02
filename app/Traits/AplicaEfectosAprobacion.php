@@ -6,8 +6,11 @@ use App\Models\CrecimientoUsuario;
 use App\Models\Materia;
 use App\Models\MateriaAprobadaUsuario;
 use App\Models\NivelAprobadoUsuario;
+use App\Models\Role;
 use App\Models\TareaConsolidacionUsuario;
+use App\Models\TipoUsuario;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 trait AplicaEfectosAprobacion

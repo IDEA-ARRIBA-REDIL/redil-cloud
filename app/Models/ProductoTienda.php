@@ -13,7 +13,6 @@ class ProductoTienda extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'productos_tienda';
-
     protected $guarded = [];
 
     protected $casts = [
@@ -31,7 +30,7 @@ class ProductoTienda extends Model
     public function getImagenUrlAttribute(): ?string
     {
         if ($this->imagen_ruta && $this->imagen_ruta !== '') {
-            return tenant_asset('img/tienda/'.$this->imagen_ruta);
+            return tenant_asset('img/tienda/' . $this->imagen_ruta);
         }
 
         return Storage::disk('global_media')->url('tienda/default.png');

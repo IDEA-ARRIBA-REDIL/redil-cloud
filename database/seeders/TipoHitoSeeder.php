@@ -78,6 +78,6 @@ class TipoHitoSeeder extends Seeder
             );
         }
 
-        $this->command->info('Tipos de Hito sembrados correctamente ('.count($tipos).' tipos).');
+        $this->command->info('Tipos de Hito sembrados correctamente (' . count($tipos) . ' tipos).');
     }
 }

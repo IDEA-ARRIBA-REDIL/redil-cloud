@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ReporteErroresHomologacionExport implements FromCollection, ShouldAutoSize, WithHeadings, WithStyles
+class ReporteErroresHomologacionExport implements FromCollection, WithHeadings, ShouldAutoSize, WithStyles
 {
     protected array $errores;
 
@@ -38,6 +38,9 @@ class ReporteErroresHomologacionExport implements FromCollection, ShouldAutoSize
         return new Collection($filas);
     }
 
+    /**
+     * @return array
+     */
     public function headings(): array
     {
         return [
@@ -51,6 +54,7 @@ class ReporteErroresHomologacionExport implements FromCollection, ShouldAutoSize
     }
 
     /**
+     * @param  Worksheet  $sheet
      * @return array
      */
     public function styles(Worksheet $sheet)

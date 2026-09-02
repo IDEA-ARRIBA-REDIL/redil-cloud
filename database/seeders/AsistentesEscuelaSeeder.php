@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class AsistentesEscuelaSeeder extends Seeder
 {
@@ -17,6 +17,8 @@ class AsistentesEscuelaSeeder extends Seeder
     protected string $usuariosPath = 'seeders/USUARIOS MIGRACION ESCUELAS.json';
 
     protected string $tipoUsuariosPath = 'seeders/USUARIO TIPO USUARIOS MIGRACION ESCUELAS.json';
+
+    
 
     protected string $tipoAsistentesPath = 'seeders/tipo_asistentes.json';
 
@@ -233,7 +235,7 @@ class AsistentesEscuelaSeeder extends Seeder
                 }
                 Log::error("AsistentesEscuelaSeeder - Error asistente_id={$asistenteId}: ".$e->getMessage());
                 $errorCount++;
-            }
+            } 
         }
 
         // 3. Procesar migración de Crecimiento de Asistentes (crecimiento_asistentes.json)

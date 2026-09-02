@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MateriaAprobadaUsuario;
 use Illuminate\View\View;
 
 class HomologacionController extends Controller

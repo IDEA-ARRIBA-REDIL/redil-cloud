@@ -12,7 +12,6 @@ class ReglaGamificacion extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'reglas_gamificacion';
-
     protected $guarded = [];
 
     protected $casts = [

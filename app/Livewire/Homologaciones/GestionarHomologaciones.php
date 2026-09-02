@@ -77,6 +77,7 @@ class GestionarHomologaciones extends Component
 
     public $tiposUsuariosDisponibles = [];
 
+
     // Reglas de validación para los formularios.
     protected $rules = [
         'sedeHomologacionId' => 'required|exists:sedes,id',

@@ -31,7 +31,7 @@ class TareaConsolidacionUsuario extends Pivot
                     $model->estado_tarea_consolidacion_id
                 );
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('Error disparando hito en TareaConsolidacionUsuario: '.$e->getMessage());
+                \Illuminate\Support\Facades\Log::error("Error disparando hito en TareaConsolidacionUsuario: " . $e->getMessage());
             }
         });
 
@@ -47,7 +47,7 @@ class TareaConsolidacionUsuario extends Pivot
                         $model->estado_tarea_consolidacion_id
                     );
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::error('Error disparando hito en TareaConsolidacionUsuario (update): '.$e->getMessage());
+                    \Illuminate\Support\Facades\Log::error("Error disparando hito en TareaConsolidacionUsuario (update): " . $e->getMessage());
                 }
             }
         });
@@ -106,6 +106,14 @@ class TareaConsolidacionUsuario extends Pivot
     /**
      * Registra la asignación inicial o la actualización jerárquica de una Tarea de Consolidación para un usuario.
      * Solo actualiza si el estado objetivo posee un puntaje superior al estado actual del usuario (evita degradación).
+     *
+     * @param  int  $userId
+     * @param  int  $tareaConsolidacionId
+     * @param  int  $estadoObjetivoId
+     * @param  string|null  $observaciones
+     * @param  mixed  $fecha
+     * @param  int|null  $autorId
+     * @return self|null
      */
     public static function procesarTarea(
         int $userId,

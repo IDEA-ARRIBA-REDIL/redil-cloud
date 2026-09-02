@@ -11,9 +11,8 @@ class SolicitudCanje extends Model
     use HasFactory;
 
     protected $table = 'solicitudes_canje';
-
     protected $guarded = [];
-
+    
     protected $casts = [
         'puntos_gastados' => 'integer',
         'procesado_el' => 'datetime',

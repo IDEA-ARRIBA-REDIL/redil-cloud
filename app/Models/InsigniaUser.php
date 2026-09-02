@@ -11,7 +11,6 @@ class InsigniaUser extends Model
     use HasFactory;
 
     protected $table = 'insignia_user';
-
     protected $guarded = [];
 
     protected $casts = [

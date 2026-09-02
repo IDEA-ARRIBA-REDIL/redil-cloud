@@ -14,7 +14,6 @@ class Insignia extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'insignias';
-
     protected $guarded = [];
 
     protected $casts = [
@@ -36,7 +35,7 @@ class Insignia extends Model
     public function getImagenUrlAttribute(?string $value): ?string
     {
         if ($value && $value !== '') {
-            return tenant_asset('img/insignias/'.$value);
+            return tenant_asset('img/insignias/' . $value);
         }
 
         return Storage::disk('global_media')->url('insignias/default.png');
