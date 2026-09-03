@@ -12,6 +12,7 @@ use App\Models\HorarioMateriaPeriodo;
 use App\Models\Matricula;
 use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
 use App\Models\Pago;
+use App\Services\ValidadorEscuelas;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -252,6 +253,26 @@ class EscuelasCarrito extends Component
             $categoria = ActividadCategoria::where('materia_periodo_id', $horario->materia_periodo_id)
                 ->where('actividad_id', $this->actividad->id)
                 ->firstOrFail();
+
+            // CAMBIO 2026-09-03: Revalidar justo antes de persistir. La lista que se
+            // mostró al cargar el carrito puede haber cambiado por una nota, asistencia,
+            // anulación o cierre de período durante la interacción del usuario.
+            $resultadoValidacion = app(ValidadorEscuelas::class)
+                ->filtrarCategoriasDisponibles($this->actividad, $usuario);
+            $categoriaSigueHabilitada = $resultadoValidacion['success']
+                && $resultadoValidacion['categorias']->contains('id', $categoria->id);
+
+            if (! $categoriaSigueHabilitada) {
+                DB::rollBack();
+                $this->dispatch('mostrarMensaje', [
+                    'msnTitulo' => 'Inscripción no disponible',
+                    'msnTexto' => $resultadoValidacion['message'] ?? 'La materia seleccionada ya no cumple las condiciones de matrícula.',
+                    'msnIcono' => 'error',
+                ]);
+
+                return;
+            }
+
             $valorMatricula = $categoria->monedas()->where('moneda_id', $this->monedaSeleccionada)->first()->pivot->valor ?? 0;
 
             // 4. VALIDACIÓN DE CUPOS (Solo si es primera vez o ha cambiado el horario)
