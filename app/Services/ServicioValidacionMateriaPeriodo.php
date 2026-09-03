@@ -23,6 +23,9 @@ class ServicioValidacionMateriaPeriodo
         $idsAlumnosDelLote = DB::table('matriculas as mat')
             ->join('horarios_materia_periodo as hmp', 'mat.horario_materia_periodo_id', '=', 'hmp.id')
             ->where('hmp.materia_periodo_id', $materiaPeriodo->id)
+            // CAMBIO 2026-09-03: No se procesan anuladas, rechazadas ni eliminadas lógicamente.
+            ->whereNull('mat.deleted_at')
+            ->whereNotIn('mat.estado_pago_matricula', ['anulada', 'rechazada'])
             ->distinct()->orderBy('mat.user_id')
             ->offset(($pagina - 1) * $porPagina)->limit($porPagina)
             ->pluck('mat.user_id');
@@ -78,14 +81,17 @@ class ServicioValidacionMateriaPeriodo
 
         $sql = "
             SELECT
-                mat.user_id, mp.id AS materia_periodo_id, mp.materia_id, m.creditos,
-                m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas,
+                mat.user_id, mat.bloqueado AS matricula_bloqueada,
+                mp.id AS materia_periodo_id, mp.materia_id, m.creditos,
+                /* LEGADO (2026-09-03): m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas */
+                mp.habilitar_calificaciones, mp.habilitar_asistencias, mp.asistencias_minimas,
                 COALESCE(SUM(ari.nota_obtenida * (icp.porcentaje / 100.0) * (cp.porcentaje / 100.0)), 0) AS nota_final_calculada,
                 (
                     SELECT COUNT(*) FROM reportes_asistencia_alumnos AS raa
                     JOIN reportes_asistencia_clase AS rac ON raa.reporte_asistencia_clase_id = rac.id
-                    JOIN horarios_materia_periodo AS hmp_asistencia ON rac.horario_materia_periodo_id = hmp_asistencia.id
-                    WHERE raa.user_id = mat.user_id AND hmp_asistencia.materia_periodo_id = mp.id AND raa.asistio = TRUE
+                    WHERE raa.user_id = mat.user_id
+                        AND rac.horario_materia_periodo_id = mat.horario_materia_periodo_id
+                        AND raa.asistio = TRUE
                 ) AS total_asistencias
             FROM matriculas AS mat
             JOIN horarios_materia_periodo AS hmp ON mat.horario_materia_periodo_id = hmp.id
@@ -94,8 +100,13 @@ class ServicioValidacionMateriaPeriodo
             LEFT JOIN item_corte_materia_periodo AS icp ON icp.horario_materia_periodo_id = hmp.id
             LEFT JOIN alumno_respuesta_items AS ari ON ari.item_corte_materia_periodo_id = icp.id AND ari.user_id = mat.user_id
             LEFT JOIN cortes_periodo AS cp ON icp.corte_periodo_id = cp.id
-            WHERE mat.periodo_id = ? AND mp.id = ? AND mat.user_id IN ({$placeholders})
-            GROUP BY mat.user_id, mp.id, mp.materia_id, m.creditos, m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas;
+            WHERE mat.periodo_id = ?
+                AND mp.id = ?
+                AND mat.deleted_at IS NULL
+                AND mat.estado_pago_matricula NOT IN ('anulada', 'rechazada')
+                AND mat.user_id IN ({$placeholders})
+            GROUP BY mat.user_id, mat.bloqueado, mp.id, mp.materia_id, m.creditos,
+                mp.habilitar_calificaciones, mp.habilitar_asistencias, mp.asistencias_minimas;
         ";
 
         return DB::select($sql, $bindings);
@@ -103,6 +114,13 @@ class ServicioValidacionMateriaPeriodo
 
     private function determinarEstadoFinal(object $resultado, float $notaMinima): array
     {
+        if ((bool) $resultado->matricula_bloqueada) {
+            return [
+                'aprobado' => false,
+                'motivo' => 'MATRICULA_BLOQUEADA',
+            ];
+        }
+
         // Por defecto, asumimos que el alumno aprueba ambas condiciones.
         $aproboPorNota = true;
         $aproboPorAsistencia = true;

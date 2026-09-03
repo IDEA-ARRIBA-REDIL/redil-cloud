@@ -94,9 +94,10 @@ class MateriaPeriodo extends Component
             $user = Auth::user();
             FinalizarMateriaJob::dispatch($materiaPeriodo, $user);
             session()->flash('mensaje_exito', "El proceso de finalización para '{$materiaPeriodo->materia->nombre}' ha comenzado.");
-            // 1. Cambiamos el estado de la materia a "no finalizado"
-            $materiaPeriodo->finalizado = true;
-            $materiaPeriodo->save();
+            // LEGADO (2026-09-03): la vista marcaba la materia como finalizada antes de
+            // ejecutar el Job. Ahora FinalizarMateriaJob lo hace únicamente al terminar.
+            // $materiaPeriodo->finalizado = true;
+            // $materiaPeriodo->save();
         } catch (\Exception $e) {
             Log::error('Error al despachar FinalizarMateriaJob: '.$e->getMessage());
             session()->flash('mensaje_error', 'Ocurrió un error al iniciar el proceso.');

@@ -339,9 +339,15 @@ class PeriodoController extends Controller
 
     public function finalizar(Periodo $periodo): RedirectResponse
     {
-        // Lógica de validación: ¿Ya se finalizó? ¿Está inactivo?
-        if ($periodo->finalizado) { // Suponiendo que añadimos un campo 'finalizado' al modelo Periodo
-            return redirect()->route('periodo.gestionar')->with('error', 'Este periodo ya ha sido finalizado anteriormente.');
+        // LEGADO (2026-09-03): `periodos` no tiene una columna `finalizado`.
+        // if ($periodo->finalizado) {
+        //     return redirect()->route('periodo.gestionar')->with('error', 'Este periodo ya ha sido finalizado anteriormente.');
+        // }
+
+        // CAMBIO 2026-09-03: El estado inactivo bloquea una segunda finalización mientras
+        // el Job termina y conserva el cierre administrativo cuando haya concluido.
+        if (! $periodo->estado) {
+            return redirect()->route('periodo.gestionar')->with('error', 'Este periodo ya está en proceso de finalización o fue finalizado anteriormente.');
         }
 
         try {

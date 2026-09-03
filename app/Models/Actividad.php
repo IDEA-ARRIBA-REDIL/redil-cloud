@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Services\ValidadorEscuelas;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne; // ¡Asegúrate de importar Collection!
+// ¡Asegúrate de importar Collection!
 use Illuminate\Support\Collection;                // ¡Asegúrate de importar Carbon!
 use Illuminate\Support\Facades\Storage;
 
@@ -23,7 +24,7 @@ class Actividad extends Model
     public function getPortadaUrlAttribute(): ?string
     {
         if ($this->portada && $this->portada !== 'default.png' && $this->portada !== 'banner-default.png') {
-            return tenant_asset('img/actividades/banners/' . $this->portada);
+            return tenant_asset('img/actividades/banners/'.$this->portada);
         }
 
         return Storage::disk('global_media')->url('actividades/banner-default.png');
@@ -265,6 +266,8 @@ class Actividad extends Model
         foreach ($materiaObjetivo->prerrequisitosMaterias as $prerrequisito) {
             $aprobada = MateriaAprobadaUsuario::where('user_id', $usuario->id)
                 ->where('materia_id', $prerrequisito->id)
+                // CAMBIO 2026-09-03: Un registro histórico reprobado no habilita el prerrequisito.
+                ->where('aprobado', MateriaAprobadaUsuario::ESTADO_APROBADO)
                 ->exists();
             if (! $aprobada) {
                 return ['success' => false, 'message' => "Para inscribir '{$materiaObjetivo->nombre}', necesitas haber aprobado '{$prerrequisito->nombre}'."];
@@ -309,6 +312,21 @@ class Actividad extends Model
 
         $materiaObjetivo = $materiaPeriodo->materia;
 
+        // CAMBIO 2026-09-03: Perfil y Taquilla usan el mismo cálculo académico
+        // que Carrito, incluida la nota normalizada sobre los cortes ya evaluados.
+        $validacionAcademica = app(ValidadorEscuelas::class)
+            ->validarPrerrequisitosAcademicos($usuario, $categoria);
+
+        if (! $validacionAcademica['success']) {
+            return $validacionAcademica;
+        }
+
+        /*
+         * LEGADO (2026-09-03): esta implementación duplicaba el cálculo académico
+         * de ValidadorEscuelas y usaba CorteMateriaPeriodo como fuente de porcentajes.
+         * Se conserva comentada para trazabilidad; la decisión activa está centralizada
+         * en ValidadorEscuelas::validarPrerrequisitosAcademicos().
+         *
         foreach ($materiaObjetivo->prerrequisitosMaterias as $prerrequisito) {
             // Buscar la matrícula activa del usuario en la materia prerrequisito
             $matriculaActiva = Matricula::where('user_id', $usuario->id)
@@ -364,6 +382,7 @@ class Actividad extends Model
                 ];
             }
         }
+        */
 
         // 5. Validar prerrequisitos de PROCESOS DE CRECIMIENTO de la materia objetivo (NUEVO)
         foreach ($materiaObjetivo->procesosPrerrequisito as $procesoReq) {
@@ -387,6 +406,11 @@ class Actividad extends Model
     /**
      * (HELPER PRIVADO) Calcula la nota ponderada actual de un estudiante en una materia.
      */
+    /*
+     * LEGADO (2026-09-03): helper reemplazado por el cálculo canónico de
+     * ValidadorEscuelas. Se conserva comentado para no perder la implementación
+     * previa durante la estabilización del cambio.
+     *
     private function _calcularNotaActualPonderada(Matricula $matricula): float
     {
         $horarioId = $matricula->horario_materia_periodo_id;
@@ -448,6 +472,7 @@ class Actividad extends Model
 
         return 0.0;
     }
+    */
 
     /**
      * ¡MÉTODO DE VALIDACIÓN DE TAQUILLA (PDP) ACTUALIZADO!

@@ -35,6 +35,9 @@ class ServicioValidacionPeriodo
         // Se obtiene una lista única de IDs de usuarios matriculados en el periodo, paginada.
         $idsAlumnosDelLote = DB::table('matriculas')
             ->where('periodo_id', $periodo->id)
+            // CAMBIO 2026-09-03: Solo se consolidan matrículas académicamente vigentes.
+            ->whereNull('deleted_at')
+            ->whereNotIn('estado_pago_matricula', ['anulada', 'rechazada'])
             ->distinct()
             ->orderBy('user_id')
             ->offset(($pagina - 1) * $porPagina) // Calcula el punto de inicio del lote
@@ -115,13 +118,15 @@ class ServicioValidacionPeriodo
             SELECT
                 mat.user_id, mat.bloqueado AS matricula_bloqueada,
                 mp.id AS materia_periodo_id, mp.materia_id, m.creditos,
-                m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas,
+                /* LEGADO (2026-09-03): m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas */
+                mp.habilitar_calificaciones, mp.habilitar_asistencias, mp.asistencias_minimas,
                 COALESCE(SUM(ari.nota_obtenida * (icp.porcentaje / 100.0) * (cp.porcentaje / 100.0)), 0) AS nota_final_calculada,
                 (
                     SELECT COUNT(*) FROM reportes_asistencia_alumnos AS raa
                     JOIN reportes_asistencia_clase AS rac ON raa.reporte_asistencia_clase_id = rac.id
-                    JOIN horarios_materia_periodo AS hmp_asistencia ON rac.horario_materia_periodo_id = hmp_asistencia.id
-                    WHERE raa.user_id = mat.user_id AND hmp_asistencia.materia_periodo_id = mp.id AND raa.asistio = TRUE
+                    WHERE raa.user_id = mat.user_id
+                        AND rac.horario_materia_periodo_id = mat.horario_materia_periodo_id
+                        AND raa.asistio = TRUE
                 ) AS total_asistencias
             FROM matriculas AS mat
             JOIN horarios_materia_periodo AS hmp ON mat.horario_materia_periodo_id = hmp.id
@@ -130,9 +135,13 @@ class ServicioValidacionPeriodo
             LEFT JOIN item_corte_materia_periodo AS icp ON icp.horario_materia_periodo_id = hmp.id
             LEFT JOIN alumno_respuesta_items AS ari ON ari.item_corte_materia_periodo_id = icp.id AND ari.user_id = mat.user_id
             LEFT JOIN cortes_periodo AS cp ON icp.corte_periodo_id = cp.id
-            WHERE mat.periodo_id = ? AND mat.user_id IN ({$placeholders}) -- <-- AQUÍ FILTRAMOS POR EL LOTE DE ALUMNOS
+            WHERE mat.periodo_id = ?
+                AND mat.deleted_at IS NULL
+                AND mat.estado_pago_matricula NOT IN ('anulada', 'rechazada')
+                AND mat.user_id IN ({$placeholders})
             GROUP BY
-                mat.user_id, mat.bloqueado, mp.id, mp.materia_id, m.creditos, m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas;
+                mat.user_id, mat.bloqueado, mp.id, mp.materia_id, m.creditos,
+                mp.habilitar_calificaciones, mp.habilitar_asistencias, mp.asistencias_minimas;
         ";
 
         // Los "bindings" son los valores que reemplazarán a los '?'.
@@ -259,7 +268,7 @@ class ServicioValidacionPeriodo
     /**
      * ===== MÉTODO NUEVO =====
      * Cierra administrativamente todos los componentes asociados a un periodo.
-     * Marca todas las materias como 'finalizadas' y todos los cortes como 'cerrados'.
+     * Marca todas las materias como 'finalizado' y todos los cortes como 'cerrados'.
      *
      * @param  Periodo  $periodo  El periodo a finalizar.
      */
@@ -275,16 +284,17 @@ class ServicioValidacionPeriodo
             $corte->cerrado = true;
             $corte->save();
         }
-        Log::info("Se cerraron {$cortesAfectados} cortes del periodo.");
+        Log::info('Se cerraron '.$cortesAfectados->count().' cortes del periodo.');
 
         // 2. Finalizar todas las materias del periodo en una sola consulta.
         $materiasAfectadas = $periodo->materiasPeriodo;
 
         foreach ($materiasAfectadas as $materia) {
-            $materia->finalizada = true;
+            // LEGADO (2026-09-03): $materia->finalizada = true;
+            $materia->finalizado = true;
             $materia->save();
         }
 
-        Log::info("Se finalizaron {$materiasAfectadas} materias del periodo.");
+        Log::info('Se finalizaron '.$materiasAfectadas->count().' materias del periodo.');
     }
 }

@@ -2,27 +2,31 @@
 
 namespace App\Jobs;
 
+use App\Mail\MateriaFinalizadaMail;
+use App\Models\MateriaPeriodo;
+use App\Models\User;
+use App\Services\ServicioValidacionMateriaPeriodo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Models\MateriaPeriodo;
-use App\Models\User;
-use App\Services\ServicioValidacionMateriaPeriodo;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\MateriaFinalizadaMail; // <-- CORRECCIÓN: Usamos el nuevo Mailable
+use Throwable; // <-- CORRECCIÓN: Usamos el nuevo Mailable
 
 class FinalizarMateriaJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 300;
+
     protected MateriaPeriodo $materiaPeriodo;
+
     protected User $initiatingUser;
+
     protected int $paginaActual;
+
     protected int $alumnosPorPagina;
 
     public function __construct(MateriaPeriodo $materiaPeriodo, User $initiatingUser, int $paginaActual = 1, int $alumnosPorPagina = 200)
@@ -36,7 +40,6 @@ class FinalizarMateriaJob implements ShouldQueue
     public function handle(ServicioValidacionMateriaPeriodo $servicioValidacion): void
     {
 
-
         Log::info("Iniciando Job 4444 de Finalización para MateriaPeriodo ID: {$this->materiaPeriodo->id} - Lote: {$this->paginaActual}");
 
         try {
@@ -47,6 +50,10 @@ class FinalizarMateriaJob implements ShouldQueue
                 self::dispatch($this->materiaPeriodo, $this->initiatingUser, $this->paginaActual + 1, $this->alumnosPorPagina);
             } else {
                 Log::info("Proceso de finalización COMPLETO  333 para MateriaPeriodo ID: {$this->materiaPeriodo->id}");
+                // CAMBIO 2026-09-03: La materia se marca finalizada solo después de que
+                // todos sus lotes académicos fueron procesados correctamente.
+                $this->materiaPeriodo->finalizado = true;
+                $this->materiaPeriodo->save();
 
                 $adminEmail = 'idea.arriba@gmail.com';
                 if ($adminEmail) {
