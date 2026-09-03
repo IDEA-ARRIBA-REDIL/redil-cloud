@@ -1,10 +1,29 @@
 <style>
     .module-nav-link {
-        font-size: 12px !important;
+        display: grid;
+        min-width: 0;
+        min-height: 2.5rem;
         padding: 0.6rem 0.8rem !important;
+        place-items: center;
+        overflow: hidden;
+        font-size: 12px !important;
+        text-align: center;
+        text-overflow: ellipsis;
         transition: background-color 0.3s ease, color 0.3s ease;
+        white-space: nowrap;
         border-radius: 0.375rem;
         border: 1px solid transparent;
+    }
+
+    .module-navigation {
+        display: grid;
+        grid-template-columns: repeat(var(--module-navigation-columns, 1), minmax(0, 1fr));
+        gap: 0.25rem;
+        align-items: stretch;
+    }
+
+    .module-navigation .nav-item {
+        min-width: 0;
     }
 
     .module-nav-link.active {
@@ -16,13 +35,44 @@
     .module-nav-link:not(.active):hover {
         background-color: var(--bs-gray-200);
     }
+
+    @media (max-width: 1199.98px) and (min-width: 992px) {
+        .module-nav-link {
+            min-height: 2.25rem;
+            padding: 0.5rem 0.35rem !important;
+            font-size: 11px !important;
+        }
+
+        .module-nav-link i {
+            display: none;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .module-navigation {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
 </style>
 
 {{-- Barra de Navegación del Módulo --}}
+@php
+    $moduleNavigationCount = isset($rolActivo)
+        ? collect([
+            $rolActivo->hasPermissionTo('escuelas.tab_dashboard_general'),
+            $rolActivo->hasPermissionTo('escuelas.tab_calificacion_detallada'),
+            $rolActivo->hasPermissionTo('escuelas.tab_reportes_asistencia'),
+            $rolActivo->hasPermissionTo('escuelas.tab_recursos_alumnos'),
+            $rolActivo->hasPermissionTo('escuelas.tab_gestionar_items'),
+            $rolActivo->hasPermissionTo('escuelas.tab_calificacion_grilla'),
+        ])->filter()->count()
+        : 1;
+@endphp
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card mb-0 p-0 border-0 shadow-sm">
-            <ul class="nav nav-pills nav-fill justify-content-start flex-column flex-md-row gap-1 px-2 py-1">
+            <ul class="nav nav-pills module-navigation px-2 py-1"
+                style="--module-navigation-columns: {{ max(1, $moduleNavigationCount) }};">
                 @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_dashboard_general'))
                 <li class="nav-item">
                     <a href="{{ route('maestros.dashboardClase', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"

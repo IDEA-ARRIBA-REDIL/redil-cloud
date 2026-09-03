@@ -1,4 +1,141 @@
 <div>
+    <style>
+        .attendance-reports-list {
+            --attendance-report-columns: minmax(7.5rem, 1.1fr) minmax(7rem, 1.25fr) minmax(4.5rem, .7fr) minmax(4.25rem, .65fr) minmax(4.25rem, .65fr) minmax(7rem, 1.2fr) minmax(8rem, 1.25fr);
+        }
+
+        .attendance-reports-header,
+        .attendance-report-row {
+            display: grid;
+            grid-template-columns: var(--attendance-report-columns);
+            gap: .5rem;
+            align-items: center;
+        }
+
+        .attendance-reports-header {
+            padding: 0 .75rem .75rem;
+            border-bottom: 1px solid var(--bs-border-color);
+            color: var(--bs-secondary-color);
+            font-size: .7rem;
+            font-weight: 600;
+        }
+
+        .attendance-reports-header > :not(:first-child):not(:nth-child(2)) {
+            text-align: center;
+        }
+
+        .attendance-report-card {
+            border: 0;
+            box-shadow: none;
+        }
+
+        .attendance-report-row {
+            min-height: 5.5rem;
+            padding: .75rem;
+        }
+
+        .attendance-report-cell:not(.attendance-date):not(.attendance-status) {
+            text-align: center;
+        }
+
+        .attendance-cell-label {
+            display: none;
+        }
+
+        .attendance-status .badge {
+            max-width: 100%;
+            padding: .35rem .5rem;
+            font-size: .6875rem;
+            white-space: normal;
+        }
+
+        .attendance-link-actions,
+        .attendance-report-actions {
+            display: grid;
+            gap: .3rem;
+        }
+
+        .attendance-link-actions .btn,
+        .attendance-report-actions .btn {
+            width: 100%;
+            min-height: 1.75rem;
+            padding: .25rem .4rem;
+            font-size: .6875rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .attendance-report-actions {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        @media (max-width: 1199.98px) {
+            .attendance-reports-header,
+            .attendance-report-row {
+                gap: .25rem;
+            }
+
+            .attendance-report-row {
+                padding-right: .5rem;
+                padding-left: .5rem;
+            }
+
+            .attendance-link-actions .btn,
+            .attendance-report-actions .btn,
+            .attendance-status .badge {
+                font-size: .625rem;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .attendance-reports-header {
+                display: none;
+            }
+
+            .attendance-report-card {
+                border: 1px solid var(--bs-border-color);
+            }
+
+            .attendance-report-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                min-height: auto;
+                gap: .875rem 1rem;
+                padding: 1rem;
+            }
+
+            .attendance-report-cell {
+                display: grid;
+                gap: .2rem;
+                text-align: left !important;
+            }
+
+            .attendance-cell-label {
+                display: block;
+                color: var(--bs-secondary-color);
+                font-size: .7rem;
+                font-weight: 600;
+            }
+
+            .attendance-public-link,
+            .attendance-actions {
+                grid-column: 1 / -1;
+            }
+
+            .attendance-link-actions,
+            .attendance-report-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .attendance-report-row,
+            .attendance-link-actions,
+            .attendance-report-actions {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+    </style>
+
     {{-- Sección de Listado de Reportes --}}
     <div class="card mb-4">
         <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
@@ -16,35 +153,29 @@
         </div>
         <div class="card-body">
             @if ($reportesPaginados->isNotEmpty())
-                {{-- INICIO DE LA SECCIÓN MODIFICADA --}}
-
-                {{-- Encabezados para la vista de escritorio (md y superior) --}}
-                <div class="row d-none d-md-flex fw-bold mb-3 border-bottom pb-2 align-items-center">
-                    <div class="col-md-2">Fecha Clase</div>
-                    <div class="col-md-1">Estado</div>
-                    <div class="col-md-2 text-center">Reportados</div>
-                    <div class="col-md-1 text-center">Presentes</div>
-                    <div class="col-md-1 text-center">Ausentes</div>
-                    <div class="col-md-2 text-center">Link Público</div>
-                    <div class="col-md-3">Acciones</div>
+                <div class="attendance-reports-list">
+                <div class="attendance-reports-header" aria-hidden="true">
+                    <div>Fecha clase</div>
+                    <div>Estado</div>
+                    <div>Reportados</div>
+                    <div>Presentes</div>
+                    <div>Ausentes</div>
+                    <div>Link público</div>
+                    <div>Acciones</div>
                 </div>
 
                 @foreach ($reportesPaginados as $reporte)
-                    <div wire:key="reporte-asistencia-{{ $reporte->id }}" class="report-item-card card mb-3 shadow-sm">
-                        <div class="card-body">
-                            <div class="row gy-3 align-items-center">
-                                {{-- Columna: Fecha Clase --}}
-                                <div class="col-12 col-md-2">
-                                    <strong class="d-md-none">Fecha Clase: </strong>
-                                    <span
-                                        class="fw-medium">{{ \Carbon\Carbon::parse($reporte->fecha_clase_reportada)->format('d/m/Y') }}</span>
-                                    <small
-                                        class="d-block text-muted">{{ \Carbon\Carbon::parse($reporte->fecha_clase_reportada)->diffForHumans() }}</small>
-                                </div>
+                    <article wire:key="reporte-asistencia-{{ $reporte->id }}"
+                        class="attendance-report-card card mb-2 {{ $loop->even ? 'bg-body-secondary' : '' }}">
+                        <div class="attendance-report-row">
+                            <div class="attendance-report-cell attendance-date">
+                                <span class="attendance-cell-label">Fecha clase</span>
+                                <span class="fw-medium">{{ \Carbon\Carbon::parse($reporte->fecha_clase_reportada)->format('d/m/Y') }}</span>
+                                <small class="text-muted">{{ \Carbon\Carbon::parse($reporte->fecha_clase_reportada)->diffForHumans() }}</small>
+                            </div>
 
-                                {{-- Columna: Estado --}}
-                                <div class="col-12 col-md-1">
-                                    <strong class="d-md-none">Estado: </strong>
+                            <div class="attendance-report-cell attendance-status">
+                                <span class="attendance-cell-label">Estado</span>
                                     @php
                                         $estadoClass = '';
                                         if ($reporte->estado_reporte === 'pendiente_detalle') {
@@ -55,43 +186,40 @@
                                             $estadoClass = 'bg-label-secondary';
                                         }
                                     @endphp
-                                    <span
-                                        class="badge {{ $estadoClass }} me-1">{{ ucfirst(str_replace('_', ' ', $reporte->estado_reporte)) }}</span>
-                                </div>
+                                <span class="badge {{ $estadoClass }}">{{ ucfirst(str_replace('_', ' ', $reporte->estado_reporte)) }}</span>
+                            </div>
 
-                                {{-- Columnas de conteos --}}
-                                <div class="col-4 col-md-2 text-md-center">
-                                    <strong class="d-md-none">Reportados:
-                                    </strong>{{ $reporte->detalles_asistencia_count }}
-                                </div>
-                                <div class="col-4 col-md-1 text-md-center">
-                                    <strong class="d-md-none">Presentes: </strong>{{ $reporte->presentes_count }}
-                                </div>
-                                <div class="col-4 col-md-1 text-md-center">
-                                    <strong class="d-md-none">Ausentes:
-                                    </strong>{{ $reporte->detalles_asistencia_count - $reporte->presentes_count }}
-                                </div>
+                            <div class="attendance-report-cell">
+                                <span class="attendance-cell-label">Reportados</span>
+                                {{ $reporte->detalles_asistencia_count }}
+                            </div>
+                            <div class="attendance-report-cell">
+                                <span class="attendance-cell-label">Presentes</span>
+                                {{ $reporte->presentes_count }}
+                            </div>
+                            <div class="attendance-report-cell">
+                                <span class="attendance-cell-label">Ausentes</span>
+                                {{ $reporte->detalles_asistencia_count - $reporte->presentes_count }}
+                            </div>
 
-                                {{-- Columna: Link Público --}}
-                                <div class="col-12 col-md-2 text-md-center">
-                                    <strong class="d-md-none d-block mb-1">Link Público: </strong>
-                                    <div
-                                        class="d-flex flex-column flex-sm-row flex-md-column justify-content-center gap-1">
-                                        <a target="_blank"
-                                            href="{{ route('maestros.reportarAutoAsistencia', ['horarioAsignado' => $horarioAsignado->id, 'reporte' => $reporte->id]) }}"
-                                            class="btn btn-sm btn-outline-info">
-                                            <i class="mdi mdi-link-variant me-1"></i> Ver Link
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary copiar-link-btn"
-                                            data-url="{{ route('maestros.reportarAutoAsistencia', ['horarioAsignado' => $horarioAsignado->id, 'reporte' => $reporte->id]) }}">
-                                            <i class="mdi mdi-content-copy me-1"></i> Copiar Link
-                                        </button>
-                                    </div>
+                            <div class="attendance-report-cell attendance-public-link">
+                                <span class="attendance-cell-label">Link público</span>
+                                <div class="attendance-link-actions">
+                                    <a target="_blank"
+                                        href="{{ route('maestros.reportarAutoAsistencia', ['horarioAsignado' => $horarioAsignado->id, 'reporte' => $reporte->id]) }}"
+                                        class="btn btn-sm btn-outline-info">
+                                        <i class="mdi mdi-link-variant me-1"></i> Ver link
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary copiar-link-btn"
+                                        data-url="{{ route('maestros.reportarAutoAsistencia', ['horarioAsignado' => $horarioAsignado->id, 'reporte' => $reporte->id]) }}">
+                                        <i class="mdi mdi-content-copy me-1"></i> Copiar link
+                                    </button>
                                 </div>
+                            </div>
 
-                                {{-- Columna: Acciones --}}
-                                <div class="col-12 col-md-3">
-                                    <strong class="d-md-none d-block mb-1">Acciones: </strong>
+                            <div class="attendance-report-cell attendance-actions">
+                                <span class="attendance-cell-label">Acciones</span>
+                                <div class="attendance-report-actions">
                                     <a href="{{ route('maestros.editarReporte', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'reporte' => $reporte]) }}"
                                         class="btn btn-sm btn-primary waves-effect waves-light rounded-pill @if (!$this->verificarSiSePuedeEditarReporte($reporte)) disabled @endif"
                                         aria-disabled="{{ !$this->verificarSiSePuedeEditarReporte($reporte) }}">
@@ -115,9 +243,9 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </article>
                 @endforeach
-                {{-- FIN DE LA SECCIÓN MODIFICADA --}}
+                </div>
             @endif
         </div>
     </div>

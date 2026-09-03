@@ -17,56 +17,244 @@
             min-height: 360px;
         }
 
-        .student-details-row .col-md-1 {
-            /* Para forzar un ancho más consistente en escritorio para las columnas de detalles */
-            flex-basis: auto;
-            /* Permite que col-md-1 funcione como se espera */
+        .students-list {
+            --student-list-columns: 2rem minmax(13rem, 2.5fr) repeat(var(--cut-count), minmax(3.5rem, 1fr)) minmax(3.5rem, 1fr) minmax(4rem, 1fr) minmax(4.75rem, 1.15fr) minmax(5.5rem, 1.2fr) minmax(5.25rem, 1.15fr);
         }
 
-        /* Estilo para la columna # en escritorio */
-        .col-md-auto-custom {
-            flex: 0 0 auto;
-            width: auto;
-            max-width: 50px;
-            /* Ajusta según sea necesario */
+        .students-list-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: .75rem;
+            align-items: center;
         }
 
-        /* Ajustes para el botón de acordeón */
-        .accordion-toggle-btn {
-            font-size: 1.2rem;
-            /* Tamaño del icono +/- */
-            padding: 0.25rem 0.5rem;
-            /* Padding más pequeño */
+        .students-export-actions {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: max-content;
         }
 
-
-        .title-encabezado {
-            font-size: 11px !important;
+        .students-list-header,
+        .student-list-row {
+            display: grid;
+            grid-template-columns: var(--student-list-columns);
+            column-gap: .5rem;
+            align-items: center;
         }
 
-        #col-btn-perfil {
-            margin-left: 5%;
+        .students-list-header {
+            min-width: 52rem;
+            padding: 0 .75rem .75rem;
+            color: var(--bs-secondary-color);
+            font-size: .7rem;
+            font-weight: 600;
+        }
+
+        .students-list-header > :not(:nth-child(2)) {
+            text-align: center;
+        }
+
+        .student-item-card {
+            border: 0;
+            box-shadow: none;
+        }
+
+        .student-list-row {
+            min-width: 52rem;
+            min-height: 4.75rem;
+            padding: .75rem;
+        }
+
+        .student-position,
+        .student-metric {
+            text-align: center;
+        }
+
+        .student-identity {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: .625rem;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .student-name {
+            overflow-wrap: anywhere;
+        }
+
+        .student-transfer {
+            display: inline-block;
+            margin-top: .25rem;
+            font-size: .625rem;
+        }
+
+        .student-action-list {
+            display: grid;
+            justify-items: center;
+            gap: .25rem;
+        }
+
+        .student-action-list form,
+        .student-action-list .btn {
+            width: 4.75rem;
+        }
+
+        .student-action-list .btn {
+            min-height: 1.625rem;
+            padding: .2rem .35rem;
+            font-size: .6875rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .student-status .badge {
+            max-width: 100%;
+            padding: .35rem .5rem;
+            font-size: .6875rem;
+        }
+
+        .student-toggle {
+            display: none;
+        }
+
+        .student-metric-label {
+            display: none;
+        }
+
+        @media (min-width: 992px) {
+            .student-details,
+            .student-details-grid {
+                display: contents !important;
+            }
+        }
+
+        @media (max-width: 1199.98px) {
+            .students-list-header,
+            .student-list-row {
+                column-gap: .25rem;
+            }
+
+            .student-list-row {
+                padding-right: .5rem;
+                padding-left: .5rem;
+            }
+
+            .student-action-list form,
+            .student-action-list .btn {
+                width: 4.5rem;
+            }
+
+            .student-action-list .btn,
+            .student-status .badge {
+                font-size: .625rem;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .students-list-header {
+                display: none;
+            }
+
+            .student-item-card {
+                border: 1px solid var(--bs-border-color);
+            }
+
+            .student-list-row {
+                grid-template-columns: 2rem minmax(0, 1fr) auto;
+                min-width: 0;
+                min-height: auto;
+                padding: .875rem;
+            }
+
+            .student-position {
+                align-self: start;
+                padding-top: .2rem;
+                color: var(--bs-secondary-color);
+            }
+
+            .student-toggle {
+                display: inline-grid;
+                place-items: center;
+                width: 2.25rem;
+                height: 2.25rem;
+                padding: 0;
+                border: 0;
+                border-radius: 50%;
+                color: var(--bs-primary);
+                background: var(--bs-primary-bg-subtle);
+            }
+
+            .student-toggle i {
+                transition: transform .2s ease;
+            }
+
+            .student-toggle[aria-expanded='true'] i {
+                transform: rotate(180deg);
+            }
+
+            .student-details.show,
+            .student-details.collapsing {
+                grid-column: 1 / -1;
+                margin-top: .75rem;
+                border-top: 1px solid var(--bs-border-color);
+            }
+
+            .student-details-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: .75rem 1rem;
+                padding-top: .875rem;
+            }
+
+            .student-metric {
+                display: grid;
+                gap: .125rem;
+                text-align: left;
+            }
+
+            .student-metric-label {
+                display: block;
+                color: var(--bs-secondary-color);
+                font-size: .7rem;
+                font-weight: 600;
+            }
+
+            .student-action-list {
+                grid-column: 1 / -1;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                padding-top: .125rem;
+            }
+
+            .student-action-list form,
+            .student-action-list .btn {
+                width: 100%;
+            }
         }
 
         @media (max-width: 575.98px) {
-            #col-btn-perfil {
-                margin-left: 1% !important;
+            .students-list-toolbar {
+                grid-template-columns: minmax(0, 1fr);
             }
 
-            .border-top-row {
-                border-top: solid !important;
+            .students-export-actions {
+                grid-auto-flow: row;
+                grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+                width: 100%;
             }
 
-            .border-top-row .col-12 {
-                border-bottom: solid 1px;
-                padding-top: 4px;
-                padding-bottom: 4px;
-                padding-left: 10%;
-                border-color: #e1e1e1;
+            .card-body.students-list-body {
+                padding-right: .75rem;
+                padding-left: .75rem;
             }
 
-            .student-details-row {
-                margin-top: 20px !important
+            .student-list-row {
+                grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+                padding: .75rem;
+            }
+
+            .student-details-grid,
+            .student-action-list {
+                grid-template-columns: minmax(0, 1fr);
             }
         }
     </style>
@@ -239,11 +427,11 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div class="card-header students-list-toolbar">
                     <h5 class="card-title mb-0"><i class="mdi mdi-account-details-outline me-2"></i>Resumen de
                         calificaciones</h5>
                     @if ($cortesDefinidos->isNotEmpty())
-                        <div class="btn-group" role="group" aria-label="Exportar notas por corte">
+                        <div class="students-export-actions" role="group" aria-label="Exportar notas por corte">
                             @foreach ($cortesDefinidos as $corte)
                                 <a href="{{ route('maestros.exportarNotasCorte', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'cortePeriodo' => $corte['id_db']]) }}"
                                     class="btn btn-sm btn-outline-success">
@@ -253,46 +441,35 @@
                         </div>
                     @endif
                 </div>
-                <div class="card-body">
+                <div class="card-body students-list-body">
                     @if ($alumnosParaDashboard->isNotEmpty())
-                        {{-- INICIO DE LA SECCIÓN MODIFICADA --}}
-
-                        {{-- Encabezados para la vista de escritorio (md y superior) --}}
-                        {{-- Estos encabezados deben reflejar las columnas de la sección de detalles --}}
-                        <div class="row d-none d-md-flex fw-bold mb-3  pb-2 align-items-center">
-                            <div style="width:20px;" class="col-md-1 text-center">#</div>
-                            <div class="title-encabezado col-md-3">Nombre del alumno</div>
-                            {{-- Los siguientes encabezados corresponden a lo que estará DENTRO del acordeón en móvil --}}
+                        <div class="students-list" style="--cut-count: {{ max(1, $cortesDefinidos->count()) }};">
+                        <div class="students-list-header" aria-hidden="true">
+                            <div>#</div>
+                            <div>Nombre del alumno</div>
                             @if ($cortesDefinidos->isNotEmpty())
                                 @foreach ($cortesDefinidos as $corte)
-                                    <div class="col-md-1 text-center title-encabezado">
+                                    <div>
                                         {{ $corte['nombre'] }}
-                                        <small
-                                            class="d-block text-muted">({{ number_format($corte['porcentaje_materia'], 0) }}%)</small>
+                                        <small class="d-block text-muted">({{ number_format($corte['porcentaje_materia'], 0) }}%)</small>
                                     </div>
                                 @endforeach
                             @else
-                                <div class="col-md-1 text-center">Cortes</div>
+                                <div>Cortes</div>
                             @endif
-                            <div class="title-encabezado col-md-1 text-center">Asist.</div>
-                            <div class="title-encabezado col-md-1 text-center">Inasist.</div>
-                            <div class="title-encabezado col-md-1 text-center">Prom. final</div>
-                            <div class="title-encabezado col-md-1 text-center">Estado</div>
-                            <div class="title-encabezado col-md-1 text-center"></div>
+                            <div>Asist.</div>
+                            <div>Inasist.</div>
+                            <div>Prom. final</div>
+                            <div>Estado</div>
+                            <div>Acciones</div>
                         </div>
 
                         @foreach ($alumnosParaDashboard as $alumno)
-                            <div style="@if ($loop->iteration % 2 == 0) background-color: #f3f3f3; @endif"
-                                class="student-item-card card mb-2  ">
-                                <div style="min-height:70px" class="card-body py-2 px-3">
-                                    {{-- Fila para Nombre y Botón de Acordeón (móvil) --}}
-                                    <div class="row align-items-center py-2">
-                                        <div style="width:20px;" class="col-md-1 d-none d-md-block"> {{-- # Visible solo en MD+ --}}
-                                            {{ $loop->iteration }}
-                                        </div>
-                                        <div style="width:350px;" class="col-12 col-md-3"> {{-- Nombre del alumno --}}
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar avatar-xs me-2">
+                            <article class="student-item-card card mb-2 {{ $loop->even ? 'bg-body-secondary' : '' }}">
+                                <div class="student-list-row">
+                                    <div class="student-position">{{ $loop->iteration }}</div>
+                                    <div class="student-identity">
+                                        <div class="avatar avatar-xs">
                                                     @php
                                                         $nombres = explode(' ', $alumno['nombre_completo']);
                                                         $iniciales = !empty($nombres[0])
@@ -310,130 +487,100 @@
                                                     @endphp
                                                     <span
                                                         class="avatar-initial rounded-circle bg-label-secondary">{{ $iniciales }}</span>
-                                                </div>
-                                                <div>
-
-                                                    <div class="fw-medium">{{ $alumno['nombre_completo'] }}</div>
-                                                    @if (isset($alumno['user_model']->identificacion))
-                                                        <small class="text-muted d-md-block">ID:
-                                                            {{ $alumno['user_model']->identificacion }}</small>
-                                                    @endif
-
-                                                </div>
-                                            </div>
                                         </div>
-                                        <div class="col-auto col-md-8 ms-auto d-md-none"> {{-- Botón de Acordeón visible solo en móvil --}}
-                                            <button style="margin-top:-70px" class="btn" type="button"
-                                                data-bs-toggle="collapse"
-                                                data-bs-target="#studentDetails_{{ $alumno['id_db'] }}_{{ $loop->iteration }}"
-                                                aria-expanded="false">
-                                                <i class="ti ti-circle-plus"></i>
-                                            </button>
+                                        <div class="student-name">
+                                            <div class="fw-medium">{{ $alumno['nombre_completo'] }}</div>
+                                            @if (isset($alumno['user_model']->identificacion))
+                                                <small class="text-muted">ID: {{ $alumno['user_model']->identificacion }}</small>
+                                            @endif
+                                            @if ($alumno['ultimo_traslado'])
+                                                <a href="javascript:void(0);"
+                                                    onclick="abrirDetalleTraslado({{ $alumno['ultimo_traslado']->id }})"
+                                                    class="student-transfer badge bg-label-info rounded-pill"
+                                                    data-bs-toggle="tooltip" title="Ver detalle del traslado">
+                                                    Traslado <i class="ti ti-chevron-down"></i>
+                                                </a>
+                                            @endif
                                         </div>
                                     </div>
 
-                                    {{-- Sección Colapsable para Detalles --}}
-                                    {{-- `collapse` la hace colapsable, `d-md-block` la muestra como bloque en MD+ --}}
-                                    <div style="margin-top:-60px !important" class="row collapse d-md-block"
+                                    <button class="student-toggle" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#studentDetails_{{ $alumno['id_db'] }}_{{ $loop->iteration }}"
+                                        aria-expanded="false"
+                                        aria-controls="studentDetails_{{ $alumno['id_db'] }}_{{ $loop->iteration }}"
+                                        aria-label="Mostrar calificaciones de {{ $alumno['nombre_completo'] }}">
+                                        <i class="ti ti-chevron-down"></i>
+                                    </button>
+
+                                    <div class="student-details collapse"
                                         id="studentDetails_{{ $alumno['id_db'] }}_{{ $loop->iteration }}">
-
-                                        <div class="pt-2 pt-md-0">
-                                            {{-- Fila interna para alinear detalles con encabezados de escritorio --}}
-                                            {{-- En móvil (cuando está expandido), estos se apilarán o distribuirán según sus clases 'col-X' --}}
-                                            <div class="row  gy-2 student-details-row align-items-center  pb-3">
-                                                {{-- Espaciadores para alinear con encabezados en escritorio --}}
-                                                <div style="width:20px;" class="col-md-1 d-none d-md-block">
-
-                                                </div>
-                                                <div class="col-md-3  d-md-block">
-                                                    @if ($alumno['ultimo_traslado'])
-                                                        <a style="margin-top:50px !important;font-size: 10px;"
-                                                            href="javascript:void(0);"
-                                                            onclick="abrirDetalleTraslado({{ $alumno['ultimo_traslado']->id }})"
-                                                            class="badge bg-label-info rounded-pill ms-6 mt-6"
-                                                            data-bs-toggle="tooltip" title="Ver detalle del traslado">
-                                                            Traslado <i class="ti ti-chevron-down"></i>
-                                                        </a>
-                                                    @endif
-
-                                                </div>
-
-                                                {{-- Columnas de Detalles Reales --}}
+                                        <div class="student-details-grid">
                                                 @if ($cortesDefinidos->isNotEmpty())
                                                     @foreach ($cortesDefinidos as $corteLoop)
-                                                        <div
-                                                            class="col-12 col-md-1 text-start @if ($alumno['ultimo_traslado']) mt-n5 @endif ">
-                                                            <strong class="d-md-none">{{ $corteLoop['nombre'] }}:
-                                                            </strong>
+                                                        <div class="student-metric">
+                                                            <span class="student-metric-label">{{ $corteLoop['nombre'] }}</span>
                                                             {{ $alumno['promedios_por_corte'][$corteLoop['id_html']] ?? '0.00' }}
                                                         </div>
                                                     @endforeach
                                                 @else
-                                                    <div
-                                                        class="col-12 col-md-1  text-start  @if ($alumno['ultimo_traslado']) mt-n5 @endif ">
-                                                        <strong class="d-md-none">Cortes: </strong>N/A
+                                                    <div class="student-metric">
+                                                        <span class="student-metric-label">Cortes</span>
+                                                        N/A
                                                     </div>
                                                 @endif
 
-                                                <div
-                                                    class="col-12 col-md-1  text-start  @if ($alumno['ultimo_traslado']) mt-n5 @endif ">
-                                                    <strong class="d-md-none">Asistencias:
-                                                    </strong>{{ $alumno['asistencias'] }}
+                                                <div class="student-metric">
+                                                    <span class="student-metric-label">Asistencias</span>
+                                                    {{ $alumno['asistencias'] }}
                                                 </div>
-                                                <div
-                                                    class="col-12 col-md-1   text-start  @if ($alumno['ultimo_traslado']) mt-n5 @endif ">
-                                                    <strong class="d-md-none">Inasistencias:
-                                                    </strong>{{ $alumno['inasistencias'] }}
+                                                <div class="student-metric">
+                                                    <span class="student-metric-label">Inasistencias</span>
+                                                    {{ $alumno['inasistencias'] }}
                                                 </div>
-                                                <div
-                                                    class="col-12 col-md-1 text-start @if ($alumno['ultimo_traslado']) mt-n5 @endif ">
-                                                    <strong class="d-md-none">Promedio final: </strong>
+                                                <div class="student-metric">
+                                                    <span class="student-metric-label">Promedio final</span>
                                                     <span
                                                         class="fw-bold {{ $alumno['ha_aprobado'] ? 'text-success' : 'text-danger' }}">
                                                         {{ number_format($alumno['promedio_final_materia'] ?? 0, 2) }}
                                                     </span>
                                                 </div>
-                                                <div
-                                                    class="col-12 col-md-1 text-start @if ($alumno['ultimo_traslado']) mt-n5 @endif ">
-                                                    <strong class="d-md-none">Estado: </strong>
+                                                <div class="student-metric student-status">
+                                                    <span class="student-metric-label">Estado</span>
                                                     <span
                                                         class="badge text-white {{ $alumno['ha_aprobado'] ? ($alumno['estado_materia'] === 'Aprobado' ? 'bg-success' : 'bg-warning') : 'bg-danger' }}">
                                                         {{ $alumno['estado_materia'] }}
                                                     </span>
                                                 </div>
-                                                <div id="col-btn-perfil"
-                                                    class="col-12 col-md-1  text-start  @if ($alumno['ultimo_traslado']) mt-n5 @endif">
-
-                                                    <a style="color:#1977E5"
+                                                <div class="student-action-list">
+                                                    <a
                                                         href="{{ route('maestros.gestionarAlumno', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'alumno' => $alumno['user_model']]) }}"
-                                                        class="btn btn-outline-secondary rounded-pill"
+                                                        class="btn btn-sm btn-outline-primary rounded-pill"
                                                         data-bs-toggle="tooltip" data-bs-placement="top"
                                                         title="Ver perfil del alumno">
                                                         Perfil
-
                                                     </a>
                                                     @can('escuelas.bloquear_matricula')
                                                         @if (! $alumno['matricula_model']->bloqueado && $horarioAsignado->materiaPeriodo->periodo->estado)
-                                                            <form class="mt-1"
+                                                            <form
                                                                 action="{{ route('maestros.bloquearMatricula', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'matricula' => $alumno['matricula_model']]) }}"
                                                                 method="POST"
                                                                 onsubmit="return confirm('¿Deseas bloquear la matrícula de este alumno? Al finalizar el período quedará reprobado aunque cumpla las notas o asistencias.');">
                                                                 @csrf
                                                                 @method('PATCH')
-                                                                <button type="submit" class="btn btn-outline-danger rounded-pill">
+                                                                <button type="submit"
+                                                                    class="btn btn-sm btn-outline-danger rounded-pill">
                                                                     Bloquear
                                                                 </button>
                                                             </form>
                                                         @endif
                                                     @endcan
                                                 </div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </article>
                         @endforeach
-                        {{-- FIN DE LA SECCIÓN MODIFICADA --}}
+                        </div>
                     @else
                         {{-- El estado vacío se mantiene igual que en tu código original --}}
                         <div class="text-center p-5">
@@ -464,28 +611,6 @@
             });
         }
         document.addEventListener('DOMContentLoaded', function() {
-
-
-            // Código para cambiar el ícono del botón de acordeón
-            var collapseStudentDetailElements = document.querySelectorAll(
-                '[id^="studentDetails_"]'); // Selecciona todos los colapsables de estudiantes
-            collapseStudentDetailElements.forEach(function(collapseEl) {
-                var button = document.querySelector('[data-bs-target="#' + collapseEl.id + '"]');
-                if (button) {
-                    var iconElement = button.querySelector('.icon-toggle');
-
-                    collapseEl.addEventListener('show.bs.collapse', function() {
-                        if (iconElement) iconElement.textContent = '-';
-                        // Puedes añadir una clase a la card-body para cambiar el fondo si está expandido
-                        // this.closest('.card-body').classList.add('expanded-student');
-                    });
-
-                    collapseEl.addEventListener('hide.bs.collapse', function() {
-                        if (iconElement) iconElement.textContent = '+';
-                        // this.closest('.card-body').classList.remove('expanded-student');
-                    });
-                }
-            });
 
 
             // Tu código JavaScript para ApexCharts y tooltips se mantiene aquí sin cambios...
