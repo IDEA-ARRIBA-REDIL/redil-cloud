@@ -109,7 +109,7 @@ window.asignarAsistente = function(grupoId, idUsuario) {
     @endforeach
   }
 
-  function crearCoverturas(){
+  function crearCoberturas(){
     @foreach($grupos as $grupo)
 
       lat = "{{$grupo->latitud}}";
@@ -137,10 +137,10 @@ window.asignarAsistente = function(grupoId, idUsuario) {
   $(document).ready(function() {
     crearMarcadores();
 
-    $('#verCovertura').click(function() {
+    $('#verCobertura').click(function() {
       if(this.checked){
         reiniciarMapa();
-        crearCoverturas();
+        crearCoberturas();
       }else{
         reiniciarMapa();
         crearMarcadores();
@@ -207,9 +207,9 @@ window.asignarAsistente = function(grupoId, idUsuario) {
     </form>
 
     <div class="col-12">
-      <div class=" small">¿Ver covertura?
+      <div class=" small">¿Ver cobertura?
         <label class="switch switch-lg">
-          <input id="verCovertura" name="verCovertura" type="checkbox" class="switch-input" />
+          <input id="verCobertura" name="verCobertura" type="checkbox" class="switch-input" />
           <span class="switch-toggle-slider">
             <span class="switch-on">No</span>
             <span class="switch-off">Si</span>

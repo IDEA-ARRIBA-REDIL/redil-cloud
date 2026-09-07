@@ -4,7 +4,7 @@
             <h4 class="fw-bold mb-1"><i class="ti ti-flag text-warning me-2"></i>Bandeja de Moderación y Denuncias</h4>
             <p class="text-muted mb-0">Revisa reportes enviados por miembros de la congregación sobre fotos o contenido en hitos.</p>
         </div>
-        <a href="{{ route('hitos.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ route('hitos.index') }}" class="btn btn-outline-primary rounded-pill waves-effect">
             <i class="ti ti-arrow-left me-1"></i> Volver a Hitos
         </a>
     </div>
@@ -17,7 +17,7 @@
                         wire:click="$set('filtroEstado', 'pendiente')">
                     <i class="ti ti-clock me-1"></i> Pendientes
                 </button>
-                <button type="button" class="btn {{ $filtroEstado === 'resuelta' ? 'btn-success' : 'btn-outline-secondary' }}"
+                <button type="button" class="btn  {{ $filtroEstado === 'resuelta' ? 'btn-success' : ' btn-outline-primary rounded-pill waves-effect' }}"
                         wire:click="$set('filtroEstado', 'resuelta')">
                     <i class="ti ti-circle-check me-1"></i> Resueltas
                 </button>

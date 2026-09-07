@@ -31,10 +31,12 @@ class Materia extends Model
         'habilitar_inasistencias', // Añadido si usas $fillable estricto
         'tipo_usuario_objetivo_id', // NUEVO
         'tipo_usuario_inicial_id', // NUEVO INICIAL
+        'orden',
     ];
 
     protected $casts = [
         'creditos' => 'integer',
+        'orden' => 'integer',
         'habilitar_calificaciones' => 'boolean',
         'habilitar_asistencias' => 'boolean',
         'caracter_obligatorio' => 'boolean',

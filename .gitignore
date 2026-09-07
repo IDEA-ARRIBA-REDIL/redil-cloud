@@ -1,5 +1,6 @@
 /.phpunit.cache
 node_modules/
+/.codex/
 .DS_Store
 
 /public/build
@@ -14,7 +15,6 @@ package-lock.json
 .phpunit.result.cache
 .editorconfig
 /storage
-/knowledge
 /scratch
 .kaddo
 docker-compose.override.yml

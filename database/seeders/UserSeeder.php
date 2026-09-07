@@ -108,7 +108,7 @@ class UserSeeder extends Seeder
 
         $usuario3 = \App\Models\User::withTrashed()->firstOrCreate(
             ['email' => 'lider_d@redil.com'],
-            [   'id'=>14636,
+            ['id' => 14636,
                 'pais_id' => 45,
                 'password' => bcrypt('12345678'),
                 'telefono_fijo' => '435354',
@@ -385,7 +385,7 @@ class UserSeeder extends Seeder
                 'primer_apellido' => 'De Juan',
                 'genero' => 1,
                 'tipo_identificacion_id' => 3,
-                'identificacion' => '963852741',
+                'identificacion' => '11121015444',
                 'tipo_usuario_id' => 3,
                 'foto' => 'default-f.png',
                 'fecha_nacimiento' => '2002-08-05',

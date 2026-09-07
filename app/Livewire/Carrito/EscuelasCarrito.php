@@ -357,7 +357,7 @@ class EscuelasCarrito extends Component
 
             // 9. GUARDAR RESPUESTAS DEL FORMULARIO
             foreach ($this->respuestas as $elementoId => $valor) {
-                if (empty($valor)) {
+                if ($valor === null || $valor === '' || $valor === []) {
                     continue;
                 }
 

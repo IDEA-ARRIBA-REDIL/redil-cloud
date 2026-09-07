@@ -269,6 +269,17 @@ use App\Models\Sede;
                         <div class="d-flex flex-column">
                           <small class="text-black ms-1">Reunión:</small>
                           <small class="fw-semibold ms-1 text-black ">{{ $reporte->reunion?->nombre ?? 'Reunión Eliminada' }}</small>
+                          <div>
+                            @if(($reporte->estado ?? 'finalizado') === 'finalizado')
+                              <span class="badge bg-label-success ms-1"><i class="ti ti-check ti-xs me-1"></i>Finalizado</span>
+                            @elseif(($reporte->estado ?? '') === 'cancelado')
+                              <span class="badge bg-label-danger ms-1">Cancelado</span>
+                            @elseif(($reporte->estado ?? '') === 'en_curso')
+                              <span class="badge bg-label-primary ms-1">En curso</span>
+                            @else
+                              <span class="badge bg-label-secondary ms-1">Programado</span>
+                            @endif
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -343,6 +354,30 @@ use App\Models\Sede;
 
                           @if($rolActivo->hasPermissionTo('reporte_reuniones.opcion_descargar_informe_visualizaciones_reporte_reunion'))
                           <li><a class="dropdown-item" href=""> Descargar informe visualizaciones</a></li>
+                          @endif
+
+                          @if($rolActivo->hasPermissionTo('reporte_reuniones.finalizar_reporte'))
+                            @if(($reporte->estado ?? 'finalizado') === 'finalizado')
+                              <li>
+                                <form action="{{ route('reporteReunion.reabrir', $reporte) }}" method="POST" class="d-inline">
+                                  @csrf
+                                  @method('PATCH')
+                                  <button type="submit" class="dropdown-item text-warning" onclick="return confirm('¿Deseas reabrir este reporte para edición?')">
+                                    <i class="ti ti-rotate me-1"></i> Reabrir reporte
+                                  </button>
+                                </form>
+                              </li>
+                            @else
+                              <li>
+                                <form action="{{ route('reporteReunion.finalizar', $reporte) }}" method="POST" class="d-inline">
+                                  @csrf
+                                  @method('PATCH')
+                                  <button type="submit" class="dropdown-item text-success" onclick="return confirm('¿Confirmas finalizar este reporte? Al finalizarlo computará en las estadísticas oficiales.')">
+                                    <i class="ti ti-check me-1"></i> Finalizar reporte
+                                  </button>
+                                </form>
+                              </li>
+                            @endif
                           @endif
 
                           <hr class="dropdown-divider">

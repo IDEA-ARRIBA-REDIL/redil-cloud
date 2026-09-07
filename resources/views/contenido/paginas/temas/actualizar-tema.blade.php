@@ -212,7 +212,7 @@
   <div class="col-md-12">
     <div class="card mb-4">
       <h5 class="card-header text-black fw-semibold">
-        <img src="{{ Storage::url('generales/img/temas/icono_seccion_informacion_principal.png') }}" alt="icono" class="me-2" width="30">
+
         Información principal
       </h5>
       <div class="card-body">

@@ -146,14 +146,14 @@
                                     </div>
                                 </div>
 
-                                @if(isset($materia->estado) && (string)$materia->estado === '1' && $modo === 'materias')
+                                @if(isset($materia->estado) && (string)$materia->estado === '1' && $modo === 'materias' && (!is_null($materia->creditos) || !is_null($materia->creditos_aprobados)))
                                 <div class="d-flex flex-row justify-content-between mb-2">
                                     <div class="d-flex flex-row align-items-center me-2">
                                         <i class="ti ti-certificate text-black me-2 fs-5"></i>
                                         <div class="d-flex flex-column">
                                             <small class="text-black">Créditos aprobados:</small>
                                             <small class="fw-semibold text-black">
-                                                {{ $materia->creditos_aprobados ?? $materia->creditos ?? 'Sin créditos' }}
+                                                {{ $materia->creditos_aprobados ?? $materia->creditos }}
                                             </small>
                                         </div>
                                     </div>

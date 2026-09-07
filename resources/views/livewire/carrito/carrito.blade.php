@@ -291,7 +291,7 @@
                                             <input type="file"
                                                 id="archivo_elemento_{{ $elemento->id }}"
                                                 class="form-control {{ $errorClass }}"
-                                                accept=".pdf,.doc,.docx"
+                                                accept=".pdf,application/pdf"
                                                 @change="subirArchivo($event)">
                                             <div x-show="subiendo" style="display: none;" class="mt-1 text-primary small">
                                                 <span class="spinner-border spinner-border-sm"></span>
@@ -301,7 +301,7 @@
                                             <div x-show="successMsg" x-transition style="display: none;" class="mt-2 alert alert-success p-2 small d-flex align-items-center">
                                                 <i class="ti ti-check fs-5 me-2"></i> <span x-text="successMsg"></span>
                                             </div>
-                                            <small class="text-muted d-block mt-1">Formatos permitidos: PDF, DOC, DOCX (máx. 10 MB)</small>
+                                            <small class="text-muted d-block mt-1">Formato permitido: solo PDF (máx. 10 MB)</small>
                                         </div>
                                     @endif
                                     @break
@@ -324,7 +324,7 @@
                                             <input type="file"
                                                 id="imagen_elemento_{{ $elemento->id }}"
                                                 class="form-control {{ $errorClass }}"
-                                                accept="image/png,image/jpeg,image/jpg,image/webp"
+                                                accept="image/png,image/jpeg,image/jpg,.png,.jpeg,.jpg"
                                                 @change="subirArchivo($event)">
                                             <div x-show="subiendo" style="display: none;" class="mt-1 text-primary small">
                                                 <span class="spinner-border spinner-border-sm"></span>
@@ -334,7 +334,7 @@
                                             <div x-show="successMsg" x-transition style="display: none;" class="mt-2 alert alert-success p-2 small d-flex align-items-center">
                                                 <i class="ti ti-check fs-5 me-2"></i> <span x-text="successMsg"></span>
                                             </div>
-                                            <small class="text-muted d-block mt-1">Formatos permitidos: PNG, JPG, WEBP (máx. 5 MB)</small>
+                                            <small class="text-muted d-block mt-1">Formatos permitidos: solo PNG, JPG o JPEG (máx. 5 MB)</small>
                                         </div>
                                     @endif
                                     @break

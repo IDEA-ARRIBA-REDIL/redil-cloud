@@ -173,6 +173,27 @@
         .btn-registrar {
             min-width: 200px;
         }
+
+        /* Selector de formato de ticket */
+        .formato-ticket-card {
+            cursor: pointer;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 12px;
+            transition: all 0.2s;
+            height: 100%;
+            background: #ffffff;
+        }
+
+        .formato-ticket-card:hover {
+            border-color: var(--bs-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .formato-ticket-card.selected {
+            border-color: var(--bs-primary) !important;
+            background-color: rgba(var(--bs-primary-rgb), 0.05) !important;
+        }
     </style>
 @endsection
 
@@ -202,6 +223,26 @@
             estacionNombre: '',
             estaciones: [],
             indicaciones: '',
+            formatoTicket: localStorage.getItem('iglesia_infantil_formato_ticket') || 'actual',
+
+            get nombreFormatoTicket() {
+                const nombres = {
+                    'actual': 'Estándar 58 mm',
+                    'termica_80mm': 'Térmica 80 mm (POS)',
+                    'dymo_450': 'Dymo LabelWriter 450',
+                    'largo_20x9': 'Largo 20 × 9 cm'
+                };
+                return nombres[this.formatoTicket] || 'Estándar 58 mm';
+            },
+
+            setFormato(formato) {
+                this.formatoTicket = formato;
+                localStorage.setItem('iglesia_infantil_formato_ticket', formato);
+                const hiddenInput = document.getElementById('hidden_formato_ticket');
+                if (hiddenInput) {
+                    hiddenInput.value = formato;
+                }
+            },
 
             // Computed: qué pasos están habilitados
             get pasoAdultoHabilitado() {
@@ -257,6 +298,12 @@
                         this.menorSeleccionado = null;
                     }
                 });
+
+                // 3. Inicializar campo oculto con formato recordado
+                const hiddenInput = document.getElementById('hidden_formato_ticket');
+                if (hiddenInput) {
+                    hiddenInput.value = this.formatoTicket;
+                }
             },
 
             // 2. Obtener datos del adulto y sus menores a cargo tras selección en Livewire
@@ -319,11 +366,12 @@
                         <p class="mb-1"><strong>Menor:</strong> ${this.menorSeleccionado?.nombre_completo ?? ''}</p>
                         <p class="mb-1"><strong>Adulto:</strong> ${this.adultoSeleccionado?.nombre_completo ?? ''}</p>
                         <p class="mb-1"><strong>Salón:</strong> ${this.salonNombre}</p>
-                        <p class="mb-0"><strong>Estación:</strong> ${this.estacionNombre}</p>
+                        <p class="mb-1"><strong>Estación:</strong> ${this.estacionNombre}</p>
+                        <p class="mb-0 text-primary"><strong>Formato Impresión:</strong> ${this.nombreFormatoTicket} <span class="badge bg-label-info ms-1">2 hojas</span></p>
                     </div>`,
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: '<i class="ti ti-baby-carriage me-1"></i>Sí, registrar',
+                    confirmButtonText: '<i class="ti ti-printer me-1"></i>Sí, registrar e imprimir',
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#28a745',
                 }).then((result) => {
@@ -343,7 +391,7 @@
                             this.salonNombre = '';
                             this.estacionNombre = '';
 
-                            // Si teníamos un adulto, recargamos sus datos para que se actualice 
+                            // Si teníamos un adulto, recargamos sus datos para que se actualice
                             // el estado 'ya_registrado' de los menores sin quitar al adulto de la vista.
                             if (adultoIdPrevia) {
                                 this.setAdulto(adultoIdPrevia);
@@ -395,6 +443,7 @@
     <input type="hidden" name="salon_infantil_id" id="hidden_salon_infantil_id">
     <input type="hidden" name="estacion_salon_infantil_id" id="hidden_estacion_salon_infantil_id">
     <input type="hidden" name="indicaciones_medicas" id="hidden_indicaciones_medicas">
+    <input type="hidden" name="formato_ticket" id="hidden_formato_ticket" :value="formatoTicket">
 </form>
 
 {{-- Flujo de check-in: todos los pasos visibles --}}
@@ -407,6 +456,7 @@
             $watch('salonId', v => document.getElementById('hidden_salon_infantil_id').value = v);
             $watch('estacionId', v => document.getElementById('hidden_estacion_salon_infantil_id').value = v);
             $watch('indicaciones', v => document.getElementById('hidden_indicaciones_medicas').value = v);
+            $watch('formatoTicket', v => document.getElementById('hidden_formato_ticket').value = v);
         ">
 
         <div class="card">
@@ -531,9 +581,9 @@
                             <template x-for="menor in menores" :key="menor.id">
                                 <div class="col-md-3 col-sm-4 col-6">
                                     <div class="card menor-card border mb-0 h-100"
-                                        :class="{ 
+                                        :class="{
                                             'selected': menorSeleccionado && menorSeleccionado.id === menor.id,
-                                            'already-registered': menor.ya_registrado 
+                                            'already-registered': menor.ya_registrado
                                         }"
                                         @click="if(!menor.ya_registrado) { menorSeleccionado = menor }">
                                         <div class="card-body text-center py-3 px-2 position-relative">
@@ -623,8 +673,61 @@
                     </div>
 
                     <div class="step-body">
+                        {{-- Selector visual de Formato de Ticket --}}
+                        <div class="mb-3" x-show="pasoConfirmarHabilitado">
+                            <label class="form-label fw-bold text-black mb-1">
+                                <i class="ti ti-printer me-1 text-primary"></i>Modelo de ticket a imprimir:
+                            </label>
+                            <div class="row g-2 mb-3">
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="formato-ticket-card"
+                                        :class="{ 'selected': formatoTicket === 'actual' }"
+                                        @click="setFormato('actual')">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <input type="radio" name="radioFormato" value="actual" :checked="formatoTicket === 'actual'" class="form-check-input me-2 mt-0">
+                                            <strong class="small text-black">Estándar 58 mm</strong>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">Mini-POS o recibo térmico de 58mm continuo (2 hojas).</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="formato-ticket-card"
+                                        :class="{ 'selected': formatoTicket === 'termica_80mm' }"
+                                        @click="setFormato('termica_80mm')">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <input type="radio" name="radioFormato" value="termica_80mm" :checked="formatoTicket === 'termica_80mm'" class="form-check-input me-2 mt-0">
+                                            <strong class="small text-black">Térmica 80 mm (POS)</strong>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">Ancho POS 80mm con doble talón y línea de corte.</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="formato-ticket-card"
+                                        :class="{ 'selected': formatoTicket === 'dymo_450' }"
+                                        @click="setFormato('dymo_450')">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <input type="radio" name="radioFormato" value="dymo_450" :checked="formatoTicket === 'dymo_450'" class="form-check-input me-2 mt-0">
+                                            <strong class="small text-black">Dymo 450 (Manilla)</strong>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">Etiquetas adhesivas/manilla (102×59mm) 2 hojas.</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-md-3">
+                                    <div class="formato-ticket-card"
+                                        :class="{ 'selected': formatoTicket === 'largo_20x9' }"
+                                        @click="setFormato('largo_20x9')">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <input type="radio" name="radioFormato" value="largo_20x9" :checked="formatoTicket === 'largo_20x9'" class="form-check-input me-2 mt-0">
+                                            <strong class="small text-black">Largo 20 × 9 cm</strong>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">Ficha y talón alargado de 20cm largo × 9cm ancho.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Resumen de lo que se registrará --}}
-                        <div class="card border  mb-3" x-show="pasoConfirmarHabilitado">
+                        <div class="card border mb-3" x-show="pasoConfirmarHabilitado">
                             <div class="card-body py-3">
                                 <div class="resumen-row">
                                     <span class="resumen-label text-black"><i class="ti ti-calendar-event me-1 text-muted"></i>Reunión</span>
@@ -650,6 +753,10 @@
                                     <span class="resumen-label text-black"><i class="ti ti-nurse me-1 text-muted"></i>Indicaciones</span>
                                     <span class="resumen-valor text-black" x-text="indicaciones"></span>
                                 </div>
+                                <div class="resumen-row">
+                                    <span class="resumen-label text-black"><i class="ti ti-printer me-1 text-muted"></i>Impresión</span>
+                                    <span class="resumen-valor text-primary" x-text="nombreFormatoTicket + ' (2 hojas: Niño + Adulto)'"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -661,11 +768,11 @@
                             class="btn btn-success btn-registrar waves-effect waves-light"
                             :disabled="!pasoConfirmarHabilitado"
                             @click="confirmarYRegistrar()">
-                            <i class="ti ti-baby-carriage me-2"></i>Registrar ingreso
-                            <i class="ti ti-external-link ms-1" title="Se abrirá el ticket"></i>
+                            <i class="ti ti-printer me-2"></i>Registrar e Imprimir Ticket
+                            <i class="ti ti-external-link ms-1" title="Se abrirán las 2 hojas del ticket"></i>
                         </button>
                         <p class="text-muted small mt-2">
-                            <i class="ti ti-ticket me-1"></i>Al registrar se abrirá el ticket de retiro para imprimir.
+                            <i class="ti ti-ticket me-1"></i>Al registrar se abrirán las 2 hojas del ticket (Gafete del Menor y Ticket de Retiro del Adulto).
                         </p>
                     </div>
                 </div>

@@ -77,7 +77,6 @@ class GestionarHomologaciones extends Component
 
     public $tiposUsuariosDisponibles = [];
 
-
     // Reglas de validación para los formularios.
     protected $rules = [
         'sedeHomologacionId' => 'required|exists:sedes,id',
@@ -118,11 +117,7 @@ class GestionarHomologaciones extends Component
         if ($value) {
             $escuela = Escuela::find($value);
             if ($escuela) {
-                if ($escuela->tipo_matricula === 'niveles_agrupados' || ($escuela->tipo_matricula === null && $escuela->niveles()->exists())) {
-                    $this->modo = 'niveles';
-                } else {
-                    $this->modo = 'materias';
-                }
+                $this->modo = $escuela->esPorNiveles() ? 'niveles' : 'materias';
             }
         }
     }
@@ -145,11 +140,7 @@ class GestionarHomologaciones extends Component
         if ($this->escuelaSeleccionadaId) {
             $escuela = Escuela::find($this->escuelaSeleccionadaId);
             if ($escuela) {
-                if ($escuela->tipo_matricula === 'niveles_agrupados' || ($escuela->tipo_matricula === null && $escuela->niveles()->exists())) {
-                    $this->modo = 'niveles';
-                } else {
-                    $this->modo = 'materias';
-                }
+                $this->modo = $escuela->esPorNiveles() ? 'niveles' : 'materias';
             }
         }
 
@@ -385,6 +376,7 @@ class GestionarHomologaciones extends Component
         DB::beginTransaction();
         try {
             $esAprobado = ((int) $this->estadoHomologacion === MateriaAprobadaUsuario::ESTADO_APROBADO);
+            $aplicaCreditos = $this->modo === 'materias' && ! $this->materiaParaHomologar?->nivel_id;
 
             MateriaAprobadaUsuario::updateOrCreate(
                 [
@@ -394,7 +386,7 @@ class GestionarHomologaciones extends Component
                 [
                     'aprobado' => (int) $this->estadoHomologacion,
                     'nota_final' => $esAprobado ? $this->notaHomologacion : null,
-                    'creditos_aprobados' => $esAprobado ? $this->materiaParaHomologar?->creditos : null,
+                    'creditos_aprobados' => ($esAprobado && $aplicaCreditos) ? $this->materiaParaHomologar?->creditos : null,
                     'es_homologacion' => true,
                     'observacion_homologacion' => $this->observacionHomologacion,
                     'sede_id' => $this->sedeHomologacionId,

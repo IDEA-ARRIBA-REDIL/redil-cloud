@@ -46,14 +46,14 @@
             'escuelas.opcion_actualizar_escuela',
             'escuelas.opcion_eliminar_escuela'
         ]))
-            <li class="menu-item">
+            <li class="menu-item {{ Route::is('escuelas.gestionarEscuelas*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon ti ti-building-skyscraper"></i>
                     <div>Escuelas </div>
                 </a>
 
                 <ul class="menu-sub">
-                    <li class="menu-item">
+                    <li class="menu-item {{ Route::is('escuelas.gestionarEscuelas*') ? 'active' : '' }}">
                         <a href="{{ route('escuelas.gestionarEscuelas') }}" class="menu-link">
                             <div>Gestionar</div>
                         </a>
@@ -212,16 +212,28 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasAnyPermission(['escuelas.item_informes_escuelas', 'escuelas.subitem_gestionar_asistencias']))
-            <li class="menu-item">
+        @if ($rolActivo->hasAnyPermission(['escuelas.item_informes_escuelas', 'escuelas.subitem_gestionar_asistencias', 'escuelas.subitem_lista_escuelas']))
+            <li class="menu-item {{ Route::is('reporteEscuela.*') || Route::is('escuelas.informe-estado-materia-niveles') || Route::is('escuelas.consolidado-academico')  ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class=" menu-icon ti ti-file-analytics"></i>
                     <div> Informes</div>
                 </a>
 
                 <ul class="menu-sub">
+
+                    <li class="menu-item {{ Route::is('escuelas.consolidado-academico') ? 'active' : '' }}">
+                        <a href="{{ route('escuelas.consolidado-academico') }}" class="menu-link">
+                            <div>Consolidado académico</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item {{ Route::is('escuelas.informe-estado-materia-niveles') ? 'active' : '' }}">
+                        <a href="{{ route('escuelas.informe-estado-materia-niveles') }}" class="menu-link">
+                            <div>Estado materia / niveles</div>
+                        </a>
+                    </li>
                     @if ($rolActivo->hasPermissionTo('escuelas.subitem_gestionar_asistencias'))
-                        <li class="menu-item">
+                        <li class="menu-item {{ Route::is('reporteEscuela.*') ? 'active' : '' }}">
                             <a href="{{ route('reporteEscuela.vistaFiltros') }}" class="menu-link">
                                 <div>Asistencias</div>
                             </a>

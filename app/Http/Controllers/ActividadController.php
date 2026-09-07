@@ -80,10 +80,18 @@ class ActividadController extends Controller
                 ->orWhere('fecha_visualizacion', '<=', $hoy);
         });
 
-        // Fecha de cierre: Nula o mayor/igual a hoy
+        // Fecha de finalización / vigencia del evento: La actividad permanece visible mientras no haya concluido
         $query->where(function ($q) use ($hoy) {
-            $q->whereNull('fecha_cierre')
-                ->orWhere('fecha_cierre', '>=', $hoy);
+            $q->where(function ($sub) use ($hoy) {
+                $sub->whereNotNull('fecha_finalizacion')
+                    ->where('fecha_finalizacion', '>=', $hoy);
+            })->orWhere(function ($sub) use ($hoy) {
+                $sub->whereNull('fecha_finalizacion')
+                    ->where(function ($nested) use ($hoy) {
+                        $nested->whereNull('fecha_inicio')
+                            ->orWhere('fecha_inicio', '>=', $hoy);
+                    });
+            });
         });
 
         // 3. Lógica de búsqueda por texto

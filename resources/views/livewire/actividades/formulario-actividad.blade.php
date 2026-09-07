@@ -1,85 +1,155 @@
 <div>
 
-    <!-- Botón para abrir modal -->
-    <button type="button" class="btn rounded-pill btn-primary mb-2" data-bs-toggle="modal" data-bs-target="#modalNuevoElemento">
-        <i class="fa fa-plus me-1"></i> Crear elemento
-    </button>
+    <!-- Botones de Acción Superiores -->
+    <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+        <button type="button" class="btn rounded-pill btn-primary shadow-xs px-3" data-bs-toggle="modal" data-bs-target="#modalNuevoElemento">
+            <i class="ti ti-plus me-1"></i> Crear elemento
+        </button>
 
-    <!-- Botón para abrir modal duplicar categoria -->
-    <button type="button" class="btn rounded-pill btn-secondary mb-2" data-bs-toggle="modal" data-bs-target="#modalDuplicaeElemento">
-        <i class="ti ti-folders me-1"></i> Duplicar elementos
-    </button>
-
+        <button type="button" class="btn rounded-pill btn-outline-primary shadow-xs px-3" data-bs-toggle="modal" data-bs-target="#modalDuplicaeElemento">
+            <i class="ti ti-folders me-1"></i> Duplicar elementos
+        </button>
+    </div>
 
     <!-- Lista de elementos existentes -->
-    <div class="h-100 mt-4">
+    <div class="h-100">
         @if(count($elementos) > 0)
         <!-- AQUI DEBE TENER ESTE ELEMENTOS PORQUE ES DONDE LEE EL SCRIPT DEL DRAG AND DROP -->
-        <div class="mt-4" id="elementos-container">
+        <div class="d-flex flex-column gap-3" id="elementos-container">
             @foreach($elementos as $elemento)
                 @php
-                    $borderColor = 'primary';
-                    if($elemento->tipoElemento->clase == 'encabezado') $borderColor = 'secondary';
-                    if(in_array($elemento->tipoElemento->clase, ['corta', 'larga'])) $borderColor = 'info';
-                    if(in_array($elemento->tipoElemento->clase, ['fecha', 'numero', 'moneda'])) $borderColor = 'success';
-                    if(in_array($elemento->tipoElemento->clase, ['archivo', 'imagen'])) $borderColor = 'warning';
-                    if(in_array($elemento->tipoElemento->clase, ['unica_respuesta', 'multiple_respuesta', 'si_no'])) $borderColor = 'primary';
+                    $esEncabezado = ($elemento->tipoElemento->clase == 'encabezado');
+
+                    // Nombres amigables y concisos para los tipos
+                    $tipoNombre = match($elemento->tipoElemento->clase) {
+                        'encabezado' => 'Sección',
+                        'corta' => 'Texto corto',
+                        'larga' => 'Texto largo',
+                        'si_no' => 'Sí / No',
+                        'unica_respuesta' => 'Selección única',
+                        'multiple_respuesta' => 'Selección múltiple',
+                        'fecha' => 'Fecha',
+                        'numero' => 'Número',
+                        'moneda' => 'Moneda',
+                        'archivo' => 'Archivo (PDF)',
+                        'imagen' => 'Imagen',
+                        default => $elemento->tipoElemento->nombre
+                    };
                 @endphp
 
-                <div class="card mb-3 draggable-item shadow-sm border-0" data-id="{{$elemento->id}}" style="border-left: 4px solid var(--bs-{{$borderColor}}) !important; transition: all 0.2s ease-in-out;">
-                    <div class="d-flex align-items-stretch">
-                        <div class="drag-handle d-flex align-items-center justify-content-center bg-lighter" style="width: 40px; cursor: grab; border-top-left-radius: 0.375rem; border-bottom-left-radius: 0.375rem;">
-                            <i class="fas fa-grip-vertical text-muted"></i>
-                        </div>
-                        
-                        <div class="card-body py-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100">
-                            <div class="flex-grow-1">
-                                @if($elemento->tipoElemento->clase == 'encabezado')
-                                    <h5 class="card-title fw-bold mb-1">{{$elemento->titulo}}</h5>
-                                    <p class="card-text text-muted mb-0 small">{{$elemento->descripcion}}</p>
-                                @else
-                                    <div class="d-flex align-items-center mb-1">
-                                        <span class="badge bg-label-{{$borderColor}} me-2">{{$elemento->tipoElemento->nombre}}</span>
-                                        @if($elemento->required)
-                                            <span class="badge bg-label-danger me-2" title="Requerido"><i class="ti ti-star"></i></span>
-                                        @endif
-                                        @if(!$elemento->visible)
-                                            <span class="badge bg-label-secondary me-2" title="Oculto al público"><i class="ti ti-eye-off"></i></span>
-                                        @endif
-                                        @if($elemento->visible_asistencia)
-                                            <span class="badge bg-label-info me-2" title="Asistencia"><i class="ti ti-clipboard-check"></i></span>
-                                        @endif
-                                    </div>
-                                    <h6 class="card-title mb-1" id='input-{{$elemento->tipoElemento->clase}}-{{$elemento->id}}'>{{$elemento->titulo}}</h6>
-                                    @if($elemento->descripcion)
-                                        <p class="card-text text-muted mb-0 small">{{$elemento->descripcion}}</p>
-                                    @endif
-                                    
-                                    @if(in_array($elemento->tipoElemento->clase, ['unica_respuesta', 'multiple_respuesta']))
-                                        <ul class="mt-2 mb-0 ps-3 text-muted small">
-                                            @foreach($elemento->opciones as $opcion)
-                                            <li>{{$opcion->valor_texto}}</li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                @endif
+                @if($esEncabezado)
+                    {{-- TARJETA SECCIÓN: Estilo divisor destacado y elegante --}}
+                    <div class="card draggable-item border border-1 border-secondary border-opacity-25 bg-lighter shadow-none rounded-3" data-id="{{$elemento->id}}" style="transition: all 0.2s ease-in-out;">
+                        <div class="d-flex align-items-center">
+                            <div class="drag-handle d-flex align-items-center justify-content-center px-3 py-3" style="cursor: grab;" title="Arrastrar para reordenar">
+                                <i class="ti ti-grip-vertical text-muted fs-5"></i>
                             </div>
 
-                            <div class="d-flex align-items-center mt-3 mt-md-0 ms-md-3">
-                                <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-sm btn-icon btn-label-primary me-2" title="Editar">
-                                    <i class="ti ti-pencil"></i>
-                                </button>
-                                <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn btn-sm btn-icon btn-label-danger" title="Eliminar">
-                                    <i class="ti ti-trash"></i>
-                                </button>
+                            <div class="card-body py-3 ps-1 pe-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge bg-white text-primary border border-1 rounded-pill px-2 py-1 small fw-medium">
+                                            Sección
+                                        </span>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-1 fs-6">{{$elemento->titulo}}</h6>
+                                    @if($elemento->descripcion)
+                                        <p class="text-muted mb-0 small">{{$elemento->descripcion}}</p>
+                                    @endif
+                                </div>
+
+                                <div class="d-flex align-items-center mt-2 mt-md-0 ms-md-3">
+                                    <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-sm btn-icon btn-text-primary rounded-pill waves-effect me-1" title="Editar">
+                                        <i class="ti ti-edit fs-5"></i>
+                                    </button>
+                                    <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn btn-sm btn-icon btn-text-danger rounded-pill waves-effect" title="Eliminar">
+                                        <i class="ti ti-trash fs-5"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                @else
+                    {{-- TARJETA PREGUNTA: Limpia, blanca, con micro-pills discretos --}}
+                    <div class="card draggable-item bg-white border border-1 shadow-none rounded-3" data-id="{{$elemento->id}}" style="transition: all 0.2s ease-in-out;">
+                        <div class="d-flex align-items-stretch">
+                            <div class="drag-handle d-flex align-items-center justify-content-center px-3 bg-transparent" style="cursor: grab;" title="Arrastrar para reordenar">
+                                <i class="ti ti-grip-vertical text-muted fs-5"></i>
+                            </div>
+
+                            <div class="card-body py-3 ps-1 pe-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between w-100">
+                                <div class="flex-grow-1">
+                                    {{-- Badges compactos y semánticos --}}
+                                    <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+                                        <span class="badge bg-label-secondary text-dark rounded-pill px-2 py-1 fw-normal" style="font-size: 0.75rem;">
+                                            {{ $tipoNombre }}
+                                        </span>
+
+                                        @if($elemento->required)
+                                            <span class="badge bg-label-danger rounded-pill px-2 py-1 fw-normal" style="font-size: 0.75rem;" title="Obligatorio">
+                                                <i class="ti ti-asterisk me-1" style="font-size: 0.6rem;"></i>Requerido
+                                            </span>
+                                        @endif
+
+                                        @if($elemento->visible_asistencia)
+                                            <span class="badge bg-label-info rounded-pill px-2 py-1 fw-normal" style="font-size: 0.75rem;" title="Visible en toma de asistencia">
+                                                <i class="ti ti-clipboard-check me-1" style="font-size: 0.7rem;"></i>Asistencia
+                                            </span>
+                                        @endif
+
+                                        @if(!$elemento->visible)
+                                            <span class="badge bg-label-secondary text-muted rounded-pill px-2 py-1 fw-normal" style="font-size: 0.75rem;" title="Oculto a participantes">
+                                                <i class="ti ti-eye-off me-1" style="font-size: 0.7rem;"></i>Oculto
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <h6 class="card-title mb-1 text-dark fw-semibold" id='input-{{$elemento->tipoElemento->clase}}-{{$elemento->id}}'>
+                                        {{$elemento->titulo}}
+                                    </h6>
+
+                                    @if($elemento->descripcion)
+                                        <p class="text-muted mb-0 small">{{$elemento->descripcion}}</p>
+                                    @endif
+
+                                    {{-- Opciones como chips sutiles --}}
+                                    @if(in_array($elemento->tipoElemento->clase, ['unica_respuesta', 'multiple_respuesta']) && $elemento->opciones->isNotEmpty())
+                                        <div class="d-flex flex-wrap gap-1 mt-2 align-items-center">
+                                            <span class="text-muted" style="font-size: 0.75rem;"><i class="ti ti-list me-1"></i>Opciones:</span>
+                                            @foreach($elemento->opciones as $opcion)
+                                                <span class="badge bg-lighter text-muted border border-1 fw-normal rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                                    {{$opcion->valor_texto}}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="d-flex align-items-center mt-3 mt-md-0 ms-md-3">
+                                    <button wire:click="abrirOffcanvas({{$elemento->id}})" type="button" class="btn btn-sm btn-icon btn-text-primary rounded-pill waves-effect me-1" title="Editar">
+                                        <i class="ti ti-edit fs-5"></i>
+                                    </button>
+                                    <button wire:click="confirmarEliminarElemento({{$elemento->id}})" type="button" class="btn btn-sm btn-icon btn-text-danger rounded-pill waves-effect" title="Eliminar">
+                                        <i class="ti ti-trash fs-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             @endforeach
         </div>
         @else
-        <p>No se han creado elementos</p>
+        <div class="text-center py-5 border border-dashed rounded-3 bg-lighter my-4">
+            <div class="avatar avatar-md mx-auto mb-3 bg-label-primary rounded-circle d-flex align-items-center justify-content-center">
+                <i class="ti ti-forms fs-3"></i>
+            </div>
+            <h6 class="fw-semibold mb-1">Aún no hay preguntas en este formulario</h6>
+            <p class="text-muted small mb-3">Comienza creando tu primera pregunta o duplica la estructura de otra actividad.</p>
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalNuevoElemento">
+                <i class="ti ti-plus me-1"></i> Crear primer elemento
+            </button>
+        </div>
         @endif
     </div>
 
@@ -260,13 +330,28 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Tipo</label>
-                        <select required wire:model="tipo_elemento_id" class="select2 form-select">
-                            <option value='0'>Seleccione una opción</option>
+                        <label class="form-label">Tipo de elemento</label>
+                        <select required wire:model="tipo_elemento_id" class="form-select">
+                            <option value="">Seleccione una opción</option>
                             @foreach($tipos as $tipo)
-                            <option value="{{$tipo->id}}">{{$tipo->nombre}}</option>
+                            @php
+                                $nombreLimpio = match($tipo->clase) {
+                                    'encabezado' => 'Sección / Encabezado (sin respuesta)',
+                                    'corta' => 'Texto corto (input sencillo)',
+                                    'larga' => 'Texto largo (área de texto)',
+                                    'si_no' => 'Sí / No',
+                                    'unica_respuesta' => 'Selección única (desplegable)',
+                                    'multiple_respuesta' => 'Selección múltiple (varias opciones)',
+                                    'fecha' => 'Fecha',
+                                    'numero' => 'Numérico',
+                                    'moneda' => 'Moneda',
+                                    'archivo' => 'Subir archivo (PDF)',
+                                    'imagen' => 'Subir imagen (PNG/JPG/JPEG)',
+                                    default => $tipo->nombre
+                                };
+                            @endphp
+                            <option value="{{$tipo->id}}">{{$nombreLimpio}}</option>
                             @endforeach
-
                         </select>
                         @error('tipo_elemento_id')
                         <span class="text-danger">{{ $message }}</span>
@@ -404,21 +489,27 @@
 
 
             // ESTO SON PARA LOS SWEET FIRE CUANDO SE ACABE CADA ELEMENTO
-            Livewire.on('msn', () => {
+            Livewire.on('msn', (data) => {
+                const detail = Array.isArray(data) ? data[0] : (data?.detail ?? data ?? {});
                 Swal.fire({
-                    title: event.detail.msnTitulo
-                    , html: event.detail.msnTexto
-                    , icon: event.detail.msnIcono
-                    , customClass: {
+                    title: detail.msnTitulo || 'Notificación',
+                    html: detail.msnTexto || '',
+                    icon: detail.msnIcono || 'info',
+                    customClass: {
                         confirmButton: 'btn btn-primary'
-                    }
-                    , buttonsStyling: false
+                    },
+                    buttonsStyling: false
                 });
             });
+
             // ESTO ES PARA CERRAR EL MODAL
-            Livewire.on('cerrarModal', () => {
-                $('#' + event.detail.nombreModal).modal('hide');
-                $(".select2").val('').trigger('change')
+            Livewire.on('cerrarModal', (data) => {
+                const detail = Array.isArray(data) ? data[0] : (data?.detail ?? data ?? {});
+                const modalId = detail.nombreModal;
+                if (modalId) {
+                    $('#' + modalId).modal('hide');
+                }
+                $(".select2").val('').trigger('change');
             });
 
             //// PARA QUE ESTO FUNCIONE DEBE CARGARSE LA LIBRERIA  SORTABLE.MIN

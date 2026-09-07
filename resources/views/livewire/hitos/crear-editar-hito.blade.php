@@ -13,7 +13,7 @@
                 @endif
             </p>
         </div>
-        <a href="{{ route('hitos.index') }}" class="btn btn-outline-secondary">
+        <a href="{{ route('hitos.index') }}" class="btn btn-outline-primary rounded-pill waves-effect">
             <i class="ti ti-arrow-left me-1"></i> Volver al Listado
         </a>
     </div>
@@ -24,7 +24,7 @@
         {{-- ============================================================ --}}
         <div class="card mb-4 border shadow-sm">
             <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
-                <h5 class="card-title fw-bold mb-0 text-primary d-flex align-items-center">
+                <h5 class="card-title fw-bold mb-0  d-flex align-items-center">
                     <span class="badge bg-label-primary text-white rounded-circle p-2 me-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">1</span>
                     Información General
                 </h5>
@@ -120,7 +120,7 @@
         {{-- ============================================================ --}}
         <div class="card mb-4 border shadow-sm">
             <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
-                <h5 class="card-title fw-bold mb-0 text-primary d-flex align-items-center">
+                <h5 class="card-title fw-bold mb-0  d-flex align-items-center">
                     <span class="badge bg-label-primary text-white rounded-circle p-2 me-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">2</span>
                     Multimedia y Fotografías
                 </h5>
@@ -241,7 +241,7 @@
             {{-- ============================================================ --}}
             <div class="card mb-4 border shadow-sm">
                 <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
-                    <h5 class="card-title fw-bold mb-0 text-primary d-flex align-items-center">
+                    <h5 class="card-title fw-bold mb-0  d-flex align-items-center">
                         <span class="badge bg-label-primary text-white rounded-circle p-2 me-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">3</span>
                         Configuración de Activación y Disparadores
                     </h5>
@@ -669,7 +669,7 @@
             @if($tipoSeleccionado && $tipoSeleccionado->slug !== 'manual')
             <div class="card mb-4 border shadow-sm">
                 <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
-                    <h5 class="card-title fw-bold mb-0 text-primary d-flex align-items-center">
+                    <h5 class="card-title fw-bold mb-0 d-flex align-items-center">
                         <span class="badge bg-label-primary text-white rounded-circle p-2 me-2 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">4</span>
                         Restricciones y Segmentación de Audiencia
                     </h5>
@@ -791,7 +791,7 @@
 
         {{-- Barra de Acciones Final --}}
         <div class="d-flex justify-content-between align-items-center py-3">
-            <a href="{{ route('hitos.index') }}" class="btn btn-outline-secondary">
+            <a href="{{ route('hitos.index') }}" class="btn  btn-outline-primary rounded-pill waves-effect">
                 <i class="ti ti-arrow-left me-1"></i> Cancelar y Volver
             </a>
             <button type="submit" class="btn btn-primary px-4 py-2">

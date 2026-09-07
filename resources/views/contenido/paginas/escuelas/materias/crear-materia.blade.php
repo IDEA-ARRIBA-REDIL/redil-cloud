@@ -313,7 +313,7 @@
 @endsection
 
 @section('content')
-    <form id="formNuevaMateria" action="{{ route('materias.guardar', $escuela) }}" method="POST">
+    <form id="formNuevaMateria" action="{{ route('materias.guardar', $escuela) }}" method="POST" novalidate>
         <div class="col-md-12">
             <div class="card mb-4 rounded rounded-3">
                 <img id="preview-foto" class="cropped-img card-img-top mb-2"
@@ -348,7 +348,7 @@
                 <div class="card h-100 p-6">
                     <h5 class="mb-4">Configuración inicial</h5>
                     <div class="row ">
-                        <div class="mb-3 col-12 col-md-4 col-sm-12">
+                        <div class="mb-3 col-12 {{ $escuela->esPorMaterias() ? 'col-md-5' : 'col-md-6' }} col-sm-12">
                             <label for="nombre" class="form-label">Nombre</label>
                             <input value="{{ old('nombre', '') }}" type="text"
                                 class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre">
@@ -357,7 +357,17 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3 col-12 col-md-4 col-sm-12">
+                        <div class="mb-3 col-6 {{ $escuela->esPorMaterias() ? 'col-md-2' : 'col-md-3' }} col-sm-6">
+                            <label for="orden" class="form-label">Orden</label>
+                            <input value="{{ old('orden', 1) }}" type="number" min="1"
+                                class="form-control @error('orden') is-invalid @enderror" id="orden" name="orden">
+                            @error('orden')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        @if($escuela->esPorMaterias())
+                        <div class="mb-3 col-6 col-md-2 col-sm-6">
                             <label for="creditos" class="form-label">Créditos</label>
                             <input value="{{ old('creditos', '') }}" type="number" min="0"
                                 class="form-control @error('creditos') is-invalid @enderror" id="creditos" name="creditos">
@@ -365,8 +375,9 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+                        @endif
 
-                        <div class="mb-3 col-md-4 col-sm-12">
+                        <div class="mb-3 col-12 col-md-3 col-sm-12">
                             <label class="form-label">¿Habilitar asistencia?</label><br>
                             <label class="switch switch-lg">
                                 <input type="checkbox" class="switch-input" id="togglehabilitarAsistencias"

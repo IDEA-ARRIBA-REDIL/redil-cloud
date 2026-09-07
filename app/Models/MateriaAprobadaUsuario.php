@@ -70,9 +70,12 @@ class MateriaAprobadaUsuario extends Model
         static::saving(function ($materiaAprobada) {
             if ((int) $materiaAprobada->aprobado === self::ESTADO_APROBADO) {
                 if (is_null($materiaAprobada->creditos_aprobados) && $materiaAprobada->materia_id) {
-                    $materia = $materiaAprobada->materia ?? Materia::find($materiaAprobada->materia_id);
-                    if ($materia && ! is_null($materia->creditos)) {
+                    $materia = $materiaAprobada->materia ?? Materia::with('escuela')->find($materiaAprobada->materia_id);
+                    $esPorMaterias = $materia && ! $materia->nivel_id && ($materia->escuela ? $materia->escuela->esPorMaterias() : true);
+                    if ($esPorMaterias && ! is_null($materia->creditos)) {
                         $materiaAprobada->creditos_aprobados = $materia->creditos;
+                    } else {
+                        $materiaAprobada->creditos_aprobados = null;
                     }
                 }
             } else {
@@ -124,7 +127,6 @@ class MateriaAprobadaUsuario extends Model
             }
         });
     }
-
 
     // -----------------------------------------------------------------
     // RELACIONES

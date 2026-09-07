@@ -203,6 +203,7 @@ class IglesiaInfantilController extends Controller
             'salon_infantil_id' => 'required|integer|exists:salones_infantil,id',
             'estacion_salon_infantil_id' => 'required|integer|exists:estaciones_salon_infantil,id',
             'indicaciones_medicas' => 'nullable|string',
+            'formato_ticket' => 'nullable|string|in:actual,termica_80mm,dymo_450,largo_20x9',
         ]);
 
         // 1. Verificar que el menor no tenga ya un registro activo en este reporte
@@ -234,8 +235,12 @@ class IglesiaInfantilController extends Controller
             'hora_entrada' => now()->format('H:i:s'),
         ]);
 
-        return redirect()->route('iglesiaInfantil.registro.ticket', $registro)
-            ->with('success', 'Menor registrado correctamente. Código de retiro: '.$codigoRetiro);
+        $formato = $request->input('formato_ticket', 'actual');
+
+        return redirect()->route('iglesiaInfantil.registro.ticket', [
+            'registro' => $registro,
+            'formato' => $formato,
+        ])->with('success', 'Menor registrado correctamente. Código de retiro: '.$codigoRetiro);
     }
 
     /** 10. Procesar retiro del menor */
@@ -390,12 +395,25 @@ class IglesiaInfantilController extends Controller
     // TICKET DE IMPRESIÓN
     // =========================================================================
 
-    /** 14. Vista de ticket de impresión (tamaño térmico) */
-    public function imprimirTicket(RegistroIglesiaInfantil $registro)
+    /** 14. Vista de ticket de impresión (soporte para 4 formatos multimodelo) */
+    public function imprimirTicket(Request $request, RegistroIglesiaInfantil $registro)
     {
-        $registro->load(['menor', 'adultoIngreso', 'salon', 'estacion', 'reporteReunion.reunion']);
+        $registro->load([
+            'menor',
+            'adultoIngreso',
+            'servidorIngreso',
+            'salon',
+            'estacion',
+            'reporteReunion.reunion',
+        ]);
 
-        return view('contenido.paginas.iglesia-infantil.ticket', compact('registro'));
+        $formato = $request->query('formato', 'actual');
+        $formatosValidos = ['actual', 'termica_80mm', 'dymo_450', 'largo_20x9'];
+        if (! in_array($formato, $formatosValidos, true)) {
+            $formato = 'actual';
+        }
+
+        return view('contenido.paginas.iglesia-infantil.ticket', compact('registro', 'formato'));
     }
 
     // =========================================================================

@@ -352,7 +352,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasAnyPermission(['reuniones.item_reuniones', 'reuniones.subitem_lista_reuniones', 'reuniones.subitem_nueva_reunion', 'reporte_reuniones.subitem_lista_reportes_reunion', 'reporte_reuniones.subitem_proximas_reuniones']))
+        @if ($rolActivo->hasAnyPermission(['reuniones.item_reuniones', 'reuniones.subitem_lista_reuniones', 'reuniones.subitem_nueva_reunion', 'reporte_reuniones.subitem_lista_reportes_reunion', 'reporte_reuniones.subitem_proximas_reuniones', 'reporte_reuniones.ver_dashboard_estadistico']))
             <li
                 class="menu-item {{ request()->routeIs('reuniones.*') || request()->routeIs('reporteReunion.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
@@ -361,6 +361,13 @@
                 </a>
 
                 <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('reporte_reuniones.ver_dashboard_estadistico'))
+                        <li class="menu-item {{ request()->routeIs('reporteReunion.dashboard*') ? 'active' : '' }}">
+                            <a href="{{ route('reporteReunion.dashboard') }}" class="menu-link">
+                                <div>Dashboard</div>
+                            </a>
+                        </li>
+                    @endif
                     @if ($rolActivo->hasPermissionTo('reuniones.subitem_lista_reuniones'))
                         <li class="menu-item {{ request()->routeIs('reuniones.lista') ? 'active' : '' }}">
                             <a href="{{ route('reuniones.lista') }}" class="menu-link">
@@ -377,7 +384,7 @@
                         </li>
                     @endif
                     @if ($rolActivo->hasPermissionTo('reporte_reuniones.subitem_lista_reportes_reunion'))
-                        <li class="menu-item">
+                        <li class="menu-item {{ request()->routeIs('reporteReunion.lista') ? 'active' : '' }}">
                             <a href="{{ route('reporteReunion.lista') }}" class="menu-link">
                                 <div>Listado reportes</div>
                             </a>

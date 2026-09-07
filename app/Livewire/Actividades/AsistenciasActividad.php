@@ -320,6 +320,7 @@ class AsistenciasActividad extends Component
 
         // 1. Obtener elementos de formulario con 'visible_asistencia' activado
         $elementosVisibles = $this->actividad->elementos()
+            ->with('opciones')
             ->where('visible_asistencia', true)
             ->orderBy('orden', 'asc')
             ->get();
@@ -388,10 +389,14 @@ class AsistenciasActividad extends Component
             case 'si_no':
                 return $respuesta->respuesta_si_no == 1 ? 'Sí' : 'No';
             case 'unica_respuesta':
-                // Idealmente buscar el texto de la opción si está disponible, sino mostrar el valor directo
-                return e($respuesta->respuesta_unica);
+                $opcion = $elemento->opciones->firstWhere('id', $respuesta->respuesta_unica);
+
+                return $opcion ? e($opcion->valor_texto) : e($respuesta->respuesta_unica);
             case 'multiple_respuesta':
-                return e($respuesta->respuesta_multiple);
+                $ids = array_filter(explode(',', (string) $respuesta->respuesta_multiple));
+                $nombres = $elemento->opciones->whereIn('id', $ids)->pluck('valor_texto')->toArray();
+
+                return count($nombres) > 0 ? e(implode(', ', $nombres)) : e($respuesta->respuesta_multiple);
             case 'fecha':
                 return e($respuesta->respuesta_fecha);
             case 'numero':

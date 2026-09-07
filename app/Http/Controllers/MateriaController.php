@@ -110,6 +110,7 @@ class MateriaController extends Controller
         // Validación de los campos
         $validatedData = $request->validate([
             'nombre' => 'required|string|max:100',
+            'orden' => 'nullable|integer|min:1',
             'creditos' => 'nullable|integer|min:0',
             'descripción' => 'required|string',
             'nivel_id' => 'nullable|integer',
@@ -124,6 +125,8 @@ class MateriaController extends Controller
         ], [
             'nombre.required' => 'El nombre de la materia es obligatorio.',
             'nombre.max' => 'El nombre no puede tener más de 100 caracteres.',
+            'orden.integer' => 'El orden debe ser un número entero.',
+            'orden.min' => 'El orden debe ser al menos 1.',
             'creditos.integer' => 'Los créditos deben ser un número entero.',
             'creditos.min' => 'Los créditos no pueden ser un valor negativo.',
             'descripción.required' => 'La descripción es obligatoria.',
@@ -143,7 +146,8 @@ class MateriaController extends Controller
         $configuracion = Configuracion::find(1);
         $materia = new Materia;
         $materia->nombre = $request->nombre;
-        $materia->creditos = $request->input('creditos');
+        $materia->orden = $request->input('orden', 1) ?? 1;
+        $materia->creditos = $escuela->esPorMaterias() ? $request->input('creditos') : null;
         $materia->descripcion = $request->descripción;
 
         $materia->limite_reporte_asistencias = $request->limiteReportes;
@@ -380,6 +384,7 @@ class MateriaController extends Controller
 
         $rules = [
             'nombre' => 'required|string|max:100',
+            'orden' => 'nullable|integer|min:1',
             'creditos' => 'nullable|integer|min:0',
             'descripción' => 'required|string',
             'nivel_id' => 'nullable|integer',
@@ -418,6 +423,8 @@ class MateriaController extends Controller
         $messages = [
             'nombre.required' => 'El nombre de la materia es obligatorio.',
             'nombre.max' => 'El nombre no puede tener más de 100 caracteres.',
+            'orden.integer' => 'El orden debe ser un número entero.',
+            'orden.min' => 'El orden debe ser al menos 1.',
             'creditos.integer' => 'Los créditos deben ser un número entero.',
             'creditos.min' => 'Los créditos no pueden ser un valor negativo.',
             'descripción.required' => 'La descripción es obligatoria.',
@@ -440,8 +447,12 @@ class MateriaController extends Controller
         }
 
         // Actualizar campos básicos
+        $escuela = $materia->escuela;
+        $esPorMaterias = $escuela ? $escuela->esPorMaterias() : empty($validatedData['nivel_id']);
+
         $materia->nombre = $validatedData['nombre'];
-        $materia->creditos = $validatedData['creditos'] ?? null;
+        $materia->orden = $request->input('orden', 1) ?? 1;
+        $materia->creditos = ($esPorMaterias && empty($validatedData['nivel_id'])) ? ($validatedData['creditos'] ?? null) : null;
         $materia->descripcion = $validatedData['descripción'] ?? $validatedData['descripcion']; // Ajusta según el nombre real
         $materia->nivel_id = $validatedData['nivel_id'] ?? null;
 

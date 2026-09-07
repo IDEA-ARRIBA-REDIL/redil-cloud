@@ -39,6 +39,25 @@ Este módulo gestiona la identidad, niveles de autoridad y permisos granulares d
 3. Spatie filtra las capacidades basadas en ese rol activo.
 4. Si el usuario cambia de rol (ej: de "Lider" a "Administrativo"), se llama a `switchActiveRole`, lo que actualiza la DB y refresca los permisos en la sesión/caché.
 
+## Integración validada con Grupos
+
+- `User::gruposDondeAsiste()` representa la membresía estable mediante `integrantes_grupo`.
+- `User::gruposEncargados()` representa el liderazgo mediante `encargados_grupo`.
+- `User::grupoServicio()` representa las funciones de servicio mediante `servidores_grupo`.
+- `User::reportesGrupo()` conserva la asistencia de cada reunión mediante `asistencia_grupos`; no reemplaza la membresía estable.
+- `User::cambiarGrupo()` evita duplicados, sincroniza la sede, registra la vinculación en la bitácora y dispara los hitos configurados para el tipo de grupo.
+- `User::desvincularDeGrupo()` elimina la membresía vigente y registra el movimiento histórico.
+- `User::gruposMinisterio()` construye la jerarquía desde la cadena encargado → grupo → integrante que lidera otro grupo.
+- `Grupo::asignarEncargado()` evita una segunda asignación del mismo líder y, por tanto, el disparo duplicado de su hito.
+- La automatización de un `TipoGrupo` delega en `User::promoverTipoUsuario()`: actualiza el tipo, reemplaza únicamente el rol dependiente, conserva los roles independientes y no degrada a un usuario de mayor nivel.
+- El correo de bienvenida por vinculación se envía al correo del usuario, cuando existe, y no a una dirección técnica fija.
+
+## Regla canónica de autorización
+
+Los métodos `hasPermissionTo()`, `checkPermissionTo()`, `hasAnyPermission()`, `hasAllPermissions()` y las comprobaciones mediante `can()` deben resolver capacidades exclusivamente desde el rol activo. La relación `roles()` conserva todos los roles asignados para permitir el cambio de contexto, pero está limitada al `model_type` polimórfico de `User`.
+
+El piloto está cubierto por `tests/Feature/UserGroupPilotTest.php`, con siete escenarios que validan rol activo, cambio de rol, aislamiento polimórfico, membresía y desvinculación, jerarquía, asistencia histórica, hitos idempotentes y promoción automática de tipo/rol.
+
 ## Seeders Críticos
 - `EntidadRelacionadaSeeder.php`: Crea las entidades base (Iglesia, Liceo, Radio).
 - `RoleSeeder.php`: Define los roles base y sus iconos/propiedades.

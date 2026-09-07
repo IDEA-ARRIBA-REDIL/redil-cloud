@@ -27,10 +27,17 @@
 @section('title', 'Inicio')
 
 
+@section('vendor-style')
+    @vite([
+        'resources/assets/vendor/libs/fullcalendar/fullcalendar.scss',
+    ])
+@endsection
+
 @section('page-style')
     @vite([
         'resources/assets/vendor/libs/swiper/swiper.scss',
-        'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
+        'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+        'resources/assets/vendor/scss/pages/app-calendar.scss'
     ])
     <style>
         /* Estilos para el header y navbar solo para dashboard  */
@@ -238,8 +245,10 @@
 
 @section('vendor-script')
     @vite([
+        'resources/assets/vendor/libs/fullcalendar/fullcalendar.js',
         'resources/assets/vendor/libs/swiper/swiper.js',
-        'resources/assets/vendor/libs/sweetalert2/sweetalert2.js'
+        'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+        'resources/assets/vendor/libs/moment/moment.js'
     ])
 @endsection
 
@@ -746,6 +755,15 @@
                     </div>
                 @endif
             </div>
+
+            @if ($rolActivo && $rolActivo->hasPermissionTo('dashboard.dashboard_mostrar_calendario'))
+
+            aqui estoy si entre
+                @livewire('dashboard.calendario-actividades', [
+                    'claseColumnas' => 'col-12 col-lg-12 mt-3'
+                ])
+            @endif
+
             <!-- Elfsight Instagram Feed | Iglesia Manantial de Vida Eterna -->
             @if(1==2)
             <h5 class="text-black fw-bold  mt-3">Siguenos en Instagram</h5>

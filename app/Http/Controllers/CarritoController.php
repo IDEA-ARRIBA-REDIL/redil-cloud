@@ -270,9 +270,10 @@ class CarritoController extends Controller
                 // Validación Específica para Archivos
                 if ($elemento->tipoElemento->clase == 'archivo') {
                     $yaRespondido = isset($respuestasExistentes[$elemento->id]) && ! empty($respuestasExistentes[$elemento->id]->url_archivo);
+                    $vieneEnRequest = $request->filled($fieldName) || $request->hasFile($fieldName);
 
-                    // Si no hay respuesta previa y no se está subiendo un archivo ahora -> Error
-                    if (! $yaRespondido && ! $request->hasFile($fieldName)) {
+                    // Si no hay respuesta previa y no se está subiendo/enviando un archivo ahora -> Error
+                    if (! $yaRespondido && ! $vieneEnRequest) {
                         return back()->withErrors([$fieldName => "El campo '{$elemento->titulo}' es obligatorio."])->withInput();
                     }
                 }
@@ -313,14 +314,14 @@ class CarritoController extends Controller
                     'compra_id' => $compra->id,
                     'elemento_formulario_actividad_id' => $elementoId,
                 ]);
-                $respuesta->inscripcion_id = $inscripcion->id;
+                $respuesta->inscripcion_id = $inscripcion?->id;
 
                 // Asignamos el ID del usuario que se está inscribiendo.
                 if (isset($usuario)) {
 
                     $respuesta->user_id = $compra->pariente_usuario_id ? $compra->pariente_usuario_id : $compra->user_id;
                 }
-                $respuesta->inscripcion_id = $inscripcion->id;
+                $respuesta->inscripcion_id = $inscripcion?->id;
 
                 // --- SWITCH COMPLETO PARA GUARDAR CADA TIPO DE RESPUESTA ---
                 switch ($elemento->tipoElemento->clase) {
@@ -962,9 +963,9 @@ class CarritoController extends Controller
         $tipo = $request->input('tipo', 'archivo'); // 'archivo' o 'imagen'
 
         if ($tipo === 'imagen') {
-            $request->validate(['archivo' => 'required|file|image|max:5120']);
+            $request->validate(['archivo' => 'required|file|mimes:jpeg,jpg,png|max:5120']);
         } else {
-            $request->validate(['archivo' => 'required|file|mimes:pdf,doc,docx|max:10240']);
+            $request->validate(['archivo' => 'required|file|mimes:pdf|max:10240']);
         }
 
         $configuracion = \App\Models\Configuracion::first();

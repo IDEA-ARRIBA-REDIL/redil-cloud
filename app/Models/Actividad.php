@@ -706,6 +706,15 @@ class Actividad extends Model
      */
     public function validarUsuarioEnCategoria(User $usuario, ?ActividadCategoria $categoria = null)
     {
+        // 0. Si la actividad es totalmente pública (vista por todos) y no hay restricción por categoría, está disponible
+        if ($this->totalmente_publica && ! $this->restriccion_por_categoria) {
+            return (object) [
+                'categoria' => $categoria,
+                'estado' => 'DISPONIBLE',
+                'motivos' => [],
+            ];
+        }
+
         $motivosFallo = [];
         $pasosCrecimientoUsuario = $usuario->pasosCrecimiento->keyBy('id');
 
@@ -792,6 +801,16 @@ class Actividad extends Model
      */
     public function validarAccesoGlobal(User $usuario): array
     {
+        // 0. Si la actividad es totalmente pública (vista por todos) y no tiene restricción por categoría, acceso concedido
+        if ($this->totalmente_publica && ! $this->restriccion_por_categoria) {
+            return [
+                'success' => true,
+                'message' => 'Actividad totalmente pública.',
+                'categorias' => $this->categorias,
+                'tipo_restriccion' => 'ninguna',
+            ];
+        }
+
         // Si la actividad es tipo escuela, delegamos a la lógica específica de escuela
         if ($this->tipo && $this->tipo->tipo_escuelas) {
             $resultado = $this->validarCategoriasEscuelaParaTaquilla($usuario);

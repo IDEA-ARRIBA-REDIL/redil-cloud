@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Guía navegable del piloto REDIL Cloud para desarrollar features trazables con Kaddo.">
+  <title>REDIL Cloud · Ruta de desarrollo con Kaddo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18211b;
+      --muted: #5f6f64;
+      --paper: #fbfcf8;
+      --card: #ffffff;
+      --line: #dfe8df;
+      --green: #2f790d;
+      --green-2: #52c700;
+      --green-soft: #ecf7e7;
+      --cyan: #21b8c8;
+      --amber: #9a6500;
+      --amber-soft: #fff6d8;
+      --shadow: 0 16px 45px rgba(26, 58, 30, .09);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; }
+    button { font: inherit; }
+    code { padding: .12em .38em; border-radius: 6px; background: #edf3ed; color: #245d12; font-size: .9em; }
+    .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 22px;
+      background: #121713;
+      color: #f5f8f4;
+      overflow-y: auto;
+    }
+    .brand { display: flex; gap: 12px; align-items: center; margin-bottom: 30px; }
+    .mark {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      place-items: center;
+      border: 2px solid #73e63b;
+      border-radius: 50%;
+      color: #73e63b;
+      font-weight: 800;
+    }
+    .brand strong, .brand span { display: block; }
+    .brand span { color: #aab5ac; font-size: .78rem; }
+    .nav-label { margin: 24px 12px 8px; color: #859188; font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    nav a {
+      display: block;
+      margin: 3px 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: #d8e1d9;
+      text-decoration: none;
+    }
+    nav a:hover, nav a:focus-visible { background: #243128; color: white; outline: none; }
+    .sidebar-note { margin-top: 26px; padding: 14px; border: 1px solid #344239; border-radius: 14px; color: #b9c4bb; font-size: .8rem; }
+    main { width: min(1180px, 100%); padding: 38px clamp(22px, 5vw, 72px) 80px; }
+    section { scroll-margin-top: 24px; margin-top: 54px; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(34px, 6vw, 72px);
+      border-radius: 30px;
+      background: linear-gradient(135deg, #2a750c 0%, #51c800 70%, #7ee140 100%);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      right: -125px;
+      top: -135px;
+      border: 44px solid rgba(255,255,255,.12);
+      border-radius: 50%;
+    }
+    .eyebrow { margin: 0 0 10px; font-size: .76rem; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+    h1 { max-width: 780px; margin: 0; font-size: clamp(2.2rem, 5vw, 4.5rem); line-height: 1.02; letter-spacing: -.055em; }
+    .hero p { max-width: 720px; margin: 22px 0 0; font-size: clamp(1rem, 2vw, 1.25rem); }
+    .hero-actions, .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: #172019;
+      color: white;
+      font-weight: 750;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .button.light { background: white; color: var(--green); }
+    .button.ghost { border-color: var(--line); background: transparent; color: var(--green); }
+    .button:hover { transform: translateY(-1px); }
+    h2 { margin: 0 0 9px; font-size: clamp(1.65rem, 3vw, 2.5rem); letter-spacing: -.035em; }
+    h3 { margin: 0 0 9px; font-size: 1.1rem; }
+    .lead { max-width: 820px; margin: 0 0 24px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+    .card {
+      grid-column: span 4;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 8px 22px rgba(26, 58, 30, .045);
+    }
+    .card.wide { grid-column: span 6; }
+    .card.full { grid-column: 1 / -1; }
+    .card p:last-child { margin-bottom: 0; }
+    .tag { display: inline-flex; padding: 4px 9px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: .72rem; font-weight: 850; text-transform: uppercase; }
+    .tag.pending { background: var(--amber-soft); color: var(--amber); }
+    .status-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .step-list { display: grid; gap: 13px; margin-top: 26px; counter-reset: steps; }
+    details.step {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 6px 18px rgba(26, 58, 30, .035);
+    }
+    details.step summary {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      cursor: pointer;
+      font-weight: 800;
+      list-style: none;
+    }
+    details.step summary::-webkit-details-marker { display: none; }
+    details.step summary::before {
+      counter-increment: steps;
+      content: counter(steps);
+      display: grid;
+      flex: 0 0 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green-soft);
+      color: var(--green);
+    }
+    details.step[open] summary { color: var(--green); }
+    .step-body { padding: 0 22px 22px 68px; color: var(--muted); }
+    .step-body ul { padding-left: 20px; }
+    .instruction-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 8px 0 16px; }
+    .instruction-box { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #f8faf7; }
+    .instruction-box strong { display: block; margin-bottom: 5px; color: var(--ink); }
+    .expected { margin-top: 14px; padding: 12px 14px; border-left: 4px solid var(--green-2); border-radius: 9px; background: var(--green-soft); color: var(--ink); }
+    .callout { padding: 20px 22px; border-left: 5px solid var(--cyan); border-radius: 12px; background: #eafafd; }
+    .warning { border-left-color: #e0a31b; background: var(--amber-soft); }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 24px; }
+    .flow span { padding: 9px 12px; border: 1px solid var(--line); border-radius: 999px; background: white; font-size: .83rem; font-weight: 700; }
+    .flow i { color: var(--green); font-style: normal; font-weight: 900; }
+    pre {
+      overflow-x: auto;
+      margin: 14px 0 0;
+      padding: 18px;
+      border-radius: 14px;
+      background: #121713;
+      color: #e8f1e9;
+      white-space: pre-wrap;
+      font: 500 .88rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .checklist { display: grid; gap: 10px; padding: 0; list-style: none; }
+    .checklist label { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .checklist input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--green); }
+    .progress { height: 9px; overflow: hidden; border-radius: 999px; background: #e4ebe4; }
+    .progress > div { width: 0; height: 100%; background: linear-gradient(90deg, var(--green), var(--green-2)); transition: width .2s ease; }
+    .progress-label { margin: 8px 0 18px; color: var(--muted); font-size: .82rem; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--green); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; }
+    .mini-list { display: grid; gap: 8px; padding-left: 20px; }
+    .source-card { position: relative; padding-top: 50px; }
+    .source-card::before { content: attr(data-kind); position: absolute; top: 20px; left: 24px; color: var(--green); font-size: .68rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    footer { margin-top: 62px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: .86rem; }
+    .mobile-menu { display: none; }
+
+    @media (max-width: 900px) {
+      .layout { display: block; }
+      .sidebar { position: static; width: 100%; height: auto; padding: 18px; }
+      .brand { margin: 0; }
+      .mobile-menu { display: inline-flex; margin-left: auto; padding: 8px 12px; border: 1px solid #405045; border-radius: 10px; background: transparent; color: white; }
+      .sidebar nav, .sidebar-note, .nav-label { display: none; }
+      .sidebar.open nav, .sidebar.open .sidebar-note, .sidebar.open .nav-label { display: block; }
+      main { padding: 24px 18px 60px; }
+      .card, .card.wide { grid-column: 1 / -1; }
+      .instruction-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      .sidebar, .hero-actions, .actions, .button { display: none !important; }
+      .layout { display: block; }
+      main { width: 100%; padding: 0; }
+      .hero { color: #111; background: white; border: 2px solid #222; box-shadow: none; }
+      section { break-inside: avoid; margin-top: 32px; }
+      details.step { break-inside: avoid; }
+      details.step .step-body { display: block; }
+      .card { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="mark">R</div>
+        <div><strong>REDIL Cloud</strong><span>Piloto de desarrollo trazable</span></div>
+        <button class="mobile-menu" id="menuButton" aria-expanded="false" aria-controls="mainNav">Menú</button>
+      </div>
+      <div class="nav-label">Recorrido</div>
+      <nav id="mainNav" aria-label="Navegación principal">
+        <a href="#inicio">Inicio</a>
+        <a href="#conversacion">Conversación nueva</a>
+        <a href="#insumos">Qué archivos entregar</a>
+        <a href="#alcance">Alcance del piloto</a>
+        <a href="#ruta">Ruta paso a paso</a>
+        <a href="#roles">Responsabilidades</a>
+        <a href="#nuevo-modulo">Nuevo módulo</a>
+        <a href="#evidencia">Videos y capturas</a>
+        <a href="#caso-piloto">Lo aprendido aquí</a>
+        <a href="#mensajes">Mensajes para Codex</a>
+        <a href="#ejercicio">Ejercicio real</a>
+        <a href="#revision">Lista de cierre</a>
+        <a href="#fuentes">Fuentes</a>
+      </nav>
+      <p class="sidebar-note">Esta página explica el proceso. La fuente de verdad continúa siendo la documentación Markdown versionada y recuperable por Kaddo.</p>
+    </aside>
+
+    <main>
+      <header class="hero" id="inicio">
+        <p class="eyebrow">Guía de trabajo del equipo · Piloto</p>
+        <h1>Del feature a un desarrollo que no queda en el aire.</h1>
+        <p>Una ruta práctica para empezar con contexto, implementar con alcance controlado y terminar con pruebas, documentación, Kaddo y aprendizaje.</p>
+        <div class="hero-actions">
+          <a class="button light" href="#ruta">Empezar la ruta</a>
+          <button class="button" type="button" onclick="window.print()">Imprimir o guardar PDF</button>
+        </div>
+      </header>
+
+      <section id="conversacion">
+        <p class="eyebrow" style="color:var(--green)">01 · No hace falta conocer este chat</p>
+        <h2>Cómo empezar correctamente una conversación nueva</h2>
+        <p class="lead">Codex no necesita recibir toda esta conversación. Necesita una solicitud clara, los documentos disponibles y permiso para inspeccionar el repositorio. El contexto estable debe vivir en archivos y en Kaddo, no depender de la memoria de un chat.</p>
+        <div class="grid">
+          <article class="card wide"><span class="tag">Obligatorio</span><h3>Explica la necesidad</h3><ul class="mini-list"><li>Qué sucede actualmente.</li><li>Qué debería suceder.</li><li>Quién usa el flujo.</li><li>Cómo se comprobará.</li></ul></article>
+          <article class="card wide"><span class="tag">Adjunta lo disponible</span><h3>Entrega puntos de entrada</h3><p>Arquitectura, archivo <code>agenteXxx.md</code>, documentación previa, videos, capturas o nombres de archivos técnicos conocidos. No tienes que descubrir todo antes de preguntar.</p></article>
+          <article class="card wide"><span class="tag">Primera respuesta</span><h3>Pide descubrimiento antes de código</h3><p>Solicita que identifique el dominio, consulte Kaddo, contraste documentación y código, cree el WI y presente preguntas, alcance, criterios y plan.</p></article>
+          <article class="card wide"><span class="tag">Punto de control</span><h3>Autoriza después</h3><p>Solo cuando el plan represente la necesidad real indicas “puedes proceder”. Esa confirmación habilita la implementación del WI, no cambios adicionales.</p></article>
+        </div>
+        <div class="callout" style="margin-top:18px"><strong>Si no sabes qué archivos pertenecen al flujo:</strong> dilo claramente. Codex debe localizar rutas, modelos, controladores, Livewire, vistas, migraciones y pruebas; no es necesario adivinarlos ni adjuntar todo el repositorio.</div>
+      </section>
+
+      <section id="insumos">
+        <p class="eyebrow" style="color:var(--green)">02 · Paquete de contexto</p>
+        <h2>Qué aporta cada archivo que entregas</h2>
+        <p class="lead">Los documentos orientan y el código comprueba. Entregar un archivo no significa que todas sus afirmaciones sean actuales: cada fuente se clasifica y se contrasta.</p>
+        <div class="grid">
+          <article class="card source-card" data-kind="Reglas globales"><h3><code>AGENTS.md</code></h3><p>Convenciones obligatorias del repositorio: arquitectura Laravel, pruebas, formato, seguridad y forma de trabajar.</p></article>
+          <article class="card source-card" data-kind="Punto de entrada"><h3><code>.agent/workflows/agenteXxx.md</code></h3><p>Indica qué documentación y archivos leer primero y resume conceptos del módulo. Puede ser histórico; se valida contra el código.</p></article>
+          <article class="card source-card" data-kind="Mapa general"><h3><code>ARCHITECTURE.md</code></h3><p>Explica stack, multi-tenancy, módulos e integraciones. Sirve para ubicarse, pero sus versiones se verifican.</p></article>
+          <article class="card source-card" data-kind="Conocimiento previo"><h3><code>_docs_agente/</code> y otros MD</h3><p>Aportan vocabulario, reglas, decisiones y antecedentes. Se distingue lo validado de lo pendiente o histórico.</p></article>
+          <article class="card source-card" data-kind="Fuente vigente"><h3><code>knowledge/</code> + Kaddo</h3><p>Contiene estado actual, capacidades, WIs, decisiones, evidencias y el enrutador mantenidos durante el piloto.</p></article>
+          <article class="card source-card" data-kind="Evidencia funcional"><h3>Videos, capturas y explicación</h3><p>Muestran el recorrido real y revelan reglas que los nombres técnicos no explican. Los datos sensibles se anonimizan.</p></article>
+        </div>
+
+        <h3 style="margin-top:30px">Qué archivos técnicos puede revisar Codex</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Archivo</th><th>Qué ayuda a entender</th><th>Qué debe acompañarlo</th></tr></thead>
+            <tbody>
+              <tr><td>Modelo Eloquent</td><td>Datos, relaciones y lógica de dominio.</td><td>Migraciones, consultas y pruebas.</td></tr>
+              <tr><td>Controlador</td><td>Entrada, autorización, validación y coordinación.</td><td>Rutas, policies, requests, modelos y respuestas.</td></tr>
+              <tr><td>Livewire</td><td>Estado y acciones reactivas de una pantalla.</td><td>Blade, eventos, permisos y pruebas.</td></tr>
+              <tr><td>Vista Blade</td><td>Campos, navegación, acciones y estados visibles.</td><td>Backend: ocultar un botón no prueba autorización.</td></tr>
+              <tr><td>Rutas y middleware</td><td>Entrada al flujo y protección inicial.</td><td>Autorización ejecutada dentro del flujo.</td></tr>
+              <tr><td>Migración</td><td>Tablas, claves, restricciones y pivotes.</td><td>Modelos y reglas funcionales.</td></tr>
+              <tr><td>Seeder</td><td>Configuración y datos iniciales.</td><td>Validación antes de asumir que es regla universal.</td></tr>
+              <tr><td>Prueba</td><td>Comportamiento reproducible que ya está cubierto.</td><td>Código actual y criterios del nuevo WI.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="alcance">
+        <p class="eyebrow" style="color:var(--green)">03 · Antes de comenzar</p>
+        <h2>Primero, saber si el trabajo está dentro del piloto</h2>
+        <p class="lead">El orquestador solo está habilitado para Usuarios, Roles/Permisos y Grupos. Un dominio nuevo requiere primero un WI de descubrimiento y autorización expresa.</p>
+        <div class="grid">
+          <article class="card"><span class="tag">Habilitado</span><h3>Usuarios</h3><p>Identidad, perfil, formularios, familia, tipo de usuario y datos congregacionales.</p></article>
+          <article class="card"><span class="tag">Habilitado</span><h3>Roles y permisos</h3><p>Rol activo, rol dependiente, roles independientes y autorización del dominio funcional.</p></article>
+          <article class="card"><span class="tag">Habilitado</span><h3>Grupos</h3><p>Integrantes, encargados, jerarquía, reportes, asistencia y georreferencia.</p></article>
+        </div>
+        <div class="callout warning" style="margin-top:18px"><strong>Puerta de alcance:</strong> Actividades, Escuelas, Reuniones y otros módulos todavía no se programan usando este piloto. Primero deben incorporarse mediante descubrimiento.</div>
+      </section>
+
+      <section id="ruta">
+        <p class="eyebrow" style="color:var(--green)">04 · Ciclo obligatorio</p>
+        <h2>Procedimiento ejecutable, incluso si nunca has usado Kaddo</h2>
+        <p class="lead">No necesitas crear archivos ni ejecutar comandos de memoria. En cada etapa tú aportas o confirmas información; Codex opera el repositorio y Kaddo, y debe mostrarte un resultado comprobable antes de continuar.</p>
+        <div class="grid" style="margin-bottom:22px">
+          <article class="card wide"><h3>¿Qué es un Work Item o WI?</h3><p>Es el expediente Markdown del desarrollo. Guarda el problema, alcance, criterios, archivos, pruebas y aprendizaje. Evita que la tarea exista únicamente dentro del chat.</p></article>
+          <article class="card wide"><h3>¿Qué es Kaddo?</h3><p>Es la herramienta que indexa ese conocimiento para recuperarlo en conversaciones futuras. Codex puede manejarla por el equipo; no es necesario conocer su CLI para comenzar.</p></article>
+          <article class="card wide"><h3>Estados del WI</h3><p><code>draft</code>: se define · <code>ready</code>: plan revisado · <code>in-progress</code>: se programa · <code>completed</code>: validado y documentado.</p></article>
+          <article class="card wide"><h3>¿Qué hace Guard?</h3><p>Busca cambios de código desconectados de documentación o ownership. Es control de trazabilidad; no reemplaza pruebas automatizadas ni validación manual.</p></article>
+        </div>
+        <div class="flow" aria-label="Resumen del flujo">
+          <span>Solicitud</span><i>→</i><span>WI</span><i>→</i><span>Contexto</span><i>→</i><span>Plan</span><i>→</i><span>Código</span><i>→</i><span>Pruebas</span><i>→</i><span>Conocimiento</span><i>→</i><span>Guard</span><i>→</i><span>Cierre</span>
+        </div>
+        <div class="step-list">
+          <details class="step" open><summary>Registrar la solicitud</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Explicas el problema actual, el resultado esperado, quién lo usa y cómo sabrás que quedó bien. Adjuntas la evidencia disponible.</div><div class="instruction-box"><strong>Lo que hace Codex</strong>Resume la necesidad y formula solamente preguntas cuya respuesta pueda cambiar la solución. Todavía no programa.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep1">Quiero resolver [problema]. Actualmente [comportamiento actual]; debería [resultado esperado]. Lo usa [actor] y lo validaré con [evidencia o resultado observable]. Adjunto [archivos, video o capturas]. No programes todavía: resume lo entendido y pregunta solo lo que cambie materialmente la solución.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep1">Copiar paso 1</button></div>
+            <div class="expected"><strong>Resultado antes de continuar:</strong> resumen correcto del problema, actor, resultado, evidencia y preguntas bloqueantes.</div>
+          </div></details>
+          <details class="step"><summary>Identificar el dominio y el alcance</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Confirmas si la clasificación corresponde a tu necesidad. Si el módulo está fuera del piloto, autorizas o no su descubrimiento.</div><div class="instruction-box"><strong>Lo que hace Codex</strong>Consulta el enrutador y distingue: dominio habilitado, módulo existente sin contexto o funcionalidad aún no implementada.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep2">Clasifica esta solicitud usando el enrutador de dominios. Dime el dominio principal, las dependencias mínimas y si está habilitado, existe en REDIL pero falta incorporarlo al orquestador, o si la funcionalidad aún no está implementada. No modifiques archivos todavía.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep2">Copiar paso 2</button></div>
+            <div class="expected"><strong>Resultado antes de continuar:</strong> dominio principal, dependencias y decisión explícita entre feature o descubrimiento.</div>
+          </div></details>
+          <details class="step"><summary>Crear el Work Item</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Lees el resumen, alcance, exclusiones y criterios. Corriges cualquier interpretación equivocada.</div><div class="instruction-box"><strong>Lo que hace Codex/Kaddo</strong>Crea un archivo WI en estado <code>draft</code>, le asigna identificador y lo incorpora al contexto. No tienes que escribir el archivo manualmente.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep3">Crea el Work Item en borrador para esta solicitud. Incluye problema, valor, alcance, exclusiones, criterios de aceptación observables, validaciones, ownership esperado, riesgos y preguntas. Muéstrame la ruta del archivo, su identificador y un resumen. No implementes todavía.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep3">Copiar paso 3</button></div>
+            <div class="expected"><strong>Resultado antes de continuar:</strong> WI en <code>draft</code> con criterios que tú puedas validar sin conocer Kaddo.</div>
+          </div></details>
+          <details class="step"><summary>Cargar y contrastar el contexto</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Respondes dudas funcionales y señalas si una conclusión no representa el software.</div><div class="instruction-box"><strong>Lo que hace Codex/Kaddo</strong>Genera el contexto, lee el estado del dominio y revisa rutas, controladores, modelos, Livewire, vistas, migraciones y pruebas reales.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep4">Carga el contexto de Kaddo y el current-state.md del dominio. Revisa el código real del flujo: rutas, controladores, modelos, Livewire, vistas, migraciones y pruebas. Separa lo comprobado en código, lo validado por negocio, las contradicciones y lo pendiente. No implementes.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep4">Copiar paso 4</button></div>
+            <div class="expected"><strong>Resultado antes de continuar:</strong> informe breve respaldado por archivos y una lista visible de dudas o diferencias.</div>
+          </div></details>
+          <details class="step"><summary>Presentar y aprobar el plan</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Revisas qué va a cambiar, qué queda fuera y cómo se probará. Si estás de acuerdo, respondes “puedes proceder”.</div><div class="instruction-box"><strong>Lo que hace Codex/Kaddo</strong>Presenta el plan y mueve el WI a <code>ready</code> cuando no hay bloqueos. Espera tu autorización antes de programar.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep5">Presenta el plan del WI con archivos esperados, cambios, riesgos, efectos secundarios, pruebas, validación manual, documentación y condiciones para detenerte. Si no quedan dudas bloqueantes, deja el WI listo y espera mi autorización antes de programar.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep5">Copiar paso 5</button></div>
+            <div class="expected"><strong>Resultado antes de continuar:</strong> plan revisable y WI en <code>ready</code>; todavía no debe existir implementación.</div>
+          </div></details>
+          <details class="step"><summary>Implementar el alcance aprobado</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Das la autorización explícita y respondes únicamente si aparece una decisión nueva.</div><div class="instruction-box"><strong>Lo que hace Codex</strong>Pasa el WI a <code>in-progress</code>, modifica solo los archivos previstos, preserva cambios ajenos y añade pruebas.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep6">Puedes proceder con el WI aprobado. Pásalo a in-progress, implementa únicamente el alcance, preserva cambios ajenos y añade las pruebas pertinentes. Si aparece una dependencia no prevista que amplíe el alcance, detente y explícamela antes de continuar.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep6">Copiar paso 6</button></div>
+            <div class="expected"><strong>Resultado antes de continuar:</strong> implementación limitada al WI y aviso previo ante cualquier ampliación material.</div>
+          </div></details>
+          <details class="step"><summary>Verificar código y comportamiento</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Realizas o confirmas la comprobación manual cuando Codex no puede observar completamente el flujo visual o los datos reales.</div><div class="instruction-box"><strong>Lo que hace Codex</strong>Ejecuta pruebas específicas, casos límite, Pint cuando cambia PHP, revisa el diff y ejecuta Guard. No oculta fallos.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep7">Verifica el feature: ejecuta pruebas específicas y casos límite, aplica Pint si cambió PHP, indícame la validación manual que debo hacer, revisa el diff y ejecuta Kaddo Guard. No cierres el WI si existe un fallo o una validación necesaria sin confirmar.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep7">Copiar paso 7</button></div>
+            <div class="expected"><strong>Resultado antes de continuar:</strong> pruebas y formato exitosos, Guard revisado, diff acotado y validación manual confirmada o claramente pendiente.</div>
+          </div></details>
+          <details class="step"><summary>Actualizar el conocimiento</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Confirmas las reglas de negocio nuevas o corregidas y distingues decisiones definitivas de temas aplazados.</div><div class="instruction-box"><strong>Lo que hace Codex/Kaddo</strong>Actualiza únicamente documentos afectados, capacidades, decisiones u ownership y regenera contexto y grafo.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep8">Actualiza solamente el conocimiento afectado por lo implementado: estado del dominio, capacidades, ADR si corresponde, ownership, riesgos o pendientes. Regenera el contexto y el grafo de Kaddo y enumera los documentos modificados.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep8">Copiar paso 8</button></div>
+            <div class="expected"><strong>Resultado antes de continuar:</strong> comportamiento nuevo recuperable en otra conversación y documentos modificados identificados.</div>
+          </div></details>
+          <details class="step"><summary>Registrar aprendizaje y cerrar</summary><div class="step-body">
+            <div class="instruction-grid"><div class="instruction-box"><strong>Lo que haces tú</strong>Revisas el resumen final y decides después si haces commit o pull request. Cerrar el WI no integra el código automáticamente.</div><div class="instruction-box"><strong>Lo que hace Codex/Kaddo</strong>Audita la Definition of Done, registra Learning y mueve el WI a <code>completed</code> solo si no falta validación.</div></div>
+            <strong>Prompt para esta etapa</strong><pre id="promptStep9">Audita el WI contra su Definition of Done. Registra Learning separando implementado, validado, aprendido y pendiente. Ciérralo solo si criterios, pruebas, validación, documentación y Guard están completos. Al final enumera pruebas, archivos y pendientes. No hagas commit salvo que te lo solicite.</pre><div class="actions"><button class="button ghost copy" data-target="promptStep9">Copiar paso 9</button></div>
+            <div class="expected"><strong>Resultado final:</strong> WI en <code>completed</code>, evidencia de validación, documentos actualizados y pendientes explícitos.</div>
+          </div></details>
+        </div>
+      </section>
+
+      <section id="roles">
+        <p class="eyebrow" style="color:var(--green)">05 · Responsabilidades</p>
+        <h2>Quién responde por cada parte</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Responsable</th><th>Debe asegurar</th></tr></thead>
+            <tbody>
+              <tr><td>Solicitante funcional</td><td>Problema, resultado esperado y validación del comportamiento.</td></tr>
+              <tr><td>Desarrollador</td><td>Contraste con código, implementación limitada, pruebas y hallazgos.</td></tr>
+              <tr><td>Codex / orquestador</td><td>Dominio correcto, contexto mínimo, control de alcance y trazabilidad.</td></tr>
+              <tr><td>Kaddo</td><td>Indexación del conocimiento, WI, ownership, preguntas y relaciones.</td></tr>
+              <tr><td>Revisor</td><td>Código, pruebas, documentación, alcance y diff antes de integrar.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="nuevo-modulo">
+        <p class="eyebrow" style="color:var(--green)">06 · Cuando aún no existe contexto</p>
+        <h2>“No está implementado” puede significar cosas diferentes</h2>
+        <p class="lead">Antes de programar hay que distinguir si falta contexto en el orquestador o falta realmente funcionalidad en el software.</p>
+        <div class="table-wrap" style="margin-bottom:22px">
+          <table>
+            <thead><tr><th>Situación</th><th>Qué significa</th><th>Qué sigue</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Ya habilitado</strong></td><td>Existe contexto validado y el enrutador conoce el dominio.</td><td>Crear el WI del feature, cargar contexto y seguir la ruta normal.</td></tr>
+              <tr><td><strong>Existe, pero no está habilitado</strong></td><td>REDIL ya tiene código o pantallas, pero el orquestador aún no dispone de contexto suficiente.</td><td>Hacer un WI de descubrimiento, documentar, validar y pedir autorización para agregarlo.</td></tr>
+              <tr><td><strong>Aún no existe</strong></td><td>La capacidad o el cambio todavía debe construirse.</td><td>Definir resultado y criterios. Si el dominio no está habilitado, documentarlo primero; luego crear otro WI de implementación.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout warning"><strong>Ejemplo:</strong> Escuelas puede existir en REDIL y aun así estar fuera del piloto. Eso no significa que haya que construir Escuelas desde cero; significa que primero debemos crear su contexto antes de modificarla.</div>
+        <h3 style="margin-top:30px">Ruta para incorporar el dominio</h3>
+        <div class="grid">
+          <article class="card wide"><h3>Descubrimiento</h3><p>Reunir videos, capturas, documentos, vocabulario, actores, reglas, estados y excepciones. Crear un WI de descubrimiento separado del desarrollo.</p></article>
+          <article class="card wide"><h3>Inventario técnico</h3><p>Contrastar rutas, modelos, controladores, componentes, vistas, tablas, migraciones y pruebas. Clasificar las contradicciones.</p></article>
+          <article class="card wide"><h3>Contexto del dominio</h3><p>Crear <code>current-state.md</code>, ownership, integraciones, riesgos, preguntas y capacidades. Mantenerlo como borrador hasta la revisión.</p></article>
+          <article class="card wide"><h3>Habilitación</h3><p>Regenerar Kaddo, validar funcional y técnicamente, y solicitar autorización para agregar el dominio al enrutador. Después se crean WIs de implementación.</p></article>
+        </div>
+      </section>
+
+      <section id="evidencia">
+        <p class="eyebrow" style="color:var(--green)">07 · Mostrar el software real</p>
+        <h2>Cómo entregar videos, voz y pantallazos útiles</h2>
+        <p class="lead">Las evidencias visuales aceleran el descubrimiento, especialmente cuando la regla funcional no se deduce del nombre de una tabla o método.</p>
+        <div class="grid">
+          <article class="card wide"><h3>Video recomendado</h3><ul class="mini-list"><li>MP4 con H.264 y audio AAC es el formato más compatible.</li><li>MOV puede servir, pero puede requerir conversión.</li><li>Dividir por flujo o indicar capítulos y minutos.</li><li>Segmentos de 5 a 15 minutos son una recomendación práctica, no un límite.</li></ul></article>
+          <article class="card wide"><h3>Qué decir con la voz</h3><ul class="mini-list"><li>Módulo, actor y objetivo.</li><li>Por qué existe la regla.</li><li>Qué permiso o excepción interviene.</li><li>Qué debería pasar y qué sería un error.</li></ul></article>
+          <article class="card wide"><h3>Qué mostrar</h3><ul class="mini-list"><li>Camino exitoso completo.</li><li>Validaciones y errores importantes.</li><li>Estados vacíos y diferencias por rol.</li><li>Antes y después cuando es un cambio.</li></ul></article>
+          <article class="card wide"><h3>Cómo tomar capturas</h3><ul class="mini-list"><li>Una vista completa para orientación.</li><li>Acercamientos si el texto no se lee.</li><li>Nombres por acción: <code>GRUPOS-ASIGNAR-INTEGRANTE.png</code>.</li><li>Una nota textual explicando lo que la imagen no demuestra.</li></ul></article>
+        </div>
+        <div class="callout warning" style="margin-top:18px"><strong>Privacidad:</strong> evita o difumina nombres, correos, teléfonos, identificaciones, direcciones, secretos, tokens y códigos QR. Si aparecen, Codex debe documentar el comportamiento sin copiar esos valores.</div>
+        <div class="flow" aria-label="Cómo se complementa la evidencia"><span>Interfaz: qué ocurre</span><i>+</i><span>Explicación: por qué</span><i>+</i><span>Código: cómo</span><i>+</i><span>Pruebas: qué se demuestra</span></div>
+      </section>
+
+      <section id="caso-piloto">
+        <p class="eyebrow" style="color:var(--green)">08 · Ejemplo real de este proceso</p>
+        <h2>Lo que hicimos con Usuarios y Grupos</h2>
+        <p class="lead">Este es el aprendizaje que un compañero no podría conocer solo leyendo el código y que ahora queda convertido en un procedimiento repetible.</p>
+        <div class="step-list">
+          <details class="step" open><summary>Entregamos documentos de entrada</summary><div class="step-body">Se comenzó con <code>ARCHITECTURE.md</code> y archivos como <code>.agent/workflows/agenteGrupos.md</code>. Estos orientaron la exploración inicial.</div></details>
+          <details class="step"><summary>Se explicó el dominio y sus relaciones</summary><div class="step-body">Se revisó cómo Grupos se conecta con Usuarios, tipos, roles, encargados e integrantes; el resultado quedó en texto y gráficos recuperables.</div></details>
+          <details class="step"><summary>El responsable aclaró reglas que el código no explica solo</summary><div class="step-body">Por ejemplo: verificación de correo antes del acceso, obligatoriedad definida por formularios y roles independientes que no dependen directamente del tipo de usuario.</div></details>
+          <details class="step"><summary>Se añadieron videos y capturas</summary><div class="step-body">El video mostró la secuencia; las capturas permitieron leer pantallas específicas; la explicación textual dio significado funcional a los controles.</div></details>
+          <details class="step"><summary>Se contrastó con el repositorio</summary><div class="step-body">Se localizaron controladores, modelos, Livewire, vistas, rutas, relaciones, migraciones y pruebas para separar lo observado, lo comprobado y lo pendiente.</div></details>
+          <details class="step"><summary>Se anexó el aprendizaje al orquestador</summary><div class="step-body">Se actualizaron <code>current-state.md</code>, capacidades y WIs; luego se regeneraron contexto y grafo y se ejecutó Kaddo Guard.</div></details>
+        </div>
+        <div class="callout" style="margin-top:18px"><strong>Resultado:</strong> una conversación futura no necesita repetir todo este diálogo. Debe entregar la solicitud y los puntos de entrada; Kaddo y la documentación conservan el aprendizaje estable.</div>
+      </section>
+
+      <section id="mensajes">
+        <p class="eyebrow" style="color:var(--green)">09 · Copiar y usar</p>
+        <h2>Mensajes recomendados para Codex</h2>
+        <div class="grid">
+          <article class="card full"><h3>Empezar un feature</h3><pre id="promptStart">Quiero implementar este feature. Primero identifica el dominio, revisa Kaddo y crea o refina el Work Item. No programes hasta presentarme el alcance, los criterios de aceptación y el plan.</pre><div class="actions"><button class="button ghost copy" data-target="promptStart">Copiar mensaje</button></div></article>
+          <article class="card full"><h3>Proceder con la implementación</h3><pre id="promptBuild">Procede con el WI aprobado. Limita los cambios al alcance, ejecuta las pruebas específicas y actualiza el conocimiento afectado.</pre><div class="actions"><button class="button ghost copy" data-target="promptBuild">Copiar mensaje</button></div></article>
+          <article class="card full"><h3>Cerrar correctamente</h3><pre id="promptClose">Valida el WI contra su Definition of Done, ejecuta Guard, registra el aprendizaje y ciérralo solo si no quedan fallos ni documentación pendiente.</pre><div class="actions"><button class="button ghost copy" data-target="promptClose">Copiar mensaje</button></div></article>
+          <article class="card full"><h3>Incorporar un módulo</h3><pre id="promptModule">Quiero incorporar el módulo &lt;nombre&gt; al orquestador. Usa estos videos y documentos como evidencia de descubrimiento, contrástalos con el código y crea su contexto de dominio antes de proponer features.</pre><div class="actions"><button class="button ghost copy" data-target="promptModule">Copiar mensaje</button></div></article>
+          <article class="card full"><h3>Comenzar una conversación nueva sin contexto</h3><pre id="promptConversation">Quiero trabajar en el módulo &lt;nombre&gt;. Mi objetivo es &lt;resultado esperado&gt; y actualmente ocurre &lt;comportamiento actual&gt;. Lo usa &lt;actor&gt; y consideraré correcto el resultado cuando &lt;validación observable&gt;.
+
+Adjunto ARCHITECTURE.md, la guía .agent/workflows/agente&lt;Nombre&gt;.md, la documentación previa disponible y estas evidencias &lt;videos/capturas/notas&gt;.
+
+Primero distingue si el módulo ya está habilitado, si existe en el software pero falta incorporarlo al orquestador, o si la funcionalidad aún no está implementada. Contrasta la documentación con modelos, controladores, Livewire, vistas, rutas, migraciones y pruebas. Crea un WI de descubrimiento cuando falte contexto y no programes hasta presentarme hallazgos, preguntas, alcance y plan.</pre><div class="actions"><button class="button ghost copy" data-target="promptConversation">Copiar mensaje completo</button></div></article>
+        </div>
+      </section>
+
+      <section id="ejercicio">
+        <p class="eyebrow" style="color:var(--green)">10 · Validación pendiente</p>
+        <h2>Ejercicio con un feature real pequeño</h2>
+        <p class="lead">La preparación está lista. Para ejecutar la prueba falta que el responsable elija una necesidad real y que un compañero intente completar la ruta sin explicación verbal.</p>
+        <div class="status-row"><span class="tag">Guía lista</span><span class="tag">Ficha lista</span><span class="tag pending">Elegir feature</span><span class="tag pending">Probar con compañero</span><span class="tag pending">Ajustar lenguaje</span></div>
+        <div class="grid" style="margin-top:18px">
+          <article class="card wide"><h3>Un buen feature para la prueba</h3><p>Tiene un resultado observable, pertenece al piloto, cabe en una sesión corta y permite comprobar un camino exitoso y un caso de rechazo o borde.</p></article>
+          <article class="card wide"><h3>Qué debe observarse</h3><p>Si el compañero identifica dominio, crea el WI, consulta contexto, confirma el plan, prueba, documenta, ejecuta Guard y cierra sin ayuda material.</p></article>
+        </div>
+        <div class="callout" style="margin-top:18px"><strong>Importante:</strong> los ejemplos de la ficha sirven para medir tamaño; no autorizan cambios funcionales. El feature debe responder a una necesidad real.</div>
+        <div class="actions"><a class="button" href="pilot-validation-exercise.md">Abrir ficha del ejercicio</a></div>
+      </section>
+
+      <section id="revision">
+        <p class="eyebrow" style="color:var(--green)">11 · Antes de integrar</p>
+        <h2>Lista de cierre del equipo</h2>
+        <p class="lead">Esta lista se guarda solamente en este navegador para ayudar durante la revisión. El WI continúa siendo el registro oficial.</p>
+        <div class="progress" aria-hidden="true"><div id="progressBar"></div></div>
+        <p class="progress-label" id="progressLabel">0 de 9 comprobaciones</p>
+        <ul class="checklist" id="reviewChecklist">
+          <li><label><input type="checkbox">Existe un WI y coincide con el cambio real.</label></li>
+          <li><label><input type="checkbox">El dominio y las dependencias son correctos.</label></li>
+          <li><label><input type="checkbox">Los criterios de aceptación tienen evidencia.</label></li>
+          <li><label><input type="checkbox">Las pruebas relevantes pasan.</label></li>
+          <li><label><input type="checkbox">Se realizó la validación manual necesaria.</label></li>
+          <li><label><input type="checkbox">Kaddo Guard fue ejecutado y revisado.</label></li>
+          <li><label><input type="checkbox">Reglas, capacidades, decisiones u ownership quedaron actualizados.</label></li>
+          <li><label><input type="checkbox">Learning distingue implementado, validado, aprendido y pendiente.</label></li>
+          <li><label><input type="checkbox">El diff contiene únicamente el alcance autorizado.</label></li>
+        </ul>
+        <button class="button ghost" id="resetChecklist" type="button">Reiniciar lista</button>
+      </section>
+
+      <section id="fuentes">
+        <p class="eyebrow" style="color:var(--green)">12 · Documentación fuente</p>
+        <h2>Esta guía no vive sola</h2>
+        <p class="lead">Si la guía y el Markdown difieren, se corrige esta página a partir de la fuente versionada.</p>
+        <div class="grid">
+          <article class="card"><h3>Playbook</h3><p>Proceso completo y criterios de cierre.</p><a href="development-playbook.md">Abrir fuente</a></article>
+          <article class="card"><h3>Orquestador</h3><p>Alcance, enrutamiento y decisiones congeladas.</p><a href="../tech/orchestrator.md">Abrir fuente</a></article>
+          <article class="card"><h3>Dominios</h3><p>Índice para seleccionar el contexto mínimo.</p><a href="../tech/domains/README.md">Abrir fuente</a></article>
+        </div>
+      </section>
+
+      <footer>
+        <strong>REDIL Cloud · Guía del piloto</strong><br>
+        Presentación derivada de <code>knowledge/delivery/development-playbook.md</code>. Última actualización: 6 de septiembre de 2026.
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const menuButton = document.getElementById('menuButton');
+    const sidebar = document.getElementById('sidebar');
+    menuButton.addEventListener('click', () => {
+      const isOpen = sidebar.classList.toggle('open');
+      menuButton.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.querySelectorAll('.copy').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const source = document.getElementById(button.dataset.target);
+        try {
+          await navigator.clipboard.writeText(source.textContent.trim());
+          const previous = button.textContent;
+          button.textContent = 'Copiado';
+          setTimeout(() => { button.textContent = previous; }, 1400);
+        } catch {
+          window.getSelection().selectAllChildren(source);
+          button.textContent = 'Texto seleccionado';
+        }
+      });
+    });
+
+    const checklist = [...document.querySelectorAll('#reviewChecklist input')];
+    const progressBar = document.getElementById('progressBar');
+    const progressLabel = document.getElementById('progressLabel');
+    const storageKey = 'redil-pilot-review-checklist-v1';
+
+    function updateChecklist() {
+      const state = checklist.map((item) => item.checked);
+      const completed = state.filter(Boolean).length;
+      progressBar.style.width = `${(completed / checklist.length) * 100}%`;
+      progressLabel.textContent = `${completed} de ${checklist.length} comprobaciones`;
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    }
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      checklist.forEach((item, index) => { item.checked = Boolean(saved[index]); });
+    } catch {
+      localStorage.removeItem(storageKey);
+    }
+    checklist.forEach((item) => item.addEventListener('change', updateChecklist));
+    document.getElementById('resetChecklist').addEventListener('click', () => {
+      checklist.forEach((item) => { item.checked = false; });
+      updateChecklist();
+    });
+    updateChecklist();
+  </script>
+</body>
+</html>

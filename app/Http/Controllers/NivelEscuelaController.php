@@ -55,17 +55,16 @@ class NivelEscuelaController extends Controller
         // si tienes otros formularios en la misma página.
         $validatedData = $request->validateWithBag('materiaRapida', [
             'nombre' => 'required|string|max:100',
-            'creditos' => 'nullable|integer|min:0',
             'descripcion' => 'nullable|string',
             // No necesitamos validar nivel_id ni escuela_id aquí, ya los tenemos.
         ]);
 
         DB::beginTransaction();
         try {
-            // Crear la nueva materia
+            // Crear la nueva materia para el nivel
             $materia = new Materia;
             $materia->nombre = $validatedData['nombre'];
-            $materia->creditos = $validatedData['creditos'] ?? null;
+            $materia->creditos = null;
             $materia->descripcion = $validatedData['descripcion'] ?? null; // Asignar descripción si existe
             $materia->nivel_id = $nivel->id; // Asociar al nivel actual
             $materia->escuela_id = $escuelaId; // Asociar a la escuela del nivel

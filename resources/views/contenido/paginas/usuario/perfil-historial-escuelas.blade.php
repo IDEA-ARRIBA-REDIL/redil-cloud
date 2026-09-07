@@ -388,31 +388,100 @@
             <h2 class="accordion-header" id="heading{{ $escuela->id }}">
               <button class="accordion-button collapsed px-4 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $escuela->id }}" aria-expanded="false" aria-controls="collapse{{ $escuela->id }}">
                 <div class="d-flex flex-column w-100 me-3">
-                  <div class="d-flex flex-wrap justify-content-between align-items-center {{ $escuela->total_obligatorias > 0 ? 'mb-2' : '' }} gap-2">
+                  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
                     <span class="h5 mb-0 fw-bold text-truncate"><i class="ti ti-bookmark me-2 text-primary"></i>{{ $escuela->nombre }}</span>
-                    <div class="d-flex align-items-center flex-wrap gap-2">
-                      @if($escuela->total_obligatorias > 0)
-                        <span class="border border-success px-3 py-1 rounded-pill ">
-                          <i class="ti ti-check me-1 text-success"></i><b>{{ $escuela->aprobadas_obligatorias }}</b> de <b>{{ $escuela->total_obligatorias }}</b> {{ $escuela->es_por_niveles ? 'niveles obligatorios' : 'materias obligatorias' }}
-                        </span>
-                      @endif 
+                  </div>
 
-                      @if($escuela->total_opcionales > 0)
-                        <span class="border border-info px-3 py-1 rounded-pill">
-                          <i class="ti ti-star me-1 text-info"></i><b>{{ $escuela->aprobadas_opcionales }}</b> de <b>{{ $escuela->total_opcionales }}</b> {{ $escuela->es_por_niveles ? 'niveles opcionales' : 'materias opcionales' }}
-                        </span>
+                  {{-- Mini-cards consolidadas estilo KPI --}}
+                  <div class="row my-2 w-100">
+                    {{-- Card 1: Materias / Niveles Obligatorios --}}
+                    @if($escuela->total_obligatorias > 0)
+                      <div class="col-12 {{ !$escuela->es_por_niveles && $escuela->total_opcionales > 0 ? 'col-sm-6 col-lg-3' : 'col-sm-6' }}">
+                        <div class="card shadow-sm border-0 h-100 bg-white">
+                          <div class="card-body d-flex align-items-center p-3">
+                            <div class="avatar me-3 flex-shrink-0">
+                              <span class="avatar-initial rounded-circle bg-info text-white">
+                                <i class="ti ti-book fs-4"></i>
+                              </span>
+                            </div>
+                            <div class="d-flex flex-column text-start">
+                              <small class="text-black mb-0">{{ $escuela->es_por_niveles ? 'Niveles obligatorios' : 'Materias obligatorias' }}</small>
+                              <h5 class="mb-0 fw-bold text-black">{{ $escuela->aprobadas_obligatorias }} / {{ $escuela->total_obligatorias }}</h5>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    @endif
+
+                    {{-- Card 2: Materias / Niveles Opcionales --}}
+                    @if($escuela->total_opcionales > 0)
+                      <div class="col-12 {{ !$escuela->es_por_niveles ? 'col-sm-6 col-lg-3' : 'col-sm-6' }}">
+                        <div class="card shadow-sm border-0 h-100 bg-white">
+                          <div class="card-body d-flex align-items-center p-3">
+                            <div class="avatar me-3 flex-shrink-0">
+                              <span class="avatar-initial rounded-circle bg-success text-white">
+                                <i class="ti ti-bookmark fs-4"></i>
+                              </span>
+                            </div>
+                            <div class="d-flex flex-column text-start">
+                              <small class="text-black mb-0">{{ $escuela->es_por_niveles ? 'Niveles opcionales' : 'Materias opcionales' }}</small>
+                              <h5 class="mb-0 fw-bold text-black">{{ $escuela->aprobadas_opcionales }} / {{ $escuela->total_opcionales }}</h5>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    @endif
+
+                    {{-- Si es escuela por materias: Cards de Créditos --}}
+                    @if(!$escuela->es_por_niveles)
+                      {{-- Card 3: Créditos de Materias Obligatorias --}}
+                      @if($escuela->total_obligatorias > 0)
+                        <div class="col-12 {{ $escuela->total_opcionales > 0 ? 'col-sm-6 col-lg-3' : 'col-sm-6' }}">
+                          <div class="card shadow-sm border-0 h-100 bg-white">
+                            <div class="card-body d-flex align-items-center p-3">
+                              <div class="avatar me-3 flex-shrink-0">
+                                <span class="avatar-initial rounded-circle bg-info text-white">
+                                  <i class="ti ti-award fs-4"></i>
+                                </span>
+                              </div>
+                              <div class="d-flex flex-column text-start">
+                                <small class="text-black mb-0">Créditos obligatorios</small>
+                                <h5 class="mb-0 fw-bold text-black">{{ $escuela->creditos_aprobados_obligatorias }} / {{ $escuela->creditos_totales_obligatorias }}</h5>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       @endif
-                    </div>
+
+                      {{-- Card 4: Créditos de Materias Opcionales --}}
+                      @if($escuela->total_opcionales > 0)
+                        <div class="col-12 col-sm-6 col-lg-3">
+                          <div class="card shadow-sm border-0 h-100 bg-white">
+                            <div class="card-body d-flex align-items-center p-3">
+                              <div class="avatar me-3 flex-shrink-0">
+                                <span class="avatar-initial rounded-circle bg-info text-white">
+                                  <i class="ti ti-stars fs-4"></i>
+                                </span>
+                              </div>
+                              <div class="d-flex flex-column text-start">
+                                <small class="text-black mb-0">Créditos opcionales</small>
+                                <h5 class="mb-0 fw-bold text-black">{{ $escuela->creditos_aprobados_opcionales }} / {{ $escuela->creditos_totales_opcionales }}</h5>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      @endif
+                    @endif
                   </div>
 
                   @if($escuela->total_obligatorias > 0)
-                    <div class="progress" style="height: 10px;">
+                    <div class="progress mt-2" style="height: 10px;">
                       <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: {{ $escuela->progreso }}%;" aria-valuenow="{{ $escuela->progreso }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mt-1 flex-wrap gap-1">
                       <small class="text-black">
-                        Avance académico: <span class="fw-bold">{{ $escuela->progreso }}%</span>
+                        Avance plan obligatorio: <span class="fw-bold text-success">{{ $escuela->progreso }}%</span>
                       </small>
                     </div>
                   @endif
@@ -431,23 +500,12 @@
                                         <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $item->nombre }}</h5>
                                     </div>
                                     @if($item->caracter_obligatorio)
-                                        <span class="border border-primary text-black rounded-pill px-3 py-1 fw-semibold">{{ $escuela->es_por_niveles ? 'Obligatorio' : 'Obligatoria' }}</span>
+                                        <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-semibold">{{ $escuela->es_por_niveles ? 'Obligatorio' : 'Obligatoria' }}</span>
                                     @else
-                                        <span class="border border-info text-black rounded-pill px-3 py-1 fw-semibold">{{ $escuela->es_por_niveles ? 'Opcional' : 'Opcional' }}</span>
+                                        <span class="badge bg-info text-white rounded-pill px-3 py-1 fw-semibold">{{ $escuela->es_por_niveles ? 'Opcional' : 'Opcional' }}</span>
                                     @endif
                                 </div>
 
-                                @if($item->resultado)
-                                    @if((int)$item->resultado->aprobado === 1)
-                                        <span class="badge bg-success rounded-pill text-white my-2">{{ $escuela->es_por_niveles ? 'Aprobado' : 'Aprobada' }}</span>
-                                    @elseif((int)$item->resultado->aprobado === 2)
-                                        <span class="badge bg-label-info rounded-pill text-white my-2">En proceso</span>
-                                    @else
-                                        <span class="badge bg-label-danger rounded-pill text-white my-2">{{ $escuela->es_por_niveles ? 'Reprobado' : 'Reprobada' }}</span>
-                                    @endif
-                                @else
-                                    <span class="badge bg-label-secondary rounded-pill text-white my-2">Pendiente</span>
-                                @endif
 
                                 <div class="d-flex flex-row align-items-center mt-3">
                                     <div class="d-flex flex-column">
@@ -455,9 +513,9 @@
                                         <small class="fw-semibold text-black">
                                             @if($item->resultado)
                                                 @if((int)$item->resultado->aprobado === 1)
-                                                    Aprobado satisfactoriamente
+                                                    Aprobado
                                                 @elseif((int)$item->resultado->aprobado === 2)
-                                                    En proceso de validación
+                                                    En proceso
                                                 @else
                                                     No aprobado
                                                 @endif
@@ -495,7 +553,7 @@
                                     </div>
 
                                     <div class="row justify-content-between mb-2">
-                                        <div class="col-12 align-items-center">
+                                        <div class="col-12 col-md-6 align-items-center">
                                             @if($item->resultado->es_homologacion)
                                                 <div class="d-flex flex-column">
                                                     <small class="text-muted"><i class="ti ti-certificate text-black me-2"></i>Observación:</small>
@@ -512,6 +570,17 @@
                                                 @endif
                                             @endif
                                         </div>
+
+                                        @if(!$escuela->es_por_niveles && (int)$item->resultado->aprobado === 1 && (($item->resultado->creditos_aprobados ?? $item->creditos) !== null))
+                                            <div class="col-12 col-md-6 align-items-center">
+                                                <div class="d-flex flex-column text-start">
+                                                    <small class="text-muted"><i class="ti ti-award text-black me-2"></i>Créditos obtenidos:</small>
+                                                    <small class="fw-semibold text-black">
+                                                        {{ $item->resultado->creditos_aprobados ?? $item->creditos }} {{ ($item->resultado->creditos_aprobados ?? $item->creditos) == 1 ? 'crédito' : 'créditos' }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
                                 @else
                                     <div class="alert alert-label-secondary mb-0 p-3 text-center">
@@ -1387,7 +1456,7 @@
                   <div class="mb-2">
                     <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la portada</label><br>
                     <center>
-                      <img src="{{ Storage::disk('global_media')->url('placeholders/placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
+                      <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
                     </center>
                     <input class="form-control d-none" type="text" value="" id="imagen-recortada-portada" name="foto">
                   </div>

@@ -1775,7 +1775,8 @@
                   <div class="mb-2">
                     <label class="mb-2"><span class="fw-bold">Paso #2</span> Recorta la portada</label><br>
                     <center>
-                      <img src="{{ Storage::disk('global_media')->url('placeholders/placeholder.jpg') }}" class="w-100" id="croppingImagePortada" alt="cropper">
+                      <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100"
+                        id="croppingImagePortada" alt="cropper">
                     </center>
                     <input class="form-control d-none" type="text" value="" id="imagen-recortada-portada" name="foto">
                   </div>

@@ -75,6 +75,22 @@ class Escuela extends Model
     }
 
     /**
+     * Determina si la escuela está configurada para operar por niveles.
+     */
+    public function esPorNiveles(): bool
+    {
+        return $this->tipo_matricula === 'niveles_agrupados' || ($this->tipo_matricula === null && $this->niveles()->exists());
+    }
+
+    /**
+     * Determina si la escuela está configurada para operar por materias independientes.
+     */
+    public function esPorMaterias(): bool
+    {
+        return ! $this->esPorNiveles();
+    }
+
+    /**
      * Accesor para obtener la URL pública de la portada.
      */
     public function getPortadaUrlAttribute(): ?string

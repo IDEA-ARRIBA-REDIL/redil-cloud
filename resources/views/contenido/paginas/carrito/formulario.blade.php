@@ -125,7 +125,7 @@ $configData = Helper::appClasses();
                 const formData = new FormData();
                 formData.append('archivo', file);
                 formData.append('tipo', tipo);
-                
+
                 // Obtenemos el token CSRF desde el input oculto o meta tag
                 const csrfToken = document.querySelector('input[name="_token"]').value;
 
@@ -219,7 +219,7 @@ $configData = Helper::appClasses();
         <div class="row px-4" style="margin-bottom: 120px;"> {{-- Espacio para el footer fijo --}}
             {{-- Columna Izquierda: Formulario Dinámico --}}
             <div class="col-lg-12 col-md-12 col-sm-12">
-          
+
 
                 @foreach ($actividad->elementos()->orderBy('orden')->get() as $elemento)
                 @if ($elemento->visible)
@@ -278,6 +278,7 @@ $configData = Helper::appClasses();
                     </div>
                     @break
 
+                    @case(5) {{-- Selección Única --}}
                     <select class="form-select @error('elemento-'.$elemento->id) is-invalid @enderror" id="elemento-{{ $elemento->id }}" name="elemento-{{ $elemento->id }}" {{ $disabledAttr }}>
                         <option value="">Seleccione una opción</option>
                         @foreach ($elemento->opciones as $opcion)
@@ -324,13 +325,13 @@ $configData = Helper::appClasses();
                     {{-- Alpine.js para subida manual --}}
                     <div x-data="uploadArchivoForm({{ $elemento->id }}, 'archivo')">
                         <input type="hidden" name="elemento-{{ $elemento->id }}" id="input-elemento-{{ $elemento->id }}" value="{{ old('elemento-'.$elemento->id) }}">
-                        <input type="file" 
-                               class="form-control @error('elemento-' . $elemento->id) is-invalid @enderror" 
-                               id="file-elemento-{{ $elemento->id }}" 
-                               accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+                        <input type="file"
+                               class="form-control @error('elemento-' . $elemento->id) is-invalid @enderror"
+                               id="file-elemento-{{ $elemento->id }}"
+                               accept=".pdf,application/pdf"
                                {{ $disabledAttr }}
                                @change="subirArchivo($event)">
-                        
+
                         <div x-show="subiendo" style="display: none;" class="mt-1 text-primary small">
                             <span class="spinner-border spinner-border-sm me-1"></span> Subiendo documento...
                         </div>
@@ -338,6 +339,7 @@ $configData = Helper::appClasses();
                         <div x-show="successMsg" x-transition style="display: none;" class="mt-2 alert alert-success p-2 small d-flex align-items-center">
                             <i class="ti ti-check fs-5 me-2"></i> <span x-text="successMsg"></span>
                         </div>
+                        <small class="text-muted d-block mt-1">Formato permitido: solo PDF (máx. 10 MB)</small>
                     </div>
                     @endif
                     @break
@@ -356,13 +358,13 @@ $configData = Helper::appClasses();
                     {{-- Alpine.js para subida manual de imagen --}}
                     <div x-data="uploadArchivoForm({{ $elemento->id }}, 'imagen')">
                         <input type="hidden" name="elemento-{{ $elemento->id }}" id="input-elemento-{{ $elemento->id }}" value="{{ old('elemento-'.$elemento->id) }}">
-                        <input type="file" 
-                               class="form-control @error('elemento-' . $elemento->id) is-invalid @enderror" 
-                               id="file-elemento-{{ $elemento->id }}" 
-                               accept="image/png, image/jpeg, image/jpg, image/webp" 
+                        <input type="file"
+                               class="form-control @error('elemento-' . $elemento->id) is-invalid @enderror"
+                               id="file-elemento-{{ $elemento->id }}"
+                               accept="image/png, image/jpeg, image/jpg, .png, .jpeg, .jpg"
                                {{ $disabledAttr }}
                                @change="subirArchivo($event)">
-                        
+
                         <div x-show="subiendo" style="display: none;" class="mt-1 text-primary small">
                             <span class="spinner-border spinner-border-sm me-1"></span> Subiendo imagen...
                         </div>
@@ -370,6 +372,7 @@ $configData = Helper::appClasses();
                         <div x-show="successMsg" x-transition style="display: none;" class="mt-2 alert alert-success p-2 small d-flex align-items-center">
                             <i class="ti ti-check fs-5 me-2"></i> <span x-text="successMsg"></span>
                         </div>
+                        <small class="text-muted d-block mt-1">Formatos permitidos: solo PNG, JPG o JPEG (máx. 5 MB)</small>
                     </div>
                     @else
                     <div class="text-muted fst-italic">No se subió ninguna imagen.</div>
@@ -439,9 +442,9 @@ $configData = Helper::appClasses();
             @else
             {{-- Botón (Enlace) para Continuar sin Guardar --}}
             @php
-                 $rutaSiguiente = ($valorTotal > 0) 
-                    ? route('carrito.checkout', ['compra' => $compra, 'actividad' => $actividad]) 
-                    : route('carrito.inscripcionFinalizada', ['inscripcion' => $compra->inscripciones->first(), 'actividad' => $actividad]); 
+                 $rutaSiguiente = ($valorTotal > 0)
+                    ? route('carrito.checkout', ['compra' => $compra, 'actividad' => $actividad])
+                    : route('carrito.inscripcionFinalizada', ['inscripcion' => $compra->inscripciones->first(), 'actividad' => $actividad]);
             @endphp
             <a href="{{ $rutaSiguiente }}" class="btn btn-primary rounded-pill">
                 Continuar <i class="ti ti-arrow-right ms-1"></i>

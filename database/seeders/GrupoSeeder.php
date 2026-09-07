@@ -63,7 +63,7 @@ class GrupoSeeder extends Seeder
             'dia' => 5,
             'dia_planeacion' => 2,
             'rhema' => 'este es el super rhema',
-            'hora' => '13:00:00',
+            'hora' => '18:00:00',
             'hora_planeacion' => '11:00:00',
             'ultimo_reporte_grupo' => '2024-11-13',
             'fecha_apertura' => '2023-06-14',

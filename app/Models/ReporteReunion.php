@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
 use Illuminate\Support\Facades\Storage;
 
 class ReporteReunion extends Model
@@ -22,7 +21,7 @@ class ReporteReunion extends Model
     public function getPortadaUrlAttribute(): string
     {
         if ($this->portada && $this->portada !== '' && $this->portada !== 'default.png') {
-            return tenant_asset('img/reportes-reuniones/' . $this->portada);
+            return tenant_asset('img/reportes-reuniones/'.$this->portada);
         }
 
         if ($this->reunion && $this->reunion->portada && $this->reunion->portada !== '' && $this->reunion->portada !== 'default.png') {
@@ -32,10 +31,22 @@ class ReporteReunion extends Model
         return Storage::disk('global_media')->url('reuniones/default.png');
     }
 
+    public const ESTADO_PROGRAMADO = 'programado';
+
+    public const ESTADO_EN_CURSO = 'en_curso';
+
+    public const ESTADO_FINALIZADO = 'finalizado';
+
+    public const ESTADO_CANCELADO = 'cancelado';
+
     protected $guarded = [];
 
     protected $fillable = [
         'reunion_id',
+        'estado',
+        'finalizado_por',
+        'finalizado_at',
+        'poblacion_elegible_historica',
         'fecha',
         'hora',
         'predicador',
@@ -67,6 +78,75 @@ class ReporteReunion extends Model
     {
         return $this->belongsToMany(User::class, 'asistencia_reuniones')
             ->withPivot('asistio', 'reservacion', 'invitados', 'created_at', 'updated_at', 'observacion', 'autor_creacion_reserva_id', 'autor_creacion_asistencia_id');
+    }
+
+    public function finalizadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'finalizado_por');
+    }
+
+    public function scopeFinalizados($query)
+    {
+        return $query->where('reporte_reuniones.estado', self::ESTADO_FINALIZADO);
+    }
+
+    public function esFinalizado(): bool
+    {
+        return ($this->estado ?? self::ESTADO_FINALIZADO) === self::ESTADO_FINALIZADO;
+    }
+
+    public function calcularPoblacionElegible(): int
+    {
+        $reunion = $this->reunion()->withTrashed()->first();
+        if (! $reunion) {
+            return 0;
+        }
+
+        $query = User::query()->where('users.status', true);
+
+        // Filtro por tipos de usuario permitidos
+        $tiposPermitidosIds = $reunion->tipoUsuarios()->pluck('tipo_usuarios.id')->toArray();
+        if (! empty($tiposPermitidosIds)) {
+            $query->whereIn('users.tipo_usuario_id', $tiposPermitidosIds);
+        }
+
+        // Filtro por sedes permitidas (o sede de la reunión)
+        $sedesAdicionalesIds = $reunion->sedes()->pluck('sedes.id')->toArray();
+        if (! empty($sedesAdicionalesIds)) {
+            $query->whereIn('users.sede_id', $sedesAdicionalesIds);
+        } elseif ($reunion->sede_id) {
+            $query->where('users.sede_id', $reunion->sede_id);
+        }
+
+        // Filtro por género si aplica
+        $generosPermitidos = json_decode($reunion->genero, true);
+        if (is_array($generosPermitidos) && ! empty($generosPermitidos)) {
+            $query->whereIn('users.genero', $generosPermitidos);
+        }
+
+        return $query->count();
+    }
+
+    public function finalizar(?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+        $this->estado = self::ESTADO_FINALIZADO;
+        $this->finalizado_por = $user?->id;
+        $this->finalizado_at = Carbon::now();
+        if (is_null($this->poblacion_elegible_historica) || $this->poblacion_elegible_historica === 0) {
+            $this->poblacion_elegible_historica = $this->calcularPoblacionElegible();
+        }
+
+        return $this->save();
+    }
+
+    public function reabrir(?User $user = null): bool
+    {
+        $this->estado = self::ESTADO_EN_CURSO;
+        $this->finalizado_por = null;
+        $this->finalizado_at = null;
+
+        return $this->save();
     }
 
     public function reunion(): BelongsTo

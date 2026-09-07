@@ -171,6 +171,45 @@
 
     <script>
         $(document).ready(function() {
+            // Inicializar Select2 en todos los selects de la página
+            $('.select2').select2({
+                allowClear: true,
+                placeholder: 'Ninguno'
+            });
+
+            // --- Lógica para campos de límite de reporte ---
+            const switchDiaLimite = $('#diaLimiteHabilitado');
+            const selectDia = $('#dia');
+            const inputCantidadReportesSemana = $('#cantidadReportesSemana');
+            const inputDiasPlazoReporte = $('#diasPlazoReporte');
+
+            function actualizarCamposLimiteReporte() {
+                const asistenciasHabilitadas = $('#togglehabilitarAsistencias').is(':checked');
+
+                if (!asistenciasHabilitadas) {
+                    selectDia.prop('disabled', true).prop('required', false);
+                    inputCantidadReportesSemana.prop('disabled', true).prop('required', false);
+                    inputDiasPlazoReporte.prop('disabled', true).prop('required', false);
+                    return;
+                }
+
+                if (switchDiaLimite.is(':checked')) {
+                    selectDia.prop('disabled', false).prop('required', true);
+                    inputCantidadReportesSemana.prop('disabled', true).prop('required', false).val('');
+                    inputDiasPlazoReporte.prop('disabled', true).prop('required', false).val('');
+                } else {
+                    selectDia.prop('disabled', true).prop('required', false).val('').trigger('change');
+                    inputCantidadReportesSemana.prop('disabled', false).prop('required', true);
+                    inputDiasPlazoReporte.prop('disabled', false).prop('required', true);
+                }
+            }
+
+            actualizarCamposLimiteReporte();
+
+            switchDiaLimite.on('change', function() {
+                actualizarCamposLimiteReporte();
+            });
+
             // Toggles visibility de asistencias
             $('#togglehabilitarAsistencias').on('change', function() {
                 if ($(this).is(':checked')) {
@@ -178,6 +217,7 @@
                 } else {
                     $('.row-asistencias').addClass('d-none').hide();
                 }
+                actualizarCamposLimiteReporte();
             });
             if ($('#togglehabilitarAsistencias').is(':checked')) {
                 $('.row-asistencias').removeClass('d-none').show();
@@ -198,51 +238,34 @@
             } else {
                 $('#containesAsistenciasAlerta').addClass('d-none').hide();
             }
-        });
-    </script>
-
-    <script>
-        $(document).ready(function() {
-            // Inicializar Select2 en todos los selects de la página
-            $('.select2').select2({
-                allowClear: true,
-                placeholder: 'Ninguno'
-            });
-
-            // --- Lógica para campos de límite de reporte ---
-            const switchDiaLimite = $('#diaLimiteHabilitado');
-            const selectDia = $('#dia');
-            const inputCantidadReportesSemana = $('#cantidadReportesSemana');
-            const inputDiasPlazoReporte = $('#diasPlazoReporte');
-
-            function actualizarCamposLimiteReporte() {
-                if (switchDiaLimite.is(':checked')) {
-                    selectDia.prop('disabled', false).prop('required', true);
-                    inputCantidadReportesSemana.prop('disabled', true).prop('required', false).val('');
-                    inputDiasPlazoReporte.prop('disabled', true).prop('required', false).val('');
-                } else {
-                    selectDia.prop('disabled', true).prop('required', false).val('').trigger('change');
-                    inputCantidadReportesSemana.prop('disabled', false).prop('required', true);
-                    inputDiasPlazoReporte.prop('disabled', false).prop('required', true);
-                }
-            }
-
-            actualizarCamposLimiteReporte();
-            switchDiaLimite.on('change', function() {
-                actualizarCamposLimiteReporte();
-            });
 
             // --- Validación del formulario principal ---
             // Nota: los pasos y tareas se gestionan directamente en BD a través de los
             // componentes Livewire; no dependen del submit del formulario principal.
             $('#formEditarMateria').on('submit', function(e) {
                 let errors = [];
+                const asistenciasHabilitadas = $('#togglehabilitarAsistencias').is(':checked');
 
-                // Validación: Asistencias mínimas
-                if ($('#togglehabilitarAsistencias').is(':checked')) {
+                // Validación: Asistencias mínimas y límites de reporte
+                if (asistenciasHabilitadas) {
                     let asistencias = $('#asistenciasMinimas').val();
-                    if (asistencias === '' || parseInt(asistencias) < 0) {
+                    if (asistencias !== '' && parseInt(asistencias) < 0) {
                         errors.push('Debe ingresar un valor válido (≥0) para asistencias mínimas');
+                    }
+
+                    if (switchDiaLimite.is(':checked')) {
+                        if (!selectDia.val()) {
+                            errors.push('Debe seleccionar un día límite para el reporte.');
+                        }
+                    } else {
+                        let reportesSemana = inputCantidadReportesSemana.val();
+                        if (!reportesSemana || parseInt(reportesSemana) < 0) {
+                            errors.push('Debe ingresar una cantidad válida para reportes por semana (ej. ≥0).');
+                        }
+                        let diasPlazo = inputDiasPlazoReporte.val();
+                        if (!diasPlazo || parseInt(diasPlazo) < 0) {
+                            errors.push('Debe ingresar una cantidad válida para días de plazo de reporte (ej. ≥0).');
+                        }
                     }
                 }
 
@@ -254,25 +277,8 @@
                     }
                 }
 
-                // Validación: Campos de límite de reporte
-                if (switchDiaLimite.is(':checked')) {
-                    if (!selectDia.val()) {
-                        errors.push('Debe seleccionar un día límite para el reporte.');
-                    }
-                } else {
-                    let reportesSemana = inputCantidadReportesSemana.val();
-                    if (!reportesSemana || parseInt(reportesSemana) < 0) {
-                        errors.push('Debe ingresar una cantidad válida para reportes por semana (ej. ≥0).');
-                    }
-                    let diasPlazo = inputDiasPlazoReporte.val();
-                    if (!diasPlazo || parseInt(diasPlazo) < 0) {
-                        errors.push('Debe ingresar una cantidad válida para días de plazo de reporte (ej. ≥0).');
-                    }
-                }
-
                 // Validación: Al menos calificaciones o asistencias habilitadas
-                if (!$('#togglehabilitarCalificaciones').is(':checked') &&
-                    !$('#togglehabilitarAsistencias').is(':checked')) {
+                if (!$('#togglehabilitarCalificaciones').is(':checked') && !asistenciasHabilitadas) {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'error',
@@ -301,7 +307,7 @@
 
 @section('content')
     <!-- PORTADA -->
-    <form id="formEditarMateria" action="{{ route('materias.actualizar', $materia) }}" method="POST">
+    <form id="formEditarMateria" action="{{ route('materias.actualizar', $materia) }}" method="POST" novalidate>
         <div class="col-md-12">
             <div class="card mb-4 rounded rounded-3">
                 <img id="preview-foto" class="cropped-img card-img-top mb-2"
@@ -359,8 +365,10 @@
             </div>
         </div>
         <!-- PORTADA -->
-        @include('layouts.status-msn')
 
+        <div class="mt-2">
+        @include('layouts.status-msn')
+        </div>
 
         @if ($materia->nivel_id)
             <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
@@ -384,7 +392,10 @@
                 <div class="card h-100 p-6">
                     <h5 class="mb-1 fw-semibold text-black">Configuración principal</h5>
                     <div class="row ">
-                        <div class="mb-3 col-12 col-md-4 col-sm-12">
+                        @php
+                            $mostrarCreditos = $escuela && $escuela->esPorMaterias() && !$materia->nivel_id;
+                        @endphp
+                        <div class="mb-3 col-12 {{ $mostrarCreditos ? 'col-md-5' : 'col-md-6' }} col-sm-12">
                             <label for="nombre" class="form-label">Nombre de la Materia</label>
                             <input value="{{ old('nombre', $materia->nombre) }}" type="text"
                                 class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre">
@@ -393,7 +404,17 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3 col-12 col-md-4 col-sm-12">
+                        <div class="mb-3 col-6 {{ $mostrarCreditos ? 'col-md-2' : 'col-md-3' }} col-sm-6">
+                            <label for="orden" class="form-label">Orden</label>
+                            <input value="{{ old('orden', $materia->orden ?? 1) }}" type="number" min="1"
+                                class="form-control @error('orden') is-invalid @enderror" id="orden" name="orden">
+                            @error('orden')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        @if($mostrarCreditos)
+                        <div class="mb-3 col-6 col-md-2 col-sm-6">
                             <label for="creditos" class="form-label">Créditos</label>
                             <input value="{{ old('creditos', $materia->creditos) }}" type="number" min="0"
                                 class="form-control @error('creditos') is-invalid @enderror" id="creditos" name="creditos">
@@ -401,8 +422,9 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+                        @endif
 
-                        <div class="mb-3 col-md-4 col-sm-12">
+                        <div class="mb-3 col-12 col-md-3 col-sm-12">
                             <label class="form-label">¿Habilitar asistencia?</label><br>
                             <label class="switch switch-lg">
                                 <input type="checkbox" class="switch-input" id="togglehabilitarAsistencias"

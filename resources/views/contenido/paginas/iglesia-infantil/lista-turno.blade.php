@@ -330,7 +330,16 @@
                                 </div>
 
                                 {{-- Acciones --}}
-                                <div class="mt-3 d-flex justify-content-end">
+                                <div class="mt-3 d-flex justify-content-end align-items-center gap-2">
+                                    {{-- Botón rápido para abrir modal de los 4 tamaños --}}
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-primary waves-effect"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalImprimirTicket{{ $registro->id }}"
+                                        title="Imprimir ticket en diferentes tamaños">
+                                        <i class="ti ti-printer me-1"></i>Imprimir ticket
+                                    </button>
+
                                     <div class="dropdown">
                                         <button type="button"
                                             class="btn btn-sm btn-outline-secondary dropdown-toggle waves-effect"
@@ -339,9 +348,40 @@
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
                                             <li>
-                                                <a href="{{ route('iglesiaInfantil.registro.ticket', $registro) }}"
-                                                    target="_blank" class="dropdown-item">
-                                                    <i class="ti ti-printer me-2"></i>Imprimir ticket
+                                                <button type="button" class="dropdown-item py-2 fw-semibold text-primary"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalImprimirTicket{{ $registro->id }}">
+                                                    <i class="ti ti-printer me-2"></i>Elegir tamaño de ticket...
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <h6 class="dropdown-header text-muted fw-bold py-1" style="font-size: 0.75rem;">
+                                                    Impresión rápida (2 hojas):
+                                                </h6>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('iglesiaInfantil.registro.ticket', ['registro' => $registro, 'formato' => 'actual']) }}"
+                                                    target="_blank" class="dropdown-item py-1">
+                                                    <i class="ti ti-receipt me-2 text-muted"></i>1. Estándar 58 mm
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('iglesiaInfantil.registro.ticket', ['registro' => $registro, 'formato' => 'termica_80mm']) }}"
+                                                    target="_blank" class="dropdown-item py-1">
+                                                    <i class="ti ti-printer me-2 text-muted"></i>2. Térmica 80 mm (POS)
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('iglesiaInfantil.registro.ticket', ['registro' => $registro, 'formato' => 'dymo_450']) }}"
+                                                    target="_blank" class="dropdown-item py-1">
+                                                    <i class="ti ti-tag me-2 text-muted"></i>3. Dymo 450 (Manilla)
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="{{ route('iglesiaInfantil.registro.ticket', ['registro' => $registro, 'formato' => 'largo_20x9']) }}"
+                                                    target="_blank" class="dropdown-item py-1">
+                                                    <i class="ti ti-file-text me-2 text-muted"></i>4. Largo 20 × 9 cm
                                                 </a>
                                             </li>
                                             @if ($registro->estaEnCustodia())
@@ -385,6 +425,122 @@
                     @if ($loop->last)</div>@endif
 
                     {{-- Modales (fuera del grid pero dentro del forelse) --}}
+
+                    {{-- Modal para seleccionar el modelo de ticket --}}
+                    <div class="modal fade" id="modalImprimirTicket{{ $registro->id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header pb-2">
+                                    <h5 class="modal-title text-primary fw-bold">
+                                        <i class="ti ti-printer me-2"></i>Imprimir Ticket — {{ $registro->menor?->nombre(3) }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body pt-2">
+                                    <div class="alert alert-info py-2 mb-3 small d-flex align-items-center">
+                                        <i class="ti ti-info-circle fs-5 me-2 flex-shrink-0"></i>
+                                        <div>
+                                            Elige el modelo adecuado para la impresora conectada. Cada modelo imprimirá <strong>2 hojas consecutivas</strong> (1 Gafete del Menor + 1 Comprobante de Retiro del Adulto).
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        {{-- 1. Estándar 58 mm --}}
+                                        <div class="col-sm-6">
+                                            <div class="card h-100 border shadow-none p-3 bg-light">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="badge bg-primary p-2 rounded me-2">
+                                                        <i class="ti ti-receipt fs-4 text-white"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0 fw-bold text-black">1. Estándar 58 mm</h6>
+                                                        <small class="text-muted">Mini-POS o recibo térmico</small>
+                                                    </div>
+                                                </div>
+                                                <p class="small text-black mb-3">
+                                                    Formato continuo de 58 mm para mini-impresoras portátiles o de recibos con línea punteada de corte.
+                                                </p>
+                                                <a href="{{ route('iglesiaInfantil.registro.ticket', ['registro' => $registro, 'formato' => 'actual']) }}"
+                                                    target="_blank" class="btn btn-sm btn-primary w-100 waves-effect waves-light mt-auto">
+                                                    <i class="ti ti-printer me-1"></i>Imprimir en 58 mm
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        {{-- 2. Térmica 80 mm POS --}}
+                                        <div class="col-sm-6">
+                                            <div class="card h-100 border shadow-none p-3 bg-light">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="badge bg-info p-2 rounded me-2">
+                                                        <i class="ti ti-printer fs-4 text-white"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0 fw-bold text-black">2. Térmica 80 mm (POS)</h6>
+                                                        <small class="text-muted">Epson, Star, Bixolon, Xprinter</small>
+                                                    </div>
+                                                </div>
+                                                <p class="small text-black mb-3">
+                                                    Ancho estándar POS de 80 mm con doble talón (salón + retiro) y código QR ampliado para escáner rápido.
+                                                </p>
+                                                <a href="{{ route('iglesiaInfantil.registro.ticket', ['registro' => $registro, 'formato' => 'termica_80mm']) }}"
+                                                    target="_blank" class="btn btn-sm btn-info w-100 waves-effect waves-light mt-auto">
+                                                    <i class="ti ti-printer me-1"></i>Imprimir en 80 mm POS
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        {{-- 3. Dymo LabelWriter 450 --}}
+                                        <div class="col-sm-6">
+                                            <div class="card h-100 border shadow-none p-3 bg-light">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="badge bg-warning p-2 rounded me-2">
+                                                        <i class="ti ti-tag fs-4 text-dark"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0 fw-bold text-black">3. Dymo 450 (Manilla)</h6>
+                                                        <small class="text-muted">Etiquetas / Manilla (102×59mm)</small>
+                                                    </div>
+                                                </div>
+                                                <p class="small text-black mb-3">
+                                                    Nombre del menor en tipografía gigante para visibilidad en ropa y segunda etiqueta de retiro para el adulto.
+                                                </p>
+                                                <a href="{{ route('iglesiaInfantil.registro.ticket', ['registro' => $registro, 'formato' => 'dymo_450']) }}"
+                                                    target="_blank" class="btn btn-sm btn-warning w-100 waves-effect waves-light mt-auto text-dark">
+                                                    <i class="ti ti-printer me-1"></i>Imprimir en Dymo 450
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        {{-- 4. Largo 20 cm × 9 cm --}}
+                                        <div class="col-sm-6">
+                                            <div class="card h-100 border shadow-none p-3 bg-light">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="badge bg-success p-2 rounded me-2">
+                                                        <i class="ti ti-file-text fs-4 text-white"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0 fw-bold text-black">4. Largo 20 × 9 cm</h6>
+                                                        <small class="text-muted">Ficha oficial y talón de seguridad</small>
+                                                    </div>
+                                                </div>
+                                                <p class="small text-black mb-3">
+                                                    Formato vertical estilizado (90×200 mm) con ficha técnica de custodia y pase oficial de entrega para padres.
+                                                </p>
+                                                <a href="{{ route('iglesiaInfantil.registro.ticket', ['registro' => $registro, 'formato' => 'largo_20x9']) }}"
+                                                    target="_blank" class="btn btn-sm btn-success w-100 waves-effect waves-light mt-auto">
+                                                    <i class="ti ti-printer me-1"></i>Imprimir en 20 × 9 cm
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     @if ($registro->estaEnCustodia())
                         {{-- Modal cambiar sal&oacute;n/estaci&oacute;n --}}
                         <div class="modal fade" id="modalCambiarSalon{{ $registro->id }}" tabindex="-1">

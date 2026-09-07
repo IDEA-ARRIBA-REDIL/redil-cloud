@@ -270,6 +270,7 @@ class User extends Authenticatable implements MustVerifyEmail
             // asociados a este usuario (model_id).
             DB::table('model_has_roles')
                 ->where('model_id', $this->id)
+                ->where('model_type', $this->getMorphClass())
                 ->update(['activo' => false]);
 
             // Esta línea ya era correcta y activa el nuevo rol en la tabla pivote.
@@ -333,10 +334,25 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'model_has_roles', 'model_id', 'role_id')->withPivot(
-            'activo',
-            'dependiente'
-        );
+        return $this->morphToMany(
+            Role::class,
+            'model',
+            'model_has_roles',
+            'model_id',
+            'role_id'
+        )->withPivot('activo', 'dependiente');
+    }
+
+    /**
+     * Determina permisos exclusivamente desde el rol activo del usuario.
+     */
+    public function hasPermissionTo($permission, $guardName = null): bool
+    {
+        $rolActivo = $this->roles()
+            ->wherePivot('activo', true)
+            ->first();
+
+        return $rolActivo?->hasPermissionTo($permission, $guardName) ?? false;
     }
 
     public function materiasAprobadasRelacion()
@@ -905,7 +921,7 @@ class User extends Authenticatable implements MustVerifyEmail
                 AND ge.grupo_id = g.id
             )
 
-            UNION DISTINCT
+            UNION
 
             -- RECURSIVE: Grupos donde los integrantes de los grupos anteriores son encargados
             SELECT
@@ -2070,16 +2086,16 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($forzar || $puntajeActual <= $puntajeObjetivo) {
             \Illuminate\Support\Facades\Log::info("User::promoverTipoUsuario: Promoviendo usuario ID {$this->id} a TipoUsuario ID {$tipoObjetivo->id} (Puntaje actual: {$puntajeActual}, Objetivo: {$puntajeObjetivo}, Forzar: ".($forzar ? 'true' : 'false').')');
 
-            $this->update(['tipo_usuario_id' => $tipoObjetivo->id]);
-
             $nuevoRolId = $tipoObjetivo->id_rol_dependiente;
 
-            if ($nuevoRolId) {
-                DB::transaction(function () use ($nuevoRolId) {
+            DB::transaction(function () use ($nuevoRolId, $tipoObjetivo) {
+                $this->update(['tipo_usuario_id' => $tipoObjetivo->id]);
+
+                if ($nuevoRolId) {
                     // Desactivar todos los roles actuales del usuario
                     DB::table('model_has_roles')
                         ->where('model_id', $this->id)
-                        ->where('model_type', get_class($this))
+                        ->where('model_type', $this->getMorphClass())
                         ->update(['activo' => false]);
 
                     // Obtener roles dependientes
@@ -2088,31 +2104,39 @@ class User extends Authenticatable implements MustVerifyEmail
                     if ($rolesDependientesIds->isNotEmpty()) {
                         DB::table('model_has_roles')
                             ->where('model_id', $this->id)
-                            ->where('model_type', get_class($this))
+                            ->where('model_type', $this->getMorphClass())
                             ->whereIn('role_id', $rolesDependientesIds)
                             ->delete();
                     }
 
                     $existeRelacion = DB::table('model_has_roles')
                         ->where('model_id', $this->id)
+                        ->where('model_type', $this->getMorphClass())
                         ->where('role_id', $nuevoRolId)
                         ->exists();
 
                     if (! $existeRelacion) {
                         DB::table('model_has_roles')->insert([
                             'role_id' => $nuevoRolId,
-                            'model_type' => get_class($this),
+                            'model_type' => $this->getMorphClass(),
                             'model_id' => $this->id,
                             'activo' => true,
+                            'dependiente' => true,
                         ]);
                     } else {
                         DB::table('model_has_roles')
                             ->where('model_id', $this->id)
+                            ->where('model_type', $this->getMorphClass())
                             ->where('role_id', $nuevoRolId)
-                            ->update(['activo' => true]);
+                            ->update([
+                                'activo' => true,
+                                'dependiente' => true,
+                            ]);
                     }
-                });
+                }
+            });
 
+            if ($nuevoRolId) {
                 app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
             }
 

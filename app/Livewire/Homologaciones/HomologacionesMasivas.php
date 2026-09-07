@@ -99,7 +99,7 @@ class HomologacionesMasivas extends Component
         if (! empty($value)) {
             $escuela = Escuela::find($value);
             if ($escuela) {
-                if ($escuela->tipo_matricula === 'niveles_agrupados' || ($escuela->tipo_matricula === null && $escuela->niveles()->exists())) {
+                if ($escuela->esPorNiveles()) {
                     $this->modo = 'niveles';
                     $this->items = NivelEscuela::where('escuela_id', $value)->orderBy('orden')->get();
                 } else {
@@ -487,6 +487,7 @@ class HomologacionesMasivas extends Component
 
                 // 1. Guardar la homologación
                 if ($this->modo === 'materias') {
+                    $aplicaCreditos = empty($item->nivel_id);
                     MateriaAprobadaUsuario::updateOrCreate(
                         [
                             'user_id' => $alumnoId,
@@ -495,7 +496,7 @@ class HomologacionesMasivas extends Component
                         [
                             'aprobado' => $estadoId,
                             'nota_final' => $notaFinal,
-                            'creditos_aprobados' => $esAprobado ? $item->creditos : null,
+                            'creditos_aprobados' => ($esAprobado && $aplicaCreditos) ? $item->creditos : null,
                             'es_homologacion' => true,
                             'observacion_homologacion' => $fila['observacion'],
                             'sede_id' => $fila['sede_id'],

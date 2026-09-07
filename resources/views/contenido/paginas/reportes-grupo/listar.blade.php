@@ -279,7 +279,7 @@ $configData = Helper::appClasses();
                   <div class="card-body d-flex flex-row p-3">
 
                     <div class="card-icon me-1 ">
-                    <img src="{{ tenant_asset('img/grupos/'. $indicador->imagen) }}" alt="icono" class="me-2" width="50">
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('global_media')->url($indicador->imagen) }}" alt="icono" class="me-2" width="50">
                     </div>
 
                     <div class="card-title mb-0 lh-sm">

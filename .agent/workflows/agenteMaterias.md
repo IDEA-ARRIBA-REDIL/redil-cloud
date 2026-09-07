@@ -11,6 +11,7 @@ Este agente se encarga de asistir en el desarrollo, mantenimiento y soporte del 
 ## 1. Arquitectura y Flujo de Portadas
 
 ### A. Subida de Imagen con Cropper.js
+
 1. **Componente de la Vista (`crear-materia.blade.php`, `gestionar-materia.blade.php`):**
    - Utiliza Cropper.js para recortar imágenes con relación de aspecto 1693/376.
    - Al hacer click en "Guardar" del modal, el Cropper convierte la imagen recortada a Blob.
@@ -28,16 +29,19 @@ Este agente se encarga de asistir en el desarrollo, mantenimiento y soporte del 
    - **Eliminación de portada anterior:** Al actualizar, se elimina la portada anterior del storage si existe y no es `default.png`.
 
 ### B. Almacenamiento en Base de Datos
+
 - La columna `portada` en la tabla `materias` almacena **solo el nombre del archivo** (ej: `portada-materia-6a0d114d68d4f-1779241293.png`).
 - No se almacena la ruta completa en la base de datos.
 - El campo tiene un valor por defecto de `default.png` en la migración.
 
 ### C. Flujo de Creación (`guardar()`)
+
 1. Se crea la materia con todos sus campos de configuración.
 2. Si `portada_nombre` tiene valor, se asigna el nombre del archivo al campo `portada`.
 3. Se guardan las relaciones (pasos de crecimiento, prerrequisitos, tareas).
 
 ### D. Flujo de Actualización (`actualizar()`)
+
 1. Se actualizan los campos básicos de la materia.
 2. Si `portada_nombre` tiene valor:
    - Se elimina la portada anterior del storage (si existe y no es `default.png`).
@@ -49,7 +53,9 @@ Este agente se encarga de asistir en el desarrollo, mantenimiento y soporte del 
 ## 2. Acceso y URLs Públicas (Multi-Tenancy)
 
 ### A. Accesor del Modelo (`Materia.php`)
+
 El modelo expone de manera segura la URL de la portada a través de su accesor `portada_url`:
+
 ```php
 public function getPortadaUrlAttribute(): ?string
 {
@@ -62,6 +68,7 @@ public function getPortadaUrlAttribute(): ?string
 ```
 
 ### B. Uso en Vistas
+
 - Se utiliza `$materia->portada_url` para obtener la URL completa de la portada.
 - Si `portada_url` es null (imagen por defecto), se usa un fallback a una imagen placeholder del sistema.
 - **Nunca** usar `Storage::disk('public')->url()` directamente en las vistas.
@@ -72,28 +79,33 @@ public function getPortadaUrlAttribute(): ?string
 ## 3. Mapa de Archivos Clave
 
 ### A. Controlador
+
 - **Archivo:** `app/Http/Controllers/MateriaController.php`
   - `uploadPortada()`: Endpoint para subir imagen de portada via fetch async (línea 629)
   - `guardar()`: Crea una nueva materia, recibe `portada_nombre` del request (línea 107)
   - `actualizar()`: Actualiza materia y su portada, elimina imagen anterior si existe (línea 369)
 
 ### B. Rutas
+
 - **Archivo:** `routes/app.php`
   - `POST /materias/upload-portada` → `MateriaController@uploadPortada` (nombre: `materias.uploadPortada`)
   - **Importante:** La ruta de upload debe estar ANTES de `POST /materias/{materia}` para evitar conflicto de parámetros.
 
 ### C. Modelo
+
 - **Archivo:** `app/Models/Materia.php`
   - Accesor: `getPortadaUrlAttribute()` → retorna URL completa con `tenant_asset()`
   - Relaciones: `pasosCrecimiento()`, `tareasRequisito()`, `tareasCulminadas()`, `prerrequisitosMaterias()`, `procesosPrerrequisito()`, `escuela()`, `nivel()`, `materiasPeriodo()`
 
 ### D. Vistas
+
 - `resources/views/contenido/paginas/escuelas/materias/crear-materia.blade.php`
 - `resources/views/contenido/paginas/escuelas/materias/gestionar-materia.blade.php`
 - `resources/views/contenido/paginas/escuelas/materias-asociadas.blade.php`
 - `resources/views/livewire/escuelas/materia-periodo.blade.php`
 
 ### E. Migración
+
 - **Archivo:** `database/migrations/tenant/2025_03_19_162323_create_materias_table.php`
   - Columna `portada`: `string('portada', 500)->default('default.png')->nullable()`
 
@@ -102,20 +114,24 @@ public function getPortadaUrlAttribute(): ?string
 ## 4. Relaciones del Modelo Materia
 
 ### A. Pasos de Crecimiento
+
 - `pasosCrecimiento()`: BelongsToMany con `PasoCrecimiento` a través de `materia_paso_crecimiento`
   - Pivot: `estado`, `al_iniciar`, `estado_paso_crecimiento_usuario_id`, `indice`
   - `al_iniciar = 1`: Pasos que se asignan al iniciar la materia
   - `al_iniciar = 0`: Pasos que se asignan al culminar la materia
 
 ### B. Tareas
+
 - `tareasRequisito()`: HasMany con `MateriaTareaRequisito`
 - `tareasCulminadas()`: HasMany con `MateriaTareaCulminada`
 
 ### C. Prerrequisitos
+
 - `prerrequisitosMaterias()`: BelongsToMany con `Materia` (auto-relación a través de `materia_prerrequisito`)
 - `procesosPrerrequisito()`: BelongsToMany con `PasoCrecimiento` (a través de `materia_proceso_prerrequisito`)
 
 ### D. Jerarquía
+
 - `escuela()`: BelongsTo con `Escuela`
 - `nivel()`: BelongsTo con `NivelEscuela`
 - `materiasPeriodo()`: HasMany con `MateriaPeriodo`
@@ -126,26 +142,30 @@ public function getPortadaUrlAttribute(): ?string
 ## 5. Configuración de la Materia
 
 ### A. Campos de Configuración
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `habilitar_calificaciones` | boolean | Habilita sistema de calificaciones |
-| `habilitar_asistencias` | boolean | Habilita control de asistencias |
-| `habilitar_inasistencias` | boolean | Habilita alerta de inasistencias |
-| `habilitar_traslado` | boolean | Permite traslados entre horarios |
-| `caracter_obligatorio` | boolean | Define si la materia es obligatoria |
-| `asistencias_minimas` | integer | Mínimo de asistencias requeridas |
-| `asistencias_minima_alerta` | integer | Umbral para alerta de inasistencias |
-| `limite_reporte_asistencias` | integer | Límite total de reportes |
-| `tiene_dia_limite` | boolean | Si tiene día límite semanal |
-| `dia_limite_reporte` | integer | Día límite (0=Domingo, 6=Sábado) |
-| `cantidad_limite_reportes_semana` | integer | Reportes permitidos por semana |
-| `dias_plazo_reporte` | integer | Días de plazo para reportar |
-| `tipo_usuario_inicial_id` | integer | Tipo de usuario al matricular |
-| `tipo_usuario_objetivo_id` | integer | Tipo de usuario al aprobar la materia |
-| `portada` | string | Nombre del archivo de portada (500 chars max) |
 
-### B. Herencia de Configuración
-- Si la materia tiene `nivel_id`, hereda la configuración del nivel asociado.
+| Campo                             | Tipo    | Descripción                                                          |
+| --------------------------------- | ------- | -------------------------------------------------------------------- |
+| `creditos`                        | integer | Número de créditos académicos (exclusivo para escuelas por materias) |
+| `habilitar_calificaciones`        | boolean | Habilita sistema de calificaciones                                   |
+| `habilitar_asistencias`           | boolean | Habilita control de asistencias                                      |
+| `habilitar_inasistencias`         | boolean | Habilita alerta de inasistencias                                     |
+| `habilitar_traslado`              | boolean | Permite traslados entre horarios                                     |
+| `caracter_obligatorio`            | boolean | Define si la materia es obligatoria                                  |
+| `asistencias_minimas`             | integer | Mínimo de asistencias requeridas                                     |
+| `asistencias_minima_alerta`       | integer | Umbral para alerta de inasistencias                                  |
+| `limite_reporte_asistencias`      | integer | Límite total de reportes                                             |
+| `tiene_dia_limite`                | boolean | Si tiene día límite semanal                                          |
+| `dia_limite_reporte`              | integer | Día límite (0=Domingo, 6=Sábado)                                     |
+| `cantidad_limite_reportes_semana` | integer | Reportes permitidos por semana                                       |
+| `dias_plazo_reporte`              | integer | Días de plazo para reportar                                          |
+| `tipo_usuario_inicial_id`         | integer | Tipo de usuario al matricular                                        |
+| `tipo_usuario_objetivo_id`        | integer | Tipo de usuario al aprobar la materia                                |
+| `portada`                         | string  | Nombre del archivo de portada (500 chars max)                        |
+
+### B. Herencia de Configuración y Créditos
+
+- Si la escuela es por niveles (`esPorNiveles()`), los créditos no operan ni se asignan (`creditos = null`).
+- Si la materia tiene `nivel_id`, hereda la configuración del nivel asociado y no utiliza créditos.
 - El método `getConfigProp()` maneja esta lógica de herencia.
 - Los accesorios como `getHabilitarAsistenciasAttribute()` usan `getConfigProp()` automáticamente.
 
@@ -168,25 +188,27 @@ public function getPortadaUrlAttribute(): ?string
 
 Las siguientes vistas deben usar `$materia->portada_url` (o su equivalente según la relación):
 
-| Vista | Variable | Nota |
-|-------|----------|------|
-| `materias/crear-materia.blade.php` | N/A (solo sube) | Creación de materia |
-| `materias/gestionar-materia.blade.php` | `$materia->portada_url` | Edición de materia |
-| `materias-asociadas.blade.php` | `$materia->portada_url` | Listado de materias de escuela |
-| `escuelas/materia-periodo.blade.php` | `$materiaPe->materia->portada_url` | Materia en periodo (Livewire) |
-| `matricula/matricula-nivel-process.blade.php` | `$materia->portada_url` | Proceso de matrícula |
-| `niveles/gestionar-materias-nivel.blade.php` | `$materia->portada_url` | Materias del nivel |
-| `matriculas/gestionar-traslados.blade.php` | `$matricula->...->materia->portada_url` | Traslados |
-| `matriculas/gestionar-matriculas.blade.php` | `$item->portada_url` | Gestión de matrículas |
+| Vista                                         | Variable                                | Nota                           |
+| --------------------------------------------- | --------------------------------------- | ------------------------------ |
+| `materias/crear-materia.blade.php`            | N/A (solo sube)                         | Creación de materia            |
+| `materias/gestionar-materia.blade.php`        | `$materia->portada_url`                 | Edición de materia             |
+| `materias-asociadas.blade.php`                | `$materia->portada_url`                 | Listado de materias de escuela |
+| `escuelas/materia-periodo.blade.php`          | `$materiaPe->materia->portada_url`      | Materia en periodo (Livewire)  |
+| `matricula/matricula-nivel-process.blade.php` | `$materia->portada_url`                 | Proceso de matrícula           |
+| `niveles/gestionar-materias-nivel.blade.php`  | `$materia->portada_url`                 | Materias del nivel             |
+| `matriculas/gestionar-traslados.blade.php`    | `$matricula->...->materia->portada_url` | Traslados                      |
+| `matriculas/gestionar-matriculas.blade.php`   | `$item->portada_url`                    | Gestión de matrículas          |
 
 ---
 
 ## 8. Datos de Ejemplo
 
 ### A. Valores en Base de Datos
+
 - **Portada por defecto:** `default.png`
 - **Portada nueva:** `portada-materia-6a0d114d68d4f-1779241293.png`
 
 ### B. URLs Generadas
+
 - **Con accesor:** `$materia->portada_url` → `https://tenant.example.com/assets/archivos/escuelas/materias/portada-materia-xxx.png`
 - **Sin portada:** `$materia->portada_url` → `null`

@@ -256,7 +256,7 @@ class EscuelaController extends Controller
      */
     public function materias(Escuela $escuela)
     {
-        $materias = $escuela->materias; // Carga implícita por la relación
+        $materias = $escuela->materias()->orderBy('orden', 'asc')->orderBy('nombre', 'asc')->get();
         $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->where('activo', true)->first();
         $usuario = auth()->user();

@@ -13,9 +13,11 @@ use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\ConfiguracionGeneralController;
 use App\Http\Controllers\ConsejeriaController;
 use App\Http\Controllers\ConsolidacionController;
+use App\Http\Controllers\ConsolidadoAcademicoController;
 use App\Http\Controllers\CorteEscuelaController;
 use App\Http\Controllers\CumpleanosController;
 use App\Http\Controllers\CursoController;
+use App\Http\Controllers\DashboardReportesReunionController;
 use App\Http\Controllers\EscuelaController;
 use App\Http\Controllers\FileViewerController;
 use App\Http\Controllers\FiltroConsolidacionController;
@@ -29,6 +31,7 @@ use App\Http\Controllers\HistorialCalificacionesController;
 use App\Http\Controllers\HomologacionController;
 use App\Http\Controllers\IglesiaController;
 use App\Http\Controllers\IglesiaInfantilController;
+use App\Http\Controllers\InformeEstadoMateriaNivelesController;
 use App\Http\Controllers\InformeEvidenciaGrupoController;
 use App\Http\Controllers\InformesController;
 use App\Http\Controllers\InformesPersonalizadosController;
@@ -542,14 +545,23 @@ Route::get('/dashboard', function () {
     $hoy = now()->toDateString();
 
     // Filtrar actividades por vigencia
-    $actividadesVigentes = Actividad::where('activa', true)
+    $actividadesVigentes = Actividad::with(['tags', 'tipo'])
+        ->where('activa', true)
         ->where(function ($query) use ($hoy) {
             $query->whereNull('fecha_visualizacion')
                 ->orWhere('fecha_visualizacion', '<=', $hoy);
         })
         ->where(function ($query) use ($hoy) {
-            $query->whereNull('fecha_cierre')
-                ->orWhere('fecha_cierre', '>=', $hoy);
+            $query->where(function ($sub) use ($hoy) {
+                $sub->whereNotNull('fecha_finalizacion')
+                    ->where('fecha_finalizacion', '>=', $hoy);
+            })->orWhere(function ($sub) use ($hoy) {
+                $sub->whereNull('fecha_finalizacion')
+                    ->where(function ($nested) use ($hoy) {
+                        $nested->whereNull('fecha_inicio')
+                            ->orWhere('fecha_inicio', '>=', $hoy);
+                    });
+            });
         })
         ->get();
 
@@ -734,12 +746,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/iglesia-virtual', [ReporteReunionController::class, 'iglesiaVirtual'])->name('reporteReunion.iglesiaVirtual');
     Route::post('/reporteReunion/crear/{reunion}', [ReporteReunionController::class, 'crear'])->name('reporteReunion.crear');
     Route::get('/reporteReunion/nuevo/{reunion}', [ReporteReunionController::class, 'reporte'])->name('reporteReunion.nuevo');
+    Route::get('/reporteReuniones/dashboard', [DashboardReportesReunionController::class, 'index'])->name('reporteReunion.dashboard');
+    Route::get('/reporteReuniones/dashboard/exportar', [DashboardReportesReunionController::class, 'exportarExcel'])->name('reporteReunion.dashboard.exportar');
     Route::get('/reporteReuniones/lista/{tipo?}', [ReporteReunionController::class, 'lista'])->name('reporteReunion.lista');
     Route::middleware('verificarReporteReunion')->group(function () {
         Route::get('/reporteReunion/{reporteReunion}/perfil', [ReporteReunionController::class, 'perfil'])->name('reporteReunion.perfil');
         Route::get('/reporteReunion/{reporteReunion}/editar', [ReporteReunionController::class, 'editar'])->name('reporteReunion.editar');
         Route::delete('/reporteReunion/{reporteReunion}/eliminar', [ReporteReunionController::class, 'eliminar'])->name('reporteReunion.eliminar');
         Route::patch('/reporteReunion/{reporteReunion}/actualizar', [ReporteReunionController::class, 'actualizar'])->name('reporteReunion.actualizar');
+        Route::patch('/reporteReunion/{reporteReunion}/finalizar', [ReporteReunionController::class, 'finalizar'])->name('reporteReunion.finalizar');
+        Route::patch('/reporteReunion/{reporteReunion}/reabrir', [ReporteReunionController::class, 'reabrir'])->name('reporteReunion.reabrir');
         Route::get('/reporteReunion/{reporteReunion}/anadir-servidores', [ReporteReunionController::class, 'añadirServidores'])->name('reporteReunion.añadirServidores');
         Route::get('/reporteReunion/{reporteReunion}/anadir-asistentes', [ReporteReunionController::class, 'añadirAsistentes'])->name('reporteReunion.añadirAsistentes');
         Route::get('/reporteReunion/{reporteReunion}/anadir-reservas', [ReporteReunionController::class, 'añadirReservas'])->name('reporteReunion.añadirReservas');
@@ -1184,6 +1200,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // // Homologaciones
     Route::get('/escuelas/homologaciones', [HomologacionController::class, 'index'])->name('escuelas.homologaciones');
     Route::get('/escuelas/homologaciones/masivas', [HomologacionController::class, 'masivas'])->name('escuelas.homologaciones.masivas');
+
+    // Consolidado Académico
+    Route::get('/escuelas/consolidado-academico', [ConsolidadoAcademicoController::class, 'index'])->name('escuelas.consolidado-academico');
+
+    // Informe Estado Materia / Niveles
+    Route::get('/escuelas/informe-estado-materia-niveles', [InformeEstadoMateriaNivelesController::class, 'index'])->name('escuelas.informe-estado-materia-niveles');
 
     // / Reportes escuelas
     // Ruta para mostrar el formulario de filtros del reporte

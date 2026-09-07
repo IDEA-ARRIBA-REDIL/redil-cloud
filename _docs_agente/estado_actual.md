@@ -1,6 +1,27 @@
 # Estado Actual del Proyecto CRECER
 
-- **Nuevos Gráficos y Métricas en Dashboard de Clase de Maestros (Agosto 2026)**:
+- **Formularios Dinámicos de Actividades y Rediseño UI/UX (Septiembre 2026)**:
+  - **Rediseño UI/UX en Gestión de Formularios**: Transformación completa de `formulario-actividad.blade.php` eliminando franjas de colores estridentes en bordes, reemplazando badges pesados por micro-pills discretos (`Obligatorio`, `Asistencia`, `Oculto`), chips sutiles para opciones de respuesta, botones de acción limpios y un formato diferenciado tipo banner para las secciones/encabezados.
+  - **Corrección de Selección Única (`@case(5)`)**: Se corrigió `formulario.blade.php` en el checkout para incluir `@case(5)`, resolviendo el fallo donde los selectores de preguntas de selección única nunca se renderizaban.
+  - **Restricción Estricta de Formatos de Archivo**: Restricción tanto en frontend (`accept`) como en backend (`uploadArchivoFormulario`) a estrictamente `.pdf` en documentos (rechazando `.doc`, `.docx`) y `.png, .jpeg, .jpg` en imágenes (rechazando `.webp` u otros).
+  - **Validación de Archivos Obligatorios**: Corrección en `guardarFormulario` de `CarritoController` para reconocer el input hidden generado tras la subida asíncrona de Alpine.js, evitando falsos rechazos de campos requeridos.
+  - **Persistencia de Respuestas Negativas ("No" / "0")**: Se reemplazó `empty($valor)` por comparación estricta en `AbonoCarrito.php` y `EscuelasCarrito.php` para no omitir respuestas con valor `"0"`.
+  - **Módulo de Asistencias**: Resolución dinámica del texto de opciones legibles (`valor_texto`) en lugar de IDs numéricos en `AsistenciasActividad.php`.
+  - **Corrección de Selección Múltiple (Checkboxes Reactivos)**: Se solucionó el fallo donde al marcar una opción en preguntas de selección múltiple (checkbox) se marcaban automáticamente todas las demás opciones de la pregunta. Se implementó la inicialización forzada de arrays de strings (`inicializarRespuestasMultiples`) en `mount()`, `cargarRespuestasExistentes()` y `render()` de `Carrito.php`, `AbonoCarrito.php` y `EscuelasCarrito.php`, junto con directivas `wire:key`, migración a `wire:model`, corrección del valor de opción en abonos y asignación de IDs únicos por elemento.
+  - **Optimizaciones Livewire**: Asignación automática de orden (`max + 1`), reseteo de variables de modal y refresco de colección `opciones` en `FormularioActividad.php`.
+
+- **Calendario de Actividades en Dashboard (Septiembre 2026)**:
+  - **Componente Livewire Reactivo**: Creación de `App\Livewire\Dashboard\CalendarioActividades` (`calendario-actividades.blade.php`) integrando FullCalendar 6 con soporte de vistas Mes, Semana, Día y Lista.
+  - **Permiso de Visualización**: Condicionado al permiso `dashboard.dashboard_mostrar_calendario` tanto en Blade como dentro de la autorización del componente Livewire.
+  - **Elegibilidad y Categorías Seguras**: Carga únicamente las actividades permitidas para el usuario autenticado (`Actividad::filtrarActividadesPermitidas`) y extrae dinámicamente los tags/categorías asociadas a esas actividades para el panel de filtros, evitando mostrar categorías o eventos no autorizados.
+  - **Filtro Estricto de Fechas de Evento**: El calendario compara únicamente con las fechas en que ocurre el evento (`fecha_inicio` y `fecha_finalizacion`), desacoplándose de las fechas de inscripción/oferta (`fecha_visualizacion` y `fecha_cierre`).
+  - **Corrección de Vigencia y Actividades Públicas**: Se corrigió `ActividadController::_buildActividadesQuery` y `routes/app.php` para validar vigencia con `fecha_finalizacion >= hoy` en lugar de `fecha_cierre >= hoy` (que ocultaba actividades activas cuando su periodo de inscripción había vencido). Además, se habilitó el bypass directo para actividades con `totalmente_publica = true` en `Actividad::validarAccesoGlobal` y `validarUsuarioEnCategoria`.
+
+- **Sistema Multiformato de Tickets para Iglesia Infantil (Septiembre 2026)**:
+  - **4 Modelos Soportados**: Estándar (58 mm), Térmica POS (80 mm con doble talón y corte), Dymo LabelWriter 450 (etiquetas adhesivas/manilla 102×59mm con tipografía grande) y Formato Alargado (20 cm × 9 cm con ficha y pase oficial).
+  - **Doble Hoja Obligatoria**: Todos los formatos imprimen 2 hojas independientes: Hoja 1 para el menor (gafete de salón con datos médicos) y Hoja 2 para el adulto responsable (ticket de custodia con QR de salida rápida), con `page-break-after: always`.
+  - **Selector Interactivo**: Paso 5 de Check-in con selector visual y persistencia en `localStorage`. Menú contextual de reimpresión rápida en Lista del Turno y barra flotante en la vista del ticket con alternador de modelos y filtros de impresión.
+
   - **Asistencia Semanal del Periodo (`attendanceTrendChart`)**: Gráfico de líneas/área con ApexCharts en fila dedicada `col-12` que itera semana a semana cubriendo todo el rango del periodo académico, contrastando asistencias (presentes) e inasistencias (ausentes).
   - **Ranking de Calificaciones (Leaderboard Table)**: Tabla/lista estilizada con scroll vertical suave, badges de podio (#1, #2, #3), avatares, barras de progreso y notas promedio destacadas ordenadas de mayor a menor.
 - **Escáner QR Continuo en Asistencias (Agosto 2026)**:
@@ -107,6 +128,6 @@
   - [x] Agente Escuelas (Validado + Diagrama + HTML).
   - [x] Agente Actividades (`actividades.md` + Mapa Mental).
   - [x] Agente Actividades-Carrito (`carrito.md` + Flujos diferenciados).
-- [ ] Construir Agente "Usuarios" (Sugerido).
+- [x] Agente Usuarios (contexto + integración con Grupos + piloto automatizado de rol activo).
 - [ ] Validar flujos de inscripción y compras en producción.
 - [ ] Mantener actualizada esta bitácora.

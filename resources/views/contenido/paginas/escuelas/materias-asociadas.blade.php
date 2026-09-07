@@ -53,7 +53,7 @@
                             <div class="card-header">
                                 <div class="d-flex align-items-start justify-content-between">
                                     <div class="d-flex align-items-center">
-
+                                        <span class="badge bg-label-primary rounded-pill me-2" title="Orden de la materia">#{{ $materia->orden ?? 1 }}</span>
                                         <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $materia->nombre }}</h5>
                                     </div>
 

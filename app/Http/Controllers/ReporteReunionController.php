@@ -20,9 +20,9 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Validation\ValidationException; // <-- Importa la clase Mail
-use Maatwebsite\Excel\Facades\Excel;           // <-- Importa tu Mailable
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Storage; // <-- Importa la clase Mail
+use Illuminate\Validation\ValidationException;           // <-- Importa tu Mailable
+use Maatwebsite\Excel\Facades\Excel;
 use stdClass;
 
 class ReporteReunionController extends Controller
@@ -263,7 +263,6 @@ class ReporteReunionController extends Controller
     public function editar(ReporteReunion $reporteReunion)
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-        return "sdfsd";
         $rolActivo->verificacionDelPermiso('reporte_reuniones.opcion_modificar_reporte_reunion');
 
         $configuracion = Configuracion::first();
@@ -345,13 +344,33 @@ class ReporteReunionController extends Controller
         $reporteReunion->clasificacionesAsistentes()->detach();
         Ofrenda::destroy($ofrendasIds);
         if ($reporteReunion->portada && $reporteReunion->portada != 'default.png') {
-            Storage::delete('img/reportes-reuniones/' . $reporteReunion->portada);
+            Storage::delete('img/reportes-reuniones/'.$reporteReunion->portada);
         }
         $reporteReunion->delete();
 
         return redirect()
             ->route('reporteReunion.lista')
             ->with('success', 'Reporte eliminado exitosamente.');
+    }
+
+    public function finalizar(ReporteReunion $reporteReunion)
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('reporte_reuniones.finalizar_reporte');
+
+        $reporteReunion->finalizar(auth()->user());
+
+        return back()->with('success', 'El reporte ha sido finalizado con éxito. Ahora computa oficialmente en las estadísticas.');
+    }
+
+    public function reabrir(ReporteReunion $reporteReunion)
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('reporte_reuniones.finalizar_reporte');
+
+        $reporteReunion->reabrir(auth()->user());
+
+        return back()->with('info', 'El reporte ha sido reabierto para edición.');
     }
 
     public function añadirServidores(ReporteReunion $reporteReunion)
@@ -999,6 +1018,24 @@ class ReporteReunionController extends Controller
 
     public function eliminarReserva(Request $request, ReservaReunion $reserva)
     {
+        // 0. Validar autorización: usuario autenticado titular/administrador o enlace firmado válido
+        $user = auth()->user();
+        $esAutorizado = false;
+
+        if ($user) {
+            $rolActivo = $user->roles()->wherePivot('activo', true)->first();
+            $esAdminReservas = $rolActivo && $rolActivo->hasPermissionTo('reporte_reuniones.opcion_anadir_asistentes_reservas_reunion');
+            $esTitular = ($reserva->user_id && $reserva->user_id == $user->id) || ($reserva->responsable_id && $reserva->responsable_id == $user->id);
+            if ($esAdminReservas || $esTitular) {
+                $esAutorizado = true;
+            }
+        } elseif ($request->hasValidSignature()) {
+            $esAutorizado = true;
+        }
+
+        if (! $esAutorizado) {
+            return back()->with('danger', 'No tienes autorización para eliminar esta reserva.');
+        }
 
         // 1. Validar que la reserva no esté registrada como una asistencia.
         if ($reserva->registrada) {

@@ -140,7 +140,7 @@ class Grupo extends Model
     {
         // CASO 1: El grupo tiene su propia portada (Banner)
         if ($this->portada && $this->portada != 'default.png') {
-            return tenant_asset('img/grupos/' . $this->portada);
+            return tenant_asset('img/grupos/'.$this->portada);
         }
 
         // CASO 2: No tiene portada el grupo, revisamos la del tipo de grupo
@@ -424,27 +424,27 @@ class Grupo extends Model
 
     }
 
-    public function asignarEncargado($userId)
+    public function asignarEncargado(int $userId): string
     {
-        if (! $this->encargados()->attach($userId)) {
-            $this->asignarSede($userId);
-
-            // Disparar Hito Automático por Designación como Líder/Encargado (si aplica)
-            if ($this->tipo_grupo_id) {
-                app(\App\Services\HitoTriggerService::class)->onDesignacionLiderGrupo(
-                    (int) $userId,
-                    (int) $this->tipo_grupo_id,
-                    (int) $this->id
-                );
-            }
-
-            return 'true';
-        } else {
+        if ($this->encargados()->whereKey($userId)->exists()) {
             return 'false';
         }
+
+        $this->encargados()->attach($userId);
+        $this->asignarSede($userId);
+
+        if ($this->tipo_grupo_id) {
+            app(\App\Services\HitoTriggerService::class)->onDesignacionLiderGrupo(
+                $userId,
+                (int) $this->tipo_grupo_id,
+                (int) $this->id
+            );
+        }
+
+        return 'true';
     }
 
-    public function eliminarEncargado($userId)
+    public function eliminarEncargado(int $userId): string
     {
         $this->encargados()->detach($userId);
 

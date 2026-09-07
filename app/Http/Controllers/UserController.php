@@ -1852,23 +1852,34 @@ class UserController extends Controller
 
             $totalObligatorias = 0;
             $aprobadasObligatorias = 0;
+            $creditosTotalesObligatorias = 0;
+            $creditosAprobadosObligatorias = 0;
+
             $totalOpcionales = 0;
             $aprobadasOpcionales = 0;
+            $creditosTotalesOpcionales = 0;
+            $creditosAprobadosOpcionales = 0;
 
             foreach ($items as $item) {
                 $resultado = $historialMap->get($item->id);
                 $item->resultado = $resultado;
                 $esAprobado = ($resultado && (int) $resultado->aprobado === 1);
+                $creditos = (int) ($item->creditos ?? 0);
+                $creditosObtenidos = $resultado ? (int) ($resultado->creditos_aprobados ?? $creditos) : $creditos;
 
                 if ($item->caracter_obligatorio) {
                     $totalObligatorias++;
+                    $creditosTotalesObligatorias += $creditos;
                     if ($esAprobado) {
                         $aprobadasObligatorias++;
+                        $creditosAprobadosObligatorias += $creditosObtenidos;
                     }
                 } else {
                     $totalOpcionales++;
+                    $creditosTotalesOpcionales += $creditos;
                     if ($esAprobado) {
                         $aprobadasOpcionales++;
+                        $creditosAprobadosOpcionales += $creditosObtenidos;
                     }
                 }
             }
@@ -1889,8 +1900,14 @@ class UserController extends Controller
             $escuela->progreso = $progreso;
             $escuela->total_obligatorias = $totalObligatorias;
             $escuela->aprobadas_obligatorias = $aprobadasObligatorias;
+            $escuela->creditos_totales_obligatorias = $creditosTotalesObligatorias;
+            $escuela->creditos_aprobados_obligatorias = $creditosAprobadosObligatorias;
+
             $escuela->total_opcionales = $totalOpcionales;
             $escuela->aprobadas_opcionales = $aprobadasOpcionales;
+            $escuela->creditos_totales_opcionales = $creditosTotalesOpcionales;
+            $escuela->creditos_aprobados_opcionales = $creditosAprobadosOpcionales;
+
             $escuela->total_items = $totalItems;
             $escuela->total_aprobadas = $totalAprobadas;
         }
@@ -2075,18 +2092,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-            
+
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-                
+
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-                
+
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-            
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -2972,18 +2989,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-            
+
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-                
+
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-                
+
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-            
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -3514,18 +3531,18 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
             $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
-            
+
             if ($formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($formulario->edad_minima)->format('Y-m-d');
                 $fechaMin = \Carbon\Carbon::now()->subYears($formulario->edad_maxima + 1)->addDay()->format('Y-m-d');
-                
+
                 $validarFechaNacimiento[] = "before_or_equal:{$fechaMax}";
                 $validarFechaNacimiento[] = "after_or_equal:{$fechaMin}";
-                
+
                 $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $formulario->edad_mensaje_error;
                 $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $formulario->edad_mensaje_error;
             }
-            
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarFechaNacimiento]);
             $usuario->fecha_nacimiento = $request[$campoTemporal->name_id];
         }
@@ -4349,23 +4366,9 @@ class UserController extends Controller
         $tipoUsuarioAutomatico = TipoUsuario::whereIn('id', $automatizacionTipoUsuarios)->orderBy('puntaje', 'DESC')->first();
 
         // Automatizacion de tipoUsuario
-        $tipoUsuarioActual = TipoUsuario::find($usuario->tipo_usuario_id);
-        if ($tipoUsuarioAutomatico && $tipoUsuarioAutomatico->puntaje > $tipoUsuarioActual->puntaje) {
-            $usuario->tipo_usuario_id = $tipoUsuarioAutomatico->id;
-            $usuario->save();
+        if ($tipoUsuarioAutomatico) {
+            $usuario->promoverTipoUsuario($tipoUsuarioAutomatico);
         }
-
-        // Además, le cambio a la usuario el rol dependiente
-        $rolDependiente = $usuario
-            ->roles()
-            ->wherePivot('dependiente', '=', true)
-            ->first();
-
-        if ($rolDependiente && $tipoUsuarioActual->id_rol_dependiente != $rolDependiente->id) {
-            $usuario->roles()->attach($tipoUsuarioActual->id_rol_dependiente, ['activo' => $rolDependiente->pivot->activo, 'dependiente' => true, 'model_type' => 'App\Models\User']);
-            $usuario->removeRole($rolDependiente);
-        }
-        $usuario->save();
 
         // Automatizacion de pasos de crecimiento
         if ($automatizacionPasosCrecimiento->count() > 0) {

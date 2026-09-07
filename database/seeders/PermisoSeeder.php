@@ -944,6 +944,24 @@ class PermisoSeeder extends Seeder
             'name' => 'reporte_reuniones.ver_conteo_preliminar_reuniones',
         ]);
 
+        Permission::firstOrCreate([
+            'titulo' => 'finalizar_reporte_reunion',
+            'descripcion' => 'Permite cambiar el estado de un reporte de reunión a finalizado o reabrirlo',
+            'name' => 'reporte_reuniones.finalizar_reporte',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'ver_dashboard_estadistico_reuniones',
+            'descripcion' => 'Permite acceder y visualizar el dashboard analítico de reportes de reunión',
+            'name' => 'reporte_reuniones.ver_dashboard_estadistico',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'exportar_dashboard_estadistico_reuniones',
+            'descripcion' => 'Permite descargar el informe en Excel del dashboard de reportes de reunión',
+            'name' => 'reporte_reuniones.exportar_dashboard_estadistico',
+        ])->syncRoles([$superAdmin]);
+
         // Sedes
         Permission::firstOrCreate([
             'titulo' => 'lista_sedes_todas',
