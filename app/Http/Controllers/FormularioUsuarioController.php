@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\FormularioUsuario;
 use App\Models\Role;
-use App\Models\TipoFormularioUsuario;
 use App\Models\Sede;
+use App\Models\TipoFormularioUsuario;
 use App\Models\TipoUsuario;
 use Illuminate\Http\Request;
 
@@ -48,6 +48,7 @@ class FormularioUsuarioController extends Controller
         $validacion = [
             'nombre' => ['max:100', 'required'],
             'título' => ['max:100', 'required'],
+            'etiqueta' => ['max:100', 'required'],
             'tipoDeFormulario' => ['required'],
         ];
 
@@ -111,6 +112,7 @@ class FormularioUsuarioController extends Controller
         $validacion = [
             'nombre' => ['max:100', 'required'],
             'título' => ['max:100', 'required'],
+            'etiqueta' => ['max:100', 'required'],
             'tipoDeFormulario' => ['required'],
         ];
 

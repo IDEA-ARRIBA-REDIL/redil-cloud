@@ -105,6 +105,61 @@ $configData = Helper::appClasses();
   });
 </script>
 
+<script type="module">
+  $(document).ready(function() {
+    const $inputBuscador = $('#buscadorRolesIndependientes');
+    const $btnLimpiar = $('#btnLimpiarBuscadorRoles');
+    const $filasRoles = $('.fila-rol-independiente');
+    const $sinCoincidencias = $('#sinCoincidenciasRoles');
+
+    function normalizarTexto(texto) {
+      return texto
+        .toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+    }
+
+    function filtrarRoles() {
+      const termino = normalizarTexto($inputBuscador.val());
+      let visibles = 0;
+
+      if (termino === '') {
+        $btnLimpiar.addClass('d-none');
+        $filasRoles.removeClass('d-none');
+        $sinCoincidencias.addClass('d-none');
+        return;
+      }
+
+      $btnLimpiar.removeClass('d-none');
+
+      $filasRoles.each(function() {
+        const nombreRol = normalizarTexto($(this).find('.nombre-rol').text());
+        if (nombreRol.includes(termino)) {
+          $(this).removeClass('d-none');
+          visibles++;
+        } else {
+          $(this).addClass('d-none');
+        }
+      });
+
+      if (visibles === 0) {
+        $sinCoincidencias.removeClass('d-none');
+      } else {
+        $sinCoincidencias.addClass('d-none');
+      }
+    }
+
+    $inputBuscador.on('input keyup', filtrarRoles);
+
+    $btnLimpiar.on('click', function() {
+      $inputBuscador.val('').focus();
+      filtrarRoles();
+    });
+  });
+</script>
+
 @endsection
 
 @section('content')
@@ -320,23 +375,33 @@ $configData = Helper::appClasses();
 
       <!-- Tipo usuarios independientes -->
       @if($rolActivo->hasPermissionTo('personas.ver_panel_asignar_tipo_usuario'))
-      <div class="card ">
-        <div class="card-header d-flex justify-content-between">
-          <p class="card-text text-uppercase fw-bold"><i class="ti ti-checkbox ms-n1 me-2"></i>Asignar roles independientes</p>
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <p class="card-text text-uppercase fw-bold mb-0"><i class="ti ti-checkbox ms-n1 me-2"></i>Asignar roles independientes</p>
         </div>
         <div class="card-body pb-20">
+          <div class="mb-3">
+            <div class="input-group input-group-merge">
+              <span class="input-group-text" id="buscador-rol-icon"><i class="ti ti-search"></i></span>
+              <input type="text" id="buscadorRolesIndependientes" class="form-control" placeholder="Buscar rol..." aria-label="Buscar rol..." aria-describedby="buscador-rol-icon">
+              <button class="btn btn-outline-secondary d-none" type="button" id="btnLimpiarBuscadorRoles">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          </div>
+
           <div class="table-responsive">
-            <table class="table table-flush-spacing">
-              <tbody>
+            <table class="table table-flush-spacing" id="tablaRolesIndependientes">
+              <thead>
                 <tr>
-                  <td class=""></td>
-                  <td class="text-nowrap fw-medium fw-bold text-center">
-                    ¿Asignar?
-                  </td>
+                  <th class="text-nowrap fw-bold ps-0">Rol</th>
+                  <th class="text-nowrap fw-bold text-center">¿Asignar?</th>
                 </tr>
+              </thead>
+              <tbody>
                 @foreach( $rolesNoDependientes as $rol)
-                <tr>
-                  <td class="text-nowrap fw-medium">{{ $rol->name }}</td>
+                <tr class="fila-rol-independiente">
+                  <td class="text-nowrap fw-medium nombre-rol ps-0">{{ $rol->name }}</td>
                   <td class="text-center">
                     <label class="switch switch-lg">
                       <input id="rolIndependiente{{$rol->id}}" name="rolIndependiente{{$rol->id}}" @if($rol->tiene=="si") checked @endif type="checkbox" class="switch-input" />
@@ -349,6 +414,12 @@ $configData = Helper::appClasses();
                   </td>
                 </tr>
                 @endforeach
+                <tr id="sinCoincidenciasRoles" class="d-none">
+                  <td colspan="2" class="text-center py-4 text-muted">
+                    <i class="ti ti-search-off fs-4 d-block mb-1"></i>
+                    No se encontraron roles que coincidan con la búsqueda.
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>

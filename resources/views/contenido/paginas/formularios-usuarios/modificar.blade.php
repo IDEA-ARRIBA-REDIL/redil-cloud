@@ -264,9 +264,9 @@ $configData = Helper::appClasses();
               Etiqueta
             </label>
             <input id="etiqueta" name="etiqueta" placeholder="Escribe la etiqueta" value="{{ old('etiqueta', $formulario->label) }}" type="text" class="form-control" />
-            @if($errors->has('título'))
+            @if($errors->has('etiqueta'))
             <div class="text-danger ti-12px mt-2">
-              <i class="ti ti-circle-x"></i> {{ $errors->first('título') }}
+              <i class="ti ti-circle-x"></i> {{ $errors->first('etiqueta') }}
             </div>
             @endif
           </div>
