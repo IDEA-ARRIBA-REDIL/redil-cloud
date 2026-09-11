@@ -115,7 +115,7 @@ class SedeController extends Controller
             'nombre' => ['required'],
             'tipo_de_sede' => ['required'],
             'fecha_creación' => ['required'],
-            'grupoId' => ['required'],
+            'grupoId' => ['nullable'],
         ];
         $request->validate($validacion);
 
@@ -127,7 +127,7 @@ class SedeController extends Controller
         $sede->nombre = $request->nombre;
         $sede->telefono = $request->teléfono;
         $sede->tipo_sede_id = $request->tipo_de_sede;
-        $sede->grupo_id = $request->grupoId;
+        $sede->grupo_id = $request->filled('grupoId') ? $request->grupoId : null;
         $sede->descripcion = $request->descripcion;
         $sede->fecha_creacion = $request->fecha_creación;
         $sede->capacidad = $request->capacidad;
@@ -215,14 +215,14 @@ class SedeController extends Controller
             'nombre' => ['required'],
             'tipo_de_sede' => ['required'],
             'fecha_creación' => ['required'],
-            'grupoId' => ['required'],
+            'grupoId' => ['nullable'],
         ];
         $request->validate($validacion);
 
         $sede->nombre = $request->nombre;
         $sede->telefono = $request->teléfono;
         $sede->tipo_sede_id = $request->tipo_de_sede;
-        $sede->grupo_id = $request->grupoId;
+        $sede->grupo_id = $request->filled('grupoId') ? $request->grupoId : null;
         $sede->descripcion = $request->descripcion;
         $sede->fecha_creacion = $request->fecha_creación;
         $sede->capacidad = $request->capacidad;

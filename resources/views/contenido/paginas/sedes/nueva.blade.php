@@ -283,7 +283,7 @@ $configData = Helper::appClasses();
             'id' => 'grupoId',
             'class' => 'col-12 col-md-6 mb-2',
             'label' => 'Seleccione el grupo principal de la sede',
-            'obligatorio' => true,
+            'obligatorio' => false,
             'conDadosDeBaja' => 'no',
             'estiloSeleccion' => 'pequeno'
           ])
