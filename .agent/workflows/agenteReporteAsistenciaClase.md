@@ -70,3 +70,18 @@ El archivo principal es `reporte-asistencia-alumnos.blade.php`.
 El script de inicialización de `Flatpickr` es dinámico:
 *   Recibe la variable `$estadoFechas['fechasPermitidasFlatpickr']`.
 *   Si el usuario no es Admin, inyecta este array en la propiedad `enable` de Flatpickr. De esta manera, a nivel cliente (frontend), el usuario es físicamente incapaz de clickear o seleccionar una fecha vencida o futura, acoplando perfectamente el frontend con las validaciones del backend.
+
+---
+
+## 6. Exportación a Excel (`AsistenciasClaseExport`)
+
+El componente Livewire `ReporteAsistenciaAlumnos` cuenta con soporte para descargar reportes de asistencia en formato Excel (`.xlsx`) mediante `Maatwebsite\Excel`:
+
+*   **Excel General (`exportarTodosLosReportes`):**
+    *   Disparado por el botón `wire:click="exportarTodosLosReportes"` en la cabecera de la tarjeta del listado.
+    *   Genera un archivo con nombre `asistencias-{slug_materia}-todos-los-reportes.xlsx` consolidando todas las clases y alumnos registrados para el horario.
+*   **Excel Individual por Clase (`exportarReporte($reporteId)`):**
+    *   Disparado por el botón `wire:click="exportarReporte({{ $reporte->id }})"` en la fila de cada clase.
+    *   Genera un archivo con nombre `asistencias-{slug_materia}-{YYYY-MM-DD}.xlsx` con los detalles específicos de esa sesión de clase.
+*   Ambos métodos delegan a la clase exportable `App\Exports\AsistenciasClaseExport($this->horarioAsignado, $reporte)`.
+
