@@ -34,11 +34,15 @@
                                 <small class="text-muted">{{ $invitado->email }}</small>
                             </div>
                             <div class="col-xs-12 col-lg-6 text-end">
-                                {{-- INICIO DEL CAMBIO: Botón para descargar solo el QR --}}
-                                <button type="button" class="btn btn-sm btn-outline-secondary my-3" title="Descargar solo Código QR" wire:click="descargarQrInvitado({{ $invitado->id }})">
-                                    <i class="ti ti-qrcode"></i> Descargar Qr
+                                {{-- Botón para descargar QR en PDF --}}
+                                <button type="button" class="btn btn-sm btn-outline-secondary my-3 rounded-pill" title="Descargar Código QR en PDF" wire:click="descargarQrInvitado({{ $invitado->id }})" wire:loading.attr="disabled" wire:target="descargarQrInvitado({{ $invitado->id }})">
+                                    <span wire:loading.remove wire:target="descargarQrInvitado({{ $invitado->id }})">
+                                        <i class="ti ti-qrcode me-1"></i> Descargar QR (PDF)
+                                    </span>
+                                    <span wire:loading wire:target="descargarQrInvitado({{ $invitado->id }})">
+                                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Generando PDF...
+                                    </span>
                                 </button>
-                                {{-- FIN DEL CAMBIO --}}
 
                                 {{-- Botón de Eliminar (sin cambios) --}}
                                 <button class="btn btn-sm btn-outline-danger my-3" title="Eliminar Invitado" wire:click="eliminarInvitado({{ $invitado->id }})" wire:confirm="¿Estás seguro de que quieres eliminar a este invitado?">
