@@ -1,5 +1,21 @@
 @php
+use App\Models\Configuracion;
+
 $containerFooter = (isset($configData['contentLayout']) && $configData['contentLayout'] === 'compact') ? 'container-xxl' : 'container-fluid';
+
+$configuracion = $configuracion ?? Configuracion::find(1);
+
+$usarMarcaBlanca = $configuracion && ($configuracion->marca_blanca || !empty($configuracion->nombre_creador));
+
+$nombreCreador = ($usarMarcaBlanca && !empty($configuracion->nombre_creador))
+    ? $configuracion->nombre_creador
+    : (!empty(config('variables.creatorName')) ? config('variables.creatorName') : 'IDEARRIBA');
+
+$urlCreador = ($usarMarcaBlanca && !empty($configuracion->url_creador))
+    ? $configuracion->url_creador
+    : (!empty(config('variables.creatorUrl')) ? config('variables.creatorUrl') : '');
+
+$versionApp = $configuracion->version_app ?? ($configuracion->version ? $configuracion->version : config('variables.templateVersion'));
 @endphp
 
 <!-- Footer-->
@@ -7,13 +23,17 @@ $containerFooter = (isset($configData['contentLayout']) && $configData['contentL
   <div class="{{ $containerFooter }}">
     <div class="footer-container d-flex align-items-center justify-content-between py-4 flex-md-row flex-column">
       <div class="text-body">
-        © <script>document.write(new Date().getFullYear())</script>, made with ❤️ by <a href="{{ (!empty(config('variables.creatorUrl')) ? config('variables.creatorUrl') : '') }}" target="_blank" class="footer-link">{{ (!empty(config('variables.creatorName')) ? config('variables.creatorName') : '') }}</a>
+        © <script>document.write(new Date().getFullYear())</script>, hecho con el corazón ❤️ por
+        @if(!empty($urlCreador))
+          <a href="{{ $urlCreador }}" target="_blank" class="footer-link">{{ $nombreCreador }}</a>
+        @else
+          <span class="footer-link">{{ $nombreCreador }}</span>
+        @endif
       </div>
-      <div class="d-none d-lg-inline-block">
-        <a href="{{ config('variables.licenseUrl') ? config('variables.licenseUrl') : '#' }}" class="footer-link me-4" target="_blank">License</a>
-        <a href="{{ config('variables.moreThemes') ? config('variables.moreThemes') : '#' }}" target="_blank" class="footer-link me-4">More Themes</a>
-        <a href="{{ config('variables.documentation') ? config('variables.documentation').'/laravel-introduction.html' : '#' }}" target="_blank" class="footer-link me-4">Documentation</a>
-        <a href="{{ config('variables.support') ? config('variables.support') : '#' }}" target="_blank" class="footer-link d-none d-sm-inline-block">Support</a>
+      <div>
+        @if(!empty($versionApp))
+          <span class="footer-link text-muted">v{{ ltrim($versionApp, 'v') }}</span>
+        @endif
       </div>
     </div>
   </div>

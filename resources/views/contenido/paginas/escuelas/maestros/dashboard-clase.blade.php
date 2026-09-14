@@ -18,7 +18,7 @@
         }
 
         .students-list {
-            --student-list-columns: 2rem minmax(13rem, 2.5fr) repeat(var(--cut-count), minmax(3.5rem, 1fr)) minmax(3.5rem, 1fr) minmax(4rem, 1fr) minmax(4.75rem, 1.15fr) minmax(5.5rem, 1.2fr) minmax(5.25rem, 1.15fr);
+            --student-list-columns: 2rem minmax(13rem, 2.5fr) repeat(var(--cut-count), minmax(3.5rem, 1fr)) minmax(3.5rem, 1fr) minmax(4rem, 1fr) minmax(4.75rem, 1.15fr) minmax(5.5rem, 1.2fr) minmax(4rem, 0.8fr);
         }
 
         .students-list-toolbar {
@@ -59,6 +59,11 @@
             box-shadow: none;
         }
 
+        .student-item-card:has(.dropdown-menu.show) {
+            position: relative;
+            z-index: 1055;
+        }
+
         .student-list-row {
             min-width: 52rem;
             min-height: 4.75rem;
@@ -89,22 +94,32 @@
         }
 
         .student-action-list {
-            display: grid;
-            justify-items: center;
-            gap: .25rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        .student-action-list form,
-        .student-action-list .btn {
-            width: 4.75rem;
+        .student-action-list .dropdown {
+            position: relative;
         }
 
-        .student-action-list .btn {
-            min-height: 1.625rem;
-            padding: .2rem .35rem;
-            font-size: .6875rem;
-            line-height: 1.2;
-            white-space: nowrap;
+        .student-action-list .dropdown-menu {
+            min-width: 9.5rem;
+            z-index: 1050;
+        }
+
+        .student-action-list .dropdown-menu form {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .student-action-list .dropdown-menu .dropdown-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: .5rem 1rem;
+            font-size: .8125rem;
         }
 
         .student-status .badge {
@@ -139,12 +154,6 @@
                 padding-left: .5rem;
             }
 
-            .student-action-list form,
-            .student-action-list .btn {
-                width: 4.5rem;
-            }
-
-            .student-action-list .btn,
             .student-status .badge {
                 font-size: .625rem;
             }
@@ -221,13 +230,9 @@
 
             .student-action-list {
                 grid-column: 1 / -1;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                padding-top: .125rem;
-            }
-
-            .student-action-list form,
-            .student-action-list .btn {
-                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+                padding-top: .25rem;
             }
         }
 
@@ -252,8 +257,7 @@
                 padding: .75rem;
             }
 
-            .student-details-grid,
-            .student-action-list {
+            .student-details-grid {
                 grid-template-columns: minmax(0, 1fr);
             }
         }
@@ -267,41 +271,90 @@
     {{-- Encabezado --}}
     <div class="row mb-3">
         <div class="col-12">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div>
-                    <h4 class="mb-1 fw-semibold text-primary">
-                        Dashboard clase: <span class="text-black fw-normal">{{ $nombreMateria }}</span>
-                    </h4>
-                    <p class="mb-0 text-black"><small>{{ $infoClase }} </small></p>
-                </div>
-                <div class="text-md-end text-start">
-                    <span class="badge bg-label-info fs-6 mb-1">Total matriculados: {{ $totalAlumnos }}</span>
-                    @php
-                        $hombresCount = $conteoGenero['hombres'] ?? 0;
-                        $mujeresCount = $conteoGenero['mujeres'] ?? 0;
-                        $otrosCount = $conteoGenero['otros'] ?? 0;
-                        $hombresPct = $totalAlumnos > 0 ? round(($hombresCount / $totalAlumnos) * 100) : 0;
-                        $mujeresPct = $totalAlumnos > 0 ? round(($mujeresCount / $totalAlumnos) * 100) : 0;
-                    @endphp
-                    <div class="d-flex flex-wrap justify-content-md-end align-items-center gap-2 mt-1">
-                        <span class="badge bg-label-primary fs-7">
-                            <i class="mdi mdi-gender-male me-1"></i>{{ $hombresCount }} Hombres ({{ $hombresPct }}%)
-                        </span>
-                        <span class="badge bg-label-danger fs-7">
-                            <i class="mdi mdi-gender-female me-1"></i>{{ $mujeresCount }} Mujeres ({{ $mujeresPct }}%)
-                        </span>
-                        @if ($otrosCount > 0)
-                            <span class="badge bg-label-secondary fs-7">
-                                {{ $otrosCount }} Otros
-                            </span>
-                        @endif
-                    </div>
-                </div>
-            </div>
+            <h4 class="mb-1 fw-semibold text-primary">
+                Dashboard clase: <span class="text-black fw-normal">{{ $nombreMateria }}</span>
+            </h4>
+            <p class="mb-0 text-black"><small>{{ $infoClase }}</small></p>
         </div>
     </div>
 
     @include('contenido.paginas.escuelas.maestros.nav-modulo')
+
+    {{-- Tarjetas de Métricas de Alumnos --}}
+    @php
+        $hombresCount = $conteoGenero['hombres'] ?? 0;
+        $mujeresCount = $conteoGenero['mujeres'] ?? 0;
+        $otrosCount = $conteoGenero['otros'] ?? 0;
+        $hombresPct = $totalAlumnos > 0 ? round(($hombresCount / $totalAlumnos) * 100) : 0;
+        $mujeresPct = $totalAlumnos > 0 ? round(($mujeresCount / $totalAlumnos) * 100) : 0;
+        $otrosPct = $totalAlumnos > 0 ? round(($otrosCount / $totalAlumnos) * 100) : 0;
+        $colClass = $otrosCount > 0 ? 'col-lg-3 col-sm-6 col-12' : 'col-lg-4 col-sm-6 col-12';
+    @endphp
+    <div class="row g-3 mb-4">
+        <div class="{{ $colClass }}">
+            <div class="card border shadow-none">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block fw-semibold">Total matriculados</small>
+                        <h4 class="mb-0 fw-bold">{{ $totalAlumnos }}</h4>
+                    </div>
+                    <div class="badge rounded bg-label-primary p-2">
+                        <i class="ti ti-users fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="{{ $colClass }}">
+            <div class="card border shadow-none">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block fw-semibold text-info">Hombres</small>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <h4 class="mb-0 fw-bold text-info">{{ $hombresCount }}</h4>
+                            <small class="text-muted fw-normal">({{ $hombresPct }}%)</small>
+                        </div>
+                    </div>
+                    <div class="badge rounded bg-label-info p-2">
+                        <i class="ti ti-gender-male fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="{{ $colClass }}">
+            <div class="card border shadow-none">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted d-block fw-semibold text-danger">Mujeres</small>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <h4 class="mb-0 fw-bold text-danger">{{ $mujeresCount }}</h4>
+                            <small class="text-muted fw-normal">({{ $mujeresPct }}%)</small>
+                        </div>
+                    </div>
+                    <div class="badge rounded bg-label-danger p-2">
+                        <i class="ti ti-gender-female fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if ($otrosCount > 0)
+            <div class="{{ $colClass }}">
+                <div class="card border shadow-none">
+                    <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-muted d-block fw-semibold text-secondary">Otros</small>
+                            <div class="d-flex align-items-baseline gap-2">
+                                <h4 class="mb-0 fw-bold text-secondary">{{ $otrosCount }}</h4>
+                                <small class="text-muted fw-normal">({{ $otrosPct }}%)</small>
+                            </div>
+                        </div>
+                        <div class="badge rounded bg-label-secondary p-2">
+                            <i class="ti ti-gender-intergender fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
 
     {{-- Fila 1 de Gráficos: Asistencia Semanal del Periodo (Ancho Completo) --}}
     <div class="row g-4 mb-4">
@@ -380,14 +433,14 @@
                                         @endphp
                                         <tr class="border-bottom">
                                             <td class="ps-3 pe-1 py-2 text-center" style="width: 36px;">
-                                                <span class="badge rounded-circle d-inline-flex align-items-center justify-content-center {{ $badgePosicionClass }}" style="width: 24px; height: 24px; font-size: 11px; font-weight: 700;">
+                                                <span class="badge rounded-circle d-inline-flex align-items-center justify-content-center text-dark" style="width: 24px; height: 24px; font-size: 11px; font-weight: 700;">
                                                     {{ $posicion }}
                                                 </span>
                                             </td>
                                             <td class="py-2 pe-2">
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-xs me-2 flex-shrink-0">
-                                                        <span class="avatar-initial rounded-circle bg-label-primary fs-6">{{ $iniciales }}</span>
+                                                        <span class="avatar-initial rounded-circle bg-label-primary fs-7">{{ $iniciales }}</span>
                                                     </div>
                                                     <div class="overflow-hidden" style="max-width: 140px;">
                                                         <span class="d-block fw-semibold text-dark text-truncate small" title="{{ $itemAlumno['nombre_completo'] }}">
@@ -434,7 +487,7 @@
                         <div class="students-export-actions" role="group" aria-label="Exportar notas por corte">
                             @foreach ($cortesDefinidos as $corte)
                                 <a href="{{ route('maestros.exportarNotasCorte', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'cortePeriodo' => $corte['id_db']]) }}"
-                                    class="btn btn-sm btn-outline-success">
+                                    class="btn btn-sm btn-outline-success me-3">
                                     <i class="ti ti-file-spreadsheet me-1"></i> Excel {{ $corte['nombre'] }}
                                 </a>
                             @endforeach
@@ -552,28 +605,38 @@
                                                     </span>
                                                 </div>
                                                 <div class="student-action-list">
-                                                    <a
-                                                        href="{{ route('maestros.gestionarAlumno', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'alumno' => $alumno['user_model']]) }}"
-                                                        class="btn btn-sm btn-outline-primary rounded-pill"
-                                                        data-bs-toggle="tooltip" data-bs-placement="top"
-                                                        title="Ver perfil del alumno">
-                                                        Perfil
-                                                    </a>
-                                                    @can('escuelas.bloquear_matricula')
-                                                        @if (! $alumno['matricula_model']->bloqueado && $horarioAsignado->materiaPeriodo->periodo->estado)
-                                                            <form
-                                                                action="{{ route('maestros.bloquearMatricula', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'matricula' => $alumno['matricula_model']]) }}"
-                                                                method="POST"
-                                                                onsubmit="return confirm('¿Deseas bloquear la matrícula de este alumno? Al finalizar el período quedará reprobado aunque cumpla las notas o asistencias.');">
-                                                                @csrf
-                                                                @method('PATCH')
-                                                                <button type="submit"
-                                                                    class="btn btn-sm btn-outline-danger rounded-pill">
-                                                                    Bloquear
-                                                                </button>
-                                                            </form>
-                                                        @endif
-                                                    @endcan
+                                                    <div class="dropdown">
+                                                        <button type="button"
+                                                            class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect"
+                                                            data-bs-toggle="dropdown"
+                                                            aria-expanded="false">
+                                                            <i class="ti ti-dots-vertical"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('maestros.gestionarAlumno', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'alumno' => $alumno['user_model']]) }}">
+                                                                    <i class="ti ti-user me-2"></i> Perfil
+                                                                </a>
+                                                            </li>
+                                                            @can('escuelas.bloquear_matricula')
+                                                                @if (! $alumno['matricula_model']->bloqueado && $horarioAsignado->materiaPeriodo->periodo->estado)
+                                                                    <li>
+                                                                        <form class="form-bloquear-matricula"
+                                                                            action="{{ route('maestros.bloquearMatricula', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'matricula' => $alumno['matricula_model']]) }}"
+                                                                            method="POST"
+                                                                            onsubmit="return confirm('¿Deseas bloquear la matrícula de este alumno? Al finalizar el período quedará reprobado aunque cumpla las notas o asistencias.');">
+                                                                            @csrf
+                                                                            @method('PATCH')
+                                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                                <i class="ti ti-ban me-2"></i> Bloquear
+                                                                            </button>
+                                                                        </form>
+                                                                    </li>
+                                                                @endif
+                                                            @endcan
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                         </div>
                                     </div>
@@ -868,6 +931,29 @@
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tooltipTriggerList.map(function(tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            document.querySelectorAll('.form-bloquear-matricula').forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: '¿Deseas bloquear la matrícula de este alumno?',
+                        text: 'Al finalizar el período quedará reprobado aunque cumpla las notas o asistencias.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, bloquear',
+                        cancelButtonText: 'Cancelar',
+                        customClass: {
+                            confirmButton: 'btn btn-danger me-3',
+                            cancelButton: 'btn btn-label-secondary'
+                        },
+                        buttonsStyling: false
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
             });
 
 

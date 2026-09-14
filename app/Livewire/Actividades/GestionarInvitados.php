@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Milon\Barcode\Facades\DNS2DFacade as DNS2D;
 use stdClass;
 
 class GestionarInvitados extends Component
@@ -47,14 +48,17 @@ class GestionarInvitados extends Component
     /**
      * Carga/Refresca la lista de invitados desde la BD y recalcula los cupos disponibles.
      */
-    public function cargarInvitados()
+    public function cargarInvitados(): void
     {
-        // Precargamos las relaciones necesarias para eficiencia y seguridad.
-        $this->inscripcionPrincipal->load(['invitados', 'user', 'compra']);
+        // Refrescamos también los atributos del modelo principal, no solo sus relaciones.
+        $this->inscripcionPrincipal->refresh()->load(['invitados', 'user', 'compra']);
         $this->invitados = $this->inscripcionPrincipal->invitados;
 
         // Calculamos cuántos cupos le quedan al usuario.
-        $this->cuposDisponibles = $this->inscripcionPrincipal->limite_invitados - $this->invitados->count();
+        $this->cuposDisponibles = max(
+            0,
+            (int) ($this->inscripcionPrincipal->limite_invitados ?? 0) - $this->invitados->count()
+        );
     }
 
     /**
@@ -82,7 +86,9 @@ class GestionarInvitados extends Component
             'emailConfirmacionNuevoInvitado.required' => 'Debes confirmar el correo electrónico.',
         ]);
 
-        // PASO 2: Volver a verificar los cupos como medida de seguridad.
+        // PASO 2: Volver a consultar y verificar los cupos como medida de seguridad.
+        $this->cargarInvitados();
+
         if ($this->cuposDisponibles <= 0) {
             $this->dispatch('mostrarAlerta', ['titulo' => 'Límite Alcanzado', 'texto' => 'Ya has registrado el máximo de invitados permitidos.', 'icono' => 'warning']);
 
@@ -122,8 +128,9 @@ class GestionarInvitados extends Component
     }
 
     /**
-     * Genera el documento PDF del ticket con el código QR para un invitado específico
-     * y lo envía al navegador para su descarga.
+     * NUEVO MÉTODO:
+     * Genera la imagen de un código QR para un invitado específico y la envía
+     * al navegador para su descarga.
      */
     public function descargarQrInvitado(int $inscripcionId)
     {
@@ -131,26 +138,33 @@ class GestionarInvitados extends Component
             // 1. Buscar la inscripción del invitado de forma segura.
             $invitado = Inscripcion::where('id', $inscripcionId)
                 ->where('inscripcion_asociada', $this->inscripcionPrincipal->id)
-                ->firstOrFail();
+                ->firstOrFail(); // Si no se encuentra, falla con un error 404.
 
-            // 2. Generar el PDF del ticket con el código QR.
-            $pdfContent = $this->_generarPdfParaInscripcion($invitado);
+            // 2. Preparar los datos que irán dentro del código QR.
+            $datosParaQr = json_encode([
+                'id' => $invitado->id,
+                'nombre' => $invitado->nombre_inscrito,
+                'tipo' => 'inscripcion_invitado_aprobada',
+            ]);
 
-            // 3. Preparar un nombre de archivo amigable en PDF.
-            $fileName = 'qr-invitado-'.Str::slug($invitado->nombre_inscrito).'-'.$invitado->id.'.pdf';
+            // 3. Generar el contenido binario de la imagen PNG del código QR.
+            $qrCodeImage = DNS2D::getBarcodePNG($datosParaQr, 'QRCODE', 10, 10); // Aumentamos el tamaño para mejor calidad
 
-            // 4. Enviar el archivo PDF al navegador para descarga directa.
+            // 4. Preparar un nombre de archivo amigable.
+            $fileName = 'qr-invitado-'.Str::slug($invitado->nombre_inscrito).'-'.$invitado->id.'.png';
+
+            // 5. Enviar la imagen al navegador como una descarga.
             return response()->streamDownload(
-                fn () => print ($pdfContent),
+                fn () => print ($qrCodeImage),
                 $fileName,
-                ['Content-Type' => 'application/pdf']
+                ['Content-Type' => 'image/png']
             );
         } catch (\Exception $e) {
-            Log::error('Error al descargar PDF para invitado: '.$e->getMessage());
+            Log::error('Error al descargar QR para invitado: '.$e->getMessage());
             // Notificar al usuario que algo salió mal.
             $this->dispatch('mostrarAlerta', [
                 'titulo' => 'Error',
-                'texto' => 'No se pudo generar el código QR en PDF para la descarga.',
+                'texto' => 'No se pudo generar el código QR para la descarga.',
                 'icono' => 'error',
             ]);
         }
@@ -202,13 +216,13 @@ class GestionarInvitados extends Component
      */
     private function _generarPdfParaInscripcion(Inscripcion $inscripcion): string
     {
-        $inscripcion->loadMissing('user', 'compra', 'categoriaActividad.actividad', 'inscripcionPrincipal');
-        $actividad = $inscripcion->categoriaActividad?->actividad ?? $this->inscripcionPrincipal->categoriaActividad?->actividad;
-        $inscripcionPrincipal = $inscripcion->inscripcionPrincipal ?? $this->inscripcionPrincipal;
+        $inscripcion->load('user', 'compra', 'categoriaActividad');
+        $actividad = $inscripcion->categoriaActividad->actividad;
+        $inscripcionPrincipal = $inscripcion->inscripcionPrincipal;
         $iglesia = Iglesia::find(1);
 
         // La vista del PDF se encarga de la lógica del QR
-        $pdf = Pdf::loadView('contenido.paginas.actividades.inscripcion-ticket', [
+        $pdf = PDF::loadView('contenido.paginas.actividades.inscripcion-ticket', [
             'inscripcion' => $inscripcion,
             'actividad' => $actividad,
             'iglesia' => $iglesia,

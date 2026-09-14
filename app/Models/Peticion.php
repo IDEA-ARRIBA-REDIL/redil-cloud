@@ -8,37 +8,47 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Peticion extends Model
 {
-  use HasFactory;
-  protected $table = 'peticiones';
-  protected $guarded = [];
+    use HasFactory;
 
-  public function usuario(): BelongsTo
-  {
-    return $this->belongsTo(User::class, 'user_id');
-  }
+    protected $table = 'peticiones';
 
-  public function tipoPeticion(): BelongsTo
-  {
-    return $this->belongsTo(TipoPeticion::class);
-  }
+    protected $guarded = [];
 
-  public function autorCreacion(): BelongsTo
-  {
-    return $this->belongsTo(User::class, 'autor_creacion_id');
-  }
+    protected function casts(): array
+    {
+        return [
+            'descripcion' => \App\Casts\SafeEncrypted::class,
+            'respuesta' => \App\Casts\SafeEncrypted::class,
+        ];
+    }
 
-  public function seguimientos()
-  {
-    return $this->hasMany(SeguimientoPeticion::class);
-  }
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
-  public function pais(): BelongsTo
-  {
-    return $this->belongsTo(Pais::class, 'pais_id');
-  }
+    public function tipoPeticion(): BelongsTo
+    {
+        return $this->belongsTo(TipoPeticion::class);
+    }
 
-  public function asignado(): BelongsTo
-  {
-    return $this->belongsTo(User::class, 'asignacion_peticion_id');
-  }
+    public function autorCreacion(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'autor_creacion_id');
+    }
+
+    public function seguimientos()
+    {
+        return $this->hasMany(SeguimientoPeticion::class);
+    }
+
+    public function pais(): BelongsTo
+    {
+        return $this->belongsTo(Pais::class, 'pais_id');
+    }
+
+    public function asignado(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'asignacion_peticion_id');
+    }
 }

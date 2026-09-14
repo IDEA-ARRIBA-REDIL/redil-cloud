@@ -1103,6 +1103,11 @@ class Actividad extends Model
         return $this->hasMany(ElementoFormularioActividad::class);
     }
 
+    public function novedades(): HasMany
+    {
+        return $this->hasMany(NovedadActividad::class, 'actividad_id');
+    }
+
     /**
      * Método público para validar cualquier colección de tareas (ej: de una materia).
      */

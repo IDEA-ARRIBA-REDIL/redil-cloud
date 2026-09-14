@@ -1,3 +1,14 @@
+@php
+use App\Models\Configuracion;
+$configuracion = $configuracion ?? Configuracion::find(1);
+$usarMarcaBlanca = $configuracion && ($configuracion->marca_blanca || !empty($configuracion->nombre_creador));
+$nombreCreador = ($usarMarcaBlanca && !empty($configuracion->nombre_creador))
+    ? $configuracion->nombre_creador
+    : (!empty(config('variables.creatorName')) ? config('variables.creatorName') : 'IDEARRIBA');
+$urlCreador = ($usarMarcaBlanca && !empty($configuracion->url_creador))
+    ? $configuracion->url_creador
+    : (!empty(config('variables.creatorUrl')) ? config('variables.creatorUrl') : '');
+@endphp
 <!-- Footer: Start -->
 <footer class="landing-footer bg-body footer-text">
   <div class="footer-top position-relative overflow-hidden z-1">
@@ -79,7 +90,11 @@
 
           </script>
         </span>
-        <a href="{{config('variables.creatorUrl')}}" target="_blank" class="fw-medium text-white text-white">{{config('variables.creatorName')}},</a>
+        @if(!empty($urlCreador))
+          <a href="{{ $urlCreador }}" target="_blank" class="fw-medium text-white">{{ $nombreCreador }},</a>
+        @else
+          <span class="fw-medium text-white">{{ $nombreCreador }},</span>
+        @endif
         <span class="footer-bottom-text"> Made with ❤️ for a better web.</span>
       </div>
       <div>

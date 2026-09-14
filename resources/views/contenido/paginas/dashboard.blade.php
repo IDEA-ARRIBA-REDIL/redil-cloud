@@ -240,6 +240,35 @@
             background-color: rgba(255, 255, 255, 0.4);
             transform: scale(1.1);
         }
+
+        /* Estilos para el banner de Gamificación */
+        .gamificacion-dashboard-card {
+            background: #14532d;
+            background: linear-gradient(135deg, #3b762b 0%, #1f3d1a 100%);
+            border-radius: 16px;
+            color: #ffffff;
+            transition: all 0.25s ease-in-out;
+            cursor: pointer;
+        }
+
+        .gamificacion-dashboard-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(20, 83, 45, 0.35) !important;
+        }
+
+        .gamificacion-puntos-badge {
+            background: rgba(255, 255, 255, 0.27);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 0.35rem 1rem;
+            border-radius: 50rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
     </style>
 @endsection
 
@@ -520,7 +549,7 @@
 
         </div>
 
-        <div id="row-contenido-general" class="row ajuste">
+        <div id="row-contenido-general" class="row ajuste">          
 
             {{--  habilitar notificaciones (solo móvil, solo si no están activas) --}}
             <div id="banner-notif-permiso" class="col-12 my-2 " style="display:none;">
@@ -597,6 +626,25 @@
             </div>
             {{-- Fin notificaciones instalación --}}
 
+              <!-- Banner de Gamificación / Perfil del Usuario -->
+            @auth
+            <div class="col-12 my-2">
+                <a href="{{ route('gamificacion.index') }}" class="text-decoration-none">
+                    <div class="card gamificacion-dashboard-card border-0 shadow-sm p-5" style="border-radius: 15px;">
+                        <div class="d-flex flex-column align-items-start gap-2">
+                            <h5 class="text-white mb-0 fw-semibold">¡Hola, {{ auth()->user()->nombre(2) }}!</h5>
+                            <div class="gamificacion-puntos-badge">
+                                <i class="ti ti-coins text-warning fs-5"></i>
+                                <span>{{ number_format(auth()->user()->puntos ?? 0) }} Puntos</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endauth
+
+            
+
             @livewire('dashboard.versiculo-del-dia', ['claseColumnas' => 'col-12  col-lg-6 mt-3'])
 
             <div id="col-racha-tiempo-con-dios" class="col-12  col-lg-6 mt-3" >
@@ -610,12 +658,12 @@
                             'tamaño' => '70px',
                             'formato' => 'compacto',
                         ])
-                       </div>
+                       </div> 
 
                        <div>
                         @livewire('TiempoConDios.racha-diaria', [
-                            'largoLinea' => '40px',
-                            'ocultarDispositivosMoviles' => false,
+                            'largoLinea' => '40px', 
+                            'ocultarDispositivosMoviles' => false,  
                             'mostrarRacha' => true,
                             'mostrar-animacion' => 'false'
                         ])

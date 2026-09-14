@@ -356,6 +356,7 @@ $configData = Helper::appClasses();
                         Agregar tarea
                       </a>
                     </li>
+                    
                     @if($rolActivo->hasPermissionTo('consejeria.opcion_agendar_cita'))
                     <li><a class="dropdown-item" href="{{ route('consejeria.nuevaCita', $persona) }}">Agendar cita</a></li>         
                     @endif      

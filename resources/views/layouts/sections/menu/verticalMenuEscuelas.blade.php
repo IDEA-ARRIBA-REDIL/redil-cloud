@@ -220,7 +220,7 @@
                 </a>
 
                 <ul class="menu-sub">
-
+                    
                     <li class="menu-item {{ Route::is('escuelas.consolidado-academico') ? 'active' : '' }}">
                         <a href="{{ route('escuelas.consolidado-academico') }}" class="menu-link">
                             <div>Consolidado académico</div>

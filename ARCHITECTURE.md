@@ -197,6 +197,8 @@ Tenant (Iglesia)
 
 - `ThemeSetting` almacena colores hex por categoría
 - `ThemeService` genera CSS dinámico desde la base de datos
+- La edición de colores requiere una prestación de logo o marca blanca activa, además del permiso tenant correspondiente.
+- La presentación del login tiene valores predeterminados en la base central y recursos opcionales en cada tenant. `LoginBrandingResolver` aplica la licencia y resuelve el fallback sin duplicar los archivos globales.
 - CSS almacenado en `storage/{tenant_id}/theme/_custom-variables.css`
 
 ### Notification System
@@ -329,6 +331,7 @@ Los agentes de documentación están en `.agent/workflows/`:
 | `agenteMatriculas.md` | Sistema de matrícula |
 | `agenteMultiTenancy.md` | Arquitectura multi-tenant |
 | `agenteNiveles.md` | Niveles académicos |
+| `agenteNovedadesActividad.md` | Gestión de novedades e incidencias de inscripción |
 | `agenteNotificaciones.md` | Sistema de notificaciones |
 | `agentePeriodos.md` | Períodos académicos |
 | `agentePeticiones.md` | Peticiones de oración |

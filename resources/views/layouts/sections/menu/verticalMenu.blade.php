@@ -542,7 +542,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasAnyPermission(['actividades.item_actividades', 'actividades.subitem_listado_actividad', 'actividades.subitem_nueva_actividad']))
+        @if ($rolActivo->hasAnyPermission(['actividades.item_actividades', 'actividades.subitem_listado_actividad', 'actividades.subitem_nueva_actividad', 'actividades.ver_novedades', 'actividades.gestionar_novedades']))
             <li class="menu-item {{ request()->routeIs('actividades.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-calendar-star"></i>
@@ -560,6 +560,13 @@
                         <li class="menu-item {{ request()->routeIs('actividades.nueva') ? 'active' : '' }}">
                             <a href="{{ route('actividades.nueva') }}" class="menu-link ">
                                 <div>Nueva</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasAnyPermission(['actividades.ver_novedades', 'actividades.gestionar_novedades']))
+                        <li class="menu-item {{ request()->routeIs('actividades.novedades.*') ? 'active' : '' }}">
+                            <a href="{{ route('actividades.novedades.gestion') }}" class="menu-link">
+                                <div>Novedades</div>
                             </a>
                         </li>
                     @endif

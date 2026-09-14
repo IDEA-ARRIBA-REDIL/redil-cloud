@@ -9,6 +9,8 @@ class UserAdminRedil extends Authenticatable
 {
     use Notifiable;
 
+    protected $connection = 'central';
+
     protected $table = 'users_admins_redil';
 
     /**

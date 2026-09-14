@@ -420,11 +420,16 @@ $configData = Helper::appClasses();
   <div class="tab-pane fade {{ $activeTab == 'grupos' ? 'show active' : '' }}" id="navs-tab-grupos" role="tabpanel">
 
   
+    @php
+      $rolActivo = $rolActivo ?? auth()->user()->roles()->wherePivot('activo', true)->first();
+    @endphp
+    @if($rolActivo && $rolActivo->hasPermissionTo('consolidacion.gestionar_bloques'))
     <div class="d-flex justify-content-end">   
       <a href="{{ route('consolidacion.bloques') }}" class="btn btn-outline-primary rounded-pill btn-sm">
         <i class="ti ti-settings me-1"></i> Bloques de sedes 
       </a>
     </div>
+    @endif
 
     <div class="row g-4 justify-content-center py-5">
 
@@ -643,9 +648,11 @@ $configData = Helper::appClasses();
         <i class="ti ti-settings me-1"></i> Bloques de clasificación
       </a>    
       
+      @if($rolActivo && $rolActivo->hasPermissionTo('consolidacion.gestionar_bloques'))
       <a href="{{ route('consolidacion.bloques') }}" class="btn btn-outline-primary rounded-pill btn-sm">
         <i class="ti ti-settings me-1"></i> Bloques de sedes 
       </a>
+      @endif
     </div>
   
     <div class="row g-4 py-5">

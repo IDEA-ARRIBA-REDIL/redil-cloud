@@ -367,6 +367,12 @@ $configData = Helper::appClasses();
           window.location.reload();
           return null;
         }
+        if (response.status === 429) {
+          // Límite de peticiones alcanzado (Rate Limiting). Enviar como invitado directamente sin bloquear al usuario
+          console.warn("Límite de verificación alcanzado. Procediendo como invitado.");
+          enviarFormularioDirecto();
+          return null;
+        }
         return response.json();
       })
       .then(data => {
@@ -548,6 +554,12 @@ $configData = Helper::appClasses();
         @if($errors->has('g-recaptcha-response')) 
           <div class="text-danger form-label small mt-1" style="color:var(--err)">{{ $errors->first('g-recaptcha-response') }}</div> 
         @endif
+      </div>
+
+      <!-- Nota de Privacidad y Cifrado -->
+      <div class="p-3 d-flex mb-7" style="color:black; font-size:12px;border: solid 2px #95CDDF;border-radius: 14px;">
+        <i class="ti ti-lock text-secondary me-2"></i>
+        <p class="m-0"> Tus datos y motivos de oración son tratados con estricta confidencialidad bajo cifrado de seguridad y utilizados exclusivamente para acompañamiento pastoral y oración.</p>
       </div>
 
       <div class="row-btns">

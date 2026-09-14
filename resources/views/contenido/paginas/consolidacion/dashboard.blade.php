@@ -485,9 +485,14 @@ $configData = Helper::appClasses();
     <button type="submit" form="formFiltros" formaction="{{ route('consolidacion.dashboard.exportar') }}" class="btn btn-primary rounded-pill me-2 border-0 shadow-sm" onclick="window.alertaExportandoExcel()">
       <i class="ti ti-file-spreadsheet me-1"></i> Exportar excel 
     </button>
+    @php
+      $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+    @endphp
+    @if($rolActivo && $rolActivo->hasPermissionTo('consolidacion.gestionar_bloques'))
     <a href="{{ route('consolidacion.bloques') }}" class="btn btn-primary rounded-pill shadow-sm border-0">
       <i class="ti ti-settings me-1"></i> Gestionar bloques
     </a>
+    @endif
   </div>
 
 

@@ -22,7 +22,7 @@
         $inscripcion = $mapaInscripciones[$comprador->id] ?? null;
         $respuestasDelComprador = $mapaRespuestas[$comprador->id] ?? [];
         @endphp
-        <div class="accordion-item">
+        <div class="accordion-item" wire:key="compra-{{ $comprador->id }}">
             <h2 class="accordion-header " id="heading-{{ $comprador->id }}">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ $comprador->id }}" aria-expanded="false" aria-controls="collapse-{{ $comprador->id }}">
                     <i class="mdi mdi-account-circle-outline me-2"></i>
@@ -55,7 +55,7 @@
                                 @endswitch
                             </div>
 
-                           
+
                         </div>
 
                         {{-- Lógica de botones de aprobación --}}
@@ -74,9 +74,9 @@
                                 Aprobar inscripción
                             </button>
                             @endif
-                             <button type="button" 
+                             <button type="button"
                                     onclick="confirmarEliminacion({{ $comprador->id }})"
-                                    class="btn btn-sm ms-3 btn-outline-danger waves-effect" 
+                                    class="btn btn-sm ms-3 btn-outline-danger waves-effect"
                                     wire:loading.attr="disabled">
                                 <i class="ti ti-trash me-1"></i>
                                 Eliminar registro
@@ -105,17 +105,34 @@
                          @endphp
 
                     <div class="alert alert-info d-flex align-items-center" role="alert">
-                       
+
                           <i class="ti ti-users-group"></i>
                         <div>
+                            @if ($inscripcion->estado == 3)
+                            Cupos de invitados aprobados actualmente: <strong class="fs-5">{{ $invitadosSolicitados }}</strong>
+                            @else
                             Invitados solicitados por el usuario: <strong class="fs-5">{{ $invitadosSolicitados }}</strong>
+                            @endif
                         </div>
                     </div>
                     {{-- ====================== FIN DEL CÓDIGO AÑADIDO ====================== --}}
 
                         <div class="mt-3">
                             <label for="invitados-{{$inscripcion->id}}" class="form-label">Cupos para invitados aprobados:</label>
-                            <input type="number" class="form-control form-control-sm" style="width: 100px;" id="invitados-{{$inscripcion->id}}" wire:model="cantidadInvitadosAprobados.{{ $inscripcion->id }}" min="0" placeholder="0">
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="number" class="form-control form-control-sm" style="width: 100px;" id="invitados-{{$inscripcion->id}}" wire:model="cantidadInvitadosAprobados.{{ $inscripcion->id }}" min="0" placeholder="0">
+                                @if ($inscripcion->estado == 3)
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary rounded-pill"
+                                    wire:click="actualizarCuposInvitadosAprobados({{ $inscripcion->id }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="actualizarCuposInvitadosAprobados({{ $inscripcion->id }})">
+                                    <i class="ti ti-refresh me-1"></i>
+                                    Actualizar cupos
+                                </button>
+                                @endif
+                            </div>
                             {{-- Nota: El valor se carga desde el método render del componente --}}
                         </div>
                         @endif

@@ -33,6 +33,48 @@ class EditarPermisos extends Component
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
+    /**
+     * 1. Activa todos los permisos de un bloque para el rol actual.
+     *
+     * @param  array<string>  $permisoNames
+     */
+    public function activarTodosBloque(array $permisoNames): void
+    {
+        if (empty($permisoNames)) {
+            return;
+        }
+
+        // 1. Asignar los permisos del bloque al rol
+        $this->role->givePermissionTo($permisoNames);
+
+        // 2. Refrescar la relación de permisos en memoria
+        $this->role->unsetRelation('permissions');
+
+        // 3. Limpiar la caché de permisos de Spatie
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+
+    /**
+     * 2. Desactiva todos los permisos de un bloque para el rol actual.
+     *
+     * @param  array<string>  $permisoNames
+     */
+    public function desactivarTodosBloque(array $permisoNames): void
+    {
+        if (empty($permisoNames)) {
+            return;
+        }
+
+        // 1. Revocar los permisos del bloque al rol
+        $this->role->revokePermissionTo($permisoNames);
+
+        // 2. Refrescar la relación de permisos en memoria
+        $this->role->unsetRelation('permissions');
+
+        // 3. Limpiar la caché de permisos de Spatie
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+
     public function bloquesDePermisos()
     {
         $items = [

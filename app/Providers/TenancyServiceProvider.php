@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Features\SupportFileUploads\FilePreviewController;
+use Livewire\Livewire;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events;
 use Stancl\Tenancy\Jobs;
@@ -105,6 +107,21 @@ class TenancyServiceProvider extends ServiceProvider
         $this->mapRoutes();
 
         $this->makeTenancyMiddlewareHighestPriority();
+
+        Livewire::setUpdateRoute(function ($handle) {
+            return Route::post('/livewire/update', $handle)
+                ->middleware([
+                    'web',
+                    'universal',
+                    Middleware\InitializeTenancyByDomain::class,
+                ]);
+        });
+
+        FilePreviewController::$middleware = [
+            'web',
+            'universal',
+            Middleware\InitializeTenancyByDomain::class,
+        ];
 
         // Sobreescribir las variables globales con la config del tenant
         Event::listen(Events\TenancyBootstrapped::class, function () {

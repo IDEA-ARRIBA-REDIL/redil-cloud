@@ -2681,12 +2681,6 @@ class UserController extends Controller
                     $mensaje = $peticion->tipoPeticion->mensaje_parte_1;
                     if ($usuario->email != '' && $mensaje != '') {
                         $key = config('variables.biblia_key');
-                        $arrContextOptions = [
-                            'ssl' => [
-                                'verify_peer' => false,
-                                'verify_peer_name' => false,
-                            ],
-                        ];
 
                         try {
                             $jsonVersiculos = $peticion->tipoPeticion->json_versiculos;
@@ -2694,19 +2688,25 @@ class UserController extends Controller
                                 $jsonVersiculos = json_decode($jsonVersiculos);
                                 $cantidadItems = count($jsonVersiculos);
                                 $random = rand(1, $cantidadItems);
-                                $respuestaText = file_get_contents(
-                                    'https://api.biblia.com/v1/bible/content/RVR60.txt?passage='.
-                                      $jsonVersiculos[$random - 1]->cita.
-                                      '&key='.
-                                      $key.
-                                      '&style=neVersePerLineFullReference&culture=es',
-                                    false,
-                                    stream_context_create($arrContextOptions)
-                                );
-                                $mensaje .=
-                                  '<I>'.$respuestaText.'</I> <B>('.$jsonVersiculos[$random - 1]->titulo.', RVR60)</B></p>';
+                                $citaObjetivo = $jsonVersiculos[$random - 1]->cita;
+
+                                $response = Http::timeout(5)->get('https://api.biblia.com/v1/bible/content/RVR60.txt', [
+                                    'passage' => $citaObjetivo,
+                                    'key' => $key,
+                                    'style' => 'neVersePerLineFullReference',
+                                    'culture' => 'es',
+                                ]);
+
+                                if ($response->successful()) {
+                                    $respuestaText = trim($response->body());
+                                    if (! empty($respuestaText)) {
+                                        $mensaje .=
+                                          '<I>'.$respuestaText.'</I> <B>('.$jsonVersiculos[$random - 1]->titulo.', RVR60)</B></p>';
+                                    }
+                                }
                             }
-                        } catch (Exception $e) {
+                        } catch (\Throwable $e) {
+                            // Manejo silencioso de fallo de conexión o timeout
                         }
 
                         $mensaje .= $peticion->tipoPeticion->mensaje_parte_2;
@@ -4146,7 +4146,7 @@ class UserController extends Controller
             $seccion->pasos = $pasosDeLaSeccion;
         });
 
-        $rolesNoDependientes = Role::where('dependiente', 'FALSE')
+        $rolesNoDependientes = Role::asignablesInformacionCongregacional()
             ->orderBy('name', 'asc')
             ->select('id', 'name')
             ->get();
@@ -4309,8 +4309,8 @@ class UserController extends Controller
 
         // asignar los roles dependientes == false, es decir los independientes
         if ($rolActivo->hasPermissionTo('personas.ver_panel_asignar_tipo_usuario')) {
-            $rolesNoDependientes = Role::orderBy('id', 'asc')
-                ->where('dependiente', '=', 'FALSE')
+            $rolesNoDependientes = Role::asignablesInformacionCongregacional()
+                ->orderBy('id', 'asc')
                 ->get();
 
             foreach ($rolesNoDependientes as $rol) {

@@ -506,10 +506,32 @@ $configData = Helper::appClasses();
                         @endif
 
                         @if (isset($hayDisponibles) && !$hayDisponibles)
-                            <div class="alert alert-danger">
-                                <h6>No cumples con los requisitos</h6>
-                                <p class="mb-0 small">No cumples con los requisitos para ninguna de las categorías disponibles.</p>
+                            <div class="alert alert-danger mb-0 text-start">
+                                <h6 class="alert-heading mb-1"><i class="ti ti-ban me-1"></i> Requisitos académicos no cumplidos</h6>
+                                <p class="mb-1 small">No cumples con los requisitos para matricularte en esta escuela:</p>
+                                <ul class="mb-0 ps-3 small">
+                                    @php
+                                        $motivosVistos = [];
+                                        $itemsErrores = $categoriasEstado->isNotEmpty() ? $categoriasEstado : $actividadEstados;
+                                    @endphp
+                                    @foreach($itemsErrores as $item)
+                                        @if(!empty($item->motivos))
+                                            @foreach($item->motivos as $motivo)
+                                                @if(!in_array($motivo, $motivosVistos))
+                                                    <li>{{ $motivo }}</li>
+                                                    @php $motivosVistos[] = $motivo; @endphp
+                                                @endif
+                                            @endforeach
+                                        @endif
+                                    @endforeach
+                                    @if(empty($motivosVistos))
+                                        <li>No cumples con los prerrequisitos académicos o pasos de crecimiento requeridos.</li>
+                                    @endif
+                                </ul>
                             </div>
+                            <a href="{{ route('actividades.novedades.crear', $actividad) }}" target="_blank" class="btn btn-warning rounded-pill w-100 mt-2">
+                                <i class="ti ti-alert-triangle me-1"></i> Registrar novedad
+                            </a>
                         @else
                             <a class='btn btn-primary w-100' href="{{ route('carrito.escuelasCarrito', ['actividad' => $actividad, 'primeraVez' => true, 'compra' => 0]) }}">Gestionar matrícula</a>
                         @endif
@@ -558,24 +580,32 @@ $configData = Helper::appClasses();
                             @endif
 
                             @if (isset($hayDisponibles) && !$hayDisponibles)
-                                <div class="alert alert-danger mb-0">
-                                    <h6 class="alert-heading mb-1"><i class="ti ti-ban"></i> Requisitos no cumplidos</h6>
+                                <div class="alert alert-danger mb-0 text-start">
+                                    <h6 class="alert-heading mb-1"><i class="ti ti-ban me-1"></i> Requisitos no cumplidos</h6>
                                     <p class="mb-1 small">No puedes comprar por los siguientes motivos:</p>
-                                    <ul class="mb-0 ps-3 small text-start">
+                                    <ul class="mb-0 ps-3 small">
                                         @php
                                             $motivosVistos = [];
                                             $itemsErrores = $categoriasEstado->isNotEmpty() ? $categoriasEstado : $actividadEstados;
                                         @endphp
                                         @foreach($itemsErrores as $item)
-                                            @foreach($item->motivos as $motivo)
-                                                @if(!in_array($motivo, $motivosVistos))
-                                                    <li>{{ $motivo }}</li>
-                                                    @php $motivosVistos[] = $motivo; @endphp
-                                                @endif
-                                            @endforeach
+                                            @if(!empty($item->motivos))
+                                                @foreach($item->motivos as $motivo)
+                                                    @if(!in_array($motivo, $motivosVistos))
+                                                        <li>{{ $motivo }}</li>
+                                                        @php $motivosVistos[] = $motivo; @endphp
+                                                    @endif
+                                                @endforeach
+                                            @endif
                                         @endforeach
+                                        @if(empty($motivosVistos))
+                                            <li>No cumples con los requisitos necesarios para participar.</li>
+                                        @endif
                                     </ul>
                                 </div>
+                                <a href="{{ route('actividades.novedades.crear', $actividad) }}" target="_blank" class="btn btn-warning rounded-pill w-100 mt-2">
+                                    <i class="ti ti-alert-triangle me-1"></i> Registrar novedad
+                                </a>
                             @else
                                 <a class='btn btn-primary w-100' href="{{ route('carrito.carrito', ['actividad' => $actividad]) }}">Comprar</a>
                             @endif
@@ -588,24 +618,32 @@ $configData = Helper::appClasses();
                                 <p class="mb-0 small">Gracias por registrarte.</p>
                             </div>
                         @elseif (isset($hayDisponibles) && !$hayDisponibles)
-                            <div class="alert alert-danger mb-0">
-                                <h6 class="alert-heading mb-1"><i class="ti ti-ban"></i> Requisitos no cumplidos</h6>
+                            <div class="alert alert-danger mb-0 text-start">
+                                <h6 class="alert-heading mb-1"><i class="ti ti-ban me-1"></i> Requisitos no cumplidos</h6>
                                 <p class="mb-1 small">No puedes inscribirte por los siguientes motivos:</p>
-                                <ul class="mb-0 ps-3 small text-start">
+                                <ul class="mb-0 ps-3 small">
                                     @php
                                         $motivosVistos = [];
                                         $itemsErrores = $categoriasEstado->isNotEmpty() ? $categoriasEstado : $actividadEstados;
                                     @endphp
                                     @foreach($itemsErrores as $item)
-                                        @foreach($item->motivos as $motivo)
-                                            @if(!in_array($motivo, $motivosVistos))
-                                                <li>{{ $motivo }}</li>
-                                                @php $motivosVistos[] = $motivo; @endphp
-                                            @endif
-                                        @endforeach
+                                        @if(!empty($item->motivos))
+                                            @foreach($item->motivos as $motivo)
+                                                @if(!in_array($motivo, $motivosVistos))
+                                                    <li>{{ $motivo }}</li>
+                                                    @php $motivosVistos[] = $motivo; @endphp
+                                                @endif
+                                            @endforeach
+                                        @endif
                                     @endforeach
+                                    @if(empty($motivosVistos))
+                                        <li>No cumples con los requisitos necesarios para participar.</li>
+                                    @endif
                                 </ul>
                             </div>
+                            <a href="{{ route('actividades.novedades.crear', $actividad) }}" target="_blank" class="btn btn-warning rounded-pill w-100 mt-2">
+                                <i class="ti ti-alert-triangle me-1"></i> Registrar novedad
+                            </a>
                         @else
                             <a class='btn btn-primary w-100' href="{{ route('carrito.carrito', ['actividad' => $actividad]) }}">Inscribirme</a>
                         @endif

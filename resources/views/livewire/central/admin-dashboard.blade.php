@@ -81,7 +81,10 @@
     <div class="card">
         <div class="card-header border-bottom d-flex justify-content-between align-items-center flex-column flex-sm-row">
             <h5 class="card-title mb-0">Iglesias Registradas</h5>
-            <div class="mt-3 mt-sm-0 d-flex gap-2">
+            <div class="mt-3 mt-sm-0 d-flex flex-wrap gap-2">
+                <a href="{{ url('/admin/login-predeterminado') }}" class="btn btn-label-primary">
+                    <span class="tf-icons bx bx-images me-1"></span>Login predeterminado
+                </a>
                 <a href="{{ url('/admin/super-admins') }}" class="btn btn-label-secondary">
                     <span class="tf-icons bx bx-group me-1"></span>Gestionar Admins
                 </a>

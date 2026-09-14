@@ -2405,6 +2405,12 @@ class PermisoSeeder extends Seeder
         ])->syncRoles([$superAdmin]);
 
         Permission::firstOrCreate([
+            'titulo' => 'subitem_personalizacion_login',
+            'descripcion' => 'Permite administrar las imágenes personalizadas de la pantalla de acceso.',
+            'name' => 'configuraciones.subitem_personalizacion_login',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
             'titulo' => 'subitem_tarea_consolidacion',
             'descripcion' => '',
             'name' => 'configuraciones.subitem_tarea_consolidacion',
@@ -2543,6 +2549,12 @@ class PermisoSeeder extends Seeder
             'titulo' => 'reporte_desempeño',
             'descripcion' => '',
             'name' => 'consolidacion.reporte_desempeño',
+        ])->syncRoles([$superAdmin]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'gestionar_bloques',
+            'descripcion' => 'Permite administrar y configurar bloques territoriales de sedes',
+            'name' => 'consolidacion.gestionar_bloques',
         ])->syncRoles([$superAdmin]);
 
         // Consejeria

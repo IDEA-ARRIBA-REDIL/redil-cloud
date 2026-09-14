@@ -109,6 +109,7 @@ $configData = Helper::appClasses();
   $(document).ready(function() {
     const $inputBuscador = $('#buscadorRolesIndependientes');
     const $btnLimpiar = $('#btnLimpiarBuscadorRoles');
+    const $iconoLimpiar = $('#iconoLimpiarBuscadorRoles');
     const $filasRoles = $('.fila-rol-independiente');
     const $sinCoincidencias = $('#sinCoincidenciasRoles');
 
@@ -126,13 +127,15 @@ $configData = Helper::appClasses();
       let visibles = 0;
 
       if (termino === '') {
-        $btnLimpiar.addClass('d-none');
+        $iconoLimpiar.css('visibility', 'hidden');
+        $btnLimpiar.css('cursor', 'default');
         $filasRoles.removeClass('d-none');
         $sinCoincidencias.addClass('d-none');
         return;
       }
 
-      $btnLimpiar.removeClass('d-none');
+      $iconoLimpiar.css('visibility', 'visible');
+      $btnLimpiar.css('cursor', 'pointer');
 
       $filasRoles.each(function() {
         const nombreRol = normalizarTexto($(this).find('.nombre-rol').text());
@@ -154,8 +157,10 @@ $configData = Helper::appClasses();
     $inputBuscador.on('input keyup', filtrarRoles);
 
     $btnLimpiar.on('click', function() {
-      $inputBuscador.val('').focus();
-      filtrarRoles();
+      if ($inputBuscador.val().trim() !== '') {
+        $inputBuscador.val('').focus();
+        filtrarRoles();
+      }
     });
   });
 </script>
@@ -384,10 +389,12 @@ $configData = Helper::appClasses();
             <div class="input-group input-group-merge">
               <span class="input-group-text" id="buscador-rol-icon"><i class="ti ti-search"></i></span>
               <input type="text" id="buscadorRolesIndependientes" class="form-control" placeholder="Buscar rol..." aria-label="Buscar rol..." aria-describedby="buscador-rol-icon">
-              <button class="btn btn-outline-secondary d-none" type="button" id="btnLimpiarBuscadorRoles">
-                <i class="ti ti-x"></i>
-              </button>
+              <span class="input-group-text text-muted" id="btnLimpiarBuscadorRoles" style="cursor: pointer;" title="Limpiar búsqueda">
+                <i class="ti ti-x" id="iconoLimpiarBuscadorRoles" style="visibility: hidden;"></i>
+              </span>
             </div>
+
+
           </div>
 
           <div class="table-responsive">

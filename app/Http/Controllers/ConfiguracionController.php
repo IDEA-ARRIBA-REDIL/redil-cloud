@@ -2,14 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\BrandingEntitlementService;
 use Illuminate\View\View;
 
 class ConfiguracionController extends Controller
 {
+    public function personalizacionLogin(BrandingEntitlementService $entitlementService): View
+    {
+        $entitlementService->authorizeUser(
+            auth()->user(),
+            'configuraciones.subitem_personalizacion_login'
+        );
+
+        return view('contenido.paginas.configuracion.personalizacion-login');
+    }
+
     /**
      * Muestra el dashboard de configuración.
      */
-    public function index(): View
+    public function index(BrandingEntitlementService $entitlementService): View
     {
         $user = auth()->user();
         $rolActivo = $user->roles()->wherePivot('activo', true)->first();
@@ -42,6 +53,15 @@ class ConfiguracionController extends Controller
                 'icon' => 'ti-palette',
                 'color' => 'bg-label-secondary',
                 'permission' => 'configuraciones.subitem_plantilla',
+                'requires_branding' => true,
+            ],
+            [
+                'title' => 'Personalización del login',
+                'route' => 'configuracion.personalizacion-login',
+                'icon' => 'ti-photo-cog',
+                'color' => 'bg-label-secondary',
+                'permission' => 'configuraciones.subitem_personalizacion_login',
+                'requires_branding' => true,
             ],
             [
                 'title' => 'Notificaciones',
@@ -172,8 +192,12 @@ class ConfiguracionController extends Controller
         ];
 
         // Filtrar items por permisos
-        $filteredItems = array_filter($items, function ($item) use ($rolActivo) {
+        $filteredItems = array_filter($items, function ($item) use ($entitlementService, $rolActivo) {
             if (! $rolActivo) {
+                return false;
+            }
+
+            if (($item['requires_branding'] ?? false) && ! $entitlementService->canCustomize()) {
                 return false;
             }
 

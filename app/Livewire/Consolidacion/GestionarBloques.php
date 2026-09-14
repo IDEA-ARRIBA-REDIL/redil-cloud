@@ -2,23 +2,40 @@
 
 namespace App\Livewire\Consolidacion;
 
-use Livewire\Component;
 use App\Models\BloqueDashboardConsolidacion;
 use App\Models\Sede;
 use Illuminate\Support\Facades\DB;
+use Livewire\Component;
 
 class GestionarBloques extends Component
 {
     public $nombre;
+
     public $bloqueSeleccionadoId = null;
+
     public $sedesAAsignar = []; // Para el wire:model del select múltiple
 
     protected $rules = [
         'nombre' => 'required|min:3|max:255|unique:bloques_dashboard_consolidacion,nombre',
     ];
 
+    protected function autorizarAccion(): void
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        if (! $rolActivo || ! $rolActivo->hasPermissionTo('consolidacion.gestionar_bloques')) {
+            abort(403);
+        }
+    }
+
+    public function mount(): void
+    {
+        $this->autorizarAccion();
+    }
+
     public function render()
     {
+        $this->autorizarAccion();
+
         // Forzar consulta fresca de bloques con conteo de sedes
         $bloques = BloqueDashboardConsolidacion::withCount('sedes')->get();
 
@@ -31,7 +48,7 @@ class GestionarBloques extends Component
             if ($bloqueSeleccionado) {
                 // Usamos ->get() para asegurar que traemos los datos actuales de la DB
                 $sedesAsignadas = $bloqueSeleccionado->sedes()->orderBy('nombre')->get();
-                
+
                 // Sedes disponibles: sedes que no están asignadas a ningún bloque
                 $sedesOcupadasIds = DB::table('bloque_dashboard_consolidacion_sede')->pluck('sede_id');
                 $sedesDisponibles = Sede::whereNotIn('id', $sedesOcupadasIds)->orderBy('nombre')->get();
@@ -42,12 +59,13 @@ class GestionarBloques extends Component
             'bloques' => $bloques,
             'bloqueSeleccionado' => $bloqueSeleccionado,
             'sedesAsignadas' => $sedesAsignadas,
-            'sedesDisponibles' => $sedesDisponibles
+            'sedesDisponibles' => $sedesDisponibles,
         ]);
     }
 
     public function crearBloque()
     {
+        $this->autorizarAccion();
         $this->validate();
 
         BloqueDashboardConsolidacion::create(['nombre' => $this->nombre]);
@@ -59,6 +77,7 @@ class GestionarBloques extends Component
 
     public function eliminarBloque($id)
     {
+        $this->autorizarAccion();
         $bloque = BloqueDashboardConsolidacion::find($id);
         if ($bloque) {
             $bloque->delete();
@@ -86,20 +105,22 @@ class GestionarBloques extends Component
 
     public function asignarSedes()
     {
-        if (!$this->bloqueSeleccionadoId || empty($this->sedesAAsignar)) {
+        $this->autorizarAccion();
+        if (! $this->bloqueSeleccionadoId || empty($this->sedesAAsignar)) {
             $this->dispatch('swal:error', ['title' => 'Error', 'text' => 'Debe seleccionar sedes']);
+
             return;
         }
 
         $bloque = BloqueDashboardConsolidacion::find($this->bloqueSeleccionadoId);
-        
+
         if ($bloque) {
             try {
                 // Sincronizar sin desvincular las existentes (usando false en el segundo parámetro de sync o simplemente attach)
                 // Usamos attach porque queremos agregar a las que ya están
                 $bloque->sedes()->attach($this->sedesAAsignar);
-                
-                $this->sedesAAsignar = []; 
+
+                $this->sedesAAsignar = [];
                 $this->dispatch('refresh-select2');
                 $this->dispatch('swal:success', ['title' => 'Asignadas', 'text' => 'Sedes asignadas correctamente']);
             } catch (\Exception $e) {
@@ -110,7 +131,10 @@ class GestionarBloques extends Component
 
     public function desvincularSede($sedeId)
     {
-        if (!$this->bloqueSeleccionadoId) return;
+        $this->autorizarAccion();
+        if (! $this->bloqueSeleccionadoId) {
+            return;
+        }
 
         $bloque = BloqueDashboardConsolidacion::find($this->bloqueSeleccionadoId);
         if ($bloque) {

@@ -13,7 +13,37 @@ $configData = Helper::appClasses();
 <!-- Vendor -->
 @vite(['resources/assets/vendor/libs/@form-validation/umd/styles/index.min.css'])
 <style>
-
+  .login-form-panel {
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  .login-form-panel.has-custom-background {
+    background-image: var(--login-background-image) !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .login-carousel,
+  .login-carousel .carousel-inner,
+  .login-carousel .carousel-item {
+    width: 100%;
+    height: 100%;
+  }
+  .login-carousel-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .login-carousel-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .login-carousel .carousel-item {
+      transition: none !important;
+    }
+  }
 </style>
 @endsection
 
@@ -40,12 +70,15 @@ $configData = Helper::appClasses();
 
 
     <!-- Login -->
-    <div class="d-flex col-12 col-lg-5 align-items-center p-sm-5 my-8 p-6">
+    <div
+      class="d-flex col-12 col-lg-5 align-items-center p-sm-5 my-8 p-6 login-form-panel {{ $loginBranding['left_image_url'] ? 'has-custom-background' : '' }}"
+      @if($loginBranding['left_image_url']) style="--login-background-image: url('{{ $loginBranding['left_image_url'] }}')" @endif
+    >
       <div class="w-100 mx-auto" style="max-width: 360px;">
 
         <!-- Logo -->
         <div class="text-center mb-2">
-          <a href="{{url('/')}}" class="d-inline-block">        
+          <a href="{{url('/')}}" class="d-inline-block">
             @include('_partials.macros', [
               'width' => '200px'
             ])
@@ -66,13 +99,13 @@ $configData = Helper::appClasses();
               <span style="color: white;" class="input-group-text input-login">
                 <i class="ti ti-mail"></i>
               </span>
-              <input   
+              <input
                 type="text"
                 class="form-control input-login"
                 id="email"
                 name="email"
                 value="{{ old('email', $emailDefault) }}"
-                placeholder="tucorreo@mail.com" 
+                placeholder="tucorreo@mail.com"
                 autofocus
               >
             </div>
@@ -158,7 +191,7 @@ $configData = Helper::appClasses();
             <button type="button" class="btn btn-outline-primary rounded-pill btn-sm ms-2 px-3 py-1-5 fw-semibold titulo-descripcion" data-bs-toggle="modal" data-bs-target="#modalFormulariosExternos" style="transition: all 0.25s ease;">
               Registrarse aquí
             </button>
-          </p> 
+          </p>
         </div>
 
       </div>
@@ -166,14 +199,55 @@ $configData = Helper::appClasses();
     <!-- /Login -->
 
      <!-- /Left Text -->
-     <div class="d-none d-lg-flex col-lg-7 p-0">
-      <div class="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center"  style="background-image: url( {{Storage::disk('global_media')->url('Banner-login.png')  }}); background-size: cover;">
-
+     <div class="d-none d-lg-flex col-lg-7 p-0 overflow-hidden">
+      <div id="loginBrandingCarousel" class="auth-cover-bg auth-cover-bg-color carousel slide carousel-fade login-carousel" data-bs-ride="carousel" data-bs-interval="{{ $loginBranding['interval'] }}">
+        <div class="carousel-inner">
+          @foreach($loginBranding['slides'] as $slide)
+            <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
+              @if($slide['link_url'])
+                <a href="{{ $slide['link_url'] }}" class="login-carousel-link" target="_blank" rel="noopener noreferrer" aria-label="Abrir enlace de {{ $slide['alt'] }}">
+              @endif
+                <img
+                  src="{{ $slide['url'] }}"
+                  class="login-carousel-image"
+                  alt="{{ $slide['alt'] }}"
+                  loading="{{ $loop->first ? 'eager' : 'lazy' }}"
+                  @if($loop->first) fetchpriority="high" @endif
+                >
+              @if($slide['link_url'])
+                </a>
+              @endif
+            </div>
+          @endforeach
+        </div>
+        @if(count($loginBranding['slides']) > 1)
+          <div class="carousel-indicators">
+            @foreach($loginBranding['slides'] as $slide)
+              <button type="button" data-bs-target="#loginBrandingCarousel" data-bs-slide-to="{{ $loop->index }}" class="{{ $loop->first ? 'active' : '' }}" aria-current="{{ $loop->first ? 'true' : 'false' }}" aria-label="Imagen {{ $loop->iteration }}"></button>
+            @endforeach
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#loginBrandingCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Anterior</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#loginBrandingCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Siguiente</span>
+          </button>
+        @endif
       </div>
     </div>
     <!-- /Left Text -->
   </div>
 </div>
+
+@if(count($loginBranding['slides']) > 1)
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.bootstrap?.Carousel.getOrCreateInstance(document.getElementById('loginBrandingCarousel')).pause();
+    }
+  });
+</script>
+@endif
 
 <!-- Modal Formularios Externos Premium -->
 <div class="modal fade" id="modalFormulariosExternos" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(6px);">
@@ -194,9 +268,9 @@ $configData = Helper::appClasses();
         <div class="d-flex flex-column gap-3">
           @foreach($formularios as $formulario)
             <div class="card card-formulario-premium border-0 p-4" style="
-              border-radius: 16px; 
-              background: rgba(255, 255, 255, 0.03); 
-              border: 1px solid rgba(255, 255, 255, 0.05); 
+              border-radius: 16px;
+              background: rgba(255, 255, 255, 0.03);
+              border: 1px solid rgba(255, 255, 255, 0.05);
               transition: all 0.25s ease;
             ">
               <div class="d-flex flex-column justify-content-between h-100 gap-3">

@@ -1,6 +1,6 @@
 /.phpunit.cache
 node_modules/
-/.codex/
+.codex/
 .DS_Store
 
 /public/build
@@ -14,7 +14,8 @@ package-lock.json
 .env.production
 .phpunit.result.cache
 .editorconfig
-/storage
+
+/knowledge
 /scratch
 .kaddo
 docker-compose.override.yml
@@ -28,11 +29,11 @@ storage/logs/*.log
 /.idea
 /.vscode
 /vendor
-/app/Providers/AppServiceProvider.php
-/config/tenants.php
+
+
 /public/css
-/routes/tenant.php
-/app/Providers
+
+
 /bootstrap/cache/*
 !/bootstrap/cache/.gitignore
 deploy_key

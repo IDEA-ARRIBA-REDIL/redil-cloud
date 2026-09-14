@@ -16,11 +16,11 @@
         </tr>
         <tr>
             <th colspan="{{ $totalCols }}" style="font-size: 11px; text-align: center; color: #555555;">
-                {{ $modo === 'materias' ? 'Materia' : 'Nivel' }}: {{ $itemNombre }} |
-                Rango: {{ !empty($rangoFechas) ? $rangoFechas : 'Histórico completo' }} |
-                Estado Académico: {{ $filtroEstadoAcademico === 'aprobados' ? 'Solo Aprobados' : ($filtroEstadoAcademico === 'en_curso' ? 'Solo En Proceso' : ($filtroEstadoAcademico === 'reprobados' ? 'Solo Reprobados' : 'Todos')) }} |
-                Registro: {{ $filtroTipoRegistro === 'regular' ? 'Solo Cursados' : ($filtroTipoRegistro === 'homologacion' ? 'Solo Homologados' : 'Todos') }} |
-                Estudiantes: {{ $filtroEstadoUsuario === 'activos' ? 'Solo activos' : ($filtroEstadoUsuario === 'dados_de_baja' ? 'Solo dados de baja' : 'Activos + Dados de baja') }} |
+                {{ $modo === 'materias' ? 'Materia' : 'Nivel' }}: {{ $itemNombre }} | 
+                Rango: {{ !empty($rangoFechas) ? $rangoFechas : 'Histórico completo' }} | 
+                Estado Académico: {{ $filtroEstadoAcademico === 'aprobados' ? 'Solo Aprobados' : ($filtroEstadoAcademico === 'en_curso' ? 'Solo En Proceso' : ($filtroEstadoAcademico === 'reprobados' ? 'Solo Reprobados' : 'Todos')) }} | 
+                Registro: {{ $filtroTipoRegistro === 'regular' ? 'Solo Cursados' : ($filtroTipoRegistro === 'homologacion' ? 'Solo Homologados' : 'Todos') }} | 
+                Estudiantes: {{ $filtroEstadoUsuario === 'activos' ? 'Solo activos' : ($filtroEstadoUsuario === 'dados_de_baja' ? 'Solo dados de baja' : 'Activos + Dados de baja') }} | 
                 Fecha de emisión: {{ now()->format('d/m/Y H:i') }}
             </th>
         </tr>

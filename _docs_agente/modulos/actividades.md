@@ -113,8 +113,17 @@ El sistema permite inscribir terceros.
 
 - En la BD, se crea una `Inscripcion` con `persona_externa_id` o datos de invitado, y se vincula a la `inscripcion_asociada` del pagador principal.
 
-## 4. Controladores Clave
+## 4. Controladores y Componentes Clave
 
-- **`ActividadController`**: Maneja el listado (`index`, `proximas`), la creación/edición administrativa, y la validación para mostrar el botón de inscripción.
-- **`CarritoController`**: Maneja el flujo de compra.
-- **`TaquillaController`**: (Probable) Interfaz para operadores que inscriben usuarios presencialmente.
+- **`ActividadController`**: Maneja el listado (`index`, `proximas`), la creación/edición administrativa, y la validación para mostrar el botón de inscripción o avisos de prerrequisitos pendientes.
+- **`CarritoController`**: Maneja el flujo de compra y matrícula de escuelas (`escuelasCarrito`).
+- **`NovedadActividadController`**: Gestiona el formulario público para que feligreses con problemas de inscripción o prerrequisitos registren incidencias (`actividades.novedades.crear`), y el punto de acceso administrativo (`actividades.novedades.gestion`).
+- **`GestionNovedades` (`Livewire\Actividades\GestionNovedades`)**: Panel administrativo de filtrado, cambio de estados (`no_revisado`, `iniciado`, `finalizado`), contestación vía correo electrónico con `DefaultMail` (`emails.default-mail`) y exportación a Excel (`NovedadesExport`).
+- **`TaquillaController`**: Interfaz para operadores que inscriben usuarios presencialmente.
+
+## 5. Módulo de Novedades (Septiembre 2026)
+
+- Permite capturar incidencias generadas por discordancia en IDs o materias y pasos de crecimiento tras migraciones de base de datos.
+- El botón **"Registrar novedad"** se activa de forma condicional en el perfil de la actividad (`perfil-actividad`) **únicamente cuando el usuario es bloqueado** por no cumplir los requisitos (académicos, pasos de crecimiento o demográficos).
+- El formulario público se abre en pestaña independiente (`target="_blank"`), precarga datos personales, permite seleccionar la materia/escuela deseada (si la actividad es de tipo escuelas), el tipo de novedad, asunto y explicación detallada hasta 500 caracteres.
+- Al contestar una novedad desde el panel administrativo, el sistema envía un correo electrónico personalizado al feligrés con la plantilla corporativa oficial de la iglesia.

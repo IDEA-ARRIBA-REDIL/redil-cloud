@@ -8,6 +8,7 @@ use App\Mail\RecordatorioFormularioMail;
 use App\Models\Actividad;
 use App\Models\ActividadCampoAdicionalCompra;
 use App\Models\ActividadCarritoCompra;
+use App\Models\ActividadCategoria;
 use App\Models\Compra;
 use App\Models\Configuracion;
 use App\Models\Iglesia;
@@ -55,8 +56,9 @@ class DashboardFormularios extends Component
         $todasLasInscripciones = Inscripcion::whereIn('compra_id', $comprasIds)->with('categoriaActividad')->get();
 
         // --- INICIO DE LA NUEVA LÓGICA ---
-        // Separamos las inscripciones principales (con compra_id) de las de invitados (con inscripcion_asociada)
-        $inscripcionesPrincipales = $todasLasInscripciones->whereNotNull('compra_id');
+        // Una inscripción principal no tiene inscripción asociada. Los invitados también
+        // conservan el compra_id de la principal, por lo que compra_id no permite distinguirlas.
+        $inscripcionesPrincipales = $todasLasInscripciones->whereNull('inscripcion_asociada');
         $inscripcionesInvitados = $todasLasInscripciones->whereNotNull('inscripcion_asociada');
 
         foreach ($todasLasRespuestas as $respuesta) {
@@ -230,13 +232,17 @@ class DashboardFormularios extends Component
 
         DB::beginTransaction();
         try {
-            // 1. Obtener los datos necesarios.
-            $inscripcion = Inscripcion::with('categoriaActividad', 'user')->findOrFail($inscripcionId);
+            // 1. Obtener exclusivamente la inscripción principal de esta actividad.
+            $inscripcion = Inscripcion::query()
+                ->whereNull('inscripcion_asociada')
+                ->whereHas('categoriaActividad', function ($query): void {
+                    $query->where('actividad_id', $this->actividad->id);
+                })
+                ->with('categoriaActividad', 'user')
+                ->findOrFail($inscripcionId);
             $cantidadInvitados = (int) ($this->cantidadInvitadosAprobados[$inscripcionId] ?? 0);
             $totalCuposADescontar = 1 + $cantidadInvitados; // 1 (principal) + N (invitados)
 
-            // 1. Obtener los datos necesarios para la validación.
-            $inscripcion = Inscripcion::with('categoriaActividad')->findOrFail($inscripcionId);
             $categoria = $inscripcion->categoriaActividad;
             $cantidadInvitadosAprobados = (int) ($this->cantidadInvitadosAprobados[$inscripcionId] ?? 0);
 
@@ -250,6 +256,8 @@ class DashboardFormularios extends Component
                     'msnIcono' => 'error',
                 ]);
 
+                DB::rollBack();
+
                 return; // Detenemos la ejecución
             }
 
@@ -262,6 +270,8 @@ class DashboardFormularios extends Component
                     'msnTexto' => "Error: Se requieren <strong>{$totalCuposRequeridos}</strong> cupos (1 principal + {$cantidadInvitadosAprobados} invitados), pero solo hay <strong>{$aforoDisponible}</strong> cupos disponibles en la categoría.",
                     'msnIcono' => 'error',
                 ]);
+
+                DB::rollBack();
 
                 return; // Detenemos la ejecución
             }
@@ -369,7 +379,13 @@ class DashboardFormularios extends Component
     {
         DB::beginTransaction();
         try {
-            $inscripcion = Inscripcion::with('categoriaActividad')->findOrFail($inscripcionId);
+            $inscripcion = Inscripcion::query()
+                ->whereNull('inscripcion_asociada')
+                ->whereHas('categoriaActividad', function ($query): void {
+                    $query->where('actividad_id', $this->actividad->id);
+                })
+                ->with('categoriaActividad')
+                ->findOrFail($inscripcionId);
 
             // Calculamos cuántos cupos vamos a devolver al aforo.
             $cuposADevolver = 1 + $inscripcion->limite_invitados;
@@ -397,6 +413,90 @@ class DashboardFormularios extends Component
             DB::rollBack();
             Log::error('Error al desaprobar inscripción: '.$e->getMessage());
             $this->dispatch('msn', ['msnTitulo' => 'Error', 'msnTexto' => 'No se pudo revertir la aprobación.'.$e->getMessage(), 'msnIcono' => 'error']);
+        }
+    }
+
+    /**
+     * Actualiza únicamente los cupos de invitados de una inscripción aprobada.
+     */
+    public function actualizarCuposInvitadosAprobados(int $inscripcionId): void
+    {
+        try {
+            $cantidadAprobada = (int) ($this->cantidadInvitadosAprobados[$inscripcionId] ?? 0);
+
+            DB::transaction(function () use ($inscripcionId, $cantidadAprobada): void {
+                $inscripcion = Inscripcion::query()
+                    ->whereNull('inscripcion_asociada')
+                    ->whereHas('categoriaActividad', function ($query): void {
+                        $query->where('actividad_id', $this->actividad->id);
+                    })
+                    ->lockForUpdate()
+                    ->findOrFail($inscripcionId);
+
+                if ((int) $inscripcion->estado !== 3) {
+                    throw new \RuntimeException('La inscripción debe estar aprobada antes de modificar sus cupos de invitados.');
+                }
+
+                if ($cantidadAprobada < 0) {
+                    throw new \RuntimeException('La cantidad de invitados aprobados no puede ser negativa.');
+                }
+
+                $categoria = ActividadCategoria::query()
+                    ->lockForUpdate()
+                    ->findOrFail($inscripcion->actividad_categoria_id);
+
+                if ($categoria->limite_invitados !== null && $cantidadAprobada > (int) $categoria->limite_invitados) {
+                    throw new \RuntimeException("La categoría permite máximo {$categoria->limite_invitados} invitados.");
+                }
+
+                $invitadosRegistrados = $inscripcion->invitados()->count();
+                if ($cantidadAprobada < $invitadosRegistrados) {
+                    throw new \RuntimeException("Ya existen {$invitadosRegistrados} invitados registrados. El cupo aprobado no puede ser menor.");
+                }
+
+                $cantidadAnterior = (int) ($inscripcion->limite_invitados ?? 0);
+                $diferenciaCupos = $cantidadAprobada - $cantidadAnterior;
+                $aforoOcupado = $categoria->aforo_ocupado;
+
+                if ($aforoOcupado === null) {
+                    $aforoOcupado = Inscripcion::query()
+                        ->where('actividad_categoria_id', $categoria->id)
+                        ->whereNull('inscripcion_asociada')
+                        ->where('estado', 3)
+                        ->get(['limite_invitados'])
+                        ->sum(fn (Inscripcion $inscripcionAprobada): int => 1 + (int) ($inscripcionAprobada->limite_invitados ?? 0));
+                }
+
+                $aforoOcupado = (int) $aforoOcupado;
+                $aforoDisponible = max(0, (int) $categoria->aforo - $aforoOcupado);
+
+                if ($diferenciaCupos > $aforoDisponible) {
+                    throw new \RuntimeException("Solo hay {$aforoDisponible} cupos adicionales disponibles en la categoría.");
+                }
+
+                $categoria->update([
+                    'aforo_ocupado' => max(0, $aforoOcupado + $diferenciaCupos),
+                ]);
+
+                $inscripcion->update([
+                    'limite_invitados' => $cantidadAprobada,
+                ]);
+            });
+
+            $this->cantidadInvitadosAprobados[$inscripcionId] = $cantidadAprobada;
+
+            $this->dispatch('msn', [
+                'msnTitulo' => 'Cupos actualizados',
+                'msnTexto' => "La inscripción ahora tiene {$cantidadAprobada} cupos de invitados aprobados.",
+                'msnIcono' => 'success',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error actualizando cupos de invitados aprobados: '.$e->getMessage());
+            $this->dispatch('msn', [
+                'msnTitulo' => 'No se pudieron actualizar los cupos',
+                'msnTexto' => $e->getMessage(),
+                'msnIcono' => 'error',
+            ]);
         }
     }
 

@@ -9,7 +9,6 @@ $configData = Helper::appClasses();
 
 @section('vendor-style')
 <link rel="stylesheet" href="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2.css') }}" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
 @vite([
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
 'resources/assets/vendor/libs/quill/typography.scss',
@@ -26,7 +25,6 @@ $configData = Helper::appClasses();
 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
 'resources/assets/vendor/libs/quill/quill.js'
 ])
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 @endsection
 
 @push('scripts')
@@ -82,7 +80,7 @@ $configData = Helper::appClasses();
   });
 
   // Cargar contenido HTML si ya existe (old o configuración previa)
-  editor.root.innerHTML = `{!! old('mensajeBienvenida', $configuracion->mensaje_bienvenida) !!}`;
+  editor.root.innerHTML = {{ Illuminate\Support\Js::from(old('mensajeBienvenida', $configuracion->mensaje_bienvenida)) }};
 
   // Escuchar cambios y actualizar el input hidden
   editor.on('text-change', () => {
@@ -124,10 +122,6 @@ $configData = Helper::appClasses();
     const switchHabCampo1 = document.getElementById('habilitarCampo1InformeEvidenciasGrupo');
     const switchHabCampo2 = document.getElementById('habilitarCampo2InformeEvidenciasGrupo');
     const switchHabCampo3 = document.getElementById('habilitarCampo3InformeEvidenciasGrupo');
-
-    // Branding
-    const switchMarcaBlanca = document.getElementById('marca_blanca');
-    const contBranding = document.getElementById('contenedor_detalles_branding');
 
     // Contenedores a ocultar/mostrar
     // Campo 1
@@ -210,7 +204,6 @@ $configData = Helper::appClasses();
       toggleCampo(switchHabCampo3?.checked, contLabel3);
       toggleCampo(switchHabCampo3?.checked, contOblig3);
 
-      toggleCampo(switchMarcaBlanca?.checked, contBranding);
     }
 
     // Re-evaluar al cambiar el switch
@@ -230,131 +223,7 @@ $configData = Helper::appClasses();
     switchHabCampo1?.addEventListener('change', actualizarVisibilidadCampos);
     switchHabCampo2?.addEventListener('change', actualizarVisibilidadCampos);
     switchHabCampo3?.addEventListener('change', actualizarVisibilidadCampos);
-    switchMarcaBlanca?.addEventListener('change', actualizarVisibilidadCampos);
-
     actualizarVisibilidadCampos();
-
-    // Lógica de Cropper para el Logo
-    var croppingLogo = document.querySelector('#croppingLogo'),
-        cropLogoBtn = document.querySelector('.cropLogo'),
-        croppedLogoImg = document.querySelector('#preview-logo'),
-        uploadLogo = document.querySelector('#cropperLogoUpload'),
-        inputLogoResultado = document.querySelector('#logo-recortado'),
-        cropperLogo = '';
-
-    setTimeout(() => {
-        if (croppingLogo) {
-            cropperLogo = new Cropper(croppingLogo, {
-                zoomable: true,
-                aspectRatio: 300 / 150,
-                cropBoxResizable: true,
-                viewMode: 1
-            });
-        }
-    }, 1000);
-
-    if (uploadLogo) {
-        uploadLogo.addEventListener('change', function(e) {
-            if (e.target.files.length) {
-                var fileType = e.target.files[0].type;
-                if (fileType.includes('image/')) {
-                    if (cropperLogo && typeof cropperLogo.destroy === 'function') {
-                        cropperLogo.destroy();
-                    }
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        if (e.target.result) {
-                            croppingLogo.src = e.target.result;
-                            cropperLogo = new Cropper(croppingLogo, {
-                                zoomable: true,
-                                aspectRatio: 300 / 150,
-                                cropBoxResizable: true,
-                                viewMode: 1
-                            });
-                        }
-                    };
-                    reader.readAsDataURL(e.target.files[0]);
-                } else {
-                    alert('El tipo de archivo seleccionado no es compatible.');
-                }
-            }
-        });
-    }
-
-    if (cropLogoBtn) {
-        cropLogoBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (cropperLogo) {
-                let imgSrc = cropperLogo.getCroppedCanvas({
-                    width: 300,
-                    height: 150
-                }).toDataURL('image/png');
-                croppedLogoImg.src = imgSrc;
-                inputLogoResultado.value = imgSrc;
-            }
-        });
-    }
-
-    // Lógica de Cropper para el Logo Negro
-    var croppingLogoNegro = document.querySelector('#croppingLogoNegro'),
-        cropLogoNegroBtn = document.querySelector('.cropLogoNegro'),
-        croppedLogoNegroImg = document.querySelector('#preview-logo-negro'),
-        uploadLogoNegro = document.querySelector('#cropperLogoNegroUpload'),
-        inputLogoNegroResultado = document.querySelector('#logo-negro-recortado'),
-        cropperLogoNegro = '';
-
-    setTimeout(() => {
-        if (croppingLogoNegro) {
-            cropperLogoNegro = new Cropper(croppingLogoNegro, {
-                zoomable: true,
-                aspectRatio: 300 / 150,
-                cropBoxResizable: true,
-                viewMode: 1
-            });
-        }
-    }, 1000);
-
-    if (uploadLogoNegro) {
-        uploadLogoNegro.addEventListener('change', function(e) {
-            if (e.target.files.length) {
-                var fileType = e.target.files[0].type;
-                if (fileType.includes('image/')) {
-                    if (cropperLogoNegro && typeof cropperLogoNegro.destroy === 'function') {
-                        cropperLogoNegro.destroy();
-                    }
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        if (e.target.result) {
-                            croppingLogoNegro.src = e.target.result;
-                            cropperLogoNegro = new Cropper(croppingLogoNegro, {
-                                zoomable: true,
-                                aspectRatio: 300 / 150,
-                                cropBoxResizable: true,
-                                viewMode: 1
-                            });
-                        }
-                    };
-                    reader.readAsDataURL(e.target.files[0]);
-                } else {
-                    alert('El tipo de archivo seleccionado no es compatible.');
-                }
-            }
-        });
-    }
-
-    if (cropLogoNegroBtn) {
-        cropLogoNegroBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (cropperLogoNegro) {
-                let imgSrc = cropperLogoNegro.getCroppedCanvas({
-                    width: 300,
-                    height: 150
-                }).toDataURL('image/png');
-                croppedLogoNegroImg.src = imgSrc;
-                inputLogoNegroResultado.value = imgSrc;
-            }
-        });
-    }
 
     const formConfig = document.getElementById('formulario');
     if (formConfig) {
@@ -383,8 +252,7 @@ $configData = Helper::appClasses();
 
 <h4 class="mb-1 fw-semibold text-primary">Configuraciones generales </h4>
 
-<form id="formulario" role="form" class="forms-sample" method="POST" action="{{ route('configuracion-general.actualizar', $configuracion) }}"
-  enctype="multipart/form-data">
+<form id="formulario" role="form" class="forms-sample" method="POST" action="{{ route('configuracion-general.actualizar') }}">
   @csrf
   @method('PATCH')
     <div class="col-md-12">
@@ -394,36 +262,32 @@ $configData = Helper::appClasses();
         <div class="card-body">
           <div class="row">
             <div class="col-md-3 col-sm-6 col-12 mb-3">
-              <label for="html5-time-input" class="form-label">Versión</label>
-              <input class="form-control" name="version" type="number" value="{{$configuracion->version}}" id="html5-time-input" />´
+              <label for="version" class="form-label">Versión</label>
+              <input class="form-control" name="version" type="number" value="{{$configuracion->version}}" id="version" />
               @error('version')
               <span class="text-danger">{{ $message }}</span>
               @enderror
             </div>
             <div class="col-md-3 col-sm-6 col-12 mb-3">
-              <label for="html5-time-input" class="form-label">Limite menor edad</label>
-              <input class="form-control" name="LimiteMenorEdad" type="number" value="{{$configuracion->limite_menor_edad}}" id="html5-time-input" />
+              <label for="limite_menor_edad" class="form-label">Limite menor edad</label>
+              <input class="form-control" name="LimiteMenorEdad" type="number" value="{{$configuracion->limite_menor_edad}}" id="limite_menor_edad" />
               @error('LimiteMenorEdad')
               <span class="text-danger">{{ $message }}</span>
               @enderror
             </div>
             <div class="col-md-6 col-sm-6 col-12 mb-3">
-              <label for="html5-time-input" class="form-label">Nombre app personalizada</label>
-              <input class="form-control" name="nombreAppPersonalizada" type="text" value="{{$configuracion->nombre_app_personalizado}}" id="html5-time-input" />
+              <label for="nombre_app_personalizado" class="form-label">Nombre app personalizada</label>
+              <input class="form-control" name="nombreAppPersonalizada" type="text" value="{{$configuracion->nombre_app_personalizado}}" id="nombre_app_personalizado" />
             </div>
 
             <div class="col-md-6 col-sm-6 col-12 mb-3">
-              <label for="html5-time-input" class="form-label">Label seccion campos extra</label>
-              <input class="form-control" name="labelSeccionCamposExtra" type="text" value="{{$configuracion->label_seccion_campos_extra}}" id="html5-time-input" />
-            </div>
-            <div class="col-md-6 col-sm-6 col-12 mb-3 ">
-              <label for="html5-time-input" class="form-label">Seccion campos extra</label>
-              <input class="form-control" name="seccionCamposExtra" type="number" id="html5-time-input" />
+              <label for="label_seccion_campos_extra" class="form-label">Label seccion campos extra</label>
+              <input class="form-control" name="labelSeccionCamposExtra" type="text" value="{{$configuracion->label_seccion_campos_extra}}" id="label_seccion_campos_extra" />
             </div>
             <div class="col-md-6 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Sección visible campos extra grupo?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" @checked($configuracion->visible_seccion_campos_extra_grupo) class="switch-input" id="toggleListasGeograficas" name="visibleSeccionCamposExtraGrupo" />
+                <input type="checkbox" @checked($configuracion->visible_seccion_campos_extra_grupo) class="switch-input" id="visible_seccion_campos_extra_grupo" name="visibleSeccionCamposExtraGrupo" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Si</span>
                   <span class="switch-off">No</span>
@@ -433,7 +297,7 @@ $configData = Helper::appClasses();
             <div class="col-md-3 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Sección visible campos extra?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" @checked($configuracion->visible_seccion_campos_extra) class="switch-input" id="toggleListasGeograficas" name="visibleSeccionCamposExtra" />
+                <input type="checkbox" @checked($configuracion->visible_seccion_campos_extra) class="switch-input" id="visible_seccion_campos_extra" name="visibleSeccionCamposExtra" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Si</span>
                   <span class="switch-off">No</span>
@@ -443,17 +307,7 @@ $configData = Helper::appClasses();
             <div class="col-md-3 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Usa listas geograficas?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" @checked($configuracion->usa_listas_geograficas) class="switch-input" id="toggleListasGeograficas" name="usaListasGeograficas" />
-                <span class="switch-toggle-slider">
-                  <span class="switch-on">Si</span>
-                  <span class="switch-off">No</span>
-                </span>
-              </label>
-            </div>
-            <div class="col-md-3 col-sm-6 col-12 mb-3">
-              <div class="form-label">¿Logo personalizado?</div>
-              <label class="switch switch-lg">
-                <input type="checkbox" @checked($configuracion->logo_personalizado) class="switch-input" id="toggleListasGeograficas" name="logoPersonalizado" />
+                <input type="checkbox" @checked($configuracion->usa_listas_geograficas) class="switch-input" id="usa_listas_geograficas" name="usaListasGeograficas" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Si</span>
                   <span class="switch-off">No</span>
@@ -463,129 +317,13 @@ $configData = Helper::appClasses();
             <div class="col-md-3 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Dirección obligatoria?</div>
               <label class="switch switch-lg">
-                <input type="checkbox" @checked($configuracion->direccion_obligatoria) class="switch-input" id="toggleListasGeograficas" name="direccionObligatoria" />
+                <input type="checkbox" @checked($configuracion->direccion_obligatoria) class="switch-input" id="direccion_obligatoria" name="direccionObligatoria" />
                 <span class="switch-toggle-slider">
                   <span class="switch-on">Si</span>
                   <span class="switch-off">No</span>
                 </span>
               </label>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-12">
-      <div class="card mb-4">
-        <h5 class="card-header text-black fw-semibold">Branding / Marca Blanca</h5>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-12 mb-4">
-              <div class="alert alert-info d-flex align-items-center" role="alert">
-                <span class="alert-icon text-info me-2">
-                  <i class="ti ti-info-circle ti-xs"></i>
-                </span>
-                <div>
-                  La <strong>Marca Blanca</strong> permite personalizar completamente la identidad visual del software para este tenant. Si está desactivada, se mostrarán los logos y créditos de la empresa por defecto.
-                </div>
-              </div>
-            </div>
-
-            <div class="col-md-4 col-sm-6 col-12 mb-3">
-              <div class="form-label">¿Habilitar Marca Blanca?</div>
-              <label class="switch switch-lg">
-                <input type="checkbox" @checked($configuracion->marca_blanca) class="switch-input" id="marca_blanca" name="marcaBlanca" />
-                <span class="switch-toggle-slider">
-                  <span class="switch-on">Si</span>
-                  <span class="switch-off">No</span>
-                </span>
-              </label>
-            </div>
-
-            <div id="contenedor_detalles_branding" class="col-12 {{ $configuracion->marca_blanca ? '' : 'd-none' }}">
-              <div class="row border-top pt-4">
-                 <div class="col-md-4 col-sm-6 col-12 mb-3">
-                  <label class="form-label">Nombre del creador</label>
-                  <input class="form-control" name="nombreCreador" type="text" value="{{ $configuracion->nombre_creador }}" placeholder="Ej: Mi Iglesia" />
-                </div>
-                <div class="col-md-4 col-sm-6 col-12 mb-3">
-                  <label class="form-label">URL del creador</label>
-                  <input class="form-control" name="urlCreador" type="url" value="{{ $configuracion->url_creador }}" placeholder="https://miiglesia.com" />
-                </div>
-                <div class="col-md-4 col-sm-6 col-12 mb-3">
-                  <label class="form-label">Color nombre app</label>
-                  <input class="form-control" name="colorNombreApp" type="text" value="{{ $configuracion->color_nombre_app }}" placeholder="Ej: white o #ffffff" />
-                </div>
-                <div class="col-md-6 col-12 mb-3">
-                  <label class="form-label">Descripción Login</label>
-                  <input class="form-control" name="descripcionLogin" type="text" value="{{ $configuracion->descripcion_login }}" placeholder="Frase motivadora en el inicio de sesión" />
-                </div>
-                <div class="col-md-6 col-12 mb-3">
-                  <label class="form-label">Sufijo App (SEO)</label>
-                  <input class="form-control" name="sufijoApp" type="text" value="{{ $configuracion->sufijo_app }}" placeholder="Descripción para buscadores" />
-                </div>
-                <div class="col-md-4 col-sm-6 col-12 mb-3">
-                  <label class="form-label">Versión personalizada</label>
-                  <input class="form-control" name="versionApp" type="text" value="{{ $configuracion->version_app }}" placeholder="Ej: 1.0.0" />
-                </div>
-
-                <div class="col-md-4 col-sm-6 col-12 mb-3">
-                  <label class="form-label">Logo de la App (300 x 150 px)</label>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="position-relative d-inline-block">
-                      <img id="preview-logo"
-                           src="{{ $configuracion->logo_app ? tenant_asset('img/branding/'.$configuracion->logo_app) : asset('assets/img/illustrations/page-pricing-enterprise.png') }}"
-                           alt="Logo actual"
-                           style="max-width: 150px; max-height: 75px; object-fit: contain; background: #2d2d2d; padding: 4px; border-radius: 4px;" class="rounded border shadow-sm">
-                      <button type="button"
-                              class="btn btn-sm btn-icon btn-primary rounded-circle position-absolute bottom-0 end-0 mb-n1 me-n1 shadow"
-                              data-bs-toggle="modal" data-bs-target="#modalLogo">
-                        <i class="ti ti-camera"></i>
-                      </button>
-                    </div>
-                    @if($configuracion->logo_app)
-                      <span class="badge bg-label-secondary">{{ basename($configuracion->logo_app) }}</span>
-                    @endif
-                  </div>
-                  <input type="hidden" id="logo-recortado" name="logo_base64">
-                </div>
-
-                <div class="col-md-4 col-sm-6 col-12 mb-3">
-                  <label class="form-label">Logo Negro (Fondo Claro) (300 x 150 px)</label>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="position-relative d-inline-block">
-                      <img id="preview-logo-negro"
-                           src="{{ $configuracion->logo_app_negro ? tenant_asset('img/branding/'.$configuracion->logo_app_negro) : asset('assets/img/illustrations/page-pricing-enterprise.png') }}"
-                           alt="Logo negro actual"
-                           style="max-width: 150px; max-height: 75px; object-fit: contain; background: #f5f5f5; padding: 4px; border-radius: 4px;" class="rounded border shadow-sm">
-                      <button type="button"
-                              class="btn btn-sm btn-icon btn-primary rounded-circle position-absolute bottom-0 end-0 mb-n1 me-n1 shadow"
-                              data-bs-toggle="modal" data-bs-target="#modalLogoNegro">
-                        <i class="ti ti-camera"></i>
-                      </button>
-                    </div>
-                    @if($configuracion->logo_app_negro)
-                      <span class="badge bg-label-secondary">{{ basename($configuracion->logo_app_negro) }}</span>
-                    @endif
-                  </div>
-                  <input type="hidden" id="logo-negro-recortado" name="logo_negro_base64">
-                </div>
-
-                <div class="col-md-4 col-sm-6 col-12 mb-3">
-                  <label class="form-label">Favicon (.ico)</label>
-                  <input class="form-control" name="faviconAppFile" type="file" accept=".ico,image/png" />
-                  <div class="mt-1">
-                  </div>
-                  @if($configuracion->favicon_app)
-                    <div class="mt-2 d-flex align-items-center gap-2">
-                      <img src="{{ tenant_asset('img/branding/'.$configuracion->favicon_app) }}" alt="Favicon actual" style="width: 32px; height: 32px; object-fit: contain; background: #2d2d2d; padding: 3px; border-radius: 4px;">
-                      <span class="badge bg-label-secondary">{{ basename($configuracion->favicon_app) }}</span>
-                    </div>
-                  @endif
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
       </div>
@@ -1388,11 +1126,13 @@ $configData = Helper::appClasses();
             @php
             $escuelaSwitches = [
             'opciones_extra_matriculas_escuelas' => '¿Opciones extra en matrículas?',
+            'opcion_material_sede' => '¿Habilitar material por sede?',
             'habilitar_salones_con_estaciones' => '¿Habilitar salones con estaciones?',
             'items_mixtos_escuelas_deshabilitados' => '¿Deshabilitar items mixtos en escuelas?',
             'cierre_cortes_habilitado' => '¿Cierre de cortes habilitado?',
             'habilitar_traslados' => '¿Habilitar traslados?',
-            'espacio_academico_habilitado' => '¿Espacio académico habilitado?'
+            'espacio_academico_habilitado' => '¿Espacio académico habilitado?',
+            'envio_material' => '¿Habilitar envío de material?'
             ];
             @endphp
 
@@ -1414,6 +1154,14 @@ $configData = Helper::appClasses();
             <div class="col-md-4 col-sm-6 col-12 mb-3">
               <label for="cantidad_intentos_auto_matricula" class="form-label">Intentos automatricula</label>
               <input class="form-control" name="cantidadIntentosAutoMatricula" type="text" value="{{ $configuracion->cantidad_intentos_auto_matricula }}" id="cantidad_intentos_auto_matricula" />
+            </div>
+
+            <div class="col-md-4 col-sm-6 col-12 mb-3">
+              <label for="cantidad_intentos_traslados" class="form-label">Intentos permitidos para traslados</label>
+              <input class="form-control" name="cantidadIntentosTraslados" type="number" min="1" value="{{ old('cantidadIntentosTraslados', $configuracion->cantidad_intentos_traslados) }}" id="cantidad_intentos_traslados" />
+              @error('cantidadIntentosTraslados')
+              <span class="text-danger">{{ $message }}</span>
+              @enderror
             </div>
 
             <div class="col-md-4 col-sm-6 col-12 mb-3">
@@ -1447,8 +1195,8 @@ $configData = Helper::appClasses();
           <div class="row">
 
             <div class="col-md-3 col-sm-6 col-12 mb-3">
-              <label for="html5-time-input" class="form-label">Limite menor edad</label>
-              <input class="form-control" name="edadMinimaConsolidacion" type="number" value="{{$configuracion->edad_minima_consolidacion}}" id="html5-time-input" />
+              <label for="edad_minima_consolidacion" class="form-label">Limite menor edad</label>
+              <input class="form-control" name="edadMinimaConsolidacion" type="number" value="{{$configuracion->edad_minima_consolidacion}}" id="edad_minima_consolidacion" />
               @error('edadMinimaConsolidacion')
               <span class="text-danger">{{ $message }}</span>
               @enderror
@@ -1467,83 +1215,5 @@ $configData = Helper::appClasses();
       </div>
     </div>
 </form>
-
-    <!-- Modal Logo -->
-    <div class="modal fade modal-img" id="modalLogo" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-simple">
-            <div class="modal-content">
-                <div class="modal-body p-0">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    <div class="text-center mb-4 p-4">
-                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir logo</h3>
-                        <p class="text-black">Selecciona y recorta el logo para la aplicación (300x150 px)</p>
-                    </div>
-
-                    <div class="row px-4">
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Paso #1 Selecciona el logo</label>
-                                <input class="form-control" type="file" id="cropperLogoUpload" accept="image/*">
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label fw-bold">Paso #2 Recorta el logo</label>
-                                <center style="background: #2d2d2d; padding: 10px; border-radius: 4px;">
-                                    <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100"
-                                        id="croppingLogo" alt="cropper" style="max-height: 300px; object-fit: contain;">
-                                </center>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 p-4">
-                    <div class="col-12 text-center">
-                        <button type="button" class="btn btn-outline-secondary px-5 rounded-pill" data-bs-dismiss="modal"
-                            aria-label="Close">Cerrar</button>
-                        <button type="button" class="btn btn-primary rounded-pill cropLogo me-sm-3 me-1 px-5"
-                            data-bs-dismiss="modal">Guardar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Logo Negro -->
-    <div class="modal fade modal-img" id="modalLogoNegro" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-simple">
-            <div class="modal-content">
-                <div class="modal-body p-0">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    <div class="text-center mb-4 p-4">
-                        <h3 class="mb-2"><i class="ti ti-camera ti-lg"></i> Subir logo negro</h3>
-                        <p class="text-black">Selecciona y recorta el logo negro para la aplicación (300x150 px)</p>
-                    </div>
-
-                    <div class="row px-4">
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Paso #1 Selecciona el logo</label>
-                                <input class="form-control" type="file" id="cropperLogoNegroUpload" accept="image/*">
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label fw-bold">Paso #2 Recorta el logo</label>
-                                <center style="background: #f5f5f5; padding: 10px; border-radius: 4px;">
-                                    <img src="{{ Storage::disk('global_media')->url('placeholder.jpg') }}" class="w-100"
-                                        id="croppingLogoNegro" alt="cropper" style="max-height: 300px; object-fit: contain;">
-                                </center>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 p-4">
-                    <div class="col-12 text-center">
-                        <button type="button" class="btn btn-outline-secondary px-5 rounded-pill" data-bs-dismiss="modal"
-                            aria-label="Close">Cerrar</button>
-                        <button type="button" class="btn btn-primary rounded-pill cropLogoNegro me-sm-3 me-1 px-5"
-                            data-bs-dismiss="modal">Guardar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
 @endsection

@@ -3,96 +3,131 @@
 namespace App\Livewire\Actividades;
 
 // Importaciones de modelos necesarios
-use App\Models\ActividadCategoria;
-use App\Models\Sede;
-use App\Models\TipoUsuario;
-use App\Models\EstadoCivil;
-use App\Models\TipoServicioGrupo;
-use App\Models\RangoEdad;
 use App\Models\Actividad;
+use App\Models\ActividadCategoria;
+use App\Models\EstadoCivil;
 use App\Models\PasoCrecimiento;
-use \stdClass;
-
+use App\Models\RangoEdad;
+use App\Models\Sede;
+use App\Models\TipoServicioGrupo;
+use App\Models\TipoUsuario;
 use Illuminate\Support\Facades\Log;
-
+use Livewire\Attributes\On;
 // Componentes de Livewire
 use Livewire\Component;
-use Livewire\Attributes\Validate;
-use Livewire\Attributes\On;
-use Illuminate\Validation\Rule;
+use stdClass;
 
 class CategoriasActividad extends Component
 {
     public $variable = 'variable';
+
     // Propiedades principales de la actividad
     public $actividad;
+
     public $monedasActividad = [];
+
     public $categoriasActividad = [];
+
     public $categoria = [];
 
     // array para las opciones del select de pasos crecimiento esto funciona solo para el modal de nueva categoria
 
     public $arrayProcesosRequisito = [];
+
     public $arrayProcesosCulminar = [];
-    /// estos son array para la entender mas facil el recorrido afuera en la vista
+
+    // / estos son array para la entender mas facil el recorrido afuera en la vista
     public $pasosCrecimientoRequisito = [];
+
     public $pasosCrecimientoCulminar = [];
 
     // Propiedades para creación de nueva categoría
     public $nombreNuevo;
+
     public $aforoNuevo;
+
     public $esGratuitaNuevo = false;
+
     public $limiteCompras;
+
     public $limiteInvitados;
+
     // Opciones para restricciones de actividad
     public $sedes = [];
-    public $tipoUsuarios = [];
-    public $estadosCiviles = [];
-    public $tipoServicios = [];
-    public $rangosEdad = [];
-    public $pasosCrecimiento = [];
 
+    public $tipoUsuarios = [];
+
+    public $estadosCiviles = [];
+
+    public $tipoServicios = [];
+
+    public $rangosEdad = [];
+
+    public $pasosCrecimiento = [];
 
     // Propiedades para nueva categoría
     public $sedesNuevo = [];
+
     public $tipoUsuariosNuevo = [];
+
     public $estadosCivilesNuevo = [];
+
     public $tipoServiciosNuevo = [];
+
     public $rangosEdadNuevo;
+
     public $pasoCrecimientoNuevo;
+
     public $pasosCrecimientoCulminarNuevo;
+
     public $generoNuevo = '';
+
     public $vinculacionGrupoNuevo = '';
+
     public $actividadGrupoNuevo = '';
+
     public $pasosCrecimientoRequisitoNuevo = '';
 
     // Propiedades para edición de categoría
     public $categoriaIdEditar;
+
     public $nombreEditar;
+
     public $aforoEditar;
+
     public $esGratuitaEditar = false;
+
     public $limiteComprasEditar;
 
     // Nuevas variables de edición (antes faltantes)
     public $sedesEditar = [];
+
     public $tipoUsuariosEditar = [];
+
     public $estadosCivilesEditar = [];
+
     public $tipoServiciosEditar = [];
+
     public $rangosEdadEditar;
+
     public $pasoCrecimientoEditar;
+
     public $pasosCrecimientoCulminarEditar;
+
     public $generosEditar = '';
+
     public $vinculacionGrupoEditar = '';
+
     public $actividadGrupoEditar = '';
+
     public $pasosCrecimientoRequisitoEditar = '';
-
-
 
     // Valores de monedas para edición y creación
     public $valoresMonedasEditar = [];
-    public $valoresMonedasNuevo = [];
-    public $actividadActual = [];
 
+    public $valoresMonedasNuevo = [];
+
+    public $actividadActual = [];
 
     /**
      * Método de inicialización del componente
@@ -116,32 +151,32 @@ class CategoriasActividad extends Component
 
         $this->pasosCrecimiento = PasoCrecimiento::orderBy('id', 'asc')->get();
 
-        /// aqui se crean las opciones para los select del modal de nuevo
+        // / aqui se crean las opciones para los select del modal de nuevo
         $contador_ids = 1;
-        foreach ($this->pasosCrecimiento  as $paso_crecimiento) {
+        foreach ($this->pasosCrecimiento as $paso_crecimiento) {
 
-            $item = new stdClass();
+            $item = new stdClass;
             $item->id = $contador_ids++;
             $item->id_paso = $paso_crecimiento->id;
-            $item->nombre = $paso_crecimiento->nombre . ' - No Realizado';
+            $item->nombre = $paso_crecimiento->nombre.' - No Realizado';
             $item->estado = 1;
             $item->indice = $item->id;
             array_push($this->arrayProcesosRequisito, $item);
             array_push($this->arrayProcesosCulminar, $item);
 
-            $item = new stdClass();
+            $item = new stdClass;
             $item->id = $contador_ids++;
             $item->id_paso = $paso_crecimiento->id;
-            $item->nombre = $paso_crecimiento->nombre . ' - En Curso';
+            $item->nombre = $paso_crecimiento->nombre.' - En Curso';
             $item->estado = 2;
             $item->indice = $item->id;
             array_push($this->arrayProcesosRequisito, $item);
             array_push($this->arrayProcesosCulminar, $item);
 
-            $item = new stdClass();
+            $item = new stdClass;
             $item->id = $contador_ids++;
             $item->id_paso = $paso_crecimiento->id;
-            $item->nombre = $paso_crecimiento->nombre . ' - Realizado';
+            $item->nombre = $paso_crecimiento->nombre.' - Realizado';
             $item->estado = 3;
             $item->indice = $item->id;
             array_push($this->arrayProcesosRequisito, $item);
@@ -176,7 +211,7 @@ class CategoriasActividad extends Component
         }
 
         // Las reglas para los valores de moneda solo se aplican si la categoría NO es gratuita.
-        if (!$this->esGratuitaNuevo) {
+        if (! $this->esGratuitaNuevo) {
             foreach ($this->monedasActividad as $moneda) {
                 $rules["valoresMonedasNuevo.{$moneda->id}"] = ['required', 'numeric', 'min:0'];
             }
@@ -201,11 +236,12 @@ class CategoriasActividad extends Component
             'sedesNuevo.required' => 'Debes seleccionar al menos una sede.',
         ];
 
-        if (!$this->esGratuitaNuevo) {
+        if (! $this->esGratuitaNuevo) {
             foreach ($this->monedasActividad as $moneda) {
                 $messages["valoresMonedasNuevo.{$moneda->id}.required"] = "El valor para {$moneda->nombre} es obligatorio.";
             }
         }
+
         return $messages;
     }
 
@@ -216,20 +252,18 @@ class CategoriasActividad extends Component
     public function nuevaCategoria()
     {
 
-
         // aqui primero creo la actividad categoria para poder luego crear los registros de las tablas intermedias
-        $categoriaActividad = new ActividadCategoria();
+        $categoriaActividad = new ActividadCategoria;
         $categoriaActividad->actividad_id = $this->actividad->id;
         $categoriaActividad->nombre = $this->nombreNuevo;
         $categoriaActividad->aforo = $this->aforoNuevo;
         $categoriaActividad->es_gratuita = $this->esGratuitaNuevo;
         $categoriaActividad->limite_invitados = $this->limiteInvitados;
 
-
         $categoriaActividad->save();
 
         // Manejo de monedas
-        if (!$this->esGratuitaNuevo) {
+        if (! $this->esGratuitaNuevo) {
             $categoriaActividad->limite_compras = $this->limiteCompras;
 
             $categoriaActividad->genero = $this->generoNuevo;
@@ -247,15 +281,14 @@ class CategoriasActividad extends Component
             }
             $categoriaActividad->monedas()->sync($monedasParaSync);
 
-
             // aqui se hace el guardado de los pasos crecimiento requisito de la categoria
             if (isset($this->pasosCrecimientoRequisitoNuevo)) {
                 $contador_ids = 1;
-                $array_procesos = array();
+                $array_procesos = [];
 
-                foreach ($this->pasosCrecimiento  as $paso_crecimiento) {
+                foreach ($this->pasosCrecimiento as $paso_crecimiento) {
 
-                    $item = new stdClass();
+                    $item = new stdClass;
                     $item->id = $contador_ids;
                     $item->id_paso = $paso_crecimiento->id;
                     $item->estado = 1;
@@ -263,7 +296,7 @@ class CategoriasActividad extends Component
                     $array_procesos[] = $item;
                     $contador_ids = $contador_ids + 1;
 
-                    $item = new stdClass();
+                    $item = new stdClass;
                     $item->id = $contador_ids;
                     $item->id_paso = $paso_crecimiento->id;
                     $item->estado = 2;
@@ -271,7 +304,7 @@ class CategoriasActividad extends Component
                     $array_procesos[] = $item;
                     $contador_ids = $contador_ids + 1;
 
-                    $item = new stdClass();
+                    $item = new stdClass;
                     $item->id = $contador_ids;
                     $item->id_paso = $paso_crecimiento->id;
                     $item->estado = 3;
@@ -287,11 +320,11 @@ class CategoriasActividad extends Component
             // aqui se hace el guardado de los pasos crecimiento requisito de la categoria
             if (isset($this->pasosCrecimientoCulminarNuevo)) {
                 $contador_ids = 1;
-                $array_procesos = array();
+                $array_procesos = [];
 
-                foreach ($this->pasosCrecimiento  as $paso_crecimiento) {
+                foreach ($this->pasosCrecimiento as $paso_crecimiento) {
 
-                    $item = new stdClass();
+                    $item = new stdClass;
                     $item->id = $contador_ids;
                     $item->id_paso = $paso_crecimiento->id;
                     $item->estado = 1;
@@ -299,7 +332,7 @@ class CategoriasActividad extends Component
                     $array_procesos[] = $item;
                     $contador_ids = $contador_ids + 1;
 
-                    $item = new stdClass();
+                    $item = new stdClass;
                     $item->id = $contador_ids;
                     $item->id_paso = $paso_crecimiento->id;
                     $item->estado = 2;
@@ -307,7 +340,7 @@ class CategoriasActividad extends Component
                     $array_procesos[] = $item;
                     $contador_ids = $contador_ids + 1;
 
-                    $item = new stdClass();
+                    $item = new stdClass;
                     $item->id = $contador_ids;
                     $item->id_paso = $paso_crecimiento->id;
                     $item->estado = 3;
@@ -318,11 +351,11 @@ class CategoriasActividad extends Component
 
                 // return $request->pasosCrecimientoRequisito;
                 $collection = collect($array_procesos)->whereIn('id', $this->pasosCrecimientoCulminarNuevo)->keyBy('id_paso')->select('estado', 'indice');
-                //return $collection->toArray();
+                // return $collection->toArray();
                 $categoriaActividad->procesosCulminados()->sync($collection);
             }
 
-            /// estos son los restantes campos de restricciones que no tienen guardados especiales
+            // / estos son los restantes campos de restricciones que no tienen guardados especiales
             if (isset($this->rangosEdadNuevo)) {
                 $categoriaActividad->rangosEdad()->sync($this->rangosEdadNuevo);
             }
@@ -353,8 +386,7 @@ class CategoriasActividad extends Component
             ]);
         }
 
-
-        return redirect()->route('actividades.categorias', [$this->actividad])->with('success', "Tu actividad: <b>" . $categoriaActividad->nombre . "</b> fue actualizada con éxito.");
+        return redirect()->route('actividades.categorias', [$this->actividad])->with('success', 'Tu actividad: <b>'.$categoriaActividad->nombre.'</b> fue actualizada con éxito.');
     }
 
     #[On('abrir-modal-actualizar-categoria')]
@@ -368,7 +400,7 @@ class CategoriasActividad extends Component
             'tipoServicios',
             'estadosCiviles',
             'procesosRequisito',
-            'procesosCulminados'
+            'procesosCulminados',
         ])->find($categoriaId);
 
         // Asignar valores
@@ -389,7 +421,7 @@ class CategoriasActividad extends Component
         $this->estadosCivilesEditar = $categoria->estadosCiviles->pluck('id')->toArray();
 
         // Cargar monedas si no es gratuita
-        if (!$categoria->es_gratuita) {
+        if (! $categoria->es_gratuita) {
             $this->valoresMonedasEditar = $categoria->monedas
                 ->pluck('pivot.valor', 'id')
                 ->toArray();
@@ -406,6 +438,7 @@ class CategoriasActividad extends Component
         // Disparar evento para abrir el modal
         $this->dispatch('abrirModal', nombreModal: 'modalEditarCategoria');
     }
+
     public function confirmarEliminarCategoria($categoriaId)
     {
         $this->dispatch('confirmarEliminarCategoria', categoriaId: $categoriaId);
@@ -416,7 +449,6 @@ class CategoriasActividad extends Component
         // Buscar la categoría de actividad
 
         $categoriaActividad = ActividadCategoria::find($categoriaId);
-
 
         if ($categoriaActividad->aforo_ocupado > 0) {
             $this->dispatch(
@@ -452,7 +484,6 @@ class CategoriasActividad extends Component
         $this->mount();
     }
 
-
     /**
      * Método para actualizar una categoría existente
      */
@@ -473,7 +504,7 @@ class CategoriasActividad extends Component
         $categoriaActividad->save();
 
         // Manejo de monedas si no es gratuita
-        if (!$this->esGratuitaEditar) {
+        if (! $this->esGratuitaEditar) {
             $monedasParaSync = [];
             foreach ($this->monedasActividad as $moneda) {
                 $valor = $this->valoresMonedasEditar[$moneda->id] ?? null;

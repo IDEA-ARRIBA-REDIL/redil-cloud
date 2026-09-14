@@ -703,8 +703,8 @@ Route::get('/reporteReunion/{reporteReunion}/compartir-link-reserva', [ReporteRe
 
 // Peticiones públicas
 Route::get('/peticion/publica', [PeticionController::class, 'publicaNueva'])->name('peticion.publica.nueva');
-Route::post('/peticion/publica/crear', [PeticionController::class, 'crear'])->name('peticion.publica.crear');
-Route::post('/peticion/publica/verificar-correo', [PeticionController::class, 'verificarCorreo'])->name('peticion.publica.verificar-correo');
+Route::post('/peticion/publica/crear', [PeticionController::class, 'crear'])->middleware('throttle:10,1')->name('peticion.publica.crear');
+Route::post('/peticion/publica/verificar-correo', [PeticionController::class, 'verificarCorreo'])->middleware('throttle:5,1')->name('peticion.publica.verificar-correo');
 Route::get('/peticion/{peticion}/exito', [PeticionController::class, 'exito'])->name('peticion.exito');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -1403,6 +1403,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Configuracion general
     Route::get('/configuracion-general', [ConfiguracionGeneralController::class, 'configuracionGeneral'])->name('configuracion-general.configuracionGeneral');
     Route::patch('/configuracion-general/actualizar', [ConfiguracionGeneralController::class, 'actualizar'])->name('configuracion-general.actualizar');
+    Route::get('/configuracion/personalizacion-login', [ConfiguracionController::class, 'personalizacionLogin'])->name('configuracion.personalizacion-login');
 
     // Gestionar pasos de crecimiento
     Route::get('/gestionar-pasos-de-crecimiento', [PasosDeCrecimientoController::class, 'pasosDeCrecimiento'])->name('gestionar-pasos-de-crecimiento.pasosDeCrecimiento');

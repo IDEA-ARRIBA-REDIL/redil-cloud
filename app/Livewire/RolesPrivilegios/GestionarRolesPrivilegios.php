@@ -64,6 +64,10 @@ class GestionarRolesPrivilegios extends Component
     #[Validate('nullable|numeric')]
     public $zona_de_consolidacion_id;
 
+    public $visible_informacion_congregacional = true;
+
+    public $esRolDependiente = false;
+
     // protected $listeners = ['cerrarModal', 'abrirModal'];
 
     public $sedes;
@@ -96,7 +100,19 @@ class GestionarRolesPrivilegios extends Component
     public function abrirFormularioAddRol()
     {
         $this->resetErrorBag(); // Establece los mensajes de error en la validacion
-        $this->limpiarFormulario();
+        $this->nombreRol = '';
+        $this->iconoRol = '';
+        $this->lista_asistentes_sede_id = null;
+        $this->lista_grupos_sede_id = null;
+        $this->lista_reportes_grupo_sede_id = null;
+        $this->lista_reuniones_sede_id = null;
+        $this->lista_sedes_sede_id = null;
+        $this->lista_ingresos_sede_id = null;
+        $this->lista_peticiones_sede_id = null;
+        $this->ver_sumatoria_ingresos_reportes_grupo_id = null;
+        $this->zona_de_consolidacion_id = null;
+        $this->visible_informacion_congregacional = true;
+        $this->esRolDependiente = false;
         $this->dispatch('abrirModal', nombreModal: 'addRol');
     }
 
@@ -116,6 +132,8 @@ class GestionarRolesPrivilegios extends Component
         $this->lista_peticiones_sede_id = $rol->lista_peticiones_sede_id;
         $this->ver_sumatoria_ingresos_reportes_grupo_id = $rol->ver_sumatoria_ingresos_reportes_grupo_id;
         $this->zona_de_consolidacion_id = $rol->zona_de_consolidacion_id;
+        $this->visible_informacion_congregacional = (bool) ($rol->visible_informacion_congregacional ?? true);
+        $this->esRolDependiente = (bool) $rol->dependiente;
 
         $this->dispatch('abrirModal', nombreModal: 'editarRol');
     }
@@ -137,6 +155,66 @@ class GestionarRolesPrivilegios extends Component
             $this->msnModalPermisos =
               'El permiso <b>"'.str_replace('_', ' ', $permiso->titulo).'"</b> fue asignado con éxito.';
         }
+    }
+
+    /**
+     * 1. Activa todos los permisos de un bloque para el rol que se está editando en el modal.
+     */
+    public function activarTodosBloque(string $etiquetaBloque): void
+    {
+        // 1. Validar existencia del rol
+        $rol = Role::find($this->idRolUpdatePermisos);
+        if (! $rol) {
+            return;
+        }
+
+        // 2. Obtener los permisos del bloque
+        $permisos = Permission::whereRaw(
+            "translate(name,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ','aeiouAEIOUaeiouAEIOU') ILIKE '%".$etiquetaBloque."%'"
+        )->get();
+
+        $nombresPermisos = $permisos->pluck('name')->toArray();
+        if (empty($nombresPermisos)) {
+            return;
+        }
+
+        // 3. Asignar los permisos al rol y actualizar array reactivo
+        $rol->givePermissionTo($nombresPermisos);
+        $this->arrayPermisosRol = array_values(array_unique(array_merge($this->arrayPermisosRol, $nombresPermisos)));
+        $this->msnModalPermisos = 'Todos los permisos del bloque fueron asignados con éxito.';
+
+        // 4. Limpiar la caché de permisos de Spatie
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+
+    /**
+     * 2. Desactiva todos los permisos de un bloque para el rol que se está editando en el modal.
+     */
+    public function desactivarTodosBloque(string $etiquetaBloque): void
+    {
+        // 1. Validar existencia del rol
+        $rol = Role::find($this->idRolUpdatePermisos);
+        if (! $rol) {
+            return;
+        }
+
+        // 2. Obtener los permisos del bloque
+        $permisos = Permission::whereRaw(
+            "translate(name,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ','aeiouAEIOUaeiouAEIOU') ILIKE '%".$etiquetaBloque."%'"
+        )->get();
+
+        $nombresPermisos = $permisos->pluck('name')->toArray();
+        if (empty($nombresPermisos)) {
+            return;
+        }
+
+        // 3. Revocar los permisos del rol y actualizar array reactivo
+        $rol->revokePermissionTo($nombresPermisos);
+        $this->arrayPermisosRol = array_values(array_diff($this->arrayPermisosRol, $nombresPermisos));
+        $this->msnModalPermisos = 'Todos los permisos del bloque fueron revocados con éxito.';
+
+        // 4. Limpiar la caché de permisos de Spatie
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
     public function nuevoRol()
@@ -173,6 +251,7 @@ class GestionarRolesPrivilegios extends Component
                   ? $this->ver_sumatoria_ingresos_reportes_grupo_id
                   : null,
                 'zona_de_consolidacion_id' => is_numeric($this->zona_de_consolidacion_id) ? $this->zona_de_consolidacion_id : null,
+                'visible_informacion_congregacional' => (bool) $this->visible_informacion_congregacional,
             ]);
 
             $this->dispatch('cerrarModal', nombreModal: 'addRol');
@@ -224,6 +303,10 @@ class GestionarRolesPrivilegios extends Component
               : null;
             $rol->zona_de_consolidacion_id = is_numeric($this->zona_de_consolidacion_id) ? $this->zona_de_consolidacion_id : null;
 
+            if (! $rol->dependiente) {
+                $rol->visible_informacion_congregacional = (bool) $this->visible_informacion_congregacional;
+            }
+
             $rol->save();
 
             $this->dispatch('cerrarModal', nombreModal: 'editarRol');
@@ -268,6 +351,7 @@ class GestionarRolesPrivilegios extends Component
             'lista_peticiones_sede_id' => $rol->lista_peticiones_sede_id,
             'ver_sumatoria_ingresos_reportes_grupo_id' => $rol->ver_sumatoria_ingresos_reportes_grupo_id,
             'zona_de_consolidacion_id' => $rol->zona_de_consolidacion_id,
+            'visible_informacion_congregacional' => $rol->visible_informacion_congregacional ?? true,
         ]);
         $nuevoRol->syncPermissions($rol->permissions->pluck('name'));
 

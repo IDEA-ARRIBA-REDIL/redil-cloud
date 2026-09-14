@@ -248,6 +248,12 @@
                                  <span class=" px-3 py-1 rounded-pill text-bg-info">{{ $tag->nombre }}</span>
                                 @endforeach
 
+                                @auth
+                                    @if (isset($actividad->usuario_elegible) && !$actividad->usuario_elegible)
+                                        <span class="px-3 py-1 rounded-pill text-bg-warning"><i class="ti ti-alert-triangle me-1"></i>Requisitos pendientes</span>
+                                    @endif
+                                @endauth
+
                                 <div  style="width: 90%;" class="small mt-3 descripcion-corta">{!! $actividad->descripcion !!}.</div>
                             </div>
                             <div class="row mt-4 mb-4 g-3">

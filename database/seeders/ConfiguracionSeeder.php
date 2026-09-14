@@ -12,7 +12,7 @@ class ConfiguracionSeeder extends Seeder
      */
     public function run(): void
     {
-        Configuracion::firstOrCreate([
+        Configuracion::firstOrCreate(['id' => 1], [
             'dias_plazo_reporte_grupo' => null,
             'reportar_grupo_cualquier_dia' => false,
             'version' => 1,
@@ -91,12 +91,14 @@ class ConfiguracionSeeder extends Seeder
             'mensaje_correo_punto_pago' => null,
             'label_fecha_creacion_grupo' => null,
             'envio_material' => true,
+            'opcion_material_sede' => false,
             // 'fecha_inicio_ejecucion_llenar_grupos_de_grupo' => '2023-12-14 01:00:02',
             // 'fecha_fin_ejecucion_llenar_grupos_de_grupo' => '2023-12-14 01:00:02',
             'habilitar_salones_con_estaciones' => 1,
             'items_mixtos_escuelas_deshabilitados' => 1,
             'cierre_cortes_habilitado' => 1,
             'habilitar_traslados' => 1,
+            'cantidad_intentos_traslados' => 3,
             'cantidad_dias_alerta_notas_maestro' => 12,
             'ruta_almacenamiento' => 'iglesia1',
             'nombre_app_personalizado' => '',
@@ -108,10 +110,9 @@ class ConfiguracionSeeder extends Seeder
             'sufijo_app' => 'Descubre lo que Dios tiene para ti',
             'version_app' => '2.0.0',
             'logo_app' => null,
+            'logo_app_negro' => null,
             'favicon_app' => null,
             'tiene_sistema_aprobacion_de_reporte' => true,
-            'marca_blanca' => false,
-            'logo_app' => '',
         ]);
 
         /*

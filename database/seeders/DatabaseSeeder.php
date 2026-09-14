@@ -37,6 +37,6 @@ class DatabaseSeeder extends Seeder
      */
     protected function incrementalSeeders(): void
     {
-        // TODO: Add new global incrementals here.
+        $this->call(LoginBrandingDefaultSeeder::class);
     }
 }

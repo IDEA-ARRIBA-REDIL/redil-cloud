@@ -113,7 +113,7 @@ class ReunionStatsService
             return [$rolActivo->lista_sedes_sede_id];
         }
 
-        if ($usuario->hasPermissionTo('sedes.lista_sedes_todas')) {
+        if ($rolActivo && $rolActivo->hasPermissionTo('sedes.lista_sedes_todas')) {
             return Sede::pluck('id')->toArray();
         }
 

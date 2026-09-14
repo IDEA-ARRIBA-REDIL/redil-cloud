@@ -220,7 +220,7 @@ class TenantDatabaseSeeder extends Seeder
         // $this->call(NuevoSeederEjemplo::class); TipoCargoCursoSeeder
         $this->call(BloqueClasificacionAsistenteSeeder::class);
         $this->call(EstructuraGruposPruebaSeeder::class);
-        //$this->call(BosaDataSeeder::class);
+        // $this->call(BosaDataSeeder::class);
         $this->call(CursoItemTipoSeeder::class);
         $this->call(CarreraSeeder::class);
         $this->call(CategoriaCursoSeeder::class);
@@ -237,8 +237,9 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(PostSeeder::class);
         $this->call(TipoNotificacionSeeder::class);
         $this->call(InformesPersonalizadosSeeder::class);
-       // $this->call(AsistentesEscuelaSeeder::class);
-       $this->call(GamificationEjemploSeeder::class);
+        // $this->call(AsistentesEscuelaSeeder::class);
+        $this->call(GamificationEjemploSeeder::class);
         $this->call(TipoHitoSeeder::class);
+        $this->call(LoginBrandingPermissionSeeder::class);
     }
 }

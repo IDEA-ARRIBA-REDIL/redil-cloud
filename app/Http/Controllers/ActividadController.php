@@ -176,24 +176,23 @@ class ActividadController extends Controller
             // Obtenemos TODAS las actividades vigentes que coinciden con la búsqueda
             $actividadesVigentes = $query->get();
 
-            // Aplicamos el filtro de elegibilidad del usuario (Lógica del Modelo)
-            // Se asume que este método retorna un array o colección de IDs permitidos
+            // Determinamos la elegibilidad del usuario sin ocultar la actividad para que pueda conocer los motivos
             $permitidasIds = Actividad::filtrarActividadesPermitidas($usuario, $actividadesVigentes);
-
-            // Filtramos la colección resultante
-            $coleccionFiltrada = $actividadesVigentes->whereIn('id', $permitidasIds);
+            foreach ($actividadesVigentes as $act) {
+                $act->usuario_elegible = in_array($act->id, $permitidasIds, true);
+            }
 
             // --- PAGINACIÓN MANUAL DE LA COLECCIÓN ---
             $page = Paginator::resolveCurrentPage() ?: 1;
             $perPage = 12;
 
             // Cortamos la colección para la página actual
-            $itemsPaginados = $coleccionFiltrada->slice(($page - 1) * $perPage, $perPage)->values();
+            $itemsPaginados = $actividadesVigentes->slice(($page - 1) * $perPage, $perPage)->values();
 
             // Creamos el objeto Paginator manteniendo los parámetros de búsqueda en la URL
             $actividades = new LengthAwarePaginator(
                 $itemsPaginados,
-                $coleccionFiltrada->count(),
+                $actividadesVigentes->count(),
                 $perPage,
                 $page,
                 ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
@@ -1801,7 +1800,7 @@ class ActividadController extends Controller
             // Solo omitimos la comprobación de requisitos si el pago ya está CONFIRMADO o PENDIENTE.
             // Si el intento fue anulado/fallido o no hay compra, permitimos validar requisitos para volver a intentar.
             if (! $pagoConfirmado && ! $pagoPendiente) {
-                if ($actividad->restriccion_por_categoria) {
+                if ($actividad->tipo->tipo_escuelas || $actividad->restriccion_por_categoria) {
                     $actividadEstados = collect([]);
                     $categoriasEstado = $actividad->validarCategoriasParaPerfil($usuario);
                     $hayDisponibles = $categoriasEstado->contains('estado', 'DISPONIBLE');

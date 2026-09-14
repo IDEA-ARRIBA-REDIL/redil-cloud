@@ -69,8 +69,8 @@ return [
         'directory' => null,   // Example: 'tmp'                      | Default: 'livewire-tmp'
         'middleware' => [
             'web',
+            'universal',
             \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
-            \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
             'throttle:60,1',
         ],
         'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
@@ -189,19 +189,4 @@ return [
 
     'release_token' => 'a',
 
-    /*
-    |---------------------------------------------------------------------------
-    | Middleware Group
-    |---------------------------------------------------------------------------
-    |
-    | Livewire routes (e.g., /livewire/update) run through a middleware group.
-    | To make it tenant-aware, we add the Stancl/Tenancy initialization middleware.
-    |
-    */
-
-    'middleware_group' => [
-        'web',
-        \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
-        \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
-    ],
 ];

@@ -80,10 +80,39 @@
                                 {!! $msnModalPermisos !!}
                             </div>
                             @foreach (json_decode($checkboxes) as $checkbox)
-                                <label class="text-nowrap fw-bold mb-2 mt-3"> {{ $checkbox->bloque->nombre }}
-                                    <i class="ti ti-info-circle" data-bs-toggle="tooltip" data-bs-placement="top"
-                                        title="Allows a full access to the system"></i>
-                                </label>
+                                @php
+                                    $nombresPermisosBloque = collect($checkbox->permisos)->pluck('name')->toArray();
+                                    $totalBloque = count($nombresPermisosBloque);
+                                    $activosBloque = count(array_intersect($nombresPermisosBloque, $arrayPermisosRol ?? []));
+                                    $todosActivosBloque = ($totalBloque > 0 && $activosBloque === $totalBloque);
+                                @endphp
+                                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mt-3 border-bottom pb-1 gap-2">
+                                    <label class="text-nowrap fw-bold mb-0"> {{ $checkbox->bloque->nombre }}
+                                        <i class="ti ti-info-circle" data-bs-toggle="tooltip" data-bs-placement="top"
+                                            title="Allows a full access to the system"></i>
+                                    </label>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="badge {{ $todosActivosBloque ? 'bg-label-success' : ($activosBloque > 0 ? 'bg-label-primary' : 'bg-label-secondary') }} me-1">
+                                            {{ $activosBloque }}/{{ $totalBloque }} activos
+                                        </span>
+                                        <button type="button"
+                                            class="btn btn-sm py-0 px-2 {{ $todosActivosBloque ? 'btn-success' : 'btn-outline-primary' }}"
+                                            wire:click="activarTodosBloque('{{ $checkbox->bloque->etiqueta }}')"
+                                            wire:loading.attr="disabled"
+                                            title="Activar todos los permisos de este bloque">
+                                            <i class="ti ti-checks me-1"></i> Activar todos
+                                        </button>
+                                        @if($activosBloque > 0)
+                                            <button type="button"
+                                                class="btn btn-sm btn-outline-danger py-0 px-2"
+                                                wire:click="desactivarTodosBloque('{{ $checkbox->bloque->etiqueta }}')"
+                                                wire:loading.attr="disabled"
+                                                title="Desactivar todos los permisos de este bloque">
+                                                <i class="ti ti-x me-1"></i> Desactivar todos
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
                                 <div class="row">
                                     @foreach ($checkbox->permisos as $permiso)
                                         <div class="col-6 form-check" wire:key="permiso-{{ $permiso->id }}">
@@ -245,6 +274,18 @@
                                 placeholder="Ver sumatoria ingresos reportes grupo id" />
                         </div>
 
+                        <div class="col-12 col-md-6">
+                            <label class="form-label d-block">¿Visible en información congregacional?</label>
+                            <label class="switch switch-primary">
+                                <input type="checkbox" class="switch-input" wire:model="visible_informacion_congregacional" id="visible_informacion_congregacional_add" />
+                                <span class="switch-toggle-slider">
+                                    <span class="switch-on">Sí</span>
+                                    <span class="switch-off">No</span>
+                                </span>
+                                <span class="switch-label">Permite asignar este rol desde la ficha de usuario</span>
+                            </label>
+                        </div>
+
                         <div class="col-12 text-center">
                             <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar</button>
                             <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal"
@@ -386,6 +427,20 @@
                                 name="ver_sumatoria_ingresos_reportes_grupo_id" class="form-control"
                                 placeholder="Ver sumatoria ingresos reportes grupo id" />
                         </div>
+
+                        @if(!$esRolDependiente)
+                        <div class="col-12 col-md-6">
+                            <label class="form-label d-block">¿Visible en información congregacional?</label>
+                            <label class="switch switch-primary">
+                                <input type="checkbox" class="switch-input" wire:model="visible_informacion_congregacional" id="visible_informacion_congregacional_edit" />
+                                <span class="switch-toggle-slider">
+                                    <span class="switch-on">Sí</span>
+                                    <span class="switch-off">No</span>
+                                </span>
+                                <span class="switch-label">Permite asignar este rol desde la ficha de usuario</span>
+                            </label>
+                        </div>
+                        @endif
 
                         <div class="col-12 text-center">
                             <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar</button>

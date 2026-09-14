@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(LocaleMiddleware::class);
+        $middleware->group('universal', []);
 
         $middleware->alias([
             'verificarGrupo' => VerificarGrupo::class,

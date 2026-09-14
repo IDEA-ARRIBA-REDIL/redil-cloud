@@ -1098,13 +1098,17 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $rolActivo = $this->roles()->wherePivot('activo', true)->first();
 
+        if (! $rolActivo) {
+            return false;
+        }
+
         // Si hay una restricción activa (ID fijo o Ministerio), verificamos contra el query restringido
-        if (($rolActivo && $rolActivo->lista_sedes_sede_id) || $this->hasPermissionTo('sedes.lista_sedes_solo_ministerio')) {
+        if ($rolActivo->lista_sedes_sede_id || $rolActivo->hasPermissionTo('sedes.lista_sedes_solo_ministerio')) {
             return $this->sedesEncargadas('query')->where('sedes.id', $sede->id)->exists();
         }
 
         // Si no hay restricciones, depende de si tiene el permiso global
-        return $this->hasPermissionTo('sedes.lista_sedes_todas');
+        return $rolActivo->hasPermissionTo('sedes.lista_sedes_todas');
     }
 
     public function misPeticiones(): Collection

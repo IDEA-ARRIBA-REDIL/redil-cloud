@@ -4,17 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class ActividadCategoria extends Model
 {
     use HasFactory;
+
     protected $table = 'actividad_categorias';
+
     protected $guarded = [];
 
     public function materia()
@@ -43,7 +42,7 @@ class ActividadCategoria extends Model
     {
         return $this->monedas->mapWithKeys(function ($moneda) {
             return [
-                $moneda->id => $this->getPrecioParaMoneda($moneda->id)
+                $moneda->id => $this->getPrecioParaMoneda($moneda->id),
             ];
         })->toArray();
     }
@@ -56,16 +55,14 @@ class ActividadCategoria extends Model
             ->value('valor');
     }
 
-
     // Nueva relación para obtener los abonos
     public function abonosCategoria(): HasMany
     {
         return $this->hasMany(AbonoCategoria::class, 'actividad_categoria_id');
     }
 
-
     // Nueva relación para obtener las materias_periodo
-   public function materiaPeriodo(): BelongsTo
+    public function materiaPeriodo(): BelongsTo
     {
         return $this->belongsTo(MateriaPeriodo::class, 'materia_periodo_id');
     }
@@ -86,7 +83,7 @@ class ActividadCategoria extends Model
         );
     }
 
-    //// estas relaciones se crearon cuando se modificaron que la restricciones tambien se pudieran por categoria
+    // // estas relaciones se crearon cuando se modificaron que la restricciones tambien se pudieran por categoria
 
     public function sedes(): BelongsToMany
     {
@@ -104,32 +101,30 @@ class ActividadCategoria extends Model
         );
     }
 
-
-
     public function procesosRequisito(): BelongsToMany
     {
         return $this->belongsToMany(PasoCrecimiento::class, 'actividad_categoria_procesos_requisitos', 'actividad_categoria_id', 'paso_crecimiento_id')
-        ->using(ActividadCategoriaProcesoRequisito::class)
-        ->withPivot(
-            'created_at',
-            'updated_at',
-            'estado', // Mantener por compatibilidad
-            'estado_paso_crecimiento_usuario_id', // NUEVO: FK dinámico
-            'indice'
-        )->with('pivot.estadoPasoCrecimiento:id,nombre,color');
+            ->using(ActividadCategoriaProcesoRequisito::class)
+            ->withPivot(
+                'created_at',
+                'updated_at',
+                'estado', // Mantener por compatibilidad
+                'estado_paso_crecimiento_usuario_id', // NUEVO: FK dinámico
+                'indice'
+            );
     }
 
     public function procesosCulminados(): BelongsToMany
     {
         return $this->belongsToMany(PasoCrecimiento::class, 'actividad_categoria_procesos_culminados', 'actividad_categoria_id', 'paso_crecimiento_id')
-        ->using(ActividadCategoriaProcesoCulminado::class)
-        ->withPivot(
-            'created_at',
-            'updated_at',
-            'estado', // Mantener por compatibilidad
-            'estado_paso_crecimiento_usuario_id', // NUEVO: FK dinámico
-            'indice'
-        )->with('pivot.estadoPasoCrecimiento:id,nombre,color');
+            ->using(ActividadCategoriaProcesoCulminado::class)
+            ->withPivot(
+                'created_at',
+                'updated_at',
+                'estado', // Mantener por compatibilidad
+                'estado_paso_crecimiento_usuario_id', // NUEVO: FK dinámico
+                'indice'
+            );
     }
 
     // ========== RELACIONES DE TAREAS DE CONSOLIDACIÓN ==========

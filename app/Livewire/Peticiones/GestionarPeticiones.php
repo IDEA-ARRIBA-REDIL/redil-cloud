@@ -9,274 +9,295 @@ use App\Models\Iglesia;
 use App\Models\Peticion;
 use App\Models\SeguimientoPeticion;
 use App\Models\User;
-use Exception;
-use Livewire\Component;
-use Livewire\Attributes\On;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Mail;
-
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Livewire\Attributes\On;
+use Livewire\Component;
 use stdClass;
 
 class GestionarPeticiones extends Component
 {
-  public $titulo = '';
+    public $titulo = '';
 
-  //modalResponder
-  public $peticionResponderId;
-  public $peticionAsignarId;
-  public $intercesorSeleccionadoId;
-  public $descripcionRespuesta="";
-  public $versiculosRecomendados;
-  public $libros;
-  public $estadoSiguiente = 1; // 1 = Pendiente, 3 = En proceso, 2 = Cerrada
+    // modalResponder
+    public $peticionResponderId;
 
-  //modalBiblia
-  public $listadoVersiculos;
+    public $peticionAsignarId;
 
-  public function mount()
-  {
-    $this->libros= Helpers::libros();
-    $this->listadoVersiculos = '<center>
+    public $intercesorSeleccionadoId;
+
+    public $descripcionRespuesta = '';
+
+    public $versiculosRecomendados;
+
+    public $libros;
+
+    public $estadoSiguiente = 1; // 1 = Pendiente, 3 = En proceso, 2 = Cerrada
+
+    // modalBiblia
+    public $listadoVersiculos;
+
+    public function mount()
+    {
+        $this->libros = Helpers::libros();
+        $this->listadoVersiculos = '<center>
       <h5 class="m-5"><i class="ti ti-search"></i> Resultados de la busqueda</h5>
     </center>';
-  }
-
-  #[On('modalResponder')]
-  public function modalResponder($peticionId, $personaId)
-  {
-    $peticion = Peticion::find($peticionId);
-
-    if ($peticion->user_id) {
-      $usuario = User::withTrashed()->select('id', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')->find($personaId);
-      $nombre = $usuario->nombre(3);
-    } else {
-      $nombre = $peticion->nombre_externo;
     }
 
-    $this->titulo = "Responder a <b>" . $nombre . "</b>";
+    #[On('modalResponder')]
+    public function modalResponder($peticionId, $personaId)
+    {
+        $peticion = Peticion::find($peticionId);
 
-    // Autoseleccionamos el estado actual si lo tiene, para que no lo cambie sin querer
-    $this->estadoSiguiente = $peticion->estado;
+        if ($peticion->user_id) {
+            $usuario = User::withTrashed()->select('id', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido')->find($personaId);
+            $nombre = $usuario->nombre(3);
+        } else {
+            $nombre = $peticion->nombre_externo;
+        }
 
-    $this->peticionResponderId = $peticionId;
-    $this->descripcionRespuesta = "<p>¡Hola! <b>" . $nombre . "</b>. </p>";
+        $this->titulo = 'Responder a <b>'.$nombre.'</b>';
 
-    $this->versiculosRecomendados = '<p>Cargando versiculos recomendados</p>
+        // Autoseleccionamos el estado actual si lo tiene, para que no lo cambie sin querer
+        $this->estadoSiguiente = $peticion->estado;
+
+        $this->peticionResponderId = $peticionId;
+        $this->descripcionRespuesta = '<p>¡Hola! <b>'.$nombre.'</b>. </p>';
+
+        $this->versiculosRecomendados = '<p>Cargando versiculos recomendados</p>
     <div class="spinner-border spinner-border-lg text-primary mt-1" role="status">
     <span class="visually-hidden">Loading...</span>
     </div>';
 
-    $this->dispatch('textoInicialRespuesta', textoInicial:  $this->descripcionRespuesta);
-    $this->dispatch('abrirModal', nombreModal: 'modalResponder');
-    $this->dispatch('cargarVersiculosRecomendados', peticionId: $peticionId);
-  }
-
-  public function addResponder()
-  {
-    $configuracion = Configuracion::find(1);
-    $peticion = Peticion::find($this->peticionResponderId);
-    $usuario_logueado=auth()->user();
-    if ($peticion->user_id) {
-      $usuario = User::withTrashed()->select('id', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'telefono_movil', 'email', 'pais_id')->find($peticion->user_id);
-
-      $email = $usuario->email;
-      $telefono = $usuario->telefono_movil;
-      $nombre = $usuario->nombre(3);
-
-      if (isset($usuario->pais->prefijo)) {
-        $prefijo = $usuario->pais->prefijo;
-      } else {
-        $iglesia = Iglesia::find(1);
-        $prefijo = $iglesia->pais->prefijo;
-      }
-    } else {
-      $email = $peticion->email_externo;
-      $telefono = $peticion->telefono_externo;
-      $nombre = $peticion->nombre_externo;
-      $prefijo = $peticion->pais->prefijo ?? Iglesia::find(1)->pais->prefijo;
+        $this->dispatch('textoInicialRespuesta', textoInicial: $this->descripcionRespuesta);
+        $this->dispatch('abrirModal', nombreModal: 'modalResponder');
+        $this->dispatch('cargarVersiculosRecomendados', peticionId: $peticionId);
     }
 
-    // Crear el nuevo seguimiento (hace veces de respuesta)
-    $seguimiento = new SeguimientoPeticion;
-    $seguimiento->peticion_id = $peticion->id;
-    $seguimiento->fecha = Carbon::now()->format('Y-m-d');
-    $seguimiento->descripcion = $this->descripcionRespuesta;
-    $seguimiento->usuario_id = $usuario_logueado->id;
-    $seguimiento->save();
-
-    // Enviar el correo
-    if ($email!="")
+    public function addResponder()
     {
-      $mensaje = $this->descripcionRespuesta;
-      $mailData = new stdClass();
-      $mailData->subject = 'Actualización en tu petición';
-      $mailData->nombre = $nombre;
-      $mailData->mensaje = $mensaje;
+        $configuracion = Configuracion::find(1);
+        $peticion = Peticion::find($this->peticionResponderId);
+        $usuario_logueado = auth()->user();
+        if ($peticion->user_id) {
+            $usuario = User::withTrashed()->select('id', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'telefono_movil', 'email', 'pais_id')->find($peticion->user_id);
 
-      if ($peticion->tipoPeticion->banner_email_url != '') {
-        $mailData->banner = $peticion->tipoPeticion->banner_email_url;
-      }
+            $email = $usuario->email;
+            $telefono = $usuario->telefono_movil;
+            $nombre = $usuario->nombre(3);
 
-      try {
-        Mail::to($email)->send(new DefaultMail($mailData));
-      } catch (\Exception $e) {
-        \Illuminate\Support\Facades\Log::error("Error enviando correo por interacción de petición ID {$peticion->id}: " . $e->getMessage());
-      }
-    }
+            if (isset($usuario->pais->prefijo)) {
+                $prefijo = $usuario->pais->prefijo;
+            } else {
+                $iglesia = Iglesia::find(1);
+                $prefijo = $iglesia->pais->prefijo;
+            }
+        } else {
+            $email = $peticion->email_externo;
+            $telefono = $peticion->telefono_externo;
+            $nombre = $peticion->nombre_externo;
+            $prefijo = $peticion->pais->prefijo ?? Iglesia::find(1)->pais->prefijo;
+        }
 
-    // Se actualiza la peticion al nuevo estado indicado
-    $peticion->estado = $this->estadoSiguiente;
-    $peticion->save();
+        // Crear el nuevo seguimiento (hace veces de respuesta)
+        $seguimiento = new SeguimientoPeticion;
+        $seguimiento->peticion_id = $peticion->id;
+        $seguimiento->fecha = Carbon::now()->format('Y-m-d');
+        $seguimiento->descripcion = $this->descripcionRespuesta;
+        $seguimiento->usuario_id = $usuario_logueado->id;
+        $seguimiento->save();
 
-    $respuesta = "La interacción y actualización de estado fueron guardados con éxito. ";
+        // Enviar el correo
+        if ($email != '') {
+            $mensaje = $this->descripcionRespuesta;
+            $mailData = new stdClass;
+            $mailData->subject = 'Actualización en tu petición';
+            $mailData->nombre = $nombre;
+            $mailData->mensaje = $mensaje;
 
-    if($telefono!="")
-		{
-			$validarTelefono = strpos($telefono, '+');
+            if ($peticion->tipoPeticion->banner_email_url != '') {
+                $mailData->banner = $peticion->tipoPeticion->banner_email_url;
+            }
 
-			if($validarTelefono===FALSE)
-			{
-				$pefijoTelefono = $prefijo.$telefono;
-			} else {
-        $pefijoTelefono = $telefono;
-      }
+            try {
+                Mail::to($email)->send(new DefaultMail($mailData));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Error enviando correo por interacción de petición ID {$peticion->id}: ".$e->getMessage());
+            }
+        }
 
-			$mensajeWhatsapp= 'Hola '.$nombre.' DIOS te bendiga ';
-
-			$respuesta.=' Si deseas puedes escribirle a <b>'.$nombre.'</b>
-			a través de WhatsApp dando clic aquí <a target="_blank" href="https://api.whatsapp.com/send?phone='.preg_replace('/[^0-9]/', '', $pefijoTelefono).'&text='.$mensajeWhatsapp.'" ><i class="ti ti-brand-whatsapp"></i> '.$telefono.'</a>';
-
-		}
-
-    return redirect(request()->header('Referer'))->with('success', $respuesta);
-  }
-
-  #[On('cargarVersiculosRecomendados')]
-  public function versiculosSegunTipoPeticion($peticionId): void
-  {
-    $peticion = Peticion::find($peticionId);
-    if (!$peticion || !$peticion->tipoPeticion) {
-      $this->versiculosRecomendados = '';
-      return;
-    }
-    $tipoPeticion = $peticion->tipoPeticion;
-    $versiculos = json_decode($tipoPeticion->json_versiculos);
-
-    $this->versiculosRecomendados = '<p class="text-black">Añade el versículo dando clic sobre él</p>';
-    if ($versiculos) {
-      foreach ($versiculos as $versiculo) {
-        $respuestaText = $versiculo->cita ?? '';
-        $titulo = $versiculo->titulo ?? '';
-
-        $this->versiculosRecomendados = $this->versiculosRecomendados . ' <button type="button" class="btn rounded-pill btn-outline-primary waves-effect btn-sm mt-1 add-versiculo" data-toggle="tooltip" data-placement="top" title="' . e($respuestaText) . '" data-verso="' . e($respuestaText) . '" data-cita="' . e($titulo) . '" >' . e($titulo) . '</button>';
-      }
-    }
-  }
-
-  #[On('buscarBibliaCita')]
-  public function buscarBibliaCita($libro,$capitulo,$versiculo)
-  {
-    $key = config('variables.biblia_key');
-    $arrContextOptions = [
-      'ssl' => [
-        'verify_peer' => false,
-        'verify_peer_name' => false,
-      ],
-    ];
-
-		$libroFormateado= Helpers::eliminarTildes($libro);
-		$libroFormateado= str_replace(' ', '', $libroFormateado);
-		$citaFormateada =$libroFormateado.$capitulo.".".$versiculo;
-		$cita=$libro." ".$capitulo.":".$versiculo;
-
-		// cita biblica
-		try {
-      $respuestaText = file_get_contents("https://api.biblia.com/v1/bible/content/RVR60.txt?passage=".$citaFormateada."&key=".$key."&style=neVersePerLineFullReference&culture=es", false, stream_context_create($arrContextOptions));
-      $this->listadoVersiculos = '
-      <div class="d-flex bd-highlight">
-        <div class="p-2 w-100 bd-highlight"><i>"'.$respuestaText.'"</i> <b>('.$cita.', RVR60)</b></div>
-        <div class="p-2 flex-shrink-1 bd-highlight align-self-center"><button type="button" class="btn btn-sm rounded-pill btn-success waves-effect waves-light add-versiculo my-auto" data-verso="'.$respuestaText.'" data-cita="'.$cita.'" >Añadir</button></div>
-      </div>';
-    } catch (Exception $e) {
-      $this->listadoVersiculos = '<center>
-        <h5 class="m-5"><i class="ti ti-search"></i>  La búsqueda no arrojo ningún resultado </h5>
-      </center>';
-    }
-  }
-
-  #[On('buscarBibliaPalabraClave')]
-  public function buscarBibliaPalabraClave($palabrasClaves)
-  {
-
-    $key = config('variables.biblia_key');
-    $arrContextOptions = [
-      'ssl' => [
-        'verify_peer' => false,
-        'verify_peer_name' => false,
-      ],
-    ];
-
-    $respuesta = file_get_contents("https://api.biblia.com/v1/bible/search/RVR60.js?query=".$palabrasClaves."&mode=verse&start=0&limit=30&key=".$key."&culture=es", false, stream_context_create($arrContextOptions));
-    $respuesta = json_decode($respuesta);
-
-    if($respuesta->resultCount==0)
-    {
-      $this->listadoVersiculos = '<center>
-        <h5 class="m-5"><i class="ti ti-search"></i>  La búsqueda no arrojo ningún resultado </h5>
-      </center>';
-    }else{
-      $this->listadoVersiculos = '';
-      foreach($respuesta->results as $versiculo)
-      {
-        $this->listadoVersiculos = $this->listadoVersiculos.'
-        <div class="d-flex bd-highlight">
-          <div class="p-2 w-100 bd-highlight"><i>"'.$versiculo->preview.'"</i> <b>('.$versiculo->title.', RVR60)</b></div>
-          <div class="p-2 flex-shrink-1 bd-highlight align-self-center"><button type="button" class="btn btn-sm rounded-pill btn-success waves-effect waves-light add-versiculo my-auto" data-verso="'.$versiculo->preview.'" data-cita="'.$versiculo->title.'" >Añadir</button></div>
-        </div>';
-      }
-    }
-
-  }
-
-  #[On('modalAsignarIntercesor')]
-  public function modalAsignarIntercesor($peticionId)
-  {
-    $this->peticionAsignarId = $peticionId;
-    $this->intercesorSeleccionadoId = null;
-    $this->dispatch('limpiar-seleccion');
-    $this->dispatch('abrirModal', nombreModal: 'modalAsignarIntercesor');
-  }
-
-  #[On('usuario-seleccionado')]
-  public function usuarioSeleccionado($id, $buscadorId = null)
-  {
-    if ($buscadorId === 'intercesor_asignado_id') {
-      $this->intercesorSeleccionadoId = $id;
-    }
-  }
-
-  public function asignarIntercesorConfirmado()
-  {
-    if ($this->intercesorSeleccionadoId) {
-      $peticion = Peticion::find($this->peticionAsignarId);
-      if ($peticion) {
-        $peticion->asignacion_peticion_id = $this->intercesorSeleccionadoId;
+        // Se actualiza la peticion al nuevo estado indicado
+        $peticion->estado = $this->estadoSiguiente;
         $peticion->save();
 
-        $this->dispatch('cerrarModal', nombreModal: 'modalAsignarIntercesor');
-        $nombreIntercesor = User::find($this->intercesorSeleccionadoId)->nombre(3);
+        $respuesta = 'La interacción y actualización de estado fueron guardados con éxito. ';
 
-        $this->dispatch('limpiar-seleccion');
-        $this->intercesorSeleccionadoId = null;
+        if ($telefono != '') {
+            $validarTelefono = strpos($telefono, '+');
 
-        return redirect(request()->header('Referer'))->with('success', "La petición fue asignada a <b>{$nombreIntercesor}</b> con éxito.");
-      }
+            if ($validarTelefono === false) {
+                $pefijoTelefono = $prefijo.$telefono;
+            } else {
+                $pefijoTelefono = $telefono;
+            }
+
+            $mensajeWhatsapp = 'Hola '.$nombre.' DIOS te bendiga ';
+
+            $respuesta .= ' Si deseas puedes escribirle a <b>'.$nombre.'</b>
+			a través de WhatsApp dando clic aquí <a target="_blank" href="https://api.whatsapp.com/send?phone='.preg_replace('/[^0-9]/', '', $pefijoTelefono).'&text='.$mensajeWhatsapp.'" ><i class="ti ti-brand-whatsapp"></i> '.$telefono.'</a>';
+
+        }
+
+        return redirect(request()->header('Referer'))->with('success', $respuesta);
     }
-  }
 
-  public function render()
-  {
-      return view('livewire.peticiones.gestionar-peticiones');
-  }
+    #[On('cargarVersiculosRecomendados')]
+    public function versiculosSegunTipoPeticion($peticionId): void
+    {
+        $peticion = Peticion::find($peticionId);
+        if (! $peticion || ! $peticion->tipoPeticion) {
+            $this->versiculosRecomendados = '';
+
+            return;
+        }
+        $tipoPeticion = $peticion->tipoPeticion;
+        $versiculos = json_decode($tipoPeticion->json_versiculos);
+
+        $this->versiculosRecomendados = '<p class="text-black">Añade el versículo dando clic sobre él</p>';
+        if ($versiculos) {
+            foreach ($versiculos as $versiculo) {
+                $respuestaText = $versiculo->cita ?? '';
+                $titulo = $versiculo->titulo ?? '';
+
+                $this->versiculosRecomendados = $this->versiculosRecomendados.' <button type="button" class="btn rounded-pill btn-outline-primary waves-effect btn-sm mt-1 add-versiculo" data-toggle="tooltip" data-placement="top" title="'.e($respuestaText).'" data-verso="'.e($respuestaText).'" data-cita="'.e($titulo).'" >'.e($titulo).'</button>';
+            }
+        }
+    }
+
+    #[On('buscarBibliaCita')]
+    public function buscarBibliaCita($libro, $capitulo, $versiculo)
+    {
+        $key = config('variables.biblia_key');
+
+        $libroFormateado = Helpers::eliminarTildes($libro);
+        $libroFormateado = str_replace(' ', '', $libroFormateado);
+        $citaFormateada = $libroFormateado.$capitulo.'.'.$versiculo;
+        $cita = $libro.' '.$capitulo.':'.$versiculo;
+
+        try {
+            $response = Http::timeout(5)->get('https://api.biblia.com/v1/bible/content/RVR60.txt', [
+                'passage' => $citaFormateada,
+                'key' => $key,
+                'style' => 'neVersePerLineFullReference',
+                'culture' => 'es',
+            ]);
+
+            if ($response->successful()) {
+                $respuestaText = trim($response->body());
+                if (! empty($respuestaText)) {
+                    $this->listadoVersiculos = '
+          <div class="d-flex bd-highlight">
+            <div class="p-2 w-100 bd-highlight"><i>"'.e($respuestaText).'"</i> <b>('.e($cita).', RVR60)</b></div>
+            <div class="p-2 flex-shrink-1 bd-highlight align-self-center"><button type="button" class="btn btn-sm rounded-pill btn-success waves-effect waves-light add-versiculo my-auto" data-verso="'.e($respuestaText).'" data-cita="'.e($cita).'" >Añadir</button></div>
+          </div>';
+
+                    return;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Manejo silencioso de fallo de conexión o timeout
+        }
+
+        $this->listadoVersiculos = '<center>
+      <h5 class="m-5"><i class="ti ti-search"></i>  La búsqueda no arrojó ningún resultado </h5>
+    </center>';
+    }
+
+    #[On('buscarBibliaPalabraClave')]
+    public function buscarBibliaPalabraClave($palabrasClaves)
+    {
+        $key = config('variables.biblia_key');
+
+        try {
+            $response = Http::timeout(5)->get('https://api.biblia.com/v1/bible/search/RVR60.js', [
+                'query' => $palabrasClaves,
+                'mode' => 'verse',
+                'start' => 0,
+                'limit' => 30,
+                'key' => $key,
+                'culture' => 'es',
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $results = $data['results'] ?? [];
+                $resultCount = $data['resultCount'] ?? count($results);
+
+                if ($resultCount > 0 && ! empty($results)) {
+                    $this->listadoVersiculos = '';
+                    foreach ($results as $versiculo) {
+                        $preview = $versiculo['preview'] ?? '';
+                        $title = $versiculo['title'] ?? '';
+
+                        $this->listadoVersiculos .= '
+            <div class="d-flex bd-highlight">
+              <div class="p-2 w-100 bd-highlight"><i>"'.e($preview).'"</i> <b>('.e($title).', RVR60)</b></div>
+              <div class="p-2 flex-shrink-1 bd-highlight align-self-center"><button type="button" class="btn btn-sm rounded-pill btn-success waves-effect waves-light add-versiculo my-auto" data-verso="'.e($preview).'" data-cita="'.e($title).'" >Añadir</button></div>
+            </div>';
+                    }
+
+                    return;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Manejo silencioso de error
+        }
+
+        $this->listadoVersiculos = '<center>
+      <h5 class="m-5"><i class="ti ti-search"></i>  La búsqueda no arrojó ningún resultado </h5>
+    </center>';
+    }
+
+    #[On('modalAsignarIntercesor')]
+    public function modalAsignarIntercesor($peticionId)
+    {
+        $this->peticionAsignarId = $peticionId;
+        $this->intercesorSeleccionadoId = null;
+        $this->dispatch('limpiar-seleccion');
+        $this->dispatch('abrirModal', nombreModal: 'modalAsignarIntercesor');
+    }
+
+    #[On('usuario-seleccionado')]
+    public function usuarioSeleccionado($id, $buscadorId = null)
+    {
+        if ($buscadorId === 'intercesor_asignado_id') {
+            $this->intercesorSeleccionadoId = $id;
+        }
+    }
+
+    public function asignarIntercesorConfirmado()
+    {
+        if ($this->intercesorSeleccionadoId) {
+            $peticion = Peticion::find($this->peticionAsignarId);
+            if ($peticion) {
+                $peticion->asignacion_peticion_id = $this->intercesorSeleccionadoId;
+                $peticion->save();
+
+                $this->dispatch('cerrarModal', nombreModal: 'modalAsignarIntercesor');
+                $nombreIntercesor = User::find($this->intercesorSeleccionadoId)->nombre(3);
+
+                $this->dispatch('limpiar-seleccion');
+                $this->intercesorSeleccionadoId = null;
+
+                return redirect(request()->header('Referer'))->with('success', "La petición fue asignada a <b>{$nombreIntercesor}</b> con éxito.");
+            }
+        }
+    }
+
+    public function render()
+    {
+        return view('livewire.peticiones.gestionar-peticiones');
+    }
 }

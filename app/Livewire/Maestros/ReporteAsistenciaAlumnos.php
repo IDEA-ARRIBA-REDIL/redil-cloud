@@ -2,17 +2,13 @@
 
 namespace App\Livewire\Maestros;
 
-use App\Exports\AsistenciasClaseExport;
 use App\Models\HorarioMateriaPeriodo;
 use App\Models\Maestro;
 use App\Models\ReporteAsistenciaClase;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReporteAsistenciaAlumnos extends Component
 {
@@ -31,37 +27,6 @@ class ReporteAsistenciaAlumnos extends Component
     {
         $this->horarioAsignado = $horarioAsignado;
         $this->maestro = $maestro;
-    }
-
-    public function exportarTodosLosReportes(): BinaryFileResponse
-    {
-        return $this->descargarExcel();
-    }
-
-    public function exportarReporte(int $reporteId): BinaryFileResponse
-    {
-        $reporte = ReporteAsistenciaClase::query()
-            ->where('horario_materia_periodo_id', $this->horarioAsignado->id)
-            ->findOrFail($reporteId);
-
-        return $this->descargarExcel($reporte);
-    }
-
-    private function descargarExcel(?ReporteAsistenciaClase $reporte = null): BinaryFileResponse
-    {
-        $materia = $this->horarioAsignado->loadMissing('materiaPeriodo.materia')->materiaPeriodo?->materia?->nombre ?? 'clase';
-        $nombreArchivo = 'asistencias-'.Str::slug($materia);
-
-        if ($reporte) {
-            $nombreArchivo .= '-'.Carbon::parse($reporte->fecha_clase_reportada)->format('Y-m-d');
-        } else {
-            $nombreArchivo .= '-todos-los-reportes';
-        }
-
-        return Excel::download(
-            new AsistenciasClaseExport($this->horarioAsignado, $reporte),
-            $nombreArchivo.'.xlsx'
-        );
     }
 
     // -------------------------------------------------------------------------

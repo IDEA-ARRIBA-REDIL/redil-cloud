@@ -631,6 +631,7 @@ class CampusCurso extends Component
          * $hilosForoItem es una propiedad pública del componente actualizada en seleccionarItem().
          */
         return view('livewire.cursos.campus-curso', [
+            'curso' => $this->getCurso(),
             'progresoPorcentaje' => $this->progresoPorcentaje,
             'hilosForo' => $this->hilosForoItem ?? collect(),
             'evaluacionBloqueada' => $this->evaluacionBloqueada,

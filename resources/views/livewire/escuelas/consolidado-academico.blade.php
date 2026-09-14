@@ -58,7 +58,7 @@
                     </div>
 
                 </div>
-
+                
             </div>
         </div>
     </div>
@@ -171,7 +171,7 @@
                 </div>
 
                 {{-- Acciones Derecha: Botón Exportar + Selector de cantidad por página --}}
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">                   
                     <label class="small text-black mb-0 ms-1">Mostrar:</label>
                     <select wire:model.live="perPage" class="form-select form-select-sm" style="width: 80px;">
                         <option value="15">15</option>
@@ -201,7 +201,7 @@
                     </div>
 
                     <div class="col-12 col-md-6 col-lg-8 text-md-end">
-
+                        
                     </div>
                 </div>
             @endif
@@ -231,8 +231,8 @@
                     <p class="text-black mb-0">Ningún estudiante coincide con los filtros aplicados en esta escuela.</p>
                 </div>
             @else
-
-
+                
+               
 
                 <div class="table-responsive" style="max-height: 560px; overflow-y: auto;">
                     <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.8125rem;">

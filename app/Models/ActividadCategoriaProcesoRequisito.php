@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class ActividadCategoriaProcesoRequisito extends Pivot
 {
     protected $table = 'actividad_categoria_procesos_requisitos';
 
-    public function estadoPasoCrecimiento()
+    public function estadoPasoCrecimiento(): BelongsTo
     {
         return $this->belongsTo(EstadoPasoCrecimientoUsuario::class, 'estado_paso_crecimiento_usuario_id');
     }

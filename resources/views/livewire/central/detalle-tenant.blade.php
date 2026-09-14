@@ -76,6 +76,9 @@
                                 </span>
                             </li>
                         </ul>
+                        <a href="{{ url('/admin/tenants/'.$tenant->getRouteKey().'/marca-blanca') }}" class="btn btn-primary w-100">
+                            <i class="ti ti-branding me-1"></i> Configurar Marca Blanca
+                        </a>
                     </div>
                 </div>
             </div>

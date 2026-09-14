@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Configuracion;
 use App\Models\FormularioUsuario;
 use App\Providers\RouteServiceProvider;
+use App\Services\LoginBrandingResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(Request $request): View
+    public function create(Request $request, LoginBrandingResolver $loginBrandingResolver): View
     {
         $formularios = FormularioUsuario::where('tipo_formulario_id', '=', 3)
             ->select('id', 'nombre', 'label', 'tipo_formulario_id')->get();
@@ -39,6 +40,7 @@ class AuthenticatedSessionController extends Controller
             'formularios' => $formularios,
             'emailDefault' => $emailDefault,
             'configuracion' => $configuracion,
+            'loginBranding' => $loginBrandingResolver->resolve(),
         ]);
     }
 

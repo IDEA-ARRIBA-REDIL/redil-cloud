@@ -43,8 +43,10 @@ foreach ($domains as $index => $domain) {
         Route::middleware(['auth:admin', \App\Http\Middleware\RevisarSuspensionAdmin::class])->group(function () {
             Route::get('/admin/dashboard', App\Livewire\Central\AdminDashboard::class)->name('admin.dashboard');
             Route::get('/admin/tenants/{tenant}', App\Livewire\Central\DetalleTenant::class)->name('admin.tenants.detalle');
+            Route::get('/admin/tenants/{tenant}/marca-blanca', App\Livewire\Central\MarcaBlancaTenant::class)->name('admin.tenants.marca-blanca');
             Route::get('/admin/super-admins', App\Livewire\Central\GestionarSuperAdmins::class)->name('admin.super-admins');
             Route::get('/admin/planes', App\Livewire\Central\GestionarPlanes::class)->name('admin.planes');
+            Route::get('/admin/login-predeterminado', App\Livewire\Central\LoginPredeterminado::class)->name('admin.login-predeterminado');
 
             Route::post('/admin/logout', function () {
 

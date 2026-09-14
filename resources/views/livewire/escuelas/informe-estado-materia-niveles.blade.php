@@ -222,7 +222,7 @@
         {{-- ========================================================================= --}}
         {{-- 3. BUSCADOR RÁPIDO (ENTRE KPIS Y TABLA)                                   --}}
         {{-- ========================================================================= --}}
-
+       
     @endif
 
      @if ($consultado && !empty($escuelaId) && !empty($itemId) && $estudiantesPaginados->isNotEmpty())
@@ -253,7 +253,7 @@
                     </h5>
                     @if ($consultado && $itemActivo)
                         <small class="text-black">
-                            {{ $modo === 'materias' ? 'Materia' : 'Nivel' }} {{ $itemActivo->caracter_obligatorio ? 'obligatoria' : 'opcional' }}
+                            {{ $modo === 'materias' ? 'Materia' : 'Nivel' }} {{ $itemActivo->caracter_obligatorio ? 'obligatoria' : 'opcional' }} 
                             @if ($modo === 'materias' && !empty($itemActivo->creditos))
                                 | {{ $itemActivo->creditos }} Créditos
                             @endif
@@ -294,7 +294,7 @@
                     </div>
 
                     <div class="col-12 col-md-6 col-lg-8 text-md-end">
-
+                        
                     </div>
                 </div>
             @endif
