@@ -1,6 +1,20 @@
 # Estado Actual del Proyecto CRECER
 
-- **Rueda de la Vida: Panel Administrativo Livewire de Áreas y Hábitos, Optimizaciones y Documentación (2026-09-29, publicado por SFTP)**:
+- **Filtro de Rango de Fechas en Historial de Pagos de Taquilla y Corrección en Exportación (Septiembre 2026, desplegado en Git, EC2 y cPanel)**:
+  - **Filtro por Rango de Fechas con Flatpickr + Alpine.js**:
+    - En [`app/Livewire/Taquilla/HistorialTransacciones.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Livewire/Taquilla/HistorialTransacciones.php), se actualizó la propiedad `$fecha` para interpretar rangos de fechas (delimitados por `' to '` o `' a '`), manteniendo soporte de fecha individual y reseteo vacío. Inicializado por defecto en la fecha actual (`today()->toDateString()`).
+    - En [`resources/views/livewire/taquilla/historial-transacciones.blade.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/resources/views/livewire/taquilla/historial-transacciones.blade.php), se reemplazó el input de fecha estático por un componente reactivo Flatpickr (`mode: 'range'`) encapsulado en Alpine.js con `wire:ignore`, formato amigable `d/m/Y`, botón de limpieza rápida `[X]` y botón de restablecimiento a "Hoy".
+    - Tanto el Dashboard de Taquilla ([`dashboard.blade.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/resources/views/contenido/paginas/taquillas/dashboard.blade.php)) como el Historial del Cajero ([`historial.blade.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/resources/views/contenido/paginas/taquillas/historial.blade.php)) se benefician automáticamente de esta reactividad al consumir este mismo componente Livewire.
+    - Se eliminó el script residual de Flatpickr jQuery en [`historial.blade.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/resources/views/contenido/paginas/taquillas/historial.blade.php).
+  - **Soporte en Exportación Excel de Transacciones de Caja**:
+    - En [`app/Exports/HistorialTransaccionesCajaExport.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Exports/HistorialTransaccionesCajaExport.php), se adaptó la consulta de exportación para filtrar por rango de fechas (`startOfDay()` a `endOfDay()`) cuando se recibe un rango.
+  - **Corrección de Excepción en `InformePagosExport.php`**:
+    - En [`app/Exports/InformePagosExport.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Exports/InformePagosExport.php), se resolvió el error fatal `Attempt to read property "user" on null` al exportar puntos de pago, aplicando navegación segura (`$compra->user?->...`) con fallback a `$compra->nombre_completo_comprador` y `$compra->identificacion_comprador` para transacciones de invitados o compradores no registrados en `users`.
+  - **Despliegue y Sincronización Multi-Entorno**:
+    - **Git (GitHub)**: Commit `9cd9a6f0ca` pusheado exitosamente a la rama `main`.
+    - **Servidor EC2 (`i-0a846e8fb50d9a003`)**: Sincronizado vía `git pull origin main` y cachés optimizadas con `php artisan optimize:clear`.
+    - **Servidor cPanel (`redil.ubicalo.com`)**: Desplegado por SFTP con respaldo preventivo en `/home/redil2024/redil-releases/taquillas-fechas-20260929204104` y validación de integridad SHA-256 para todos los 5 archivos.
+
   - **Entrega SFTP Asistida**: Lote de 10 archivos sincronizado con reemplazo atómico y comprobación SHA-256 completada al 100%. Respaldo privado remoto creado en `/home/redil2024/redil-releases/rueda-vida-gestion-20260929152416` con manifiesto `manifest.json`. Sin migraciones pendientes de base de datos ni comandos remotos ejecutados.
   - **Panel de Gestión Livewire (`GestionarRuedaDeLaVida.php` y `gestionar-rueda-de-la-vida.blade.php`)**:
     - Se creó un módulo administrativo interactivo para que administradores de la iglesia configuren áreas (`SeccionRv`) y hábitos (`CampoSeccionRv`) sin requerir acceso ni modificaciones directas en la base de datos.
