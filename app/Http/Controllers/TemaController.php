@@ -80,13 +80,13 @@ class TemaController extends Controller
             // AÑADO LA PORTADA
             if ($request->foto) {
                 $path = 'img/temas/';
-                
+
                 $imagenPartes = explode(';base64,', $request->foto);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
                 $nombreFoto = 'tema'.$tema->id.'.png';
-                
-                Storage::put($path . $nombreFoto, $imagenBase64);
-                
+
+                Storage::put($path.$nombreFoto, $imagenBase64);
+
                 $tema->portada = $nombreFoto;
                 $tema->save();
             }
@@ -177,13 +177,13 @@ class TemaController extends Controller
             // AÑADO LA PORTADA
             if ($request->foto) {
                 $path = 'img/temas/';
-                
+
                 $imagenPartes = explode(';base64,', $request->foto);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
                 $nombreFoto = 'tema'.$tema->id.'.png';
-                
-                Storage::put($path . $nombreFoto, $imagenBase64);
-                
+
+                Storage::put($path.$nombreFoto, $imagenBase64);
+
                 $tema->portada = $nombreFoto;
                 $tema->save();
             }
@@ -200,7 +200,8 @@ class TemaController extends Controller
             $tema->temasGrupos()->sync(json_decode($request->inputGruposIds));
         }
 
-        return back()->with('success', 'El tema <b>'.$tema->titulo.'</b> fue actualizado con éxito.');
+        // 1. Redirigir al listado de temas con mensaje de éxito
+        return redirect()->route('tema.lista')->with('success', 'El tema <b>'.$tema->titulo.'</b> fue actualizado con éxito.');
     }
 
     public function listar(Request $request)
@@ -300,7 +301,7 @@ class TemaController extends Controller
     {
         if ($tema->portada != 'default.png') {
             $path = 'img/temas/';
-            Storage::delete($path . $tema->portada);
+            Storage::delete($path.$tema->portada);
         }
 
         $tema->delete();

@@ -147,6 +147,11 @@
                             <i class="ti ti-dots-vertical text-black"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a href="{{ route('periodo.dashboard', $periodo->id) }}" class="dropdown-item">
+                                    <i class="ti ti-chart-bar me-2"></i> Dashboard del periodo
+                                </a>
+                            </li>
                              @if( $rolActivo->hasPermissionTo('escuelas.opcion_modificar_periodo'))
                             <li>
                                 <a href="{{ route('periodo.actualizar', $periodo->id) }}" class="dropdown-item">

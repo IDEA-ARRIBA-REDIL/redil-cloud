@@ -108,6 +108,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $appends = [
         'foto_url',
         'banner_url',
+        'link_whatsapp',
     ];
 
     /**
@@ -119,6 +120,14 @@ class User extends Authenticatable implements MustVerifyEmail
             return tenant_asset('img/usuario/fotos/'.$this->foto);
         }
 
+        return $this->default_foto_url;
+    }
+
+    /**
+     * Get the user's default photo URL (fallback).
+     */
+    public function getDefaultFotoUrlAttribute(): string
+    {
         return $this->genero == 1
             ? Storage::disk('global_media')->url('personas/default-f.png')
             : Storage::disk('global_media')->url('personas/default-m.png');
@@ -166,6 +175,33 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getArchivoDUrlAttribute(): ?string
     {
         return $this->archivo_d ? tenant_asset('archivos/usuario/'.$this->archivo_d) : null;
+    }
+
+    /**
+     * Obtiene el enlace de WhatsApp formateado para el usuario.
+     */
+    public function getLinkWhatsappAttribute(): ?string
+    {
+        // 1. Si no hay teléfono móvil, retornamos null
+        if (empty($this->telefono_movil)) {
+            return null;
+        }
+
+        // 2. Limpiar el número (dejar solo dígitos)
+        $numeroLimpio = preg_replace('/[^0-9]/', '', (string) $this->telefono_movil);
+
+        // 3. Validación básica: al menos 10 dígitos
+        if (strlen($numeroLimpio) < 10) {
+            return null;
+        }
+
+        // 4. Si tiene 10 dígitos, agregar prefijo 57 (Colombia)
+        if (strlen($numeroLimpio) === 10) {
+            $numeroLimpio = '57'.$numeroLimpio;
+        }
+
+        // 5. Retornar la URL base de WhatsApp
+        return 'https://wa.me/'.$numeroLimpio;
     }
 
     protected static function booted()

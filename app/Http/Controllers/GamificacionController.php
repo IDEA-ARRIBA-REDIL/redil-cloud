@@ -2,11 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Insignia;
-use App\Models\InsigniaUser;
-use App\Models\ReglaGamificacion;
-use Illuminate\Support\Facades\Auth;
-
 class GamificacionController extends Controller
 {
     /**
@@ -14,22 +9,31 @@ class GamificacionController extends Controller
      */
     public function index()
     {
-        $usuario = Auth::user();
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('gamificacion.habilitar_gamificacion');
 
-        // Cargar todas las insignias del catálogo ordenadas
-        $insignias = Insignia::orderBy('orden', 'asc')->get();
+        return view('contenido.paginas.gamificacion.index');
+    }
 
-        // Obtener los registros de progreso del usuario autenticado indexados por insignia_id
-        $progresos = InsigniaUser::where('user_id', $usuario->id)
-            ->get()
-            ->keyBy('insignia_id');
+    /**
+     * Muestra la vista de configuración administrativa de gamificación (Reglas e Insignias).
+     */
+    public function configuracion()
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('configuraciones.configuracion_gamificacion');
 
-        // Cargar reglas de gamificación tipo 'meta' para obtener la meta_cantidad de cada insignia
-        $reglasMeta = ReglaGamificacion::where('frecuencia', 'meta')
-            ->whereNotNull('insignia_id')
-            ->get()
-            ->keyBy('insignia_id');
+        return view('contenido.paginas.gamificacion.configuracion');
+    }
 
-        return view('contenido.paginas.gamificacion.index', compact('usuario', 'insignias', 'progresos', 'reglasMeta'));
+    /**
+     * Muestra la vista de administración de la Tienda de Canjes (Premios y Solicitudes).
+     */
+    public function tienda()
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo->verificacionDelPermiso('configuraciones.tienda_gamificacion');
+
+        return view('contenido.paginas.gamificacion.tienda');
     }
 }

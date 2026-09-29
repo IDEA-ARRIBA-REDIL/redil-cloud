@@ -9,12 +9,11 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
-use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Throwable;
 
-class MarcaBlancaTenant extends Component
+class MarcaBlancaTenant extends ComponenteAdminCentral
 {
     use WithFileUploads;
 

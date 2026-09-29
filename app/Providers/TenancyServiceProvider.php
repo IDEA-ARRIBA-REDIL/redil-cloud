@@ -28,17 +28,18 @@ class TenancyServiceProvider extends ServiceProvider
             // Tenant events
             Events\CreatingTenant::class => [],
             Events\TenantCreated::class => [
-                JobPipeline::make([
-                    Jobs\CreateDatabase::class,
-                    Jobs\MigrateDatabase::class,
-                    Jobs\SeedDatabase::class,
+                function (Events\TenantCreated $event): void {
+                    if ((int) $event->tenant->onboarding_version === 1) {
+                        return;
+                    }
 
-                    // Your own jobs to prepare the tenant.
-                    // Provision API keys, create S3 buckets, anything you want!
-
-                ])->send(function (Events\TenantCreated $event) {
-                    return $event->tenant;
-                })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                    JobPipeline::make([
+                        Jobs\CreateDatabase::class,
+                        Jobs\MigrateDatabase::class,
+                        Jobs\SeedDatabase::class,
+                    ])->send(fn (Events\TenantCreated $created) => $created->tenant)
+                        ->shouldBeQueued(false)->toListener()($event);
+                },
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],
@@ -108,12 +109,29 @@ class TenancyServiceProvider extends ServiceProvider
 
         $this->makeTenancyMiddlewareHighestPriority();
 
+        Event::listen(Events\TenancyBootstrapped::class, function (): void {
+            $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
+            $registrar->clearPermissionsCollection();
+            $registrar->cacheKey = 'spatie.permission.cache.tenant.'.tenant('id');
+        });
+        Event::listen(Events\TenancyEnded::class, function (): void {
+            $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
+            $registrar->clearPermissionsCollection();
+            $registrar->cacheKey = 'spatie.permission.cache.central';
+        });
+
+        Livewire::addPersistentMiddleware([
+            \App\Http\Middleware\RevisarSuspensionAdmin::class,
+            \App\Http\Middleware\RevisarSuspensionTenant::class,
+        ]);
+
         Livewire::setUpdateRoute(function ($handle) {
             return Route::post('/livewire/update', $handle)
                 ->middleware([
                     'web',
                     'universal',
                     Middleware\InitializeTenancyByDomain::class,
+                    \App\Http\Middleware\RevisarSuspensionTenant::class,
                 ]);
         });
 

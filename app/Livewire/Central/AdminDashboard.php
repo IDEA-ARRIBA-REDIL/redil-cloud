@@ -3,20 +3,21 @@
 namespace App\Livewire\Central;
 
 use App\Models\Tenant;
-use Livewire\Component;
 
-class AdminDashboard extends Component
+class AdminDashboard extends ComponenteAdminCentral
 {
     public function toggleSuspension($tenantId)
     {
         $tenant = Tenant::findOrFail($tenantId);
-        $tenant->is_suspended = ! $tenant->is_suspended;
-        if ($tenant->is_suspended) {
-            $tenant->status = 'suspended';
-        } else {
-            $tenant->status = 'active'; // o al estado anterior, pero por ahora active
+        if (! $tenant->license_ends_at || ! $tenant->plan_id) {
+            $this->addError('status', 'Configura y revisa la licencia desde el detalle del tenant.');
+
+            return;
         }
-        $tenant->save();
+        app(\App\Services\EstadoTenantService::class)->actualizar(
+            $tenant, $tenant->status === 'active' ? 'suspended' : 'active',
+            $tenant->plan_id, $tenant->license_ends_at->toDateString()
+        );
 
         session()->flash('message', 'Estado del inquilino actualizado.');
     }

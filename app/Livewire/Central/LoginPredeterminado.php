@@ -7,11 +7,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
-use Livewire\Component;
 use Livewire\WithFileUploads;
 use Throwable;
 
-class LoginPredeterminado extends Component
+class LoginPredeterminado extends ComponenteAdminCentral
 {
     use WithFileUploads;
 

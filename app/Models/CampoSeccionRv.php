@@ -4,22 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CampoSeccionRv extends Model
 {
     use HasFactory;
-    protected $table = 'campos_seccion_rv';
-    protected $guarded = [];
 
+    protected $table = 'campos_seccion_rv';
+
+    protected $guarded = [];
 
     public function seccion(): BelongsTo
     {
-        return $this->belongsTo(SeccionRv::class);
+        return $this->belongsTo(SeccionRv::class, 'seccion_rv_id');
     }
 
     public function ruedasDeLaVida(): BelongsToMany

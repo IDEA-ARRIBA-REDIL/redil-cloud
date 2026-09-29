@@ -300,7 +300,7 @@ use App\Models\Sede;
             <i class="ti ti-building-church text-black"></i>
             <div class="d-flex flex-column">
               <small class="text-black ms-1">Sede</small>
-              <small class="fw-semibold ms-1 text-black"> {{ $reunion->sede->nombre}}</small>
+              <small class="fw-semibold ms-1 text-black"> {{ $reunion->sede?->nombre ?? 'Sin sede' }}</small>
             </div>
           </div>
 

@@ -29,7 +29,7 @@ El desarrollador despliega un cambio del piloto siguiendo una secuencia verifica
 
 ## Current behavior
 
-Producción se despliega manualmente. Cloud no ejecuta pruebas y corre `migrate --force` seguido de `tenants:migrate` durante cada deploy. El historial reciente incluye fallos de migraciones y `composer.lock`; PostgreSQL no tiene backups y el plan no incluye Preview Environments.
+Según el inventario del 2026-09-06, producción se desplegaba manualmente, sin pruebas configuradas en Cloud y con `migrate --force` seguido de `tenants:migrate` durante cada deploy. Se observaron fallos de migraciones y `composer.lock`, backups desactivados y previews no disponibles en la cuenta. No se reinspeccionó el panel el 2026-09-27: estos datos requieren reconfirmación. La documentación actual ofrece previews en todos los planes; no mantener la limitación histórica como regla vigente.
 
 ## Target behavior
 
@@ -46,7 +46,7 @@ Cada despliegue usa pruebas, preview aislada, migraciones compatibles, registro 
 ## Scope unknowns
 
 - Cantidad real de tenants y duración de la migración completa.
-- Ambiente de staging que reemplazará la preview no disponible.
+- Disponibilidad y presupuesto de preview aislada o staging en la cuenta actual.
 - RPO/RTO y política de backups que autoriza migraciones productivas.
 
 ## Scope confidence
@@ -56,6 +56,7 @@ Alto para documentar el proceso; medio para ejecutarlo porque faltan staging, ba
 ## Acceptance Criteria
 
 - El runbook separa build, deploy, migración central y migración tenant.
+- Caches de configuración se generan en build; el plan no depende de archivos escritos en deploy y cabe en su límite documentado de 15 minutos, o define una alternativa por etapas.
 - Define migraciones backward-compatible y tratamiento de fallos parciales.
 - Preview usa base, caché y almacenamiento aislados de producción.
 - Incluye smoke test de Usuarios, Roles y Grupos.
@@ -69,7 +70,7 @@ Alto para documentar el proceso; medio para ejecutarlo porque faltan staging, ba
 
 ## Validation
 
-- Ensayo completo en staging aislado o entorno local PostgreSQL equivalente mientras el plan no incluya Preview Environments.
+- Ensayo completo en preview/staging aislado o PostgreSQL local equivalente mientras no exista ambiente remoto de prueba aprobado.
 - Registro del resultado por tenant sin incluir información sensible.
 - `kaddo guard` sin omisiones inesperadas.
 
@@ -83,13 +84,14 @@ Alto para documentar el proceso; medio para ejecutarlo porque faltan staging, ba
 ## Open questions
 
 - ¿Qué RPO y RTO acepta el responsable del producto?
-- ¿Se creará un ambiente staging separado o se actualizará el plan?
+- ¿Se habilitará una preview aislada o staging, tras confirmar disponibilidad y costo?
 
 ## Evidencia actual
 
 - Inventario de Cloud: `knowledge/tech/discovery/infraestructura-multitenancy-laravel-cloud-2026-09-06.md`.
 - Runbook propuesto: `knowledge/delivery/laravel-cloud-deployment-runbook.md`.
 - No se modificó Laravel Cloud ni se ejecutó un despliegue.
+- Revisión documental del 2026-09-27: reglas vigentes y fuentes oficiales en el runbook; no constituye ensayo ni cierre del WI.
 
 ## Suggested ownership
 

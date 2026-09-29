@@ -5,16 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\AvanceHabitoRv;
 use App\Models\Configuracion;
 use App\Models\ConfiguracionRv;
-use App\Models\HabitosRv;
 use App\Models\HabitoUsuarioRv;
-use App\Models\Metas;
 use App\Models\MetaUsuarioRv;
 use App\Models\RuedaDeLaVidaUser;
 use App\Models\SeccionRv;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RuedaDeLaVidaController extends Controller
 {
@@ -88,14 +86,44 @@ class RuedaDeLaVidaController extends Controller
         );
     }
 
+    public function gestionar()
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+
+        if ($rolActivo && ! $rolActivo->hasPermissionTo('rueda_de_la_vida.item_rueda_de_la_vida')) {
+            abort(403, 'No tienes permisos para gestionar la Rueda de la Vida.');
+        }
+
+        $configuracionRv = ConfiguracionRv::first();
+
+        return view('contenido.paginas.rueda-de-la-vida.gestionar', [
+            'configuracionRv' => $configuracionRv,
+        ]);
+    }
+
     public function resumen(RuedaDeLaVidaUser $rueda)
     {
         $usuario = auth()->user();
         $configuracionRv = ConfiguracionRv::first();
-        $seccionesContadorPromedios = SeccionRv::with('campos')->where('tipo_seccion_id', 1)->get();
-        $metasRv = Metas::get();
-        $habitosMetasRv = HabitosRv::get();
-        $metasUsuario = MetaUsuarioRv::with(['habitos', 'seccion'])->where('rueda_de_la_vida_id', $rueda->id)->get();
+        $seccionesContadorPromedios = SeccionRv::with('campos')->where('tipo_seccion_id', 1)->orderBy('orden', 'asc')->get();
+        $metasUsuario = MetaUsuarioRv::with(['habitos.avances', 'seccion'])->where('rueda_de_la_vida_id', $rueda->id)->get();
+
+        // 1. Optimización: Precálculo de promedios por sección en una sola consulta agregada para evitar N+1
+        $promediosPorSeccion = DB::table('campo_rueda_de_la_vida')
+            ->join('campos_seccion_rv', 'campo_rueda_de_la_vida.campos_seccion_rv_id', '=', 'campos_seccion_rv.id')
+            ->where('campo_rueda_de_la_vida.rueda_de_la_vida_id', $rueda->id)
+            ->groupBy('campos_seccion_rv.seccion_rv_id')
+            ->select('campos_seccion_rv.seccion_rv_id', DB::raw('AVG(campo_rueda_de_la_vida.valor) as promedio'))
+            ->pluck('promedio', 'seccion_rv_id')
+            ->map(fn ($valor) => (float) $valor)
+            ->toArray();
+
+        // 2. Cargar hábitos calificados con su valor y nombre de campo abierto para esta rueda
+        $camposCalificados = $rueda->campos()
+            ->with('seccion')
+            ->orderBy('campos_seccion_rv.orden', 'asc')
+            ->get()
+            ->groupBy('seccion_rv_id');
 
         return view(
             'contenido.paginas.rueda-de-la-vida.resumen',
@@ -104,9 +132,9 @@ class RuedaDeLaVidaController extends Controller
                 'configuracionRv' => $configuracionRv,
                 'seccionesContadorPromedios' => $seccionesContadorPromedios,
                 'rueda' => $rueda,
-                'metasRv' => $metasRv,
-                'habitosMetasRv' => $habitosMetasRv,
+                'promediosPorSeccion' => $promediosPorSeccion,
                 'metasUsuario' => $metasUsuario,
+                'camposCalificados' => $camposCalificados,
             ]
         );
     }
@@ -119,7 +147,7 @@ class RuedaDeLaVidaController extends Controller
         $cantidadTotalSecciones = $secciones->count();
         $configuracion = Configuracion::first();
         $configuracionRv = ConfiguracionRv::first();
-        $maximoId = $secciones->last()->id;
+        $maximoId = $secciones->last()?->id ?? 1;
 
         return view(
             'contenido.paginas.rueda-de-la-vida.nueva',
@@ -137,69 +165,91 @@ class RuedaDeLaVidaController extends Controller
 
     public function crear(Request $request)
     {
-        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-        $usuario = User::find($rolActivo->pivot->model_id);
+        $usuario = auth()->user();
         $fechaHoy = Carbon::now()->format('Y-m-d');
 
-        // / aqui primero se crea una rueda de la vida para poder luego crear las tareas intermedias
-        $ruedaDelaVida = new RuedaDeLaVidaUser;
-        $ruedaDelaVida->usuario_id = $usuario->id;
-        $ruedaDelaVida->fecha = $fechaHoy;
-        $ruedaDelaVida->promedio_general = $request->valorPromedioGeneralOculto;
-        $ruedaDelaVida->save();
+        DB::transaction(function () use ($request, $usuario, $fechaHoy) {
+            // 1. Crear cabecera de la rueda de la vida
+            $ruedaDelaVida = new RuedaDeLaVidaUser;
+            $ruedaDelaVida->usuario_id = $usuario->id;
+            $ruedaDelaVida->fecha = $fechaHoy;
+            $ruedaDelaVida->promedio_general = $request->valorPromedioGeneralOculto ?? 0;
+            $ruedaDelaVida->save();
 
-        // // aqui se guardan los campos seccion de la rueda de la vida
-        $secciones = SeccionRv::with('campos')->where('tipo_seccion_id', 1)->orderBy('orden', 'asc')->get();
+            // 2. Guardar los campos y calificaciones de cada sección
+            $secciones = SeccionRv::with('campos')->where('tipo_seccion_id', 1)->orderBy('orden', 'asc')->get();
+            $promediosSecciones = [];
 
-        foreach ($secciones as $seccion) {
-            foreach ($seccion->campos as $campo) {
-                if ($campo->abierto == true) {
-                    $ruedaDelaVida->campos()->attach($campo->id, [
-                        'valor' => $request->input('campo-'.$campo->id.'-seccion-'.$seccion->id),
-                        'nombre_campo_abierto' => $request->input('campo-abierto-'.$campo->id.'-seccion'.$seccion->id),
-                    ]);
-                } else {
-                    $ruedaDelaVida->campos()->attach($campo->id, [
-                        'valor' => $request->input('campo-'.$campo->id.'-seccion-'.$seccion->id),
-                    ]);
+            foreach ($secciones as $seccion) {
+                $valoresSeccion = [];
+
+                foreach ($seccion->campos as $campo) {
+                    $valorInput = $request->input('campo-'.$campo->id.'-seccion-'.$seccion->id);
+                    $valorNumerico = is_numeric($valorInput) ? min(10, max(0, (float) $valorInput)) : 0;
+                    $valoresSeccion[] = $valorNumerico;
+
+                    if ($campo->abierto) {
+                        $nombreAbierto = $request->input('campo-abierto-'.$campo->id.'-seccion-'.$seccion->id)
+                            ?? $request->input('campo-abierto-'.$campo->id.'-seccion'.$seccion->id);
+                        $nombreAbierto = ! empty($nombreAbierto) ? trim((string) $nombreAbierto) : null;
+
+                        $ruedaDelaVida->campos()->attach($campo->id, [
+                            'valor' => $valorNumerico,
+                            'nombre_campo_abierto' => $nombreAbierto,
+                        ]);
+                    } else {
+                        $ruedaDelaVida->campos()->attach($campo->id, [
+                            'valor' => $valorNumerico,
+                        ]);
+                    }
+                }
+
+                if (count($valoresSeccion) > 0) {
+                    $promediosSecciones[] = array_sum($valoresSeccion) / count($valoresSeccion);
                 }
             }
-        }
 
-        // Guardar las metas y hábitos creados dinámicamente por el usuario
-        $metasData = $request->input('metas', []);
-
-        foreach ($metasData as $metaData) {
-            $nombreMeta = trim($metaData['nombre'] ?? '');
-            $seccionRvId = $metaData['seccion_rv_id'] ?? null;
-
-            if ($nombreMeta === '' || ! $seccionRvId) {
-                continue;
+            // 3. Si no vino promedio general del frontend o se requiere consistencia, calcularlo en backend
+            if (empty($ruedaDelaVida->promedio_general) && count($promediosSecciones) > 0) {
+                $ruedaDelaVida->promedio_general = round(array_sum($promediosSecciones) / count($promediosSecciones), 1);
+                $ruedaDelaVida->save();
             }
 
-            $meta = MetaUsuarioRv::create([
-                'rueda_de_la_vida_id' => $ruedaDelaVida->id,
-                'seccion_rv_id' => $seccionRvId,
-                'nombre' => $nombreMeta,
-            ]);
+            // 4. Guardar las metas y hábitos creados dinámicamente por el usuario
+            $metasData = $request->input('metas', []);
 
-            $habitosData = $metaData['habitos'] ?? [];
+            foreach ($metasData as $metaData) {
+                $nombreMeta = trim($metaData['nombre'] ?? '');
+                $seccionRvId = $metaData['seccion_rv_id'] ?? null;
 
-            foreach ($habitosData as $nombreHabito) {
-                $nombreHabito = trim($nombreHabito ?? '');
-
-                if ($nombreHabito === '') {
+                if ($nombreMeta === '' || ! $seccionRvId) {
                     continue;
                 }
 
-                HabitoUsuarioRv::create([
-                    'meta_usuario_rv_id' => $meta->id,
-                    'nombre' => $nombreHabito,
+                $meta = MetaUsuarioRv::create([
+                    'rueda_de_la_vida_id' => $ruedaDelaVida->id,
+                    'seccion_rv_id' => $seccionRvId,
+                    'nombre' => $nombreMeta,
                 ]);
-            }
-        }
 
-        return redirect()->route('ruedaDeLaVida.finalizada'); // Redirige a la ruta nombrada 'historial'
+                $habitosData = $metaData['habitos'] ?? [];
+
+                foreach ($habitosData as $nombreHabito) {
+                    $nombreHabito = trim($nombreHabito ?? '');
+
+                    if ($nombreHabito === '') {
+                        continue;
+                    }
+
+                    HabitoUsuarioRv::create([
+                        'meta_usuario_rv_id' => $meta->id,
+                        'nombre' => $nombreHabito,
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->route('ruedaDeLaVida.finalizada');
     }
 
     /**

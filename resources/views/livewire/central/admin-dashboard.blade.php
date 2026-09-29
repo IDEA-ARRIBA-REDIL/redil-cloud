@@ -1,4 +1,6 @@
 <div class="container-xxl flex-grow-1 container-p-y">
+    <a href="{{ url('/admin/invitaciones') }}" class="btn btn-primary rounded-pill mb-3">Invitaciones después del pago</a>
+    @foreach($errors->all() as $error)<p class="text-danger">{{ $error }}</p>@endforeach
     <div class="row g-4 mb-4">
         <!-- Total -->
         <div class="col-sm-6 col-xl-3">

@@ -23,7 +23,9 @@ class AuthenticatedSessionController extends Controller
     public function create(Request $request, LoginBrandingResolver $loginBrandingResolver): View
     {
         $formularios = FormularioUsuario::where('tipo_formulario_id', '=', 3)
-            ->select('id', 'nombre', 'label', 'tipo_formulario_id')->get();
+            ->select('id', 'nombre', 'label', 'titulo', 'descripcion', 'icono', 'color', 'tipo_formulario_id')
+            ->orderBy('id', 'asc')
+            ->get();
 
         $emailDefault = Session::get('emailDefault') ? Session::get('emailDefault') : '';
 

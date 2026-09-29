@@ -35,9 +35,9 @@ class UserPolicy
         return $this->tienePermiso($rolActivo, 'personas.subitem_nuevo_asistente');
     }
 
-    public function modificarUsuarioPolitica(?User $usuarioLogueado, FormularioUsuario $formulario): bool
+    public function modificarUsuarioPolitica(?User $usuarioLogueado, ?FormularioUsuario $formulario = null): bool
     {
-        if ($formulario->tipo->es_formulario_exterior) {
+        if ($formulario?->tipo?->es_formulario_exterior) {
             return true;
         }
 

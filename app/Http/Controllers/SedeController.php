@@ -58,6 +58,14 @@ class SedeController extends Controller
             $query = Sede::whereRaw('1=2');
         }
 
+        $haySedeDefault = Sede::where('default', true)->exists();
+        $filtroDefault = $request->get('filtro_default', 'todos');
+
+        // Filtro por sede default
+        if ($filtroDefault === 'default') {
+            $query->where('sedes.default', true);
+        }
+
         // Busqueda por palabra clave
         if ($request->buscar) {
             $buscar = htmlspecialchars($request->buscar);
@@ -66,7 +74,7 @@ class SedeController extends Controller
 
             foreach ($palabras as $palabra) {
                 $query->where(function ($q) use ($palabra) {
-                    $q->where('sedes.nombre', 'LIKE', "%{$palabra}%");
+                    $q->whereRaw("LOWER(translate(sedes.nombre, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ', 'aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$palabra.'%']);
                     if (is_numeric($palabra)) {
                         $q->orWhere('sedes.id', $palabra);
                     }
@@ -84,6 +92,8 @@ class SedeController extends Controller
                 'buscar' => $buscar,
                 'configuracion' => $configuracion,
                 'rolActivo' => $rolActivo,
+                'haySedeDefault' => $haySedeDefault,
+                'filtroDefault' => $filtroDefault,
             ]
         );
     }
@@ -400,6 +410,16 @@ class SedeController extends Controller
     public function eliminar(Sede $sede)
     {
         $this->authorize('eliminar', $sede);
+
+        if ($sede->default) {
+            return back()->with('error', 'No es posible eliminar la sede configurada por defecto.');
+        }
+
+        $sedeDefault = Sede::where('default', true)->first();
+        if (! $sedeDefault) {
+            return back()->with('error', 'No hay una sede por defecto configurada para reasignar los datos.');
+        }
+
         $configuracion = Configuracion::find(1);
 
         if ($sede->foto && $sede->foto !== 'default.png' && $sede->foto !== 'sede.png' && Storage::exists('img/sedes/'.$sede->foto)) {

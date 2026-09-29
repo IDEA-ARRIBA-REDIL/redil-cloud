@@ -4,29 +4,44 @@
     <a href="javascript:;" wire:click="crearCancion" class="btn btn-primary rounded-pill px-7 py-2 mx-1"><i class="ti ti-music-plus me-2"></i> Nueva canción </a>
   </div>
 
-  <div class="row g-4 pt-10">
-    <div class="col-12 col-md-6 offset-md-3 mt-3">
+  <div class="row g-3 pt-6 justify-content-center">
+    <div class="col-12 col-md-5">
       <div class="input-group">
-        <input wire:model.live.debounce.500ms="busqueda" type="text" class="form-control" id="busqueda" name="busqueda" placeholder="Buscar">
+        <span class="input-group-text"><i class="ti ti-search"></i></span>
+        <input wire:model.live.debounce.400ms="busqueda" type="text" class="form-control" id="busqueda" name="busqueda" placeholder="Buscar por canción, artista o álbum...">
+        @if($busqueda)
+        <button class="btn btn-outline-secondary" type="button" wire:click="$set('busqueda', '')">
+          <i class="ti ti-x"></i>
+        </button>
+        @endif
       </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <select wire:model.live="filtroAlbum" class="form-select" id="filtroAlbum">
+        <option value="">Todos los álbumes</option>
+        <option value="sin-album">Sin álbum asignado</option>
+        @foreach ($todosLosAlbumes as $itemAlbum)
+          <option value="{{ $itemAlbum->id }}">{{ $itemAlbum->nombre }}</option>
+        @endforeach
+      </select>
     </div>
   </div>
 
   <div class="row g-2 listadoDeCanciones mt-5">
-    @foreach ($canciones as $cancion)
+    @forelse ($canciones as $cancion)
     <div class="col-12 col-md-4" data-cancion-id="{{ $cancion->id }}">
       <div class="card border">
         <div class="card-body">
           <div class="d-flex justify-content-between">
             <div class="flex-shrink-1">
-              @if(!$busqueda)
-              <a href="javascript:;" class="" data-bs-toggle="tooltip" data-bs-toggle="tooltip" data-bs-placement="right" title="Ordenar sección"><i class="text-muted ti ti-grip-horizontal drag-handle"></i></a>
+              @if(!$busqueda && !$filtroAlbum)
+              <a href="javascript:;" class="" data-bs-toggle="tooltip" data-bs-placement="right" title="Ordenar sección"><i class="text-black ti ti-grip-horizontal drag-handle"></i></a>
               @endif
             </div>
             <div class="d-flex justify-content-end">
               <div>
-                <a href="javascript:;" wire:click="editarCancion({{ $cancion->id }})"  class="text-muted" data-bs-toggle="tooltip" data-bs-toggle="tooltip" data-bs-placement="right" title="Editar cancion"><i class="ti ti-edit "></i></a>
-                <a href="javascript:;" wire:click="$dispatch('eliminarCancion', { cancionId: {{ $cancion->id }}, nombreCancion: '{{ $cancion->nombre }}' })" class="text-muted" data-bs-toggle="tooltip" data-bs-placement="right" title="Eliminar cancion"><i class="ti ti-trash "></i></a>
+                <a href="javascript:;" wire:click="editarCancion({{ $cancion->id }})"  class="text-black" data-bs-toggle="tooltip" data-bs-placement="right" title="Editar cancion"><i class="ti ti-edit "></i></a>
+                <a href="javascript:;" wire:click="$dispatch('eliminarCancion', { cancionId: {{ $cancion->id }}, nombreCancion: '{{ $cancion->nombre }}' })" class="text-black" data-bs-toggle="tooltip" data-bs-placement="right" title="Eliminar cancion"><i class="ti ti-trash "></i></a>
               </div>
             </div>
           </div>
@@ -49,12 +64,18 @@
         </div>
       </div>
     </div>
-    @endforeach
+    @empty
+    <div class="col-12 text-center py-5">
+      <i class="ti ti-music-off fs-1 text-black d-block mb-2"></i>
+      <h5 class="text-black mb-1">No se encontraron canciones</h5>
+      <p class="text-black small">Intenta ajustar tu búsqueda o el filtro de álbumes.</p>
+    </div>
+    @endforelse
   </div>
 
   <!-- crear y editar canción  -->
-  <form id="nuevaEditarCancion" role="form" class="forms-sample" x-on:submit="guardando = true" wire:submit.prevent="guardarCancion" enctype="multipart/form-data">
-    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" x-data="{ guardando: false }" tabindex="-1" id="modalNuevaEditarCancion" aria-labelledby="modalNuevaEditarCancionLabel">
+  <form id="nuevaEditarCancion" role="form" class="forms-sample" wire:submit.prevent="guardarCancion" enctype="multipart/form-data">
+    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" tabindex="-1" id="modalNuevaEditarCancion" aria-labelledby="modalNuevaEditarCancionLabel" data-bs-backdrop="false" data-bs-scroll="false">
         <div class="offcanvas-header my-1 px-8">
             <h4 class="offcanvas-title fw-bold text-primary" id="modalNuevaEditarCancionLabel">
               @if($modoEdicionCancion) Editar canción @else Nueva canción @endif
@@ -77,7 +98,11 @@
                 <label id="label_archivo" class="form-label" for="archivo">
                 {{ $cancionEditando && $cancionEditando->archivo ? 'Reemplazar canción'  : 'Subir canción' }}
                 </label>
-                <input type="file" id="archivo" name="archivo" data-input="archivo" class="form-control inputFile" accept=".mp3">
+                <input type="file" id="archivo" name="archivo" wire:model="archivo" class="form-control inputFile" accept=".mp3, .wav, .mp4">
+                <div wire:loading wire:target="archivo" class="text-primary ti-12px mt-2">
+                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  <span>Cargando archivo de audio...</span>
+                </div>
                 @if($errors->has('archivo'))
                 <div class="text-danger ti-12px mt-2">
                   <i class="ti ti-circle-x"></i> {{ $errors->first('archivo') }}
@@ -90,7 +115,7 @@
 
               <div class="mb-3 col-12">
                 <label class="form-label" for="nombre">Nombre</label>
-                <input id="nombre" name="nombre" wire:model.defer="nombre" type="text" class="form-control" />
+                <input id="nombre" name="nombre" wire:model="nombre" type="text" class="form-control" />
                 @error('nombre')
                 <div class="text-danger ti-12px mt-2">
                     <i class="ti ti-circle-x"></i> {{ $message }}
@@ -100,7 +125,7 @@
 
               <div class="mb-3 col-12">
                 <label class="form-label" for="artista">Artista</label>
-                <input id="artista" name="artista" wire:model.defer="artista" type="text" class="form-control" />
+                <input id="artista" name="artista" wire:model="artista" type="text" class="form-control" />
                 @error('artista')
                 <div class="text-danger ti-12px mt-2">
                     <i class="ti ti-circle-x"></i> {{ $message }}
@@ -111,31 +136,26 @@
             </div>
         </div>
         <div class="offcanvas-footer p-5 border-top border-2 px-8">
-            <!-- Spinner al procesar en servidor (Alpine class binding) -->
+            <!-- Spinner al procesar en servidor -->
             <button class="d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" 
-                    x-bind:class="guardando ? '' : 'd-none'" 
+                    wire:loading.class.remove="d-none"
+                    wire:target="guardarCancion,archivo"
                     type="button" 
                     disabled="">
-              <span class="spinner-border" role="status" aria-hidden="true"></span>
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               <span class="ms-1">Guardando...</span>
             </button>
 
-            <!-- Spinner al leer archivo en cliente (JS) -->
-            <button class="btnGuardarLoader d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" type="button" disabled="">
-              <span class="spinner-border" role="status" aria-hidden="true"></span>
-              <span class="ms-1">Procesando archivo...</span>
-            </button>
-
             <!-- Botones normales (se ocultan si está guardando) -->
-            <button x-bind:class="guardando ? 'd-none' : ''" type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
-            <button x-bind:class="guardando ? 'd-none' : ''" type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
+            <button wire:loading.class="d-none" wire:target="guardarCancion,archivo" type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
+            <button wire:loading.attr="disabled" wire:target="guardarCancion,archivo" type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
         </div>
     </div>
   </form>
 
   <!-- crear y editar álbum  -->
-  <form id="nuevaEditarAlbum" role="form" class="forms-sample" x-on:submit="guardando = true" wire:submit.prevent="guardarAlbum" enctype="multipart/form-data">
-    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" x-data="{ guardando: false }" tabindex="-1" id="modalNuevaEditarAlbum" aria-labelledby="modalNuevaEditarAlbumLabel">
+  <form id="nuevaEditarAlbum" role="form" class="forms-sample" wire:submit.prevent="guardarAlbum" enctype="multipart/form-data">
+    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" tabindex="-1" id="modalNuevaEditarAlbum" aria-labelledby="modalNuevaEditarAlbumLabel" data-bs-backdrop="false" data-bs-scroll="false">
         <div class="offcanvas-header my-1 px-8">
             <h4 class="offcanvas-title fw-bold text-primary" id="modalNuevaEditarAlbumLabel">
               @if($modoEdicionAlbum) Editar álbum @else Nuevo álbum @endif
@@ -143,7 +163,7 @@
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body pt-6 px-8">
-            <div class="mb-4">
+            <div class="mb-4 pb-5">
               @if($modoEdicionAlbum)
               <span class="text-black ti-14px mb-4">Estas editando el álbum <b>"{{ $albumEditando->nombre }}"</b>, por favor ingresa toda la información. </span>
               @else
@@ -153,14 +173,18 @@
             @csrf
             <div class="pt-3">
 
-              @if($albumEditando && $albumEditando->imagen)
-               <img class="card-img img-fluid mb-3 rounded " src="{{ $albumEditando->portada_url }}" alt="album">
-              @endif
+              <div class="mb-3 col-12 text-center" id="contenedorPreviewAlbum">
+                @if($albumEditando && $albumEditando->imagen)
+                  <img id="previewAlbumPortada" class="card-img img-fluid mb-2 rounded shadow-sm" style="max-height: 180px; width: 180px; object-fit: cover;" src="{{ $albumEditando->portada_url }}" alt="album">
+                @else
+                  <img id="previewAlbumPortada" class="card-img img-fluid mb-2 rounded shadow-sm d-none" style="max-height: 180px; width: 180px; object-fit: cover;" src="" alt="album">
+                @endif
+              </div>
 
               <div class="mb-3 col-12">
-                <label class="form-label" for="nombreÁlbum">Nombre</label>
-                <input id="nombreÁlbum" name="nombreÁlbum" wire:model.defer="nombreÁlbum" type="text" class="form-control" />
-                @error('nombreÁlbum')
+                <label class="form-label" for="nombreAlbum">Nombre</label>
+                <input id="nombreAlbum" name="nombreAlbum" wire:model="nombreAlbum" type="text" class="form-control" />
+                @error('nombreAlbum')
                 <div class="text-danger ti-12px mt-2">
                     <i class="ti ti-circle-x"></i> {{ $message }}
                 </div>
@@ -172,43 +196,42 @@
                 <label id="label_imagen" class="form-label" for="imagen">
                 {{ $albumEditando && $albumEditando->imagen ? 'Reemplazar imagen'  : 'Subir imagen' }}
                 </label>
-                <input type="file" id="imagen" name="imagen" data-input="imagen" class="form-control inputFile" accept=".jpg, .png, .jpeg">
+                <input type="file" id="imagen" class="form-control inputFile" accept=".jpg, .png, .jpeg, .webp">
+                <div wire:loading wire:target="imagen" class="text-primary ti-12px mt-2">
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  <span>Cargando imagen recortada...</span>
+                </div>
                 @if($errors->has('imagen'))
                 <div class="text-danger ti-12px mt-2">
                   <i class="ti ti-circle-x"></i> {{ $errors->first('imagen') }}
                 </div>
                 @endif
-                <div class="ti-12px mt-2"> <i class="text-info ti ti-info-circle me-1"></i>La imagen debe ser de 300px alto y 300px ancho</div>
+                <div class="ti-12px mt-2 text-muted"> <i class="text-info ti ti-crop me-1"></i>Al elegir una imagen se abrirá el recortador cuadrado (300x300px).</div>
               </div>
               <!-- /imagen -->
 
             </div>
         </div>
         <div class="offcanvas-footer p-5 border-top border-2 px-8">
-            <!-- Spinner al procesar en servidor (Alpine class binding) -->
+            <!-- Spinner al procesar en servidor -->
             <button class="d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" 
-                    x-bind:class="guardando ? '' : 'd-none'" 
+                    wire:loading.class.remove="d-none"
+                    wire:target="guardarAlbum,imagen"
                     type="button" 
                     disabled="">
-              <span class="spinner-border" role="status" aria-hidden="true"></span>
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               <span class="ms-1">Guardando...</span>
             </button>
 
-            <!-- Spinner al leer archivo en cliente (JS) -->
-            <button class="btnGuardarLoader d-none btn btn-sm py-2 px-4 btn-primary waves-effect waves-light rounded-pill" type="button" disabled="">
-              <span class="spinner-border" role="status" aria-hidden="true"></span>
-              <span class="ms-1">Procesando archivo...</span>
-            </button>
-
             <!-- Botones normales (se ocultan si está guardando) -->
-            <button x-bind:class="guardando ? 'd-none' : ''" type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
-            <button x-bind:class="guardando ? 'd-none' : ''" type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
+            <button wire:loading.class="d-none" wire:target="guardarAlbum,imagen" type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
+            <button wire:loading.attr="disabled" wire:target="guardarAlbum,imagen" type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
         </div>
     </div>
   </form>
 
   <!-- Gestionar album -->
-  <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar"  tabindex="-1" id="modalGestionarAlbum" aria-labelledby="modalGestionarAlbumLabel">
+  <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" tabindex="-1" id="modalGestionarAlbum" aria-labelledby="modalGestionarAlbumLabel" data-bs-backdrop="false" data-bs-scroll="false">
     <div class="offcanvas-header my-1 px-8">
         <h4 class="offcanvas-title fw-bold text-primary" id="modalGestionarAlbumLabel">
           Gestionar álbum
@@ -234,16 +257,16 @@
             <div class="card-body p-1">
               <div class="row">
                 <div class="col-3 d-flex align-items-center">
-                  <img class="card-img img-fluid" src="{{ $album->portada_url }}?v={{ time() }}" alt="album">
+                  <img class="card-img img-fluid" src="{{ $album->portada_url }}" alt="album">
                 </div>
                 <div class="col-7 my-2 text-start">
                   <h6 class="text-truncate mb-0">{{ $album->nombre }}</h6>
-                  <p class="text-muted  mb-0"> <i class="ti ti-playlist"></i> {{ $album->canciones()->count() }} {{ $album->canciones()->count() == 1 ? 'Canción': 'Canciones' }}</p>
+                  <p class="text-black  mb-0"> <i class="ti ti-playlist"></i> {{ $album->canciones_count }} {{ $album->canciones_count == 1 ? 'Canción': 'Canciones' }}</p>
                 </div>
 
                 <div class="col-2 d-flex justify-content-end d-flex align-items-center">
-                  <a href="javascript:;" wire:click="editarAlbum({{ $album->id }})"  class="text-muted" data-bs-toggle="tooltip" data-bs-toggle="tooltip" data-bs-placement="right" title="Editar álbum"><i class="ti ti-edit "></i></a>
-                  <a href="javascript:;" wire:click="$dispatch('eliminarAlbum', { albumId: {{ $album->id }}, nombreAlbum: '{{ $album->nombre }}' })" class="text-muted" data-bs-toggle="tooltip" data-bs-placement="right" title="Eliminar álbum"><i class="ti ti-trash "></i></a>
+                  <a href="javascript:;" wire:click="editarAlbum({{ $album->id }})"  class="text-black" data-bs-toggle="tooltip" data-bs-toggle="tooltip" data-bs-placement="right" title="Editar álbum"><i class="ti ti-edit "></i></a>
+                  <a href="javascript:;" wire:click="$dispatch('eliminarAlbum', { albumId: {{ $album->id }}, nombreAlbum: '{{ $album->nombre }}' })" class="text-black" data-bs-toggle="tooltip" data-bs-placement="right" title="Eliminar álbum"><i class="ti ti-trash "></i></a>
                 </div>
               </div>
             </div>
@@ -254,17 +277,47 @@
     </div>
   </div>
 
+  <!-- Modal Recorte Álbum (Cropper) -->
+  <div wire:ignore.self class="modal fade" id="modalRecorteAlbum" tabindex="-1" aria-labelledby="modalRecorteAlbumLabel" aria-hidden="true" style="z-index: 1090;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-primary" id="modalRecorteAlbumLabel"><i class="ti ti-crop me-2"></i>Recortar portada de álbum</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="img-container d-flex justify-content-center align-items-center bg-dark" style="min-height: 350px; max-height: 65vh; overflow: hidden;">
+            <img id="croppingImageAlbum" src="" alt="Recorte" style="max-width: 100%; display: block;">
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between pt-5">
+          <span class="text-black small"><i class="ti ti-aspect-ratio me-1"></i>Formato cuadrado 1:1 (300x300px)</span>
+          <div>
+            <button type="button" class="btn btn-label-secondary rounded-pill me-2" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" id="btnAplicarRecorteAlbum" class="btn btn-primary rounded-pill">
+              <span id="btnRecorteSpinner" class="spinner-border spinner-border-sm d-none me-1" role="status"></span>
+              <i class="ti ti-check me-1"></i> Aplicar recorte
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 @assets
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
   @vite([
     'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
-    ]);
+    'resources/assets/vendor/libs/cropperjs/cropper.css',
+  ]);
 
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
   @vite([
     'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
     'resources/assets/vendor/libs/sortablejs/sortable.js',
+    'resources/assets/vendor/libs/cropperjs/cropper.js',
   ]);
 @endassets
 
@@ -280,97 +333,127 @@
         onEnd: function (evt) {
           let nuevoOrden = [];
           const canciones = cancionesList.children;
-          //alert( JSON.stringify(canciones));
-          // 1. Recorrer los elementos y crear el array de nuevo orden
           for (let i = 0; i < canciones.length; i++) {
               nuevoOrden.push({
                   id: canciones[i].dataset.cancionId,
-                  orden: i + 1 // El orden comienza en 1
+                  orden: i + 1
               });
           }
 
-          //alert( JSON.stringify(nuevoOrden));
-
-          // 2. Emitir el evento a Livewire
           $wire.actualizarOrden( JSON.stringify(nuevoOrden) );
         }
     });
   });
 
+  // Lógica de Cropper para Portada de Álbum
   document.addEventListener('livewire:initialized', () => {
       const inputImagen = document.getElementById('imagen');
-      const btnGuardar = document.querySelector('#nuevaEditarAlbum .btnGuardar');
-      const btnLoader = document.querySelector('#nuevaEditarAlbum .btnGuardarLoader');
+      const croppingImage = document.getElementById('croppingImageAlbum');
+      const modalRecorteEl = document.getElementById('modalRecorteAlbum');
+      const btnAplicarRecorte = document.getElementById('btnAplicarRecorteAlbum');
+      const btnRecorteSpinner = document.getElementById('btnRecorteSpinner');
+      const previewAlbumPortada = document.getElementById('previewAlbumPortada');
+      let cropper = null;
 
-      if (inputImagen && btnGuardar) {
+      if (inputImagen && modalRecorteEl) {
         inputImagen.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) {
                 return;
             }
 
-            // Validar dimensiones en el cliente antes de procesar
+            if (!file.type.match(/^image\/(jpeg|png|jpg|webp|gif)$/i)) {
+              Swal.fire({
+                title: 'Formato no soportado',
+                text: 'Por favor selecciona una imagen válida (JPG, PNG o WEBP).',
+                icon: 'error',
+                customClass: { confirmButton: 'btn btn-primary' },
+                buttonsStyling: false
+              });
+              inputImagen.value = '';
+              return;
+            }
+
             const reader = new FileReader();
             reader.onload = (event) => {
-                const img = new Image();
-                img.onload = function() {
-                    if (this.width > 300 || this.height > 300) {
-                        Swal.fire({
-                            title: 'Dimensiones incorrectas',
-                            text: 'La imagen de portada del álbum debe ser como máximo de 300px de ancho y 300px de alto. Su imagen actual es de ' + this.width + 'x' + this.height + 'px.',
-                            icon: 'error',
-                            customClass: {
-                                confirmButton: 'btn btn-primary'
-                            },
-                            buttonsStyling: false
-                        });
-                        inputImagen.value = ''; // Limpiar input
-                        return;
-                    }
-                    
-                    // Si pasa, mostrar cargador y asignar a Livewire
-                    btnGuardar.classList.add('d-none');
-                    btnLoader.classList.remove('d-none');
-
-                    $wire.set('imagenBase64', event.target.result);
-                    $wire.set('imagenNombre', file.name);
-
-                    btnGuardar.classList.remove('d-none');
-                    btnLoader.classList.add('d-none');
-                };
-                img.src = event.target.result;
+                croppingImage.src = event.target.result;
+                if (cropper) {
+                  cropper.destroy();
+                  cropper = null;
+                }
+                const modalRecorte = bootstrap.Modal.getOrCreateInstance(modalRecorteEl);
+                modalRecorte.show();
             };
             reader.readAsDataURL(file);
         });
-      }
-  });
 
-  document.addEventListener('livewire:initialized', () => {
-    const inputArchivo = document.getElementById('archivo');
-    const btnGuardar = document.querySelector('#nuevaEditarCancion .btnGuardar');
-    const btnLoader = document.querySelector('#nuevaEditarCancion .btnGuardarLoader');
-
-    if (inputArchivo && btnGuardar) {
-      inputArchivo.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (!file) {
-              return;
+        modalRecorteEl.addEventListener('shown.bs.modal', () => {
+          if (cropper) {
+            cropper.destroy();
           }
+          cropper = new Cropper(croppingImage, {
+            aspectRatio: 1,
+            viewMode: 1,
+            autoCropArea: 1,
+            responsive: true,
+            restore: false,
+            checkCrossOrigin: false,
+            zoomable: true
+          });
+        });
 
-          btnGuardar.classList.add('d-none');
-          btnLoader.classList.remove('d-none');
+        modalRecorteEl.addEventListener('hidden.bs.modal', () => {
+          if (cropper) {
+            cropper.destroy();
+            cropper = null;
+          }
+        });
 
-          const reader = new FileReader();
-          reader.onload = (event) => {
-              $wire.set('archivoBase64', event.target.result);
-              $wire.set('archivoNombre', file.name);
-              
-              btnGuardar.classList.remove('d-none');
-              btnLoader.classList.add('d-none');
-          };
-          reader.readAsDataURL(file);
-      });
-    }
+        if (btnAplicarRecorte) {
+          btnAplicarRecorte.addEventListener('click', () => {
+            if (!cropper) return;
+
+            btnAplicarRecorte.disabled = true;
+            if (btnRecorteSpinner) btnRecorteSpinner.classList.remove('d-none');
+
+            const canvas = cropper.getCroppedCanvas({
+              width: 300,
+              height: 300,
+              imageSmoothingEnabled: true,
+              imageSmoothingQuality: 'high'
+            });
+
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                btnAplicarRecorte.disabled = false;
+                if (btnRecorteSpinner) btnRecorteSpinner.classList.add('d-none');
+                return;
+              }
+
+              const fileRecortado = new File([blob], 'album-portada-' + Date.now() + '.png', { type: 'image/png' });
+
+              $wire.upload('imagen', fileRecortado, () => {
+                // Vista previa local inmediata
+                if (previewAlbumPortada) {
+                  previewAlbumPortada.src = canvas.toDataURL();
+                  previewAlbumPortada.classList.remove('d-none');
+                }
+                btnAplicarRecorte.disabled = false;
+                if (btnRecorteSpinner) btnRecorteSpinner.classList.add('d-none');
+
+                const modalRecorte = bootstrap.Modal.getInstance(modalRecorteEl);
+                if (modalRecorte) {
+                  modalRecorte.hide();
+                }
+              }, () => {
+                btnAplicarRecorte.disabled = false;
+                if (btnRecorteSpinner) btnRecorteSpinner.classList.add('d-none');
+                Swal.fire('Error', 'No se pudo procesar la imagen recortada.', 'error');
+              });
+            }, 'image/png');
+          });
+        }
+      }
   });
 
   $wire.on('eliminarCancion', (params) => {
@@ -443,25 +526,46 @@
     })
   });
 
-  $wire.on('msn', data => {
+  $wire.on('msn', (params) => {
+    const data = Array.isArray(params) ? params[0] : params;
     Swal.fire({
-      title: event.detail.msnTitulo,
-      html: event.detail.msnTexto,
-      icon: event.detail.msnIcono,
+      title: data?.msnTitulo || '',
+      html: data?.msnTexto || '',
+      icon: data?.msnIcono || 'info',
       customClass: {
           confirmButton: 'btn btn-primary'
       },
-        buttonsStyling: false
+      buttonsStyling: false
     });
   });
 
-  $wire.on('cerrarModal', data => {
-    var offcanvasElement = document.getElementById(event.detail.nombreModal);
-    var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
-    offcanvas.hide();
+  const MODALES_GESTION = ['modalNuevaEditarCancion', 'modalNuevaEditarAlbum', 'modalGestionarAlbum'];
+
+  $wire.on('cerrarModal', (params) => {
+    const data = Array.isArray(params) ? params[0] : params;
+    const nombreModal = data?.nombreModal;
+    if (!nombreModal || !MODALES_GESTION.includes(nombreModal)) return;
+
+    const offcanvasElement = document.getElementById(nombreModal);
+    if (offcanvasElement) {
+      const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+      if (offcanvas) {
+        offcanvas.hide();
+      }
+    }
+
+    setTimeout(() => {
+      if (!document.querySelector('.offcanvas.show')) {
+        document.querySelectorAll('.offcanvas-backdrop').forEach(el => el.remove());
+      }
+    }, 350);
   });
 
-  $wire.on('abrirModal', data => {
+  $wire.on('abrirModal', (params) => {
+    const data = Array.isArray(params) ? params[0] : params;
+    const nombreModal = data?.nombreModal;
+    if (!nombreModal || !MODALES_GESTION.includes(nombreModal)) return;
+
     // Limpiar inputs de archivo locales al abrir cualquier modal
     const archivoInput = document.getElementById('archivo');
     if (archivoInput) {
@@ -472,29 +576,51 @@
         imagenInput.value = '';
     }
 
-    var offcanvasElement = document.getElementById(event.detail.nombreModal);
-
-    // Resetear el estado guardando de Alpine al abrir si está inicializado
-    if (window.Alpine && offcanvasElement) {
-        const alpineData = Alpine.$data(offcanvasElement);
-        if (alpineData) {
-            alpineData.guardando = false;
-        }
+    // Si es nuevo álbum, resetear preview si no tiene imagen previa
+    if (nombreModal === 'modalNuevaEditarAlbum') {
+      const previewImg = document.getElementById('previewAlbumPortada');
+      if (previewImg && !previewImg.getAttribute('src')) {
+        previewImg.classList.add('d-none');
+      }
     }
 
-    // Agregar backdrop
+    const offcanvasElement = document.getElementById(nombreModal);
+    if (!offcanvasElement) return;
+
+    // Si hay otro offcanvas abierto actualmente, ocultarlo
+    document.querySelectorAll('.offcanvas.show').forEach((el) => {
+      if (el.id !== nombreModal) {
+        const inst = bootstrap.Offcanvas.getInstance(el);
+        if (inst) {
+          inst.hide();
+        }
+      }
+    });
+
+    // Limpiar backdrops anteriores
+    document.querySelectorAll('.offcanvas-backdrop').forEach(el => el.remove());
+
+    // Crear y añadir backdrop explícito al body
     const backdrop = document.createElement('div');
     backdrop.className = 'offcanvas-backdrop fade show';
     document.body.appendChild(backdrop);
 
-    var offcanvas = new bootstrap.Offcanvas(offcanvasElement, {
-      backdrop: true
+    const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement, {
+      backdrop: false,
+      scroll: false
     });
     offcanvas.show();
 
-    // Remover backdrop al cerrar
-    offcanvasElement.addEventListener('hidden.bs.offcanvas', () => {
+    // Limpiar backdrop al cerrar este offcanvas
+    const removerBackdrop = () => {
       backdrop.remove();
+      offcanvasElement.removeEventListener('hidden.bs.offcanvas', removerBackdrop);
+    };
+    offcanvasElement.addEventListener('hidden.bs.offcanvas', removerBackdrop);
+
+    // Cerrar offcanvas al pulsar fuera sobre el backdrop
+    backdrop.addEventListener('click', () => {
+      offcanvas.hide();
     });
   });
 </script>

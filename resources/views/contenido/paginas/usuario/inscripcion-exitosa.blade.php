@@ -27,7 +27,7 @@ $configData = Helper::appClasses();
         <div class="row">
             <div class="col-12 col-lg-12 d-flex align-items-center">
                 <div class=" mx-auto my-auto text-center">
-                    <img src="{{ Storage::url('generales/img/otros/dibujo_formulario_usuario_respuesta.png') }}" class="w-50 p-0">
+                    <img src="{{ Storage::disk('global_media')->url('Inscripcion-exitosa.png') }}" class="w-50 p-0">
                     <h2 class="text-black fw-bold mb-0">Inscripción exitosa</h2>
 
                     @if(isset($mensajeTipo) && $mensajeTipo== 1)

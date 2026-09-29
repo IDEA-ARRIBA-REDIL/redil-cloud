@@ -251,45 +251,56 @@ $configData = Helper::appClasses();
 
 <!-- Modal Formularios Externos Premium -->
 <div class="modal fade" id="modalFormulariosExternos" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(6px);">
-  <div class="modal-dialog modal-dialog-centered modal-md">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 24px; background: rgba(18, 22, 33, 0.96); border: 1px solid rgba(255, 255, 255, 0.08) !important;">
-      <div class="modal-header border-0 pb-0 pt-6 px-6">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg" style="">
+      <div class="modal-header border-0 pb-2 pt-6 px-6">
         <div class="d-flex align-items-center justify-content-between w-100">
           <div>
-            <h4 class="modal-title fw-bold text-white mb-1" id="modalFormulariosExternosTitle" style="letter-spacing: -0.5px;">
-              Formularios de Registro
+            <h4 class="modal-title fw-semibold text-black mb-1" id="modalFormulariosExternosTitle" style="letter-spacing: -0.5px; font-size: 1.35rem;">
+              ¿Cómo estás realizando tu registro?
             </h4>
-            <p class="text-muted mb-0" style="font-size: 0.82rem;">Selecciona el formulario según tu necesidad</p>
+            <p class="text-black mb-0" style="font-size: 0.85rem;">Selecciona la opción que corresponda a tu situación.</p>
           </div>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="box-shadow: none;"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="box-shadow: none;"></button>
         </div>
       </div>
       <div class="modal-body p-6">
         <div class="d-flex flex-column gap-3">
           @foreach($formularios as $formulario)
-            <div class="card card-formulario-premium border-0 p-4" style="
-              border-radius: 16px;
-              background: rgba(255, 255, 255, 0.03);
-              border: 1px solid rgba(255, 255, 255, 0.05);
+            <div class="card card-formulario-premium border p-3 p-md-4" style="
+              border-radius: 18px;
+              background: #f8fafc;
+              border-color: #e2e8f0 !important;
               transition: all 0.25s ease;
             ">
-              <div class="d-flex flex-column justify-content-between h-100 gap-3">
-                <div>
-                  <h5 class="text-white fw-semibold mb-1" style="font-size: 1.05rem;">
-                    {{ $formulario->titulo ?? $formulario->label }}
-                  </h5>
-                  @if($formulario->descripcion)
-                    <p class="text-muted mb-0" style="font-size: 0.85rem; line-height: 1.4;">
-                      {{ $formulario->descripcion }}
-                    </p>
-                  @else
-                    <p class="text-muted mb-0" style="font-size: 0.85rem; font-style: italic;">
-                      Sin descripción disponible.
-                    </p>
-                  @endif
+              <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap flex-md-nowrap">
+                <div class="d-flex align-items-center gap-3 gap-md-4">
+                  <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="
+                    width: 62px;
+                    height: 62px;
+                    background-color: {{ $formulario->color ? $formulario->color . '22' : '#c5c5c5ff' }};
+                    color: {{ $formulario->color ?? '#000000ff' }};
+                  ">
+                    <i class="{{ $formulario->icono ?: 'ti ti-forms' }}" style="font-size: 2rem;"></i> 
+                  </div>
+                  <div>
+                    <h5 class="fw-bold mb-1 text-black" style="font-size: 1.15rem; letter-spacing: -0.3px;">
+                      {{ $formulario->label ?? $formulario->titulo }}
+                    </h5>
+                    @if($formulario->descripcion)
+                      <p class="mb-0 text-black small">
+                        {{ $formulario->descripcion }}
+                      </p>
+                    @endif
+                  </div>
                 </div>
-                <div class="d-flex justify-content-end align-items-center">
-                  <a href="{{ route('usuario.nuevoExterior', $formulario) }}" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold d-flex align-items-center gap-2 btn-comenzar" style="font-size: 0.82rem; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);">
+                <div class="flex-shrink-0 ms-auto ms-md-0">
+                  <a href="{{ route('usuario.nuevoExterior', $formulario) }}" class="btn rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 text-white btn-comenzar" style="
+                    background-color: #138848;
+                    border: none;
+                    font-size: 0.9rem;
+                    box-shadow: 0 4px 12px rgba(19, 136, 72, 0.3);
+                  ">
                     Comenzar <i class="ti ti-arrow-right ti-xs"></i>
                   </a>
                 </div>
@@ -304,16 +315,18 @@ $configData = Helper::appClasses();
 
 <style>
 .card-formulario-premium:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.10) !important;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
 }
 .btn-comenzar {
   transition: all 0.2s ease;
 }
 .btn-comenzar:hover {
-  transform: translateX(2px);
+  background-color: #0f6b38 !important;
+  transform: translateX(3px);
+  box-shadow: 0 6px 16px rgba(19, 136, 72, 0.4) !important;
 }
 </style>
 

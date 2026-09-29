@@ -392,7 +392,7 @@ $configData = Helper::appClasses();
                         <i class="ti ti-atom-2 text-black"></i>
                         <div class="d-flex flex-column">
                           <small class="text-black ms-1">Grupo:</small>
-                          <small class="fw-semibold ms-1 text-black ">{{ $reporte->grupo->nombre }}</small>
+                          <small class="fw-semibold ms-1 text-black ">{{ $reporte->grupo?->nombre ?? 'Sin grupo' }}</small>
                         </div>
                       </div>
                     </div>
@@ -415,7 +415,7 @@ $configData = Helper::appClasses();
                             @if($reporte->aprobado === null || !$configuracion->tiene_sistema_aprobacion_de_reporte || $rolActivo->hasPermissionTo('reportes_grupos.privilegio_reportar_grupo_cualquier_fecha') )
                               @if( $rolActivo->hasPermissionTo('reportes_grupos.privilegio_reportar_grupo_cualquier_fecha') )
                               <li><a class="dropdown-item" href="{{ route('reporteGrupo.asistencia', $reporte->id) }}">Editar </a></li>
-                              @elseif($reporte->grupo->estaDentroDelRango($reporte->fecha, $configuracion))
+                              @elseif($reporte->grupo && $reporte->grupo->estaDentroDelRango($reporte->fecha, $configuracion))
                               <li><a class="dropdown-item" href="{{ route('reporteGrupo.asistencia', $reporte->id) }}">Editar</a></li>
                               @endif
                             @endif

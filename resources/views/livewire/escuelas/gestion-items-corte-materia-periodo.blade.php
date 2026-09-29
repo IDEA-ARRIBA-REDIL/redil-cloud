@@ -12,41 +12,49 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
-     <div class="col-12 mb-3">
-                                <div class="alert alert-warning d-flex align-items-center" role="alert">
-                                    <i class="ti ti-alert-triangle me-2"></i>
-                                    <div>
-                                        <strong>Nota Importante:</strong> Para editar un ítem que ya tiene calificaciones asignadas, solo se permitirá modificar su <strong>fecha</strong> y <strong>contenido</strong>. Los valores críticos (porcentaje, tipo, etc.) estarán bloqueados para mantener la consistencia de las notas.
-                                    </div>
-                                </div>
-                            </div>
+    <div class="col-12 mb-3">
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="ti ti-alert-triangle me-2"></i>
+            <div>
+                <strong>Nota Importante:</strong> Para editar un ítem que ya tiene calificaciones asignadas, solo se permitirá modificar su <strong>fecha</strong> y <strong>contenido</strong>. Los valores críticos (porcentaje, tipo, etc.) estarán bloqueados para mantener la consistencia de las notas.
+            </div>
+        </div>
+    </div>
 
-    <div class="accordion" id="accordionCortes">
-        @foreach($cortes as $corte)
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="heading{{ $corte->id }}">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $corte->id }}" aria-expanded="true" aria-controls="collapse{{ $corte->id }}">
-                        {{ $corte->corteEscuela->nombre ?? 'Corte Sin Nombre' }}
-                        <span class="badge bg-label-primary ms-2">{{ $corte->porcentaje }}%</span>
-                        <span class="text-muted ms-auto me-3 fst-italic" style="font-size: 0.8rem;">
-                            (Suma items: {{ $this->itemsPorCorte[$corte->id]->sum('porcentaje') }}%)
+    <div class="accordion" id="items-cortes-{{ $horarioAsignado->id }}">
+        @forelse ($cortes as $corte)
+            @php
+                $itemsDelCorte = collect($itemsPorCorte[$corte->id] ?? []);
+                $panelCorte = 'items-corte-'.$horarioAsignado->id.'-'.$corte->id;
+            @endphp
+            <div class="accordion-item border rounded mb-4" wire:key="{{ $panelCorte }}">
+                <h2 class="accordion-header" id="titulo-{{ $panelCorte }}">
+                    <button class="accordion-button {{ $loop->first ? '' : 'collapsed' }}" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#{{ $panelCorte }}"
+                        aria-expanded="{{ $loop->first ? 'true' : 'false' }}" aria-controls="{{ $panelCorte }}" wire:ignore.self>
+                        <span class="d-flex flex-wrap align-items-center gap-2 w-100 pe-3">
+                            <span class="fw-semibold">{{ $corte->corteEscuela->nombre ?? 'Corte sin nombre' }}</span>
+                            <span class="badge rounded-pill bg-label-primary">{{ $itemsDelCorte->count() }} {{ $itemsDelCorte->count() === 1 ? 'ítem' : 'ítems' }}</span>
+                            <span class="badge rounded-pill bg-label-info">Corte: {{ $corte->porcentaje }}%</span>
+                            <small class="text-muted ms-md-auto">Suma de ítems: {{ $itemsDelCorte->sum('porcentaje') }}%</small>
                         </span>
                     </button>
                 </h2>
-                <div id="collapse{{ $corte->id }}" class="accordion-collapse collapse show" aria-labelledby="heading{{ $corte->id }}" data-bs-parent="#accordionCortes">
-                    <div class="accordion-body">
+                <div id="{{ $panelCorte }}" class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}"
+                    aria-labelledby="titulo-{{ $panelCorte }}" wire:ignore.self>
+                    <div class="accordion-body pt-4">
 
                         <div class="mb-3 text-end">
-                            <button class="btn btn-sm btn-primary" wire:click="abrirModalCrear({{ $corte->id }})">
-                                <i class="ti ti-plus me-1"></i> Nuevo Item
+                            <button class="btn btn-sm btn-primary rounded-pill" wire:click="abrirModalCrear({{ $corte->id }})">
+                                <i class="ti ti-plus me-1"></i> Nuevo ítem
                             </button>
                         </div>
 
-                        <div class="row">
+                        <div class="row equal-height-row">
 
-                            @forelse($itemsPorCorte[$corte->id] as $item)
-                                <div class="col-md-4 mb-3">
-                                    <div class="card h-100 border-start border-3 border-{{ $item->visible ? 'success' : 'secondary' }}">
+                            @forelse ($itemsDelCorte as $item)
+                                <div class="col-lg-4 col-md-6 col-12 mb-3 equal-height-col" wire:key="item-evaluacion-{{ $item->id }}">
+                                    <div class="card h-100 shadow rounded border-start border-3 border-{{ $item->visible ? 'success' : 'secondary' }}">
                                         <div class="card-body p-3">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                 <h6 class="card-title fw-bold mb-0 text-truncate" title="{{ $item->nombre }}">
@@ -121,7 +129,11 @@
                     </div>
                 </div>
             </div>
-        @endforeach
+        @empty
+            <div class="alert alert-secondary text-center" role="alert">
+                <i class="ti ti-info-circle me-2"></i> No hay cortes configurados para este periodo.
+            </div>
+        @endforelse
     </div>
 
     <!-- Modal Crear -->

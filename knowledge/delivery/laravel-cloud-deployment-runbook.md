@@ -11,25 +11,76 @@ domains:
   - usuarios
   - roles-permisos
   - grupos
-reviewed_at: 2026-09-06
+reviewed_at: 2026-09-27
 ---
 
 # Despliegue seguro del piloto multi-tenant en Laravel Cloud
 
 ## Para qué sirve
 
+Para decisiones de lanzamiento, ambientes, responsables y migración de iglesias, consultar primero [DESPLIEGUEREDILCLOUD](DESPLIEGUEREDILCLOUD.md). Ese plan recoge las aclaraciones posteriores del responsable: el montaje de Cloud no tiene usuarios actuales y AWS de Manantial es independiente. Las referencias a «producción» en el inventario histórico siguiente describen la configuración observada entonces, no acreditan uso productivo actual ni describen AWS/cPanel.
+
 Este documento es una lista operativa para publicar cambios de Usuarios, Roles/Permisos y Grupos sin dejar migraciones, documentación o evidencia “en el aire”. No autoriza desplegar ni habilitar recursos; cada ejecución productiva necesita un responsable y una ventana aprobada.
 
-## Estado actual que condiciona el procedimiento
+## Evidencia histórica y verificación del ambiente
+
+Los siguientes puntos proceden del inventario del **2026-09-06**, no de una inspección actual. La revisión del **2026-09-27** contrasta documentación oficial; no accedió al panel ni modificó recursos. Reconfirmar los puntos relevantes antes de operar:
 
 - Producción se despliega manualmente desde `main`.
 - Cloud construye dependencias y assets, pero no ejecuta pruebas.
 - El deploy migra primero la base central y después todos los schemas tenant.
-- Preview Environments no están incluidos en el plan.
+- En aquella revisión se registró que Preview Environments no estaba disponible en la cuenta. La documentación actual los ofrece en todos los planes; confirmar disponibilidad y configuración en la cuenta, sin asumir que ya están habilitados.
 - PostgreSQL no tiene copias administradas ni restauración puntual.
 - Scheduler está apagado y no hay procesos de fondo.
 
 Por estas condiciones, **no debe probarse por primera vez una migración en producción**. Antes del próximo cambio con base de datos se necesita un staging aislado o, como mínimo transitorio, PostgreSQL local con dos tenants y la misma versión de motor.
+
+En cada revisión registrar ambiente, fecha, fuente, resultado y responsable. Conservar los hallazgos históricos como evidencia y documentar su resolución por separado. La existencia de una capacidad en Cloud no demuestra su activación en REDIL.
+
+## Reglas de Cloud que condicionan el desarrollo
+
+Documentación consultada el **2026-09-27**; verificar de nuevo antes de aplicar cambios operativos.
+
+### Build y deploy no son intercambiables
+
+- `config:cache` y `optimize`, cuando se utilicen, van en build, no en deploy.
+- Los cambios de filesystem hechos por comandos de deploy no persisten en la aplicación; no usar esa fase para generar archivos necesarios en ejecución.
+- Build y comandos de deploy tienen un límite de 15 minutos cada uno. Estimar el conjunto de migraciones central/tenant; si no cabe con margen, diseñar un procedimiento por etapas antes de publicar.
+- No añadir por rutina `queue:restart`, `horizon:terminate`, `optimize:clear` o `storage:link` a los comandos de deploy: Cloud documenta su gestión automática o advierte que son inadecuados allí.
+
+Fuente: [Environments](https://laravel.com/cloud/docs/environments). No reutilizar cachés compiladas de producción en desarrollo: en este repositorio se observaron rutas locales cacheadas hacia `/home/redil2024/public_html`; su corrección es una tarea aparte, no una instrucción para borrar cachés productivas.
+
+### Preview aislada y aprobada
+
+Cloud anuncia previews en todos los planes; Starter incluye una automatización por organización. Sus recursos generan consumo. Confirmar acceso y presupuesto antes de habilitarla. Elegir base, caché y almacenamiento aislados: Cloud también permite compartir recursos del ambiente objetivo, lo que no es apropiado para ensayar migraciones sobre producción.
+
+Las automatizaciones actuales definen sus propias variables; no heredan automáticamente las del ambiente objetivo. Comprobar aparte dominio central, resolución de tenants, cookies e integraciones externas de REDIL. Usar datos sintéticos y credenciales de prueba; el aislamiento de ambientes no sustituye las pruebas de aislamiento entre iglesias.
+
+Fuente: [Preview Environments](https://laravel.com/cloud/docs/preview-environments).
+
+### Scheduler, réplicas y reposo
+
+Cloud captura `schedule:list` al desplegar y puede despertar aplicaciones Laravel para ejecutar las tareas registradas. Un cambio de horario requiere nuevo despliegue para actualizar esa captura. No atribuir una tarea ausente únicamente al reposo del ambiente: comprobar primero scheduler habilitado, horario efectivo y contexto tenant.
+
+Con varias réplicas, controlar duplicación con `onOneServer()` cuando corresponda y solapamientos con `withoutOverlapping()`, usando locks compartidos. Evaluar también si la frecuencia de tareas impide volver al reposo y aumenta consumo.
+
+Fuente: [Scheduled Tasks](https://laravel.com/cloud/docs/scheduled-tasks).
+
+### Colas: compatibilidad y cambios de comportamiento
+
+El `composer.lock` comprobado el 2026-09-27 declara Laravel 12.53.0. Para Managed Queues, la documentación exige al menos 12.63.0 en la rama Laravel 12 y `aws/aws-sdk-php`. No habilitarlas sin comprobar las dependencias vigentes y probar tenant, reintentos e idempotencia.
+
+Cloud establece `QUEUE_CONNECTION=cloud` al desplegarlas: inventariar trabajos sin conexión explícita antes del cambio. Flex tiene un límite de ejecución de 90 segundos; seleccionar la alternativa adecuada para trabajos largos. Workers y Managed Queues no son configuraciones equivalentes.
+
+**Aviso fechado:** Cloud anuncia el retiro de queue clusters y de la generación anterior de managed queues para el 2026-09-30. Verificar si la cuenta utiliza alguno; el inventario histórico no demuestra uso ni descarta cambios posteriores. No convertir este aviso en una migración automática.
+
+Fuente: [Managed Queues](https://laravel.com/cloud/docs/queues).
+
+### Evidencia de errores y retención
+
+Distinguir Application logs de Access logs. Ante 4XX, consultar también Access logs; un filtro de aplicación vacío no demuestra ausencia de tráfico o fallos. Registrar intervalo, ambiente y filtros. Confirmar la retención y cuota del plan antes de depender de Cloud como archivo histórico; conservar evidencia sanitizada sin datos personales ni secretos.
+
+Fuente: [Logs](https://laravel.com/cloud/docs/logs).
 
 ## Prompt para iniciar el trabajo con Codex
 
@@ -42,6 +93,7 @@ Por estas condiciones, **no debe probarse por primera vez una migración en prod
 3. Enlazar los archivos `agente*.md`, modelos, componentes Livewire, vistas, rutas, políticas y migraciones relevantes.
 4. Escribir criterios de aceptación que incluyan tenant A, tenant B, permisos y errores.
 5. Registrar explícitamente qué módulos quedan fuera.
+6. Clasificar impacto operativo como afectado, revisado-no-afectado o pendiente de verificar. Si aplica, enlazar WI-012, WI-013 o WI-014 y anotar la evidencia requerida; documentarlo no autoriza ejecutarlo.
 
 El Work Item pasa a implementación solo cuando otra persona puede entender qué construir y cómo comprobarlo sin depender del chat original.
 
@@ -82,7 +134,7 @@ No iniciar el deploy si falta cualquiera de estos puntos:
 - responsable disponible durante despliegue y observación;
 - plan de detención/reversión escrito.
 
-Mientras backups siga en 0 días, los cambios productivos de esquema quedan **no recomendados**.
+Si se confirma que backups continúa en 0 días, o no hay evidencia de una copia recuperable, no aprobar cambios productivos de esquema hasta resolver la puerta de recuperación.
 
 ## 5. Desplegar
 
@@ -129,12 +181,13 @@ Actualizar el Work Item con commit, despliegue, migraciones, tenants procesados,
 - RPO: cuánto dato se acepta perder.
 - RTO: cuánto tiempo puede estar indisponible el servicio.
 - Responsable y suplente de despliegues e incidentes.
-- Staging aislado o alternativa formal mientras no haya Preview Environments.
+- Preview o staging aislado, con disponibilidad en la cuenta, recursos y presupuesto confirmados; alternativa local formal mientras no se habilite.
 - Política de backup de PostgreSQL y R2.
 - Estrategia de cola, scheduler, caché distribuida y alertas.
 
 ## Referencias oficiales
 
+- [Environments: build y deploy](https://laravel.com/cloud/docs/environments)
 - [Deployments](https://laravel.com/cloud/docs/deployments)
 - [Preview Environments](https://laravel.com/cloud/docs/preview-environments)
 - [Postgres](https://laravel.com/cloud/docs/resources/databases/postgres)

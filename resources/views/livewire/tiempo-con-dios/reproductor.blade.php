@@ -98,7 +98,7 @@
 
 
   <!-- Playlist -->
-  <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" style="background-color: #1C1C1E !important"  tabindex="-1" id="modalPlayList" aria-labelledby="modalPlayListLabel">
+  <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar" style="background-color: #1C1C1E !important" tabindex="-1" id="modalPlayList" aria-labelledby="modalPlayListLabel" data-bs-backdrop="false" data-bs-scroll="false">
     <div class="offcanvas-header my-1 px-8">
       <button type="button" class="btn rounded-pill btn-icon waves-effect waves-light me-5" style="background-color: #000" data-bs-dismiss="offcanvas" aria-label="Close">
         <i class="ti ti-x ti-lg"></i>
@@ -271,27 +271,58 @@
 
     });
 
-  $wire.on('cerrarModal', data => {
-    var offcanvasElement = document.getElementById(event.detail.nombreModal);
-    var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
-    offcanvas.hide();
+  $wire.on('cerrarModal', (params) => {
+    const data = Array.isArray(params) ? params[0] : params;
+    const nombreModal = data?.nombreModal;
+    if (nombreModal !== 'modalPlayList') return;
+
+    const offcanvasElement = document.getElementById('modalPlayList');
+    if (offcanvasElement) {
+      const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+      if (offcanvas) {
+        offcanvas.hide();
+      }
+    }
+
+    setTimeout(() => {
+      if (!document.querySelector('.offcanvas.show')) {
+        document.querySelectorAll('.offcanvas-backdrop').forEach(el => el.remove());
+      }
+    }, 350);
   });
 
-  $wire.on('abrirModal', data => {
-    // Agregar backdrop
+  $wire.on('abrirModal', (params) => {
+    const data = Array.isArray(params) ? params[0] : params;
+    const nombreModal = data?.nombreModal;
+    if (nombreModal !== 'modalPlayList') return;
+
+    const offcanvasElement = document.getElementById('modalPlayList');
+    if (!offcanvasElement) return;
+
+    // Limpiar backdrops anteriores
+    document.querySelectorAll('.offcanvas-backdrop').forEach(el => el.remove());
+
+    // Crear y añadir backdrop explícito
     const backdrop = document.createElement('div');
     backdrop.className = 'offcanvas-backdrop fade show';
     document.body.appendChild(backdrop);
 
-    var offcanvasElement = document.getElementById(event.detail.nombreModal);
-    var offcanvas = new bootstrap.Offcanvas(offcanvasElement, {
-      backdrop: true
+    const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement, {
+      backdrop: false,
+      scroll: false
     });
     offcanvas.show();
 
-    // Remover backdrop al cerrar
-    offcanvasElement.addEventListener('hidden.bs.offcanvas', () => {
+    // Limpiar backdrop al cerrar
+    const removerBackdrop = () => {
       backdrop.remove();
+      offcanvasElement.removeEventListener('hidden.bs.offcanvas', removerBackdrop);
+    };
+    offcanvasElement.addEventListener('hidden.bs.offcanvas', removerBackdrop);
+
+    // Cerrar al pulsar el backdrop
+    backdrop.addEventListener('click', () => {
+      offcanvas.hide();
     });
   });
 </script>

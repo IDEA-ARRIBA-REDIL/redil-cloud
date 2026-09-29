@@ -22,6 +22,9 @@ return new class extends Migration
             $table->string('imagen_ruta')->nullable();
             $table->text('instrucciones_canje')->nullable();
             $table->integer('orden')->default(0);
+            $table->text('enlace_digital')->nullable();
+            $table->boolean('visible_todos')->default(true);
+            $table->integer('genero')->default(3);
             $table->timestamps();
             $table->softDeletes();
         });

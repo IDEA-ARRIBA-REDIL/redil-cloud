@@ -711,6 +711,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // gamificacion
     Route::get('/gamificacion', [GamificacionController::class, 'index'])->name('gamificacion.index');
+    Route::get('/gamificacion/configuracion', [GamificacionController::class, 'configuracion'])->name('gamificacion.configuracion');
+    Route::get('/gamificacion/tienda', [GamificacionController::class, 'tienda'])->name('gamificacion.tienda');
 
     // Reuniones
     Route::get('/reunion/nueva', [ReunionesController::class, 'nueva'])->name('reuniones.nueva');
@@ -1182,6 +1184,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // periodos
     Route::get('/periodos/gestionar', [PeriodoController::class, 'gestionar'])->name('periodo.gestionar');
+    Route::get('/periodos/{periodo}/dashboard', \App\Http\Controllers\DashboardPeriodoController::class)->name('periodo.dashboard');
+    Route::post('/periodos/{periodo}/dashboard/materias/{materiaPeriodo}/cerrar', [\App\Http\Controllers\DashboardPeriodoController::class, 'cerrar'])->name('periodo.dashboard.cerrar-materia');
+    Route::post('/periodos/{periodo}/dashboard/materias/{materiaPeriodo}/reabrir', [\App\Http\Controllers\DashboardPeriodoController::class, 'reabrir'])->name('periodo.dashboard.reabrir-materia');
+    Route::get('/periodos/{periodo}/dashboard/materias/{materiaPeriodo}/informe', [\App\Http\Controllers\DashboardPeriodoController::class, 'informe'])->name('periodo.dashboard.informe-materia');
     Route::get('/periodos/crear', [PeriodoController::class, 'crear'])->name('periodo.crear');
     Route::get('/periodos/{periodo}/actualizar', [PeriodoController::class, 'actualizar'])->name('periodo.actualizar');
     Route::get('/periodos/{periodo}/cortes', [PeriodoController::class, 'cortes'])->name('periodo.cortes');
@@ -1269,6 +1275,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // / rueda de la vida
     Route::get('/rueda-vida/nueva', [RuedaDeLaVidaController::class, 'nueva'])->name('ruedaDeLaVida.nueva');
     Route::get('/rueda-vida/gestor', [RuedaDeLaVidaController::class, 'gestor'])->name('ruedaDeLaVida.gestor');
+    Route::get('/rueda-vida/gestionar', [RuedaDeLaVidaController::class, 'gestionar'])->name('ruedaDeLaVida.gestionar');
     Route::get('/rueda-vida/historial', [RuedaDeLaVidaController::class, 'historial'])->name('ruedaDeLaVida.historial');
     Route::get('/rueda-vida/bienvenida', [RuedaDeLaVidaController::class, 'bienvenida'])->name('ruedaDeLaVida.bienvenida');
     Route::get('/rueda-vida/finalizada', [RuedaDeLaVidaController::class, 'finalizada'])->name('ruedaDeLaVida.finalizada');

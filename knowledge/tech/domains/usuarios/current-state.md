@@ -41,6 +41,10 @@ related_domains:
 
 # Módulo de Usuarios, Roles y Permisos
 
+## Cambio en validación — WI-016 (2026-09-27)
+
+El perfil congregacional incluye un bloque de tareas de consolidación asignadas a la persona: nombre, estado actual y fecha, ordenadas por el orden de la tarea. Es solo lectura, sin enlaces de gestión ni notas/historial. Quien puede abrir el perfil puede ver el bloque, sin permisos adicionales de Consolidación o Procesos de crecimiento. Componente `App\View\Components\TareasConsolidacionPerfil`; relaciones existentes de `User`, sin cambios de esquema ni de políticas. Pruebas automatizadas verificadas; revisión visual pendiente. Ver `knowledge/delivery/work-items/in-progress/WI-016-tareas-consolidacion-perfil-type-feature.md`.
+
 > Piloto de documentación para construir una fuente de contexto por módulos. Este archivo no ejecuta código, no configura Kaddo y no reemplaza pruebas ni reglas de autorización. Su contenido debe revisarse antes de declararlo como fuente canónica.
 
 ## 1. Cómo interpretar este documento

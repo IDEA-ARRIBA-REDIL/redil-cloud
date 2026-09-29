@@ -9,7 +9,15 @@
                 </select>
             </div>
 
-            <div id="reader" style="width:100%; max-width: 500px; min-height: 250px;" class="mx-auto border rounded p-0 overflow-hidden bg-black position-relative"></div>
+            <div id="reader-container" class="position-relative mx-auto" style="max-width: 500px;">
+                <div id="reader" style="width:100%; min-height: 260px;" class="border rounded p-0 overflow-hidden bg-black"></div>
+                <div id="reader-overlay" class="position-absolute top-0 start-0 w-100 h-100 d-none flex-column justify-content-center align-items-center bg-dark bg-opacity-75 text-white rounded" style="z-index: 10;">
+                    <div class="spinner-border text-primary mb-2" role="status" style="width: 2.5rem; height: 2.5rem;">
+                        <span class="visually-hidden">Procesando...</span>
+                    </div>
+                    <span class="fw-semibold fs-6">Procesando código QR...</span>
+                </div>
+            </div>
 
             <div class="mt-3">
                 <small class="text-muted">Apunte la cámara al código QR del asistente.</small>
@@ -36,6 +44,19 @@
             const qrModalElement = document.getElementById('qrScannerModal');
             const cameraSelect = document.getElementById('camera-select');
             const readerDiv = document.getElementById('reader');
+
+            const setOverlayCargando = (mostrar) => {
+                const overlay = document.getElementById('reader-overlay');
+                if (overlay) {
+                    if (mostrar) {
+                        overlay.classList.remove('d-none');
+                        overlay.classList.add('d-flex');
+                    } else {
+                        overlay.classList.remove('d-flex');
+                        overlay.classList.add('d-none');
+                    }
+                }
+            };
 
             const loadCameras = async () => {
                 if (!cameraSelect) return;
@@ -89,7 +110,12 @@
 
                 try {
                     if (!html5QrcodeScanner) {
-                        html5QrcodeScanner = new Html5Qrcode("reader");
+                        html5QrcodeScanner = new Html5Qrcode("reader", {
+                            experimentalFeatures: {
+                                useBarCodeDetectorIfSupported: true
+                            },
+                            verbose: false
+                        });
                     }
 
                     isScanning = true;
@@ -98,11 +124,17 @@
                     await html5QrcodeScanner.start(
                         cameraSelect.value,
                         {
-                            fps: 10,
-                            qrbox: {
-                                width: 250,
-                                height: 250
-                            }
+                            fps: 20,
+                            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                                const qrboxEdge = Math.max(220, Math.floor(minEdge * 0.8));
+                                return {
+                                    width: qrboxEdge,
+                                    height: qrboxEdge
+                                };
+                            },
+                            aspectRatio: 1.0,
+                            disableFlip: false
                         },
                         (decodedText, decodedResult) => {
                             // Si ya estamos procesando o es la misma lectura inmediata, ignorar
@@ -111,6 +143,16 @@
 
                             isPausedForProcessing = true;
                             ultimaLectura = decodedText;
+
+                            // Feedback háptico en móviles si está soportado
+                            if (navigator.vibrate) {
+                                try {
+                                    navigator.vibrate(80);
+                                } catch (e) {}
+                            }
+
+                            // Feedback visual inmediato en el contenedor de cámara
+                            setOverlayCargando(true);
 
                             // Pausamos el escáner para evitar lecturas duplicadas mientras el backend responde
                             try {
@@ -126,11 +168,11 @@
                                 qrText: decodedText
                             });
 
-                            // Limpiar ultimaLectura después de 3 segundos
+                            // Limpiar timer previo y renovar
                             clearTimeout(timerLectura);
                             timerLectura = setTimeout(() => {
                                 ultimaLectura = null;
-                            }, 3000);
+                            }, 5000);
                         },
                         (errorMessage) => {
                             // Ignorar frames sin detección
@@ -140,6 +182,7 @@
                 } catch (err) {
                     isScanning = false;
                     isPausedForProcessing = false;
+                    setOverlayCargando(false);
                     console.error("Error al iniciar el scanner:", err);
                     Swal.fire({
                         title: 'Error',
@@ -150,10 +193,11 @@
             };
 
             const resumeScanner = () => {
+                setOverlayCargando(false);
                 isPausedForProcessing = false;
                 setTimeout(() => {
                     ultimaLectura = null;
-                }, 1000);
+                }, 500);
 
                 if (html5QrcodeScanner && isScanning) {
                     try {
@@ -171,6 +215,7 @@
             };
 
             const stopScanner = async () => {
+                setOverlayCargando(false);
                 if (html5QrcodeScanner && isScanning) {
                     try {
                         await html5QrcodeScanner.stop();
@@ -215,6 +260,7 @@
             //       Listeners de Livewire                                //
             // ========================================================== //
             Livewire.on('showAlert', (data) => {
+                setOverlayCargando(false);
                 const alertData = Array.isArray(data) ? data[0] : data;
                 const isInteractive = alertData.interactive ?? false;
 
@@ -223,7 +269,7 @@
                     text: alertData.text || '',
                     html: alertData.html || undefined,
                     icon: alertData.icon || 'info',
-                    timer: isInteractive ? undefined : 2000,
+                    timer: isInteractive ? undefined : 4000,
                     timerProgressBar: !isInteractive,
                     showConfirmButton: isInteractive,
                     confirmButtonText: alertData.confirmButtonText || 'Aceptar',
@@ -239,6 +285,7 @@
             });
 
             Livewire.on('showFormAlert', (data) => {
+                setOverlayCargando(false);
                 const alertData = Array.isArray(data) ? data[0] : data;
 
                 Swal.fire({
@@ -258,6 +305,7 @@
             });
 
             Livewire.on('confirmarAsistenciaConInvitados', (event) => {
+                setOverlayCargando(false);
                 const detail = Array.isArray(event) ? event[0] : event;
 
                 Swal.fire({

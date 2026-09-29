@@ -28,7 +28,7 @@ El responsable de operación detecta fallos por ambiente y tenant y puede restau
 
 ## Current behavior
 
-El dashboard muestra backups de PostgreSQL desactivados, retención 0 días y sin recuperación puntual. En el último día hubo 3.766 respuestas 4XX y 222 respuestas no erróneas, pero la vista de logs no devolvió registros. No hay Object Storage administrado; R2 es externo.
+El inventario del 2026-09-06 registró backups de PostgreSQL desactivados, retención 0 días y sin recuperación puntual. Para el día consultado hubo 3.766 respuestas 4XX y 222 respuestas no erróneas; el filtro Application logs no devolvió registros. No se observaron buckets administrados y R2 era externo. Son observaciones históricas, no una comprobación del ambiente actual. La revisión documental del 2026-09-27 no accedió al panel.
 
 ## Target behavior
 
@@ -50,13 +50,14 @@ Existe un runbook con señales mínimas, alertas responsables, retención, inven
 
 ## Scope confidence
 
-Medio: el inventario está comprobado, pero RPO/RTO, responsables, alertas y costos requieren decisión humana.
+Medio: el inventario histórico requiere reconfirmación; RPO/RTO, responsables, alertas y costos requieren decisión humana.
 
 ## Acceptance Criteria
 
 - Logs operativos incluyen tenant, request/job y resultado sin PII ni secretos.
 - Alertas cubren despliegues, comandos, clusters, colas y gasto.
 - Se documentan retención y destino de evidencia histórica.
+- El diagnóstico diferencia Application logs y Access logs, registra intervalo/ambiente/filtros y no interpreta un filtro vacío como ausencia de errores; confirmar retención y cuota actuales. Fuente: https://laravel.com/cloud/docs/logs (consulta documental 2026-09-27).
 - RPO y RTO quedan aprobados.
 - Una restauración no productiva queda ejecutada y registrada.
 

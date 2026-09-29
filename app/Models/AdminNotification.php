@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AdminNotification extends Model
 {
+    use \Stancl\Tenancy\Database\Concerns\CentralConnection;
+
     protected $table = 'admin_notifications';
 
     protected $fillable = [

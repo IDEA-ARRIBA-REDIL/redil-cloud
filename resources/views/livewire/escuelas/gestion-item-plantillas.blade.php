@@ -17,95 +17,118 @@
     {{-- Mensajes Flash de Sesión --}}
    @include('layouts.status-msn')
 
-    {{-- Listado de Ítems en Tarjetas --}}
-    <div class="row equal-height-row">
-        @forelse ($itemPlantillas as $item)
-            <div class="col equal-height-col col-lg-4 col-md-6 col-12 mb-4">
-                <div class="card h-100 shadow rounded">
-                    {{-- Botón de menú desplegable (tres puntos) --}}
-                    <div style="border-radius: 20px !important;" class="position-absolute border p-1 rounded top-0 end-0 mt-3 me-3 z-1">
-                        <div class="dropdown">
-                            <button class="btn p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="ti ti-dots-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    {{-- Opción Editar --}}
-                                    <button class="dropdown-item" type="button"
-                                        wire:click="abrirOffcanvasEditar({{ $item->id }})">
-                                        Editar
-                                    </button>
-                                </li>
-                                <li>
-                                    {{-- Opción Eliminar con confirmación JS --}}
-                                    <button class="dropdown-item" type="button"
-                                        wire:click="$dispatch('confirmar-eliminacion-item', { id: {{ $item->id }}, nombre: '{{ addslashes($item->nombre) }}' })">
-                                        Eliminar
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    {{-- Cuerpo de la tarjeta con detalles del ítem --}}
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <h5 class="card-title mb-0 flex-grow-1 text-truncate" title="{{ $item->nombre }}">
-                                {{ $item->nombre }}
-                            </h5>
-                        </div>
-                        <p class="card-text text-muted small mb-2">
-                            {{-- Muestra descripción corta o mensaje por defecto --}}
-                            {{ $item->contenido ? Str::limit($item->contenido, 80) : 'Sin descripción.' }}
-                        </p>
-                        {{-- Detalles: Corte y Tipo --}}
-                        <div class="row mb-2">
-                            <div class="col-6">
-                                <small class="text-muted d-block">Corte:</small>
-                                <span class="fw-semibold text-black ">{{ $item->corteEscuela->nombre ?? 'N/A' }}</span>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Tipo:</small>
-                                <span
-                                    class="fw-semibold text-black ">{{ $item->tipoItem->nombre ?? 'No especificado' }}</span>
-                            </div>
-                        </div>
-                        {{-- Detalles: Orden y Porcentaje --}}
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <small class="text-muted d-block">Orden:</small>
-                                <span class="fw-semibold text-black">{{ $item->orden }}</span>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Porcentaje :</small>
-                                <span class="fw-semibold text-black">{{ $item->porcentaje_sugerido ?? 'N/A' }}%</span>
-                            </div>
-                        </div>
-                        {{-- Detalles: Visible y Entregable (con badges) --}}
-                        <div class="row">
-                            <div class="col-6">
-                                <small class="text-muted d-block">Visible:</small>
-                                <span
-                                    class="badge rounded-pill {{ $item->visible_predeterminado ? 'bg-label-success' : 'bg-label-secondary' }}">
-                                    {{ $item->visible_predeterminado ? 'Sí' : 'No' }}
-                                </span>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Entregable:</small>
-                                <span
-                                    class="badge rounded-pill {{ $item->entregable_predeterminado ? 'bg-label-info' : 'bg-label-secondary' }}">
-                                    {{ $item->entregable_predeterminado ? 'Sí' : 'No' }}
-                                </span>
-                            </div>
+    {{-- Cada corte conserva su panel al actualizar las tarjetas con Livewire. --}}
+    @php
+        $itemsPorCorte = collect($itemPlantillas)->groupBy('corte_escuela_id')
+            ->sortBy(fn ($items) => $items->first()->corteEscuela->orden ?? PHP_INT_MAX);
+    @endphp
+    <div class="accordion" id="modelo-cortes-{{ $materia->id }}">
+        @forelse ($itemsPorCorte as $corteId => $itemsDelCorte)
+            @php
+                $panelCorte = 'modelo-corte-'.$materia->id.'-'.($corteId ?: 'sin-corte');
+            @endphp
+            <div class="accordion-item border rounded mb-4" wire:key="{{ $panelCorte }}">
+                <h2 class="accordion-header" id="titulo-{{ $panelCorte }}">
+                    <button type="button" class="accordion-button {{ $loop->first ? '' : 'collapsed' }}"
+                        data-bs-toggle="collapse" data-bs-target="#{{ $panelCorte }}"
+                        aria-expanded="{{ $loop->first ? 'true' : 'false' }}" aria-controls="{{ $panelCorte }}" wire:ignore.self>
+                        <span class="fw-semibold">{{ $itemsDelCorte->first()->corteEscuela->nombre ?? 'Sin corte disponible' }}</span>
+                        <span class="badge rounded-pill bg-label-primary ms-3 me-2">{{ $itemsDelCorte->count() }} {{ $itemsDelCorte->count() === 1 ? 'ítem' : 'ítems' }}</span>
+                    </button>
+                </h2>
+                <div id="{{ $panelCorte }}" class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}"
+                    aria-labelledby="titulo-{{ $panelCorte }}" wire:ignore.self>
+                    <div class="accordion-body pt-4">
+                        <div class="row equal-height-row">
+                            @foreach ($itemsDelCorte as $item)
+                                <div class="col equal-height-col col-lg-4 col-md-6 col-12 mb-4" wire:key="modelo-item-{{ $item->id }}">
+                                    <div class="card h-100 shadow rounded">
+                                        {{-- Botón de menú desplegable (tres puntos) --}}
+                                        <div style="border-radius: 20px !important;" class="position-absolute border p-1 rounded top-0 end-0 mt-3 me-3 z-1">
+                                            <div class="dropdown">
+                                                <button class="btn p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="ti ti-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        {{-- Opción Editar --}}
+                                                        <button class="dropdown-item" type="button"
+                                                            wire:click="abrirOffcanvasEditar({{ $item->id }})">
+                                                            Editar
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        {{-- Opción Eliminar con confirmación JS --}}
+                                                        <button class="dropdown-item" type="button"
+                                                            wire:click="$dispatch('confirmar-eliminacion-item', { id: {{ $item->id }}, nombre: '{{ addslashes($item->nombre) }}' })">
+                                                            Eliminar
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        {{-- Cuerpo de la tarjeta con detalles del ítem --}}
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <h5 class="card-title mb-0 flex-grow-1 text-truncate" title="{{ $item->nombre }}">
+                                                    {{ $item->nombre }}
+                                                </h5>
+                                            </div>
+                                            <p class="card-text text-muted small mb-2">
+                                                {{-- Muestra descripción corta o mensaje por defecto --}}
+                                                {{ $item->contenido ? Str::limit($item->contenido, 80) : 'Sin descripción.' }}
+                                            </p>
+                                            {{-- Detalles: Corte y Tipo --}}
+                                            <div class="row mb-2">
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Corte:</small>
+                                                    <span class="fw-semibold text-black ">{{ $item->corteEscuela->nombre ?? 'N/A' }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Tipo:</small>
+                                                    <span
+                                                        class="fw-semibold text-black ">{{ $item->tipoItem->nombre ?? 'No especificado' }}</span>
+                                                </div>
+                                            </div>
+                                            {{-- Detalles: Orden y Porcentaje --}}
+                                            <div class="row mb-3">
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Orden:</small>
+                                                    <span class="fw-semibold text-black">{{ $item->orden }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Porcentaje :</small>
+                                                    <span class="fw-semibold text-black">{{ $item->porcentaje_sugerido ?? 'N/A' }}%</span>
+                                                </div>
+                                            </div>
+                                            {{-- Detalles: Visible y Entregable (con badges) --}}
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Visible:</small>
+                                                    <span
+                                                        class="badge rounded-pill {{ $item->visible_predeterminado ? 'bg-label-success' : 'bg-label-secondary' }}">
+                                                        {{ $item->visible_predeterminado ? 'Sí' : 'No' }}
+                                                    </span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Entregable:</small>
+                                                    <span
+                                                        class="badge rounded-pill {{ $item->entregable_predeterminado ? 'bg-label-info' : 'bg-label-secondary' }}">
+                                                        {{ $item->entregable_predeterminado ? 'Sí' : 'No' }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
             </div>
         @empty
-            {{-- Mensaje si no hay ítems --}}
-            <div class="col-12">
-                <div class="alert alert-secondary text-center" role="alert">
-                    <i class="ti ti-info-circle me-2"></i> Aún no has creado plantillas de ítems para esta materia.
-                </div>
+            <div class="alert alert-secondary text-center" role="alert">
+                <i class="ti ti-info-circle me-2"></i> Aún no has creado plantillas de ítems para esta materia.
             </div>
         @endforelse
     </div>

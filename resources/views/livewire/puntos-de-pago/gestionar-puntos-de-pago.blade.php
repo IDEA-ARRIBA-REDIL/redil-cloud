@@ -186,7 +186,7 @@
                         <div class="row mt-2">
                             <div class="col-12 d-flex flex-column">
                                 <small class="text-black">Sede:</small>
-                                <small class="fw-semibold text-black ">{{ $puntoDePago->sede->nombre }}</small>
+                                <small class="fw-semibold text-black ">{{ $puntoDePago->sede?->nombre ?? 'Sin sede asignada' }}</small>
                             </div>
                         </div>
 

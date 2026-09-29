@@ -70,6 +70,14 @@ class Inscripcion extends Model
     }
 
     /**
+     * Alias de relación para compatibilidad con componentes que usan actividadCategoria.
+     */
+    public function actividadCategoria(): BelongsTo
+    {
+        return $this->categoriaActividad();
+    }
+
+    /**
      * Obtiene la compra a la que pertenece la inscripción.
      */
     public function compra(): BelongsTo

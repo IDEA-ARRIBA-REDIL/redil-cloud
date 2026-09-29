@@ -260,6 +260,36 @@ $configData = Helper::appClasses();
           </div>
           <!-- /Descripcion -->
 
+          <!-- Icono -->
+          <div class="mb-3 col-12 col-md-4">
+            <label class="form-label" for="icono">
+              Ícono representativo
+            </label>
+            <input id="icono" name="icono" placeholder="Ej: ti ti-building-church" value="{{ old('icono') }}" type="text" class="form-control" />
+            <div class="form-text">Clase del ícono Tabler (ej: <code>ti ti-building-church</code>, <code>ti ti-world</code>).</div>
+            @if($errors->has('icono'))
+            <div class="text-danger ti-12px mt-2">
+              <i class="ti ti-circle-x"></i> {{ $errors->first('icono') }}
+            </div>
+            @endif
+          </div>
+          <!-- /Icono -->
+
+          <!-- Color -->
+          <div class="mb-3 col-12 col-md-4">
+            <label class="form-label" for="color">
+              Color representativo
+            </label>
+            <input id="color" name="color" value="{{ old('color', '#138848') }}" type="color" class="form-control form-control-color w-100" />
+            <div class="form-text">Color del ícono y fondo en el login.</div>
+            @if($errors->has('color'))
+            <div class="text-danger ti-12px mt-2">
+              <i class="ti ti-circle-x"></i> {{ $errors->first('color') }}
+            </div>
+            @endif
+          </div>
+          <!-- /Color -->
+
           <!--  Tipo de id  -->
           <div class="mb-3 col-12 col-md-4">
             <label class="form-label" for="tipo_identificacion_id">

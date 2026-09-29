@@ -30,9 +30,14 @@ $configData = Helper::appClasses();
       title: "¿Estás seguro que deseas eliminar a <b>"+nombre+"</b>?",
       html: "Esta acción no es reversible.",
       icon: "warning",
-      showCancelButton: false,
+      showCancelButton: true,
       confirmButtonText: 'Si, eliminar',
-      cancelButtonText: 'Cancelar'
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        confirmButton: 'btn btn-primary me-3 waves-effect waves-light',
+        cancelButton: 'btn btn-label-secondary waves-effect waves-light'
+      },
+      buttonsStyling: false
     }).then((result) => {
       if (result.isConfirmed) {
         $('#eliminarSede').attr('action',"/sede/"+id+"/eliminar");
@@ -74,25 +79,45 @@ $configData = Helper::appClasses();
 
 @include('layouts.status-msn')
 
+@if(!$haySedeDefault)
+<div class="col-12 mt-2">
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <div class="d-flex align-items-center">
+      <i class="ti ti-alert-triangle ti-sm me-2"></i>
+      <div>
+        <strong>¡Atención!</strong> No hay configurada una sede por defecto en el sistema, por favor configúrala.
+      </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+  </div>
+</div>
+@endif
+
 
   <form id="formBuscar" class="forms-sample" method="GET" action="{{ route('sede.lista') }}">
-    <div class="row mt-5">
-      <div class="col-9 col-md-4">
+    <div class="row mt-5 g-2 align-items-center">
+      <div class="col-12 col-sm-6 col-md-4">
         <div class="input-group input-group-merge bg-white">
-          <input id="buscar" name="buscar" type="text" value="{{$buscar}}" class="form-control" placeholder="Busqueda..." aria-describedby="btnBusqueda">
+          <input id="buscar" name="buscar" type="text" value="{{$buscar}}" class="form-control" placeholder="Búsqueda..." aria-describedby="btnBusqueda">
 
           @if($buscar)
-          <span id="borrarBusquedaPorPalabra" class="input-group-text"><i class="ti ti-x"></i></span>
+          <span id="borrarBusquedaPorPalabra" class="input-group-text cursor-pointer"><i class="ti ti-x"></i></span>
           @else
           <span class="input-group-text"><i class="ti ti-search"></i></span>
           @endif
         </div>
       </div>
-      <div class="col-3 col-md-8 d-flex justify-content-end">
+      <div class="col-12 col-sm-6 col-md-3">
+        <select id="filtroDefault" name="filtro_default" class="form-select bg-white" onchange="document.getElementById('formBuscar').submit();">
+          <option value="todos" {{ $filtroDefault == 'todos' ? 'selected' : '' }}>Todas las sedes</option>
+          <option value="default" {{ $filtroDefault == 'default' ? 'selected' : '' }}>Solo sede por defecto</option>
+        </select>
       </div>
-      @if($sedes)
-      <span class="text-center py-3">{{ $sedes->total() > 1 ? $sedes->total().' Sedes' : $sedes->total().' Sede' }}  {!! $buscar ? '(Con busqueda <b>"'.$buscar.'"</b>)' : '' !!}</span>
-      @endif
+      <div class="col-12 col-md-5 d-flex justify-content-md-end justify-content-start">
+        @if($sedes)
+        <span class="py-2 text-muted">{{ $sedes->total() > 1 ? $sedes->total().' Sedes' : $sedes->total().' Sede' }} {!! $buscar ? '(Con búsqueda <b>"'.$buscar.'"</b>)' : '' !!} {!! $filtroDefault == 'default' ? '<span class="badge bg-label-primary ms-1">Por defecto</span>' : '' !!}</span>
+        @endif
+      </div>
     </div>
   </form>
 
@@ -101,14 +126,22 @@ $configData = Helper::appClasses();
   @foreach($sedes as $sede)
     <div class="col-12 col-xl-4 col-md-6">
 
-      <div class="card ">
-        <img class="card-img-top object-fit-cover" style="height: 130px;"  src="{{ $sede->foto_url }}" alt="Card imagen {{ $sede->nombre }}" />
-        <div class="card-header">
+      <div class="card h-100 {{ $sede->default ? 'border border-2 border-primary shadow-sm' : '' }}">
+        <div class="position-relative">
+          <img class="card-img-top object-fit-cover" style="height: 130px;" src="{{ $sede->foto_url }}" alt="Card imagen {{ $sede->nombre }}" />    
+        </div>
+        <div class="card-header pb-2">
           <div class="d-flex justify-content-between">
             <div class="d-flex align-items-start">
               <div class="me-2 mt-1">
-                <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $sede->tipo ? $sede->tipo->nombre : 'No definido'}}</h5>
+                <div class="d-flex align-items-center gap-2">
+                  <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $sede->tipo ? $sede->tipo->nombre : 'No definido'}}</h5>
+                 
+                </div>
                 <div class="client-info fw-semibold text-black">{{ $sede->nombre }}</div>
+                 @if($sede->default)
+                    <span class="badge bg-label-primary rounded-pill"><i class="ti ti-star-filled ti-xs me-1"></i> Default</span>
+                  @endif
               </div>
             </div>
             <div class="ms-auto">

@@ -1,83 +1,75 @@
 # Módulo: Rueda de la Vida (RDV)
 
-Este documento describe la arquitectura completa, la base de datos, el flujo de usuario y los modelos del módulo "Rueda de la Vida".
+Este documento describe la arquitectura completa, la base de datos, el flujo de usuario, el panel administrativo y los modelos del módulo "Rueda de la Vida" en REDIL Cloud.
 
 ---
 
 ## 1. Propósito del Módulo
 
-La **Rueda de la Vida** es una herramienta de autodiagnóstico espiritual y de hábitos. El usuario califica sus hábitos en distintas áreas de su vida (del 1 al 10), obtiene promedios por sección, visualiza su estado general mediante gráficos polares (ApexCharts), y luego escribe sus metas y hábitos a mejorar. El resultado queda guardado en el historial del usuario.
+La **Rueda de la Vida** es una herramienta de autodiagnóstico espiritual y de hábitos en REDIL Cloud. El usuario:
+1. Califica sus hábitos en distintas áreas de su vida (del 0 al 10).
+2. Visualiza su estado general mediante gráficos polares interactivos (ApexCharts) por área y en un consolidado general.
+3. Establece metas dinámicas vinculadas a las áreas evaluadas y hábitos de mejora concretos.
+4. Consulta su historial de evaluaciones previas.
+5. **Realiza seguimiento periódico de sus hábitos**: registra avances por período (ej. cada 30 días) para medir su evolución a lo largo del tiempo.
+6. **Administración amigable**: la iglesia cuenta con un panel administrativo Livewire para gestionar áreas (secciones) y hábitos (campos) sin manipular la base de datos.
 
 ---
 
 ## 2. Arquitectura de Base de Datos
 
-### 2.1 Tablas Principales
+### 2.1 Tablas Activas del Módulo
 
 #### `tipos_seccion_rv` — Tipos de sección
 Define los comportamientos posibles de cada sección del formulario.
 
-| Campo       | Tipo    | Descripción                                      |
-|-------------|---------|--------------------------------------------------|
-| `nombre`    | string  | `contador`, `promedios`, `encuesta`              |
-| `min`       | int     | Valor mínimo permitido                           |
-| `max`       | int     | Valor máximo permitido (por defecto 10)          |
-| `validacion`| bool    | Si la sección tiene validación                   |
-| `resumen`   | bool    | Si la sección muestra un resumen                 |
-| `encuesta`  | bool    | Si la sección es tipo encuesta (metas/hábitos)   |
-| `url_imagen`| string  | Imagen asociada (nullable)                        |
+| Campo        | Tipo    | Descripción                                      |
+|--------------|---------|--------------------------------------------------|
+| `nombre`     | string  | `contador` (1), `promedios` (2), `encuesta` (3)  |
+| `min`        | int     | Valor mínimo permitido (0)                       |
+| `max`        | int     | Valor máximo permitido (10)                      |
+| `validacion` | bool    | Si la sección tiene validación                   |
+| `resumen`    | bool    | Si la sección muestra un resumen                 |
+| `encuesta`   | bool    | Si la sección es tipo encuesta (metas/hábitos)   |
 
-#### `secciones_rv` — Secciones del formulario
-Cada sección corresponde a un paso en el wizard de la Rueda de la Vida. Tiene SoftDeletes.
+#### `secciones_rv` — Secciones del formulario (Áreas de Vida)
+Cada sección corresponde a un paso en el wizard de la Rueda. Tiene SoftDeletes.
 
-| Campo                      | Descripción                                        |
-|----------------------------|----------------------------------------------------|
-| `titulo_barra`             | Texto del navbar                                   |
-| `tipo_seccion_id`          | FK a `tipos_seccion_rv`                            |
-| `icono`                    | Clase de ícono Tabler (ej. `ti ti-cloud-heart`)    |
-| `orden`                    | Orden de aparición en el wizard                    |
-| `titulo_steper`            | Subtítulo del paso                                 |
-| `nombre_seccion`           | Nombre visible de la sección                       |
-| `subtitulo_seccion`        | Texto descriptivo                                  |
-| `color`                    | Color hexadecimal de la sección                    |
-| `promedio_minimo`          | Valor mínimo esperado de promedio (ej. 6)         |
-| `max`                      | Valor máximo del input (heredado de tipo_seccion)  |
-| `label_*`                  | Labels configurables para botones y promedios      |
+| Campo              | Descripción                                           |
+|--------------------|-------------------------------------------------------|
+| `titulo_barra`     | Texto del navbar                                      |
+| `tipo_seccion_id`  | FK a `tipos_seccion_rv`                               |
+| `icono`            | Clase de ícono Tabler (ej. `ti ti-cloud-heart`)       |
+| `orden`            | Orden de aparición en el wizard                       |
+| `titulo_steper`    | Subtítulo del paso                                    |
+| `nombre_seccion`   | Nombre visible del área (ej. Espiritual, Física, etc.)|
+| `subtitulo_seccion`| Texto descriptivo o instrucción                       |
+| `color`            | Color hexadecimal para gráficos y acentos visuales    |
+| `promedio_minimo`  | Valor mínimo esperado de promedio (ej. 6)            |
+| `min`, `max`       | Rango de calificación (0 a 10)                        |
 
-**Secciones predeterminadas (seeder):**
-1. Espiritual (`tipo_seccion_id: 1` = contador)
-2. Física (contador)
-3. Intelectual (contador)
-4. Familiar (contador)
-5. Laboral y financiero (contador)
-6. Emocional (contador)
-7. Resumen promedios (`tipo_seccion_id: 2` = promedios)
-8. Escribe tus metas y hábitos (`tipo_seccion_id: 3` = encuesta)
-
-#### `campos_seccion_rv` — Campos por sección
+#### `campos_seccion_rv` — Hábitos por Área
 Cada campo es un hábito calificable dentro de una sección tipo `contador`.
 
-| Campo          | Descripción                                              |
-|----------------|----------------------------------------------------------|
-| `nombre`       | Nombre del hábito (ej. "Oración", "Ejercicio")           |
-| `abierto`      | `true` = campo libre (el usuario escribe su propio hábito) |
-| `seccion_rv_id`| FK a `secciones_rv`                                      |
-| `orden`        | Orden del campo dentro de la sección                     |
-| `color`        | Color hexadecimal para el gráfico polar                  |
+| Campo          | Descripción                                                      |
+|----------------|------------------------------------------------------------------|
+| `nombre`       | Nombre del hábito (ej. "Oración", "Ejercicio")                   |
+| `abierto`      | `true` = campo libre (el usuario escribe su propio hábito)       |
+| `seccion_rv_id`| FK a `secciones_rv`                                              |
+| `orden`        | Orden del campo dentro del área                                  |
+| `color`        | Color hexadecimal para la serie polar de ApexCharts              |
 
-> Cada sección tipo `contador` tiene **5 campos fijos** (`abierto: false`) + **1 campo abierto** (`abierto: true`) donde el usuario escribe su propio hábito.
+#### `rueda_de_la_vida_user` — Cabecera de Evaluación
+Guarda cada ocasión en que el usuario completa su autodiagnóstico.
 
-#### `rueda_de_la_vida_user` — Registro del usuario (Modelo: `RuedaDeLaVidaUser`)
-Tabla principal que guarda cada vez que el usuario completa la Rueda.
+| Campo              | Descripción                                     |
+|--------------------|-------------------------------------------------|
+| `usuario_id`       | FK al usuario autenticado                       |
+| `fecha`            | Fecha de realización (`Y-m-d`)                  |
+| `promedio_general` | Promedio global calculado de todas las áreas    |
 
-| Campo              | Descripción                               |
-|--------------------|-------------------------------------------|
-| `usuario_id`       | FK al usuario autenticado                 |
-| `fecha`            | Fecha de realización (`Y-m-d`)            |
-| `promedio_general` | Promedio calculado de todos los promedios |
-
-#### `campo_rueda_de_la_vida` — Pivote: campos calificados
-Relaciona cada `RuedaDeLaVidaUser` con los `CampoSeccionRv` y guarda el valor dado.
+#### `campo_rueda_de_la_vida` — Pivote de Calificaciones
+Relaciona `RuedaDeLaVidaUser` con `CampoSeccionRv`.
 
 | Campo                  | Descripción                                   |
 |------------------------|-----------------------------------------------|
@@ -86,230 +78,145 @@ Relaciona cada `RuedaDeLaVidaUser` con los `CampoSeccionRv` y guarda el valor da
 | `valor`                | Valor numérico asignado (0–10)                |
 | `nombre_campo_abierto` | Texto libre si el campo es `abierto: true`    |
 
-#### `metas` — Metas del formulario de encuesta
-Las metas son las preguntas tipo texto de la sección `encuesta`. Están asociadas a una `SeccionRv` tipo encuesta.
+#### `metas_usuario_rv` — Metas Dinámicas del Usuario
+Metas creadas libremente por el usuario en el último paso del wizard.
 
-| Campo       | Descripción                         |
-|-------------|-------------------------------------|
-| `nombre`    | Nombre de la meta (ej. "Meta 1")    |
-| `requerida` | Si el campo es obligatorio          |
+| Campo                 | Descripción                                       |
+|-----------------------|---------------------------------------------------|
+| `rueda_de_la_vida_id` | FK a `rueda_de_la_vida_user`                      |
+| `seccion_rv_id`       | FK a `secciones_rv` (área de vida a la que aplica)|
+| `nombre`              | Nombre o enunciado de la meta                     |
 
-#### `meta_rueda_de_la_vida` — Pivote: respuestas a metas
-| Campo                | Descripción                     |
-|----------------------|---------------------------------|
-| `rueda_de_la_vida_id`| FK a `rueda_de_la_vida_user`    |
-| `metas_id`           | FK a `metas`                    |
-| `valor`              | Respuesta en texto del usuario  |
+#### `habitos_usuario_rv` — Hábitos de cada Meta
+Acciones concretas que el usuario define para cumplir una meta.
 
-#### `habitos_rueda_vida` — Hábitos configurados (Modelo: `HabitosRv`)
-Los hábitos son los sub-inputs de texto de cada meta en la sección encuesta.
+| Campo                 | Descripción                                |
+|-----------------------|--------------------------------------------|
+| `meta_usuario_rv_id`  | FK a `metas_usuario_rv`                    |
+| `nombre`              | Nombre o descripción del hábito            |
 
-| Campo       | Descripción                            |
-|-------------|----------------------------------------|
-| `nombre`    | Nombre del hábito                      |
-| `metas_id`  | FK a `metas`                           |
-| `requerido` | Si el campo es obligatorio             |
+#### `avance_habito_rv` — Seguimiento Periódico de Hábitos
+Registros históricos de avance para cada hábito.
 
-#### `habitos_rueda_de_la_vida` — Pivote: respuestas a hábitos
-| Campo                  | Descripción                        |
-|------------------------|------------------------------------|
-| `rueda_de_la_vida_id`  | FK a `rueda_de_la_vida_user`       |
-| `habitos_rueda_vida_id`| FK a `habitos_rueda_vida`          |
-| `valor`                | Respuesta en texto del usuario     |
+| Campo                  | Descripción                                           |
+|------------------------|-------------------------------------------------------|
+| `habito_usuario_rv_id` | FK a `habitos_usuario_rv`                             |
+| `puntaje`              | Puntaje alcanzado en el período (0–10)                |
+| `periodo_inicio`       | Fecha de inicio del período (`date`)                  |
 
-#### `rueda_de_la_vida` — Tabla alternativa (Modelo: `RuedaDeLaVida`)
-> ⚠️ Existe un modelo `RuedaDeLaVida` (tabla `rueda_de_la_vida`) y un modelo `RuedaDeLaVidaUser` (tabla `rueda_de_la_vida_user`). El controlador usa **`RuedaDeLaVidaUser`** como tabla de registro activo. `RuedaDeLaVida` parece ser una versión previa/legado.
+> **Restricción de unicidad**: `['habito_usuario_rv_id', 'periodo_inicio']` garantiza que solo se registre un avance por hábito en cada ciclo.
 
-#### `configuracion_rv` — Configuración del módulo (Modelo: `ConfiguracionRv`)
-Tabla de configuración global del módulo (nombre, labels, promedio mínimo general).
+#### `configuracion_rv` — Parámetros Globales del Módulo
 
-| Campo clave             | Descripción                                          |
-|-------------------------|------------------------------------------------------|
-| `nombre_general`        | Nombre visible del módulo (ej. "Rueda de la Vida")   |
-| `label_promedio_general`| Label de promedio en vistas (ej. "Promedio")         |
-| `promedio_general`      | Valor mínimo del promedio general para marcar éxito  |
-| `nombre_habitos`        | Label del bloque de hábitos en la encuesta           |
+| Campo                    | Descripción                                                     |
+|--------------------------|-----------------------------------------------------------------|
+| `nombre_general`         | Nombre visible del módulo (ej. "Rueda de la Vida")              |
+| `label_promedio_general` | Label para el promedio en vistas (ej. "Promedio")               |
+| `promedio_general`       | Valor mínimo del promedio para resaltar éxito (ej. 6)           |
+| `nombre_habitos`         | Label del bloque de hábitos en la encuesta                      |
+| `max_metas`              | Máximo de metas permitidas por usuario en cada rueda            |
+| `max_habitos_por_meta`   | Máximo de hábitos permitidos por meta                           |
+| `periodicidad`           | Frecuencia en días entre evaluaciones de avance (default 30)    |
 
 ---
 
-## 3. Modelos y Relaciones
+## 3. Modelos y Relaciones Eloquent
 
 ```
 RuedaDeLaVidaUser
-  ├── campos()     → BelongsToMany(CampoSeccionRv)  via campo_rueda_de_la_vida
-  │                   withPivot: valor, nombre_campo_abierto
-  ├── metas()      → BelongsToMany(Metas)            via meta_rueda_de_la_vida
-  │                   withPivot: valor, withTimestamps
-  └── habitos()    → BelongsToMany(HabitosRv)        via habitos_rueda_de_la_vida
-                      withPivot: valor, withTimestamps
+  ├── campos()       → BelongsToMany(CampoSeccionRv, 'campo_rueda_de_la_vida')
+  │                     withPivot: valor, nombre_campo_abierto
+  └── metasUsuario() → HasMany(MetaUsuarioRv, 'rueda_de_la_vida_id')
+
+MetaUsuarioRv
+  ├── ruedaDeLaVida() → BelongsTo(RuedaDeLaVidaUser, 'rueda_de_la_vida_id')
+  ├── seccion()       → BelongsTo(SeccionRv, 'seccion_rv_id')
+  └── habitos()       → HasMany(HabitoUsuarioRv, 'meta_usuario_rv_id')
+
+HabitoUsuarioRv
+  ├── meta()    → BelongsTo(MetaUsuarioRv, 'meta_usuario_rv_id')
+  └── avances() → HasMany(AvanceHabitoRv, 'habito_usuario_rv_id') (orden asc por periodo_inicio)
+
+AvanceHabitoRv
+  └── habito()  → BelongsTo(HabitoUsuarioRv, 'habito_usuario_rv_id')
 
 SeccionRv
   ├── tipoSeccion() → BelongsTo(TipoSeccionRv)
-  ├── campos()      → HasMany(CampoSeccionRv)
-  ├── metas()       → HasMany(Metas)
-  └── promedio($ruedaVidaId) → Calcula promedio de campos para una rueda específica
+  └── campos()      → HasMany(CampoSeccionRv, 'seccion_rv_id') (orden asc)
 
 CampoSeccionRv
-  ├── seccion()        → BelongsTo(SeccionRv)
-  └── ruedasDeLaVida() → BelongsToMany(RuedaDeLaVida)
-
-Metas
-  ├── habitos()        → HasMany(HabitosRv)
-  └── ruedasDeLaVida() → BelongsToMany(RuedaDeLaVida)
-
-HabitosRv
-  ├── metas()          → BelongsTo(Metas)
-  └── ruedasDeLaVida() → BelongsToMany(RuedaDeLaVida)
+  └── seccion()     → BelongsTo(SeccionRv, 'seccion_rv_id')
 ```
 
 ---
 
-## 4. Rutas
+## 4. Rutas Registradas (`routes/app.php`)
 
-Definidas en `routes/app.php` (líneas 814–821), protegidas por autenticación y permiso `rueda_de_la_vida.item_rueda_de_la_vida`:
-
-| Método | URI                              | Nombre                    | Acción                      |
-|--------|----------------------------------|---------------------------|-----------------------------|
-| GET    | `/rueda-vida/gestor`             | `ruedaDeLaVida.gestor`    | Redirige a historial o bienvenida |
-| GET    | `/rueda-vida/bienvenida`         | `ruedaDeLaVida.bienvenida`| Vista de bienvenida          |
-| GET    | `/rueda-vida/nueva`              | `ruedaDeLaVida.nueva`     | Formulario wizard            |
-| PATCH  | `/rueda-vida/crear`              | `ruedaDeLaVida.crear`     | Guarda los datos del formulario |
-| GET    | `/rueda-vida/historial`          | `ruedaDeLaVida.historial` | Historial paginado del usuario |
-| GET    | `/rueda-vida/{rueda}/resumen`    | `ruedaDeLaVida.resumen`   | Detalle/resumen de una rueda |
-| GET    | `/rueda-vida/finalizada`         | `ruedaDeLaVida.finalizada`| Pantalla de éxito            |
-
----
-
-## 5. Controlador: `RuedaDeLaVidaController`
-
-### `gestor()`
-- Verifica permiso `rueda_de_la_vida.item_rueda_de_la_vida`.
-- Si el usuario tiene ruedas → redirige a `historial`.
-- Si no tiene → redirige a `bienvenida`.
-
-### `bienvenida()`
-- Muestra la pantalla de bienvenida con información y botón "Comenzar".
-- Usa `ConfiguracionRv::first()` y `Configuracion::first()`.
-
-### `nueva()`
-- Carga todas las secciones ordenadas por `orden asc`.
-- Carga secciones tipo contador (`tipo_seccion_id: 1`) con sus campos (para los gráficos polares).
-- Pasa `$maximoId` (ID de la última sección) al wizard JS.
-
-### `crear(Request $request)` — ⚠️ Lógica Central
-1. Obtiene el usuario autenticado vía rol activo.
-2. Crea el registro `RuedaDeLaVidaUser` con `promedio_general` del campo oculto `valorPromedioGeneralOculto`.
-3. Itera sobre **secciones tipo contador** y sus **campos**:
-   - Si `campo.abierto == true`: guarda `valor` + `nombre_campo_abierto`.
-   - Si no: solo guarda `valor`.
-   - Nombre del input: `campo-{campo_id}-seccion-{seccion_id}`.
-   - Nombre del texto abierto: `campo-abierto-{campo_id}-seccion{seccion_id}`.
-4. Itera sobre **metas** y guarda en `meta_rueda_de_la_vida`.
-   - Input: `inputMeta-{meta_id}`.
-5. Para cada meta, itera sobre sus **hábitos** y guarda en `habitos_rueda_de_la_vida`.
-   - Input: `inputHabitoMeta-{habito_id}`.
-6. Redirige a `ruedaDeLaVida.finalizada`.
-
-### `resumen(RuedaDeLaVidaUser $rueda)`
-- Muestra promedios por sección usando `$seccion->promedio($rueda->id)`.
-- Muestra respuestas de metas con `$rueda->metas()->wherePivot('metas_id', $meta->id)->first()`.
-- Muestra respuestas de hábitos con `$rueda->habitos()->wherePivot('habitos_rueda_vida_id', $habito->id)->first()`.
-
-### `historial()`
-- Lista paginada (10 por página) de `RuedaDeLaVidaUser` del usuario autenticado, ordenada `asc`.
+| Método | URI                               | Nombre                              | Acción / Descripción                          |
+|--------|-----------------------------------|-------------------------------------|-----------------------------------------------|
+| GET    | `/rueda-vida/gestor`              | `ruedaDeLaVida.gestor`              | Redirige a historial o bienvenida             |
+| GET    | `/rueda-vida/bienvenida`          | `ruedaDeLaVida.bienvenida`          | Pantalla de onboarding inicial                |
+| GET    | `/rueda-vida/nueva`               | `ruedaDeLaVida.nueva`               | Formulario wizard de autoevaluación           |
+| PATCH  | `/rueda-vida/crear`               | `ruedaDeLaVida.crear`               | Guarda la rueda (`DB::transaction`)           |
+| GET    | `/rueda-vida/historial`           | `ruedaDeLaVida.historial`           | Listado paginado de evaluaciones              |
+| GET    | `/rueda-vida/{rueda}/resumen`     | `ruedaDeLaVida.resumen`             | Resumen consolidado y seguimiento de avances  |
+| GET    | `/rueda-vida/finalizada`          | `ruedaDeLaVida.finalizada`          | Pantalla de éxito tras diligenciar la rueda   |
+| GET    | `/rueda-vida/gestionar`           | `ruedaDeLaVida.gestionar`           | Panel administrativo Livewire del módulo      |
+| GET    | `/rueda-vida/meta/{meta}/avances` | `ruedaDeLaVida.avancesHabitos`      | JSON: Historial de avances de una meta        |
+| POST   | `/rueda-vida/meta/{meta}/avance`  | `ruedaDeLaVida.guardarAvanceHabitos`| JSON: Guarda avances de hábitos de una meta   |
+| GET    | `/rueda-vida/habito/{habito}/avances`| `ruedaDeLaVida.avancesHabito`   | JSON: Avances y estado de un hábito           |
+| POST   | `/rueda-vida/habito/{habito}/avance` | `ruedaDeLaVida.guardarAvanceHabito`| JSON: Guarda avance de un hábito individual   |
 
 ---
 
-## 6. Vistas
+## 5. Panel Administrativo Livewire (`GestionarRuedaDeLaVida`)
 
-| Vista                     | Descripción                                             |
-|---------------------------|---------------------------------------------------------|
-| `bienvenida.blade.php`    | Pantalla split: texto + imagen de fondo (Storage global)|
-| `nueva.blade.php`         | Wizard multi-paso con gráficos ApexCharts polares      |
-| `historial.blade.php`     | Listado de ruedas completadas con promedio y fecha      |
-| `resumen.blade.php`       | Detalle de una rueda: promedios + metas + hábitos       |
-| `exitosa.blade.php`       | Pantalla de confirmación tras guardar                   |
+Ubicado en `app/Livewire/RuedaDeLaVida/GestionarRuedaDeLaVida.php` y renderizado en `rueda-vida/gestionar`.
 
-Todas extienden `layouts/blankLayout` y usan SweetAlert2 + ApexCharts via Vite.
-
----
-
-## 7. Lógica JavaScript de la Vista `nueva.blade.php`
-
-### Wizard de Pasos
-- Usa `#step-N` para mostrar/ocultar con clase `d-none`.
-- Botones `.next-step` y `.prev-step` controlan la navegación.
-- El último paso cambia el botón a `type="submit"`.
-- Se bloquea Enter excepto en el último paso.
-
-### Gráficos Polares por Sección (`#polarChart-{seccion_id}`)
-- Un gráfico ApexCharts de tipo `polarArea` por cada sección tipo `contador`.
-- Los colores vienen de `$campo->color`.
-- Al cambiar inputs, `procesarCambioInput()` actualiza el gráfico y el promedio visible.
-
-### Gráfico General (`#polarPromedioGeneral`)
-- Se actualiza al pasar de paso con `actualizarGrafico()`.
-- Lee los inputs `.promedioGeneral` (ocultos) para calcular el promedio global.
-- Actualiza `#valorPromedioGeneralOculto` (enviado en el form) y `#valorPromedioGeneralVisible`.
-
-### Validación de Rango
-- Los inputs tienen `min="0" max="{{$seccion->max}}"`.
-- La función `procesarCambioInput()` clampea el valor: `Math.max(min, Math.min(max, value))`.
+### Capacidades:
+1. **Pestaña Áreas y Hábitos**:
+   - Lista todas las secciones configuradas en formato acordeón con su color distintivo e ícono Tabler.
+   - **Crear / Editar / Eliminar / Reordenar Áreas** (`SeccionRv` tipo 1):
+     - Nombre, subtítulo, ícono, color (color picker) y promedio mínimo.
+   - **Crear / Editar / Eliminar / Reordenar Hábitos** (`CampoSeccionRv`):
+     - Configurar hábitos fijos o abiertos (donde el usuario redacta libremente).
+     - Asignar color para el gráfico polar y orden dentro del área.
+2. **Pestaña Configuración General**:
+   - Edición de `ConfiguracionRv`: nombre general, labels, promedio mínimo, límites de metas y periodicidad de avances.
+3. **Seguridad y Feedback**:
+   - Confirmaciones de eliminación con SweetAlert2 (`Swal.fire`).
+   - Alertas de éxito reactivas mediante `$this->dispatch('msn', ...)`.
 
 ---
 
-## 8. Notas y Consideraciones Importantes
+## 6. Submódulo de Seguimiento de Hábitos (`AvanceHabitoRv`)
 
-### ⚠️ Dos modelos para la misma entidad
-- `RuedaDeLaVida` → tabla `rueda_de_la_vida` (posible legado).
-- `RuedaDeLaVidaUser` → tabla `rueda_de_la_vida_user` (tabla activa usada por el controlador).
-- Las relaciones en `RuedaDeLaVida` y `RuedaDeLaVidaUser` son idénticas. Ambos usan la pivote `campo_rueda_de_la_vida`.
-
-### ⚠️ Inconsistencia en el name del campo abierto
-En el controlador `crear()`, el input del nombre abierto se lee como:
-```php
-$request->input("campo-abierto-" . $campo->id . "-seccion" . $seccion->id)
-// Falta el guión antes de "seccion"
-```
-Pero en la vista se define como:
-```html
-name="campo-abierto-{{$campo->id}}-seccion{{$seccion->id}}"
-// También sin guión (son consistentes entre sí)
-```
-
-### Configuración Multi-Tenant
-- `ConfiguracionRv::first()` — se usa en todas las vistas para leer labels y promedios mínimos.
-- Las secciones y campos son globales para todos los usuarios del tenant.
-
-### Permiso de acceso
-- Se requiere `rueda_de_la_vida.item_rueda_de_la_vida` verificado en `gestor()`.
+En la pantalla de resumen (`/rueda-vida/{rueda}/resumen`):
+- Los usuarios pueden ver sus metas y hábitos asignados.
+- Cada hábito tiene un botón *"Registrar avance"*, que abre un modal con:
+  - **Pestaña Período Actual**: Permite calificar el hábito (0 a 10) para el ciclo actual. Si ya fue evaluado, se bloquea y se muestra la fecha del próximo período.
+  - **Pestaña Historial**: Muestra una tabla con las calificaciones históricas y un gráfico ApexCharts de evolución temporal.
+- El cálculo de períodos se efectúa con:
+  `$periodosCompletos = floor($fechaCreacion->diffInDays(today()) / $periodicidad);`
+  `$periodoInicio = $fechaCreacion->copy()->addDays($periodosCompletos * $periodicidad);`
 
 ---
 
-## 9. Flujo Completo del Usuario
+## 7. Notas de Compatibilidad y Limpieza
 
-```
-Acceso a /rueda-vida/gestor
-    ↓
-¿Tiene ruedas previas?
-    ├─ Sí → /rueda-vida/historial
-    └─ No → /rueda-vida/bienvenida
-                ↓
-         Click "Comenzar"
-                ↓
-         /rueda-vida/nueva (Wizard)
-         [Paso 1–6: Secciones tipo contador]
-         → Usuario asigna valores 0–10 a cada hábito
-         → Gráfico polar se actualiza en tiempo real
-         → Se calcula promedio por sección
-         [Paso 7: Resumen promedios]
-         → Gráfico general con todos los promedios
-         [Paso 8: Encuesta metas/hábitos]
-         → Usuario escribe sus metas y hábitos de mejora
-         [Botón Guardar] → PATCH /rueda-vida/crear
-                ↓
-         /rueda-vida/finalizada
-                ↓
-         Usuario puede ver /rueda-vida/historial
-         → Click "ver mis metas" → /rueda-vida/{id}/resumen
-```
+- Las tablas `metas`, `habitos_rueda_vida`, `meta_rueda_de_la_vida`, `habitos_rueda_de_la_vida` y `rueda_de_la_vida` corresponden a la versión 1 legada. Se conservan en el schema por seguridad histórica pero no son consultadas ni alimentadas por el flujo activo.
+- El controlador `RuedaDeLaVidaController` ejecuta `crear()` bajo transacciones ACID (`DB::transaction`) y precalcula los promedios en `resumen()` en una sola consulta agrupada para eliminar problemas de N+1.
+
+---
+
+## 8. Hábitos de Campo Abierto y Visualización en Resumen
+
+- **Formulario (`nueva.blade.php`)**:
+  - Los hábitos configurados como abiertos (`abierto = true`) permiten escribir texto libre (ej: *"Intercesión"*, *"Lectura bíblica"*).
+  - Al escribir, un listener reactivo actualiza dinámicamente las etiquetas y la leyenda del gráfico ApexCharts polar en tiempo real.
+- **Persistencia (`RuedaDeLaVidaController::crear`)**:
+  - El texto personalizado se almacena en `campo_rueda_de_la_vida.nombre_campo_abierto`.
+- **Resumen (`resumen.blade.php`)**:
+  - Las tarjetas de área funcionan como acordeón interactivo que despliega los hábitos evaluados con su puntaje (/ 10) y borde de color.
+  - Para los campos abiertos, se destaca el nombre personalizado ingresado por el usuario junto a un badge distintivo `Personalizado`.
+  - Dispone de botón *"Ver hábitos / Colapsar hábitos"* para expandir todas las áreas y exportación completa en `html2canvas` al descargar resumen.

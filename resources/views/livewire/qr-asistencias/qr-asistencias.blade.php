@@ -90,7 +90,8 @@
                     title: alertData.title
                     , text: alertData.text
                     , icon: alertData.icon
-                    , timer: 2500
+                    , timer: alertData.timer || 4000
+                    , timerProgressBar: true
                     , showConfirmButton: false
                     , allowOutsideClick: false
                     , allowEscapeKey: false
@@ -140,15 +141,25 @@
                     return;
                 }
 
-                html5QrCode = new Html5Qrcode("reader");
+                html5QrCode = new Html5Qrcode("reader", {
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true
+                    },
+                    verbose: false
+                });
 
                 html5QrCode.start(
                     selectedDeviceId, {
-                        fps: 10
-                        , qrbox: {
-                            width: 250
-                            , height: 250
+                        fps: 20
+                        , qrbox: function(viewfinderWidth, viewfinderHeight) {
+                            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                            const qrboxEdge = Math.max(220, Math.floor(minEdge * 0.8));
+                            return {
+                                width: qrboxEdge
+                                , height: qrboxEdge
+                            };
                         }
+                        , aspectRatio: 1.0
                     }
                     , (decodedText) => {
                         // Detenemos el scanner primero
@@ -157,11 +168,11 @@
                             document.getElementById('reader').innerHTML = '';
 
                             // Luego llamamos a Livewire
-                            // @this.handleSuccessfulScan(decodedText);
+                            @this.handleSuccessfulScan(decodedText);
 
                             // Cerramos el modal si todo fue bien
                             const modal = bootstrap.Modal.getInstance(scannerModalEl);
-                            // if (modal) modal.hide();
+                            if (modal) modal.hide();
                         }).catch(err => {
                             console.error("Error al detener el scanner antes de procesar el resultado", err);
                         });

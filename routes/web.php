@@ -35,12 +35,14 @@ foreach ($domains as $index => $domain) {
 
         // Registro de clientes / onboarding
         Route::get('/registro', App\Livewire\Central\RegistroIglesia::class)->name('registro');
+        Route::get('/activar-cuenta', App\Livewire\Central\ActivarCuentaTenant::class)->name('activar-cuenta');
 
         // Autenticación de Super Admins
         Route::get('/admin/login', App\Livewire\Central\Auth\AdminLogin::class)->name('admin.login');
 
         // Panel Privado de Super Admins (Protegido por guard admin y suspensión)
-        Route::middleware(['auth:admin', \App\Http\Middleware\RevisarSuspensionAdmin::class])->group(function () {
+        Route::middleware([\App\Http\Middleware\RevisarSuspensionAdmin::class, 'auth:admin'])->group(function () {
+            Route::get('/admin/invitaciones', App\Livewire\Central\GestionarInvitaciones::class)->name('admin.invitaciones');
             Route::get('/admin/dashboard', App\Livewire\Central\AdminDashboard::class)->name('admin.dashboard');
             Route::get('/admin/tenants/{tenant}', App\Livewire\Central\DetalleTenant::class)->name('admin.tenants.detalle');
             Route::get('/admin/tenants/{tenant}/marca-blanca', App\Livewire\Central\MarcaBlancaTenant::class)->name('admin.tenants.marca-blanca');

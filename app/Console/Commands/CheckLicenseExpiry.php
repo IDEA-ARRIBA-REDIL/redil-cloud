@@ -31,7 +31,7 @@ class CheckLicenseExpiry extends Command
 
         foreach ($tenants as $tenant) {
             $endsAt = Carbon::parse($tenant->license_ends_at)->startOfDay();
-            $graceEndsAt = Carbon::parse($tenant->grace_ends_at)->startOfDay();
+            $graceEndsAt = Carbon::parse($tenant->grace_ends_at ?? $tenant->license_ends_at)->startOfDay();
 
             // CASO 1: Vence en exactamente 30 días
             if ($endsAt->isSameDay($today->copy()->addDays(30)) && ! $tenant->notified_30_days) {

@@ -11,7 +11,7 @@ class PermisoSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    public function run(bool $importarJson = true): void
     {
         // 1. Buscar o crear los roles que necesitaremos
         $superAdmin = Role::firstOrCreate(['name' => 'Super Administrador Prueba']);
@@ -2506,6 +2506,24 @@ class PermisoSeeder extends Seeder
             'name' => 'configuraciones.gestionar_tipos_actividad',
         ])->syncRoles([$superAdmin]);
 
+        Permission::firstOrCreate([
+            'titulo' => 'configuracion_gamificacion',
+            'descripcion' => '',
+            'name' => 'configuraciones.configuracion_gamificacion',
+        ]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'tienda_gamificacion',
+            'descripcion' => '',
+            'name' => 'configuraciones.tienda_gamificacion',
+        ]);
+
+        Permission::firstOrCreate([
+            'titulo' => 'habilitar_gamificacion',
+            'descripcion' => '',
+            'name' => 'gamificacion.habilitar_gamificacion',
+        ]);
+
         // Iglesia
         Permission::firstOrCreate([
             'titulo' => 'item_iglesia',
@@ -3005,7 +3023,9 @@ class PermisoSeeder extends Seeder
         ])->syncRoles([$superAdmin]);
 
         // Asignación de permisos a los nuevos roles provenientes de todos_tipo_usuarios.json
-        $this->asignarPermisosARolesJson();
+        if ($importarJson) {
+            $this->asignarPermisosARolesJson();
+        }
     }
 
     /**

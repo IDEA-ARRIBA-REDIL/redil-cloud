@@ -310,8 +310,11 @@
   <!-- Información principal  -->
 
   <!-- botonera -->
-  <div class="d-flex mb-1 mt-5">
-    <div class="me-auto">
+  <div class="d-flex mb-1 mt-5 gap-2">
+    <div>
+      <a href="{{ route('tema.lista') }}" class="btn btn-outline-secondary rounded-pill px-4 py-2">Volver</a>
+    </div>
+    <div>
       <button type="submit" class="btn btnGuardar btn-primary rounded-pill px-12 py-2">Guardar</button>
     </div>
   </div>

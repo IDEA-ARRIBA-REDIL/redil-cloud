@@ -626,21 +626,36 @@
             </div>
             {{-- Fin notificaciones instalación --}}
 
-              <!-- Banner de Gamificación / Perfil del Usuario -->
+            <!-- Banner de Gamificación / Perfil del Usuario -->
             @auth
+            @if ($rolActivo && $rolActivo->hasPermissionTo('gamificacion.habilitar_gamificacion'))
             <div class="col-12 my-2">
                 <a href="{{ route('gamificacion.index') }}" class="text-decoration-none">
                     <div class="card gamificacion-dashboard-card border-0 shadow-sm p-5" style="border-radius: 15px;">
-                        <div class="d-flex flex-column align-items-start gap-2">
-                            <h5 class="text-white mb-0 fw-semibold">¡Hola, {{ auth()->user()->nombre(2) }}!</h5>
-                            <div class="gamificacion-puntos-badge">
-                                <i class="ti ti-coins text-warning fs-5"></i>
-                                <span>{{ number_format(auth()->user()->puntos ?? 0) }} Puntos</span>
+                    
+
+                        <div class="d-flex">
+                        
+                            <div class="d-flex flex-column align-items-start gap-2">
+                                <h5 class="text-white mb-0 fw-semibold">¡Hola, {{ auth()->user()->nombre(2) }}!</h5>
+                                <div class="gamificacion-puntos-badge">
+                                    <i class="ti ti-coins text-warning fs-5"></i>
+                                    <span>{{ number_format(auth()->user()->puntos ?? 0) }} Puntos</span>
+                                </div>
                             </div>
+
+                            <div class="flex-grow-1 d-flex justify-content-end align-items-center">
+                                <button class="btn btn-icon rounded-pill btn-text-dark waves-effect">
+                                    <i class="ti ti-chevron-right"></i>
+                                </button>
+                            </div>
+
                         </div>
+
                     </div>
                 </a>
             </div>
+            @endif
             @endauth
 
             

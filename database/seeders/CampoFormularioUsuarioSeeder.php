@@ -498,7 +498,7 @@ class CampoFormularioUsuarioSeeder extends Seeder
             'visible_resumen' => true,
         ]);
 
-        $campo->secciones()->attach(10, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 1, 'informacion_de_apoyo' => 'Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (*, -, ., ?, &, $, #).']);
+        $campo->secciones()->attach(10, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 1, 'informacion_de_apoyo' => 'Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (@, *, -, ., ?, &, $, #).']);
 
         $campo = CampoFormularioUsuario::firstOrCreate([
             'nombre' => 'Confirmar contraseña',

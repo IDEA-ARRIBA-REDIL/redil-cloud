@@ -17,6 +17,8 @@ El orquestador solo puede seleccionar **Usuarios**, **Roles/Permisos** y **Grupo
 
 Ante una solicitud fuera de este alcance, el orquestador debe detener el enrutamiento, informar que el dominio no está habilitado y solicitar autorización antes de ampliar el piloto.
 
+Excepción autorizada para **WI-016** (2026-09-27): Usuarios puede cargar Consolidación como dependencia exclusivamente para mostrar las tareas asignadas en el perfil congregacional, en modo lectura. No habilita gestión, métricas ni otros cambios de Consolidación. Consultar `knowledge/delivery/work-items/in-progress/WI-016-tareas-consolidacion-perfil-type-feature.md`.
+
 ## 1. Objetivo
 
 Ante una solicitud de desarrollo o consulta:

@@ -16,6 +16,16 @@
     @endif
 
     <div class="row">
+        <div class="col-12 mb-3">
+            <p>Aprovisionamiento: {{ $tenant->provisioned_at ? 'Completado' : 'Pendiente o fallido' }}.</p>
+            @if($tenant->status === 'setup_failed')
+                <button wire:click="reintentarConfiguracion" wire:loading.attr="disabled" class="btn btn-outline-warning">Reintentar configuración</button>
+            @endif
+            @if($tenant->permiteAcceso() && $tenant->provisioned_at)
+                <button wire:click="enviarAccesos" wire:loading.attr="disabled" class="btn btn-primary">Enviar accesos iniciales</button>
+            @endif
+            @foreach($errors->all() as $error)<p class="text-danger">{{ $error }}</p>@endforeach
+        </div>
         <!-- User Sidebar -->
         <div class="col-xl-4 col-lg-5 col-md-5 order-1 order-md-0">
             <!-- User Card -->
@@ -100,7 +110,7 @@
                                     <option value="active">Activo</option>
                                     <option value="suspended">Suspendido</option>
                                     <option value="expired">Expirado</option>
-                                    <option value="setup_failed">Error en Configuración</option>
+                                    <option value="cancelled">Cancelado</option>
                                 </select>
                                 @error('status') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>

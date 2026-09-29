@@ -142,6 +142,13 @@
                         </div>
                         @endforelse
                     </ul>
+
+                    {{-- Paginación reactiva --}}
+                    @if ($inscritos instanceof \Illuminate\Pagination\LengthAwarePaginator && $inscritos->hasPages())
+                        <div class="mt-3 d-flex justify-content-center">
+                            {{ $inscritos->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

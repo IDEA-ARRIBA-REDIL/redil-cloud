@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Nombres de campos de la sección
         nombresCampos['seccion{{ $seccion->id }}'] = [];
         @foreach ($seccion->campos as $campo)
-            nombresCampos['seccion{{ $seccion->id }}'].push('{{ $campo->nombre }}');
+            nombresCampos['seccion{{ $seccion->id }}'].push('{{ $campo->abierto ? ($campo->nombre ?: "Hábito #" . $loop->iteration) : $campo->nombre }}');
         @endforeach
 
         // Opciones del gráfico
@@ -411,11 +411,48 @@ document.addEventListener('DOMContentLoaded', function() {
         chart = new ApexCharts(document.querySelector("#polarChart-{{ $seccion->id }}"), options);
         chart.render();
         charts.push(chart);
+        window.chartsMap = window.chartsMap || {};
+        window.chartsMap['{{ $seccion->id }}'] = chart;
     @endforeach
 
     // Inicializar los listeners de los botones
     initializeButtonListeners();
+    // Inicializar los listeners reactivos de los campos abiertos
+    initializeAbiertoListeners();
 });
+
+// Función para inicializar los listeners de los campos abiertos y actualizar el gráfico en tiempo real
+function initializeAbiertoListeners() {
+    const inputsAbiertos = document.querySelectorAll('.abierto');
+    inputsAbiertos.forEach(input => {
+        input.addEventListener('input', function() {
+            const seccionId = this.dataset.seccion;
+            const orden = parseInt(this.dataset.orden) || 0;
+            const rowContenedor = this.closest('.row.p-2');
+            if (!rowContenedor) return;
+
+            const seccionCol = rowContenedor.closest('.col-lg-5');
+            if (!seccionCol) return;
+
+            const allRows = Array.from(seccionCol.querySelectorAll('.row.p-2'));
+            const indice = allRows.indexOf(rowContenedor);
+
+            if (indice !== -1 && nombresCampos['seccion' + seccionId]) {
+                const fallback = 'Hábito #' + (orden > 0 ? orden : (indice + 1));
+                const nuevoTexto = this.value.trim() || fallback;
+                nombresCampos['seccion' + seccionId][indice] = nuevoTexto;
+
+                const chart = (window.chartsMap && window.chartsMap[seccionId])
+                    || charts.find(c => c.el && c.el.id === `polarChart-${seccionId}`);
+                if (chart) {
+                    chart.updateOptions({
+                        labels: [...nombresCampos['seccion' + seccionId]]
+                    });
+                }
+            }
+        });
+    });
+}
   </script>
 
   <script>
@@ -698,12 +735,18 @@ document.addEventListener('DOMContentLoaded', function() {
                               @if($campo->abierto == false)
                               <span class="label text-mobile fw-normal">{{$campo->nombre}}</span>
                               @else
-                              <input style=" width: 150px;
+                              <input style=" width: 180px;
                                       border: none;
                                       border-bottom: solid 1px #d8d8d8;
                                       border-radius: 0px;"
-                              class="abierto" id="campo-{{$campo->id}}-seccion-{{$seccion->id}}" name="campo-abierto-{{$campo->id}}-seccion{{$seccion->id}}"
-                              type="text" placeholder="Ingresa tu habito">
+                              class="abierto"
+                              id="campo-abierto-{{$campo->id}}-seccion-{{$seccion->id}}"
+                              name="campo-abierto-{{$campo->id}}-seccion{{$seccion->id}}"
+                              data-seccion="{{ $seccion->id }}"
+                              data-campo="{{ $campo->id }}"
+                              data-orden="{{ $loop->iteration }}"
+                              type="text"
+                              placeholder="Ingresa tu hábito">
                               @endif
                           </div>
                        </div>

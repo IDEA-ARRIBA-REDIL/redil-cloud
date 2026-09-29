@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Mail\MateriaFinalizadaMail;
 use App\Models\MateriaPeriodo;
 use App\Models\User;
+use App\Services\GestionCierreMateriaService;
 use App\Services\ServicioValidacionMateriaPeriodo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -29,16 +30,23 @@ class FinalizarMateriaJob implements ShouldQueue
 
     protected int $alumnosPorPagina;
 
-    public function __construct(MateriaPeriodo $materiaPeriodo, User $initiatingUser, int $paginaActual = 1, int $alumnosPorPagina = 200)
+    protected ?string $tokenCierre = null;
+
+    public function __construct(MateriaPeriodo $materiaPeriodo, User $initiatingUser, int $paginaActual = 1, int $alumnosPorPagina = 200, ?string $tokenCierre = null)
     {
         $this->materiaPeriodo = $materiaPeriodo;
         $this->initiatingUser = $initiatingUser;
         $this->paginaActual = $paginaActual;
         $this->alumnosPorPagina = $alumnosPorPagina;
+        $this->tokenCierre = $tokenCierre;
     }
 
     public function handle(ServicioValidacionMateriaPeriodo $servicioValidacion): void
     {
+        $gestion = app(GestionCierreMateriaService::class);
+        if ($this->tokenCierre !== null && ! $gestion->vigente($this->materiaPeriodo->id, $this->tokenCierre)) {
+            return;
+        }
 
         Log::info("Iniciando Job 4444 de Finalización para MateriaPeriodo ID: {$this->materiaPeriodo->id} - Lote: {$this->paginaActual}");
 
@@ -47,13 +55,16 @@ class FinalizarMateriaJob implements ShouldQueue
 
             if ($alumnosProcesados > 0) {
                 Log::info("Lote {$this->paginaActual} completado. Despachando siguiente lote...");
-                self::dispatch($this->materiaPeriodo, $this->initiatingUser, $this->paginaActual + 1, $this->alumnosPorPagina);
+                self::dispatch($this->materiaPeriodo, $this->initiatingUser, $this->paginaActual + 1, $this->alumnosPorPagina, $this->tokenCierre);
             } else {
                 Log::info("Proceso de finalización COMPLETO  333 para MateriaPeriodo ID: {$this->materiaPeriodo->id}");
                 // CAMBIO 2026-09-03: La materia se marca finalizada solo después de que
                 // todos sus lotes académicos fueron procesados correctamente.
                 $this->materiaPeriodo->finalizado = true;
                 $this->materiaPeriodo->save();
+                if ($this->tokenCierre !== null) {
+                    $gestion->terminar($this->materiaPeriodo->id, $this->tokenCierre);
+                }
 
                 $adminEmail = 'idea.arriba@gmail.com';
                 if ($adminEmail) {
@@ -63,8 +74,18 @@ class FinalizarMateriaJob implements ShouldQueue
                 }
             }
         } catch (Throwable $e) {
+            if ($this->tokenCierre !== null) {
+                $gestion->terminar($this->materiaPeriodo->id, $this->tokenCierre, true);
+            }
             Log::error("Job FinalizarMateriaJob FALLÓ para MateriaPeriodo ID: {$this->materiaPeriodo->id}. Error: {$e->getMessage()}");
             $this->fail($e);
+        }
+    }
+
+    public function failed(?Throwable $error): void
+    {
+        if ($this->tokenCierre !== null) {
+            app(GestionCierreMateriaService::class)->terminar($this->materiaPeriodo->id, $this->tokenCierre, true);
         }
     }
 }

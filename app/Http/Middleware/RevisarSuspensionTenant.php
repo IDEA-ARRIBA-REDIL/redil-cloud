@@ -14,6 +14,11 @@ class RevisarSuspensionTenant
         $tenant = tenant();
 
         if ($tenant) {
+            if ($request->hasSession()) {
+                $sessionTenant = $request->session()->get('_tenant_id');
+                abort_if($sessionTenant !== null && $sessionTenant !== $tenant->getTenantKey(), 403);
+                $request->session()->put('_tenant_id', $tenant->getTenantKey());
+            }
             Log::withContext([
                 'tenant_id' => $tenant->id,
             ]);
@@ -23,7 +28,7 @@ class RevisarSuspensionTenant
             }
 
             // Verificar estado suspendido (ya sea por columna is_suspended o status)
-            if ($tenant->is_suspended || $tenant->status === 'suspended') {
+            if (! $tenant->permiteAcceso()) {
                 return response(view('errors.tenant-suspended'), 403);
             }
         }

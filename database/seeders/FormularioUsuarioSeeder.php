@@ -64,6 +64,8 @@ class FormularioUsuarioSeeder extends Seeder
 
         FormularioUsuario::firstOrCreate([
             'nombre' => 'Formulario nuevo externo',
+            'icono' => 'ti ti-building-church',
+            'color' => '#09b456ff',
             'titulo' => 'Inscripción',
             'label' => 'Registrarte',
             'descripcion' => 'Es formulario es para agregar los nuevos sin logueo',

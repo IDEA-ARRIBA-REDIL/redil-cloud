@@ -469,42 +469,77 @@
       </div>
     </div>
   </div>
-  <!--/ Header -->
+  <!--/ Header --> 
 
   @if($configuracion->vista_perfil_usuario_clasica==false)
   <!-- Navbar pills -->
   <div class="row">
     <div class="col-md-12">
-      <div class="card mb-10 p-1 border-1">
-        <ul class="nav nav-pills justify-content-start flex-column flex-md-row  gap-2">
+      <div class="card mb-4 p-1 border" style="overflow: hidden;">
+        <ul class="nav nav-pills nav-profile-slider flex-row flex-nowrap gap-2 m-0 p-0" style="display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; overflow-y: hidden !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; width: 100%; max-width: 100%;">
           @can('verPerfilUsuarioPolitica', [$usuario, 'principal'])
-          <li class="nav-item flex-fill"><a id="tap-principal" href="{{ route('usuario.perfil', $usuario) }}" class="nav-link p-3 waves-effect waves-light active" data-tap="principal"><i class='ti-xs ti ti-user-check me-2'></i> Principal</a></li>
+          <li class="nav-item flex-shrink-0 flex-xl-fill"><a id="tap-principal" href="{{ route('usuario.perfil', $usuario) }}" class="nav-link p-3 waves-effect waves-light active text-nowrap" data-tap="principal"><i class='ti-xs ti ti-user-check me-2'></i> Principal</a></li>
           @endcan
 
           @can('verPerfilUsuarioPolitica', [$usuario, 'familia'])
-          <li class="nav-item flex-fill"><a id="tap-familia" href="{{ route('usuario.perfil.familia', $usuario) }}" class="nav-link p-3 waves-effect waves-light"  data-tap="familia"><i class='ti-xs ti ti-home-heart me-2'></i> Familia</a></li>
+          <li class="nav-item flex-shrink-0 flex-xl-fill"><a id="tap-familia" href="{{ route('usuario.perfil.familia', $usuario) }}" class="nav-link p-3 waves-effect waves-light text-nowrap" data-tap="familia"><i class='ti-xs ti ti-home-heart me-2'></i> Familia</a></li>
           @endcan
 
           @can('verPerfilUsuarioPolitica', [$usuario, 'congregacion'])
-          <li class="nav-item flex-fill"><a id="tap-congregacion" href="{{ route('usuario.perfil.congregacion', $usuario) }}" class="nav-link p-3 waves-effect waves-light" data-tap="congregacion"><i class='ti-xs ti ti-building-church me-2'></i> Congregación</a></li>
+          <li class="nav-item flex-shrink-0 flex-xl-fill"><a id="tap-congregacion" href="{{ route('usuario.perfil.congregacion', $usuario) }}" class="nav-link p-3 waves-effect waves-light text-nowrap" data-tap="congregacion"><i class='ti-xs ti ti-building-church me-2'></i> Congregación</a></li>
           @endcan
 
           @can('verPerfilUsuarioPolitica', [$usuario, 'escuelas'])
-          <li class="nav-item flex-fill"><a id="tap-otro1" href="{{ route('usuario.historial-escuelas', $usuario) }}" class="nav-link p-3 waves-effect waves-light" data-tap="escuelas"><i class='ti-xs ti ti-school me-2'></i> Escuelas</a></li>
+          <li class="nav-item flex-shrink-0 flex-xl-fill"><a id="tap-otro1" href="{{ route('usuario.historial-escuelas', $usuario) }}" class="nav-link p-3 waves-effect waves-light text-nowrap" data-tap="escuelas"><i class='ti-xs ti ti-school me-2'></i> Escuelas</a></li>
           @endcan
 
           @can('verPerfilUsuarioPolitica', [$usuario, 'financiera'])
-          <li class="nav-item flex-fill"><a id="tap-otro2"href="javascript:void(0);" class="nav-link p-3 waves-effect waves-light" data-tap="otro2"><i class='ti-xs ti ti-report-money me-2'></i> Financiera</a></li>
+          <li class="nav-item flex-shrink-0 flex-xl-fill"><a id="tap-otro2" href="javascript:void(0);" class="nav-link p-3 waves-effect waves-light text-nowrap" data-tap="otro2"><i class='ti-xs ti ti-report-money me-2'></i> Financiera</a></li>
           @endcan
 
           @can('verPerfilUsuarioPolitica', [$usuario, 'hitos'])
-          <li class="nav-item flex-fill"><a id="tap-otro3"href="javascript:void(0);" class="nav-link p-3 waves-effect waves-light" data-tap="otro3"><i class='ti-xs ti ti-album me-2'></i> Hitos</a></li>
+          <li class="nav-item flex-shrink-0 flex-xl-fill"><a id="tap-otro3" href="javascript:void(0);" class="nav-link p-3 waves-effect waves-light text-nowrap" data-tap="otro3"><i class='ti-xs ti ti-album me-2'></i> Hitos</a></li>
           @endcan
         </ul>
       </div>
     </div>
   </div>
   <!--/ Navbar pills -->
+
+  <style>
+    .nav-profile-slider::-webkit-scrollbar { display: none; }
+    .nav-profile-slider .nav-link { white-space: nowrap !important; }
+    @media (max-width: 1199.98px) {
+      .nav-profile-slider .nav-item { flex: 0 0 auto !important; }
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const slider = document.querySelector('.nav-profile-slider');
+      if (!slider) return;
+      const activeTab = slider.querySelector('.nav-link.active');
+      if (activeTab) {
+        setTimeout(() => {
+          activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }, 150);
+      }
+      let isDown = false, startX, scrollLeft;
+      slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+      });
+      slider.addEventListener('mouseleave', () => { isDown = false; });
+      slider.addEventListener('mouseup', () => { isDown = false; });
+      slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        slider.scrollLeft = scrollLeft - (x - startX) * 1.5;
+      });
+    });
+  </script>
   @endif
 
   <!-- Principal-->

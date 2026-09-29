@@ -25,20 +25,96 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label fecha-picker" for="fecha">Fecha</label>
-                     <input type="text" id="fecha" class="form-control fecha-picker" wire:model.live="fecha"
-                        placeholder="YYYY-MM-DD" />
-                </div>
-            </div>
-             <div class="col-12 text-end mt-5">
-                        
-                        <button wire:click="exportarExcel" class="btn btn-outline-secondary" title="Exportar Excel">
-                            <i class="ti ti-file-spreadsheet"></i> Exportar
+                <div class="col-12 col-md-6" wire:ignore x-data="{
+                    fp: null,
+                    init() {
+                        this.fp = flatpickr(this.$refs.picker, {
+                            mode: 'range',
+                            dateFormat: 'Y-m-d',
+                            altInput: true,
+                            altFormat: 'd M, Y',
+                            locale: {
+                                rangeSeparator: ' a ',
+                                firstDayOfWeek: 1,
+                                weekdays: {
+                                    shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'],
+                                    longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                                },
+                                months: {
+                                    shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                                    longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                                },
+                            },
+                            defaultDate: ['{{ $fechaInicio }}', '{{ $fechaFin }}'],
+                            onClose: (selectedDates, dateStr, instance) => {
+                                if (selectedDates.length === 2) {
+                                    const start = instance.formatDate(selectedDates[0], 'Y-m-d');
+                                    const end = instance.formatDate(selectedDates[1], 'Y-m-d');
+                                    $wire.set('fechaInicio', start);
+                                    $wire.set('fechaFin', end);
+                                } else if (selectedDates.length === 1) {
+                                    const start = instance.formatDate(selectedDates[0], 'Y-m-d');
+                                    $wire.set('fechaInicio', start);
+                                    $wire.set('fechaFin', start);
+                                } else if (selectedDates.length === 0) {
+                                    $wire.set('fechaInicio', '');
+                                    $wire.set('fechaFin', '');
+                                }
+                            }
+                        });
+
+                        Livewire.on('restablecerFechas', ({ inicio, fin }) => {
+                            if (this.fp) {
+                                this.fp.setDate([inicio, fin], true);
+                            }
+                        });
+
+                        Livewire.on('limpiarFlatpickr', () => {
+                            if (this.fp) {
+                                this.fp.clear();
+                            }
+                        });
+                    },
+                    limpiar() {
+                        if (this.fp) {
+                            this.fp.clear();
+                        }
+                        $wire.set('fechaInicio', '');
+                        $wire.set('fechaFin', '');
+                    },
+                    restablecerMesActual() {
+                        $wire.restablecerMesActual();
+                    }
+                }">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="form-label" for="rangoFecha">Rango de fechas</label>
+                        <div class="d-flex gap-2 mb-1">
+                            <button type="button" class="btn btn-link p-0 text-primary small" style="font-size: 0.8rem; text-decoration: none;" @click="restablecerMesActual()" title="Restablecer al mes en curso">
+                                <i class="ti ti-rotate-clockwise me-1"></i>Mes actual
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="ti ti-calendar"></i></span>
+                        <input type="text" id="rangoFecha" x-ref="picker" class="form-control" placeholder="Seleccionar rango..." readonly>
+                        <button class="btn btn-outline-secondary" type="button" @click="limpiar()" title="Limpiar fechas">
+                            <i class="ti ti-x"></i>
                         </button>
                     </div>
+                </div>
+            </div>
+            <div class="col-12 text-end mt-4 d-flex justify-content-end align-items-center gap-2">
+                @if($busqueda || $puntoPagoId || $cajaId || $fechaInicio !== now()->startOfMonth()->toDateString() || $fechaFin !== now()->endOfMonth()->toDateString())
+                    <button wire:click="limpiarFiltros" type="button" class="btn btn-outline-danger" title="Restablecer todos los filtros">
+                        <i class="ti ti-filter-off"></i> Limpiar filtros
+                    </button>
+                @endif
+                <button wire:click="exportarExcel" class="btn btn-outline-secondary" title="Exportar Excel">
+                    <i class="ti ti-file-spreadsheet"></i> Exportar
+                </button>
+            </div>
         </div>
-       
+
     </div>
 
     <div class="row equal-height-row g-4">
@@ -57,12 +133,12 @@
                             <div class="d-flex flex-column">
                                 <h5 class="mb-0 fw-semibold text-black lh-sm">Compra</h5>
                                 <small class="text-dark mt-1">#{{ $modificacion->compra_id }}</small>
-                                
+
                             </div>
-                           
+
                         </div>
 
-                        
+
                     </div>
 
                     <div class="card-body">
@@ -71,7 +147,7 @@
                             <div class="d-flex flex-column col-12 col-md-6">
                                 <small class="text-dark"><i class="ti ti-calendar me-2"></i>Fecha Modificación:</small>
                                 <small class="fw-semibold text-black">{{ $modificacion->created_at->format('d-m-Y h:i A') }}</small>
-                               
+
                             </div>
                             <div class="d-flex flex-column col-12 col-md-6">
                                 <small class="text-dark"><i class="ti ti-calendar-event me-2"></i>Fecha Compra:</small>

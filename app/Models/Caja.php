@@ -4,40 +4,40 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Caja extends Model
 {
-  use HasFactory;
-  protected $table = 'cajas';
-  protected $guarded = [];
-  use SoftDeletes;
+    use HasFactory;
 
+    protected $table = 'cajas';
 
-  // ¡RELACIÓN RESTAURADA!
-  // Obtiene el cajero (usuario) que está asignado a esta caja.
-  public function usuario(): BelongsTo
-  {
-    return $this->belongsTo(User::class, 'user_id');
-  }
+    protected $guarded = [];
 
-  // Relación: Una caja pertenece a un Punto de Pago
-  public function puntoDePago(): BelongsTo
-  {
-    return $this->belongsTo(PuntoDePago::class);
-  }
+    use SoftDeletes;
 
-  /* public function registros(): HasMany
+    // ¡RELACIÓN RESTAURADA!
+    // Obtiene el cajero (usuario) que está asignado a esta caja.
+    public function usuario(): BelongsTo
     {
-      return $this->hasMany(RegistroCaja::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function historiales(): HasMany
+    // Relación: Una caja pertenece a un Punto de Pago
+    public function puntoDePago(): BelongsTo
     {
-      return $this->hasMany(HistorialCierreCaja::class);
-    }	*/
+        return $this->belongsTo(PuntoDePago::class)->withTrashed();
+    }
+
+    /* public function registros(): HasMany
+      {
+        return $this->hasMany(RegistroCaja::class);
+      }
+
+      public function historiales(): HasMany
+      {
+        return $this->hasMany(HistorialCierreCaja::class);
+      }	*/
 }

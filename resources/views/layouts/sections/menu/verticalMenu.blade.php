@@ -857,7 +857,6 @@
             </a>
         </li>
     @endif
-
     <li class="menu-item">
         <a href="{{ route('logout') }}"
             onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="menu-link">

@@ -5,9 +5,8 @@ namespace App\Livewire\Central;
 use App\Models\UserAdminRedil;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Component;
 
-class GestionarSuperAdmins extends Component
+class GestionarSuperAdmins extends ComponenteAdminCentral
 {
     public $admins;
 
@@ -27,7 +26,9 @@ class GestionarSuperAdmins extends Component
     {
         return [
             'name' => 'required',
-            'email' => 'required|email|unique:users_admins_redil,email,'.$this->admin_id,
+            'email' => ['required', 'email', 'max:254', \Illuminate\Validation\Rule::unique('central.users_admins_redil', 'email')->ignore($this->admin_id ? UserAdminRedil::findOrFail($this->admin_id) : null)],
+            'admin_id' => ['nullable', 'integer'],
+            'password' => [$this->admin_id ? 'nullable' : 'required', 'string', 'min:14', 'max:128'],
         ];
     }
 
@@ -65,6 +66,7 @@ class GestionarSuperAdmins extends Component
 
     public function store()
     {
+        $this->email = \Illuminate\Support\Str::lower(trim($this->email));
         $this->validate();
 
         $data = [

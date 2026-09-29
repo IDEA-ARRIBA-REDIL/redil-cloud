@@ -13,6 +13,8 @@ reviewed_at: 2026-09-06
 
 # Auditoría inicial de aislamiento multi-tenant en Laravel Cloud
 
+> Nota de vigencia añadida el 2026-09-27: este documento conserva la evidencia de la revisión del 2026-09-06; no representa una inspección actual del panel. La documentación oficial ahora anuncia Preview Environments en todos los planes, por lo que las restricciones de plan registradas aquí son históricas y requieren reconfirmación en la cuenta. Para requisitos actuales de colas, scheduler, build/deploy y previews consultar `knowledge/delivery/laravel-cloud-deployment-runbook.md`. Esta actualización es documental: no resuelve hallazgos ni habilita recursos.
+
 ## Objetivo y límite
 
 Revisar cómo el piloto Usuarios–Roles–Grupos conserva el tenant en HTTP, PostgreSQL, archivos, caché, colas y tareas programadas. Esta auditoría no habilita otros módulos ni cambia comportamiento funcional.

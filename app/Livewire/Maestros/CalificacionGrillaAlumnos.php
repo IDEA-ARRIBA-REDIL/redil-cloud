@@ -11,6 +11,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class CalificacionGrillaAlumnos extends Component
@@ -20,6 +22,8 @@ class CalificacionGrillaAlumnos extends Component
     public Collection $alumnosConEstado;
 
     public Collection $items;
+
+    public string $busquedaAlumno = '';
 
     public $configuracion;
 
@@ -178,8 +182,40 @@ class CalificacionGrillaAlumnos extends Component
         }
     }
 
-    public function render()
+    private function alumnosFiltrados(): Collection
     {
-        return view('livewire.maestros.calificacion-grilla-alumnos');
+        $termino = Str::lower(Str::ascii(trim($this->busquedaAlumno)));
+        if ($termino === '') {
+            return $this->alumnosConEstado;
+        }
+
+        $fragmentos = preg_split('/\s+/', $termino, flags: PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return $this->alumnosConEstado->filter(function (EstadoAcademico $estado) use ($fragmentos): bool {
+            $usuario = $estado->user;
+            if (! $usuario) {
+                return false;
+            }
+
+            $contenidoBuscable = implode(' ', array_filter([
+                $usuario->primer_nombre,
+                $usuario->segundo_nombre,
+                $usuario->primer_apellido,
+                $usuario->segundo_apellido,
+                $usuario->identificacion,
+                $usuario->email,
+            ], fn ($valor): bool => $valor !== null && $valor !== ''));
+
+            $contenidoNormalizado = Str::lower(Str::ascii($contenidoBuscable));
+
+            return collect($fragmentos)->every(fn (string $fragmento): bool => str_contains($contenidoNormalizado, $fragmento));
+        })->values();
+    }
+
+    public function render(): View
+    {
+        return view('livewire.maestros.calificacion-grilla-alumnos', [
+            'alumnosFiltrados' => $this->alumnosFiltrados(),
+        ]);
     }
 }

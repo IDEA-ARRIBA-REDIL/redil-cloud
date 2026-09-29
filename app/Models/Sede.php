@@ -168,26 +168,32 @@ class Sede extends Model
     {
         $sedeDefault = Sede::where('default', true)->first();
 
-        // Asigno la sede por defecto al grupo principal de la sede
-        $grupoPrincipal = $this->grupo()->first();
-        $grupoPrincipal->sede_id = $sedeDefault->id;
-        $grupoPrincipal->save();
+        if (! $sedeDefault) {
+            return false;
+        }
 
-        // Asigno la sede por defecto a los encargados del grupo principal de la sede
-        foreach ($grupoPrincipal->encargados()->get() as $encargado) {
-            $encargado->sede_id = $sedeDefault->id;
-            $encargado->save();
+        // Asigno la sede por defecto al grupo principal de la sede si existe
+        $grupoPrincipal = $this->grupo;
+        if ($grupoPrincipal) {
+            $grupoPrincipal->sede_id = $sedeDefault->id;
+            $grupoPrincipal->save();
+
+            // Reasignamos los encargados de ese grupo principal
+            foreach ($grupoPrincipal->encargados as $encargado) {
+                $encargado->sede_id = $sedeDefault->id;
+                $encargado->save();
+            }
         }
 
         // Asigno la sede por defecto a todos los usuarios de la sede
-        $asistentes = $this->usuarios()->get();
+        $asistentes = $this->usuarios()->select('id', 'sede_id')->get();
         foreach ($asistentes as $asistente) {
             $asistente->sede_id = $sedeDefault->id;
             $asistente->save();
         }
 
         // Asigno la sede por defecto a todos los grupos de la sede
-        $grupos = $this->grupos()->get();
+        $grupos = $this->grupos()->select('id', 'sede_id')->get();
         foreach ($grupos as $grupo) {
             $grupo->sede_id = $sedeDefault->id;
             $grupo->save();

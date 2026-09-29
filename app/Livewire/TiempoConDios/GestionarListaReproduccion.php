@@ -2,365 +2,417 @@
 
 namespace App\Livewire\TiempoConDios;
 
+use App\Helpers\Helpers;
 use App\Models\Album;
 use App\Models\Cancion;
 use App\Models\Configuracion;
-use Livewire\Component;
-
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\On;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class GestionarListaReproduccion extends Component
 {
-  public $canciones = [], $albumes = [], $configuracion, $busqueda = '', $busquedaAlbumes, $ejemplo = "sdf";
+    use WithFileUploads;
 
-  /* Campos para el funcionamiento de editar y crear de la cancion */
-  public $nombre;
-  public $artista;
-  public $álbum;
-  public $archivo;
-  public $modoEdicionCancion = false;
-  public $cancionEditando;
+    public $canciones = [];
 
-  /* Propiedades de subida de audio en Base64 con Alpine */
-  public $archivoBase64;
-  public $archivoNombre;
+    public $albumes = [];
 
-   /* Campos para el funcionamiento de editar y crear album */
-  public $nombreÁlbum;
-  public $imagen;
-  public $modoEdicionAlbum = false;
-  public $albumEditando;
+    public $todosLosAlbumes = [];
 
-  /* Propiedades de subida de imagen de álbum en Base64 con Alpine */
-  public $imagenBase64;
-  public $imagenNombre;
+    public $configuracion;
 
-  protected $rules = [
-    'nombre' => 'required',
-    'artista' => 'required',
-  ];
+    public $busqueda = '';
 
-  protected $rulesEditar = [
-    'nombre' => 'required',
-    'artista' => 'required',
-  ];
+    public $busquedaAlbumes;
 
-   protected $rulesAlbum = [
-    'nombreÁlbum' => 'required',
-  ];
+    public $filtroAlbum = '';
 
-  public function mount(): void
-  {
-    $this->configuracion = Configuracion::first();
-  }
+    public $ejemplo = 'sdf';
 
-  // esta funcion prepara las variables para abrir el modal de crearCancion
-  public function crearCancion(): void
-  {
-    $this->álbum = null;
-    $this->modoEdicionCancion = false;
-    $this->reset(['nombre', 'artista', 'archivoBase64', 'archivoNombre']);
-    $this->dispatch('quitarSeleccion')->to(SelectorDeAlbumes::class);
-    $this->dispatch('abrirModal', nombreModal: 'modalNuevaEditarCancion');
-    $this->cancionEditando = null;
-  }
+    /* Campos para el funcionamiento de editar y crear de la cancion */
+    public $nombre;
 
-   // esta funcion prepara las variables para abrir el modal de editarCancion
-  public function editarCancion(int|string $cancionId): void
-  {
-    $this->cancionEditando = Cancion::find($cancionId);
-    $this->modoEdicionCancion = true;
+    public $artista;
 
-    // formateo el formulario
-    $this->reset(['nombre', 'artista', 'archivoBase64', 'archivoNombre']);
-    $this->álbum = null;
-    $this->dispatch('quitarSeleccion')->to(SelectorDeAlbumes::class);
+    public $album;
 
-    if ($this->cancionEditando->album_id) {
-        $this->dispatch('seleccionarAlbum', $this->cancionEditando->album_id)->to(SelectorDeAlbumes::class);
+    public $archivo;
+
+    public $modoEdicionCancion = false;
+
+    public $cancionEditando;
+
+    /* Campos para el funcionamiento de editar y crear album */
+    public $nombreAlbum;
+
+    public $imagen;
+
+    public $modoEdicionAlbum = false;
+
+    public $albumEditando;
+
+    protected $rules = [
+        'nombre' => 'required',
+        'artista' => 'required',
+    ];
+
+    protected $rulesEditar = [
+        'nombre' => 'required',
+        'artista' => 'required',
+    ];
+
+    protected $rulesAlbum = [
+        'nombreAlbum' => 'required',
+    ];
+
+    public function mount(): void
+    {
+        $this->configuracion = Configuracion::first();
     }
 
-    //fin formateo formulario
+    // esta funcion prepara las variables para abrir el modal de crearCancion
+    public function crearCancion(): void
+    {
+        $this->album = null;
+        $this->modoEdicionCancion = false;
+        $this->reset(['nombre', 'artista', 'archivo']);
+        $this->dispatch('quitarSeleccion')->to(SelectorDeAlbumes::class);
+        $this->dispatch('abrirModal', nombreModal: 'modalNuevaEditarCancion');
+        $this->cancionEditando = null;
+    }
 
-    $this->nombre = $this->cancionEditando->nombre;
-    $this->artista = $this->cancionEditando->artista;
-    $this->dispatch('abrirModal', nombreModal: 'modalNuevaEditarCancion');
-  } 
-  
-  // esta funcion guarda o edita los datos en la BD
-  public function guardarCancion(): void
-  {
-    if ($this->modoEdicionCancion) {
-      // Valido campos de texto
-      $validatedData = Validator::make($this->all(), $this->rulesEditar)->validate();
+    // esta funcion prepara las variables para abrir el modal de editarCancion
+    public function editarCancion(int|string $cancionId): void
+    {
+        $this->cancionEditando = Cancion::find($cancionId);
+        $this->modoEdicionCancion = true;
 
-      // Validar extensión del archivo si se proporciona uno nuevo
-      if ($this->archivoBase64) {
-        $extension = pathinfo($this->archivoNombre, PATHINFO_EXTENSION);
-        if (!in_array(strtolower($extension), ['mp3', 'wav', 'mp4'])) {
-            $this->addError('archivo', 'El formato del archivo debe ser mp3, wav o mp4.');
-            return;
-        }
-      }
+        // formateo el formulario
+        $this->reset(['nombre', 'artista', 'archivo']);
+        $this->album = null;
+        $this->dispatch('quitarSeleccion')->to(SelectorDeAlbumes::class);
 
-      // Actualizar la sección existente
-      $this->cancionEditando->nombre = $this->nombre;
-      $this->cancionEditando->artista = $this->artista;
-      $this->cancionEditando->album_id = $this->álbum ?: null;
-      $this->cancionEditando->save();
-
-      // Guardar audio (si se proporciona)
-      if ($this->archivoBase64) {
-        $extension = pathinfo($this->archivoNombre, PATHINFO_EXTENSION);
-        $nombreArchivo = 'cancion' . $this->cancionEditando->id . '.' . strtolower($extension);
-
-        // Eliminar archivo actual
-        if ($this->cancionEditando->archivo && $this->cancionEditando->archivo !== 'temporal.mp3' && Storage::disk('public')->exists('archivos/reproductor/' . $this->cancionEditando->archivo)) {
-            Storage::disk('public')->delete('archivos/reproductor/' . $this->cancionEditando->archivo);
+        if ($this->cancionEditando->album_id) {
+            $this->dispatch('seleccionarAlbum', $this->cancionEditando->album_id)->to(SelectorDeAlbumes::class);
         }
 
-        $this->guardarArchivoBase64($this->archivoBase64, 'archivos/reproductor/' . $nombreArchivo);
+        // fin formateo formulario
 
-        $this->cancionEditando->archivo = $nombreArchivo;
-        $this->cancionEditando->save();
-      }
-
-      $this->reset(['nombre', 'artista', 'archivoBase64', 'archivoNombre', 'álbum']);
-      $this->dispatch('quitarSeleccion')->to(SelectorDeAlbumes::class);
-      $this->dispatch('cerrarModal', nombreModal: 'modalNuevaEditarCancion');
-      $this->modoEdicionCancion = false;
-
-      $this->dispatch(
-        'msn',
-        msnIcono: 'success',
-        msnTitulo: '¡Muy bien!',
-        msnTexto: 'La sección fue editada con exito.'
-      );
-    } else {
-      // Valido campos de texto
-      $validatedData = Validator::make($this->all(), $this->rules)->validate();
-
-      // Validar presencia y extensión del archivo obligatoriamente al crear
-      if (!$this->archivoBase64) {
-        $this->addError('archivo', 'El archivo de audio es obligatorio.');
-        return;
-      }
-
-      $extension = pathinfo($this->archivoNombre, PATHINFO_EXTENSION);
-      if (!in_array(strtolower($extension), ['mp3', 'wav', 'mp4'])) {
-        $this->addError('archivo', 'El formato del archivo debe ser mp3, wav o mp4.');
-        return;
-      }
-
-      $cancion = new Cancion;
-      $cancion->nombre = $validatedData['nombre'];
-      $cancion->artista = $validatedData['artista'];
-
-      if ($this->álbum) {
-        $cancion->album_id = $this->álbum;
-      }
-
-      $ultimaCancion = Cancion::orderBy('orden', 'desc')->first();
-      $cancion->orden = $ultimaCancion ? $ultimaCancion->orden + 1 : 1;
-      $cancion->archivo = 'temporal.mp3';
-      $cancion->save();
-
-      $nombreArchivo = 'cancion' . $cancion->id . '.' . strtolower($extension);
-
-      $this->guardarArchivoBase64($this->archivoBase64, 'archivos/reproductor/' . $nombreArchivo);
-
-      $cancion->archivo = $nombreArchivo;
-      $cancion->save();
-
-      $this->reset(['nombre', 'artista', 'archivoBase64', 'archivoNombre', 'álbum']);
-      $this->dispatch('quitarSeleccion')->to(SelectorDeAlbumes::class);
-      $this->dispatch('cerrarModal', nombreModal: 'modalNuevaEditarCancion');
-      $this->modoEdicionCancion = false;
-
-      $this->dispatch(
-        'msn',
-        msnIcono: 'success',
-        msnTitulo: '¡Muy bien!',
-        msnTexto: 'La sección fue creada con exito.'
-      );
-    }
-  }
-
-  public function eliminarCancion(int|string $cancioId): void
-  {
-    $cancion = Cancion::find($cancioId);
-
-    if ($cancion) {
-      if ($cancion->archivo && $cancion->archivo !== 'temporal.mp3' && Storage::disk('public')->exists('archivos/reproductor/' . $cancion->archivo)) {
-          Storage::disk('public')->delete('archivos/reproductor/' . $cancion->archivo);
-      }
-      $cancion->delete();
-    }
-  }
-
-  #[On('obtenerAlbumSeleccionado')]
-  public function obtenerAlbumSeleccionado(mixed $id): void
-  {
-    $this->álbum = $id;
-  }
-
-  public function actualizarOrden(string $nuevaOrden): void
-  {
-    // 1. Decodificar la data recibida
-    $ordenes = json_decode($nuevaOrden, true);
-
-    // 2. Iterar sobre el array de orden y actualizar la base de datos
-    foreach ($ordenes as $orden) {
-        $cancion = Cancion::find($orden['id']);
-        $cancion->orden = $orden['orden'];
-        $cancion->save();
-    }
-  }
-
-  // estapara abrir el modal de modalGestionarAlbum
-  public function abrirGestionarAlbum(): void
-  {
-    $this->dispatch('abrirModal', nombreModal: 'modalGestionarAlbum');
-  }
-
-  //  esta funcion prepara las variables para abrir el modal para crear album
-  public function crearAlbum(): void
-  {
-    $this->modoEdicionAlbum = false;
-    $this->reset(['nombreÁlbum', 'imagen', 'imagenBase64', 'imagenNombre']);
-    $this->albumEditando = null;
-    $this->dispatch('cerrarModal', nombreModal: 'modalGestionarAlbum');
-    $this->dispatch('abrirModal', nombreModal: 'modalNuevaEditarAlbum');
-  }
-
-  //  esta funcion prepara las variables para abrir el modal para editar album
-  public function editarAlbum(int|string $albumId): void
-  {
-    $this->modoEdicionAlbum = true;
-    $this->reset(['nombreÁlbum', 'imagen', 'imagenBase64', 'imagenNombre']);
-    $this->albumEditando = Album::find($albumId);
-    $this->nombreÁlbum = $this->albumEditando->nombre;
-    $this->dispatch('cerrarModal', nombreModal: 'modalGestionarAlbum');
-    $this->dispatch('abrirModal', nombreModal: 'modalNuevaEditarAlbum');
-  }
-
-  // esta funcion guarda o edita los datos del album en la BD
-  public function guardarAlbum(): void
-  {
-    $validatedData = Validator::make($this->all(), $this->rulesAlbum)->validate();
-
-    if ($this->imagenBase64) {
-      $extension = pathinfo($this->imagenNombre, PATHINFO_EXTENSION);
-      if (!in_array(strtolower($extension), ['jpg', 'png', 'jpeg'])) {
-          $this->addError('imagen', 'El formato de la imagen debe ser jpg, jpeg o png.');
-          return;
-      }
+        $this->nombre = $this->cancionEditando->nombre;
+        $this->artista = $this->cancionEditando->artista;
+        $this->dispatch('abrirModal', nombreModal: 'modalNuevaEditarCancion');
     }
 
-    if ($this->modoEdicionAlbum) {
-      // Actualizar la sección existente
-      $this->albumEditando->nombre = $this->nombreÁlbum;
-      $this->albumEditando->save();
+    // esta funcion guarda o edita los datos en la BD
+    public function guardarCancion(): void
+    {
+        if ($this->modoEdicionCancion) {
+            // Valido campos de texto
+            $validatedData = Validator::make($this->all(), $this->rulesEditar)->validate();
 
-      // Guardar imagen (si se proporciona)
-      if ($this->imagenBase64) {
-        $extension = pathinfo($this->imagenNombre, PATHINFO_EXTENSION);
-        $nombreArchivo = 'album' . $this->albumEditando->id . '.' . strtolower($extension);
+            // Validar extensión del archivo si se proporciona uno nuevo
+            if ($this->archivo) {
+                $extension = strtolower($this->archivo->getClientOriginalExtension());
+                if (! in_array($extension, ['mp3', 'wav', 'mp4'])) {
+                    $this->addError('archivo', 'El formato del archivo debe ser mp3, wav o mp4.');
 
-        // elimino el archivo actual
-        if ($this->albumEditando->imagen && $this->albumEditando->imagen !== 'temporal.png' && $this->albumEditando->imagen !== 'album-default.png' && Storage::disk('public')->exists('img/reproductor/' . $this->albumEditando->imagen)) {
-            Storage::disk('public')->delete('img/reproductor/' . $this->albumEditando->imagen);
+                    return;
+                }
+            }
+
+            // Actualizar la canción existente
+            $this->cancionEditando->nombre = $this->nombre;
+            $this->cancionEditando->artista = $this->artista;
+            $this->cancionEditando->album_id = $this->album ?: null;
+            $this->cancionEditando->save();
+
+            // Guardar audio (si se proporciona)
+            if ($this->archivo) {
+                $extension = strtolower($this->archivo->getClientOriginalExtension());
+                $nombreArchivo = 'cancion_'.$this->cancionEditando->id.'_'.time().'.'.$extension;
+
+                // Eliminar archivo actual
+                if ($this->cancionEditando->archivo && $this->cancionEditando->archivo !== 'temporal.mp3' && Storage::disk('public')->exists('archivos/reproductor/'.$this->cancionEditando->archivo)) {
+                    Storage::disk('public')->delete('archivos/reproductor/'.$this->cancionEditando->archivo);
+                }
+
+                $this->archivo->storeAs('archivos/reproductor', $nombreArchivo, 'public');
+
+                $this->cancionEditando->archivo = $nombreArchivo;
+                $this->cancionEditando->touch();
+                $this->cancionEditando->save();
+            }
+
+            $this->reset(['nombre', 'artista', 'archivo', 'album']);
+            $this->dispatch('quitarSeleccion')->to(SelectorDeAlbumes::class);
+            $this->dispatch('cerrarModal', nombreModal: 'modalNuevaEditarCancion');
+            $this->modoEdicionCancion = false;
+
+            $this->dispatch(
+                'msn',
+                msnIcono: 'success',
+                msnTitulo: '¡Muy bien!',
+                msnTexto: 'La canción fue editada con éxito.'
+            );
+        } else {
+            // Valido campos de texto
+            $validatedData = Validator::make($this->all(), $this->rules)->validate();
+
+            // Validar presencia y extensión del archivo obligatoriamente al crear
+            if (! $this->archivo) {
+                $this->addError('archivo', 'El archivo de audio es obligatorio.');
+
+                return;
+            }
+
+            $extension = strtolower($this->archivo->getClientOriginalExtension());
+            if (! in_array($extension, ['mp3', 'wav', 'mp4'])) {
+                $this->addError('archivo', 'El formato del archivo debe ser mp3, wav o mp4.');
+
+                return;
+            }
+
+            $cancion = new Cancion;
+            $cancion->nombre = $validatedData['nombre'];
+            $cancion->artista = $validatedData['artista'];
+
+            if ($this->album) {
+                $cancion->album_id = $this->album;
+            }
+
+            $ultimaCancion = Cancion::orderBy('orden', 'desc')->first();
+            $cancion->orden = $ultimaCancion ? $ultimaCancion->orden + 1 : 1;
+            $cancion->archivo = 'temporal.mp3';
+            $cancion->save();
+
+            $nombreArchivo = 'cancion_'.$cancion->id.'_'.time().'.'.$extension;
+
+            $this->archivo->storeAs('archivos/reproductor', $nombreArchivo, 'public');
+
+            $cancion->archivo = $nombreArchivo;
+            $cancion->save();
+
+            $this->reset(['nombre', 'artista', 'archivo', 'album']);
+            $this->dispatch('quitarSeleccion')->to(SelectorDeAlbumes::class);
+            $this->dispatch('cerrarModal', nombreModal: 'modalNuevaEditarCancion');
+            $this->modoEdicionCancion = false;
+
+            $this->dispatch(
+                'msn',
+                msnIcono: 'success',
+                msnTitulo: '¡Muy bien!',
+                msnTexto: 'La canción fue creada con éxito.'
+            );
+        }
+    }
+
+    public function eliminarCancion(int|string $cancionId): void
+    {
+        $cancion = Cancion::find($cancionId);
+
+        if ($cancion) {
+            if ($cancion->archivo && $cancion->archivo !== 'temporal.mp3' && Storage::disk('public')->exists('archivos/reproductor/'.$cancion->archivo)) {
+                Storage::disk('public')->delete('archivos/reproductor/'.$cancion->archivo);
+            }
+            $cancion->delete();
+        }
+    }
+
+    #[On('obtenerAlbumSeleccionado')]
+    public function obtenerAlbumSeleccionado(mixed $id): void
+    {
+        $this->album = $id;
+    }
+
+    public function actualizarOrden(string $nuevaOrden): void
+    {
+        // 1. Decodificar la data recibida
+        $ordenes = json_decode($nuevaOrden, true);
+
+        // 2. Iterar sobre el array de orden y actualizar la base de datos
+        foreach ($ordenes as $orden) {
+            $cancion = Cancion::find($orden['id']);
+            $cancion->orden = $orden['orden'];
+            $cancion->save();
+        }
+    }
+
+    // estapara abrir el modal de modalGestionarAlbum
+    public function abrirGestionarAlbum(): void
+    {
+        $this->dispatch('abrirModal', nombreModal: 'modalGestionarAlbum');
+    }
+
+    //  esta funcion prepara las variables para abrir el modal para crear album
+    public function crearAlbum(): void
+    {
+        $this->modoEdicionAlbum = false;
+        $this->reset(['nombreAlbum', 'imagen']);
+        $this->albumEditando = null;
+        $this->dispatch('cerrarModal', nombreModal: 'modalGestionarAlbum');
+        $this->dispatch('abrirModal', nombreModal: 'modalNuevaEditarAlbum');
+    }
+
+    //  esta funcion prepara las variables para abrir el modal para editar album
+    public function editarAlbum(int|string $albumId): void
+    {
+        $this->modoEdicionAlbum = true;
+        $this->reset(['nombreAlbum', 'imagen']);
+        $this->albumEditando = Album::find($albumId);
+        $this->nombreAlbum = $this->albumEditando->nombre;
+        $this->dispatch('cerrarModal', nombreModal: 'modalGestionarAlbum');
+        $this->dispatch('abrirModal', nombreModal: 'modalNuevaEditarAlbum');
+    }
+
+    // esta funcion guarda o edita los datos del album en la BD
+    public function guardarAlbum(): void
+    {
+        $validatedData = Validator::make($this->all(), $this->rulesAlbum)->validate();
+
+        if ($this->imagen) {
+            $extension = strtolower($this->imagen->getClientOriginalExtension());
+            if (! in_array($extension, ['jpg', 'png', 'jpeg'])) {
+                $this->addError('imagen', 'El formato de la imagen debe ser jpg, jpeg o png.');
+
+                return;
+            }
         }
 
-        $this->guardarArchivoBase64($this->imagenBase64, 'img/reproductor/' . $nombreArchivo);
+        if ($this->modoEdicionAlbum) {
+            // Actualizar el álbum existente
+            $this->albumEditando->nombre = $this->nombreAlbum;
+            $this->albumEditando->touch();
+            $this->albumEditando->save();
 
-        $this->albumEditando->imagen = $nombreArchivo;
-        $this->albumEditando->save();
-      }
+            // Guardar imagen (si se proporciona)
+            if ($this->imagen) {
+                $extension = strtolower($this->imagen->getClientOriginalExtension());
+                $nombreArchivo = 'album_'.$this->albumEditando->id.'_'.time().'.'.$extension;
 
-      $this->reset(['imagenBase64', 'imagenNombre']);
-      $this->dispatch('cerrarModal', nombreModal: 'modalNuevaEditarAlbum');
-      $this->dispatch('abrirModal', nombreModal: 'modalGestionarAlbum');
-      $this->modoEdicionAlbum = false;
+                // elimino el archivo actual
+                if ($this->albumEditando->imagen && $this->albumEditando->imagen !== 'temporal.png' && $this->albumEditando->imagen !== 'album-default.png' && Storage::disk('public')->exists('img/reproductor/'.$this->albumEditando->imagen)) {
+                    Storage::disk('public')->delete('img/reproductor/'.$this->albumEditando->imagen);
+                }
 
-      $this->dispatch(
-        'msn',
-        msnIcono: 'success',
-        msnTitulo: '¡Muy bien!',
-        msnTexto: 'El álbum fue editado con éxito.'
-      );
-    } else {
-      $album = new Album;
-      $album->nombre = $validatedData['nombreÁlbum'];
-      $album->imagen = 'temporal.png';
-      $album->save();
+                $this->imagen->storeAs('img/reproductor', $nombreArchivo, 'public');
 
-      if ($this->imagenBase64) {
-        $extension = pathinfo($this->imagenNombre, PATHINFO_EXTENSION);
-        $nombreArchivo = 'album' . $album->id . '.' . strtolower($extension);
+                $this->albumEditando->imagen = $nombreArchivo;
+                $this->albumEditando->touch();
+                $this->albumEditando->save();
+            }
 
-        $this->guardarArchivoBase64($this->imagenBase64, 'img/reproductor/' . $nombreArchivo);
+            $this->reset(['nombreAlbum', 'imagen']);
+            $this->dispatch('cerrarModal', nombreModal: 'modalNuevaEditarAlbum');
+            $this->dispatch('abrirModal', nombreModal: 'modalGestionarAlbum');
+            $this->modoEdicionAlbum = false;
 
-        $album->imagen = $nombreArchivo;
-      } else {
-        $album->imagen = null;
-      }
-      $album->save();
+            $this->dispatch(
+                'msn',
+                msnIcono: 'success',
+                msnTitulo: '¡Muy bien!',
+                msnTexto: 'El álbum fue editado con éxito.'
+            );
+        } else {
+            $album = new Album;
+            $album->nombre = $validatedData['nombreAlbum'];
+            $album->imagen = 'temporal.png';
+            $album->save();
 
-      $this->reset(['imagenBase64', 'imagenNombre']);
-      $this->dispatch('cerrarModal', nombreModal: 'modalNuevaEditarAlbum');
-      $this->dispatch('abrirModal', nombreModal: 'modalGestionarAlbum');
-      $this->modoEdicionAlbum = false;
+            if ($this->imagen) {
+                $extension = strtolower($this->imagen->getClientOriginalExtension());
+                $nombreArchivo = 'album_'.$album->id.'_'.time().'.'.$extension;
 
-      $this->dispatch(
-        'msn',
-        msnIcono: 'success',
-        msnTitulo: '¡Muy bien!',
-        msnTexto: 'El álbum fue creado con éxito.'
-      );
+                $this->imagen->storeAs('img/reproductor', $nombreArchivo, 'public');
+
+                $album->imagen = $nombreArchivo;
+            } else {
+                $album->imagen = null;
+            }
+            $album->touch();
+            $album->save();
+
+            $this->reset(['nombreAlbum', 'imagen']);
+            $this->dispatch('cerrarModal', nombreModal: 'modalNuevaEditarAlbum');
+            $this->dispatch('abrirModal', nombreModal: 'modalGestionarAlbum');
+            $this->modoEdicionAlbum = false;
+
+            $this->dispatch(
+                'msn',
+                msnIcono: 'success',
+                msnTitulo: '¡Muy bien!',
+                msnTexto: 'El álbum fue creado con éxito.'
+            );
+        }
     }
-  }
 
-  public function eliminarAlbum(int|string $albumId): void
-  {
-    $album = Album::find($albumId);
+    public function eliminarAlbum(int|string $albumId): void
+    {
+        $album = Album::find($albumId);
 
-    if ($album) {
-      if ($album->imagen && $album->imagen !== 'temporal.png' && $album->imagen !== 'album-default.png' && Storage::disk('public')->exists('img/reproductor/' . $album->imagen)) {
-          Storage::disk('public')->delete('img/reproductor/' . $album->imagen);
-      }
+        if ($album) {
+            if ($album->imagen && $album->imagen !== 'temporal.png' && $album->imagen !== 'album-default.png' && Storage::disk('public')->exists('img/reproductor/'.$album->imagen)) {
+                Storage::disk('public')->delete('img/reproductor/'.$album->imagen);
+            }
 
-      foreach ($album->canciones as $cancion) {
-        $cancion->album_id = null;
-        $cancion->save();
-      }
+            foreach ($album->canciones as $cancion) {
+                $cancion->album_id = null;
+                $cancion->save();
+            }
 
-      $album->delete();
+            $album->delete();
+        }
     }
-  }
 
-  private function guardarArchivoBase64(string $base64String, string $rutaDestino): void
-  {
-    $datos = explode(',', $base64String);
-    $decodificado = base64_decode(end($datos));
-    Storage::disk('public')->put($rutaDestino, $decodificado);
-  }
+    public function render(): \Illuminate\Contracts\View\View
+    {
+        $this->todosLosAlbumes = Album::orderBy('nombre', 'asc')->get();
 
-  public function render(): \Illuminate\Contracts\View\View
-  {
-    $canciones = Cancion::whereRaw('1=1');
-    $this->canciones = $canciones->whereRaw("translate(nombre,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ','aeiouAEIOUaeiouAEIOU') ILIKE '%$this->busqueda%'")
-    ->orderBy('orden')
-    ->get();
+        $cancionesQuery = Cancion::with('album');
 
-    $albumes = Album::whereRaw('1=1');
-    $this->albumes = $albumes->whereRaw("translate(nombre,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ','aeiouAEIOUaeiouAEIOU') ILIKE '%$this->busquedaAlbumes%'")
-    ->orderBy('updated_at','desc')
-    ->orderBy('nombre','asc')
-    ->get();
+        // 1. Filtro por Álbum
+        if ($this->filtroAlbum !== '' && $this->filtroAlbum !== null) {
+            if ($this->filtroAlbum === 'sin-album') {
+                $cancionesQuery->whereNull('album_id');
+            } else {
+                $cancionesQuery->where('album_id', $this->filtroAlbum);
+            }
+        }
 
-    return view('livewire.tiempo-con-dios.gestionar-lista-reproduccion');
-  }
+        // 2. Buscador insensible a acentos, mayúsculas y minúsculas en canción, artista y álbum
+        if (! empty(trim($this->busqueda))) {
+            $busquedaLimpia = trim($this->busqueda);
+            $busquedaSaneada = Helpers::sanearStringConEspacios($busquedaLimpia);
+            $busquedaSaneada = str_replace(["'"], '', $busquedaSaneada);
+            $palabras = array_filter(explode(' ', $busquedaSaneada));
+
+            foreach ($palabras as $palabra) {
+                $palabraSafe = addslashes($palabra);
+                $cancionesQuery->where(function ($q) use ($palabraSafe) {
+                    $q->whereRaw("translate(canciones.nombre, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ', 'aeiouAEIOUaeiouAEIOU') ILIKE '%$palabraSafe%'")
+                        ->orWhereRaw("translate(canciones.artista, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ', 'aeiouAEIOUaeiouAEIOU') ILIKE '%$palabraSafe%'")
+                        ->orWhereHas('album', function ($qAlbum) use ($palabraSafe) {
+                            $qAlbum->whereRaw("translate(albumes.nombre, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ', 'aeiouAEIOUaeiouAEIOU') ILIKE '%$palabraSafe%'");
+                        });
+                });
+            }
+        }
+
+        $this->canciones = $cancionesQuery->orderBy('orden')->get();
+
+        // 3. Consulta de Álbumes para el modal de Gestión de Álbumes
+        $albumesQuery = Album::withCount('canciones');
+        if ($this->busquedaAlbumes) {
+            $busquedaAlbumSaneada = Helpers::sanearStringConEspacios(trim($this->busquedaAlbumes));
+            $busquedaAlbumSaneada = str_replace(["'"], '', $busquedaAlbumSaneada);
+            $albumesQuery->whereRaw("translate(nombre,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ','aeiouAEIOUaeiouAEIOU') ILIKE '%$busquedaAlbumSaneada%'");
+        }
+        $this->albumes = $albumesQuery->orderBy('updated_at', 'desc')
+            ->orderBy('nombre', 'asc')
+            ->get();
+
+        return view('livewire.tiempo-con-dios.gestionar-lista-reproduccion');
+    }
 }

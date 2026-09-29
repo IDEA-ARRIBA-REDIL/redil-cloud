@@ -93,10 +93,25 @@ $configData = Helper::appClasses();
 
   $('.select2').each(function() {
     var placeholder = $(this).data('placeholder');
+    var minSearch = $(this).find('option').length > 10 ? 0 : Infinity;
+    if ($(this).data('minimum-results-for-search') !== undefined) {
+      minSearch = $(this).data('minimum-results-for-search');
+    }
+
     $(this).select2({
       placeholder: placeholder,
-      allowClear: true
+      allowClear: true,
+      minimumResultsForSearch: minSearch
     });
+  });
+
+  // En dispositivos móviles, centrar suavemente el select al abrir
+  $(document).on('select2:open', function(e) {
+    if (window.innerWidth < 768) {
+      setTimeout(function() {
+        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
   });
 </script>
 
@@ -1477,19 +1492,22 @@ $configData = Helper::appClasses();
 <!--/ modal foto -->
 
 <!-- modal cambio de formulario -->
-<div class="modal fade" id="modalCambioDeFormulario" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-simple">
-    <div class="modal-content">
-      <div class="modal-body">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        <div class="mb-6">
-          <h4 class="mb-2 text-center">Cambio de fecha</h4>
-          <p>El rango permitido de edades para este formulario es de <b>{{ $formulario->edad_minima }}</b> a
-            <b>{{ $formulario->edad_maxima }}</b> años, estás intentando cambiar la fecha fuera del rango.
-            Por favor, usa uno de los siguientes formularios.
-          </p>
+<div class="modal fade" id="modalCambioDeFormulario" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(4px);">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg p-5" style="border-radius: 20px;">
+      <div class="modal-header border-0 pb-0 pt-4 px-4">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <div>
+            <h4 class="modal-title fw-semibold text-black mb-1" style="letter-spacing: -0.5px;">Cambio de formulario sugerido</h4>
+            <p class="text-black mb-0" style="font-size: 0.85rem;">
+              El rango permitido para este formulario es de <b>{{ $formulario->edad_minima }}</b> a <b>{{ $formulario->edad_maxima }}</b> años. Te recomendamos continuar en el formulario correspondiente a la edad:
+            </p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="box-shadow: none;"></button>
         </div>
-        <div class="row" id="modalMsnCambioDeFormulario">
+      </div>
+      <div class="modal-body p-4">
+        <div class="row g-3" id="modalMsnCambioDeFormulario">
 
         </div>
       </div>

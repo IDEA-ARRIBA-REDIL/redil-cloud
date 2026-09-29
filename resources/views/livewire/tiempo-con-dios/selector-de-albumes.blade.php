@@ -59,5 +59,5 @@
     </div>
     @endif
 
-    <input type="text" id="album" name="álbum" value="{{$albumSeleccionado ? $albumSeleccionado->id : '' }}" class="form-control d-none" placeholder="">
+    <input type="text" id="album" name="album" value="{{$albumSeleccionado ? $albumSeleccionado->id : '' }}" class="form-control d-none" placeholder="">
 </div>

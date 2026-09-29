@@ -7,6 +7,7 @@ use App\Models\CampoTiempoConDios;
 use App\Models\Configuracion;
 use App\Models\SeccionTiempoConDios;
 use App\Models\TiempoConDios;
+use App\Services\GamificacionService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class TiempoConDiosController extends Controller
 {
     public function historial(Request $request)
     {
-        
+
         $usuario = auth()->user();
         $existeTiemposConDios = $usuario->tiemposConDios()->first();
 
@@ -35,13 +36,11 @@ class TiempoConDiosController extends Controller
                 ->whereBetween('fecha', [$filtroFechaIni, $filtroFechaFin])
                 ->orderBy('fecha', 'desc')
                 ->get();
-                        
-                /*foreach ($tiemposConDios as $tiempoConDios) {
-                    $tiempoConDios->fecha = Carbon::parse($tiempoConDios->fecha)->subDay()->format('Y-m-d');
-                    $tiempoConDios->save();
-                }*/
-                
 
+            /*foreach ($tiemposConDios as $tiempoConDios) {
+                $tiempoConDios->fecha = Carbon::parse($tiempoConDios->fecha)->subDay()->format('Y-m-d');
+                $tiempoConDios->save();
+            }*/
 
             $meses = Helpers::meses('largo');
 
@@ -75,7 +74,7 @@ class TiempoConDiosController extends Controller
 
         $fechaHoy = Carbon::now()->format('Y-m-d');
         $tiempoConDiosHoy = $usuario->tiemposConDios()->where('fecha', $fechaHoy)->first();
-        
+
         if ($tiempoConDiosHoy) {
             if ($tiempoConDiosHoy->estado === 'completado') {
                 return Redirect::to('pagina-no-encontrada');
@@ -93,19 +92,19 @@ class TiempoConDiosController extends Controller
 
         $fechaHoy = Carbon::now()->format('Y-m-d');
         $tiempoConDiosHoy = $usuario->tiemposConDios()->where('fecha', $fechaHoy)->first();
-        
+
         $pasoActual = 1;
         $respuestasPrevias = [];
-        
+
         // Si no hay borrador, crearlo inmediatamente
-        if (!$tiempoConDiosHoy) {
+        if (! $tiempoConDiosHoy) {
             $modo = $request->query('modo', 'propia');
             $tiempoConDiosHoy = TiempoConDios::create([
                 'user_id' => $usuario->id,
                 'fecha' => $fechaHoy,
                 'estado' => 'en_progreso',
                 'paso_actual' => 1,
-                'modo' => $modo
+                'modo' => $modo,
             ]);
         }
 
@@ -119,7 +118,7 @@ class TiempoConDiosController extends Controller
                 $pasoActual = $tiempoConDiosHoy->paso_actual;
                 // Si el borrador ya tiene plan_lector_id, forzamos modo plan, si no usamos el modo de la DB.
                 $modoLectura = $tiempoConDiosHoy->plan_lector_id ? 'plan' : $tiempoConDiosHoy->modo;
-                
+
                 // Cargar las respuestas desde la tabla pivote
                 $camposGuardados = $tiempoConDiosHoy->campos;
                 foreach ($camposGuardados as $campo) {
@@ -151,7 +150,7 @@ class TiempoConDiosController extends Controller
     {
         $user = auth()->user();
         $fechaHoy = Carbon::now()->format('Y-m-d');
-        
+
         $tiempoConDiosHoy = $user->tiemposConDios()->where('fecha', $fechaHoy)->first();
         if ($tiempoConDiosHoy && $tiempoConDiosHoy->estado === 'completado') {
             return Redirect::to('pagina-no-encontrada');
@@ -161,12 +160,12 @@ class TiempoConDiosController extends Controller
             $query->where('es_input', true);
         })->get();
 
-        if (!$tiempoConDiosHoy) {
+        if (! $tiempoConDiosHoy) {
             $tiempoConDiosHoy = TiempoConDios::create([
                 'fecha' => Carbon::now()->format('Y-m-d'),
                 'user_id' => auth()->user()->id,
                 'estado' => 'en_progreso',
-                'paso_actual' => 1
+                'paso_actual' => 1,
             ]);
         }
 
@@ -194,7 +193,7 @@ class TiempoConDiosController extends Controller
                     ->where('user_id', $user->id)
                     ->whereIn('plan_lector_dia_id', $plan->dias()->pluck('id'))
                     ->count();
-                
+
                 $porcentaje = ($totalDias > 0) ? round(($completadosCount / $totalDias) * 100) : 100;
 
                 \Illuminate\Support\Facades\DB::table('plan_lector_users')
@@ -202,12 +201,17 @@ class TiempoConDiosController extends Controller
                     ->where('user_id', $user->id)
                     ->update([
                         'porcentaje_progreso' => $porcentaje,
-                        'estado' => ($porcentaje >= 100) ? 'completado' : 'inscrito'
+                        'estado' => ($porcentaje >= 100) ? 'completado' : 'inscrito',
                     ]);
 
                 $plan->recalcularPromedio();
             }
         }
+
+        // =====================================================================
+        // DISPARADOR DE GAMIFICACIÓN: TIEMPO CON DIOS
+        // =====================================================================
+        $resultadoGamificacion = GamificacionService::procesarAccion($user, 'tiempo_con_dios');
 
         $cantidadRachaSemanal = $user->cantidadRachaSemanal();
 
@@ -217,6 +221,7 @@ class TiempoConDiosController extends Controller
         return view('contenido.paginas.tiempo-con-dios.tiempo-exitoso', [
             'cantidadRachaSemanal' => $cantidadRachaSemanal,
             'diaDeLaSemana' => $diaDeLaSemana,
+            'resultadoGamificacion' => $resultadoGamificacion,
         ]);
 
     }

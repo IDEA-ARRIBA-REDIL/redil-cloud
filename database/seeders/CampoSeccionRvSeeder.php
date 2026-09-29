@@ -24,7 +24,7 @@ class CampoSeccionRvSeeder extends Seeder
 
         //
         CampoSeccionRv::firstOrCreate([
-            'nombre' => 'Meditación biblica',
+            'nombre' => 'Meditación bíblica',
             'abierto' => false,
             'seccion_rv_id' => 1,
             'orden' => 2,
@@ -299,7 +299,7 @@ class CampoSeccionRvSeeder extends Seeder
 
         //
         CampoSeccionRv::firstOrCreate([
-            'nombre' => 'manejo de frustraciones',
+            'nombre' => 'Manejo de frustraciones',
             'abierto' => false,
             'seccion_rv_id' => 6,
             'orden' => 2,

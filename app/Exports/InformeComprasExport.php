@@ -24,7 +24,6 @@ class InformeComprasExport implements FromView
             'moneda',
             'destinatario',
             'inscripciones.categoriaActividad',
-            'inscripciones.actividadCategoria',
             'inscripciones.user',
             'abonos',
             'pagos.tipoPago',

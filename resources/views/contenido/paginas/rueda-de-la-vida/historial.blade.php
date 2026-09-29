@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 @extends('layouts/blankLayout')
 
-@section('title', 'Historial RV')
+@section('title', 'Historial '.$configuracionRv->nombre_general)
 
 @section('vendor-style')
 
@@ -79,13 +79,15 @@ use Carbon\Carbon;
   </nav>
 
   <div class="pt-5 px-3 px-sm-7 mt-10">
-    <div class="col-12 d-flex col-sm-8 offset-sm-2 col-lg-8 offset-lg-2 mb-7">
+    <div class="col-12 d-flex flex-wrap justify-content-between align-items-center col-sm-8 offset-sm-2 col-lg-8 offset-lg-2 mb-7 gap-2">
       <a href="/rueda-vida/nueva">
       <button style="border: solid 1px #CFD1D3 !important" type="button" class="btn btn-sm border py-2 border-2 rounded-3 shadow-sm box-waves-effect">
-        <img style="width:50px" src="{{ Storage::url('generales/img/otros/dibujo_formulario_usuario_respuesta.png') }}" class="p-0"> <h6 style="color:#333" class="mb-0 p-2 fw-semibold">  Realizar {{$configuracionRv->nombre_general}}</h6>
+        <img style="width:50px" src="{{ Storage::disk('global_media')->url('rueda-de-la-vida.png') }}" class="p-0"> <h6 style="color:#333" class="mb-0 p-2 fw-semibold d-inline-block">  Realizar {{$configuracionRv->nombre_general}}</h6>
         <i class="ms-3 ti ti-chevron-right"></i>
        </button>
       </a>
+
+
     </div>
 
     <div class="col-12 col-sm-8 offset-sm-2 col-lg-8 offset-lg-2">
@@ -94,16 +96,7 @@ use Carbon\Carbon;
       @foreach($ruedasDeLaVida as $rueda)
       <div class="row boxShadow mb-3 pb-1 mt-3 justify-content-center align-items-center mx-0">
         <div class="col-lg-3 col-md-4 col-12 text-center text-md-start mb-2 mb-md-0">
-          @php
-              $fechaOriginal = $rueda->fecha; // Tu fecha en formato Y-m-d
-              $fecha = new DateTime($fechaOriginal);
-
-              // Formatear la fecha usando strftime()
-              setlocale(LC_TIME, 'es_ES.UTF-8'); // Configurar el locale a español
-              $fechaFormateada = strftime('%d-%B-%Y', $fecha->getTimestamp());
-
-          @endphp
-          <p style="text-transform: capitalize; color:#333;" class="mb-0"> {{$fechaFormateada}}</p>
+          <p style="text-transform: capitalize; color:#333;" class="mb-0"> {{$rueda->fecha}}</p>
         </div>
         <div class="col-lg-6 col-md-4 text-center col-12 mb-2 mb-md-0">
           <h6 class="fw-semibold mb-0 @if($rueda->promedio_general >= $configuracionRv->promedio_general)text-success @else texto-danger @endif"> {{$configuracionRv->label_promedio_general}} : {{$rueda->promedio_general}} </h6>

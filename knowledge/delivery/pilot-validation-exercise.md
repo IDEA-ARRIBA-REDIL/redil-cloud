@@ -39,16 +39,16 @@ Ejemplos de tamaño —no son autorización para implementarlos—:
 
 | Campo | Respuesta |
 |---|---|
-| Fecha | Por completar |
+| Fecha | 2026-09-27, primera ejecución asistida; réplica por compañero pendiente |
 | Compañero que ejecuta | Por completar |
 | Revisor | Por completar |
-| Feature elegido | Por completar |
-| Dominio principal | Por completar |
-| Dependencias estrictas | Por completar |
-| Comportamiento actual | Por completar |
-| Comportamiento esperado | Por completar |
-| Usuario que usa el flujo | Por completar |
-| Evidencia funcional | Por completar |
+| Feature elegido | WI-016: tareas de consolidación en perfil congregacional |
+| Dominio principal | Usuarios |
+| Dependencias estrictas | Consolidación, únicamente lectura de asignaciones existentes |
+| Comportamiento actual | El perfil no mostraba las tareas de consolidación |
+| Comportamiento esperado | Mostrar nombre, estado y fecha sin acciones de modificación |
+| Usuario que usa el flujo | Cualquiera autorizado para abrir ese perfil congregacional |
+| Evidencia funcional | 12 pruebas / 61 aserciones exitosas; revisión visual pendiente; ver WI-016 en work-items/in-progress |
 | Tiempo de inicio y cierre | Por completar |
 
 ### Paquete que recibe el compañero

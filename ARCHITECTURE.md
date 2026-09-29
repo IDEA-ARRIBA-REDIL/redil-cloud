@@ -355,3 +355,48 @@ Los agentes de documentación están en `.agent/workflows/`:
 - **Neon** para PostgreSQL serverless
 - **Valkey** para cache (Redis fork)
 - **Cloudflare R2** para archivos estáticos
+
+### 10.1. Sincronización asistida SFTP desde el equipo local
+
+**Instrucción del responsable (2026-09-28):** al terminar una tarea de implementación autorizada, el agente debe subir sus archivos elegibles al cPanel de desarrollo mediante SFTP directo, sin exigir abrirlos y guardarlos uno por uno en Antigravity. No es necesario controlar el plugin del IDE. Esta alternativa sustituye el guardado manual descrito en la sección 7.2 de `.agent/skills/base-desarrollo/SKILL.md` únicamente cuando se cumplen las condiciones siguientes; no habilita comandos remotos ni modifica las demás restricciones del proyecto.
+
+#### Condiciones de activación
+
+- Ejecutarse en el Mac local del responsable, con usuario de sistema `macosxdarwin` y raíz real del proyecto `/Users/macosxdarwin/Desktop/REDIL-CLOUD`. Comprobar el entorno de ejecución real, no inferirlo de una ruta mencionada en el chat. Una copia en otro equipo, contenedor, worktree, CI o sesión alojada en un servidor no queda autorizada por esta regla. Ante dudas, preguntar.
+- Leer las credenciales únicamente desde `.vscode/sftp.json` local, sin imprimirlas, copiarlas a documentación ni incluirlas en el lote. El destino autorizado es el cPanel de desarrollo de la cuenta `redil2024`, raíz `/home/redil2024/public_html`, no Laravel Cloud ni infraestructura de clientes. Si el perfil, host, cuenta o destino cambia respecto del destino previamente verificado, solicitar confirmación antes de escribir.
+- Validar la identidad SSH contra una clave de host conocida. No aceptar automáticamente claves nuevas o modificadas. Respetar las aprobaciones de red y permisos que solicite la herramienta; esta instrucción no las omite.
+- La instrucción aplica durante tareas de implementación, no como vigilancia permanente de archivos ni en consultas, diagnósticos o tareas exclusivamente documentales. Si el usuario pide trabajar solo en local o no desplegar, no subir nada.
+- **Alcance ampliado por el responsable (2026-09-28):** subir mediante SFTP los archivos elegibles creados o modificados por el agente en cada tarea de implementación autorizada, de cualquier módulo o área del proyecto. No se limita a administración central. Incluye controladores, servicios, componentes, vistas, rutas, configuración y otros archivos necesarios de la tarea, respetando las exclusiones y validaciones siguientes. Esta autorización no incluye cambios previos ajenos a la tarea ni habilita una sincronización indiscriminada de todo el repositorio.
+
+#### Procedimiento por tarea
+
+1. Antes de editar, identificar los archivos de la tarea y conservar su estado local y remoto de referencia. No tomar todos los cambios existentes del repositorio como parte de la entrega.
+2. Revisar y validar los cambios; anunciar el lote que se va a subir. No publicar código con errores conocidos ni un lote incompleto. Si falta una referencia fiable para distinguir cambios previos o hay diferencias remotas no explicadas, detener la subida de ese lote y consultar; no sobrescribir el trabajo del compañero.
+3. Excluir secretos (`.env` y variantes, claves, credenciales), `.vscode/`, `.git/`, dependencias, logs, cachés, archivos de usuarios, documentación interna y pruebas. No sincronizar directorios completos ni usar opciones de borrado espejo. No subir `UserSeeder` ni `TenantDatabaseSeeder` bajo esta autorización. Mantener `routes/web.php` como cambio manual hasta nueva autorización explícita, entregando al usuario las rutas necesarias.
+4. Respaldar los archivos remotos que se reemplazarán en una carpeta privada fuera de `public_html`, con un manifiesto de rutas y hashes sin secretos. Revalidar el estado remoto justo antes de reemplazar. Subir a archivos temporales y reemplazar de forma atómica por archivo cuando el servidor lo permita; verificar el contenido final por checksum y conservar permisos adecuados. Esto no vuelve atómico un despliegue de varios archivos: si requiere mantenimiento o una transición coordinada, detenerse y acordar ese procedimiento.
+5. No ejecutar automáticamente Artisan, migraciones, seeders, Composer, compilaciones, cambios de `.env`, cron, reinicios de workers ni comandos Git. Si el lote necesita estas acciones o cambios manuales de rutas para funcionar, explicar comandos, orden y riesgos y coordinar la activación antes de publicarlo. Una subida SFTP no acredita que migraciones, cachés, assets o procesos estén actualizados.
+6. Informar qué archivos se subieron y verificaron, dónde quedó el respaldo y qué acciones manuales faltan. Registrar la entrega en el WI y la documentación del módulo cuando corresponda. Ante un fallo parcial, indicar exactamente lo aplicado y lo pendiente; no declarar éxito ni restaurar por encima de cambios remotos posteriores.
+
+**Límite:** esta regla documenta cómo debe actuar el agente cuando tenga acceso a las herramientas y lea estas instrucciones; no instala un sincronizador, no configura el plugin y no garantiza que otros editores o agentes la carguen automáticamente. El flujo de producción en Laravel Cloud sigue siendo independiente y se rige por `knowledge/delivery/DESPLIEGUEREDILCLOUD.md`.
+
+---
+
+## 11. Integridad Absoluta del Código (Directrices Anti-Truncado para Agentes de IA)
+
+Para garantizar la estabilidad del software y evitar la pérdida accidental de lógica de negocio en el código fuente, cualquier agente de IA o desarrollador DEBE acatar estrictamente:
+
+### 11.1. Prohibición Absoluta de Marcadores de Omisión / Elipsis
+- **NUNCA** utilizar marcadores de posición, pseudocódigo o comentarios abstractos de omisión como:
+  - `/* ... */`
+  - `// ... resto del código ...`
+  - `// ... sin cambios ...`
+  - `/* lógica previa */`
+  - `<!-- ... -->`
+- Todo bloque de código que se escriba o edite DEBE ser **100% completo, ejecutable y funcional**. Nunca asumir que el código existente se preservará si se reemplaza por un comentario de resumen.
+
+### 11.2. Edición Quirúrgica y No Destructiva
+- Preferir siempre modificaciones atómicas dirigidas sobre las líneas exactas a cambiar (`replace_file_content`), evitando sobreescribir bloques o métodos enteros innecesariamente.
+- Si se reescribe un bloque contenedor, clase o vista, se DEBEN transferir y respetar íntegramente todos los métodos, callbacks, listeners de eventos (`@this.on`, Alpine, SweetAlert2), directivas y validaciones preexistentes.
+
+### 11.3. Verificación de Completitud
+- Antes de finalizar cualquier cambio, el agente debe auto-revisar que ninguna función o listener haya quedado vacío o con lógica simulada.

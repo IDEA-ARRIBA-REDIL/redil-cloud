@@ -45,7 +45,7 @@ class TipoGrupo extends Model
         'subtitulo_ofrendas_finalizar_reporte',
         'descripcion_ofrendas_finalizar_reporte',
         'sumar_encargado_asistencia_grupo',
-        'horasDisponiblidadLinkAsistencia',
+        'horas_disponiblidad_link_asistencia',
         'estado',
     ];
 
@@ -111,20 +111,22 @@ class TipoGrupo extends Model
             'tipo_ofrenda_id'
         )->withPivot('created_at', 'updated_at');
     }
-  public function getImagenUrlAttribute(): ?string
-  {
-      if ($this->imagen && $this->imagen !== '' && $this->imagen !== 'indicador_general.png') {
-          return tenant_asset('img/tipos-grupos/iconos/' . $this->imagen);
-      }
 
-      return Storage::disk('global_media')->url('tipo-grupo/indicador_general.png');
-  }
+    public function getImagenUrlAttribute(): ?string
+    {
+        if ($this->imagen && $this->imagen !== '' && $this->imagen !== 'indicador_general.png') {
+            return tenant_asset('img/tipos-grupos/iconos/'.$this->imagen);
+        }
 
-  public function getPortadaUrlAttribute(): ?string
-  {
-      if (!$this->portada) {
-          return null;
-      }
-      return tenant_asset('img/tipos-grupos/banners/' . $this->portada);
-  }
+        return Storage::disk('global_media')->url('tipo-grupo/indicador_general.png');
+    }
+
+    public function getPortadaUrlAttribute(): ?string
+    {
+        if (! $this->portada) {
+            return null;
+        }
+
+        return tenant_asset('img/tipos-grupos/banners/'.$this->portada);
+    }
 }

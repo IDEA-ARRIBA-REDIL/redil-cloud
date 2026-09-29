@@ -15,7 +15,8 @@
           <img src="{{ $usuario->foto_url }}" 
                alt="{{ $usuario->nombre(3) }}" 
                class="rounded-3" 
-               style="width: 55px; height: 55px; object-fit: cover;">
+               style="width: 55px; height: 55px; object-fit: cover;"
+               onerror="this.onerror=null; this.src='{{ $usuario->default_foto_url }}';">
         @else
           <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 55px; height: 55px; background-color: #EBE9FA;">
             <i class="ti ti-cake text-primary fs-3"></i>

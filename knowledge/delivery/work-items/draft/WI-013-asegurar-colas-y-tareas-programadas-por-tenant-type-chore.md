@@ -32,7 +32,7 @@ El operador puede confiar en que correos y tareas de Grupos se ejecutan una vez,
 
 ## Current behavior
 
-El bootstrapper de colas está activo, pero no existe una prueba de dos tenants. El recordatorio de reportes se programa sin iteración tenant, `onOneServer()` ni `withoutOverlapping()`. En Cloud, Scheduler está apagado, no hay Background processes ni cache adjunta.
+La auditoría del 2026-09-06 registró el bootstrapper de colas activo, sin prueba de dos tenants, y el recordatorio de reportes sin iteración tenant, `onOneServer()` ni `withoutOverlapping()`. El panel mostraba Scheduler apagado, sin Background processes ni cache adjunta. Reconfirmar código y ambiente antes de implementar; la revisión documental del 2026-09-27 no reinspeccionó el panel.
 
 ## Target behavior
 
@@ -55,7 +55,7 @@ Jobs y comandos transportan o inicializan explícitamente el tenant, son idempot
 
 ## Scope confidence
 
-Medio-alto: Cloud confirma que no ejecuta scheduler ni procesos de fondo, pero el driver efectivo sigue sin verificarse para evitar revelar variables o despertar producción.
+Medio: existe evidencia histórica, pero el estado actual del ambiente y el driver efectivo requieren verificación sin revelar secretos.
 
 ## Acceptance Criteria
 
@@ -65,6 +65,8 @@ Medio-alto: Cloud confirma que no ejecuta scheduler ni procesos de fondo, pero e
 - Reintentar un job no duplica el efecto observable.
 - Fallos incluyen `tenant_id`, job y causa sin datos sensibles.
 - Se documenta la compatibilidad de Laravel antes de habilitar Managed Queues.
+- La elección de cola considera cambio de conexión predeterminada, duración máxima del trabajo y limpieza del contexto tenant; ver requisitos fechados y fuentes en `knowledge/delivery/laravel-cloud-deployment-runbook.md`.
+- Se verifica la captura de horarios de `schedule:list` en el despliegue, el comportamiento con réplicas y su efecto sobre Scale-to-Zero.
 
 ## Out of scope
 
@@ -90,6 +92,7 @@ Medio-alto: Cloud confirma que no ejecuta scheduler ni procesos de fondo, pero e
 
 - ¿Qué valores efectivos tienen `QUEUE_CONNECTION`, `CACHE_DRIVER` y `CACHE_STORE` en producción?
 - ¿Se autoriza crear cache y worker, considerando el costo, después de actualizar y probar Laravel?
+- ¿Existe hoy una queue cluster o managed queue de generación anterior afectada por el retiro anunciado para el 2026-09-30? Verificar antes de concluir que requiere migración; no estaba demostrado en el inventario histórico.
 
 ## Suggested ownership
 

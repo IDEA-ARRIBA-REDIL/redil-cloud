@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\AlumnoRespuestaItem;
 use App\Models\Calificaciones;
 use App\Models\MateriaAprobadaUsuario;
 use App\Models\MateriaPeriodo;
+use App\Models\Matricula;
 use App\Models\Periodo;
+use App\Models\ReporteAsistenciaAlumnos;
 use App\Traits\AplicaEfectosAprobacion;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -20,15 +22,13 @@ class ServicioValidacionMateriaPeriodo
 
     public function procesarLoteDeAlumnosPorMateria(MateriaPeriodo $materiaPeriodo, int $pagina, int $porPagina): int
     {
-        $idsAlumnosDelLote = DB::table('matriculas as mat')
-            ->join('horarios_materia_periodo as hmp', 'mat.horario_materia_periodo_id', '=', 'hmp.id')
-            ->where('hmp.materia_periodo_id', $materiaPeriodo->id)
-            // CAMBIO 2026-09-03: No se procesan anuladas, rechazadas ni eliminadas lógicamente.
-            ->whereNull('mat.deleted_at')
-            ->whereNotIn('mat.estado_pago_matricula', ['anulada', 'rechazada'])
-            ->distinct()->orderBy('mat.user_id')
+        $idsAlumnosDelLote = Matricula::query()
+            ->where('periodo_id', $materiaPeriodo->periodo_id)
+            ->whereHas('horarioMateriaPeriodo', fn ($consulta) => $consulta->where('materia_periodo_id', $materiaPeriodo->id))
+            ->whereNotIn('estado_pago_matricula', ['anulada', 'rechazada'])
+            ->distinct()->orderBy('user_id')
             ->offset(($pagina - 1) * $porPagina)->limit($porPagina)
-            ->pluck('mat.user_id');
+            ->pluck('user_id');
 
         if ($idsAlumnosDelLote->isEmpty()) {
             return 0;
@@ -49,7 +49,7 @@ class ServicioValidacionMateriaPeriodo
             return [];
         }
         $notaMinima = Calificaciones::where('sistema_calificacion_id', $periodo->sistema_calificaciones_id)->where('aprobado', true)->min('nota_minima');
-        if (is_null($notaMinima)) {
+        if (is_null($notaMinima) && collect($resultadosAcademicos)->contains(fn (object $resultado): bool => (bool) $resultado->habilitar_calificaciones)) {
             throw new \Exception("No se encontró nota mínima de aprobación para el sistema de calificación ID: {$periodo->sistema_calificaciones_id}");
         }
         $datosParaGuardar = [];
@@ -75,41 +75,52 @@ class ServicioValidacionMateriaPeriodo
 
     private function obtenerResultadosAcademicos(MateriaPeriodo $materiaPeriodo, Collection $idsAlumnos): array
     {
-        $placeholders = implode(',', array_fill(0, count($idsAlumnos), '?'));
-        // El binding ahora incluye el materia_periodo_id
-        $bindings = array_merge([$materiaPeriodo->periodo_id, $materiaPeriodo->id], $idsAlumnos->toArray());
+        $matriculas = Matricula::query()->where('periodo_id', $materiaPeriodo->periodo_id)
+            ->whereHas('horarioMateriaPeriodo', fn ($consulta) => $consulta->where('materia_periodo_id', $materiaPeriodo->id))
+            ->whereNotIn('estado_pago_matricula', ['anulada', 'rechazada'])
+            ->whereIn('user_id', $idsAlumnos)->get();
+        $horarios = $matriculas->pluck('horario_materia_periodo_id')->unique();
+        $notas = AlumnoRespuestaItem::query()
+            ->join('item_corte_materia_periodo as item', 'item.id', '=', 'alumno_respuesta_items.item_corte_materia_periodo_id')
+            ->join('cortes_periodo as corte', 'corte.id', '=', 'item.corte_periodo_id')
+            ->where('item.materia_periodo_id', $materiaPeriodo->id)
+            ->where('corte.periodo_id', $materiaPeriodo->periodo_id)
+            ->whereIn('item.horario_materia_periodo_id', $horarios)
+            ->whereIn('alumno_respuesta_items.user_id', $idsAlumnos)
+            ->select('alumno_respuesta_items.user_id', 'item.horario_materia_periodo_id')
+            ->selectRaw('SUM(nota_obtenida * item.porcentaje / 100.0 * corte.porcentaje / 100.0) as nota')
+            ->groupBy('alumno_respuesta_items.user_id', 'item.horario_materia_periodo_id')->get()
+            ->keyBy(fn ($nota): string => $nota->user_id.'-'.$nota->horario_materia_periodo_id);
+        $asistencias = ReporteAsistenciaAlumnos::query()
+            ->join('reportes_asistencia_clase as clase', 'clase.id', '=', 'reportes_asistencia_alumnos.reporte_asistencia_clase_id')
+            ->whereIn('clase.horario_materia_periodo_id', $horarios)
+            ->whereIn('reportes_asistencia_alumnos.user_id', $idsAlumnos)->where('asistio', true)
+            ->select('reportes_asistencia_alumnos.user_id', 'clase.horario_materia_periodo_id')
+            ->selectRaw('COUNT(*) as total')
+            ->groupBy('reportes_asistencia_alumnos.user_id', 'clase.horario_materia_periodo_id')->get()
+            ->keyBy(fn ($asistencia): string => $asistencia->user_id.'-'.$asistencia->horario_materia_periodo_id);
+        $materiaPeriodo->loadMissing('materia');
 
-        $sql = "
-            SELECT
-                mat.user_id, mat.bloqueado AS matricula_bloqueada,
-                mp.id AS materia_periodo_id, mp.materia_id, m.creditos,
-                /* LEGADO (2026-09-03): m.habilitar_calificaciones, m.habilitar_asistencias, m.asistencias_minimas */
-                mp.habilitar_calificaciones, mp.habilitar_asistencias, mp.asistencias_minimas,
-                COALESCE(SUM(ari.nota_obtenida * (icp.porcentaje / 100.0) * (cp.porcentaje / 100.0)), 0) AS nota_final_calculada,
-                (
-                    SELECT COUNT(*) FROM reportes_asistencia_alumnos AS raa
-                    JOIN reportes_asistencia_clase AS rac ON raa.reporte_asistencia_clase_id = rac.id
-                    WHERE raa.user_id = mat.user_id
-                        AND rac.horario_materia_periodo_id = mat.horario_materia_periodo_id
-                        AND raa.asistio = TRUE
-                ) AS total_asistencias
-            FROM matriculas AS mat
-            JOIN horarios_materia_periodo AS hmp ON mat.horario_materia_periodo_id = hmp.id
-            JOIN materia_periodo AS mp ON hmp.materia_periodo_id = mp.id
-            JOIN materias AS m ON mp.materia_id = m.id
-            LEFT JOIN item_corte_materia_periodo AS icp ON icp.horario_materia_periodo_id = hmp.id
-            LEFT JOIN alumno_respuesta_items AS ari ON ari.item_corte_materia_periodo_id = icp.id AND ari.user_id = mat.user_id
-            LEFT JOIN cortes_periodo AS cp ON icp.corte_periodo_id = cp.id
-            WHERE mat.periodo_id = ?
-                AND mp.id = ?
-                AND mat.deleted_at IS NULL
-                AND mat.estado_pago_matricula NOT IN ('anulada', 'rechazada')
-                AND mat.user_id IN ({$placeholders})
-            GROUP BY mat.user_id, mat.bloqueado, mp.id, mp.materia_id, m.creditos,
-                mp.habilitar_calificaciones, mp.habilitar_asistencias, mp.asistencias_minimas;
-        ";
+        return $matriculas->groupBy('user_id')->map(function (Collection $inscripciones) use ($materiaPeriodo, $notas, $asistencias): object {
+            if ($inscripciones->pluck('horario_materia_periodo_id')->unique()->count() > 1) {
+                throw new \RuntimeException('Hay alumnos inscritos en varios horarios de la misma materia. Revisa sus matrículas antes de cerrar.');
+            }
+            $matricula = $inscripciones->first();
+            $clave = $matricula->user_id.'-'.$matricula->horario_materia_periodo_id;
 
-        return DB::select($sql, $bindings);
+            return (object) [
+                'user_id' => $matricula->user_id,
+                'matricula_bloqueada' => $inscripciones->contains('bloqueado', true),
+                'materia_periodo_id' => $materiaPeriodo->id,
+                'materia_id' => $materiaPeriodo->materia_id,
+                'creditos' => $materiaPeriodo->materia?->creditos,
+                'habilitar_calificaciones' => $materiaPeriodo->habilitar_calificaciones,
+                'habilitar_asistencias' => $materiaPeriodo->habilitar_asistencias,
+                'asistencias_minimas' => $materiaPeriodo->asistencias_minimas,
+                'nota_final_calculada' => (float) ($notas->get($clave)?->nota ?? 0),
+                'total_asistencias' => (int) ($asistencias->get($clave)?->total ?? 0),
+            ];
+        })->values()->all();
     }
 
     private function determinarEstadoFinal(object $resultado, float $notaMinima): array
@@ -187,7 +198,9 @@ class ServicioValidacionMateriaPeriodo
                 if (
                     abs($registroExistente->nota_final - $dato['nota_final']) > 0.001 ||
                     $registroExistente->total_asistencias != $dato['total_asistencias'] ||
-                    $registroExistente->aprobado != $dato['aprobado']
+                    $registroExistente->aprobado != $dato['aprobado'] ||
+                    $registroExistente->motivo_reprobacion !== $dato['motivo_reprobacion'] ||
+                    $registroExistente->creditos_aprobados != $dato['creditos_aprobados']
                 ) {
                     // Si algo cambió, lo añadimos a la lista de registros a actualizar.
                     $paraActualizar[] = $dato;
@@ -222,6 +235,7 @@ class ServicioValidacionMateriaPeriodo
                         'total_asistencias' => $datoActualizar['total_asistencias'],
                         'aprobado' => $datoActualizar['aprobado'],
                         'motivo_reprobacion' => $datoActualizar['motivo_reprobacion'],
+                        'creditos_aprobados' => $datoActualizar['creditos_aprobados'],
                         'updated_at' => now(),
                     ]);
             }

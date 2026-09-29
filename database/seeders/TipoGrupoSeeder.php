@@ -33,18 +33,16 @@ class TipoGrupoSeeder extends Seeder
                 'posible_grupo_sede' => $grupo['posible_grupo_sede'] ?? false,
                 'metros_cobertura' => $grupo['metros_cobertura'] ?? 0,
 
-                /*
                 'ingresos_individuales_discipulos' => $grupo['ingresos_individuales_discipulos'] ?? false,
                 'ingresos_individuales_lideres' => $grupo['ingresos_individuales_lideres'] ?? false,
                 'inasistencia_obligatoria' => $grupo['inasistencia_obligatoria'] ?? false,
 
                 'tipo_evangelistico' => $grupo['tipo_evangelistico'] ?? false,
-                */
 
-                'ingresos_individuales_discipulos' => true,
+                /*'ingresos_individuales_discipulos' => true,
                 'ingresos_individuales_lideres' => true,
                 'inasistencia_obligatoria' => true,
-                'tipo_evangelistico' => true,
+                'tipo_evangelistico' => true,*/
 
                 'registra_datos_planeacion' => $grupo['registra_datos_planeacion'] ?? false,
                 'servidores_solo_discipulos' => $grupo['servidores_solo_discipulos'] ?? false,
@@ -83,7 +81,7 @@ class TipoGrupoSeeder extends Seeder
             // clasificaciones asistentes y ofrendas para grupos evangelísticos (Crecimiento, Warriors, etc.)
             // if (! empty($grupo['tipo_evangelistico'])) {
             $tipoGrupo->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-            $tipoGrupo->tiposOfrendas()->syncWithoutDetaching([5, 6, 2, 4]);
+            $tipoGrupo->tiposOfrendas()->syncWithoutDetaching([5, 6]);
             // }
         }
     }

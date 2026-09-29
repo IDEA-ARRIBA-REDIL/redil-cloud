@@ -78,6 +78,13 @@ class ConfiguracionController extends Controller
                 'permission' => 'configuraciones.subitem_pasos_de_crecimiento',
             ],
             [
+                'title' => 'Rueda de la vida',
+                'route' => 'ruedaDeLaVida.gestionar',
+                'icon' => 'ti-circle-dashed-check',
+                'color' => 'bg-label-secondary',
+                'permission' => 'rueda_de_la_vida.item_rueda_de_la_vida',
+            ],
+            [
                 'title' => 'Tipos de grupos',
                 'route' => 'gestionar-tipos-de-grupos.listar',
                 'icon' => 'ti-users-group',
@@ -155,6 +162,13 @@ class ConfiguracionController extends Controller
                 'permission' => 'configuraciones.subitem_formulario_usuarios',
             ],
             [
+                'title' => 'Campos formularios',
+                'route' => 'formularioUsuario.listaCampos',
+                'icon' => 'ti ti-input-check',
+                'color' => 'bg-label-secondary',
+                'permission' => 'configuraciones.subitem_gestionar_campos_formulario_usuario',
+            ],
+            [
                 'title' => 'Banners generales',
                 'route' => 'banner-general.listarBanners',
                 'icon' => 'ti-photo',
@@ -188,6 +202,20 @@ class ConfiguracionController extends Controller
                 'icon' => 'ti-trophy',
                 'color' => 'bg-label-secondary',
                 'permission' => ['hitos.gestionar', 'configuraciones.item_configuraciones'],
+            ],
+            [
+                'title' => 'Gamificación',
+                'route' => 'gamificacion.configuracion',
+                'icon' => 'ti-award',
+                'color' => 'bg-label-secondary',
+                'permission' => 'configuraciones.configuracion_gamificacion',
+            ],
+            [
+                'title' => 'Tienda de canjes',
+                'route' => 'gamificacion.tienda',
+                'icon' => 'ti-building-store',
+                'color' => 'bg-label-secondary',
+                'permission' => 'configuraciones.tienda_gamificacion',
             ],
         ];
 

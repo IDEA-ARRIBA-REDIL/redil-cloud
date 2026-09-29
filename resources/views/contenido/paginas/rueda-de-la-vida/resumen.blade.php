@@ -23,6 +23,14 @@ use Carbon\Carbon;
     color: #AA1A1E !important;
   }
 
+  .card-area-box {
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
   .card-area-promedio {
     border-radius: 10px;
     padding: 12px 16px;
@@ -32,6 +40,23 @@ use Carbon\Carbon;
     margin-bottom: 10px;
     border: 1px solid #e0e0e0;
     background: #fff;
+  }
+
+  .card-area-box .card-area-promedio {
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+  }
+
+  .card-area-box .card-area-promedio:hover {
+    background-color: #f8f9fa;
+  }
+
+  .chevron-icon {
+    transition: transform 0.25s ease;
   }
 
   /* ── Estilos de impresión / PDF ─────────────────────────── */
@@ -44,7 +69,9 @@ use Carbon\Carbon;
     /* Ocultar elementos de navegación y acciones */
     .navbar-resumen,
     .btn-descargar-pdf,
-    .waves-effect {
+    .btn-toggle-habitos,
+    .waves-effect,
+    .chevron-icon {
       display: none !important;
     }
 
@@ -60,8 +87,15 @@ use Carbon\Carbon;
       break-inside: avoid;
     }
 
+    .card-area-box,
     .card-area-promedio {
       break-inside: avoid;
+    }
+
+    .collapse-habitos {
+      display: block !important;
+      height: auto !important;
+      visibility: visible !important;
     }
 
     /* Asegurar que el gráfico no se parta */
@@ -105,8 +139,8 @@ use Carbon\Carbon;
       $coloresResumen = [];
       $labelsResumen = [];
       foreach ($seccionesContadorPromedios as $seccion) {
-          $promedio = $seccion->promedio($rueda->id);
-          $seriesResumen[] = round($promedio ?? 0, 1);
+          $promedio = $promediosPorSeccion[$seccion->id] ?? $seccion->promedio($rueda->id) ?? 0;
+          $seriesResumen[] = round((float) $promedio, 1);
           $labelsResumen[] = $seccion->nombre_seccion;
           // Usamos el color propio de la sección (definido en secciones_rv.color)
           $coloresResumen[] = $seccion->color ?? '#6777ef';
@@ -180,22 +214,93 @@ use Carbon\Carbon;
 
 <script>
   /**
+   * Alterna la visibilidad de todos los hábitos evaluados.
+   */
+  function toggleTodosHabitos() {
+    const collapses = document.querySelectorAll('.collapse-habitos');
+    const btn = document.getElementById('btnToggleTodosHabitos');
+    const chevrons = document.querySelectorAll('.card-area-box .chevron-icon');
+
+    let algunoCerrado = false;
+    collapses.forEach(c => {
+      if (!c.classList.contains('show')) {
+        algunoCerrado = true;
+      }
+    });
+
+    collapses.forEach(c => {
+      if (algunoCerrado) {
+        c.classList.add('show');
+      } else {
+        c.classList.remove('show');
+      }
+    });
+
+    if (btn) {
+      if (algunoCerrado) {
+        btn.innerHTML = '<i class="ti ti-arrows-minimize me-1"></i> Colapsar hábitos';
+      } else {
+        btn.innerHTML = '<i class="ti ti-arrows-maximize me-1"></i> Ver hábitos';
+      }
+    }
+
+    chevrons.forEach(ch => {
+      ch.style.transform = algunoCerrado ? 'rotate(180deg)' : 'rotate(0deg)';
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.collapse-habitos').forEach(el => {
+      el.addEventListener('show.bs.collapse', function () {
+        const trigger = document.querySelector(`[data-bs-target="#${this.id}"]`);
+        if (trigger) {
+          const ch = trigger.querySelector('.chevron-icon');
+          if (ch) ch.style.transform = 'rotate(180deg)';
+        }
+      });
+      el.addEventListener('hide.bs.collapse', function () {
+        const trigger = document.querySelector(`[data-bs-target="#${this.id}"]`);
+        if (trigger) {
+          const ch = trigger.querySelector('.chevron-icon');
+          if (ch) ch.style.transform = 'rotate(0deg)';
+        }
+      });
+    });
+  });
+
+  /**
    * Genera una imagen del resumen usando html2canvas y la descarga.
    */
   function imprimirPDF() {
     const btn = document.querySelector('.btn-descargar-pdf');
     const elemento = document.querySelector('.contenido-resumen');
-    
-    // Ocultar botón temporalmente para que no salga en la imagen
+    const btnToggle = document.getElementById('btnToggleTodosHabitos');
+    const collapses = document.querySelectorAll('.collapse-habitos');
+
+    // Ocultar botones temporalmente para que no salgan en la imagen
     btn.style.display = 'none';
+    if (btnToggle) btnToggle.style.display = 'none';
+
+    // Guardar estados previos y expandir todos los hábitos para la imagen
+    const estadosPrevios = [];
+    collapses.forEach(c => {
+      estadosPrevios.push(c.classList.contains('show'));
+      c.classList.add('show');
+    });
 
     html2canvas(elemento, {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff'
     }).then(canvas => {
-      // Restaurar el botón
+      // Restaurar botones y estado de los collapses
       btn.style.display = '';
+      if (btnToggle) btnToggle.style.display = '';
+      collapses.forEach((c, idx) => {
+        if (!estadosPrevios[idx]) {
+          c.classList.remove('show');
+        }
+      });
 
       // Crear enlace de descarga
       const enlace = document.createElement('a');
@@ -205,6 +310,12 @@ use Carbon\Carbon;
     }).catch(err => {
       console.error('Error al generar la imagen', err);
       btn.style.display = '';
+      if (btnToggle) btnToggle.style.display = '';
+      collapses.forEach((c, idx) => {
+        if (!estadosPrevios[idx]) {
+          c.classList.remove('show');
+        }
+      });
     });
   }
 </script>
@@ -253,18 +364,76 @@ use Carbon\Carbon;
         <div id="polarChartResumen"></div>
       </div>
 
-      {{-- Lista de áreas con promedio --}}
+      {{-- Lista de áreas con promedio y desglose de hábitos evaluados --}}
       <div class="col-lg-6 col-md-6 col-sm-12">
-        @foreach ($seccionesContadorPromedios as $seccion)
-        <div class="card-area-promedio">
-          <div class="d-flex align-items-center">
-            <i class="{{ $seccion->icono ?? 'ti ti-circle' }} me-2 text-dark"></i>
-            <span class="fw-semibold text-dark" style="font-size: 0.9rem;">{{ $seccion->nombre_seccion }}</span>
-          </div>
-          <span class="fw-bold @if($seccion->promedio($rueda->id) >= $configuracionRv->promedio_general) text-success @else texto-danger @endif"
-            style="font-size: 1rem;">
-            {{ number_format($seccion->promedio($rueda->id), 1, ',', ' ') }}
+        <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+          <span class="text-muted fw-semibold" style="font-size: 0.85rem;">
+            <i class="ti ti-list-check me-1 text-primary"></i> Hábitos evaluados por área
           </span>
+          <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill btn-toggle-habitos" id="btnToggleTodosHabitos" onclick="toggleTodosHabitos()" style="font-size: 0.75rem; padding: 3px 10px;">
+            <i class="ti ti-arrows-maximize me-1"></i> Ver hábitos
+          </button>
+        </div>
+
+        @foreach ($seccionesContadorPromedios as $seccion)
+        @php
+          $promedioSec = $promediosPorSeccion[$seccion->id] ?? $seccion->promedio($rueda->id) ?? 0;
+          $camposSeccion = isset($camposCalificados) && $camposCalificados->has($seccion->id)
+              ? $camposCalificados->get($seccion->id)
+              : $seccion->campos;
+        @endphp
+        <div class="card-area-box mb-2">
+          <div class="card-area-promedio"
+               data-bs-toggle="collapse"
+               data-bs-target="#detalle-seccion-{{ $seccion->id }}"
+               aria-expanded="false"
+               aria-controls="detalle-seccion-{{ $seccion->id }}"
+               title="Haz clic para ver hábitos evaluados">
+            <div class="d-flex align-items-center">
+              <i class="{{ $seccion->icono ?? 'ti ti-circle' }} me-2 text-dark"></i>
+              <span class="fw-semibold text-dark" style="font-size: 0.9rem;">{{ $seccion->nombre_seccion }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="fw-bold @if($promedioSec >= $configuracionRv->promedio_general) text-success @else texto-danger @endif"
+                style="font-size: 1rem;">
+                {{ number_format((float) $promedioSec, 1, ',', ' ') }}
+              </span>
+              <i class="ti ti-chevron-down text-muted chevron-icon" style="font-size: 0.9rem;"></i>
+            </div>
+          </div>
+
+          <div class="collapse collapse-habitos" id="detalle-seccion-{{ $seccion->id }}">
+            <div class="px-3 py-2 border-top bg-light" style="background-color: #fafbfc !important;">
+              @forelse ($camposSeccion as $campo)
+                @php
+                  $nombreMostrar = $campo->nombre;
+                  if ($campo->abierto) {
+                    $nombreMostrar = !empty($campo->pivot?->nombre_campo_abierto)
+                      ? $campo->pivot->nombre_campo_abierto
+                      : ($campo->nombre ?: ('Hábito #' . $loop->iteration));
+                  }
+                  $valorHabito = isset($campo->pivot?->valor) ? (int) $campo->pivot->valor : 0;
+                @endphp
+                <div class="d-flex align-items-center justify-content-between py-1 px-2 mb-1 rounded bg-white border"
+                     style="border-left: 4px solid {{ $campo->color ?? '#6777ef' }} !important;">
+                  <div class="d-flex align-items-center flex-wrap">
+                    <span class="text-dark fw-medium" style="font-size: 0.85rem;">{{ $nombreMostrar }}</span>
+                    @if($campo->abierto)
+                      <span class="badge bg-label-primary rounded-pill ms-2 py-0 px-2" style="font-size: 0.68rem;">Personalizado</span>
+                    @endif
+                  </div>
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="fw-bold @if($valorHabito >= 7) text-success @elseif($valorHabito >= 5) text-warning @else text-danger @endif" style="font-size: 0.85rem;">
+                      {{ $valorHabito }}
+                    </span>
+                    <small class="text-muted" style="font-size: 0.75rem;">/ 10</small>
+                  </div>
+                </div>
+              @empty
+                <div class="text-muted text-center py-2" style="font-size: 0.8rem;">Sin hábitos evaluados en esta sección.</div>
+              @endforelse
+            </div>
+          </div>
         </div>
         @endforeach
 

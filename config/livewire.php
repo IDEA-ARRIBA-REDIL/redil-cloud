@@ -65,11 +65,10 @@ return [
 
     'temporary_file_upload' => [
         'disk' => null,        // Example: 'local', 's3'              | Default: 'default'
-        'rules' => null,       // Example: ['file', 'mimes:png,jpg']  | Default: ['required', 'file', 'max:12288'] (12MB)
+        'rules' => ['required', 'file', 'max:102400'], // Límite de 100MB (por defecto Livewire usa 12MB)
         'directory' => null,   // Example: 'tmp'                      | Default: 'livewire-tmp'
         'middleware' => [
             'web',
-            'universal',
             \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
             'throttle:60,1',
         ],

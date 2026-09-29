@@ -52,7 +52,12 @@ class VerificarReunion
             }
         }
 
-        
+        // 1. Si la validación es exitosa, continuar con la petición
+        if ($validado) {
+            return $next($request);
+        }
+
+        // 2. Si no está validado, redirigir a página no encontrada
+        return redirect()->route('pagina-no-encontrada');
     }
 }
- 

@@ -49,6 +49,8 @@ class FormularioUsuarioController extends Controller
             'nombre' => ['max:100', 'required'],
             'título' => ['max:100', 'required'],
             'etiqueta' => ['max:100', 'required'],
+            'icono' => ['nullable', 'string', 'max:100'],
+            'color' => ['nullable', 'string', 'max:50'],
             'tipoDeFormulario' => ['required'],
         ];
 
@@ -67,6 +69,8 @@ class FormularioUsuarioController extends Controller
         $formulario->nombre = $request->nombre;
         $formulario->titulo = $request->título;
         $formulario->label = $request->etiqueta;
+        $formulario->icono = $request->icono;
+        $formulario->color = $request->color;
         $formulario->descripcion = $request->descripción;
         $formulario->validar_edad = $request->validarEdad ? true : false;
         $formulario->edad_minima = $request->edadMínima;
@@ -113,6 +117,8 @@ class FormularioUsuarioController extends Controller
             'nombre' => ['max:100', 'required'],
             'título' => ['max:100', 'required'],
             'etiqueta' => ['max:100', 'required'],
+            'icono' => ['nullable', 'string', 'max:100'],
+            'color' => ['nullable', 'string', 'max:50'],
             'tipoDeFormulario' => ['required'],
         ];
 
@@ -130,6 +136,8 @@ class FormularioUsuarioController extends Controller
         $formulario->nombre = $request->nombre;
         $formulario->titulo = $request->título;
         $formulario->label = $request->etiqueta;
+        $formulario->icono = $request->icono;
+        $formulario->color = $request->color;
         $formulario->descripcion = $request->descripción;
         $formulario->validar_edad = $request->validarEdad ? true : false;
         $formulario->edad_minima = $request->edadMínima;

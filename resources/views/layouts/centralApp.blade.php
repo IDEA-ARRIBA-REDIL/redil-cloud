@@ -2,6 +2,8 @@
 @php
     use App\Helpers\Helpers;
     $configData = Helpers::appClasses();
+    $configData['style'] = 'light';
+    $configData['styleOptVal'] = 'light';
 @endphp
 
 <html lang="es" class="{{ $configData['style'] }}-style customizer-hide"
@@ -11,7 +13,7 @@
     data-style="{{ $configData['styleOptVal'] }}">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>REDIL Cloud - Panel Central</title>
 
@@ -42,11 +44,30 @@
     ])
 
     @livewireStyles
+    @include('layouts.sections.central-styles')
 </head>
-<body>
+<body class="redil-central">
+    <a class="redil-skip" href="#central-contenido">Saltar al contenido</a>
+    <header class="redil-topbar">
+        <a class="redil-brand" href="{{ url(auth('admin')->check() ? '/admin/dashboard' : '/admin/login') }}" aria-label="REDIL, administración central">
+            <span class="redil-brand-mark" aria-hidden="true">R<span>•</span></span>
+            <span><strong>REDIL</strong><small>PASTOREO INTELIGENTE</small></span>
+        </a>
+        @auth('admin')
+            <nav class="redil-nav" aria-label="Administración central">
+                @foreach(['dashboard' => 'Iglesias', 'planes' => 'Planes', 'invitaciones' => 'Invitaciones', 'super-admins' => 'Administradores', 'login-predeterminado' => 'Diseño de acceso'] as $ruta => $titulo)
+                    <a href="{{ url('/admin/'.$ruta) }}" @if(request()->is('admin/'.$ruta) || ($ruta === 'dashboard' && request()->is('admin/tenants/*'))) aria-current="page" @endif>{{ $titulo }}</a>
+                @endforeach
+            </nav>
+            <form method="POST" action="{{ url('/admin/logout') }}">@csrf<button type="submit" class="btn btn-sm btn-label-secondary">Salir</button></form>
+        @else
+            <span class="redil-eyebrow">ADMINISTRACIÓN CENTRAL</span>
+        @endauth
+    </header>
 
     <!-- Content starts here -->
-    {{ $slot }}
+    <main id="central-contenido" tabindex="-1">{{ $slot }}</main>
+    <footer class="redil-footer">REDIL Cloud <span>·</span> Tecnología al servicio de tu comunidad.</footer>
     <!-- Content ends here -->
 
     <!-- Core JS -->

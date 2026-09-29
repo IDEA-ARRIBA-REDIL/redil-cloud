@@ -191,10 +191,35 @@
 
                     {{-- 2. Cuerpo Principal (Detalle Primario: Punto de Pago) --}}
                     <div class="card-body">
+                        {{-- Notificación si falta el Punto de Pago o la Sede --}}
+                        @if (!$caja->puntoDePago || !$caja->puntoDePago->sede)
+                            <div class="alert alert-warning py-1 px-2 mb-2 d-flex align-items-center" role="alert" style="font-size: 0.78rem;">
+                                <i class="ti ti-alert-triangle me-1 text-warning"></i>
+                                <span>
+                                    @if (!$caja->puntoDePago)
+                                        Sin punto de pago asignado o eliminado.
+                                    @elseif (!$caja->puntoDePago->sede)
+                                        El punto de pago no tiene sede asignada.
+                                    @endif
+                                </span>
+                            </div>
+                        @endif
+
                         <div class="row mt-2">
                             <div class="col-12 d-flex flex-column">
                                 <small class="text-black">Punto de pago:</small>
-                                <small class="fw-semibold text-black ">{{ $caja->puntoDePago->nombre }}</small>
+                                @if ($caja->puntoDePago)
+                                    <small class="fw-semibold text-black">
+                                        {{ $caja->puntoDePago->nombre }}
+                                        @if (method_exists($caja->puntoDePago, 'trashed') && $caja->puntoDePago->trashed())
+                                            <span class="badge bg-label-warning ms-1" style="font-size: 0.68rem;">Eliminado</span>
+                                        @endif
+                                    </small>
+                                @else
+                                    <small class="text-danger fw-semibold">
+                                        <i class="ti ti-alert-triangle ti-xs me-1"></i>No asignado
+                                    </small>
+                                @endif
                             </div>
                         </div>
 
@@ -206,8 +231,19 @@
                             <div class="row">
                                 <div class="col-12 col-md-6 d-flex flex-column mt-1">
                                     <small class="text-black">Sede:</small>
-                                    <small
-                                        class="fw-semibold text-black ">{{ $caja->puntoDePago->sede->nombre }}</small>
+                                    @if ($caja->puntoDePago && $caja->puntoDePago->sede)
+                                        <small class="fw-semibold text-black">
+                                            {{ $caja->puntoDePago->sede->nombre }}
+                                        </small>
+                                    @elseif ($caja->puntoDePago && !$caja->puntoDePago->sede)
+                                        <small class="text-danger fw-semibold">
+                                            <i class="ti ti-alert-triangle ti-xs me-1"></i>Sin sede asignada
+                                        </small>
+                                    @else
+                                        <small class="text-muted fw-semibold">
+                                            No disponible
+                                        </small>
+                                    @endif
                                 </div>
 
                                 <div class="col-12 col-md-6 d-flex flex-column mt-2">
@@ -564,28 +600,37 @@
                     @this.set('cajeroId', e.target.value);
                 });
 
-                // --- 4. LÓGICA PARA QUITAR TAGS (SIN CAMBIOS) ---
+                // --- 4. LÓGICA PARA QUITAR TAGS ---
                 document.querySelectorAll('.remove-tag-taquilla').forEach(button => {
                     button.addEventListener('click', function() {
-                        /* ... (lógica de quitar tags) ... */
+                        const field = this.dataset.field;
+                        const value = this.dataset.value;
+                        const urlParams = new URLSearchParams(window.location.search);
+
+                        if (field === 'buscar') {
+                            urlParams.delete('buscar');
+                        } else {
+                            let values = urlParams.getAll(field + '[]');
+                            if (values.length > 0) {
+                                values = values.filter(v => v != value);
+                                urlParams.delete(field + '[]');
+                                values.forEach(v => urlParams.append(field + '[]', v));
+                            }
+                        }
+                        const baseUrl = window.location.origin + window.location.pathname;
+                        window.location.href = baseUrl + '?' + urlParams.toString();
                     });
                 });
 
                 // ===================================================================
-                // ¡INICIO DE LA CORRECCIÓN!
+                // CONTROL DE MODALES
                 // ===================================================================
 
                 // --- 5. CONTROL DE APERTURA/CIERRE DE MODALES (MODIFICADO) ---
 
-                // ¡ELIMINADO!
-                // Ya no necesitamos un listener separado para 'abrir-modal-caja'.
-                // @this.on('abrir-modal-caja', () => { ... });
-
                 // ¡UNIFICADO!
                 // Este listener ahora maneja TANTO 'Crear' como 'Editar'.
                 @this.on('abrirModalEditarCaja', (data) => {
-                    // 'data' contendrá los IDs o será nulo (si es 'Crear')
-
                     // 1. Establecemos los valores de Select2
                     //    Si 'data.puntoDePagoId' es nulo, .val(null) lo limpiará.
                     modalPuntoSelect.val(data.puntoDePagoId).trigger('change');
@@ -595,37 +640,58 @@
                     modalCaja.show();
                 });
 
-                // ¡MODIFICADO!
                 // Usamos el evento de Bootstrap 'hidden.bs.modal' para resetear.
-                // Esto es MÁS SEGURO porque se ejecuta DESPUÉS de que el modal se oculta.
                 modalEl.addEventListener('hidden.bs.modal', (event) => {
                     // Reseteamos los Select2
                     modalPuntoSelect.val(null).trigger('change');
                     modalCajeroSelect.val(null).trigger('change');
 
-                    // Opcional: Llamar al método de reseteo de Livewire aquí
-                    // si aún no lo haces en 'cerrarModalCaja'.
                     @this.call('resetearFormularioCaja');
                 });
 
-                // ¡ELIMINADO!
-                // El listener 'cerrar-modal-caja' ya no necesita resetear los Select2.
                 @this.on('cerrar-modal-caja', () => {
                     modalCaja.hide();
-                    // (Las líneas de .val(null).trigger('change') se quitaron de aquí)
                 });
 
-                // ===================================================================
-                // ¡FIN DE LA CORRECCIÓN!
-                // ===================================================================
-
-
-                // --- 6. NOTIFICACIONES (SIN CAMBIOS) ---
+                // --- 6. NOTIFICACIONES Y CONFIRMACIONES ---
                 @this.on('notificacion', (event) => {
-                    /* ... */
+                    const data = Array.isArray(event) ? event[0] : event;
+                    Swal.fire({
+                        title: data.titulo || (data.tipo === 'success' ? '¡Éxito!' : 'Aviso'),
+                        text: data.mensaje,
+                        icon: data.tipo || 'info',
+                        confirmButtonText: 'Aceptar',
+                        showCancelButton: false,
+                        customClass: {
+                            confirmButton: 'btn btn-primary'
+                        },
+                        buttonsStyling: false
+                    });
                 });
+
                 @this.on('confirmarEliminacion', (event) => {
-                    /* ... */
+                    const data = Array.isArray(event) ? event[0] : event;
+                    Swal.fire({
+                        title: data.titulo || '¿Dar de baja la Caja?',
+                        text: data.texto || 'Esta acción dará de baja la caja.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, ¡dar de baja!',
+                        cancelButtonText: 'Cancelar',
+                        customClass: {
+                            confirmButton: 'btn btn-danger me-2',
+                            cancelButton: 'btn btn-label-secondary'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            @this.dispatch(data.evento, {
+                                id: data.id
+                            });
+                        }
+                    });
                 });
 
             });

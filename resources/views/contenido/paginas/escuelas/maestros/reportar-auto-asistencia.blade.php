@@ -27,7 +27,7 @@
                             action="{{ route('maestros.registrarAutoAsistenciaEstudiante', ['horarioAsignado' => $horarioAsignado->id, 'reporte' => $reporte->id]) }}"
                             enctype="multipart/form-data">
                             @csrf
-                            <img src="{{ Storage::url('generales/img/otros/dibujo_respuesta.png') }}"
+                            <img src="{{ Storage::disk('global_media')->url('Link-asistencia.png') }}"
                                 class="img-fluid w-50 p-0">
 
                             @if ($puedeReportar == false)

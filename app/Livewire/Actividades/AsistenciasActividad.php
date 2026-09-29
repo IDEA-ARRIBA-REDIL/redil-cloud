@@ -13,10 +13,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AsistenciasActividad extends Component
 {
+    use WithPagination;
+
+    protected string $paginationTheme = 'bootstrap';
+
     public Actividad $actividad;
 
     public string $busqueda = '';
@@ -43,9 +48,11 @@ class AsistenciasActividad extends Component
 
     public int $totalDiasActividad = 1; // Nueva propiedad para la duración del evento
 
+    public $elementosVisiblesAsistencia = null;
+
     /**
      * MÉTODO EDITADO:
-     * Ahora calcula la duración total del evento en días.
+     * Ahora calcula la duración total del evento en días y precarga elementos visibles.
      */
     public function mount(Actividad $actividad)
     {
@@ -69,6 +76,13 @@ class AsistenciasActividad extends Component
         // diffInDays cuenta los días completos entre fechas, por eso sumamos 1.
         $this->totalDiasActividad = $fechaInicio->diffInDays($fechaFin) + 1;
 
+        // Precargamos los elementos visibles de asistencia para evitar consultas en cada escaneo QR
+        $this->elementosVisiblesAsistencia = $this->actividad->elementos()
+            ->with(['opciones', 'tipoElemento'])
+            ->where('visible_asistencia', true)
+            ->orderBy('orden', 'asc')
+            ->get();
+
         $this->cargarAsistenciasDeHoy();
     }
 
@@ -88,13 +102,12 @@ class AsistenciasActividad extends Component
 
     /**
      * MÉTODO EDITADO:
-     * El nombre ahora es más claro. Su función sigue siendo la misma:
-     * cargar un mapa de las asistencias del DÍA DE HOY para el switch.
+     * Carga mapa de asistencias del DÍA DE HOY optimizado para fecha directa.
      */
     private function cargarAsistenciasDeHoy()
     {
         $this->asistenciasRegistradasHoy = ActividadAsistenciaInscripcion::where('actividad_id', $this->actividad->id)
-            ->whereDate('fecha', Carbon::today())
+            ->where('fecha', Carbon::today()->toDateString())
             ->pluck('inscripcion_id')
             ->flip()
             ->toArray();
@@ -160,9 +173,8 @@ class AsistenciasActividad extends Component
                 'interactive' => true,
             ]);
         } elseif ($inscripcion->categoriaActividad && $inscripcion->categoriaActividad->actividad_id != $this->actividad->id) {
-            $inscripcionReal = Inscripcion::with('categoriaActividad.actividad')->find($datosQr['id']);
-            $nombreActividadReal = $inscripcionReal->categoriaActividad->actividad->nombre ?? 'otra actividad';
-            $detalles = $inscripcionReal->categoriaActividad->actividad->detalles_finales ?? '';
+            $nombreActividadReal = $inscripcion->categoriaActividad->actividad->nombre ?? 'otra actividad';
+            $detalles = $inscripcion->categoriaActividad->actividad->detalles_finales ?? '';
             $this->dispatch('showAlert', [
                 'title' => 'QR de Otra Actividad',
                 'html' => 'Este QR pertenece a la actividad: <strong>'.e($nombreActividadReal).'</strong>'.($detalles ? '<br><small class="text-muted">'.e($detalles).'</small>' : ''),
@@ -182,7 +194,7 @@ class AsistenciasActividad extends Component
     private function cargarAsistencias(): void
     {
         $this->asistenciasRegistradas = ActividadAsistenciaInscripcion::where('actividad_id', $this->actividad->id)
-            ->whereDate('fecha', Carbon::today())
+            ->where('fecha', Carbon::today()->toDateString())
             ->pluck('inscripcion_id')
             ->flip()
             ->toArray();
@@ -205,8 +217,8 @@ class AsistenciasActividad extends Component
     }
 
     /**
-     * MÉTODO RECONSTRUIDO:
-     * Registra la asistencia para una inscripción específica, solo si no existe una para el día de hoy.
+     * MÉTODO RECONSTRUIDO Y OPTIMIZADO:
+     * Registra la asistencia para una inscripción específica, verificando en memoria/BD de forma inmediata.
      */
     private function registrarAsistencia(Inscripcion $inscripcion): void
     {
@@ -223,13 +235,13 @@ class AsistenciasActividad extends Component
 
         $nombreAsistente = $inscripcion->user ? $inscripcion->user->nombre(3) : ($inscripcion->nombre_inscrito ?? 'Invitado');
 
-        // Verificamos si ya tenía asistencia registrada el día de hoy
-        $yaRegistradoHoy = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)
-            ->whereDate('fecha', Carbon::today())
+        // Verificamos si ya tenía asistencia registrada el día de hoy (evaluación instantánea en memoria O en BD)
+        $yaRegistradoHoy = isset($this->asistenciasRegistradasHoy[$inscripcion->id]) || ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)
+            ->where('fecha', Carbon::today()->toDateString())
             ->exists();
 
         if ($yaRegistradoHoy) {
-            $this->cargarAsistenciasDeHoy();
+            $this->asistenciasRegistradasHoy[$inscripcion->id] = true;
             $this->dispatch('showAlert', [
                 'title' => '¡Ya Registrado!',
                 'text' => $nombreAsistente.' ya tiene asistencia registrada el día de hoy.',
@@ -253,60 +265,61 @@ class AsistenciasActividad extends Component
             ]
         );
 
-        // --- Parte 2: Lógica para Culminar Procesos de Crecimiento (Sistema Dinámico) ---
-        $procesosACulminar = $this->actividad->procesosCulminados;
-        if ($procesosACulminar->isNotEmpty() && $inscripcion->user_id) {
-            $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
-            if ($totalAsistencias === 1) {
-                foreach ($procesosACulminar as $proceso) {
-                    $estadoAsignar = $proceso->pivot->estado_paso_crecimiento_usuario_id ?? $proceso->pivot->estado;
-                    CrecimientoUsuario::procesarPaso(
-                        userId: $inscripcion->user_id,
-                        pasoCrecimientoId: $proceso->id,
-                        estadoObjetivoId: $estadoAsignar,
-                        detalle: 'Asistencia '.$this->actividad->nombre,
-                        fecha: Carbon::today()
-                    );
+        // Actualizamos en memoria inmediatamente sin reconsultar toda la tabla
+        $this->asistenciasRegistradasHoy[$inscripcion->id] = true;
+
+        // --- Parte 2, 2.5 y 3: Procesos, Tipo de Usuario y Consolidación ---
+        if ($inscripcion->user_id) {
+            $procesosACulminar = $this->actividad->relationLoaded('procesosCulminados')
+                ? $this->actividad->procesosCulminados
+                : $this->actividad->procesosCulminados;
+
+            $cambioTipoUsuario = ! empty($this->actividad->tipo_usuario_objetivo_id);
+
+            $tareasACulminar = $this->actividad->restriccion_por_categoria && $inscripcion->categoriaActividad
+                ? $inscripcion->categoriaActividad->tareasCulminadas
+                : $this->actividad->tareasCulminadas;
+
+            if ($procesosACulminar->isNotEmpty() || $cambioTipoUsuario || $tareasACulminar->isNotEmpty()) {
+                $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
+
+                if ($totalAsistencias === 1) {
+                    // Culminar procesos
+                    foreach ($procesosACulminar as $proceso) {
+                        $estadoAsignar = $proceso->pivot->estado_paso_crecimiento_usuario_id ?? $proceso->pivot->estado;
+                        CrecimientoUsuario::procesarPaso(
+                            userId: $inscripcion->user_id,
+                            pasoCrecimientoId: $proceso->id,
+                            estadoObjetivoId: $estadoAsignar,
+                            detalle: 'Asistencia '.$this->actividad->nombre,
+                            fecha: Carbon::today()
+                        );
+                    }
+
+                    // Promover tipo usuario
+                    if ($cambioTipoUsuario) {
+                        $usuario = $inscripcion->user ?? \App\Models\User::find($inscripcion->user_id);
+                        if ($usuario) {
+                            $usuario->promoverTipoUsuario($this->actividad->tipo_usuario_objetivo_id);
+                        }
+                    }
+
+                    // Culminar tareas de consolidacion
+                    foreach ($tareasACulminar as $tarea) {
+                        TareaConsolidacionUsuario::procesarTarea(
+                            userId: $inscripcion->user_id,
+                            tareaConsolidacionId: $tarea->tarea_consolidacion_id,
+                            estadoObjetivoId: $tarea->estado_tarea_consolidacion_id,
+                            observaciones: 'Asistencia confirmada en actividad: '.$this->actividad->nombre,
+                            fecha: Carbon::today()
+                        );
+                    }
                 }
             }
         }
-
-        // --- Parte 2.5: Lógica para Cambio de Tipo Usuario y Roles ---
-        if ($this->actividad->tipo_usuario_objetivo_id && $inscripcion->user_id) {
-            $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
-            if ($totalAsistencias === 1) {
-                $usuario = \App\Models\User::find($inscripcion->user_id);
-                if ($usuario) {
-                    $usuario->promoverTipoUsuario($this->actividad->tipo_usuario_objetivo_id);
-                }
-            }
-        }
-
-        // --- Parte 3: Lógica para Culminar Tareas de Consolidación ---
-        $tareasACulminar = $this->actividad->restriccion_por_categoria && $inscripcion->categoriaActividad
-            ? $inscripcion->categoriaActividad->tareasCulminadas
-            : $this->actividad->tareasCulminadas;
-
-        if ($tareasACulminar->isNotEmpty() && $inscripcion->user_id) {
-            $totalAsistencias = ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcion->id)->count();
-            if ($totalAsistencias === 1) {
-                foreach ($tareasACulminar as $tarea) {
-                    TareaConsolidacionUsuario::procesarTarea(
-                        userId: $inscripcion->user_id,
-                        tareaConsolidacionId: $tarea->tarea_consolidacion_id,
-                        estadoObjetivoId: $tarea->estado_tarea_consolidacion_id,
-                        observaciones: 'Asistencia confirmada en actividad: '.$this->actividad->nombre,
-                        fecha: Carbon::today()
-                    );
-                }
-            }
-        }
-
-        // Simplemente actualizamos el array que usa la vista para los botones
-        $this->cargarAsistenciasDeHoy();
 
         // =========================================================================
-        // NUEVA LÓGICA: Verificar y mostrar respuestas de formulario con 'visible_asistencia'
+        // Verificar y mostrar respuestas de formulario con 'visible_asistencia'
         // =========================================================================
         $this->_verificarYMostrarRespuestasAsistencia($inscripcion);
     }
@@ -318,9 +331,9 @@ class AsistenciasActividad extends Component
     {
         $nombreAsistente = $inscripcion->user ? $inscripcion->user->nombre(3) : ($inscripcion->nombre_inscrito ?? 'Invitado');
 
-        // 1. Obtener elementos de formulario con 'visible_asistencia' activado
-        $elementosVisibles = $this->actividad->elementos()
-            ->with('opciones')
+        // 1. Obtener elementos de formulario con 'visible_asistencia' activado (usando caché de componente si existe)
+        $elementosVisibles = $this->elementosVisiblesAsistencia ?? $this->actividad->elementos()
+            ->with(['opciones', 'tipoElemento'])
             ->where('visible_asistencia', true)
             ->orderBy('orden', 'asc')
             ->get();
@@ -338,7 +351,6 @@ class AsistenciasActividad extends Component
         }
 
         // 2. Obtener las respuestas asociadas a la compra de esta inscripción
-        // Asumimos que las respuestas están ligadas a la compra
         $respuestas = \App\Models\RespuestaElementoFormulario::where('compra_id', $inscripcion->compra_id)
             ->whereIn('elemento_formulario_actividad_id', $elementosVisibles->pluck('id'))
             ->get()
@@ -425,29 +437,28 @@ class AsistenciasActividad extends Component
 
     /**
      * MÉTODO AJUSTADO:
-     * Elimina la asistencia de una inscripción para el día de hoy.
+     * Elimina la asistencia de una inscripción para el día de hoy optimizado en memoria.
      */
     private function eliminarAsistencia(string $inscripcionId)
     {
         if ($this->actividad->activa) {
             ActividadAsistenciaInscripcion::where('inscripcion_id', $inscripcionId)
-                ->whereDate('fecha', Carbon::today())
+                ->where('fecha', Carbon::today()->toDateString())
                 ->delete();
 
-            // --- INICIO DE LA CORRECCIÓN ---
-            // $this->mount($this->actividad); // <-- ELIMINADO
-            // $this->cargarAsistencias(); // <-- ELIMINADO (y era un typo)
-
-            // Simplemente actualizamos el array que usa la vista para los botones
-            $this->cargarAsistenciasDeHoy();
-            // --- FIN DE LA CORRECCIÓN ---
+            unset($this->asistenciasRegistradasHoy[$inscripcionId]);
         }
+    }
+
+    public function updatingBusqueda(): void
+    {
+        $this->resetPage();
     }
 
     /**
      * MÉTODO EDITADO:
-     * Ahora la consulta es mucho más potente. Carga el conteo de asistencias
-     * y las relaciones necesarias para mostrar tanto usuarios como invitados.
+     * Ahora la consulta es mucho más potente y paginada (25 por página) para evitar
+     * lentitud y recarga pesada del DOM en cada escaneo QR.
      */
     public function render()
     {
@@ -500,8 +511,8 @@ class AsistenciasActividad extends Component
                 });
             }
 
-            // 5. Obtener los resultados finales
-            $inscritos = $query->get();
+            // 5. Paginación eficiente para respuesta ultra rápida
+            $inscritos = $query->paginate(25);
         }
 
         // 6. Retornar la vista con los datos
