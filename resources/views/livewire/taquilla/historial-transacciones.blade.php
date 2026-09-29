@@ -2,10 +2,65 @@
     <div class=" mb-4">
         <div class="">
             <div class="row gx-3 gy-2 align-items-center">
-                <div class="col-12 col-md-3">
-                    <label class="form-label" for="fecha">Fecha</label>
-                    <input type="text" id="fecha" class="form-control fecha-picker" wire:model.live="fecha"
-                        placeholder="YYYY-MM-DD" />
+                <div class="col-12 col-md-3" wire:ignore x-data="{
+                    fp: null,
+                    init() {
+                        const setup = () => {
+                            if (typeof flatpickr !== 'undefined' && !this.fp) {
+                                const input = this.$refs.fechaPicker;
+                                const val = @this.get('fecha') || '{{ $fecha }}';
+                                let defaultDates = null;
+                                if (val) {
+                                    if (val.includes(' to ')) {
+                                        defaultDates = val.split(' to ');
+                                    } else if (val.includes(' a ')) {
+                                        defaultDates = val.split(' a ');
+                                    } else {
+                                        defaultDates = val;
+                                    }
+                                }
+
+                                this.fp = flatpickr(input, {
+                                    mode: 'range',
+                                    dateFormat: 'Y-m-d',
+                                    disableMobile: true,
+                                    defaultDate: defaultDates,
+                                    onChange: (selectedDates, dateStr) => {
+                                        if (selectedDates.length === 2 || selectedDates.length === 0) {
+                                            @this.set('fecha', dateStr);
+                                        }
+                                    },
+                                    onClose: (selectedDates, dateStr) => {
+                                        if (selectedDates.length === 1) {
+                                            @this.set('fecha', dateStr);
+                                        } else if (selectedDates.length === 2 || selectedDates.length === 0) {
+                                            @this.set('fecha', dateStr);
+                                        }
+                                    }
+                                });
+                            }
+                        };
+                        setup();
+                        if (!this.fp) {
+                            setTimeout(setup, 300);
+                        }
+                    },
+                    limpiar() {
+                        if (this.fp) {
+                            this.fp.clear();
+                        }
+                        @this.set('fecha', '');
+                    }
+                }">
+                    <label class="form-label" for="fecha">Rango de fechas</label>
+                    <div class="input-group input-group-merge">
+                        <span class="input-group-text"><i class="ti ti-calendar"></i></span>
+                        <input type="text" id="fecha" x-ref="fechaPicker" class="form-control"
+                            placeholder="YYYY-MM-DD a YYYY-MM-DD" value="{{ $fecha }}" />
+                        <button type="button" class="btn btn-outline-secondary px-2 border-start-0" @click="limpiar()" title="Limpiar fecha">
+                            <i class="ti ti-x"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-12 col-md-3">
                     <label class="form-label" for="actividad_id">Actividad</label>

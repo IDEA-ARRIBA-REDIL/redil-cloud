@@ -13,16 +13,6 @@
 @section('vendor-script')
     @vite(['resources/js/app.js', 'resources/assets/vendor/libs/quill/quill.js', 'resources/assets/vendor/libs/pickr/pickr.js', 'resources/assets/vendor/libs/moment/moment.js', 'resources/assets/vendor/libs/select2/select2.js', 'resources/assets/vendor/libs/flatpickr/flatpickr.js', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js', 'resources/assets/vendor/libs/@form-validation/umd/bundle/popular.min.js', 'resources/assets/vendor/libs/apex-charts/apexcharts.js'])
 
-    <script>
-        $(document).ready(function() {
-            $('.flatpickr-date').flatpickr({
-                dateFormat: "Y-m-d",
-                disableMobile: true,
-                mode: "range",
-            });
-        });
-    </script>
-
 @endsection
 
 @section('content')

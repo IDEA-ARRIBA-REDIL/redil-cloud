@@ -22,9 +22,9 @@ class HistorialTransacciones extends Component
     public $fecha;
 
     public $busqueda = '';
-    
+
     public $actividad_id = '';
-    
+
     public $tipo_pago_id = '';
 
     protected $paginationTheme = 'bootstrap';
@@ -44,7 +44,7 @@ class HistorialTransacciones extends Component
     {
         $this->resetPage();
     }
-    
+
     public function updatingActividadId()
     {
         $this->resetPage();
@@ -69,7 +69,7 @@ class HistorialTransacciones extends Component
             ]);
         }
     }
-    
+
     public function exportarExcel()
     {
         $filtros = [
@@ -77,30 +77,39 @@ class HistorialTransacciones extends Component
             'busqueda' => $this->busqueda,
             'actividad_id' => $this->actividad_id,
             'tipo_pago_id' => $this->tipo_pago_id,
-            'caja_id' => $this->cajaActiva->id
+            'caja_id' => $this->cajaActiva->id,
         ];
-        
-        return Excel::download(new HistorialTransaccionesCajaExport($filtros), 'historial_caja_' . $this->cajaActiva->id . '_' . now()->format('Ymd_Hi') . '.xlsx');
+
+        return Excel::download(new HistorialTransaccionesCajaExport($filtros), 'historial_caja_'.$this->cajaActiva->id.'_'.now()->format('Ymd_Hi').'.xlsx');
     }
 
     public function render()
     {
         $query = Compra::query();
 
-        if (str_contains($this->fecha, ' to ')) {
-            $fechas = explode(' to ', $this->fecha);
-            $query->whereBetween('fecha', [$fechas[0], $fechas[1]]);
-        } else {
-            $query->whereDate('fecha', $this->fecha);
+        if (! empty($this->fecha)) {
+            if (str_contains($this->fecha, ' to ')) {
+                $fechas = explode(' to ', $this->fecha);
+                $start = trim($fechas[0]);
+                $end = trim($fechas[1] ?? $fechas[0]);
+                $query->whereBetween('fecha', [$start, $end]);
+            } elseif (str_contains($this->fecha, ' a ')) {
+                $fechas = explode(' a ', $this->fecha);
+                $start = trim($fechas[0]);
+                $end = trim($fechas[1] ?? $fechas[0]);
+                $query->whereBetween('fecha', [$start, $end]);
+            } else {
+                $query->whereDate('fecha', trim($this->fecha));
+            }
         }
-        
-        if (!empty($this->actividad_id)) {
+
+        if (! empty($this->actividad_id)) {
             $query->where('actividad_id', $this->actividad_id);
         }
 
         $transacciones = $query->whereHas('pagos', function ($q) {
             $q->where('registro_caja_id', $this->cajaActiva->id);
-            if (!empty($this->tipo_pago_id)) {
+            if (! empty($this->tipo_pago_id)) {
                 $q->where('tipo_pago_id', $this->tipo_pago_id);
             }
         })
@@ -119,19 +128,28 @@ class HistorialTransacciones extends Component
         $queryPagos = Pago::where('registro_caja_id', $this->cajaActiva->id)
             ->where('anulado_pdp', false);
 
-        if (str_contains($this->fecha, ' to ')) {
-            $fechas = explode(' to ', $this->fecha);
-            $queryPagos->whereBetween('fecha', [$fechas[0].' 00:00:00', $fechas[1].' 23:59:59']);
-        } else {
-            $queryPagos->whereDate('fecha', $this->fecha);
+        if (! empty($this->fecha)) {
+            if (str_contains($this->fecha, ' to ')) {
+                $fechas = explode(' to ', $this->fecha);
+                $start = trim($fechas[0]);
+                $end = trim($fechas[1] ?? $fechas[0]);
+                $queryPagos->whereBetween('fecha', [$start.' 00:00:00', $end.' 23:59:59']);
+            } elseif (str_contains($this->fecha, ' a ')) {
+                $fechas = explode(' a ', $this->fecha);
+                $start = trim($fechas[0]);
+                $end = trim($fechas[1] ?? $fechas[0]);
+                $queryPagos->whereBetween('fecha', [$start.' 00:00:00', $end.' 23:59:59']);
+            } else {
+                $queryPagos->whereDate('fecha', trim($this->fecha));
+            }
         }
-        
-        if (!empty($this->tipo_pago_id)) {
+
+        if (! empty($this->tipo_pago_id)) {
             $queryPagos->where('tipo_pago_id', $this->tipo_pago_id);
         }
-        
-        if (!empty($this->actividad_id)) {
-            $queryPagos->whereHas('compra', function($q) {
+
+        if (! empty($this->actividad_id)) {
+            $queryPagos->whereHas('compra', function ($q) {
                 $q->where('actividad_id', $this->actividad_id);
             });
         }
@@ -186,7 +204,7 @@ class HistorialTransacciones extends Component
             'transacciones' => $transacciones,
             'resumenFinanciero' => $resumenFinanciero,
             'actividades' => Actividad::orderBy('created_at', 'desc')->get(),
-            'tiposPago' => TipoPago::where('activo', true)->get()
+            'tiposPago' => TipoPago::where('activo', true)->get(),
         ]);
     }
 }
