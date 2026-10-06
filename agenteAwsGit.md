@@ -46,6 +46,14 @@ El flujo de trabajo conecta el desarrollo en tu máquina local con el repositori
 4. **Estado propio de EC2**: Antes de integrar en `main`, comprobar `git status` y comparar los archivos que tocaría el nuevo commit. El 2026-10-06 EC2 tenía cambios locales en `database/seeders/PermisoSeeder.php`, numerosos recursos de `storage/` y datos de seeders; conservarlos. No usar `git checkout --`, `git reset --hard`, `git clean` ni un `stash` masivo como solución automática.
 5. **Permisos de Manantial**: El seeder en EC2 selecciona el rol `Super Administrador` y asigna permisos de gamificación; el archivo local utiliza `Super Administrador Prueba` y difiere en asignaciones. No reemplazar ni ejecutar el seeder en EC2 hasta reconciliar esa diferencia y validar su efecto en los roles existentes.
 
+### Liberación de octubre de 2026: migraciones y permisos delimitados
+
+El responsable autorizó agregar las columnas y tablas nuevas y los seis permisos de configuración, con la condición de conservar usuarios, registros y permisos ya asignados. El lote de integración retiró el cambio masivo de `PermisoSeeder.php`, por lo que el `PermisoSeeder.php` personalizado de EC2 no debe reemplazarse. El respaldo privado del esquema tenant `crecer_2025` está en `/home/ubuntu/redil-deploy-backups/crecer-20261006-164501.dump`; `pg_restore --list` lo verificó. Revisar de nuevo su vigencia inmediatamente antes de la migración.
+
+- `php artisan tenants:migrate --tenants=crecer --force --no-interaction` ejecuta exclusivamente migraciones tenant pendientes. No llama a `UserSeeder`, `TenantDatabaseSeeder` ni a `PermisoSeeder`. Las tres migraciones nuevas agregan cuatro columnas y seis tablas; no contienen instrucciones que actualicen o borren filas de usuarios.
+- `php artisan tenants:seed --class=AgregarPermisosConfiguracionSeeder --tenants=crecer --force --no-interaction` ejecuta únicamente ese seeder delimitado: crea los seis permisos que faltan y los asigna al rol existente `Super Administrador` sin sincronizar ni retirar otros permisos. No ejecutar `tenants:seed` sin `--class`, `db:seed`, `UserSeeder`, `TenantDatabaseSeeder`, `PermisoSeeder` ni `NuevoTenantSeeder` en esta liberación.
+- Antes de activar código que consulta las columnas/tablas nuevas, publicar solo las tres migraciones, simularlas con `--pretend`, ejecutarlas para `crecer`, comprobar esquema y número de usuarios, y después integrar el código funcional. No ejecutar otros seeders, comandos de jerarquía de grupos ni trabajos de informes por el mero despliegue.
+
 ---
 
 ## 3. Flujo de Trabajo Paso a Paso
