@@ -11,15 +11,12 @@ class AgregarPermisosConfiguracionSeeder extends Seeder
 {
     public function run(): void
     {
-        $rolAdministrador = Role::query()
+        $rolesAdministradores = Role::query()
             ->where('guard_name', 'web')
-            ->where('name', 'Super Administrador')
-            ->first() ?? Role::query()
-            ->where('guard_name', 'web')
-            ->where('name', 'Super Administrador Prueba')
-            ->first();
+            ->whereIn('name', ['Super Administrador', 'Super Administrador Prueba'])
+            ->get();
 
-        if (! $rolAdministrador) {
+        if ($rolesAdministradores->isEmpty()) {
             throw new \LogicException('No existe un rol de superadministrador; no se agregaron permisos.');
         }
 
@@ -38,7 +35,9 @@ class AgregarPermisosConfiguracionSeeder extends Seeder
                 ['titulo' => $titulo, 'descripcion' => '']
             );
 
-            $permiso->assignRole($rolAdministrador);
+            foreach ($rolesAdministradores as $rolAdministrador) {
+                $permiso->assignRole($rolAdministrador);
+            }
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
