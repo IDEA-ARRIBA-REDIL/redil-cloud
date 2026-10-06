@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\Storage;
 class Album extends Model
 {
     use HasFactory;
-
     protected $table = 'albumes';
-
     protected $guarded = [];
 
     protected $appends = [
@@ -21,17 +19,15 @@ class Album extends Model
 
     public function canciones(): HasMany
     {
-        return $this->hasMany(Cancion::class);
+      return $this->hasMany(Cancion::class);
     }
 
     public function getPortadaUrlAttribute(): string
     {
         if ($this->imagen && $this->imagen !== '' && $this->imagen !== 'album-default.png' && $this->imagen !== 'temporal.png') {
             $version = $this->updated_at ? $this->updated_at->timestamp : time();
-
-            return tenant_asset('img/reproductor/'.$this->imagen).'?v='.$version;
+            return tenant_asset('img/reproductor/' . $this->imagen) . '?v=' . $version;
         }
-
         return Storage::disk('global_media')->url('reproductor/album-default.png');
     }
 }

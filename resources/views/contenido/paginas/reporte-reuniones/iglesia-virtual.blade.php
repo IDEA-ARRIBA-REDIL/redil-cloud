@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="d-flex align-items-start">
               <div class="me-2 mt-1">
                 <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $reporte->reunion->nombre }}</h5>
-                <div class="client-info fw-semibold text-black">{{ $reporte->reunion->sede->nombre }}</div>
+                <div class="client-info fw-semibold text-black">{{ $reporte->reunion->sede?->nombre ?? 'Sede no asignada' }}</div>
               </div>
             </div>
           </div>

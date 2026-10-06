@@ -250,9 +250,20 @@ $configData = Helper::appClasses();
 @section('content')
 @include('layouts.status-msn')
 
-<h4 class="mb-1 fw-semibold text-primary">Configuraciones generales </h4>
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+    <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+        <i class="ti ti-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-semibold text-primary">Configuraciones generales</h4>
+    </div>
+    <p class="text-black mb-0 small">
+    Administra las configuraciones generales de la aplicación.
+    </p>
+  </div>
 
-<form id="formulario" role="form" class="forms-sample" method="POST" action="{{ route('configuracion-general.actualizar') }}">
+
+<form id="formulario" role="form" class="forms-sample mt-10" method="POST" action="{{ route('configuracion-general.actualizar') }}">
   @csrf
   @method('PATCH')
     <div class="col-md-12">

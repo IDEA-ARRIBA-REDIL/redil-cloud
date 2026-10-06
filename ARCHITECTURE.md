@@ -400,3 +400,86 @@ Para garantizar la estabilidad del software y evitar la pérdida accidental de l
 
 ### 11.3. Verificación de Completitud
 - Antes de finalizar cualquier cambio, el agente debe auto-revisar que ninguna función o listener haya quedado vacío o con lógica simulada.
+
+---
+
+## 12. Arquitectura de Conocimiento Vivo (Kaddo KDD & Lifecycle v2)
+
+REDIL Cloud implementa **Knowledge Driven Development (KDD)** a través del framework **Kaddo** y su ciclo **Kaddo Lifecycle v2**, manteniendo una capa de conocimiento viva (*living knowledge layer*) acoplada al código fuente en el directorio `knowledge/`.
+
+### 12.1. Modelo de Conocimiento en 4 Capas
+
+1. **Business Layer (`knowledge/business/`):** Problema, usuarios, propuesta de valor e impacto en el ministerio.
+2. **Product Layer (`knowledge/product/`):** Capacidades, decisiones de diseño, flujos y criterios de aceptación (ACs).
+3. **Tech Layer (`knowledge/tech/`):** Arquitectura de módulos, estándares, ADRs, dominios y el **Orquestador** (`knowledge/tech/orchestrator.md`).
+4. **Delivery Layer (`knowledge/delivery/`):** Roadmap, Work Items (`draft`, `ready`, `in-progress`, `completed`), playbooks de desarrollo y runbooks de despliegue.
+
+### 12.2. Ciclo de Vida de 7 Etapas (Kaddo Lifecycle v2)
+
+El desarrollo asistido por IA sigue un ciclo cerrado de 7 etapas donde cada Work Item (WI) actúa como contrato físico trazable:
+
+```
+Intención ──► Definición ──► Planeación ──► Implementación ──► Evidencia ──► Verificación ──► Aprendizaje
+   ▲          (Refinement)   (Context Bal.)   (In-Progress)     (Diff & ACs)   (kaddo guard)   (kaddo learn)
+   │                                                                                                │
+   └────────────────────────────────── Memoria Viva (knowledge/) ───────────────────────────────────┘
+```
+
+1. **Intención (Captured Intent):** Captura la necesidad inicial en `knowledge/delivery/work-items/draft/WI-XXX.md`.
+2. **Definición (Refinement → Ready):** El agente de refinamiento formula Criterios de Aceptación (ACs) verificables, módulos, patrones de archivos (`code:` globs) y sugerencia de rama Git. El desarrollador humano revisa y aprueba (moviendo a `ready/`).
+3. **Planeación & Balanceo de Contexto (Context Balancing):** Se asigna el nivel de contexto requerido (**Lightweight**, **Standard** o **Deep**) para alimentar a Gemini Flash vía `kaddo context`, evitando sobrecarga de tokens y alucinaciones.
+4. **Implementación:** El agente de desarrollo mueve el ítem a `in-progress/` y ejecuta cambios quirúrgicos limitados a los globs de `code:`, respetando las directrices de integridad de código (Sección 11).
+5. **Evidencia Objetiva (Verdad Física en Git):** El agente entrega un reporte basado en el estado físico de Git (`git diff` / staged files), matriz de cumplimiento de ACs (1:1), pruebas ejecutadas y propuesta formal de commit. Queda estrictamente prohibida la finalización con un simple "ya terminé".
+6. **Verificación & Guard:** Ejecución de `kaddo verify` y `kaddo guard` para detectar desvíos de conocimiento (*Knowledge Drift*) respecto a los archivos autorizados en `code:`.
+7. **Aprendizaje & Memoria Viva (`kaddo learn`):** Se capturan lecciones aprendidas y particularidades técnicas, actualizando `knowledge/` y archivando el ítem en `completed/`.
+
+### 12.3. División de Responsabilidades: CLI Determinista vs. LLM Interpretativo
+
+```
+┌───────────────────────────────────────────────────────────┐
+│              CLI DETERMINISTA (kaddo CLI)                 │
+│  • Escaneo técnico de inventario (`kaddo scan`)           │
+│  • Empaquetado y estructuración de contexto (`context`)  │
+│  • Gestión física de carpetas y contratos de trabajo      │
+│  • Verificación de diffs en Git y detección de drift      │
+│  • Cero llamadas a API, 100% libre de alucinaciones       │
+└─────────────────────────────┬─────────────────────────────┘
+                              │ (Context Pack estructurado)
+                              ▼
+┌───────────────────────────────────────────────────────────┐
+│            LLM INTERPRETATIVO (Gemini Flash 3.8)         │
+│  • Extracción de capacidades de negocio (Product)         │
+│  • Reconstrucción de arquitectura y baseline técnico      │
+│  • Refinamiento de Criterios de Aceptación (ACs)           │
+│  • Sugerencia de ramas y propuestas Conventional Commits  │
+│  • Generación de reportes de evidencia basados en diffs   │
+└───────────────────────────────────────────────────────────┘
+```
+
+### 12.4. Estrategia Git y Fronteras Estrictas del Agente (Agent Git Boundaries)
+
+Para preservar la seguridad y el control absoluto del desarrollador sobre el historial del repositorio:
+
+- **Prohibición de ejecución de comandos Git:** Ni la CLI de Kaddo ni los agentes de IA ejecutan autónomamente `git branch`, `git checkout`, `git commit`, `git push` o `git merge`.
+- **Atribución consultiva y de propuesta:** El agente solo sugiere el nombre de la rama (ej. `feature/WI-XXX-slug`) y la propuesta formateada de mensaje bajo la convención **Conventional Commits** (ej. `feat(usuarios): permitir cambio de rol activo (ref WI-XXX)`).
+- **Human-in-the-Loop:** El desarrollador humano revisa y ejecuta los cambios de estado en Git en su terminal local.
+- **Configuración central:** Regida por `.kaddo/git.yml` y documentada en `knowledge/tech/git-strategy.md` (GitHub Flow + Conventional Commits + SemVer).
+
+### 12.5. Módulos Globales Transversales (Global Docs)
+
+Aspectos transversales del repositorio centralizados en `knowledge/tech/`:
+1. **Standards (`knowledge/tech/standards.md`):** Convenciones de código, estándares de UI, Pint y checklist de PRs.
+2. **Security (`knowledge/tech/security.md`):** Aislamiento multi-tenant, sanitización, manejo de variables de entorno y protección de datos PII.
+3. **Stack (`knowledge/tech/stack.md`):** Laravel, PHP 8.2, Livewire 3, PostgreSQL, Valkey, Reverb y dependencias oficiales.
+4. **Git Strategy (`knowledge/tech/git-strategy.md`):** Políticas de ramas, tipos de WI y commits.
+
+### 12.6. Control de Desplazamiento de Conocimiento (`kaddo guard`)
+
+`kaddo guard` actúa como escáner estático cruzando los archivos modificados en `git diff` contra los patrones `code:` (globs) definidos en el YAML del Work Item:
+- Si el código cambia pero el Work Item o la documentación del dominio no se actualiza para reflejar la evidencia, `kaddo guard` emite una alerta informativa no bloqueante (*Possible Knowledge Drift*).
+
+### 12.7. Orquestador de Reglas y Dominios
+
+El archivo maestro [knowledge/tech/orchestrator.md](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/knowledge/tech/orchestrator.md) rige el enrutamiento de solicitudes, las puertas de alcance por dominio (actualmente piloto en Usuarios, Roles/Permisos y Grupos con excepciones autorizadas como WI-017 AdminGlobal) y las decisiones arquitectónicas congeladas.
+
+

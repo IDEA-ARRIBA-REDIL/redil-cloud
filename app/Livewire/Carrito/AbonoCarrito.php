@@ -2,26 +2,30 @@
 
 namespace App\Livewire\Carrito;
 
+use Livewire\Component;
 use App\Models\AbonoCategoria;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Validate;
+use Livewire\Attributes\On;
+use Illuminate\Validation\Rule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Number;
+use Carbon\Carbon;
 use App\Models\Actividad;
-use App\Models\ActividadCampoAdicionalCompra;
-use App\Models\ActividadCarritoCompra;
 use App\Models\ActividadCategoria;
+use App\Models\ActividadCarritoCompra;
+use App\Models\ActividadCampoAdicionalCompra;
 use App\Models\ActividadCategoriaMoneda;
 use App\Models\CategoriaActividadCompra;
+use App\Models\Moneda;
+use App\Models\User;
 use App\Models\Compra;
 use App\Models\Configuracion;
-use App\Models\ElementoFormularioActividad;
-use App\Models\Inscripcion;
-use App\Models\Moneda;
 use App\Models\Pago;
+use App\Models\Inscripcion;
 use App\Models\RespuestaElementoFormulario;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Number;
-use Livewire\Component;
+use App\Models\ElementoFormularioActividad;
 use Livewire\WithFileUploads;
 
 class AbonoCarrito extends Component
@@ -30,113 +34,71 @@ class AbonoCarrito extends Component
 
     // Propiedades de navegación y formulario
     public $pasoActual = 1;
-
     public $totalPasos = 1;
-
     public $elementosFormulario = [];
-
     public $respuestas = [];
-
     // Propiedades públicas del componente
     public $categoriasCompraPermitidas = []; // Categorías de compra permitidas
-
     public $categoriasCompraPermitidasIds = []; // IDs de categorías permitidas
-
     public $cantidadItemsActuales = 0; // Contador de items en el carrito
-
     public $actividad; // Actividad actual
-
     public $primeraVez; // Bandera para identificar si es la primera vez que se carga el componente
-
     public $monedaSeleccionada = 1; // Moneda seleccionada para la compra
-
     public $monedaActual; // Objeto de la moneda actual
-
     public $carrito = []; // Items en el carrito
-
     public $relacionesFamiliares = []; // Relaciones familiares del usuario
-
     public $parientesHabilitados = []; // Parientes habilitados para comprar
-
     public $cantidad = 1; // Cantidad por defecto para múltiples compras
-
     public $cantidades = []; // Cantidades por categoría
-
     public $camposAdicionalesActividad = []; // Campos adicionales de la actividad
-
     public $camposAdicionalesActividadGuardados = []; // Campos adicionales guardados
-
     public $usuario; // Usuario actual
-
     public $parienteSeleccionado; // Pariente seleccionado
-
     public $camposAdicionalesHtml; // HTML generado para campos adicionales
-
     public $totalCompra; // Total de la compra
-
     public $destinatario; // Destinatario de la compra
-
     public $compraActual; // Compra actual (si existe)
-
     public $camposAdicionales = []; // Respuestas de campos adicionales
-
     public $destinatarioSeleccionado; // Destinatario seleccionado
-
     public $configuracion; // Configuración del sistema
-
     public $mensajeAbono; // Mensaje relacionado con abonos
-
     public $valorAbono; // Valor del abono
-
     public $pagosAbonoCompra; // Pagos relacionados con abonos
-
     public $mostrarInputAbono; // Bandera para mostrar el input de abono
-
     public $valorMinimoAbonoParaCategoria = 0; // Valor mínimo del abono para la categoría
-
     public $valorAbonoRetorno; // Valor de retorno del abono
-
     public $valorMinimoAbonoParaCategoriaRetorno = 0; // Valor mínimo de retorno del abono
-
     public $valorTotalAbonado = 0; // Total abonado
-
     public $categoriaAbonoSeleccionada; // Categoría de abono seleccionada
-
     public $pagosCompraUsuario; // Pagos del usuario
-
     public $mensajito; // Mensaje adicional
-
     public $pagoActual; // Pago actual
-
     public $valorPagosCompra; // Valor total de los pagos
-
     public $carritoActual; // Carrito actual
-
     public $compraNueva; // Nueva compra
-
     public $actualizar = false; // Bandera para actualizar
-
     public $pagoCompraActual; // Pago de la compra actual
-
     public $monedaNueva; // Nueva moneda seleccionada
-
     public $fechaHoy; // Fecha actual
-
     public $abonosFinalizados = false; // Bandera para abonos finalizados
-
     public $pagosAnteriores = [];
 
+
     // ANOTACIÓN 18 DE MARZO: ES NECESARIO CUANDO LA TAQUILLA ESTE LISTA QUE SE HAGAN LAS VALIDACIONES DE LOS PAGOS QUE TENGAN ESTADOS FINALIZADOS TRUE,
-    // / Y QUE LOS ESTADOS PAGOS SEAN LOS CORRECTOS, SI TIENE VARIOS ABONOS PERO NO ESTAN FINALIZADOS OK, Y SE COMPROBO QUE LOS PAGOS FUERON FINALIZADOS ENTONCES NO SE DEBEN LISTAR
-    // / ESTA VALIDACIÓN ESTA PENDIENTE Y DEBE HACERSE EN TODOS LOS PROCESOS DE ABONOS.
+    /// Y QUE LOS ESTADOS PAGOS SEAN LOS CORRECTOS, SI TIENE VARIOS ABONOS PERO NO ESTAN FINALIZADOS OK, Y SE COMPROBO QUE LOS PAGOS FUERON FINALIZADOS ENTONCES NO SE DEBEN LISTAR
+    /// ESTA VALIDACIÓN ESTA PENDIENTE Y DEBE HACERSE EN TODOS LOS PROCESOS DE ABONOS.
 
     /**
      * Método mount: Se ejecuta al inicializar el componente.
      *
-     * @param  Actividad  $actividad  Actividad actual.
-     * @param  mixed  $compraActual  Compra existente (si aplica).
-     * @param  bool  $primeraVez  Indica si es la primera carga del componente.
+     * @param Actividad $actividad Actividad actual.
+     * @param mixed $compraActual Compra existente (si aplica).
+     * @param bool $primeraVez Indica si es la primera carga del componente.
      */
+
+
+
+
     public function mount(Actividad $actividad, $compraActual, $primeraVez)
     {
         $this->primeraVez = $primeraVez;
@@ -146,6 +108,7 @@ class AbonoCarrito extends Component
         $this->compraActual = $compraActual;
 
         $this->cargarCategoriasPermitidas();
+
 
         // --- INICIO DE LA CORRECCIÓN ---
         // Se añade la validación para redirigir si no hay categorías permitidas.
@@ -166,7 +129,8 @@ class AbonoCarrito extends Component
             $this->cargarCarritoDesdeCompra($compraActual);
 
             // --- INICIO DE LA CORRECCIÓN DEFINITIVA ---
-            if (! $this->primeraVez) {
+            if (!$this->primeraVez) {
+
 
                 // 1. Buscamos el último pago realizado para esta compra.
                 $ultimoPago = Pago::where('compra_id', $compraActual->id)->latest()->first();
@@ -210,34 +174,22 @@ class AbonoCarrito extends Component
 
     private function cargarRespuestasExistentes()
     {
-        if (! $this->compraActual || ! isset($this->compraActual->id)) {
-            return;
-        }
+        if (!$this->compraActual || !isset($this->compraActual->id)) return;
 
         $respuestasGuardadas = RespuestaElementoFormulario::where('compra_id', $this->compraActual->id)->get();
         foreach ($respuestasGuardadas as $resp) {
             $tipoClase = $resp->elemento->tipoElemento->getRawOriginal('clase') ?? $resp->elemento->tipoElemento->clase;
             switch ($tipoClase) {
-                case 'corta': $valor = $resp->respuesta_texto_corto;
-                    break;
-                case 'larga': $valor = $resp->respuesta_texto_largo;
-                    break;
-                case 'si_no': $valor = $resp->respuesta_si_no;
-                    break;
-                case 'unica_respuesta': $valor = $resp->respuesta_unica;
-                    break;
-                case 'multiple_respuesta': $valor = explode(',', $resp->respuesta_multiple);
-                    break;
-                case 'fecha': $valor = $resp->respuesta_fecha;
-                    break;
-                case 'numero': $valor = $resp->respuesta_numero;
-                    break;
-                case 'moneda': $valor = $resp->respuesta_moneda;
-                    break;
-                case 'archivo': $valor = $resp->url_archivo;
-                    break;
-                case 'imagen': $valor = $resp->url_foto;
-                    break;
+                case 'corta': $valor = $resp->respuesta_texto_corto; break;
+                case 'larga': $valor = $resp->respuesta_texto_largo; break;
+                case 'si_no': $valor = $resp->respuesta_si_no; break;
+                case 'unica_respuesta': $valor = $resp->respuesta_unica; break;
+                case 'multiple_respuesta': $valor = explode(',', $resp->respuesta_multiple); break;
+                case 'fecha': $valor = $resp->respuesta_fecha; break;
+                case 'numero': $valor = $resp->respuesta_numero; break;
+                case 'moneda': $valor = $resp->respuesta_moneda; break;
+                case 'archivo': $valor = $resp->url_archivo; break;
+                case 'imagen': $valor = $resp->url_foto; break;
                 default: $valor = null;
             }
             $this->respuestas[$resp->elemento_formulario_actividad_id] = $valor;
@@ -266,8 +218,8 @@ class AbonoCarrito extends Component
                         'compra_id' => $this->compraActual->id,
                         // CORRECCIÓN 2: Verificar si $this->pagoActual existe antes de acceder a su id.
                         'pago_id' => $this->pagoActual ? $this->pagoActual->id : null,
-                        'actividad_carrito_compra_id' => $item->id,
-                    ],
+                        'actividad_carrito_compra_id' => $item->id
+                    ]
                 ];
             })->toArray();
         }
@@ -349,7 +301,7 @@ class AbonoCarrito extends Component
             $parientes = auth()->user()->parientesDelUsuario()->get();
             $categoriasParientesIds = collect();
 
-            foreach ($parientes as $pariente) {
+            foreach($parientes as $pariente) {
                 $disponibles = $this->actividad->categoriasDisponiblesParaUsuario($pariente->id);
                 $categoriasParientesIds = $categoriasParientesIds->merge($disponibles->pluck('id'));
             }
@@ -374,7 +326,7 @@ class AbonoCarrito extends Component
         if (empty($this->monedaSeleccionada)) {
             $this->monedaSeleccionada = $this->actividad->monedas()->first()->id ?? 0;
         }
-        $this->monedaActual = Moneda::find($this->monedaSeleccionada) ?? new Moneda;
+        $this->monedaActual = Moneda::find($this->monedaSeleccionada) ?? new Moneda();
     }
 
     private function cargarCamposAdicionales()
@@ -401,21 +353,19 @@ class AbonoCarrito extends Component
                 }
             }
             $html .= '<div wire:ignore class="form-group col-sm-12 col-md-6 mb-2">';
-            $html .= '<label class="form-label">'.$campo->nombre.'</label>';
-            $html .= '<input placeholder="ingresa la información" wire:model="camposAdicionales.'.$campo->id.'" name="campoAd-'.$campo->id.'" type="text" class="form-control" value="'.$respuestaCampo.'">';
+            $html .= '<label class="form-label">' . $campo->nombre . '</label>';
+            $html .= '<input placeholder="ingresa la información" wire:model="camposAdicionales.' . $campo->id . '" name="campoAd-' . $campo->id . '" type="text" class="form-control" value="' . $respuestaCampo . '">';
             $html .= '</div>';
         }
         $html .= '</div></div></div>';
-
         return $html;
     }
 
     public function eliminarDelCarritoAbono($categoriaId)
     {
         // 1. Validar que tengamos una compra activa y una categoría para buscar.
-        if (! $this->compraActual || ! $categoriaId) {
+        if (!$this->compraActual || !$categoriaId) {
             $this->dispatch('mostrarMensaje', ['mensaje' => 'No se pudo encontrar la compra para eliminar el item.', 'tipo' => 'error']);
-
             return;
         }
 
@@ -454,8 +404,8 @@ class AbonoCarrito extends Component
 
             // 9. Mostrar mensaje de éxito al usuario.
             $this->dispatch('mostrarMensaje', [
-                'mensaje' => 'El abono ha sido quitado del carrito y el pago asociado ha sido revertido.',
-                'tipo' => 'success',
+                'mensaje' => "El abono ha sido quitado del carrito y el pago asociado ha sido revertido.",
+                'tipo' => 'success'
             ]);
 
             // 10. Recalcular la información de abonos para actualizar los mensajes en la vista.
@@ -463,10 +413,12 @@ class AbonoCarrito extends Component
         } catch (\Exception $e) {
             // 11. En caso de cualquier error, revertir todos los cambios.
             DB::rollBack();
-            Log::error('Error al eliminar abono y pago: '.$e->getMessage());
+            Log::error("Error al eliminar abono y pago: " . $e->getMessage());
             $this->dispatch('mostrarMensaje', ['mensaje' => 'Ocurrió un error al intentar eliminar el abono.', 'tipo' => 'error']);
         }
     }
+
+
 
     public function eliminarDelCarritoAbonoRetorno($categoriaId, $carritoActual)
     {
@@ -492,18 +444,20 @@ class AbonoCarrito extends Component
 
             // 5. Actualizar mensaje
             $moneda = Moneda::find($this->monedaSeleccionada);
-            $this->mensajeAbono = 'Valor restante: '
-                .Number::currency($this->valorMinimoAbonoParaCategoriaRetorno)
-                .$moneda->nombre_corto;
+            $this->mensajeAbono = "Valor restante: "
+                . Number::currency($this->valorMinimoAbonoParaCategoriaRetorno)
+                . $moneda->nombre_corto;
         }
+
 
         if (isset($this->carrito[$categoriaId])) {
             unset($this->carrito[$categoriaId]);
 
+
             // Puedes mostrar un mensaje al usuario si lo deseas
             $this->dispatch('mostrarMensaje', [
-                'mensaje' => 'Abono eliminado del carrito.',
-                'tipo' => 'success',
+                'mensaje' => "Abono eliminado del carrito.",
+                'tipo' => 'success'
             ]);
         }
 
@@ -527,7 +481,6 @@ class AbonoCarrito extends Component
         }
         */
     }
-
     private function calcularLimitesAbono($categoriaId)
     {
         $categoria = ActividadCategoria::find($categoriaId);
@@ -544,7 +497,7 @@ class AbonoCarrito extends Component
 
         return [
             'min' => $valorTotal - $totalAbonado, // Restante es el mínimo requerido
-            'max' => $valorTotal - $totalAbonado, // Máximo igual al restante
+            'max' => $valorTotal - $totalAbonado // Máximo igual al restante
         ];
     }
 
@@ -556,18 +509,16 @@ class AbonoCarrito extends Component
         if ($this->actividad->pagos_abonos_con_valores_cerrados) {
             if ($this->valorAbono != $this->valorMinimoAbonoParaCategoria) {
                 $this->dispatch('mostrarMensaje', [
-                    'mensaje' => 'Para esta actividad el abono debe ser exactamente: '.Number::currency($this->valorMinimoAbonoParaCategoria),
-                    'tipo' => 'error',
+                    'mensaje' => "Para esta actividad el abono debe ser exactamente: " . Number::currency($this->valorMinimoAbonoParaCategoria),
+                    'tipo' => 'error'
                 ]);
-
                 return;
             }
         } elseif ($this->valorAbono < $this->valorMinimoAbonoParaCategoria) {
             $this->dispatch('mostrarMensaje', [
-                'mensaje' => 'El valor del abono no puede ser menor a '.Number::currency($this->valorMinimoAbonoParaCategoria),
-                'tipo' => 'error',
+                'mensaje' => "El valor del abono no puede ser menor a " . Number::currency($this->valorMinimoAbonoParaCategoria),
+                'tipo' => 'error'
             ]);
-
             return;
         }
 
@@ -575,9 +526,8 @@ class AbonoCarrito extends Component
         if (isset($this->carrito[$categoriaId])) {
             $this->dispatch('mostrarMensaje', [
                 'mensaje' => "Ya has agregado un abono para la categoría '{$categoria->nombre}' al carrito.",
-                'tipo' => 'warning',
+                'tipo' => 'warning'
             ]);
-
             return;
         }
 
@@ -601,10 +551,9 @@ class AbonoCarrito extends Component
         // Validar que el valor del abono no supere el máximo permitido
         if ($this->valorAbono > $maximoPermitido) {
             $this->dispatch('mostrarMensaje', [
-                'mensaje' => 'El valor del abono no puede superar: '.Number::currency($maximoPermitido),
-                'tipo' => 'warning',
+                'mensaje' => "El valor del abono no puede superar: " . Number::currency($maximoPermitido),
+                'tipo' => 'warning'
             ]);
-
             return;
         }
 
@@ -618,10 +567,10 @@ class AbonoCarrito extends Component
         // Agregar al carrito
         $this->carrito[$categoriaId] = [
             'id' => $categoria->id,
-            'nombre' => $categoria->nombre.' (Abono)', // Indicar que es un abono
+            'nombre' => $categoria->nombre . ' (Abono)', // Indicar que es un abono
             'cantidad' => 1, // La cantidad para abonos siempre es 1
             'precio' => $this->valorAbono, // Usar el valor del input
-            'moneda' => $nombreMoneda,
+            'moneda' => $nombreMoneda
         ];
 
         // Actualizar el total abonado
@@ -634,8 +583,8 @@ class AbonoCarrito extends Component
         // Mostrar mensaje de éxito
         $this->mensajeAbono = 'Tu carrito fue agregado exitosamente.';
         $this->dispatch('mostrarMensaje', [
-            'mensaje' => 'Abono agregado al carrito.',
-            'tipo' => 'success',
+            'mensaje' => "Abono agregado al carrito.",
+            'tipo' => 'success'
         ]);
     }
 
@@ -648,20 +597,19 @@ class AbonoCarrito extends Component
         // Validar que el valor del abono no sea menor al mínimo permitido
         if ($this->valorAbonoRetorno != $limites['min']) {
             $this->dispatch('mostrarMensaje', [
-                'mensaje' => 'Debes abonar exactamente: '.Number::currency($limites['min']),
-                'tipo' => 'error',
+                'mensaje' => "Debes abonar exactamente: " . Number::currency($limites['min']),
+                'tipo' => 'error'
             ]);
-
             return;
         }
+
 
         // Validar que el valor del abono no sea menor al mínimo permitido
         if ($this->valorAbonoRetorno < $this->valorMinimoAbonoParaCategoriaRetorno) {
             $this->dispatch('mostrarMensaje', [
-                'mensaje' => 'El valor del abono no puede ser menor a '.$this->valorMinimoAbonoParaCategoriaRetorno,
-                'tipo' => 'error',
+                'mensaje' => "El valor del abono no puede ser menor a " . $this->valorMinimoAbonoParaCategoriaRetorno,
+                'tipo' => 'error'
             ]);
-
             return;
         }
 
@@ -669,28 +617,30 @@ class AbonoCarrito extends Component
         if (isset($this->carrito[$categoriaId])) {
             $this->dispatch('mostrarMensaje', [
                 'mensaje' => "Ya has agregado un abono para la categoría '{$categoria->nombre}' al carrito.",
-                'tipo' => 'warning',
+                'tipo' => 'warning'
             ]);
-
             return;
         }
 
         // Obtener la moneda y su nombre_corto
         $monedaCompra = Moneda::find($this->monedaSeleccionada);
 
+
+
+
         // Agregar al carrito
 
         $this->carrito[$categoriaId] =
             [
                 'id' => $categoria->id,
-                'nombre' => $categoria->nombre.' (Abono)', // Indicar que es un abono
+                'nombre' => $categoria->nombre . ' (Abono)', // Indicar que es un abono
                 'cantidad' => 1, // La cantidad para abonos siempre es 1
                 'precio' => $this->valorAbonoRetorno, // Usar el valor del input
-                'moneda' => $monedaCompra->nombre_corto,
+                'moneda' => $monedaCompra->nombre_corto
             ];
         $this->carritoActual = json_encode($this->carrito);
 
-        // $this->mensajito=$this->carrito[$categoriaId];
+        //$this->mensajito=$this->carrito[$categoriaId];
 
         // Resetear el valor del abono (opcional)
 
@@ -706,8 +656,8 @@ class AbonoCarrito extends Component
 
         // Puedes mostrar un mensaje al usuario si lo deseas
         $this->dispatch('mostrarMensaje', [
-            'mensaje' => 'Abono agregado al carrito.',
-            'tipo' => 'success',
+            'mensaje' => "Abono agregado al carrito.",
+            'tipo' => 'success'
         ]);
     }
 
@@ -720,9 +670,8 @@ class AbonoCarrito extends Component
 
         // Obtener la categoría seleccionada
         $categoriaSeleccionada = ActividadCategoria::find($this->categoriaAbonoSeleccionada);
-        if (! $categoriaSeleccionada) {
+        if (!$categoriaSeleccionada) {
             $this->mensajeAbono = '<p class="mb-1">Categoría no encontrada.</p>';
-
             return;
         }
 
@@ -769,7 +718,7 @@ class AbonoCarrito extends Component
         // Construir el mensaje
         $valorAbonoMoneda = Number::currency($this->valorMinimoAbonoParaCategoria);
 
-        $this->mensajeAbono .= '<p class="mb-1">Fecha límite para este abono: '.$fechaLimiteAbonoActual.'</p>';
+        $this->mensajeAbono .= '<p class="mb-1">Fecha límite para este abono: ' . $fechaLimiteAbonoActual . '</p>';
 
         // Si el usuario tiene abonos registrados, mostrarlos
         if ($totalAbonado > 0) {
@@ -779,11 +728,11 @@ class AbonoCarrito extends Component
 
             foreach ($pagosUsuario as $pago) {
                 $valorPagoMoneda = Number::currency($pago->valor);
-                $this->mensajeAbono .= '<p class="mb-1">Tienes un abono registrado por valor de:<b> '.$valorPagoMoneda.$monedaSeleccionadaActual->nombre_corto.'  </b> en la fecha '.$pago->fecha.'</p>';
+                $this->mensajeAbono .= '<p class="mb-1">Tienes un abono registrado por valor de:<b> ' . $valorPagoMoneda . $monedaSeleccionadaActual->nombre_corto . '  </b> en la fecha ' . $pago->fecha . '</p>';
             }
         }
 
-        $this->mensajeAbono .= '<p class="mb-1">Valor mínimo de abono: '.$valorAbonoMoneda.$monedaSeleccionadaActual->nombre_corto.'</p>';
+        $this->mensajeAbono .= '<p class="mb-1">Valor mínimo de abono: ' . $valorAbonoMoneda . $monedaSeleccionadaActual->nombre_corto . '</p>';
     }
 
     public function actualizarCategoriaAbonoSeleccionadaViejito()
@@ -799,12 +748,14 @@ class AbonoCarrito extends Component
 
         $this->valorMinimoAbonoParaCategoriaRetorno = 0;
 
-        // REGISTROS DE COMPRAS Y PAGOS DE USUARIO
+        //REGISTROS DE COMPRAS Y PAGOS DE USUARIO
         $comprasRegistradasUsuario = $this->usuario->compras()->where('actividad_id', $this->actividad->id)->pluck('id')->toArray();
         $categoriaActividadCompras = CategoriaActividadCompra::where('actividad_categoria_id', $categoriaActivdadSeleccionada->id)->whereIn('compra_id', $comprasRegistradasUsuario)->pluck('compra_id')->toArray();
         $this->pagosCompraUsuario = Pago::whereIn('compra_id', $categoriaActividadCompras)->get();
 
-        // // PRIMERO SE REVISA SI TIENE UN PAGO O COMPRA ASOCIADO
+
+        //// PRIMERO SE REVISA SI TIENE UN PAGO O COMPRA ASOCIADO
+
 
         if ($this->pagosCompraUsuario->count() > 0) {
             // Obtener los abonos de la categoría seleccionada
@@ -818,7 +769,7 @@ class AbonoCarrito extends Component
                 ->where('moneda_id', $this->monedaSeleccionada) // Moneda seleccionada
                 ->value('valor');
 
-            // / solo para calcular el valor del abono categoria
+            /// solo para calcular el valor del abono categoria
             foreach ($abonosCategoria as $abonoCat) {
                 // Si la fecha actual es menor o igual a la fecha fin del abono
                 if ($fechaActual >= ($abonoCat->abono->fecha_fin)) {
@@ -842,7 +793,7 @@ class AbonoCarrito extends Component
                 ->where('moneda_id', $this->monedaSeleccionada) // Moneda seleccionada
                 ->value('valor');
 
-            // / solo para calcular el valor del abono categoria
+            /// solo para calcular el valor del abono categoria
             foreach ($abonosCategoria as $abonoCat) {
                 // Si la fecha actual es menor o igual a la fecha fin del abono
                 if ($fechaActual >= ($abonoCat->abono->fecha_fin)) {
@@ -861,6 +812,7 @@ class AbonoCarrito extends Component
                 $monedaSeleccionadaActual = Moneda::find($this->monedaSeleccionada);
             }
 
+
             $this->valorAbonoRetorno = $this->valorMinimoAbonoParaCategoriaRetorno;
             $this->valorAbono = $this->valorMinimoAbonoParaCategoriaRetorno;
             $this->valorMinimoAbonoParaCategoria = $this->valorMinimoAbonoParaCategoriaRetorno;
@@ -868,9 +820,11 @@ class AbonoCarrito extends Component
             $valorAbonoMoneda = Number::currency($this->valorMinimoAbonoParaCategoria);
 
             $this->mensajeAbono .= '<p class="mb-1"> No tienes abonos o pagos registrados</p>';
-            $this->mensajeAbono .= '<p class="mb-1"> Tú valor mínimo de abono es de '.$valorAbonoMoneda.$monedaSeleccionadaActual->nombre_corto.'</p>';
-            $this->mensajeAbono .= '<p class="mb-1"> Fecha limite para este abono: '.$fechaLiminiteAbonoActual;
+            $this->mensajeAbono .= '<p class="mb-1"> Tú valor mínimo de abono es de ' . $valorAbonoMoneda . $monedaSeleccionadaActual->nombre_corto . '</p>';
+            $this->mensajeAbono .= '<p class="mb-1"> Fecha limite para este abono: ' . $fechaLiminiteAbonoActual;
         }
+
+
 
         /*
 
@@ -896,19 +850,19 @@ class AbonoCarrito extends Component
         */
     }
 
+
+
     public function crearAbono()
     {
         // 1. Validaciones iniciales
         if (empty($this->carrito)) {
             $this->dispatch('mostrarMensaje', ['titulo' => 'Carrito vacío', 'mensaje' => 'Debes agregar un abono al carrito para continuar.', 'tipo' => 'error']);
-
             return;
         }
         if (count($this->camposAdicionalesActividad) > 0) {
             foreach ($this->camposAdicionalesActividad as $campo) {
                 if (empty($this->camposAdicionales[$campo->id])) {
                     $this->dispatch('mostrarMensaje', ['mensaje' => "Por favor, completa el campo: {$campo->nombre}", 'tipo' => 'error']);
-
                     return;
                 }
             }
@@ -922,7 +876,7 @@ class AbonoCarrito extends Component
 
             // 2. Lógica condicional de Aforo
             // Si no existe una compra previa, es el primer pago y se debe validar y reservar el cupo.
-            if (! isset($compraParaElPago->id)) {
+            if (!isset($compraParaElPago->id)) {
 
                 // --- Lógica de Aforo: Se ejecuta SÓLO para compras nuevas ---
                 foreach ($this->carrito as $categoriaId => $item) {
@@ -931,11 +885,10 @@ class AbonoCarrito extends Component
                     // Se calcula el aforo disponible real
                     $aforoDisponible = $categoria->aforo - $categoria->aforo_ocupado;
 
-                    if (! $categoria || $item['cantidad'] > $aforoDisponible) {
+                    if (!$categoria || $item['cantidad'] > $aforoDisponible) {
                         $mensajeError = $aforoDisponible > 0 ? "Solo quedan {$aforoDisponible} cupos para la categoría: {$categoria->nombre}" : "No hay suficientes cupos para la categoría: {$categoria->nombre}";
                         $this->dispatch('mostrarMensaje', ['mensaje' => $mensajeError, 'tipo' => 'error']);
                         DB::rollBack(); // Se revierte la transacción si no hay cupo
-
                         return;
                     }
 
@@ -960,7 +913,7 @@ class AbonoCarrito extends Component
                         'valor' => $valorTotalCategoria, // Se guarda el valor total de la categoría, no del abono
                         'estado' => 1, // Iniciada
                         'metodo_pago_id' => 1,
-                        'nombre_completo_comprador' => $this->usuario->primer_nombre.' '.$this->usuario->primer_apellido,
+                        'nombre_completo_comprador' => $this->usuario->primer_nombre . ' ' . $this->usuario->primer_apellido,
                         'identificacion_comprador' => $this->usuario->identificacion,
                         'telefono_comprador' => $this->usuario->telefono_movil,
                         'email_comprador' => $this->usuario->email,
@@ -978,10 +931,10 @@ class AbonoCarrito extends Component
                         'estado' => $this->actividad->estado_inscripcion_defecto ?? 0,
                         'nombre_inscrito' => $compraParaElPago->nombre_completo_comprador,
                         'email' => $compraParaElPago->email_comprador,
-                        'limite_invitados' => 0,
+                        'limite_invitados' => 0
                     ]);
                 } else {
-                    throw new \Exception('El usuario debe estar autenticado para crear una compra de abono.');
+                    throw new \Exception("El usuario debe estar autenticado para crear una compra de abono.");
                 }
             }
 
@@ -1010,7 +963,7 @@ class AbonoCarrito extends Component
                 'cantidad' => 1,
                 'precio' => $valorDelAbono,
                 'pago_id' => $pago->id,
-                'fecha' => $this->fechaHoy,
+                'fecha' => $this->fechaHoy
             ]);
 
             // 5. Lógica de Campos Adicionales y Redirección
@@ -1032,7 +985,6 @@ class AbonoCarrito extends Component
             if ($this->pasoActual == 1 && $this->totalPasos > 1) {
                 $this->pasoActual = 2;
                 $this->dispatch('mostrarMensaje', ['mensaje' => 'Abono agregado. Por favor completa el formulario.', 'tipo' => 'success']);
-
                 return;
             }
 
@@ -1041,11 +993,11 @@ class AbonoCarrito extends Component
 
         } catch (\Exception $e) {
             DB::rollBack(); // Se revierten los cambios en caso de cualquier error
-            Log::error('Error al crear abono: '.$e->getMessage());
+            Log::error('Error al crear abono: ' . $e->getMessage());
             $this->dispatch('mostrarMensaje', [
                 'titulo' => '¡Error Inesperado!',
-                'mensaje' => 'Error técnico: '.$e->getMessage(),
-                'tipo' => 'error',
+                'mensaje' => 'Error técnico: ' . $e->getMessage(),
+                'tipo' => 'error'
             ]);
         }
     }
@@ -1054,9 +1006,8 @@ class AbonoCarrito extends Component
     {
         $compra = $compra ?? $this->compraActual;
 
-        if (! $compra || ! isset($compra->id)) {
+        if (!$compra || !isset($compra->id)) {
             $this->dispatch('mostrarMensaje', ['mensaje' => 'No se encontró la compra para finalizar.', 'tipo' => 'error']);
-
             return;
         }
 
@@ -1069,10 +1020,9 @@ class AbonoCarrito extends Component
                     if ($valor === null || $valor === '' || $valor === []) {
                         $this->dispatch('mostrarMensaje', [
                             'mensaje' => "El campo \"{$elemento->titulo}\" es obligatorio.",
-                            'tipo' => 'error',
+                            'tipo' => 'error'
                         ]);
                         DB::rollBack();
-
                         return;
                     }
                 }
@@ -1082,57 +1032,45 @@ class AbonoCarrito extends Component
             $inscripcion = Inscripcion::where('compra_id', $compra->id)->first();
 
             foreach ($this->respuestas as $elementoId => $valor) {
-                if ($valor === null || $valor === '' || $valor === []) {
-                    continue;
-                }
+                if ($valor === null || $valor === '' || $valor === []) continue;
 
                 $elemento = ElementoFormularioActividad::find($elementoId);
-                if (! $elemento) {
-                    continue;
-                }
+                if (!$elemento) continue;
 
                 $respuesta = RespuestaElementoFormulario::updateOrCreate([
                     'compra_id' => $compra->id,
                     'elemento_formulario_actividad_id' => $elementoId,
                 ], [
                     'inscripcion_id' => $inscripcion?->id,
-                    'user_id' => $compra->pariente_usuario_id ?: $compra->user_id,
+                    'user_id' => $compra->pariente_usuario_id ?: $compra->user_id
                 ]);
 
                 switch ($elemento->tipoElemento->getRawOriginal('clase') ?? $elemento->tipoElemento->clase) {
-                    case 'corta': $respuesta->respuesta_texto_corto = $valor;
-                        break;
-                    case 'larga': $respuesta->respuesta_texto_largo = $valor;
-                        break;
-                    case 'si_no': $respuesta->respuesta_si_no = $valor;
-                        break;
-                    case 'unica_respuesta': $respuesta->respuesta_unica = $valor;
-                        break;
-                    case 'multiple_respuesta': $respuesta->respuesta_multiple = is_array($valor) ? implode(',', $valor) : $valor;
-                        break;
-                    case 'fecha': $respuesta->respuesta_fecha = $valor;
-                        break;
-                    case 'numero': $respuesta->respuesta_numero = $valor;
-                        break;
-                    case 'moneda': $respuesta->respuesta_moneda = $valor;
-                        break;
+                    case 'corta': $respuesta->respuesta_texto_corto = $valor; break;
+                    case 'larga': $respuesta->respuesta_texto_largo = $valor; break;
+                    case 'si_no': $respuesta->respuesta_si_no = $valor; break;
+                    case 'unica_respuesta': $respuesta->respuesta_unica = $valor; break;
+                    case 'multiple_respuesta': $respuesta->respuesta_multiple = is_array($valor) ? implode(",", $valor) : $valor; break;
+                    case 'fecha': $respuesta->respuesta_fecha = $valor; break;
+                    case 'numero': $respuesta->respuesta_numero = $valor; break;
+                    case 'moneda': $respuesta->respuesta_moneda = $valor; break;
                     case 'archivo':
                         if ($valor instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
                             $directorio = 'archivos/actividades/';
-                            $nombreArchivo = time().'_'.preg_replace('/[^A-Za-z0-9.\-\_]/', '', $valor->getClientOriginalName());
+                            $nombreArchivo = time() . '_' . preg_replace('/[^A-Za-z0-9.\-\_]/', '', $valor->getClientOriginalName());
                             $valor->storeAs($directorio, $nombreArchivo);
                             $respuesta->url_archivo = $nombreArchivo;
-                        } elseif (is_string($valor) && ! empty($valor)) {
+                        } elseif (is_string($valor) && !empty($valor)) {
                             $respuesta->url_archivo = $valor;
                         }
                         break;
                     case 'imagen':
                         if ($valor instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
                             $directorio = 'img/actividades/respuesta-formularios/';
-                            $nombreFoto = 'img_'.time().'_'.$valor->getClientOriginalName();
+                            $nombreFoto = 'img_' . time() . '_' . $valor->getClientOriginalName();
                             $valor->storeAs($directorio, $nombreFoto);
                             $respuesta->url_foto = $nombreFoto;
-                        } elseif (is_string($valor) && ! empty($valor)) {
+                        } elseif (is_string($valor) && !empty($valor)) {
                             $respuesta->url_foto = $valor;
                         }
                         break;
@@ -1147,10 +1085,10 @@ class AbonoCarrito extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al finalizar abono: '.$e->getMessage());
+            Log::error('Error al finalizar abono: ' . $e->getMessage());
             $this->dispatch('mostrarMensaje', [
-                'mensaje' => 'Error al guardar el formulario: '.$e->getMessage(),
-                'tipo' => 'error',
+                'mensaje' => 'Error al guardar el formulario: ' . $e->getMessage(),
+                'tipo' => 'error'
             ]);
         }
     }
@@ -1169,7 +1107,7 @@ class AbonoCarrito extends Component
         }
     }
 
-    // / cuando se hace un cambio de moneda hay que ejecutar esto porque debe eliminar lo del carrito y calcular de nuevo las categorias
+    /// cuando se hace un cambio de moneda hay que ejecutar esto porque debe eliminar lo del carrito y calcular de nuevo las categorias
     public function updatedMonedaSeleccionada($value)
     {
         $this->carrito = [];
@@ -1183,14 +1121,16 @@ class AbonoCarrito extends Component
             // Dispara una notificación usando SweetAlert2 o el sistema que prefieras
             $this->dispatch('mostrarMensajeMoneda', [
                 'titulo' => 'Cambio de moneda',
-                'mensaje' => ' Has cambiado la moneda a:'.$this->monedaNueva->nombre,
-                'tipo' => 'success',
+                'mensaje' => ' Has cambiado la moneda a:' . $this->monedaNueva->nombre,
+                'tipo' => 'success'
             ]);
 
             // Aquí puedes agregar cualquier otra lógica necesaria
             // Por ejemplo, recalcular precios, actualizar otros componentes, etc.
         }
     }
+
+
 
     // esto me ayuda recorriendo los items del carrito para poder saber cuanto suma todo, es mas facil para al final en el resumen poner un valor, en vez de tener que calcular todo de nuevo
     public function calcularTotal()
@@ -1211,9 +1151,8 @@ class AbonoCarrito extends Component
                 $this->dispatch('mostrarMensaje', [
                     'titulo' => 'Opps algo sucedió',
                     'mensaje' => 'El carrito está vacío',
-                    'tipo' => 'error',
+                    'tipo' => 'error'
                 ]);
-
                 return;
             }
 
@@ -1223,9 +1162,8 @@ class AbonoCarrito extends Component
                     if (empty($this->camposAdicionales[$campo->id])) {
                         $this->dispatch('mostrarMensaje', [
                             'mensaje' => "Por favor, completa el campo: {$campo->nombre}",
-                            'tipo' => 'error',
+                            'tipo' => 'error'
                         ]);
-
                         return; // Detener el proceso si falta algún campo
                     }
                 }
@@ -1240,25 +1178,23 @@ class AbonoCarrito extends Component
             // Validación de aforo (similar a crearCompra)
             foreach ($this->carrito as $categoriaId => $item) {
                 $categoria = ActividadCategoria::find($categoriaId);
-                if (! $categoria) {
+                if (!$categoria) {
                     continue;
                 }
 
                 if ($categoria->aforo == 0) {
                     $this->dispatch('mostrarMensaje', [
                         'mensaje' => "Lo sentimos, no hay cupos disponibles para la categoría: {$categoria->nombre}",
-                        'tipo' => 'error',
+                        'tipo' => 'error'
                     ]);
-
                     return;
                 }
 
                 if ($item['cantidad'] > $categoria->aforo) {
                     $this->dispatch('mostrarMensaje', [
                         'mensaje' => "Solo quedan {$categoria->aforo_ocupado} cupos disponibles para la categoría: {$categoria->nombre}",
-                        'tipo' => 'error',
+                        'tipo' => 'error'
                     ]);
-
                     return;
                 } else {
                     // Disminuir el aforo de la categoría (bloqueo optimista)
@@ -1266,12 +1202,12 @@ class AbonoCarrito extends Component
                     $categoria->save();
                 }
             }
-            // ...
+            //...
 
             // Actualizar la compra principal
             $compraActualizada->moneda_id = $this->monedaSeleccionada;
-            $compraActualizada->valor = $this->totalCompra;
-            // ... otros campos que se puedan actualizar...
+            $compraActualizada->valor =  $this->totalCompra;
+            //... otros campos que se puedan actualizar...
             $compraActualizada->save();
 
             // Actualizar los items del carrito
@@ -1286,11 +1222,13 @@ class AbonoCarrito extends Component
                     'precio' => $item['precio'],
                     'user_id' => $this->usuario ? $this->usuario->id : null,
                     'pago_id' => $pagoActual->id,
-                    'fecha' => $this->fechaHoy,
+                    'fecha' => $this->fechaHoy
                 ]);
                 $pagoActual->valor = $item['precio'];
                 $pagoActual->save();
             }
+
+
 
             // Actualizar los campos adicionales
             // Primero, eliminar los campos existentes
@@ -1308,42 +1246,42 @@ class AbonoCarrito extends Component
             }
 
             // Redireccionar al siguiente paso (similar a crearCompra)
-            // ...
+            //...
 
             $this->dispatch('mostrarMensaje', [
                 'titulo' => 'Carrito de compras actualizado',
                 'mensaje' => 'Se actualizaron los cambios de tu carrito de compra',
-                'tipo' => 'success',
+                'tipo' => 'success'
             ]);
         } catch (\Illuminate\Database\QueryException $e) {
             // Capturar errores de la base de datos
             DB::rollBack();
-            Log::error('Error de base de datos al crear la compra: '.$e->getMessage());
+            Log::error('Error de base de datos al crear la compra: ' . $e->getMessage());
 
             $this->dispatch('mostrarMensaje', [
                 'titulo' => 'Opps algo sucedió',
-                'mensaje' => 'Hubo un error al guardar la compra en la base de datos.'.$e->getMessage().' Por favor, intenta nuevamente.',
-                'tipo' => 'error',
+                'mensaje' => 'Hubo un error al guardar la compra en la base de datos.' . $e->getMessage() . ' Por favor, intenta nuevamente.',
+                'tipo' => 'error'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Capturar errores de validación
             DB::rollBack();
-            Log::error('Error de validación al crear la compra: '.$e->getMessage());
+            Log::error('Error de validación al crear la compra: ' . $e->getMessage());
 
             $this->dispatch('mostrarMensaje', [
                 'titulo' => 'Opps algo sucedió',
-                'mensaje' => 'Error de validación: '.$e->validator->errors()->first(),
-                'tipo' => 'error',
+                'mensaje' => 'Error de validación: ' . $e->validator->errors()->first(),
+                'tipo' => 'error'
             ]);
         } catch (\Exception $e) {
             // Capturar cualquier otra excepción
             DB::rollBack();
-            Log::error('Error al crear la compra: '.$e->getMessage());
+            Log::error('Error al crear la compra: ' . $e->getMessage());
 
             $this->dispatch('mostrarMensaje', [
                 'titulo' => 'Opps algo sucedió',
-                'mensaje' => 'Error: Creando carrito de compras'.$e->getMessage(), // Mostrar el mensaje de error real
-                'tipo' => 'error',
+                'mensaje' => 'Error: Creando carrito de compras' . $e->getMessage(), // Mostrar el mensaje de error real
+                'tipo' => 'error'
             ]);
         }
     }

@@ -20,19 +20,17 @@ $configData = Helper::appClasses();
 
 @section('content')
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-  <div>
-    <h4 class="mb-1 fw-semibold text-primary">
-      <i class="ti ti-circle-dashed-check me-2"></i>{{ $configuracionRv->nombre_general ?? 'Rueda de la Vida' }}
-    </h4>
-    <p class="text-muted mb-0">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+          <i class="ti ti-arrow-left"></i>
+      </a>
+      <h4 class="mb-0 fw-semibold text-primary">{{ $configuracionRv->nombre_general ?? 'Rueda de la Vida' }}</h4>
+      </div>
+      <p class="text-black mb-0 small">
       Administra las áreas de autoevaluación, los hábitos fijos y abiertos, y los parámetros globales del módulo.
-    </p>
-  </div>
-  <div>
-    <a href="{{ route('ruedaDeLaVida.historial') }}" class="btn btn-outline-secondary rounded-pill px-4">
-      <i class="ti ti-arrow-left me-1"></i> Ir al Historial
-    </a>
-  </div>
+      </p>
+    </div>
 </div>
 
 @include('layouts.status-msn')

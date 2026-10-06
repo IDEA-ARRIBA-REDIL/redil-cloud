@@ -42,7 +42,7 @@ class GamificacionService
             DB::transaction(function () use ($user, $reglas, &$resultado) {
                 // Bloquear registro de usuario para actualización segura
                 $usuario = User::where('id', $user->id)->lockForUpdate()->first();
-                if (! $usuario) {
+                if (!$usuario) {
                     return;
                 }
 
@@ -84,7 +84,7 @@ class GamificacionService
 
                                 if ($insigniaUser->wasRecentlyCreated) {
                                     $resultado['insigniasDesbloqueadas'][] = $regla->insignia;
-                                } elseif (! $insigniaUser->completada) {
+                                } elseif (!$insigniaUser->completada) {
                                     $insigniaUser->update(['completada' => true, 'obtenida_el' => now()]);
                                     $resultado['insigniasDesbloqueadas'][] = $regla->insignia;
                                 }
@@ -131,7 +131,7 @@ class GamificacionService
                             break;
 
                         case 'meta':
-                            if (! $regla->insignia_id || ! $regla->insignia) {
+                            if (!$regla->insignia_id || !$regla->insignia) {
                                 continue 2;
                             }
 
@@ -143,7 +143,7 @@ class GamificacionService
                             ]);
 
                             // Si la insignia no ha sido completada aún
-                            if (! $insigniaUser->completada) {
+                            if (!$insigniaUser->completada) {
                                 $progresoActual = (int) ($insigniaUser->progreso_actual ?: 0) + 1;
                                 $insigniaUser->progreso_actual = $progresoActual;
 
@@ -182,7 +182,7 @@ class GamificacionService
             });
 
         } catch (\Throwable $th) {
-            Log::error("GamificacionService::procesarAccion - Error procesando '{$accionCodigo}' para usuario {$user->id}: ".$th->getMessage(), [
+            Log::error("GamificacionService::procesarAccion - Error procesando '{$accionCodigo}' para usuario {$user->id}: " . $th->getMessage(), [
                 'trace' => $th->getTraceAsString(),
             ]);
         }

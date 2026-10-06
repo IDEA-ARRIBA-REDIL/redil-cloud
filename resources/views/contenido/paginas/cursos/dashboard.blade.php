@@ -365,8 +365,8 @@
                         name="rango_fechas" value="{{ $rangoFechas }}" placeholder="DD/MM/AAAA - DD/MM/AAAA">
                 </div>
 
-                <!-- Select2 Carrera -->
-                <div class="col-12 col-md-6 border-end border-gray p-0 d-flex align-items-center">
+                <!-- Select2 Carrera --> 
+                <div class="col-12 col-md-6 border-end border-gray p-1 d-flex align-items-center">
                     <select name="carrera_id[]" class="select2 border-none form-select w-100" data-allow-clear="true"
                         data-placeholder="Todas las Carreras" multiple>
                         @foreach ($carreras as $carrera)

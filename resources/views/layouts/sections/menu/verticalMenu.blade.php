@@ -813,6 +813,15 @@
             </li>
         @endif
 
+    @if ($rolActivo->hasPermissionTo('configuraciones.tienda_gamificacion'))
+        <li class="menu-item {{ request()->routeIs('gamificacion.tienda') ? 'active' : '' }}">
+            <a href="{{ route('gamificacion.tienda') }}" class="menu-link">
+                <i class="menu-icon tf-icons ti ti-shopping-bag"></i>
+                <div>Tienda de canjes</div>
+            </a>
+        </li>
+    @endif
+
     @if ($rolActivo->hasPermissionTo('iglesia.item_iglesia'))
         <li class="menu-item">
             <a href="" class="menu-link menu-toggle">

@@ -7,7 +7,7 @@ domains:
   - usuarios
   - roles-permisos
   - grupos
-updated_at: 2026-09-06
+updated_at: 2026-09-30
 ---
 
 # Ruta de desarrollo trazable con Kaddo
@@ -18,28 +18,22 @@ Esta es la ruta obligatoria del piloto para que un feature empiece con contexto 
 
 El Work Item es el hilo conductor: enlaza la necesidad, el dominio, los archivos afectados, la validación y el aprendizaje final. Kaddo organiza el conocimiento; el código y las pruebas demuestran el comportamiento real.
 
-## Flujo completo
+## Flujo completo (Kaddo Lifecycle v2 - 7 Etapas)
 
 ```text
-Solicitud o evidencia
+1. Intención (Captured Intent)
         ↓
-Puerta de alcance y dominio
+2. Definición (Refinement → Ready con ACs y affected_files)
         ↓
-Work Item en borrador
+3. Planeación & Balanceo de Contexto (Lightweight / Standard / Deep)
         ↓
-Contexto + criterios de aceptación
+4. Implementación Controlada (In-Progress, acotada al alcance)
         ↓
-WI listo y plan confirmado
+5. Evidencia Objetiva (AC Matrix, Git diffs, tests ejecutados)
         ↓
-Implementación limitada al alcance
+6. Verificación & Guard (kaddo verify, kaddo guard, revisión humana)
         ↓
-Pruebas + formato + Kaddo Guard
-        ↓
-Actualizar dominio, capacidades y decisiones
-        ↓
-Capturar aprendizaje y cerrar el WI
-        ↓
-Revisión y commit del equipo
+7. Aprendizaje & Memoria Viva (kaddo learn, knowledge/, WI completed)
 ```
 
 ## Roles
@@ -70,131 +64,160 @@ Una persona puede asumir varios roles, pero ninguna responsabilidad debe quedar 
 
 El flujo recomendado es asistido: el compañero describe la intención y copia el prompt de cada etapa; Codex crea o modifica los archivos, ejecuta Kaddo y muestra la evidencia. Quien prefiera usar la CLI puede hacerlo, pero conocer sus comandos no es un requisito para comenzar.
 
-## A. Desarrollar un feature de un módulo habilitado
+## A. Desarrollar un feature con Kaddo Lifecycle v2 (7 Etapas)
 
-### 1. Registrar la solicitud
+### Etapa 1: Intención (Captured Intent)
 
-La solicitud debe responder, como mínimo:
+La solicitud se origina desde una conversación, issue, ticket o video. El responsable funcional debe aportar únicamente lo fundamental:
+- **¿Qué sucede actualmente?** (Comportamiento actual).
+- **¿Qué debería suceder?** (Resultado esperado).
+- **¿Quién usa el flujo?** (Actor o rol).
+- **¿Cómo se comprueba que quedó correcto?** (Evidencia observable).
+- **Evidencia adjunta:** Captura, regla de negocio o video (resumiendo en texto sus conclusiones).
 
-- ¿Qué sucede actualmente?
-- ¿Qué debería suceder?
-- ¿Quién usa el flujo?
-- ¿Cómo se comprueba que quedó correcto?
-- ¿Hay video, captura, regla de negocio o caso real que sirva de evidencia?
+Se crea el Work Item en borrador bajo `knowledge/delivery/work-items/draft/WI-XXX.md`.
 
-Si una respuesta cambia materialmente la solución, debe aclararse antes de programar. Los videos son evidencia de descubrimiento; sus conclusiones deben quedar resumidas en texto para que Kaddo pueda recuperarlas.
+### Etapa 2: Definición (Refinement → Ready)
 
-### 2. Aplicar la puerta de alcance
+El **Refinement Agent** analiza la intención, contrasta con las 4 capas de conocimiento (`knowledge/business/`, `product/`, `tech/`, `delivery/`) y enriquece el Work Item:
+- Define **Criterios de Aceptación (ACs)** cuantitativos, unívocos y verificables.
+- Mapea de forma precisa el módulo principal (`assigned_module`) y los patrones de archivos (`code:` globs).
+- Asigna la sugerencia de rama Git según `.kaddo/git.yml` (`git_branch_suggestion`).
+- Recomienda el nivel de balanceo de contexto (`context_level`: `lightweight | standard | deep`).
+- Señala riesgos o brechas abiertas (*Knowledge Gaps*) que requieran clarificación humana.
 
-El orquestador identifica verbo, objeto y dominio principal usando `knowledge/tech/domains/README.md`.
+#### Plantilla Oficial de Work Item (Gemini Flash 3.8 v2 con Git)
 
-- Si pertenece a Usuarios, Roles/Permisos o Grupos, continúa.
-- Si es ambiguo, formula una pregunta corta.
-- Si pertenece a otro módulo, se detiene y solicita autorización para incorporarlo. No se programa ese módulo usando contexto parcial.
+```yaml
+---
+id: WI-XXX
+title: "[Título descriptivo de la tarea]"
+type: "feature | bugfix | hotfix | spike | chore"
+status: draft
+layer: "product | tech | delivery"
+assigned_module: "nombre-del-modulo"
+context_level: "lightweight | standard | deep"
+git_branch_suggestion: "feature/WI-XXX-slug"
+code:
+  - "app/Http/Controllers/..."
+  - "app/Livewire/..."
+  - "resources/views/livewire/..."
+dependencies:
+  - WI-YYY
+tags:
+  - tag1
+---
 
-### 3. Crear el Work Item
+# WI-XXX: [Título de la Tarea]
 
-Todo cambio funcional debe tener un WI antes de modificar código. El WI incluye:
+## 1. Intención & Contexto de Negocio
+- **Problema/Necesidad:** [Descripción breve de por qué se requiere este cambio]
+- **Valor Requerido:** [Impacto esperado en el producto o ministerio]
 
-- identificador, título, tipo, estado y nivel de conocimiento;
-- problema actual y valor esperado;
-- dominios y capacidades afectadas;
-- archivos o patrones de ownership esperados;
-- criterios de aceptación observables;
-- exclusiones explícitas;
-- validaciones técnicas y funcionales;
-- preguntas o riesgos todavía abiertos.
+## 2. Alcance Técnico y Ownership (`code:` globs)
+- **Módulo Principal:** `knowledge/tech/modules/[modulo]` (o dominio en `knowledge/tech/domains/[dominio]`)
+- **Archivos/Componentes Objetivo:**
+  - `app/...`
+  - `resources/views/...`
+- **Sugerencia de Rama Git:** `feature/WI-XXX-slug`
+- **Riesgos & Brechas Identificadas:** [Efectos secundarios o dependencias no resueltas]
 
-El WI comienza en `draft`. Pasa a `ready` solamente cuando no quedan dudas bloqueantes y el alcance puede probarse. Al comenzar la implementación pasa a `in-progress`.
+## 3. Criterios de Aceptación (Acceptance Criteria - ACs)
+- [ ] **AC-01:** [Dado... Cuando... Entonces...]
+- [ ] **AC-02:** [El sistema debe responder con... / validar que...]
+- [ ] **AC-03:** [Evidencia requerida: Test pasando / log / verificación en pantalla]
 
-### 4. Cargar y contrastar contexto
+## 4. Recomendación de Handoff & Nivel de Contexto
+- **Nivel Sugerido:** `[lightweight | standard | deep]`
+- **Razón del Balanceo:** [Explicación de por qué este nivel evita saturar tokens]
+```
 
-Antes de proponer código:
+El usuario revisa y aprueba el Work Item. Con su visto bueno, el archivo se traslada físicamente a:
+`knowledge/delivery/work-items/ready/WI-XXX.md`.
 
-1. Recuperar el WI y su contexto desde Kaddo.
-2. Leer el `current-state.md` del dominio principal.
-3. Cargar solo las dependencias estrictamente necesarias.
-4. Revisar modelos, controladores o componentes, rutas, vistas, migraciones y pruebas del flujo real.
-5. Consultar documentación compatible con la versión instalada cuando intervenga Laravel o Livewire.
-6. Registrar cualquier diferencia entre negocio documentado y código; no ocultarla ni corregirla por inferencia.
+### Etapa 3: Planeación & Balanceo de Contexto (Context Balancing / Handoff)
 
-La jerarquía de evidencia definida por el enrutador de dominios decide qué fuente prevalece.
+Actúa como balanceador de carga de contexto para Gemini Flash. En lugar de procesar archivos masivos o código innecesario, se aplica el nivel pactado:
+- **Lightweight:** Retoques visuales, copys o ajustes en un solo método (solo archivos objetivo).
+- **Standard:** Features y fixes convencionales (archivos objetivo + interfaces directas + reglas de dominio).
+- **Deep:** Cambios arquitectónicos transversales, multi-tenancy core o refactorizaciones globales.
 
-### 5. Presentar y confirmar el plan
+Se consulta la documentación transversal de `knowledge/tech/` (`standards.md`, `security.md`, `stack.md`, `git-strategy.md`) y se ejecuta `kaddo context --wi WI-XXX` para ensamblar el paquete acotado. El agente presenta el plan técnico y espera la confirmación explícita del desarrollador (*Human-in-the-loop*).
 
-El plan previo debe declarar:
+### Etapa 4: Implementación Controlada (In-Progress)
 
-- alcance técnico;
-- archivos esperados;
-- pasos de implementación;
-- riesgos y efectos secundarios;
-- pruebas y validación manual;
-- qué queda fuera;
-- condiciones que obligan a detenerse y preguntar.
+El archivo del Work Item pasa físicamente a:
+`knowledge/delivery/work-items/in-progress/WI-XXX.md`.
 
-No se amplía el alcance silenciosamente. Si aparece una dependencia material no prevista, primero se actualiza el WI y se confirma el nuevo alcance.
+- El **Implementation Agent** modifica exclusivamente los archivos que caen dentro de los patrones `code:` globs del Work Item.
+- **Directrices anti-truncamiento obligatorias (Sección 11 de ARCHITECTURE.md):** Prohibido el uso de comentarios de omisión (`// ... resto del código ...`), pseudocódigo o métodos simulados. Todo cambio debe ser quirúrgico, atómico y 100% funcional.
 
-### 6. Implementar
+### Etapa 5: Evidencia Objetiva (Git Diff & Physical Proof)
 
-El desarrollador sigue las convenciones existentes del repositorio y realiza solo los cambios del WI. Debe preservar modificaciones ajenas presentes en el árbol de trabajo y evitar refactorizaciones no relacionadas.
+Al finalizar la edición, el agente **NUNCA** responde únicamente *"ya terminé"*. Extrae la verdad física desde `git diff` y entrega el **Reporte de Evidencia y Verificación**:
 
-Cada regla nueva o corregida debe quedar respaldada por una prueba cuando sea técnicamente viable. Una decisión estructural duradera se registra como ADR; una regla funcional se actualiza en el documento del dominio o en capacidades.
+```markdown
+# REPORTE DE EVIDENCIA Y VERIFICACIÓN: WI-XXX
 
-### 7. Verificar
+## 1. Estado de Ejecución & Propuesta Git
+- **Work Item:** WI-XXX - [Título]
+- **Estado:** Ready → In-Progress → Completed
+- **Rama Sugerida:** `feature/WI-XXX-slug`
+- **Propuesta de Commit:** `feat(modulo): implementa cambio X (ref WI-XXX)`
 
-La verificación mínima antes del cierre incluye:
+## 2. Resumen de Cambios Físicos (Git Diff)
+\`\`\`diff
+[Resumen de archivos modificados y líneas impactadas vía git diff --stat]
+\`\`\`
 
-1. Pruebas específicas del feature, con rutas exitosas, fallidas y casos límite relevantes.
-2. Formato de los archivos PHP modificados con Pint.
-3. Validación manual cuando el comportamiento visual o el flujo de usuario no esté completamente cubierto por pruebas.
-4. Kaddo Guard para detectar cambios de código sin conocimiento u ownership asociado.
-5. Revisión del diff para confirmar que no entraron cambios ajenos al WI.
+## 3. Matriz de Verificación de Criterios de Aceptación (AC Matrix)
+| ID AC | Descripción del Criterio | Estado | Evidencia de Cumplimiento / Test |
+|-------|--------------------------|--------|-----------------------------------|
+| AC-01 | [Texto del AC]           | ✅ CUMPLE | `php artisan test` passing / Método `X` en línea Y |
+| AC-02 | [Texto del AC]           | ✅ CUMPLE | Verificación en interfaz / Flujo comprobado |
 
-No se declara éxito si una prueba relevante falla. Las limitaciones aceptadas deben quedar escritas.
+## 4. Resultado de Kaddo Guard & Knowledge Drift
+- **Alineación con `code:` globs:** ✅ 100% coincidente / ⚠️ Archivo adicional modificado
+- **Estado Kaddo Guard:** [Sin alertas de Knowledge Drift / Alerta atendida]
 
-### 8. Actualizar el conocimiento
+## 5. Captura de Aprendizaje (Kaddo Learn / Knowledge Update)
+- **Lección Aprendida para la Memoria Viva:** [Detalle técnico relevante descubierto]
+- **Actualización de Conocimiento:** [Instrucción para actualizar knowledge/]
+```
 
-Antes de cerrar, revisar qué cambió realmente:
+### Etapa 6: Verificación & Guard (Verification & Guard)
 
-| Cambio | Documento que debe revisarse |
-|---|---|
-| Regla de negocio o comportamiento | `knowledge/tech/domains/<dominio>/current-state.md` |
-| Capacidad visible del producto | `knowledge/product/capabilities.md` |
-| Decisión arquitectónica duradera | `knowledge/tech/decisions/` |
-| Ownership o archivos del dominio | Frontmatter del dominio y del WI |
-| Riesgo, deuda o incertidumbre | Pregunta abierta o sección de pendientes |
-| Procedimiento de entrega | Este playbook o documentación del orquestador |
+- Se ejecutan pruebas automatizadas (`php artisan test --filter=...`), formateo con Pint (`vendor/bin/pint --format agent`) y comprobación en el navegador.
+- Se ejecuta `kaddo verify` y `kaddo guard` para comprobar que ningún archivo fue modificado fuera de los `code:` globs (*Knowledge Drift*).
 
-Después se regenera el contexto y el grafo de Kaddo para que el nuevo conocimiento esté disponible en la siguiente tarea.
+### Etapa 7: Aprendizaje & Memoria Viva (Learning Loop - Closing)
 
-### 9. Cerrar el Work Item
+- Se ejecuta la captura de conocimiento (`kaddo learn`).
+- Se actualizan los documentos correspondientes en `knowledge/tech/domains/`, `capabilities.md` o ADRs según corresponda.
+- El archivo del Work Item se traslada a:
+  `knowledge/delivery/work-items/completed/WI-XXX.md`.
 
-El WI se mueve a `completed` únicamente cuando:
+---
 
-- todos los criterios de aceptación fueron comprobados;
-- las pruebas requeridas pasan;
-- la validación manual necesaria fue confirmada;
-- Guard fue revisado y no existen omisiones sin explicar;
-- la documentación afectada fue actualizada;
-- la sección `Learning` distingue implementado, validado, aprendido y pendiente.
+## Fronteras Estrictas de Git (Agent Git Boundaries)
 
-El cierre no realiza commits ni integra cambios automáticamente. El equipo revisa el diff y decide el commit o pull request.
+1. **NUNCA ejecutar comandos de Git autónomamente:** Ni la CLI de Kaddo ni los agentes de IA ejecutan `git branch`, `git checkout`, `git commit`, `git push` o `git merge`.
+2. **Rol consultivo y propuesta:** El agente formula la sugerencia de rama y la propuesta de mensaje de commit siguiendo **Conventional Commits** y referenciando el WI.
+3. **El desarrollador humano ejecuta:** El desarrollador humano revisa el diff en su terminal y ejecuta los comandos de Git correspondientes.
 
-## Prompts ejecutables por etapa
+---
 
-Cada prompt se envía cuando la etapa anterior ya produjo el resultado esperado. Los corchetes representan información que debe reemplazarse.
+## Prompts ejecutables por etapa (Lifecycle v2 con Git)
 
-| Paso | Prompt para Codex | Resultado que debe entregar antes de continuar |
+| Etapa | Prompt para el Agente | Resultado que debe entregar antes de continuar |
 |---|---|---|
-| 1. Solicitud | “Quiero resolver `[problema]`. Actualmente `[comportamiento]`; debería `[resultado]`. Lo usa `[actor]` y lo validaré con `[evidencia]`. No programes todavía: resume lo entendido y pregunta solo lo que cambie materialmente la solución.” | Resumen del problema, actor, resultado, evidencia y preguntas verdaderamente bloqueantes. |
-| 2. Alcance | “Clasifica esta solicitud con el enrutador. Dime el dominio principal, dependencias mínimas y si está habilitado, existe sin contexto o aún no está implementado. No modifiques archivos.” | Clasificación explícita y decisión de continuar con feature o abrir descubrimiento. |
-| 3. WI | “Crea el Work Item en borrador. Incluye problema, valor, alcance, exclusiones, criterios observables, validaciones, ownership esperado, riesgos y preguntas. Muéstrame su ruta y un resumen. No implementes.” | Archivo WI en `draft`, identificador y criterios comprensibles para el responsable. |
-| 4. Contexto | “Carga el contexto de Kaddo y el `current-state.md` del dominio. Revisa el código real del flujo: rutas, controladores, modelos, Livewire, vistas, migraciones y pruebas. Separa lo comprobado, lo validado por negocio, las contradicciones y lo pendiente. No implementes.” | Informe breve respaldado por archivos, sin suposiciones ocultas. |
-| 5. Plan | “Presenta el plan del WI con archivos, cambios, riesgos, efectos secundarios, pruebas, validación manual, documentación y condiciones para detenerte. Si no hay bloqueos, deja el WI listo y espera mi autorización.” | Plan revisable y WI en `ready`; todavía no debe existir implementación. |
-| 6. Implementación | “Procede con el WI aprobado. Pásalo a `in-progress`, implementa únicamente el alcance, preserva cambios ajenos y añade las pruebas pertinentes. Informa si aparece una dependencia no prevista.” | Código y pruebas limitados al WI; cualquier ampliación se detiene para revisión. |
-| 7. Verificación | “Verifica el feature: ejecuta pruebas específicas y casos límite, aplica Pint si cambió PHP, indica la validación manual, revisa el diff y ejecuta Kaddo Guard. No cierres si existe un fallo.” | Evidencia de pruebas, formato, revisión, Guard y cualquier limitación. |
-| 8. Conocimiento | “Actualiza solamente el conocimiento afectado por lo implementado: estado del dominio, capacidades, ADR si corresponde, ownership, riesgos o pendientes. Regenera el contexto y el grafo de Kaddo y enumera los documentos modificados.” | Documentación alineada con el comportamiento real y nuevo contexto recuperable. |
-| 9. Cierre | “Audita el WI contra su Definition of Done. Registra Learning separando implementado, validado, aprendido y pendiente. Ciérralo solo si criterios, pruebas, validación, documentación y Guard están completos. No hagas commit salvo que te lo solicite.” | WI en `completed`, resumen final, pruebas ejecutadas, archivos modificados y pendientes explícitos. |
+| **1. Intención** | *"Quiero resolver `[problema]`. Actualmente `[comportamiento]`; debería `[resultado]`. Lo usa `[actor]` y lo validaré con `[evidencia]`. Crea el WI en `draft/` sin programar."* | Archivo `draft/WI-XXX.md` creado con el problema y alcance preliminar. |
+| **2. Definición** | *"Actúa como Refinement Agent. Contrasta el WI-XXX con el conocimiento de Kaddo, define ACs medibles, declara patrones code: globs, sugiere rama Git según .kaddo/git.yml y recomienda context_level. Déjalo en `ready/`."* | WI completo con YAML frontmatter estructurado, ACs, sugerencia de rama y sin dudas bloqueantes. |
+| **3. Planeación** | *"Genera el paquete de contexto para WI-XXX con nivel `[lightweight/standard/deep]` y presenta el plan de implementación. Espera mi aprobación."* | Plan de archivos, pasos de implementación y confirmación del alcance. |
+| **4. Implementación** | *"Pasa el WI-XXX a `in-progress/` e implementa únicamente los archivos bajo code: globs, respetando las reglas anti-truncamiento de ARCHITECTURE.md."* | Código quirúrgico implementado dentro del alcance autorizado. |
+| **5. Evidencia** | *"Genera el Reporte de Evidencia y Verificación oficial para WI-XXX con la matriz de ACs, git diff --stat, propuesta de commit Conventional Commits y validaciones."* | Reporte estructurado con tabla de ACs 1:1, diffs y propuesta de commit. |
+| **6. Verificación** | *"Ejecuta pruebas, Pint y Kaddo Guard para comprobar que no haya deriva de código ni errores."* | Reporte de Guard limpio y pruebas pasando sin errores. |
+| **7. Aprendizaje** | *"Ejecuta kaddo learn, documenta la lección aprendida en knowledge/ y traslada el WI a `completed/`."* | Conocimiento del proyecto actualizado y WI archivado como completado. |
 
 ## B. Ejemplo: feature del módulo de Usuarios
 

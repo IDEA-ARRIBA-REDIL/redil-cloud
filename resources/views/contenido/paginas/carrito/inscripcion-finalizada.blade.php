@@ -55,7 +55,7 @@ $configData = Helper::appClasses();
 
                 <div class="text-center mb-4 col-12">
                     {{-- La imagen ahora usa la variable $icono que viene del controlador --}}
-                    <img style="width: 240px; height: 240px; object-fit: contain;" src="{{ Storage::disk('global_media')->url('Inscipcion-exitosa.png') }}" alt="Inscripción exitosa" class="p-0">
+                    <img style="width: 240px; height: 240px; object-fit: contain;" src="{{ Storage::disk('global_media')->url('Inscripcion-exitosa.png') }}" alt="Inscripción exitosa" class="p-0">
                 </div>
 
                 <h2 class="text-black fw-bold mb-0 lh-sm mt-3">{{ $titulo }} </h2>

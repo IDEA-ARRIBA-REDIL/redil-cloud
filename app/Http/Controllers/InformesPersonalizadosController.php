@@ -7,12 +7,14 @@ use App\Models\CampoExtraGrupo;
 use App\Models\CampoInformeExcel;
 use App\Models\ClasificacionAsistente;
 use App\Models\Grupo;
-use App\Models\Informe;
+use App\Models\InformeEnCola;
+use App\Models\InformePersonalizado;
 use App\Models\ReporteGrupo;
 use App\Models\SemanaDeshabilitada;
 use App\Models\TipoGrupo;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class InformesPersonalizadosController extends Controller
@@ -32,6 +34,42 @@ class InformesPersonalizadosController extends Controller
     }
 
     // =========================================================================
+    // MEGAINFORME PERSONALIZADO (DINÁMICO EN COLA)
+    // =========================================================================
+
+    /**
+     * Muestra la vista de configuración y monitorización del Megainforme.
+     */
+    public function showMegaInforme(int $id)
+    {
+        $informe = InformePersonalizado::findOrFail($id);
+
+        return view('contenido.paginas.informes-personalizados.mega-informe', [
+            'informe' => $informe,
+        ]);
+    }
+
+    /**
+     * Descarga segura del archivo generado en cola.
+     */
+    public function descargarInformeEnCola(int $id)
+    {
+        $informeEnCola = InformeEnCola::findOrFail($id);
+
+        if (! $informeEnCola->isCompleted() || empty($informeEnCola->nombre_archivo)) {
+            abort(404, 'El informe solicitado aún no se encuentra completado o no tiene archivo disponible.');
+        }
+
+        $relPath = 'informes/' . $informeEnCola->nombre_archivo . '.xlsx';
+
+        if (! Storage::disk('local')->exists($relPath)) {
+            abort(404, 'El archivo generado no se encuentra en el almacenamiento.');
+        }
+
+        return Storage::disk('local')->download($relPath, $informeEnCola->nombre_archivo . '.xlsx');
+    }
+
+    // =========================================================================
     // INFORME ASISTENCIA SEMANAL OBREROS
     // Equivalente a: getInformeAsistenciaSemanalObrerosPersonalizado($id)
     // =========================================================================
@@ -42,7 +80,7 @@ class InformesPersonalizadosController extends Controller
      */
     public function showInformeObreros(int $id)
     {
-        $informePersonalizado = Informe::findOrFail($id);
+        $informePersonalizado = InformePersonalizado::findOrFail($id);
         $tiposDeGrupos = TipoGrupo::select('id', 'nombre')
             ->orderBy('orden', 'asc')
             ->get();
@@ -76,7 +114,7 @@ class InformesPersonalizadosController extends Controller
      */
     public function exportarInformeObreros(Request $request, int $id)
     {
-        $informePersonalizado = Informe::findOrFail($id);
+        $informePersonalizado = InformePersonalizado::findOrFail($id);
 
         // ── 1. Campos de información principal seleccionados ──────────────────
         if ($request->filled('info_principal')) {

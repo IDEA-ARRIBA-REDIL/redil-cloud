@@ -159,6 +159,8 @@ class GestionarRolesPrivilegios extends Component
 
     /**
      * 1. Activa todos los permisos de un bloque para el rol que se está editando en el modal.
+     *
+     * @param  string  $etiquetaBloque
      */
     public function activarTodosBloque(string $etiquetaBloque): void
     {
@@ -189,6 +191,8 @@ class GestionarRolesPrivilegios extends Component
 
     /**
      * 2. Desactiva todos los permisos de un bloque para el rol que se está editando en el modal.
+     *
+     * @param  string  $etiquetaBloque
      */
     public function desactivarTodosBloque(string $etiquetaBloque): void
     {

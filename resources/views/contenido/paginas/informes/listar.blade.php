@@ -87,7 +87,7 @@ $configData = Helper::appClasses();
 
   <form id="formBuscar" class="forms-sample p-5" method="GET" action="{{ route('informe.lista') }}">
     <div class="row mt-5">
-        <div class="col-4 mb-3">
+        <div class="col-12 col-md-4 mb-3">
           <label class="text-black">Filtrar por tipo</label>
           <select id="tipoInformeId" name="tipoInformeId" class="select2 form-select">
               <option value="">Todos</option>
@@ -197,7 +197,7 @@ $configData = Helper::appClasses();
         </div>
 
         <div class="col-12 col-md-2">
-          <div class="d-flex flex-row align-items-center justify-content-center h-100 text-center">
+          <div class="d-flex flex-row align-items-start justify-content-start align-md-items-center justify-content-md-center h-100 text-center">
             <span class="badge rounded-pill fw-light {{ $informe->activo ? 'text-bg-primary' : 'text-bg-secondary' }}">
               <span class="text-white"> {{ $informe->activo ? 'Activo' : 'Inactivo' }}</span>
             </span>
@@ -212,8 +212,6 @@ $configData = Helper::appClasses();
           <i class="ti ti-user-cog"></i>
         </button>
         @endif
-
-        {{$informe->link}}
         <a @if($informe->add_id_a_la_url==TRUE) href="{{ route($informe->link, $informe->id) }}" @else href="{{ route($informe->link) }}" @endif class="my-auto btn btn-sm ms-1 rounded-pill btn-outline-secondary waves-effect">{{$informe->nombre_boton}} </a>
       </div>
 

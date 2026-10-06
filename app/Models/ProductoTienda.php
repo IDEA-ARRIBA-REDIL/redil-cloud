@@ -15,7 +15,6 @@ class ProductoTienda extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'productos_tienda';
-
     protected $guarded = [];
 
     protected $casts = [
@@ -94,22 +93,22 @@ class ProductoTienda extends Model
                         // Filtro Sede
                         ->where(function ($qSede) use ($user) {
                             $qSede->whereDoesntHave('sedes')
-                                ->orWhereHas('sedes', fn ($sq) => $sq->where('sedes.id', $user->sede_id));
+                                ->orWhereHas('sedes', fn($sq) => $sq->where('sedes.id', $user->sede_id));
                         })
                         // Filtro Estado Civil
                         ->where(function ($qEstado) use ($user) {
                             $qEstado->whereDoesntHave('estadosCiviles')
-                                ->orWhereHas('estadosCiviles', fn ($sq) => $sq->where('estados_civiles.id', $user->estado_civil_id));
+                                ->orWhereHas('estadosCiviles', fn($sq) => $sq->where('estados_civiles.id', $user->estado_civil_id));
                         })
                         // Filtro Rango Edad
                         ->where(function ($qRango) use ($rangoEdadId) {
                             $qRango->whereDoesntHave('rangosEdad')
-                                ->orWhereHas('rangosEdad', fn ($sq) => $sq->where('rangos_edad.id', $rangoEdadId));
+                                ->orWhereHas('rangosEdad', fn($sq) => $sq->where('rangos_edad.id', $rangoEdadId));
                         })
                         // Filtro Tipo Usuario
                         ->where(function ($qTipo) use ($user) {
                             $qTipo->whereDoesntHave('tiposUsuarios')
-                                ->orWhereHas('tiposUsuarios', fn ($sq) => $sq->where('tipo_usuarios.id', $user->tipo_usuario_id));
+                                ->orWhereHas('tiposUsuarios', fn($sq) => $sq->where('tipo_usuarios.id', $user->tipo_usuario_id));
                         })
                         // Filtro Pasos de Crecimiento
                         ->where(function ($qPaso) use ($user) {
@@ -144,7 +143,7 @@ class ProductoTienda extends Model
     public function getImagenUrlAttribute(): ?string
     {
         if ($this->imagen_ruta && $this->imagen_ruta !== '') {
-            return tenant_asset('img/tienda/'.$this->imagen_ruta);
+            return tenant_asset('img/tienda/' . $this->imagen_ruta);
         }
 
         return Storage::disk('global_media')->url('tienda/default.png');

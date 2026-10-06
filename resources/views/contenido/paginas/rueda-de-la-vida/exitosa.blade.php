@@ -61,7 +61,7 @@ $configData = Helper::appClasses();
         <div class="row">
             <div class="col-12 col-lg-12 d-flex align-items-center">
                 <div class=" mx-auto my-auto text-center">
-                     <img style="width: 240px; height: 240px; object-fit: contain;" src="{{ Storage::disk('global_media')->url('Inscipcion-exitosa.png') }}" alt="Inscripción exitosa" class="p-0">
+                     <img style="width: 240px; height: 240px; object-fit: contain;" src="{{ Storage::disk('global_media')->url('Inscripcion-exitosa.png') }}" alt="Inscripción exitosa" class="p-0">
                     <h2 class="text-black fw-bold mb-0">Creación exitosa</h2>
                     <p class="text-black mt-1 mb-5"><b>{{ $usuario->nombre(3) }}</b> Tú {{$configuracionRv->nombre_general}} ha sido creada exitosamente
                     </p>

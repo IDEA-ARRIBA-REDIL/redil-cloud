@@ -335,8 +335,19 @@
 @section('content')
 <div class="container mt-4">
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-1 fw-semibold text-primary">Filtros de consolidación</h4>
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+        <i class="ti ti-arrow-left"></i>
+      </a>
+      <h4 class="mb-0 fw-semibold text-primary">Filtros de consolidación</h4>
+    </div>
+    <p class="text-black mb-0 small">
+      Administra los filtros de consolidación.
+    </p>
+  </div>  
+
+  <div class="d-flex justify-content-end align-items-center my-4">
     <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="offcanvas" data-bs-target="#offcanvasCreateFiltro" aria-controls="offcanvasCreateFiltro">
       <i class="ti ti-plus me-1"></i> Nuevo filtro
     </button>

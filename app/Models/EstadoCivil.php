@@ -9,20 +9,34 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EstadoCivil extends Model
 {
-  use HasFactory;
-  protected $table = 'estados_civiles';
-  protected $guarded = [];
+    use HasFactory;
 
-  public function usuarios(): HasMany
-  {
-    return $this->hasMany(User::class);
-  }
+    protected $table = 'estados_civiles';
 
-  public function actividadEstados()
-  {
-    return $this->belongsToMany(EstadoCivil::class, 'actividad_estados_civiles',  'estado_civil_id', 'actividad_id' )->withPivot(
-      'created_at',
-      'updated_at'
-    );
-  }
+    protected $guarded = [];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'es_union_libre' => 'boolean',
+        ];
+    }
+
+    public function usuarios(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
+    public function actividadEstados()
+    {
+        return $this->belongsToMany(EstadoCivil::class, 'actividad_estados_civiles', 'estado_civil_id', 'actividad_id')->withPivot(
+            'created_at',
+            'updated_at'
+        );
+    }
 }

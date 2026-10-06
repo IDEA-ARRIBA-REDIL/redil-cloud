@@ -4,7 +4,6 @@ namespace App\Livewire\BannerEscuela;
 
 use App\Models\BannerEscuela;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class GestionarBanners extends Component
@@ -113,18 +112,8 @@ class GestionarBanners extends Component
     }
 
     /**
-     * Esta función despacha el evento para confirmar con SweetAlert.
+     * Elimina un banner y su archivo asociado en el storage.
      */
-    public function confirmarBorrado($id)
-    {
-        $this->dispatch('confirmar-eliminacion', ['id' => $id]);
-    }
-
-    /**
-     * Este método es llamado desde JS después de la confirmación.
-     * Añadimos el oyente #[On] para que pueda ser llamado desde el frontend.
-     */
-    #[On('eliminarBanner')]
     public function eliminarBanner($id)
     {
         $banner = BannerEscuela::find($id);
@@ -134,9 +123,12 @@ class GestionarBanners extends Component
                 Storage::disk('public')->delete($banner->imagen);
             }
             $banner->delete();
-            $this->cargarBanners(); // Recargamos la lista
-            // Enviamos notificación de éxito
-            $this->dispatch('notificacion', ['titulo' => '¡Eliminado!', 'mensaje' => 'El banner ha sido eliminado.', 'icono' => 'success']);
+            $this->cargarBanners();
+            $this->dispatch('notificacion', [
+                'titulo' => '¡Eliminado!',
+                'mensaje' => 'El banner ha sido eliminado.',
+                'icono' => 'success'
+            ]);
         }
     }
 
@@ -153,12 +145,20 @@ class GestionarBanners extends Component
     }
 
     /**
-     * Resetea las propiedades del formulario.
+     * Resetea las propiedades del formulario y cierra el modal.
      */
     public function resetearFormulario()
     {
         $this->eliminarArchivoLocal();
-        $this->reset(['descripcion', 'activo', 'bannerId', 'nombreArchivoSubido', 'rutaArchivoSubida']);
+        $this->reset(['descripcion', 'activo', 'bannerId', 'nombreArchivoSubido', 'rutaArchivoSubida', 'modalVisible']);
+    }
+
+    /**
+     * Cierra el modal y resetea el formulario.
+     */
+    public function cerrarModal()
+    {
+        $this->resetearFormulario();
     }
 
     public function render()

@@ -10,13 +10,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TipoVinculacion extends Model
 {
-  use HasFactory;
-  protected $table = 'tipo_vinculaciones';
-  protected $guarded = [];
-  use SoftDeletes;
+    use HasFactory;
+    use SoftDeletes;
 
-  public function usuarios(): HasMany
-  {
-    return $this->hasMany(User::class);
-  }
+    protected $table = 'tipo_vinculaciones';
+
+    protected $guarded = [];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'por_grupo' => 'boolean',
+        ];
+    }
+
+    public function usuarios(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
 }

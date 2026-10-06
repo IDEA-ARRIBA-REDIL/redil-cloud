@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\MiRestablecimientoDeContrasena;
 use App\Notifications\MiVerificacionDeCorreo;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -277,6 +278,16 @@ class User extends Authenticatable implements MustVerifyEmail
         self::$emailsVerificacionEnviados[] = $this->id;
 
         $this->notify(new MiVerificacionDeCorreo);
+    }
+
+    /**
+     * Enviar la notificación de restablecimiento de contraseña usando la plantilla corporativa.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new MiRestablecimientoDeContrasena($token));
     }
 
     public function tipoUsuario(): BelongsTo

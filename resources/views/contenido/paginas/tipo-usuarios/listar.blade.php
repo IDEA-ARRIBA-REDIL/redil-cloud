@@ -11,13 +11,24 @@
 
 @section('content')
 
-<h4 class=" mb-1 fw-semibold text-primary">Tipos de usuarios</h4>
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+        <i class="ti ti-arrow-left"></i>
+      </a>
+      <h4 class="mb-0 fw-semibold text-primary">Tipos de usuarios</h4>
+    </div>
+    <p class="text-black mb-0 small">
+      Administra los tipos de usuarios.
+    </p>
+  </div>  
 
-<div class="d-flex flex-row-reverse mb-4">
-    <a href="{{ route('tipo-usuario.creacion') }}" class="btn btn-primary rounded-pill px-7 py-2">
-      <i class="ti ti-plus me-2"></i> Nuevo
-    </a>
-</div>
+  
+  <div class="d-flex flex-row-reverse mb-4">
+      <a href="{{ route('tipo-usuario.creacion') }}" class="btn btn-primary rounded-pill px-7 py-2">
+        <i class="ti ti-plus me-2"></i> Nuevo
+      </a>
+  </div>
 
 @if(session('success'))
 <div class="alert alert-success mb-4">{{ session('success') }}</div>

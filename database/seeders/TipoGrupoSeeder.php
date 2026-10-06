@@ -33,17 +33,19 @@ class TipoGrupoSeeder extends Seeder
                 'posible_grupo_sede' => $grupo['posible_grupo_sede'] ?? false,
                 'metros_cobertura' => $grupo['metros_cobertura'] ?? 0,
 
+                
                 'ingresos_individuales_discipulos' => $grupo['ingresos_individuales_discipulos'] ?? false,
                 'ingresos_individuales_lideres' => $grupo['ingresos_individuales_lideres'] ?? false,
                 'inasistencia_obligatoria' => $grupo['inasistencia_obligatoria'] ?? false,
-
+                
                 'tipo_evangelistico' => $grupo['tipo_evangelistico'] ?? false,
+                
 
                 /*'ingresos_individuales_discipulos' => true,
                 'ingresos_individuales_lideres' => true,
                 'inasistencia_obligatoria' => true,
                 'tipo_evangelistico' => true,*/
-
+                
                 'registra_datos_planeacion' => $grupo['registra_datos_planeacion'] ?? false,
                 'servidores_solo_discipulos' => $grupo['servidores_solo_discipulos'] ?? false,
                 'color' => $grupo['color'] ?? null,
@@ -54,7 +56,7 @@ class TipoGrupoSeeder extends Seeder
                 'enviar_mensaje_bienvenida' => $grupo['enviar_mensaje_bienvenida'] ?? false,
                 'mensaje_bienvenida' => $grupo['mensaje_bienvenida'] ?? null,
                 'orden' => $grupo['orden'] ?? 0,
-                'tiempo_para_definir_inactivo_grupo' => $grupo['tiempo_para_definir_inactivo_grupo'] ?? 30,
+                'tiempo_para_definir_inactivo_grupo' => $grupo['tiempo_para_definir_inactivo_grupo'] ?? 30,                
                 'horas_disponiblidad_link_asistencia' => 5,
                 'estado' => true,
             ];
@@ -79,10 +81,10 @@ class TipoGrupoSeeder extends Seeder
             }
 
             // clasificaciones asistentes y ofrendas para grupos evangelísticos (Crecimiento, Warriors, etc.)
-            // if (! empty($grupo['tipo_evangelistico'])) {
-            $tipoGrupo->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
-            $tipoGrupo->tiposOfrendas()->syncWithoutDetaching([5, 6]);
-            // }
+            //if (! empty($grupo['tipo_evangelistico'])) {
+                $tipoGrupo->clasificacionAsistentes()->syncWithoutDetaching([1, 2, 3, 4, 5]);
+                $tipoGrupo->tiposOfrendas()->syncWithoutDetaching([5, 6]); 
+           // }
         }
     }
 }

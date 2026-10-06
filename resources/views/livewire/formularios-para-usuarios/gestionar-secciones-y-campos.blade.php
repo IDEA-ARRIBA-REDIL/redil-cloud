@@ -56,6 +56,13 @@
                     @if($campo->pivot->informacion_de_apoyo)
                     <li class=""><i class="ti ti-info-circle ti-sm"></i><span class="fw-medium mx-1">Información de apoyo:</span> <span>{{ Str::limit($campo->pivot->informacion_de_apoyo, 20) }}</span></li>
                     @endif
+                    @if($campo->pivot->depende_de_campo_id)
+                    @php
+                      $campoPadreObj = \App\Models\CampoFormularioUsuario::find($campo->pivot->depende_de_campo_id);
+                      $accionTexto = ($campo->pivot->accion_dependencia ?? 'deshabilitar') === 'ocultar' ? 'Ocultar' : 'Bloquear';
+                    @endphp
+                    <li class="mt-1"><i class="ti ti-git-fork ti-sm text-info"></i><span class="fw-medium mx-1">Depende de:</span> <span class="badge bg-label-info">{{ $campoPadreObj ? $campoPadreObj->nombre : 'Campo #' . $campo->pivot->depende_de_campo_id }} ({{ $campo->pivot->tipo_condicion == 'igual_a' ? 'Valor: ' . $campo->pivot->valor_condicion : 'Lleno' }} &bull; {{ $accionTexto }})</span></li>
+                    @endif
                   </ul>
                   <div class="row g-4 mt-2">
 
@@ -156,6 +163,73 @@
             </label>
           </div>
           <!-- / requerido-->
+
+          <!-- Dependencia de otro campo -->
+          <div class="mb-3 col-12">
+            <div class="small fw-medium mb-1">¿Este campo depende de otro campo?</div>
+            <label class="switch switch-lg">
+              <input id="tieneDependencia" name="tieneDependencia" wire:model.live="tieneDependencia" type="checkbox" class="switch-input" />
+              <span class="switch-toggle-slider">
+                <span class="switch-on">SI</span>
+                <span class="switch-off">NO</span>
+              </span>
+              <span class="switch-label"></span>
+            </label>
+          </div>
+
+          @if($tieneDependencia)
+          <div class="p-3 mb-3 border rounded bg-light">
+            <div class="mb-3 col-12">
+              <label class="form-label fw-bold" for="dependeDeCampoId">Campo del cual depende</label>
+              <select id="dependeDeCampoId" name="dependeDeCampoId" wire:model.live="dependeDeCampoId" class="form-select">
+                <option value="">-- Seleccionar campo padre --</option>
+                @foreach($this->camposDisponiblesParaDependencia as $cDisponible)
+                  <option value="{{ $cDisponible->id }}">{{ $cDisponible->nombre }}</option>
+                @endforeach
+              </select>
+            </div>
+
+            @if($dependeDeCampoId)
+            <div class="mb-3 col-12">
+              <label class="form-label fw-bold" for="tipoCondicion">Condición para habilitar</label>
+              <select id="tipoCondicion" name="tipoCondicion" wire:model.live="tipoCondicion" class="form-select">
+                <option value="no_vacio">Cuando tenga cualquier valor (no esté vacío)</option>
+                <option value="igual_a">Cuando sea igual a un valor específico</option>
+              </select>
+            </div>
+
+            @if($tipoCondicion === 'igual_a')
+            <div class="mb-3 col-12">
+              <label class="form-label fw-bold" for="valorCondicion">Valor esperado para habilitar</label>
+              @php
+                $opcionesPadre = $this->opcionesValorCondicionPadre;
+              @endphp
+
+              @if(count($opcionesPadre) > 0)
+                <select id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" class="form-select">
+                  <option value="">-- Seleccionar valor esperado --</option>
+                  @foreach($opcionesPadre as $valKey => $valLabel)
+                    <option value="{{ $valKey }}">{{ $valLabel }}</option>
+                  @endforeach
+                </select>
+              @else
+                <input id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" type="text" placeholder="Ingresa el valor exacto esperado" class="form-control" />
+              @endif
+            </div>
+            @endif
+
+            <div class="mb-3 col-12">
+              <label class="form-label fw-bold" for="accionDependencia">Acción al no cumplir la condición</label>
+              <select id="accionDependencia" name="accionDependencia" wire:model.defer="accionDependencia" class="form-select">
+                <option value="deshabilitar">Deshabilitar / Bloquear campo</option>
+                <option value="ocultar">Ocultar campo completamente</option>
+              </select>
+            </div>
+
+            @endif
+          </div>
+          @endif
+          <!-- / Dependencia de otro campo -->
 
           <div class="mb-3 col-12">
             <label class="form-label" for="informacionDeApoyo">Información de apoyo</label>

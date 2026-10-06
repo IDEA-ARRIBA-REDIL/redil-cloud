@@ -174,7 +174,7 @@
         <button type="button" class="nav-link p-3 waves-effect waves-light w-100 fw-semibold {{ $tabActivo === 'solicitudes' ? 'active' : '' }}" wire:click="cambiarTab('solicitudes')">
           <span>Solicitudes de canje</span>
           @if($pendientesCount > 0)
-            <span class="badge bg-danger rounded-pill ms-2 px-2">{{ $pendientesCount }}</span>
+            <span class="badge bg-danger text-white rounded-pill ms-2 px-2">{{ $pendientesCount }}</span>
           @endif
         </button>
       </li>

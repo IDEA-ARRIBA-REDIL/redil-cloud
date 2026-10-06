@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Insignia extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $table = 'insignias';
-
     protected $guarded = [];
 
     protected $casts = [
@@ -35,7 +35,7 @@ class Insignia extends Model
     public function getImagenUrlAttribute(?string $value): ?string
     {
         if ($value && $value !== '') {
-            return tenant_asset('img/insignias/'.$value);
+            return tenant_asset('img/insignias/' . $value);
         }
 
         return null;
@@ -43,22 +43,22 @@ class Insignia extends Model
 
     public function getEsImagenAttribute(): bool
     {
-        return ! empty($this->attributes['imagen_url']);
+        return !empty($this->attributes['imagen_url']);
     }
 
     public function getIconoCompletoAttribute(): string
     {
         $clase = trim($this->icono_clase ?? '');
-        if (! $clase) {
+        if (!$clase) {
             return 'ti ti-award';
         }
 
-        if (str_starts_with($clase, 'ti-') && ! str_starts_with($clase, 'ti ')) {
-            return 'ti '.$clase;
+        if (str_starts_with($clase, 'ti-') && !str_starts_with($clase, 'ti ')) {
+            return 'ti ' . $clase;
         }
 
-        if (! str_contains($clase, 'ti') && ! str_contains($clase, 'fa') && ! str_contains($clase, 'bx')) {
-            return 'ti ti-'.$clase;
+        if (!str_contains($clase, 'ti') && !str_contains($clase, 'fa') && !str_contains($clase, 'bx')) {
+            return 'ti ti-' . $clase;
         }
 
         return $clase;
