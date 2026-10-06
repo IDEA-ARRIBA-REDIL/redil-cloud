@@ -495,6 +495,15 @@ $configData = Helper::appClasses();
                 @else
                    <small class="fw-semibold text-success">No</small>
                 @endif
+              </div> 
+
+              <div class="col-6 d-flex flex-column mt-1">
+                <small class="text-black">¿Cuenta verificada?</small>
+                @if($persona->email_verified_at)
+                   <small class="fw-semibold text-danger">Sí</small>
+                @else
+                   <small class="fw-semibold text-success">No</small>
+                @endif
               </div>
 
             </div>

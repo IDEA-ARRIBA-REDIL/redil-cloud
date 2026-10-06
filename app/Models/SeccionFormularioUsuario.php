@@ -25,7 +25,7 @@ class SeccionFormularioUsuario extends Model
         'campo_seccion_formulario_usuario',
         'seccion_id',
         'campo_id'
-      )->withPivot('created_at','updated_at', 'requerido', 'class', 'orden', 'informacion_de_apoyo');
+      )->withPivot('created_at','updated_at', 'requerido', 'class', 'orden', 'informacion_de_apoyo', 'depende_de_campo_id', 'tipo_condicion', 'valor_condicion', 'accion_dependencia');
     }
 
 }

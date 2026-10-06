@@ -150,7 +150,7 @@ class CumpleanosController extends Controller
         ]);
 
         try {
-            $mailData = new stdClass;
+            $mailData = new stdClass();
             $mailData->subject = $request->subject;
             $mailData->nombre = $request->recipient_name;
             $mailData->mensaje = $request->message;

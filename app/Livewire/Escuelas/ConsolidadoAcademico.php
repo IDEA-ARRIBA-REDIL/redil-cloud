@@ -5,14 +5,15 @@ namespace App\Livewire\Escuelas;
 use App\Exports\ConsolidadoAcademicoExport;
 use App\Models\Escuela;
 use App\Models\Materia;
-use App\Models\MateriaAprobadaUsuario;
-use App\Models\NivelAprobadoUsuario;
 use App\Models\NivelEscuela;
+use App\Models\Sede;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\MateriaAprobadaUsuario;
+use App\Models\NivelAprobadoUsuario;
 
 class ConsolidadoAcademico extends Component
 {

@@ -1119,11 +1119,13 @@ class UserController extends Controller
                 ->discipulos('todos');
         } elseif ($rolActivo->hasPermissionTo('personas.lista_asistentes_todos')) {
             $personas = User::withTrashed()
-                ->whereNotNull('email_verified_at')
+                //->whereNotNull('email_verified_at')
                 ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
                 ->select('users.*', 'integrantes_grupo.grupo_id as grupo_id')
                 ->get()
                 ->unique('id');
+
+                return "sdf";
         }
 
         // filtrado por tipo ejemplo: "Todos o inactivo reunion o por alguno de los tipos de usuario Pastor, lider, oveja etc..."
@@ -1542,16 +1544,6 @@ class UserController extends Controller
         $tiposDeEstadosCiviles = EstadoCivil::orderBy('nombre', 'asc')->get();
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
         $sedes = Sede::orderBy('nombre', 'asc')->get();
-        $tieneCampoPreguntaViveEn = [];
-        if ($formularioAutoEditar) {
-            $tieneCampoPreguntaViveEn = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
-                ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
-                ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formularioAutoEditar->id)
-                ->where('nombre_bd', '=', 'pregunta_vives_en')
-                ->select('campos_formulario_usuario.*', 'campo_seccion_formulario_usuario.requerido')
-                ->first();
-        }
-
         $dataQr = [
             'id' => $usuario->id,
             'nombre' => $usuario->nombre(3),
@@ -1581,7 +1573,6 @@ class UserController extends Controller
             'tiposDeVinculacion' => $tiposDeVinculacion,
             'camposExtraAutogestion' => $camposExtraAutogestion,
             'formularioAutoEditar' => $formularioAutoEditar,
-            'tieneCampoPreguntaViveEn' => $tieneCampoPreguntaViveEn,
             'entidadesRelacionadas' => $entidadesRelacionadas,
             'dataQr' => $dataQr,
         ]);
@@ -1994,13 +1985,6 @@ class UserController extends Controller
         // $aux=Input::get('aux');
         $aux = null;
 
-        $tieneCampoPreguntaViveEn = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
-            ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
-            ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formulario->id)
-            ->where('nombre_bd', '=', 'pregunta_vives_en')
-            ->select('campos_formulario_usuario.*', 'campo_seccion_formulario_usuario.requerido')
-            ->first();
-
         $secciones = $formulario->secciones()->orderBy('orden', 'asc')->get();
         $cantidadTotalSecciones = $secciones->count();
 
@@ -2028,7 +2012,6 @@ class UserController extends Controller
             'fechaDefault' => $fechaDefault,
             'fechaHoy' => $fechaHoy,
             'aux' => $aux,
-            'tieneCampoPreguntaViveEn' => $tieneCampoPreguntaViveEn,
             'secciones' => $secciones,
             'cantidadTotalSecciones' => $cantidadTotalSecciones,
             'tiposParentescos' => $tiposParentescos,
@@ -2692,8 +2675,8 @@ class UserController extends Controller
 
                                 $response = Http::timeout(5)->get('https://api.biblia.com/v1/bible/content/RVR60.txt', [
                                     'passage' => $citaObjetivo,
-                                    'key' => $key,
-                                    'style' => 'neVersePerLineFullReference',
+                                    'key'     => $key,
+                                    'style'   => 'neVersePerLineFullReference',
                                     'culture' => 'es',
                                 ]);
 
@@ -2900,13 +2883,6 @@ class UserController extends Controller
         // $aux=Input::get('aux');
         $aux = null;
 
-        $tieneCampoPreguntaViveEn = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
-            ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
-            ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formulario->id)
-            ->where('nombre_bd', '=', 'pregunta_vives_en')
-            ->select('campos_formulario_usuario.*', 'campo_seccion_formulario_usuario.requerido')
-            ->first();
-
         return view('contenido.paginas.usuario.modificar', [
             'configuracion' => $configuracion,
             'layout' => $layout,
@@ -2932,7 +2908,6 @@ class UserController extends Controller
             'fechaHoy' => $fechaHoy,
             'aux' => $aux,
             'usuario' => $usuario,
-            'tieneCampoPreguntaViveEn' => $tieneCampoPreguntaViveEn,
         ]);
     }
 

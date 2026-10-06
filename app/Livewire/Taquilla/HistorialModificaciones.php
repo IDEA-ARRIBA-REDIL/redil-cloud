@@ -2,11 +2,11 @@
 
 namespace App\Livewire\Taquilla;
 
-use App\Models\Caja;
-use App\Models\HistorialModificacionPago;
-use App\Models\PuntoDePago;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\HistorialModificacionPago;
+use App\Models\PuntoDePago;
+use App\Models\Caja;
 
 class HistorialModificaciones extends Component
 {
@@ -15,13 +15,9 @@ class HistorialModificaciones extends Component
     protected $paginationTheme = 'bootstrap';
 
     public $busqueda = '';
-
     public $puntoPagoId = '';
-
     public $cajaId = '';
-
     public $fechaInicio = '';
-
     public $fechaFin = '';
 
     public function mount(): void
@@ -91,15 +87,15 @@ class HistorialModificaciones extends Component
             ->when($this->busqueda, function ($query) {
                 $query->where(function ($q) {
                     $q->whereHas('usuarioAfectado', function ($subQ) {
-                        $subQ->where('nombres', 'like', '%'.$this->busqueda.'%')
-                            ->orWhere('apellidos', 'like', '%'.$this->busqueda.'%')
-                            ->orWhere('identificacion', 'like', '%'.$this->busqueda.'%');
+                        $subQ->where('nombres', 'like', '%' . $this->busqueda . '%')
+                             ->orWhere('apellidos', 'like', '%' . $this->busqueda . '%')
+                             ->orWhere('identificacion', 'like', '%' . $this->busqueda . '%');
                     })
-                        ->orWhereHas('asesor', function ($subQ) {
-                            $subQ->where('nombres', 'like', '%'.$this->busqueda.'%')
-                                ->orWhere('apellidos', 'like', '%'.$this->busqueda.'%');
-                        })
-                        ->orWhere('motivo', 'like', '%'.$this->busqueda.'%');
+                    ->orWhereHas('asesor', function ($subQ) {
+                        $subQ->where('nombres', 'like', '%' . $this->busqueda . '%')
+                             ->orWhere('apellidos', 'like', '%' . $this->busqueda . '%');
+                    })
+                    ->orWhere('motivo', 'like', '%' . $this->busqueda . '%');
                 });
             })
             ->when($this->puntoPagoId, function ($query) {
@@ -123,13 +119,13 @@ class HistorialModificaciones extends Component
         if ($this->puntoPagoId) {
             $cajas = Caja::where('punto_de_pago_id', $this->puntoPagoId)->get();
         } else {
-            $cajas = Caja::all();
+             $cajas = Caja::all();
         }
 
         return view('livewire.taquilla.historial-modificaciones', [
             'modificaciones' => $modificaciones,
             'puntosDePago' => $puntosDePago,
-            'cajas' => $cajas,
+            'cajas' => $cajas
         ]);
     }
 }

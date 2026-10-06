@@ -38,7 +38,6 @@ class SafeEncrypted implements CastsAttributes
         // Si ya estuviera cifrado (ej. reasignación sin cambios), verificar para evitar doble cifrado
         try {
             Crypt::decryptString($value);
-
             return $value;
         } catch (DecryptException $e) {
             return Crypt::encryptString($value);

@@ -17,11 +17,11 @@ class CampoFormularioUsuario extends Model
     public function secciones(): BelongsToMany
     {
       return $this->belongsToMany(
-        CampoFormularioUsuario::class,
+        SeccionFormularioUsuario::class,
         'campo_seccion_formulario_usuario',
         'campo_id',
         'seccion_id'
-      )->withPivot('created_at','updated_at','requerido','class','orden');
+      )->withPivot('created_at','updated_at','requerido','class','orden', 'informacion_de_apoyo', 'depende_de_campo_id', 'tipo_condicion', 'valor_condicion', 'accion_dependencia');
     }
 
     public function usuarios(): BelongsToMany

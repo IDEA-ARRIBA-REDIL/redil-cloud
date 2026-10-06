@@ -21,8 +21,7 @@ class BarrioLocalidadBuscador extends Component
     public $mostrarError = false;
     public $msnError = '';
 
-    public $conPreguntaAdiccional = 'no';
-    public $mostrar = false;
+    public $mostrar = true;
     public $class = '';
     public $label = '';
     public $nameId = '';
@@ -31,14 +30,6 @@ class BarrioLocalidadBuscador extends Component
 
     public function mount()
     {
-
-      if($this->conPreguntaAdiccional == 'si')
-      {
-        $vivesEn = old('pregunta_vives_en');
-        if($vivesEn)
-          $this->mostrar = true;
-      }
-
       $oldUbicacion = old($this->nameId);
       $oldTipoUbicacion = old('tipoUbicacion');
 
@@ -53,16 +44,12 @@ class BarrioLocalidadBuscador extends Component
 
           if($this->usuario->barrio && $this->usuario->barrio->id)
           {
-            $this->mostrar = true;
             $this->seleccionarUbicacion ($this->usuario->barrio->id, 'Barrio');
           }elseif($this->usuario->localidad && $this->usuario->localidad->id){
-            $this->mostrar = true;
             $this->seleccionarUbicacion ($this->usuario->localidad->id, 'Localidad');
           }
         }
       }
-
-
     }
 
     public function desplegarListaBusqueda()

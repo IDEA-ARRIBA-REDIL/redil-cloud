@@ -176,8 +176,8 @@
                 <div class="card h-100 border shadow-none">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-start mb-1">
-                            <h5 class="mb-0 fw-bold text-dark lh-sm" title="{{ $pago->compra->user->nombre(3) ?? 'N/A' }}">
-                                {{ $pago->compra->user->nombre(3) ?? 'Usuario Desconocido' }}
+                            <h5 class="mb-0 fw-bold text-dark lh-sm" title="{{ $pago->compra?->user?->nombre(3) ?? 'N/A' }}">
+                                {{ $pago->compra?->user?->nombre(3) ?? 'Usuario Desconocido' }}
                             </h5>
                             @if($pago->estadoPago)
                                 <span class="badge rounded-pill text-white fs-9 " style="background-color: {{ $pago->estadoPago->color ?? '#6c757d' }};">
@@ -187,15 +187,15 @@
                                 <span class="badge rounded-pill bg-secondary">Sin Estado</span>
                             @endif
                         </div>
-                        <p class="text-muted small mb-3">Identificación: {{ $pago->compra->user->identificacion ?? 'N/A' }}</p>
+                        <p class="text-muted small mb-3">Identificación: {{ $pago->compra?->user?->identificacion ?? 'N/A' }}</p>
 
                         <div class="mb-3">
-                             <h6 class="fw-semibold mb-2 text-dark text-truncate" title="{{ $pago->compra->actividad ? $pago->compra->actividad->nombre : 'Actividad Desconocida' }}">
-                                {{ $pago->compra->actividad ? $pago->compra->actividad->nombre : 'Actividad Desconocida' }}
+                             <h6 class="fw-semibold mb-2 text-dark text-truncate" title="{{ $pago->compra?->actividad?->nombre ?? 'Actividad Desconocida' }}">
+                                {{ $pago->compra?->actividad?->nombre ?? 'Actividad Desconocida' }}
                             </h6>
                             <div style="background-color: #E8F3FF;" class=" rounded p-2 d-flex justify-content-between align-items-center rounded-pill">
                                  <small class="text-dark fw-semibold">Pago interno #{{ $pago->id }}</small>
-                                 <small class="text-dark fw-semibold">Compra #{{ $pago->compra_id }}</small>
+                                 <small class="text-dark fw-semibold">Compra #{{ $pago->compra_id ?? 'N/A' }}</small>
                             </div>
                         </div>
 

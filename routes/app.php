@@ -19,6 +19,7 @@ use App\Http\Controllers\CumpleanosController;
 use App\Http\Controllers\CursoController;
 use App\Http\Controllers\DashboardReportesReunionController;
 use App\Http\Controllers\EscuelaController;
+use App\Http\Controllers\EstadoCivilController;
 use App\Http\Controllers\FileViewerController;
 use App\Http\Controllers\FiltroConsolidacionController;
 use App\Http\Controllers\FinanzaController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\MateriaController;
 use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\NivelesEscuelasController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\OcupacionController;
 use App\Http\Controllers\ParienteUsuarioController;
 use App\Http\Controllers\PasosDeCrecimientoController;
 use App\Http\Controllers\PeriodoController;
@@ -49,6 +51,7 @@ use App\Http\Controllers\PeticionController;
 use App\Http\Controllers\PlanLectorController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ProfesionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PuntoDePagoController;
 use App\Http\Controllers\PushSubscriptionController;
@@ -61,6 +64,7 @@ use App\Http\Controllers\ReporteReunionController;
 use App\Http\Controllers\ReunionesController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\RuedaDeLaVidaController;
+use App\Http\Controllers\SectorEconomicoController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\TaquillaController;
 use App\Http\Controllers\TareaConsolidacionController;
@@ -70,11 +74,13 @@ use App\Http\Controllers\ThemeSettingController;
 use App\Http\Controllers\TiempoConDiosController;
 use App\Http\Controllers\TipoActividadGestionController;
 use App\Http\Controllers\TipoCargoCursoController;
+use App\Http\Controllers\TipoIdentificacionController;
 use App\Http\Controllers\TipoOfrendaController;
 use App\Http\Controllers\TipoPagosController;
 use App\Http\Controllers\TipoPeticionesController;
 use App\Http\Controllers\TipoServicioActividadController;
 use App\Http\Controllers\TipoServicioReporteReunionController;
+use App\Http\Controllers\TipoVinculacionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UsuarioConfiguracionController;
 use App\Http\Controllers\VersiculoDiarioController;
@@ -1394,6 +1400,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Dashboard de Configuración
     Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
+    Route::get('/configuracion/profesiones', [ProfesionController::class, 'index'])->name('profesiones.index');
+    Route::get('/configuracion/ocupaciones', [OcupacionController::class, 'index'])->name('ocupaciones.index');
+    Route::get('/configuracion/sectores-economicos', [SectorEconomicoController::class, 'index'])->name('sectores-economicos.index');
+    Route::get('/configuracion/estados-civiles', [EstadoCivilController::class, 'index'])->name('estados-civiles.index');
+    Route::get('/configuracion/tipo-vinculaciones', [TipoVinculacionController::class, 'index'])->name('tipo-vinculaciones.index');
+    Route::get('/configuracion/tipo-identificaciones', [TipoIdentificacionController::class, 'index'])->name('tipo-identificaciones.index');
 
     // gestionar lista de reproducción
     Route::get('/gestionar-lista-de-reproduccion', [ListaReproducionController::class, 'listar'])->name('configuracion.gestionar-lista-reproduccion');

@@ -32,9 +32,7 @@ class PanelGamificacion extends Component
 
     // Sub-pestañas de Historial ('movimientos' | 'canjes')
     public string $subtabHistorial = 'movimientos';
-
     public ?string $historialFechaInicio = null;
-
     public ?string $historialFechaFin = null;
 
     public function mount(): void
@@ -101,13 +99,12 @@ class PanelGamificacion extends Component
         $usuario = Auth::user();
         $producto = ProductoTienda::forUser($usuario)->find($productoId);
 
-        if (! $producto) {
+        if (!$producto) {
             $this->dispatch('msn', [
                 'icono' => 'error',
                 'titulo' => 'Producto no disponible',
                 'texto' => 'Este producto ya no se encuentra disponible para tu perfil.',
             ]);
-
             return;
         }
 
@@ -117,9 +114,8 @@ class PanelGamificacion extends Component
             $this->dispatch('msn', [
                 'icono' => 'warning',
                 'titulo' => 'Puntos insuficientes',
-                'texto' => 'Te faltan '.number_format($faltantes).' puntos para poder canjear este producto.',
+                'texto' => "Te faltan " . number_format($faltantes) . " puntos para poder canjear este producto.",
             ]);
-
             return;
         }
 
@@ -130,7 +126,6 @@ class PanelGamificacion extends Component
                 'titulo' => 'Producto agotado',
                 'texto' => 'Lo sentimos, las unidades disponibles de este artículo se han agotado.',
             ]);
-
             return;
         }
 
@@ -147,7 +142,6 @@ class PanelGamificacion extends Component
                     'titulo' => 'Límite alcanzado',
                     'texto' => "Ya has alcanzado el límite máximo de ({$producto->limite_por_usuario}) canje(s) permitido(s) para este producto.",
                 ]);
-
                 return;
             }
         }
@@ -212,9 +206,9 @@ class PanelGamificacion extends Component
                 }
 
                 // 3. Generar código único de canje
-                $codigoCanje = 'CNJ-'.strtoupper(Str::random(6));
+                $codigoCanje = 'CNJ-' . strtoupper(Str::random(6));
                 while (SolicitudCanje::where('codigo_canje', $codigoCanje)->exists()) {
-                    $codigoCanje = 'CNJ-'.strtoupper(Str::random(6));
+                    $codigoCanje = 'CNJ-' . strtoupper(Str::random(6));
                 }
 
                 // 4. Crear registro en transacciones_puntos
@@ -296,10 +290,10 @@ class PanelGamificacion extends Component
         $querySolicitudes = SolicitudCanje::with('producto')
             ->where('user_id', $usuario->id);
 
-        if (! empty($this->historialFechaInicio) && ! empty($this->historialFechaFin)) {
+        if (!empty($this->historialFechaInicio) && !empty($this->historialFechaFin)) {
             $querySolicitudes->whereBetween('created_at', [
-                $this->historialFechaInicio.' 00:00:00',
-                $this->historialFechaFin.' 23:59:59',
+                $this->historialFechaInicio . ' 00:00:00',
+                $this->historialFechaFin . ' 23:59:59',
             ]);
         }
 
@@ -308,10 +302,10 @@ class PanelGamificacion extends Component
         // 4. Historial de Transacciones de puntos (Paginadas y filtradas por fecha a 90 días por defecto)
         $queryTransacciones = TransaccionPuntos::where('user_id', $usuario->id);
 
-        if (! empty($this->historialFechaInicio) && ! empty($this->historialFechaFin)) {
+        if (!empty($this->historialFechaInicio) && !empty($this->historialFechaFin)) {
             $queryTransacciones->whereBetween('created_at', [
-                $this->historialFechaInicio.' 00:00:00',
-                $this->historialFechaFin.' 23:59:59',
+                $this->historialFechaInicio . ' 00:00:00',
+                $this->historialFechaFin . ' 23:59:59',
             ]);
         }
 
@@ -388,7 +382,7 @@ class PanelGamificacion extends Component
             ],
         ];
 
-        $misiones = $reglas->map(function ($regla) use ($progresos, $transaccionesHoy, $todasTransacciones, $mapaRutas) {
+        $misiones = $reglas->map(function ($regla) use ($usuario, $progresos, $transaccionesHoy, $todasTransacciones, $mapaRutas) {
             $accion = $regla->accion_codigo;
             $metaData = $mapaRutas[$accion] ?? [
                 'titulo' => $regla->nombre,
@@ -472,7 +466,6 @@ class PanelGamificacion extends Component
             if ($this->filtroMision === 'completadas') {
                 return in_array($mision['estado'], ['completada', 'completada_hoy']);
             }
-
             return true;
         });
 

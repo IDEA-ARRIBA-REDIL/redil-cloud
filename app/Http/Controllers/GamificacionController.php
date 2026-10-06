@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Insignia;
+use App\Models\InsigniaUser;
+use App\Models\ReglaGamificacion;
+use Illuminate\Support\Facades\Auth;
+
 class GamificacionController extends Controller
 {
     /**
@@ -11,7 +16,6 @@ class GamificacionController extends Controller
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('gamificacion.habilitar_gamificacion');
-
         return view('contenido.paginas.gamificacion.index');
     }
 
@@ -22,7 +26,6 @@ class GamificacionController extends Controller
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('configuraciones.configuracion_gamificacion');
-
         return view('contenido.paginas.gamificacion.configuracion');
     }
 
@@ -33,7 +36,6 @@ class GamificacionController extends Controller
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('configuraciones.tienda_gamificacion');
-
         return view('contenido.paginas.gamificacion.tienda');
     }
 }

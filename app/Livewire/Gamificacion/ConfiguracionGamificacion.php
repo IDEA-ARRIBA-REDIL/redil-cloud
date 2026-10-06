@@ -10,45 +10,30 @@ use Livewire\WithFileUploads;
 
 class ConfiguracionGamificacion extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads; 
 
     // Control de Pestañas ('reglas' | 'insignias')
     public string $tabActivo = 'reglas';
 
     // Propiedades Formulario Regla
     public ?int $reglaId = null;
-
     public string $accion_codigo = '';
-
     public string $nombre = '';
-
     public string $frecuencia = 'cada_vez';
-
     public $meta_cantidad = 1;
-
     public $puntos_premio = 0;
-
     public ?int $insignia_id = null;
 
     // Propiedades Formulario Insignia
     public ?int $insigniaId = null;
-
     public string $insigniaNombre = '';
-
     public string $insigniaDescripcion = '';
-
     public string $tipo_diseno = 'icono'; // 'icono' | 'imagen'
-
     public string $icono_clase = 'ti ti-award';
-
     public string $icono_color = '#166534';
-
     public $imagen = null;
-
     public ?string $imagen_recortada = null;
-
     public ?string $imagen_existente = null;
-
     public $orden = 0;
 
     // Buscador
@@ -56,9 +41,7 @@ class ConfiguracionGamificacion extends Component
 
     // Filtros para Reglas
     public string $filtroAccion = '';
-
     public string $filtroFrecuencia = '';
-
     public string $filtroInsignia = '';
 
     /**
@@ -223,7 +206,7 @@ class ConfiguracionGamificacion extends Component
         }
 
         $this->dispatch('abrirOffcanvasInsignia', [
-            'imagenUrl' => $this->imagen_existente ? tenant_asset('img/insignias/'.$this->imagen_existente) : null,
+            'imagenUrl' => $this->imagen_existente ? tenant_asset('img/insignias/' . $this->imagen_existente) : null,
             'placeholderUrl' => Storage::disk('global_media')->url('placeholder.jpg'),
         ]);
     }
@@ -243,7 +226,7 @@ class ConfiguracionGamificacion extends Component
             $reglas['icono_clase'] = 'required|string|max:100';
             $reglas['icono_color'] = 'required|string|max:30';
         } else {
-            if (! $this->insigniaId && ! $this->imagen_recortada && ! $this->imagen && ! $this->imagen_existente) {
+            if (!$this->insigniaId && !$this->imagen_recortada && !$this->imagen && !$this->imagen_existente) {
                 $reglas['imagen_recortada'] = 'required';
             }
         }
@@ -274,11 +257,11 @@ class ConfiguracionGamificacion extends Component
                 // Decodificar Base64 de CropperJS
                 $imagenPartes = explode(';base64,', $this->imagen_recortada);
                 $imagenBase64 = base64_decode(count($imagenPartes) > 1 ? $imagenPartes[1] : $imagenPartes[0]);
-                $nombreArchivo = 'insignia-'.time().'.png';
-                Storage::disk('public')->put('img/insignias/'.$nombreArchivo, $imagenBase64);
+                $nombreArchivo = 'insignia-' . time() . '.png';
+                Storage::disk('public')->put('img/insignias/' . $nombreArchivo, $imagenBase64);
                 $datos['imagen_url'] = $nombreArchivo;
             } elseif ($this->imagen) {
-                $nombreArchivo = 'insignia-'.time().'.'.$this->imagen->getClientOriginalExtension();
+                $nombreArchivo = 'insignia-' . time() . '.' . $this->imagen->getClientOriginalExtension();
                 $this->imagen->storeAs('img/insignias', $nombreArchivo, 'public');
                 $datos['imagen_url'] = $nombreArchivo;
             }
@@ -289,7 +272,7 @@ class ConfiguracionGamificacion extends Component
 
             // Eliminar imagen anterior si se sube una nueva o se cambia a ícono
             if (($this->imagen_recortada || $this->imagen || $this->tipo_diseno === 'icono') && $insignia->getRawOriginal('imagen_url')) {
-                Storage::disk('public')->delete('img/insignias/'.$insignia->getRawOriginal('imagen_url'));
+                Storage::disk('public')->delete('img/insignias/' . $insignia->getRawOriginal('imagen_url'));
             }
 
             $insignia->update($datos);
@@ -365,15 +348,15 @@ class ConfiguracionGamificacion extends Component
         // Consulta de Reglas con filtros
         $queryReglas = ReglaGamificacion::with('insignia');
 
-        if (! empty($this->filtroAccion)) {
+        if (!empty($this->filtroAccion)) {
             $queryReglas->where('accion_codigo', $this->filtroAccion);
         }
 
-        if (! empty($this->filtroFrecuencia)) {
+        if (!empty($this->filtroFrecuencia)) {
             $queryReglas->where('frecuencia', $this->filtroFrecuencia);
         }
 
-        if (! empty($this->filtroInsignia)) {
+        if (!empty($this->filtroInsignia)) {
             if ($this->filtroInsignia === 'con_insignia') {
                 $queryReglas->whereNotNull('insignia_id');
             } elseif ($this->filtroInsignia === 'sin_insignia') {
@@ -387,12 +370,11 @@ class ConfiguracionGamificacion extends Component
 
         // Consulta de Insignias con búsqueda
         $insignias = $todasInsignias;
-        if (! empty(trim($this->busquedaInsignias))) {
+        if (!empty(trim($this->busquedaInsignias))) {
             $termino = $this->normalizarTexto($this->busquedaInsignias);
             $insignias = $todasInsignias->filter(function ($insignia) use ($termino) {
                 $nombre = $this->normalizarTexto($insignia->nombre ?? '');
                 $descripcion = $this->normalizarTexto($insignia->descripcion ?? '');
-
                 return str_contains($nombre, $termino) || str_contains($descripcion, $termino);
             });
         }

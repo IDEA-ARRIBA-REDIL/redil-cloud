@@ -1,5 +1,17 @@
 <div wire:init="loadData">
 
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+          <i class="ti ti-arrow-left"></i>
+      </a>
+      <h4 class="mb-0 fw-semibold text-primary">Tipos de notificaciones</h4>
+      </div>
+      <p class="text-black mb-0 small">
+      Administra las diferentes notificaciones.
+      </p>
+    </div>
+
     {{-- Alertas de éxito --}}
     @if (session()->has('success'))
         <div class="alert alert-success alert-dismissible border-0 fade show mb-4" role="alert">
@@ -8,14 +20,13 @@
         </div>
     @endif
 
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 mt-10">
         {{-- Cabecera --}}
         <div class="card-header bg-white border-bottom d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 py-3">
             <div>
                 <h5 class="mb-0 fw-bold text-dark">
                     <i class="ti ti-bell-cog me-2 text-primary"></i>Tipos de Notificaciones
                 </h5>
-                <small class="text-muted">Gestiona los eventos y su alcance de envío.</small>
             </div>
             <div class="d-flex align-items-center gap-2">
                 <div class="input-group input-group-sm">

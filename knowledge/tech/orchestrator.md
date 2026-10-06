@@ -7,10 +7,10 @@ domains:
   - usuarios
   - roles-permisos
   - grupos
-updated_at: 2026-09-27
+updated_at: 2026-09-30
 ---
 
-# Orquestador Kaddo del piloto
+# Orquestador Kaddo del piloto (Lifecycle v2)
 
 ## Objetivo
 
@@ -27,16 +27,61 @@ Seleccionar el contexto mínimo necesario para solicitudes de Usuarios, Roles/Pe
 | Alta por invitación, licencias o seguridad del panel central (WI-017 autorizado) | AdminGlobal | Workflow AdminGlobal, WI-017 y plan de despliegue; Usuarios/Grupos solo para las cuatro cuentas iniciales |
 | Cualquier otro módulo | Fuera del piloto | Detener y solicitar autorización |
 
-## Secuencia obligatoria
+## Secuencia obligatoria (Kaddo Lifecycle v2 - 7 Etapas)
 
-1. Identificar verbo, objeto y alcance de la solicitud.
-2. Aplicar la puerta de alcance del piloto.
-3. Cargar un dominio principal y solo sus dependencias estrictas.
-4. Abrir los archivos de código y pruebas del flujo concreto.
-5. Resolver diferencias usando: pruebas, código, negocio validado y documentación, en ese orden.
-6. Implementar solo cuando exista autorización.
-7. Ejecutar pruebas específicas y `kaddo guard`.
-8. Actualizar el conocimiento si el cambio altera reglas, arquitectura o propiedad.
+1. **Intención (Captured Intent):**
+   - Identificar verbo, objeto y alcance de la solicitud.
+   - Aplicar la puerta de alcance del piloto (Usuarios, Roles, Grupos o excepciones autorizadas como WI-017).
+   - Crear el Work Item en borrador (`knowledge/delivery/work-items/draft/WI-XXX.md`).
+
+2. **Definición (Refinement → Ready):**
+   - El Refinement Agent contrasta la solicitud con `knowledge/` y el código existente.
+   - Define Criterios de Aceptación (ACs) cuantitativos y verificables.
+   - Mapea explícitamente los patrones de ownership con `code:` globs y el módulo asignado.
+   - Asigna la sugerencia de rama Git según `.kaddo/git.yml` (`git_branch_suggestion: "{type}/WI-XXX-{slug}"`).
+   - Identifica riesgos o brechas de conocimiento (*Knowledge Gaps*) y sugiere el nivel de contexto.
+   - Requiere revisión y aprobación explícita humana (*Human-in-the-Loop*) para mover el WI a `ready/`.
+
+3. **Planeación y Balanceo de Contexto (Context Balancing / Handoff):**
+   - Seleccionar el nivel de contexto estricto para evitar saturar tokens en Gemini Flash:
+     * **Lightweight:** Retoques visuales, textos o ajustes puntuales (archivos objetivo).
+     * **Standard:** Features y fixes convencionales (archivos objetivo + interfaces directas + reglas del módulo).
+     * **Deep:** Cambios arquitectónicos transversales, multi-tenancy core o migraciones globales.
+   - Consultar los estándares globales transversales en `knowledge/tech/standards.md`, `security.md` y `stack.md`.
+   - Generar el paquete con `kaddo context` y confirmar el plan de implementación con el desarrollador humano.
+
+4. **Implementación Controlada:**
+   - Mover el Work Item a `in-progress/`.
+   - Modificar quirúrgicamente solo los archivos autorizados bajo los patrones `code:` globs del Work Item.
+   - Respetar directrices de integridad de código anti-truncado (sin `...` ni omitir lógica previa).
+
+5. **Evidencia Objetiva (Verdad Física en Git):**
+   - Prohibido finalizar únicamente con *"Ya terminé"*.
+   - Generar el **Reporte de Evidencia y Verificación**:
+     * Estado de ejecución y sugerencia de rama.
+     * Propuesta formal de mensaje de commit bajo **Conventional Commits** (ej. `feat(scope): mensaje (ref WI-XXX)`).
+     * Resumen físico de archivos modificados/creados extraídos directamente del estado de `git diff` (`git diff --stat`).
+     * Matriz de Criterios de Aceptación (ACs) 1:1 con estado y pruebas de cumplimiento.
+     * Pruebas ejecutadas y resultados (PHPUnit/Pest, linter, inspección en navegador).
+     * Desviaciones justificadas y Knowledge Gaps resueltos.
+
+6. **Verificación y Guard:**
+   - Ejecutar `kaddo verify` y `kaddo guard` para comprobar que no existan modificaciones no autorizadas fuera del alcance (*Knowledge Drift* entre `git diff` y `code:` globs).
+   - Validar el comportamiento con el desarrollador humano.
+
+7. **Aprendizaje y Memoria Viva (Learning Loop):**
+   - Ejecutar la captura de conocimiento (`kaddo learn`).
+   - Registrar lecciones aprendidas y actualizar `knowledge/` (módulos, decisiones, ADRs).
+   - Mover el Work Item a `completed/`.
+
+## Fronteras y Límites Estrictos de Git (Agent Git Boundaries)
+
+Para salvaguardar la integridad del repositorio y el control del desarrollador:
+
+1. **NUNCA ejecutar comandos de Git autónomamente:** Ni la CLI de Kaddo ni los agentes de IA ejecutan `git branch`, `git checkout`, `git commit`, `git push` o `git merge`.
+2. **Rol consultivo:** El agente solo sugiere el nombre de rama y propone la estructura exacta del commit respetando Conventional Commits y referenciando el WI.
+3. **Ejecución humana:** El desarrollador humano revisa y ejecuta los comandos reales de Git en su entorno local.
+4. **Referencia oficial:** Regido por `.kaddo/git.yml` y documentado en `knowledge/tech/git-strategy.md`.
 
 El ciclo detallado de creación, implementación, validación y cierre de Work Items está definido en `knowledge/delivery/development-playbook.md`.
 

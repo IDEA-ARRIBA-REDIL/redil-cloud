@@ -111,22 +111,20 @@ class TipoGrupo extends Model
             'tipo_ofrenda_id'
         )->withPivot('created_at', 'updated_at');
     }
+  public function getImagenUrlAttribute(): ?string
+  {
+      if ($this->imagen && $this->imagen !== '' && $this->imagen !== 'indicador_general.png') {
+          return tenant_asset('img/tipos-grupos/iconos/' . $this->imagen);
+      }
 
-    public function getImagenUrlAttribute(): ?string
-    {
-        if ($this->imagen && $this->imagen !== '' && $this->imagen !== 'indicador_general.png') {
-            return tenant_asset('img/tipos-grupos/iconos/'.$this->imagen);
-        }
+      return Storage::disk('global_media')->url('tipo-grupo/indicador_general.png');
+  }
 
-        return Storage::disk('global_media')->url('tipo-grupo/indicador_general.png');
-    }
-
-    public function getPortadaUrlAttribute(): ?string
-    {
-        if (! $this->portada) {
-            return null;
-        }
-
-        return tenant_asset('img/tipos-grupos/banners/'.$this->portada);
-    }
+  public function getPortadaUrlAttribute(): ?string
+  {
+      if (!$this->portada) {
+          return null;
+      }
+      return tenant_asset('img/tipos-grupos/banners/' . $this->portada);
+  }
 }

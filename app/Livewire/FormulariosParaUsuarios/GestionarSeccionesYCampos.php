@@ -2,6 +2,7 @@
 
 namespace App\Livewire\FormulariosParaUsuarios;
 
+use App\Models\CampoFormularioUsuario;
 use App\Models\Configuracion;
 use App\Models\SeccionFormularioUsuario;
 use Livewire\Component;
@@ -41,6 +42,13 @@ class GestionarSeccionesYCampos extends Component
   public $campoEditando;
   public $seccionCampo;
 
+  /* Dependencia de campos */
+  public $tieneDependencia = false;
+  public $dependeDeCampoId = null;
+  public $tipoCondicion = 'no_vacio';
+  public $valorCondicion = null;
+  public $accionDependencia = 'deshabilitar';
+
 
   // otros
   public $configuracion ;
@@ -59,12 +67,118 @@ class GestionarSeccionesYCampos extends Component
      $this->configuracion = Configuracion::find(1);
   }
 
+  public function updatedTieneDependencia($value)
+  {
+    if (!$value) {
+      $this->dependeDeCampoId = null;
+      $this->tipoCondicion = 'no_vacio';
+      $this->valorCondicion = null;
+      $this->accionDependencia = 'deshabilitar';
+    }
+  }
+
+  public function updatedDependeDeCampoId($value)
+  {
+    $this->valorCondicion = null;
+  }
+
+  public function getCamposDisponiblesParaDependenciaProperty()
+  {
+    if (!$this->formulario) {
+      return collect();
+    }
+
+    $seccionesIds = $this->formulario->secciones()->pluck('id')->toArray();
+
+    $camposIdsUsados = DB::table('campo_seccion_formulario_usuario')
+      ->whereIn('seccion_id', $seccionesIds)
+      ->pluck('campo_id')
+      ->toArray();
+
+    $query = CampoFormularioUsuario::whereIn('id', $camposIdsUsados);
+
+    if ($this->modoEdicionCampo && $this->campoEditando) {
+      $query->where('id', '!=', $this->campoEditando->id);
+    } elseif ($this->campo) {
+      $query->where('id', '!=', $this->campo);
+    }
+
+    return $query->orderBy('nombre', 'asc')->get();
+  }
+
+  public function getOpcionesValorCondicionPadreProperty()
+  {
+    if (!$this->dependeDeCampoId) {
+      return [];
+    }
+
+    $campoPadre = CampoFormularioUsuario::find($this->dependeDeCampoId);
+    if (!$campoPadre) {
+      return [];
+    }
+
+    // Si es un Switch / Checkbox
+    if ($campoPadre->name_id === 'tienesUnaPeticion' || $campoPadre->name_id === 'preguntaVivesEn' || str_contains(strtolower($campoPadre->nombre_bd ?? ''), 'switch')) {
+      return [
+        '1' => 'Marcado / Encendido (SÍ)',
+        '0' => 'Desmarcado / Apagado (NO)'
+      ];
+    }
+
+    // Si es un Campo Extra con opciones select (tipo 3 o 4)
+    if (!empty($campoPadre->opciones_select)) {
+      $opciones = json_decode($campoPadre->opciones_select, true);
+      if (is_array($opciones)) {
+        $resultado = [];
+        foreach ($opciones as $op) {
+          $val = $op['value'] ?? $op['nombre'] ?? '';
+          $nombre = $op['nombre'] ?? $val;
+          $resultado[$val] = ucwords($nombre);
+        }
+        return $resultado;
+      }
+    }
+
+    // Si es un campo base tipo selector
+    $nombreBd = $campoPadre->nombre_bd ?? $campoPadre->name_id;
+    switch ($nombreBd) {
+      case 'tipo_identificacion_id':
+        return \App\Models\TipoIdentificacion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'estado_civil_id':
+        return \App\Models\EstadoCivil::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'genero_id':
+        return \App\Models\Genero::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'tipo_sangre_id':
+        return \App\Models\TipoSangre::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'profesion_id':
+        return \App\Models\Profesion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'estatus_id':
+        return \App\Models\Estatus::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'tipo_vivienda_id':
+        return \App\Models\TipoVivienda::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'tipo_vinculacion_id':
+        return \App\Models\TipoVinculacion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'sede_id':
+        return \App\Models\Sede::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'ocupacion_id':
+        return \App\Models\Ocupacion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'sector_economico_id':
+        return \App\Models\SectorEconomico::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+      case 'rango_edad_id':
+        return \App\Models\RangoEdad::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+    }
+
+    return [];
+  }
+
   // esta funcion prepara las variables para abrir el modal de crearCampo
   public function crearCampo($seccionId)
   {
     $this->seccionesActivas = [$seccionId];
     $this->modoEdicionCampo = false;
-    $this->reset(['class', 'campoRequerido', 'informacionDeApoyo']);
+    $this->reset(['class', 'campoRequerido', 'informacionDeApoyo', 'tieneDependencia', 'dependeDeCampoId', 'tipoCondicion', 'valorCondicion', 'accionDependencia']);
+    $this->tipoCondicion = 'no_vacio';
+    $this->accionDependencia = 'deshabilitar';
     $this->seccionCampo =  SeccionFormularioUsuario::find($seccionId); // Almacena la sección actual de campo
     $this->class="col-12 col-sm-6 col-md-4 col-lg-3";
     $this->dispatch('abrirModal', nombreModal: 'modalNuevoCampo');
@@ -82,7 +196,7 @@ class GestionarSeccionesYCampos extends Component
     $this->modoEdicionCampo = true;
 
     // formateo el formulario
-    $this->reset(['class', 'campoRequerido', 'informacionDeApoyo']);
+    $this->reset(['class', 'campoRequerido', 'informacionDeApoyo', 'tieneDependencia', 'dependeDeCampoId', 'tipoCondicion', 'valorCondicion', 'accionDependencia']);
     $this->campo = null;
     $this->dispatch('quitarSeleccion')->to(SelectorDeCampos::class);
     //fin formateo formulario
@@ -90,6 +204,11 @@ class GestionarSeccionesYCampos extends Component
     $this->class= $this->campoEditando->pivot->class;
     $this->informacionDeApoyo = $this->campoEditando->pivot->informacion_de_apoyo;
     $this->campoRequerido= $this->campoEditando->pivot->requerido;
+    $this->dependeDeCampoId = $this->campoEditando->pivot->depende_de_campo_id;
+    $this->tieneDependencia = !empty($this->dependeDeCampoId);
+    $this->tipoCondicion = $this->campoEditando->pivot->tipo_condicion ?? 'no_vacio';
+    $this->valorCondicion = $this->campoEditando->pivot->valor_condicion;
+    $this->accionDependencia = $this->campoEditando->pivot->accion_dependencia ?? 'deshabilitar';
     $this->dispatch('abrirModal', nombreModal: 'modalNuevoCampo');
   }
 
@@ -105,18 +224,22 @@ class GestionarSeccionesYCampos extends Component
           [
             'requerido' => $this->campoRequerido,
             'class' => $this->class,
-            'informacion_de_apoyo' => $this->informacionDeApoyo
+            'informacion_de_apoyo' => $this->informacionDeApoyo,
+            'depende_de_campo_id' => $this->tieneDependencia && $this->dependeDeCampoId ? $this->dependeDeCampoId : null,
+            'tipo_condicion' => $this->tieneDependencia && $this->dependeDeCampoId ? ($this->tipoCondicion ?? 'no_vacio') : null,
+            'valor_condicion' => $this->tieneDependencia && $this->dependeDeCampoId && $this->tipoCondicion === 'igual_a' ? $this->valorCondicion : null,
+            'accion_dependencia' => $this->tieneDependencia && $this->dependeDeCampoId ? ($this->accionDependencia ?? 'deshabilitar') : 'deshabilitar',
           ]
         );
 
         $this->dispatch('cerrarModal', nombreModal: 'modalNuevoCampo');
-        $this->reset('campoEditando', 'modoEdicionCampo'); // <-- AÑADIR ESTO
+        $this->reset('campoEditando', 'modoEdicionCampo');
 
         $this->dispatch(
           'msn',
           msnIcono: 'success',
           msnTitulo: '¡Muy bien!',
-          msnTexto: 'La sección fue editada con éxito.'
+          msnTexto: 'El campo fue editado con éxito.'
         );
 
     } else {
@@ -142,7 +265,11 @@ class GestionarSeccionesYCampos extends Component
             'class' => $this->class,
             'requerido' => $this->campoRequerido ? true : false,
             'orden' => $this->seccionCampo->campos()->count() + 1,
-            'informacion_de_apoyo' => $this->informacionDeApoyo
+            'informacion_de_apoyo' => $this->informacionDeApoyo,
+            'depende_de_campo_id' => $this->tieneDependencia && $this->dependeDeCampoId ? $this->dependeDeCampoId : null,
+            'tipo_condicion' => $this->tieneDependencia && $this->dependeDeCampoId ? ($this->tipoCondicion ?? 'no_vacio') : null,
+            'valor_condicion' => $this->tieneDependencia && $this->dependeDeCampoId && $this->tipoCondicion === 'igual_a' ? $this->valorCondicion : null,
+            'accion_dependencia' => $this->tieneDependencia && $this->dependeDeCampoId ? ($this->accionDependencia ?? 'deshabilitar') : 'deshabilitar',
           ]);
 
           $this->dispatch('cerrarModal', nombreModal: 'modalNuevoCampo');

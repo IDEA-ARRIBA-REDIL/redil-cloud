@@ -10,13 +10,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SectorEconomico extends Model
 {
-  use HasFactory;
-  protected $table = 'sectores_economicos';
-  protected $guarded = [];
-  use SoftDeletes;
+    use HasFactory;
+    use SoftDeletes;
 
-  public function usuarios(): HasMany
-  {
-    return $this->hasMany(User::class);
-  }
+    protected $table = 'sectores_economicos';
+
+    protected $guarded = [];
+
+    public function usuarios(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
 }

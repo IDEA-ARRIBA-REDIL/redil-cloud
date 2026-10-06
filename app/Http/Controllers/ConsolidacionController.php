@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\DashboardCosechaExport;
-use App\Exports\DetalleConsolidacionKpiDashboardExport;
-use App\Exports\DetalleConsolidacionKpiExport;
 use App\Helpers\Helpers;
 use App\Models\BitacoraCrecimientoUsuario;
 use App\Models\BitacoraEstadoCivil;
 use App\Models\BitacoraTareaConsolidacion;
 use App\Models\BitacoraTipoUsuario;
+use App\Models\BitacoraIntegranteGrupo;
 use App\Models\BloqueDashboardConsolidacion;
 use App\Models\Configuracion;
+use App\Models\Escuela;
 use App\Models\EstadoCivil;
 use App\Models\EstadoNivelAcademico;
 use App\Models\EstadoPasoCrecimientoUsuario;
 use App\Models\EstadoTareaConsolidacion;
 use App\Models\FiltroConsolidacion;
+use App\Models\HistorialTareaConsolidacionUsuario;
 use App\Models\Matricula;
 use App\Models\NivelAcademico;
-use App\Models\Ocupacion;
+use App\Models\Ocupacion;   
 use App\Models\PasoCrecimiento;
 use App\Models\Profesion;
 use App\Models\RangoEdad;
@@ -33,7 +33,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\DetalleConsolidacionKpiExport;
+use App\Exports\DetalleConsolidacionKpiDashboardExport;
+use App\Exports\DashboardCosechaExport;
 use stdClass;
+
 
 class ConsolidacionController extends Controller
 {
@@ -207,7 +211,7 @@ class ConsolidacionController extends Controller
         $item->cantidad = (clone $indicadoresQuery)->count(); // Usamos clone para no alterar la consulta
         $item->color = '#fff';
         $item->icono = 'ti ti-asterisk';
-        $indicadoresGenerales[] = $item;
+        $indicadoresGenerales[] = $item; 
 
         //  APLICAMOS LOS FILTROS DE TIPO
         if ($tipo == 'sin-tareas') {
@@ -731,31 +735,31 @@ class ConsolidacionController extends Controller
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('consolidacion.dashboard_consolidacion');
 
-        // return Matricula::get();
-        // return User::find(17);
+        //return Matricula::get();
+        //return User::find(17);
 
-        /* $matricula = Matricula::firstOrCreate([
-                     "id"=> 1,
-                     "user_id"=> 17,
-                     "periodo_id"=> 1,
-                     "horario_materia_periodo_id"=> 1,
-                     "referencia_pago"=> null,
-                     "valor_a_pagar"=> null,
-                     "valor_pagado"=> null,
-                     "fecha_pago"=> null,
-                     "estado_pago_matricula"=> "finalizada",
-                     "observacion"=> null,
-                     "fecha_matricula"=> "2026-04-08T05:00:00.000000Z",
-                     "sede_id"=> 1,
-                     "material_sede_id"=> 2,
-                     "trasladado"=> false,
-                     "fecha_bloqueo"=> null,
-                     "bloqueado"=> false,
-                     "escuela_id"=> 1,
-                     "tipo_pago_id"=> null
-                 ]);
+       /* $matricula = Matricula::firstOrCreate([
+                    "id"=> 1,
+                    "user_id"=> 17,
+                    "periodo_id"=> 1,
+                    "horario_materia_periodo_id"=> 1,
+                    "referencia_pago"=> null,
+                    "valor_a_pagar"=> null,
+                    "valor_pagado"=> null,
+                    "fecha_pago"=> null,
+                    "estado_pago_matricula"=> "finalizada",
+                    "observacion"=> null,
+                    "fecha_matricula"=> "2026-04-08T05:00:00.000000Z",
+                    "sede_id"=> 1,
+                    "material_sede_id"=> 2,
+                    "trasladado"=> false,
+                    "fecha_bloqueo"=> null,
+                    "bloqueado"=> false,
+                    "escuela_id"=> 1,
+                    "tipo_pago_id"=> null
+                ]);
 
-                 return $matricula;*/
+                return $matricula;*/
 
         // Lógica para Rango de Fechas (Semanas)
         $rangoFechas = $request->rango_fechas;
@@ -871,7 +875,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -889,7 +893,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -921,7 +925,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -974,7 +978,6 @@ class ConsolidacionController extends Controller
                     $adultos++; // Fallback
                 }
             }
-
             return ['adultos' => $adultos, 'menores' => $menores];
         };
 
@@ -1049,7 +1052,7 @@ class ConsolidacionController extends Controller
                             ->whereHas('tipoUsuarioNuevo', function ($q) {
                                 $q->where(function ($q2) {
                                     $q2->where('habilitado_para_consolidacion', true)
-                                        ->orWhere('es_miembro_oficial', true);
+                                       ->orWhere('es_miembro_oficial', true);
                                 });
                             });
                     });
@@ -1064,7 +1067,7 @@ class ConsolidacionController extends Controller
                             ->whereHas('tipoUsuarioNuevo', function ($q) {
                                 $q->where(function ($q2) {
                                     $q2->where('habilitado_para_consolidacion', true)
-                                        ->orWhere('es_miembro_oficial', true);
+                                       ->orWhere('es_miembro_oficial', true);
                                 });
                             });
                     });
@@ -1543,7 +1546,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -1562,7 +1565,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -1631,7 +1634,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -1697,7 +1700,7 @@ class ConsolidacionController extends Controller
         }
 
         $bloquesDisponiblesView = $esVistaDetalle ? collect() : $bloquesDisponibles;
-
+        
         // --- Lógica para Membresías (Tab 3) ---
         $queryBaseMiembros = User::withTrashed()
             ->whereBetween('created_at', [$inicio, $fin])
@@ -1925,7 +1928,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -2198,7 +2201,7 @@ class ConsolidacionController extends Controller
         $usuarios = $datos['query']->get(); // Obtener todos sin paginar
 
         return Excel::download(
-            new DetalleConsolidacionKpiExport($usuarios, $datos),
+            new DetalleConsolidacionKpiExport($usuarios, $datos), 
             'detalle_desempeno_consolidacion.xlsx'
         );
     }
@@ -2293,7 +2296,7 @@ class ConsolidacionController extends Controller
                 break;
 
             case 'matriculas':
-                $query->whereHas('matriculas', function ($q) use ($inicio, $fin) {
+                $query->whereHas('matriculas', function ($q) use ($sedeIds, $inicio, $fin) {
                     $q->whereBetween('fecha_matricula', [$inicio, $fin])
                         ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
                 })->whereIn('sede_id', $sedeIds);
@@ -2354,7 +2357,7 @@ class ConsolidacionController extends Controller
         })
             ->select(DB::raw('MAX(bitacora_estados_civiles.id) as max_id'))
             ->groupBy('bitacora_estados_civiles.user_id')
-            ->pluck('max_id');
+            ->pluck('max_id'); 
 
         return BitacoraEstadoCivil::whereIn('id', $latestBitacoraIds)
             ->whereHas('estadoCivilNuevo', function ($q) {
@@ -2371,7 +2374,7 @@ class ConsolidacionController extends Controller
         $usuarios = $datos['query']->get();
 
         return Excel::download(
-            new DetalleConsolidacionKpiDashboardExport($usuarios, $datos),
+            new DetalleConsolidacionKpiDashboardExport($usuarios, $datos), 
             'detalle_kpi_dashboard_consolidacion.xlsx'
         );
     }
@@ -2396,13 +2399,13 @@ class ConsolidacionController extends Controller
     private function getDatosDetalleKpiDashboard(Request $request)
     {
         $kpi = $request->kpi ?? 'cosecha_total';
-
+        
         $bloquesRaw = $request->bloques_seleccionados;
         $bloquesIds = is_array($bloquesRaw) ? $bloquesRaw : ($bloquesRaw ? explode(',', $bloquesRaw) : []);
-
+        
         $sedesRaw = $request->sedes_seleccionadas;
         $sedesIdsRequest = is_array($sedesRaw) ? $sedesRaw : ($sedesRaw ? explode(',', $sedesRaw) : []);
-
+        
         $rangoFechas = $request->rango_fechas;
         $search = $request->buscar;
 
@@ -2416,10 +2419,8 @@ class ConsolidacionController extends Controller
             $bloquesSeleccionados = BloqueDashboardConsolidacion::all();
         }
 
-        $sedesPermitidasIds = $bloquesSeleccionados->flatMap(function ($b) {
-            return $b->sedes->pluck('id');
-        })->unique()->toArray();
-        if (! empty($sedesIdsRequest)) {
+        $sedesPermitidasIds = $bloquesSeleccionados->flatMap(function($b) { return $b->sedes->pluck('id'); })->unique()->toArray();
+        if (!empty($sedesIdsRequest)) {
             $sedesPermitidasIds = array_intersect($sedesPermitidasIds, $sedesIdsRequest);
         }
 
@@ -2435,9 +2436,9 @@ class ConsolidacionController extends Controller
             if ($bloqueFiltrado) {
                 // Si hay un bloque específico, sus sedes son la base.
                 $sedesBloque = $bloqueFiltrado->sedes->pluck('id')->toArray();
-
+                
                 // Si además hay un filtro global de sedes, intersectamos.
-                if (! empty($sedesIdsRequest)) {
+                if (!empty($sedesIdsRequest)) {
                     $sedesPermitidasIds = array_intersect($sedesIdsRequest, $sedesBloque);
                     // Si el filtro global es incompatible con el bloque clicado, priorizamos el bloque.
                     if (empty($sedesPermitidasIds)) {
@@ -2487,76 +2488,76 @@ class ConsolidacionController extends Controller
             // ================= TAB 1: COSECHA =================
             case 'cosecha_total':
                 $query->whereBetween('created_at', [$inicio, $fin])
-                    ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
-                        $q->whereBetween('created_at', [$inicio, $fin])
+                      ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
+                          $q->whereBetween('created_at', [$inicio, $fin])
                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
                             ->whereHas('tipoUsuarioNuevo', function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
-                    });
+                      });
                 break;
             case 'cosecha_efectiva':
                 $query->whereBetween('created_at', [$inicio, $fin])
-                    ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
-                        $q->whereBetween('created_at', [$inicio, $fin])
+                      ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
+                          $q->whereBetween('created_at', [$inicio, $fin])
                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
                             ->whereHas('tipoUsuarioNuevo', function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
-                    })
-                    ->where(function ($q) use ($inicio, $fin) {
-                        $q->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                            $sub->whereBetween('created_at', [$inicio, $fin]);
-                        })
-                            ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                                $sub->whereBetween('created_at', [$inicio, $fin])
-                                    ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                                    ->where('dado_baja', false);
-                            });
-                    });
+                      })
+                      ->where(function ($q) use ($inicio, $fin) {
+                          $q->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                              $sub->whereBetween('created_at', [$inicio, $fin]);
+                          })
+                              ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                                  $sub->whereBetween('created_at', [$inicio, $fin])
+                                      ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                                      ->where('dado_baja', false);
+                              });
+                      });
                 break;
             case 'deserciones':
                 $query->whereBetween('created_at', [$inicio, $fin])
-                    ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
-                        $q->whereBetween('created_at', [$inicio, $fin])
+                      ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
+                          $q->whereBetween('created_at', [$inicio, $fin])
                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
                             ->whereHas('tipoUsuarioNuevo', function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
-                    })
-                    ->whereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                        $sub->whereBetween('created_at', [$inicio, $fin])
-                            ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                            ->where('dado_baja', true);
-                    });
+                      })
+                      ->whereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                          $sub->whereBetween('created_at', [$inicio, $fin])
+                              ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                              ->where('dado_baja', true);
+                      });
                 break;
-
-                // ================= TAB 2: ESCUELAS =================
+            
+            // ================= TAB 2: ESCUELAS =================
             case 'total_matriculas':
                 $query->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                     $q->whereBetween('fecha_matricula', [$inicio, $fin])
-                        ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
+                      ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
                 });
                 break;
             case 'matriculas_sector':
                 $query->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                     $q->whereBetween('fecha_matricula', [$inicio, $fin])
-                        ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true)->where('es_de_sector', true));
+                      ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true)->where('es_de_sector', true));
                 });
                 break;
             case 'matriculas_templo':
                 $query->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                     $q->whereBetween('fecha_matricula', [$inicio, $fin])
-                        ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true)->where('es_de_sector', false));
+                      ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true)->where('es_de_sector', false));
                 });
                 break;
             case 'matriculas_deserciones':
                 $query->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                     $q->whereBetween('fecha_matricula', [$inicio, $fin])
-                        ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
+                      ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
                 })->whereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
                     $sub->whereBetween('created_at', [$inicio, $fin])
                         ->where('dado_baja', true);
@@ -2565,7 +2566,7 @@ class ConsolidacionController extends Controller
             case 'matriculas_efectivos':
                 $query->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                     $q->whereBetween('fecha_matricula', [$inicio, $fin])
-                        ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
+                      ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
                 })->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
                     $sub->whereBetween('created_at', [$inicio, $fin])
                         ->where('dado_baja', true);
@@ -2574,36 +2575,36 @@ class ConsolidacionController extends Controller
             case 'matriculas_aptos':
                 // Cosecha Efectiva
                 $query->whereBetween('created_at', [$inicio, $fin])
-                    ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
-                        $q->whereBetween('created_at', [$inicio, $fin])
+                      ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
+                          $q->whereBetween('created_at', [$inicio, $fin])
                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
                             ->whereHas('tipoUsuarioNuevo', function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
-                    })
-                    ->where(function ($q) use ($inicio, $fin) {
-                        $q->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                            $sub->whereBetween('created_at', [$inicio, $fin]);
-                        })
-                            ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                                $sub->whereBetween('created_at', [$inicio, $fin])
-                                    ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                                    ->where('dado_baja', false);
-                            });
-                    });
+                      })
+                      ->where(function ($q) use ($inicio, $fin) {
+                          $q->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                              $sub->whereBetween('created_at', [$inicio, $fin]);
+                          })
+                              ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                                  $sub->whereBetween('created_at', [$inicio, $fin])
+                                      ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                                      ->where('dado_baja', false);
+                              });
+                      });
                 break;
             case 'matriculas_union_libre':
                 $matriculadosEfectivosIds = User::withTrashed()
                     ->whereIn('sede_id', $sedesPermitidasIds)
                     ->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('fecha_matricula', [$inicio, $fin])
-                            ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
+                          ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
                     })->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
                         $sub->whereBetween('created_at', [$inicio, $fin])
                             ->where('dado_baja', true);
                     })->pluck('id');
-
+                
                 $unionLibreIds = [];
                 if ($matriculadosEfectivosIds->isNotEmpty()) {
                     $subQueryBitacora = BitacoraEstadoCivil::whereIn('user_id', $matriculadosEfectivosIds)
@@ -2613,102 +2614,102 @@ class ConsolidacionController extends Controller
 
                     $latestIds = BitacoraEstadoCivil::joinSub($subQueryBitacora, 'latest_helper', function ($join) {
                         $join->on('bitacora_estados_civiles.user_id', '=', 'latest_helper.user_id')
-                            ->on('bitacora_estados_civiles.created_at', '=', 'latest_helper.max_created_at');
+                             ->on('bitacora_estados_civiles.created_at', '=', 'latest_helper.max_created_at');
                     })->select(DB::raw('MAX(bitacora_estados_civiles.id) as max_id'))
-                        ->groupBy('bitacora_estados_civiles.user_id')
-                        ->pluck('max_id');
+                      ->groupBy('bitacora_estados_civiles.user_id')
+                      ->pluck('max_id');
 
                     $unionLibreIds = BitacoraEstadoCivil::whereIn('id', $latestIds)
-                        ->whereHas('estadoCivilNuevo', fn ($q) => $q->where('es_union_libre', true))
+                        ->whereHas('estadoCivilNuevo', fn($q) => $q->where('es_union_libre', true))
                         ->pluck('user_id');
                 }
                 $query->whereIn('id', $unionLibreIds);
                 break;
-
-                // ================= TAB 3: MEMBRESÍA =================
+            
+            // ================= TAB 3: MEMBRESÍA =================
             case 'total_miembros':
                 $query->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
                     $subQuery->whereBetween('created_at', [$inicio, $fin])
-                        ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                        ->whereHas('tipoUsuarioNuevo', function ($q) {
-                            $q->where('es_miembro_oficial', true);
-                        });
+                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                             ->whereHas('tipoUsuarioNuevo', function ($q) {
+                                 $q->where('es_miembro_oficial', true);
+                             });
                 })
-                    ->where(function ($query) use ($inicio, $fin) {
-                        $query->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                            $sub->whereBetween('created_at', [$inicio, $fin]);
-                        })
-                            ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                                $sub->whereBetween('created_at', [$inicio, $fin])
-                                    ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                                    ->where('dado_baja', false);
-                            });
+                ->where(function ($query) use ($inicio, $fin) {
+                    $query->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin]);
+                    })
+                    ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin])
+                            ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                            ->where('dado_baja', false);
                     });
+                });
                 break;
             case 'miembros_ubicados':
                 $query->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
                     $subQuery->whereBetween('created_at', [$inicio, $fin])
-                        ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                        ->whereHas('tipoUsuarioNuevo', fn ($q) => $q->where('es_miembro_oficial', true));
+                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                             ->whereHas('tipoUsuarioNuevo', fn($q) => $q->where('es_miembro_oficial', true));
                 })
-                    ->where(function ($query) use ($inicio, $fin) {
-                        $query->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                            $sub->whereBetween('created_at', [$inicio, $fin]);
-                        })
-                            ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                                $sub->whereBetween('created_at', [$inicio, $fin])
-                                    ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                                    ->where('dado_baja', false);
-                            });
+                ->where(function ($query) use ($inicio, $fin) {
+                    $query->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin]);
                     })
-                    ->whereHas('bitacorasIntegranteGrupo', function ($query) use ($inicio, $fin) {
-                        $query->whereBetween('created_at', [$inicio, $fin])
-                            ->whereRaw('id = (SELECT MAX(b3.id) FROM bitacora_integrantes_grupo as b3 WHERE b3.user_id = bitacora_integrantes_grupo.user_id AND b3.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                            ->where('estado_vinculacion', true);
+                    ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin])
+                            ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                            ->where('dado_baja', false);
                     });
+                })
+                ->whereHas('bitacorasIntegranteGrupo', function ($query) use ($inicio, $fin) {
+                    $query->whereBetween('created_at', [$inicio, $fin])
+                        ->whereRaw('id = (SELECT MAX(b3.id) FROM bitacora_integrantes_grupo as b3 WHERE b3.user_id = bitacora_integrantes_grupo.user_id AND b3.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                        ->where('estado_vinculacion', true);
+                });
                 break;
             case 'bautismos':
                 $query->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
                     $subQuery->whereBetween('created_at', [$inicio, $fin])
-                        ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                        ->whereHas('tipoUsuarioNuevo', fn ($q) => $q->where('es_miembro_oficial', true));
+                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                             ->whereHas('tipoUsuarioNuevo', fn($q) => $q->where('es_miembro_oficial', true));
                 })
-                    ->where(function ($query) use ($inicio, $fin) {
-                        $query->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                            $sub->whereBetween('created_at', [$inicio, $fin]);
-                        })
-                            ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                                $sub->whereBetween('created_at', [$inicio, $fin])
-                                    ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                                    ->where('dado_baja', false);
-                            });
+                ->where(function ($query) use ($inicio, $fin) {
+                    $query->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin]);
                     })
-                    ->where(function ($query) {
-                        $query->whereDoesntHave('tipoVinculacion')
-                            ->orWhereHas('tipoVinculacion', function ($q) {
-                                $q->where('viene_de_otra_iglesia', false);
-                            });
+                    ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin])
+                            ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                            ->where('dado_baja', false);
                     });
+                })
+                ->where(function ($query) {
+                    $query->whereDoesntHave('tipoVinculacion')
+                        ->orWhereHas('tipoVinculacion', function ($q) {
+                            $q->where('viene_de_otra_iglesia', false);
+                        });
+                });
                 break;
             case 'traslados':
                 $query->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
                     $subQuery->whereBetween('created_at', [$inicio, $fin])
-                        ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                        ->whereHas('tipoUsuarioNuevo', fn ($q) => $q->where('es_miembro_oficial', true));
+                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                             ->whereHas('tipoUsuarioNuevo', fn($q) => $q->where('es_miembro_oficial', true));
                 })
-                    ->where(function ($query) use ($inicio, $fin) {
-                        $query->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                            $sub->whereBetween('created_at', [$inicio, $fin]);
-                        })
-                            ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                                $sub->whereBetween('created_at', [$inicio, $fin])
-                                    ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                                    ->where('dado_baja', false);
-                            });
+                ->where(function ($query) use ($inicio, $fin) {
+                    $query->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin]);
                     })
-                    ->whereHas('tipoVinculacion', function ($q) {
-                        $q->where('viene_de_otra_iglesia', true);
+                    ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin])
+                            ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                            ->where('dado_baja', false);
                     });
+                })
+                ->whereHas('tipoVinculacion', function ($q) {
+                    $q->where('viene_de_otra_iglesia', true);
+                });
                 break;
             case 'union_libre_matriculados':
                 // Parte A: Pendientes (Matriculados en periodo en Unión Libre)
@@ -2716,13 +2717,13 @@ class ConsolidacionController extends Controller
                     ->tap($filtroSedesCallback)
                     ->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('fecha_matricula', [$inicio, $fin])
-                            ->where('bloqueado', false)
-                            ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
+                          ->where('bloqueado', false)
+                          ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
                     })
                     ->whereHas('bitacorasEstadoCivil', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('created_at', [$inicio, $fin])
                             ->whereRaw('id = (SELECT MAX(b_ec.id) FROM bitacora_estados_civiles as b_ec WHERE b_ec.user_id = bitacora_estados_civiles.user_id AND b_ec.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                            ->whereHas('estadoCivilNuevo', fn ($q2) => $q2->where('es_union_libre', true));
+                            ->whereHas('estadoCivilNuevo', fn($q2) => $q2->where('es_union_libre', true));
                     })->pluck('id');
 
                 // Parte B: Miembros Formalizados (Matrimonio actual, Union Libre previo)
@@ -2731,7 +2732,7 @@ class ConsolidacionController extends Controller
                     ->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
                         $subQuery->whereBetween('created_at', [$inicio, $fin])
                             ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                            ->whereHas('tipoUsuarioNuevo', fn ($q) => $q->where('es_miembro_oficial', true));
+                            ->whereHas('tipoUsuarioNuevo', fn($q) => $q->where('es_miembro_oficial', true));
                     })
                     ->where(function ($q) use ($inicio, $fin) {
                         $q->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
@@ -2746,11 +2747,11 @@ class ConsolidacionController extends Controller
                     ->whereHas('bitacorasEstadoCivil', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('created_at', [$inicio, $fin])
                             ->whereRaw('id = (SELECT MAX(b_ec2.id) FROM bitacora_estados_civiles as b_ec2 WHERE b_ec2.user_id = bitacora_estados_civiles.user_id AND b_ec2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                            ->whereHas('estadoCivilNuevo', fn ($q2) => $q2->where('es_matrimonio', true));
+                            ->whereHas('estadoCivilNuevo', fn($q2) => $q2->where('es_matrimonio', true));
                     })
                     ->whereHas('bitacorasEstadoCivil', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('created_at', [$inicio, $fin])
-                            ->whereHas('estadoCivilNuevo', fn ($q2) => $q2->where('es_union_libre', true));
+                            ->whereHas('estadoCivilNuevo', fn($q2) => $q2->where('es_union_libre', true));
                     })->pluck('id');
 
                 $query->whereIn('id', $idsA->merge($idsB)->unique());
@@ -2763,36 +2764,36 @@ class ConsolidacionController extends Controller
                             $q->where('es_miembro_oficial', true);
                         });
                 })
-                    ->where(function ($q) use ($inicio, $fin) {
-                        $q->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                            $sub->whereBetween('created_at', [$inicio, $fin]);
-                        })
-                            ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                                $sub->whereBetween('created_at', [$inicio, $fin])
-                                    ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                                    ->where('dado_baja', false);
-                            });
+                ->where(function ($q) use ($inicio, $fin) {
+                    $q->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                        $sub->whereBetween('created_at', [$inicio, $fin]);
                     })
-                    ->whereHas('bitacorasEstadoCivil', function ($q2) use ($inicio, $fin) {
-                        $q2->whereBetween('created_at', [$inicio, $fin])
-                            ->whereRaw('id = (SELECT MAX(b_ec2.id) FROM bitacora_estados_civiles as b_ec2 WHERE b_ec2.user_id = bitacora_estados_civiles.user_id AND b_ec2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
-                            ->whereHas('estadoCivilNuevo', function ($q3) {
-                                $q3->where('es_matrimonio', true);
-                            });
-                    })
-                    ->whereHas('bitacorasEstadoCivil', function ($q2) use ($inicio, $fin) {
-                        $q2->whereBetween('created_at', [$inicio, $fin])
-                            ->whereHas('estadoCivilNuevo', function ($q3) {
-                                $q3->where('es_union_libre', true);
-                            });
-                    });
+                        ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                            $sub->whereBetween('created_at', [$inicio, $fin])
+                                ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                                ->where('dado_baja', false);
+                        });
+                })
+                ->whereHas('bitacorasEstadoCivil', function ($q2) use ($inicio, $fin) {
+                    $q2->whereBetween('created_at', [$inicio, $fin])
+                        ->whereRaw('id = (SELECT MAX(b_ec2.id) FROM bitacora_estados_civiles as b_ec2 WHERE b_ec2.user_id = bitacora_estados_civiles.user_id AND b_ec2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
+                        ->whereHas('estadoCivilNuevo', function ($q3) {
+                            $q3->where('es_matrimonio', true);
+                        });
+                })
+                ->whereHas('bitacorasEstadoCivil', function ($q2) use ($inicio, $fin) {
+                    $q2->whereBetween('created_at', [$inicio, $fin])
+                        ->whereHas('estadoCivilNuevo', function ($q3) {
+                            $q3->where('es_union_libre', true);
+                        });
+                });
                 break;
             case 'pendientes_membresia_union_libre':
                 $idsMatriculados = User::withTrashed()
                     ->tap($filtroSedesCallback)
                     ->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('fecha_matricula', [$inicio, $fin])
-                            ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
+                          ->whereHas('escuela', fn ($q2) => $q2->where('habilitada_consolidacion', true));
                     })->pluck('id');
 
                 $query->whereIn('id', $idsMatriculados)
@@ -2804,26 +2805,26 @@ class ConsolidacionController extends Controller
                             });
                     });
                 break;
-
+                
             default:
                 if (str_starts_with($kpi, 'cosecha_vinculacion_')) {
                     $vinculacionId = str_replace('cosecha_vinculacion_', '', $kpi);
                     $query->whereBetween('created_at', [$inicio, $fin])
-                        ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
-                            $q->whereBetween('created_at', [$inicio, $fin])
+                          ->whereHas('bitacorasTipoUsuario', function ($q) use ($inicio, $fin) {
+                              $q->whereBetween('created_at', [$inicio, $fin])
                                 ->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
                                 ->whereHas('tipoUsuarioNuevo', function ($q2) {
                                     $q2->where('habilitado_para_consolidacion', true)
-                                        ->orWhere('es_miembro_oficial', true);
+                                       ->orWhere('es_miembro_oficial', true);
                                 });
-                        })->where('tipo_vinculacion_id', $vinculacionId);
-                } elseif (str_starts_with($kpi, 'traslados_')) {
+                          })->where('tipo_vinculacion_id', $vinculacionId);
+                } else if (str_starts_with($kpi, 'traslados_')) {
                     $edadRef = Carbon::now()->subYears(18)->format('Y-m-d');
                     $esAdulto = str_contains($kpi, 'adultos');
-
+                    
                     $query->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
                         $subQuery->whereBetween('created_at', [$inicio, $fin])
-                            ->whereHas('tipoUsuarioNuevo', fn ($q) => $q->where('es_miembro_oficial', true));
+                                 ->whereHas('tipoUsuarioNuevo', fn($q) => $q->where('es_miembro_oficial', true));
                     })->whereHas('tipo_vinculacion', function ($q) {
                         $q->where('viene_de_otra_iglesia', true);
                     });
@@ -2831,17 +2832,17 @@ class ConsolidacionController extends Controller
                     if ($esAdulto) {
                         $query->whereNotNull('fecha_nacimiento')->where('fecha_nacimiento', '<=', $edadRef);
                     } else {
-                        $query->where(function ($q) use ($edadRef) {
+                        $query->where(function($q) use ($edadRef) {
                             $q->whereNull('fecha_nacimiento')->orWhere('fecha_nacimiento', '>', $edadRef);
                         });
                     }
-                } elseif (str_starts_with($kpi, 'bautismos_')) {
+                } else if (str_starts_with($kpi, 'bautismos_')) {
                     $edadRef = Carbon::now()->subYears(18)->format('Y-m-d');
                     $esAdulto = str_contains($kpi, 'adultos');
-
+                    
                     $query->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
                         $subQuery->whereBetween('created_at', [$inicio, $fin])
-                            ->whereHas('tipoUsuarioNuevo', fn ($q) => $q->where('es_miembro_oficial', true));
+                                 ->whereHas('tipoUsuarioNuevo', fn($q) => $q->where('es_miembro_oficial', true));
                     })->whereHas('tipo_vinculacion', function ($q) {
                         $q->where('viene_de_otra_iglesia', false);
                     });
@@ -2849,7 +2850,7 @@ class ConsolidacionController extends Controller
                     if ($esAdulto) {
                         $query->whereNotNull('fecha_nacimiento')->where('fecha_nacimiento', '<=', $edadRef);
                     } else {
-                        $query->where(function ($q) use ($edadRef) {
+                        $query->where(function($q) use ($edadRef) {
                             $q->whereNull('fecha_nacimiento')->orWhere('fecha_nacimiento', '>', $edadRef);
                         });
                     }
@@ -2877,11 +2878,11 @@ class ConsolidacionController extends Controller
             'sedesSeleccionadas' => $sedesIdsRequest,
             'bloqueDetalle' => $bloqueDetalle,
             'sedeDetalle' => $sedeDetalle,
-            'rangoFechas' => $rangoFechas,
+            'rangoFechas' => $rangoFechas
         ];
     }
 
-    public function exportarDashboard(Request $request)
+    public function exportarDashboard(Request $request) 
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('consolidacion.dashboard_consolidacion');
@@ -2901,8 +2902,8 @@ class ConsolidacionController extends Controller
             $fin = Carbon::now()->endOfMonth();
         }
 
-        $esVistaDetalle = $request->has('bloque_detalle_id') && ! empty($request->bloque_detalle_id);
-
+        $esVistaDetalle = $request->has('bloque_detalle_id') && !empty($request->bloque_detalle_id);
+        
         $bloquesIterar = collect();
         if ($esVistaDetalle) {
             $bloque = BloqueDashboardConsolidacion::with('sedes')->find($request->bloque_detalle_id);
@@ -2912,7 +2913,7 @@ class ConsolidacionController extends Controller
                 }
                 $bloquesIterar->push($bloque);
             }
-        } else {
+        } else { 
             $bloquesDisponibles = BloqueDashboardConsolidacion::with('sedes')->get();
             if ($request->has('bloques_seleccionados') && is_array($request->bloques_seleccionados) && count($request->bloques_seleccionados) > 0) {
                 $bloquesSeleccionados = $request->bloques_seleccionados;
@@ -2927,7 +2928,7 @@ class ConsolidacionController extends Controller
         $titulosVinculaciones = $tiposVinculaciones->pluck('nombre')->toArray();
 
         // Construir texto de filtros para el encabezado del archivo
-        $textoRango = $inicio->format('Y-m-d').' a '.$fin->format('Y-m-d');
+        $textoRango = $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d');
         $filtrosExtra = "Rango de fechas: {$textoRango}";
 
         $dataExport = [];
@@ -2935,7 +2936,7 @@ class ConsolidacionController extends Controller
         foreach ($bloquesIterar as $bloque) {
             foreach ($bloque->sedes as $sede) {
                 $metricasSede = $this->getCosechaMetricsForExport([$sede->id], $inicio, $fin);
-
+                
                 $fila = [
                     'Sede / Bloque' => $sede->nombre,
                     'Total Cosecha' => $metricasSede['total'] == 0 ? '0' : $metricasSede['total'],
@@ -2943,12 +2944,12 @@ class ConsolidacionController extends Controller
                     'Cosecha Efectiva' => $metricasSede['efectiva'] == 0 ? '0' : $metricasSede['efectiva'],
                     'Efectividad (%)' => $metricasSede['porcentaje'] == 0 ? '0' : $metricasSede['porcentaje'],
                 ];
-
+                
                 foreach ($tiposVinculaciones as $tv) {
                     $valorVinculacion = $metricasSede['vinculaciones'][$tv->id] ?? 0;
                     $fila[$tv->nombre] = $valorVinculacion == 0 ? '0' : $valorVinculacion;
                 }
-
+                
                 $fila['Total matrículas'] = $metricasSede['total_matriculas'] == 0 ? '0' : $metricasSede['total_matriculas'];
                 $fila['Matrículas efectivas'] = $metricasSede['matriculas_efectivas'] == 0 ? '0' : $metricasSede['matriculas_efectivas'];
                 $fila['Efectividad de matrículas (%)'] = $metricasSede['porcentaje_matriculas'] == 0 ? '0' : $metricasSede['porcentaje_matriculas'];
@@ -2960,7 +2961,7 @@ class ConsolidacionController extends Controller
                 $fila['Templo Warriors'] = $metricasSede['templo_warriors'] == 0 ? '0' : $metricasSede['templo_warriors'];
                 $fila['Aptos'] = $metricasSede['aptos'] == 0 ? '0' : $metricasSede['aptos'];
                 $fila['Unión Libre'] = $metricasSede['union_libre'] == 0 ? '0' : $metricasSede['union_libre'];
-
+                
                 $fila['Total Miembros'] = $metricasSede['total_miembros'] == 0 ? '0' : $metricasSede['total_miembros'];
                 $fila['Ef. Matrículas a Membresías (%)'] = $metricasSede['ef_matriculas_membresias'] == 0 ? '0' : $metricasSede['ef_matriculas_membresias'];
                 $fila['Ubicados en Grupos'] = $metricasSede['ubicados_grupos'] == 0 ? '0' : $metricasSede['ubicados_grupos'];
@@ -2975,7 +2976,7 @@ class ConsolidacionController extends Controller
                 $fila['Total Bautismos'] = $metricasSede['total_bautismos'] == 0 ? '0' : $metricasSede['total_bautismos'];
                 $fila['Adultos (Bautismos)'] = $metricasSede['bautismos_adultos'] == 0 ? '0' : $metricasSede['bautismos_adultos'];
                 $fila['Warriors (Bautismos)'] = $metricasSede['bautismos_warriors'] == 0 ? '0' : $metricasSede['bautismos_warriors'];
-
+                
                 $dataExport[] = $fila;
             }
 
@@ -2983,18 +2984,18 @@ class ConsolidacionController extends Controller
             $metricasBloque = $this->getCosechaMetricsForExport($sedesBloqueIds, $inicio, $fin);
 
             $filaBloque = [
-                'Sede / Bloque' => 'TOTAL: '.strtoupper($bloque->nombre),
+                'Sede / Bloque' => 'TOTAL: ' . strtoupper($bloque->nombre),
                 'Total Cosecha' => $metricasBloque['total'] == 0 ? '0' : $metricasBloque['total'],
                 'Deserciones' => $metricasBloque['deserciones'] == 0 ? '0' : $metricasBloque['deserciones'],
                 'Cosecha Efectiva' => $metricasBloque['efectiva'] == 0 ? '0' : $metricasBloque['efectiva'],
                 'Efectividad (%)' => $metricasBloque['porcentaje'] == 0 ? '0' : $metricasBloque['porcentaje'],
             ];
-
+            
             foreach ($tiposVinculaciones as $tv) {
                 $valorVincBloque = $metricasBloque['vinculaciones'][$tv->id] ?? 0;
                 $filaBloque[$tv->nombre] = $valorVincBloque == 0 ? '0' : $valorVincBloque;
             }
-
+            
             $filaBloque['Total matrículas'] = $metricasBloque['total_matriculas'] == 0 ? '0' : $metricasBloque['total_matriculas'];
             $filaBloque['Matrículas efectivas'] = $metricasBloque['matriculas_efectivas'] == 0 ? '0' : $metricasBloque['matriculas_efectivas'];
             $filaBloque['Efectividad de matrículas (%)'] = $metricasBloque['porcentaje_matriculas'] == 0 ? '0' : $metricasBloque['porcentaje_matriculas'];
@@ -3006,7 +3007,7 @@ class ConsolidacionController extends Controller
             $filaBloque['Templo Warriors'] = $metricasBloque['templo_warriors'] == 0 ? '0' : $metricasBloque['templo_warriors'];
             $filaBloque['Aptos'] = $metricasBloque['aptos'] == 0 ? '0' : $metricasBloque['aptos'];
             $filaBloque['Unión Libre'] = $metricasBloque['union_libre'] == 0 ? '0' : $metricasBloque['union_libre'];
-
+            
             $filaBloque['Total Miembros'] = $metricasBloque['total_miembros'] == 0 ? '0' : $metricasBloque['total_miembros'];
             $filaBloque['Ef. Matrículas a Membresías (%)'] = $metricasBloque['ef_matriculas_membresias'] == 0 ? '0' : $metricasBloque['ef_matriculas_membresias'];
             $filaBloque['Ubicados en Grupos'] = $metricasBloque['ubicados_grupos'] == 0 ? '0' : $metricasBloque['ubicados_grupos'];
@@ -3021,7 +3022,7 @@ class ConsolidacionController extends Controller
             $filaBloque['Total Bautismos'] = $metricasBloque['total_bautismos'] == 0 ? '0' : $metricasBloque['total_bautismos'];
             $filaBloque['Adultos (Bautismos)'] = $metricasBloque['bautismos_adultos'] == 0 ? '0' : $metricasBloque['bautismos_adultos'];
             $filaBloque['Warriors (Bautismos)'] = $metricasBloque['bautismos_warriors'] == 0 ? '0' : $metricasBloque['bautismos_warriors'];
-
+            
             $dataExport[] = $filaBloque;
         }
 
@@ -3031,7 +3032,7 @@ class ConsolidacionController extends Controller
     private function getCosechaMetricsForExport($sedesItemIds, $inicio, $fin)
     {
         $filtroItem = function ($query) use ($inicio, $fin, $sedesItemIds) {
-            if (! empty($sedesItemIds)) {
+            if (!empty($sedesItemIds)) {
                 $query->whereHas('bitacorasSede', function ($subQuery) use ($inicio, $fin, $sedesItemIds) {
                     $subQuery->whereBetween('created_at', [$inicio, $fin])
                         ->whereIn('sede_id_nuevo', $sedesItemIds)
@@ -3050,7 +3051,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -3064,7 +3065,7 @@ class ConsolidacionController extends Controller
                         ->whereHas('tipoUsuarioNuevo', function ($q) {
                             $q->where(function ($q2) {
                                 $q2->where('habilitado_para_consolidacion', true)
-                                    ->orWhere('es_miembro_oficial', true);
+                                   ->orWhere('es_miembro_oficial', true);
                             });
                         });
                 });
@@ -3073,9 +3074,9 @@ class ConsolidacionController extends Controller
                 $q->whereDoesntHave('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
                     $sub->whereBetween('created_at', [$inicio, $fin]);
                 })
-                    ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
-                        $sub->whereBetween('created_at', [$inicio, $fin])->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])->where('dado_baja', false);
-                    });
+                ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
+                    $sub->whereBetween('created_at', [$inicio, $fin])->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])->where('dado_baja', false);
+                });
             })->tap($filtroItem)->count();
 
         $idsItem = User::withTrashed()->whereBetween('created_at', [$inicio, $fin])
@@ -3095,7 +3096,7 @@ class ConsolidacionController extends Controller
         }])->get();
 
         $vinculacionesArray = [];
-        foreach ($vinculacionesDB as $v) {
+        foreach($vinculacionesDB as $v) {
             $vinculacionesArray[$v->id] = $v->usuarios_count;
         }
 
@@ -3103,7 +3104,7 @@ class ConsolidacionController extends Controller
 
         // --- DATOS ESCUELAS ---
         $limiteEdad = Configuracion::where('id', 1)->value('limite_menor_edad') ?? 18;
-
+        
         $calcDistribucion = function ($coleccion, $limite) {
             $adultos = 0;
             $menores = 0;
@@ -3120,7 +3121,6 @@ class ConsolidacionController extends Controller
                     $adultos++;
                 }
             }
-
             return ['adultos' => $adultos, 'menores' => $menores];
         };
 
@@ -3159,7 +3159,7 @@ class ConsolidacionController extends Controller
 
         $distSectorItem = $calcDistribucion($sectorItem, $limiteEdad);
         $distTemploItem = $calcDistribucion($temploItem, $limiteEdad);
-
+        
         $matriculasDesercionesItem = $matriculasCollectionItem->where('bloqueado', true)->count();
         $matriculasEfectivosItem = $totalMatriculasItem - $matriculasDesercionesItem;
         $porcentajeEfectividadMatriculasItem = $totalMatriculasItem > 0 ? round(($matriculasEfectivosItem / $totalMatriculasItem) * 100, 2) : 0;
@@ -3183,7 +3183,6 @@ class ConsolidacionController extends Controller
                     $adultos++;
                 }
             }
-
             return ['adultos' => $adultos, 'menores' => $menores];
         };
 
@@ -3321,7 +3320,7 @@ class ConsolidacionController extends Controller
             })->count();
 
         $totalUnionLibreMatriculados = $matriculasUnionLibre + $miembrosFormalizadosItemTotal;
-
+        
         $ef_matriculas_membresias = $matriculasEfectivosItem > 0 ? round(($totalMiembros / $matriculasEfectivosItem) * 100, 2) : 0;
         $ef_ubicacion = $totalMiembros > 0 ? round(($miembrosUbicados / $totalMiembros) * 100, 2) : 0;
         $ef_formalizacion = $totalUnionLibreMatriculados > 0 ? round(($miembrosFormalizadosItemTotal / $totalUnionLibreMatriculados) * 100, 2) : 0;
@@ -3332,7 +3331,7 @@ class ConsolidacionController extends Controller
             'deserciones' => $totalItem - $efectivaItem,
             'porcentaje' => $porcentaje,
             'vinculaciones' => $vinculacionesArray,
-
+            
             // Estadísticas de escuelas
             'total_matriculas' => $totalMatriculasItem,
             'matriculas_efectivas' => $matriculasEfectivosItem,

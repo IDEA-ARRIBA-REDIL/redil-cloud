@@ -3,10 +3,10 @@
 namespace App\Exports;
 
 use App\Models\HistorialModificacionPago;
-use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\Exportable;
 
 class HistorialModificacionesExport implements FromQuery, WithHeadings, WithMapping
 {
@@ -25,43 +25,43 @@ class HistorialModificacionesExport implements FromQuery, WithHeadings, WithMapp
             ->with(['asesor', 'caja', 'puntoDePago', 'compra', 'pago', 'usuarioAfectado', 'actividad', 'categoriaActividad', 'tipoPago']);
 
         // Filtro por Búsqueda
-        if (! empty($this->filtros['busqueda'])) {
+        if (!empty($this->filtros['busqueda'])) {
             $busqueda = $this->filtros['busqueda'];
             $query->where(function ($q) use ($busqueda) {
                 $q->whereHas('usuarioAfectado', function ($subQ) use ($busqueda) {
-                    $subQ->where('nombres', 'like', '%'.$busqueda.'%')
-                        ->orWhere('apellidos', 'like', '%'.$busqueda.'%')
-                        ->orWhere('identificacion', 'like', '%'.$busqueda.'%');
+                    $subQ->where('nombres', 'like', '%' . $busqueda . '%')
+                         ->orWhere('apellidos', 'like', '%' . $busqueda . '%')
+                         ->orWhere('identificacion', 'like', '%' . $busqueda . '%');
                 })
-                    ->orWhereHas('asesor', function ($subQ) use ($busqueda) {
-                        $subQ->where('nombres', 'like', '%'.$busqueda.'%')
-                            ->orWhere('apellidos', 'like', '%'.$busqueda.'%');
-                    })
-                    ->orWhere('motivo', 'like', '%'.$busqueda.'%');
+                ->orWhereHas('asesor', function ($subQ) use ($busqueda) {
+                    $subQ->where('nombres', 'like', '%' . $busqueda . '%')
+                         ->orWhere('apellidos', 'like', '%' . $busqueda . '%');
+                })
+                ->orWhere('motivo', 'like', '%' . $busqueda . '%');
             });
         }
 
         // Filtro por Punto de Pago
-        if (! empty($this->filtros['puntoPagoId'])) {
+        if (!empty($this->filtros['puntoPagoId'])) {
             $query->where('punto_de_pago_id', $this->filtros['puntoPagoId']);
         }
 
         // Filtro por Caja
-        if (! empty($this->filtros['cajaId'])) {
+        if (!empty($this->filtros['cajaId'])) {
             $query->where('caja_id', $this->filtros['cajaId']);
         }
 
         // Filtro por Rango de Fechas
-        if (! empty($this->filtros['fechaInicio'])) {
+        if (!empty($this->filtros['fechaInicio'])) {
             $query->whereDate('created_at', '>=', $this->filtros['fechaInicio']);
         }
 
-        if (! empty($this->filtros['fechaFin'])) {
+        if (!empty($this->filtros['fechaFin'])) {
             $query->whereDate('created_at', '<=', $this->filtros['fechaFin']);
         }
 
         // Compatibilidad legacy si se envía fecha única
-        if (! empty($this->filtros['fecha']) && empty($this->filtros['fechaInicio']) && empty($this->filtros['fechaFin'])) {
+        if (!empty($this->filtros['fecha']) && empty($this->filtros['fechaInicio']) && empty($this->filtros['fechaFin'])) {
             $query->whereDate('created_at', $this->filtros['fecha']);
         }
 

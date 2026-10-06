@@ -4,97 +4,88 @@ namespace App\Livewire\Usuarios\Formularios;
 
 use App\Models\FormularioUsuario;
 use Carbon\Carbon;
-use Livewire\Attributes\On;
 use Livewire\Component;
+
+use Livewire\Attributes\On;
 
 class FechaNacimiento extends Component
 {
-    public $formulario;
+  public $formulario;
+  public $usuario;
+  public $fechaDefault;
+  public $respuesta = '';
+  public $fecha = '';
+  public $mostrarError = false;
+  public $msnError = '';
 
-    public $usuario;
+  public $class = '';
+  public $label = '';
+  public $nameId = '';
 
-    public $fechaDefault;
+  public function mount()
+  {
+    $this->fecha = $this->usuario ? $this->usuario->fecha_nacimiento : '' ;
 
-    public $respuesta = '';
+    if(old($this->nameId)!='')
+    $this->fecha = old($this->nameId);
 
-    public $fecha = '';
-
-    public $mostrarError = false;
-
-    public $msnError = '';
-
-    public $class = '';
-
-    public $label = '';
-
-    public $nameId = '';
-
-    public function mount()
+    $edad = Carbon::parse($this->fecha)->age;
+   /* if($this->fecha)
     {
-        $this->fecha = $this->usuario ? $this->usuario->fecha_nacimiento : '';
+      if($edad < $this->formulario->edad_minima || $edad > $this->formulario->edad_maxima)
+      {
+        $this->fecha = '';
+      }
+    }*/
+  }
 
-        if (old($this->nameId) != '') {
-            $this->fecha = old($this->nameId);
-        }
+  public function validarFecha()
+  {
+    if ($this->formulario->validar_edad) {
+      if (!$this->fecha) {
+        return;
+      }
 
-        $edad = Carbon::parse($this->fecha)->age;
-        /* if($this->fecha)
-         {
-           if($edad < $this->formulario->edad_minima || $edad > $this->formulario->edad_maxima)
-           {
-             $this->fecha = '';
-           }
-         }*/
-    }
+      $edad = Carbon::parse($this->fecha)->age;
 
-    public function validarFecha()
-    {
-        if ($this->formulario->validar_edad) {
-            if (! $this->fecha) {
-                return;
-            }
+      // 1. Validar si la edad está dentro del rango del formulario actual
+      $esEdadValida = true;
+      if ($this->formulario->edad_minima !== null && $edad < $this->formulario->edad_minima) {
+        $esEdadValida = false;
+      }
+      if ($this->formulario->edad_maxima !== null && $edad > $this->formulario->edad_maxima) {
+        $esEdadValida = false;
+      }
 
-            $edad = Carbon::parse($this->fecha)->age;
+      if ($esEdadValida) {
+        $this->dispatch('desbloqueoBtnGuardar');
+        return;
+      }
 
-            // 1. Validar si la edad está dentro del rango del formulario actual
-            $esEdadValida = true;
-            if ($this->formulario->edad_minima !== null && $edad < $this->formulario->edad_minima) {
-                $esEdadValida = false;
-            }
-            if ($this->formulario->edad_maxima !== null && $edad > $this->formulario->edad_maxima) {
-                $esEdadValida = false;
-            }
+      // 2. Si la edad está fuera de rango, buscar si existen otros formularios compatibles
+      $otrosFormularios = FormularioUsuario::where('tipo_formulario_id', $this->formulario->tipo->id)
+        ->where('edad_minima', '<=', $edad)
+        ->where('edad_maxima', '>=', $edad)
+        ->where('id', '!=', $this->formulario->id)
+        ->get();
 
-            if ($esEdadValida) {
-                $this->dispatch('desbloqueoBtnGuardar');
+      if ($otrosFormularios->count() > 0) {
+        $html = '';
+        foreach ($otrosFormularios as $otroFormulario) {
+          if ($this->usuario) {
+            $ruta = route('usuario.modificar', [$otroFormulario, $this->usuario]);
+          } elseif ($this->formulario->tipo && $this->formulario->tipo->es_formulario_exterior) {
+            $ruta = route('usuario.nuevoExterior', $otroFormulario);
+          } else {
+            $ruta = route('usuario.nuevo', $otroFormulario);
+          }
 
-                return;
-            }
+          $color = $otroFormulario->color ?: '#138848';
+          $icono = $otroFormulario->icono ?: 'ti ti-forms';
+          $titulo = e($otroFormulario->label ?? $otroFormulario->titulo);
+          $descripcion = $otroFormulario->descripcion ? e($otroFormulario->descripcion) : '<span class="text-muted fst-italic">Sin descripción disponible.</span>';
 
-            // 2. Si la edad está fuera de rango, buscar si existen otros formularios compatibles
-            $otrosFormularios = FormularioUsuario::where('tipo_formulario_id', $this->formulario->tipo->id)
-                ->where('edad_minima', '<=', $edad)
-                ->where('edad_maxima', '>=', $edad)
-                ->where('id', '!=', $this->formulario->id)
-                ->get();
-
-            if ($otrosFormularios->count() > 0) {
-                $html = '';
-                foreach ($otrosFormularios as $otroFormulario) {
-                    if ($this->usuario) {
-                        $ruta = route('usuario.modificar', [$otroFormulario, $this->usuario]);
-                    } elseif ($this->formulario->tipo && $this->formulario->tipo->es_formulario_exterior) {
-                        $ruta = route('usuario.nuevoExterior', $otroFormulario);
-                    } else {
-                        $ruta = route('usuario.nuevo', $otroFormulario);
-                    }
-
-                    $color = $otroFormulario->color ?: '#138848';
-                    $icono = $otroFormulario->icono ?: 'ti ti-forms';
-                    $titulo = e($otroFormulario->label ?? $otroFormulario->titulo);
-                    $descripcion = $otroFormulario->descripcion ? e($otroFormulario->descripcion) : '<span class="text-muted fst-italic">Sin descripción disponible.</span>';
-
-                    $html .= '<div class="col-12">
+          $html .= '<div class="col-12">
             <div class="card border p-3 p-md-4 shadow-none" style="
               border-radius: 16px;
               background: #f8fafc;
@@ -133,40 +124,39 @@ class FechaNacimiento extends Component
               </div>
             </div>
           </div>';
-                }
-
-                $this->fecha = '';
-                $this->dispatch(
-                    'abrirModalCambioDeFormulario',
-                    nombreModal: 'modalCambioDeFormulario',
-                    html: $html
-                );
-            } else {
-                $this->fecha = '';
-                $this->dispatch(
-                    'msn',
-                    msnIcono: 'info',
-                    msnTitulo: '¡Ups!',
-                    msnTexto: $this->formulario->edad_mensaje_error ?: 'La edad ingresada no es permitida para este formulario.'
-                );
-            }
         }
-    }
 
-    public function bloquearBtnGuardar()
-    {
-        $this->dispatch('bloqueoBtnGuardar');
+        $this->fecha = '';
+        $this->dispatch(
+          'abrirModalCambioDeFormulario',
+          nombreModal: 'modalCambioDeFormulario',
+          html: $html
+        );
+      } else {
+        $this->fecha = '';
+        $this->dispatch(
+          'msn',
+          msnIcono: 'info',
+          msnTitulo: '¡Ups!',
+          msnTexto: $this->formulario->edad_mensaje_error ?: 'La edad ingresada no es permitida para este formulario.'
+        );
+      }
     }
+  }
 
-    #[On('mostrarMensajeError')]
-    public function mostrarMensajeError($mostrarError, $msnError)
-    {
-        $this->mostrarError = $mostrarError;
-        $this->msnError = $msnError;
-    }
+  public function bloquearBtnGuardar(){
+    $this->dispatch('bloqueoBtnGuardar');
+  }
 
-    public function render()
-    {
-        return view('livewire.usuarios.formularios.fecha-nacimiento');
-    }
+  #[On('mostrarMensajeError')]
+  public function mostrarMensajeError($mostrarError, $msnError)
+  {
+    $this->mostrarError = $mostrarError;
+    $this->msnError = $msnError;
+  }
+
+  public function render()
+  {
+      return view('livewire.usuarios.formularios.fecha-nacimiento');
+  }
 }

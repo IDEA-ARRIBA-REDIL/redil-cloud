@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InformePersonalizado extends Model
 {
@@ -33,6 +34,21 @@ class InformePersonalizado extends Model
             'informe_numerico' => 'boolean',
             'add_id_a_la_url' => 'boolean',
         ];
+    }
+
+    public function secciones(): HasMany
+    {
+        return $this->hasMany(SeccionInforme::class, 'informe_personalizado_id')->orderBy('orden', 'asc');
+    }
+
+    public function bloques(): HasMany
+    {
+        return $this->hasMany(BloqueInforme::class, 'informe_personalizado_id');
+    }
+
+    public function informesEnCola(): HasMany
+    {
+        return $this->hasMany(InformeEnCola::class, 'informe_personalizado_id')->latest();
     }
 
     public function tiposUsuarios(): BelongsToMany

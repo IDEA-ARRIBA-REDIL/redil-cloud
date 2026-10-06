@@ -282,15 +282,14 @@ class CursoController extends Controller
             ->join('cursos', 'curso_users.curso_id', '=', 'cursos.id')
             ->join('carreras', 'cursos.carrera_id', '=', 'carreras.id')
             ->join('users', 'curso_users.user_id', '=', 'users.id')
-            ->join('tipo_usuarios', 'users.tipo_usuario_id', '=', 'tipo_usuarios.id')
-            ->leftJoin('entidades_relacionadas', 'tipo_usuarios.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
+            ->leftJoin('entidades_relacionadas', 'users.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
             ->select(
                 'carreras.nombre as carrera',
                 \Illuminate\Support\Facades\DB::raw("COALESCE(entidades_relacionadas.nombre, 'Sin Entidad') as entidad"),
                 \Illuminate\Support\Facades\DB::raw('count(*) as total')
             )
-            ->groupBy('carrera', 'entidad')
-            ->orderBy('carrera')
+            ->groupBy('carreras.nombre', 'entidades_relacionadas.nombre')
+            ->orderBy('carreras.nombre')
             ->get();
 
         $carrerasLabels = $queryCarrerasEntidades->pluck('carrera')->unique()->values()->toArray();
@@ -379,12 +378,11 @@ class CursoController extends Controller
         // Query 4: Distribución por entidades por curso — una sola query
         $statsEntidades = DB::table('curso_users')
             ->join('users', 'curso_users.user_id', '=', 'users.id')
-            ->join('tipo_usuarios', 'users.tipo_usuario_id', '=', 'tipo_usuarios.id')
-            ->leftJoin('entidades_relacionadas', 'tipo_usuarios.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
+            ->leftJoin('entidades_relacionadas', 'users.entidad_relacionada_id', '=', 'entidades_relacionadas.id')
             ->selectRaw("curso_users.curso_id, COALESCE(entidades_relacionadas.nombre, 'Sin Entidad') as entidad, COUNT(*) as total")
             ->whereIn('curso_users.curso_id', $cursoIdsVisibles)
             ->whereBetween('curso_users.fecha_inscripcion', [$fechaInicio.' 00:00:00', $fechaFin.' 23:59:59'])
-            ->groupBy('curso_users.curso_id', 'entidad')
+            ->groupBy('curso_users.curso_id', 'entidades_relacionadas.nombre')
             ->get()
             ->groupBy('curso_id');
 

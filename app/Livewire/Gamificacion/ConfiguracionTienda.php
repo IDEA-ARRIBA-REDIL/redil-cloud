@@ -14,6 +14,7 @@ use App\Models\TareaConsolidacion;
 use App\Models\TipoUsuario;
 use App\Models\TransaccionPuntos;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -27,61 +28,38 @@ class ConfiguracionTienda extends Component
 
     // Propiedades Formulario Producto
     public ?int $productoId = null;
-
     public string $nombre = '';
-
     public string $descripcion = '';
-
     public string $tipo = 'fisico'; // 'fisico' | 'digital'
-
     public $costo_puntos = 0;
-
     public $stock = null;
-
     public $limite_por_usuario = null;
-
     public string $instrucciones_canje = '';
-
     public string $enlace_digital = '';
-
     public $imagen = null;
-
     public ?string $imagen_recortada = null;
-
     public ?string $imagen_existente = null;
-
     public $orden = 0;
 
     // =========================================================================
     // PROPIEDADES DE RESTRICCIONES / VISIBILIDAD
     // =========================================================================
     public bool $visible_todos = true;
-
     public int $genero = 3; // 1: Masculino, 2: Femenino, 3: Ambos
-
     public array $sedesSeleccionadas = [];
-
     public array $estadosCivilesSeleccionados = [];
-
     public array $rangosEdadSeleccionados = [];
-
     public array $tiposUsuarioSeleccionados = [];
-
     public array $procesosRequisito = [];
-
     public array $tareasRequisito = [];
 
     // Buscadores y Filtros
     public string $busquedaProductos = '';
-
     public string $filtroTipoProducto = ''; // '' | 'fisico' | 'digital'
 
     public string $busquedaSolicitudes = '';
-
     public string $filtroEstadoSolicitud = ''; // '' | 'pendiente' | 'aprobado' | 'entregado' | 'rechazado'
-
     public ?string $fechaInicio = null;
-
     public ?string $fechaFin = null;
 
     /**
@@ -188,7 +166,7 @@ class ConfiguracionTienda extends Component
 
         if ($id) {
             $producto = ProductoTienda::with([
-                'sedes', 'estadosCiviles', 'rangosEdad', 'tiposUsuarios', 'procesosRequisito', 'tareasRequisito',
+                'sedes', 'estadosCiviles', 'rangosEdad', 'tiposUsuarios', 'procesosRequisito', 'tareasRequisito'
             ])->findOrFail($id);
 
             $this->productoId = $producto->id;
@@ -206,17 +184,17 @@ class ConfiguracionTienda extends Component
             // Cargar restricciones de visibilidad
             $this->visible_todos = (bool) ($producto->visible_todos ?? true);
             $this->genero = (int) ($producto->genero ?? 3);
-            $this->sedesSeleccionadas = $producto->sedes->pluck('id')->map(fn ($item) => (string) $item)->toArray();
-            $this->estadosCivilesSeleccionados = $producto->estadosCiviles->pluck('id')->map(fn ($item) => (string) $item)->toArray();
-            $this->rangosEdadSeleccionados = $producto->rangosEdad->pluck('id')->map(fn ($item) => (string) $item)->toArray();
-            $this->tiposUsuarioSeleccionados = $producto->tiposUsuarios->pluck('id')->map(fn ($item) => (string) $item)->toArray();
+            $this->sedesSeleccionadas = $producto->sedes->pluck('id')->map(fn($item) => (string) $item)->toArray();
+            $this->estadosCivilesSeleccionados = $producto->estadosCiviles->pluck('id')->map(fn($item) => (string) $item)->toArray();
+            $this->rangosEdadSeleccionados = $producto->rangosEdad->pluck('id')->map(fn($item) => (string) $item)->toArray();
+            $this->tiposUsuarioSeleccionados = $producto->tiposUsuarios->pluck('id')->map(fn($item) => (string) $item)->toArray();
 
-            $this->procesosRequisito = $producto->procesosRequisito->map(fn ($p) => [
+            $this->procesosRequisito = $producto->procesosRequisito->map(fn($p) => [
                 'paso_crecimiento_id' => (string) $p->id,
                 'estado_paso_crecimiento_usuario_id' => (string) $p->pivot->estado_paso_crecimiento_usuario_id,
             ])->toArray();
 
-            $this->tareasRequisito = $producto->tareasRequisito->map(fn ($t) => [
+            $this->tareasRequisito = $producto->tareasRequisito->map(fn($t) => [
                 'tarea_consolidacion_id' => (string) $t->id,
                 'estado_tarea_consolidacion_id' => (string) $t->pivot->estado_tarea_consolidacion_id,
             ])->toArray();
@@ -230,7 +208,7 @@ class ConfiguracionTienda extends Component
         ]);
 
         $this->dispatch('abrirOffcanvasProducto', [
-            'imagenUrl' => $this->imagen_existente ? tenant_asset('img/tienda/'.$this->imagen_existente) : null,
+            'imagenUrl' => $this->imagen_existente ? tenant_asset('img/tienda/' . $this->imagen_existente) : null,
             'placeholderUrl' => Storage::disk('global_media')->url('placeholder.jpg'),
         ]);
     }
@@ -281,11 +259,11 @@ class ConfiguracionTienda extends Component
         if ($this->imagen_recortada) {
             $imagenPartes = explode(';base64,', $this->imagen_recortada);
             $imagenBase64 = base64_decode(count($imagenPartes) > 1 ? $imagenPartes[1] : $imagenPartes[0]);
-            $nombreArchivo = 'producto-'.time().'.png';
-            Storage::disk('public')->put('img/tienda/'.$nombreArchivo, $imagenBase64);
+            $nombreArchivo = 'producto-' . time() . '.png';
+            Storage::disk('public')->put('img/tienda/' . $nombreArchivo, $imagenBase64);
             $datos['imagen_ruta'] = $nombreArchivo;
         } elseif ($this->imagen) {
-            $nombreArchivo = 'producto-'.time().'.'.$this->imagen->getClientOriginalExtension();
+            $nombreArchivo = 'producto-' . time() . '.' . $this->imagen->getClientOriginalExtension();
             $this->imagen->storeAs('img/tienda', $nombreArchivo, 'public');
             $datos['imagen_ruta'] = $nombreArchivo;
         }
@@ -295,7 +273,7 @@ class ConfiguracionTienda extends Component
 
             // Eliminar imagen anterior si se sube una nueva
             if (($this->imagen_recortada || $this->imagen) && $producto->imagen_ruta) {
-                Storage::disk('public')->delete('img/tienda/'.$producto->imagen_ruta);
+                Storage::disk('public')->delete('img/tienda/' . $producto->imagen_ruta);
             }
 
             $producto->update($datos);
@@ -308,7 +286,7 @@ class ConfiguracionTienda extends Component
         // =====================================================================
         // SINCRONIZAR RESTRICCIONES DE VISIBILIDAD
         // =====================================================================
-        if (! $this->visible_todos) {
+        if (!$this->visible_todos) {
             $producto->sedes()->sync($this->sedesSeleccionadas);
             $producto->estadosCiviles()->sync($this->estadosCivilesSeleccionados);
             $producto->rangosEdad()->sync($this->rangosEdadSeleccionados);
@@ -317,7 +295,7 @@ class ConfiguracionTienda extends Component
             // Sincronizar pasos de crecimiento requisito
             $pasosSync = [];
             foreach ($this->procesosRequisito as $idx => $paso) {
-                if (! empty($paso['paso_crecimiento_id']) && ! empty($paso['estado_paso_crecimiento_usuario_id'])) {
+                if (!empty($paso['paso_crecimiento_id']) && !empty($paso['estado_paso_crecimiento_usuario_id'])) {
                     $pasosSync[$paso['paso_crecimiento_id']] = [
                         'estado_paso_crecimiento_usuario_id' => $paso['estado_paso_crecimiento_usuario_id'],
                         'indice' => $idx,
@@ -329,7 +307,7 @@ class ConfiguracionTienda extends Component
             // Sincronizar tareas de consolidación requisito
             $tareasSync = [];
             foreach ($this->tareasRequisito as $idx => $tarea) {
-                if (! empty($tarea['tarea_consolidacion_id']) && ! empty($tarea['estado_tarea_consolidacion_id'])) {
+                if (!empty($tarea['tarea_consolidacion_id']) && !empty($tarea['estado_tarea_consolidacion_id'])) {
                     $tareasSync[$tarea['tarea_consolidacion_id']] = [
                         'estado_tarea_consolidacion_id' => $tarea['estado_tarea_consolidacion_id'],
                         'indice' => $idx,
@@ -425,7 +403,6 @@ class ConfiguracionTienda extends Component
                 'titulo' => 'Atención',
                 'texto' => 'Esta solicitud ya ha sido procesada previamente.',
             ]);
-
             return;
         }
 
@@ -443,49 +420,59 @@ class ConfiguracionTienda extends Component
     }
 
     /**
-     * Rechaza una solicitud de canje y devuelve los puntos al usuario.
+     * Rechaza una solicitud de canje, devuelve los puntos al usuario y reingresa el stock físico si aplica.
      */
     public function rechazarSolicitud(int $id, ?string $motivo = null): void
     {
-        $solicitud = SolicitudCanje::with(['user', 'producto'])->findOrFail($id);
+        try {
+            DB::transaction(function () use ($id, $motivo) {
+                $solicitud = SolicitudCanje::with(['user', 'producto'])->lockForUpdate()->findOrFail($id);
 
-        if ($solicitud->estado !== 'pendiente') {
+                if ($solicitud->estado !== 'pendiente') {
+                    throw new \Exception('Esta solicitud ya ha sido procesada previamente.');
+                }
+
+                // 1. Reembolsar puntos al usuario
+                if ($solicitud->user && $solicitud->puntos_gastados > 0) {
+                    $solicitud->user->increment('puntos', $solicitud->puntos_gastados);
+
+                    // Registrar la transacción de reembolso si existe la tabla
+                    if (class_exists(TransaccionPuntos::class)) {
+                        TransaccionPuntos::create([
+                            'user_id' => $solicitud->user_id,
+                            'monto' => $solicitud->puntos_gastados,
+                            'motivo' => 'Reembolso por canje rechazado: ' . ($solicitud->producto->nombre ?? 'Producto') . " (#{$solicitud->codigo_canje})",
+                            'creado_por_user_id' => Auth::id(),
+                        ]);
+                    }
+                }
+
+                // 2. Reingresar stock si es producto físico con control de inventario
+                if ($solicitud->producto && $solicitud->producto->tipo === 'fisico' && $solicitud->producto->stock !== null) {
+                    $solicitud->producto->increment('stock', 1);
+                }
+
+                // 3. Marcar solicitud como rechazada
+                $solicitud->update([
+                    'estado' => 'rechazado',
+                    'notas_admin' => $motivo ?: $solicitud->notas_admin,
+                    'procesado_por_user_id' => Auth::id(),
+                    'procesado_el' => now(),
+                ]);
+            });
+
+            $this->dispatch('msn', [
+                'icono' => 'info',
+                'titulo' => 'Solicitud Rechazada',
+                'texto' => 'Se ha rechazado la solicitud, los puntos han sido reembolsados y el stock ha sido reingresado.',
+            ]);
+        } catch (\Throwable $th) {
             $this->dispatch('msn', [
                 'icono' => 'warning',
                 'titulo' => 'Atención',
-                'texto' => 'Esta solicitud ya ha sido procesada previamente.',
+                'texto' => $th->getMessage() ?: 'No fue posible procesar el rechazo de la solicitud.',
             ]);
-
-            return;
         }
-
-        // Reembolsar puntos al usuario
-        if ($solicitud->user && $solicitud->puntos_gastados > 0) {
-            $solicitud->user->increment('puntos', $solicitud->puntos_gastados);
-
-            // Registrar la transacción de reembolso si existe la tabla
-            if (class_exists(TransaccionPuntos::class)) {
-                TransaccionPuntos::create([
-                    'user_id' => $solicitud->user_id,
-                    'monto' => $solicitud->puntos_gastados,
-                    'motivo' => 'Reembolso por canje rechazado: '.($solicitud->producto->nombre ?? 'Producto')." (#{$solicitud->codigo_canje})",
-                    'creado_por_user_id' => Auth::id(),
-                ]);
-            }
-        }
-
-        $solicitud->update([
-            'estado' => 'rechazado',
-            'notas_admin' => $motivo ?: $solicitud->notas_admin,
-            'procesado_por_user_id' => Auth::id(),
-            'procesado_el' => now(),
-        ]);
-
-        $this->dispatch('msn', [
-            'icono' => 'info',
-            'titulo' => 'Solicitud Rechazada',
-            'texto' => 'Se ha rechazado la solicitud y los puntos han sido reembolsados al usuario.',
-        ]);
     }
 
     /**
@@ -516,19 +503,18 @@ class ConfiguracionTienda extends Component
         // ---------------------------------------------------------------------
         $queryProductos = ProductoTienda::query();
 
-        if (! empty($this->filtroTipoProducto)) {
+        if (!empty($this->filtroTipoProducto)) {
             $queryProductos->where('tipo', $this->filtroTipoProducto);
         }
 
         $todosProductos = $queryProductos->orderBy('orden', 'asc')->latest()->get();
 
         $productos = $todosProductos;
-        if (! empty(trim($this->busquedaProductos))) {
+        if (!empty(trim($this->busquedaProductos))) {
             $termino = $this->normalizarTexto($this->busquedaProductos);
             $productos = $todosProductos->filter(function ($prod) use ($termino) {
                 $nombre = $this->normalizarTexto($prod->nombre ?? '');
                 $desc = $this->normalizarTexto($prod->descripcion ?? '');
-
                 return str_contains($nombre, $termino) || str_contains($desc, $termino);
             });
         }
@@ -538,22 +524,22 @@ class ConfiguracionTienda extends Component
         // ---------------------------------------------------------------------
         $querySolicitudes = SolicitudCanje::with(['user', 'producto', 'procesadoPor'])->latest();
 
-        if (! empty($this->filtroEstadoSolicitud)) {
+        if (!empty($this->filtroEstadoSolicitud)) {
             $querySolicitudes->where('estado', $this->filtroEstadoSolicitud);
         }
 
-        if (! empty($this->fechaInicio)) {
+        if (!empty($this->fechaInicio)) {
             $querySolicitudes->whereDate('created_at', '>=', $this->fechaInicio);
         }
 
-        if (! empty($this->fechaFin)) {
+        if (!empty($this->fechaFin)) {
             $querySolicitudes->whereDate('created_at', '<=', $this->fechaFin);
         }
 
         $todasSolicitudes = $querySolicitudes->get();
 
         $solicitudes = $todasSolicitudes;
-        if (! empty(trim($this->busquedaSolicitudes))) {
+        if (!empty(trim($this->busquedaSolicitudes))) {
             $terminoSolicitud = $this->normalizarTexto($this->busquedaSolicitudes);
             $solicitudes = $todasSolicitudes->filter(function ($sol) use ($terminoSolicitud) {
                 $codigo = $this->normalizarTexto($sol->codigo_canje ?? '');

@@ -158,42 +158,6 @@ $configData = Helper::appClasses();
   });
 </script>
 
-<script type="module">
-  $('#tienesUnaPeticion').change(function() {
-
-    if (this.checked) {
-      $("#divSelectTipoPeticion").removeClass("d-none");
-      $("#divDescripcionPeticion").removeClass("d-none");
-      $('#descripcion_peticion').prop("required", true);
-      $('#tipo_peticion').prop("required", true);
-    } else {
-      $("#divSelectTipoPeticion").addClass("d-none");
-      $("#divDescripcionPeticion").addClass("d-none");
-
-      $("#descripcion_peticion").val("");
-      $('#descripcion_peticion').removeAttr("required");
-
-      $("#tipo_peticion").val("");
-      $('#tipo_peticion').removeAttr("required");
-    }
-  });
-</script>
-
-<script type="module">
-  $('#preguntaVivesEn').change(function() {
-
-    if (this.checked) {
-      Livewire.dispatch('mostrarBuscadorUbicacion', {
-        cambiarPor: true
-      });
-    } else {
-      Livewire.dispatch('mostrarBuscadorUbicacion', {
-        cambiarPor: false
-      });
-    }
-  });
-</script>
-
 <script>
   function sinComillas(e) {
     tecla = (document.all) ? e.keyCode : e.which;
@@ -790,33 +754,17 @@ $configData = Helper::appClasses();
           @endif
           <!-- / pregunta_vives_en -->
 
-          <!-- / ubicacion-->
-          @if ($tieneCampoPreguntaViveEn)
+          <!-- ubicacion -->
           @if ($campo->nombre_bd == 'ubicacion')
           @livewire('Generales.barrio-localidad-buscador', [
           'class' => $campo->pivot->class,
           'label' => $campo->nombre,
           'nameId' => $campo->name_id,
-          'conPreguntaAdiccional' => 'si',
-          'mostrar' => false,
           'placeholder' => $campo->placeholder,
           'usuario' => $usuario,
           ])
           @endif
-          @else
-          @if ($campo->nombre_bd == 'ubicacion')
-          @livewire('Generales.barrio-localidad-buscador', [
-          'class' => $campo->pivot->class,
-          'label' => $campo->nombre,
-          'nameId' => $campo->name_id,
-          'conPreguntaAdiccional' => 'no',
-          'mostrar' => true,
-          'placeholder' => $campo->placeholder,
-          'usuario' => $usuario,
-          ])
-          @endif
-          @endif
-          <!-- / ubicacion-->
+          <!-- / ubicacion -->
 
           <!-- Nivel academico -->
           @if ($campo->nombre_bd == 'nivel_academico_id')
@@ -1007,8 +955,7 @@ $configData = Helper::appClasses();
 
           <!-- Tipo de Petición -->
           @if ($campo->nombre_bd == 'tipo_peticion_id')
-          <div id="divSelectTipoPeticion"
-            class="mb-2 {{ old('tienesUnaPeticion') ? '' : 'd-none' }} {{ $campo->pivot->class }}">
+          <div class="mb-3 {{ $campo->pivot->class }}">
             <label class="form-label" for="tipo_peticion">
               {{ $campo->nombre }}
             </label>
@@ -1031,8 +978,7 @@ $configData = Helper::appClasses();
 
           <!-- Descripción de la petición -->
           @if ($campo->nombre_bd == 'descripcion_peticion')
-          <div id="divDescripcionPeticion"
-            class="mb-2 {{ old('tienesUnaPeticion') ? '' : 'd-none' }} {{ $campo->pivot->class }}">
+          <div class="mb-3 {{ $campo->pivot->class }}">
             <label class="form-label" for="descripcion_peticion">
               {{ $campo->nombre }}
             </label>
@@ -1515,5 +1461,7 @@ $configData = Helper::appClasses();
   </div>
 </div>
 <!-- modal cambio de formulario -->
+
+@include('contenido.paginas.usuario.scripts.dependencias-campos')
 
 @endsection
