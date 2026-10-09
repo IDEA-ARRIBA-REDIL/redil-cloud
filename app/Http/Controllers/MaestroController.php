@@ -929,6 +929,7 @@ class MaestroController extends Controller
         $horarioAsignado->load([
             'materiaPeriodo.materia:id,nombre',
             'materiaPeriodo.periodo:id,nombre',
+            'materiaPeriodo.periodo.cortesPeriodo.corteEscuela:id,nombre,orden',
             // 'maestros.user:id,name' // Para mostrar el nombre del maestro de la clase
         ]);
 

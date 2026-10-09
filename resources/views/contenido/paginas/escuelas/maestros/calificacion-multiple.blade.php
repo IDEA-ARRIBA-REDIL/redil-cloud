@@ -124,6 +124,74 @@
 
     @include('contenido.paginas.escuelas.maestros.nav-modulo')
 
+    <div class="row mb-3" aria-label="Fechas límite de los cortes">
+        @foreach (($horarioAsignado->materiaPeriodo?->periodo?->cortesPeriodo ?? collect())->sortBy('corteEscuela.orden') as $corte)
+            @php
+                $fechaLimite = $corte->fecha_fin?->copy()->endOfDay();
+                $ahora = now();
+                $diasRestantes = $fechaLimite ? (int) $ahora->copy()->startOfDay()->diffInDays($fechaLimite->copy()->startOfDay(), false) : null;
+                $colorAlerta = $diasRestantes === null ? 'info' : ($diasRestantes <= 0 ? 'danger' : ($diasRestantes <= 6 ? 'warning' : 'success'));
+            @endphp
+            <div class="col-12 col-xl-6">
+                <div class="alert alert-{{ $colorAlerta }} mb-2"
+                    @if ($fechaLimite)
+                        x-data="{
+                            limite: {{ $fechaLimite->getTimestampMs() + 1 }},
+                            ahora: {{ $ahora->getTimestampMs() }},
+                            inicioServidor: {{ $ahora->getTimestampMs() }},
+                            inicioCliente: Date.now(),
+                            intervalo: null,
+                            zonaHoraria: @js(config('app.timezone')),
+                            fechaCierre: @js($fechaLimite->format('Y-m-d')),
+                            init() {
+                                this.actualizar();
+                                this.intervalo = setInterval(() => this.actualizar(), 1000);
+                            },
+                            destroy() { clearInterval(this.intervalo); },
+                            actualizar() { this.ahora = this.inicioServidor + Date.now() - this.inicioCliente; },
+                            get segundos() { return Math.max(0, Math.ceil((this.limite - this.ahora) / 1000)); },
+                            get dias() {
+                                const partes = new Intl.DateTimeFormat('en', {
+                                    timeZone: this.zonaHoraria, year: 'numeric', month: '2-digit', day: '2-digit'
+                                }).formatToParts(new Date(this.ahora));
+                                const fecha = Object.fromEntries(partes.map(parte => [parte.type, parte.value]));
+                                return Math.round((Date.parse(this.fechaCierre + 'T00:00:00Z') - Date.UTC(Number(fecha.year), Number(fecha.month) - 1, Number(fecha.day))) / 86400000);
+                            },
+                            get color() { return this.segundos === 0 || this.dias === 0 ? 'danger' : (this.dias <= 6 ? 'warning' : 'success'); },
+                            get mensaje() {
+                                if (this.segundos === 0) { return 'Plazo del corte vencido'; }
+                                if (this.dias === 0) { return 'Hoy vence el corte'; }
+                                return 'Quedan ' + this.dias + (this.dias === 1 ? ' día' : ' días') + ' para el cierre';
+                            },
+                            get tiempo() {
+                                const dias = Math.floor(this.segundos / 86400);
+                                const horas = Math.floor(this.segundos % 86400 / 3600);
+                                const minutos = Math.floor(this.segundos % 3600 / 60);
+                                const segundos = this.segundos % 60;
+                                return dias + 'd ' + [horas, minutos, segundos].map(valor => String(valor).padStart(2, '0')).join(':');
+                            }
+                        }"
+                        x-bind:class="{ 'alert-{{ $colorAlerta }}': color === '{{ $colorAlerta }}', ['alert-' + color]: true }"
+                    @endif
+                >
+                    <div class="fw-semibold mb-1">
+                        <i class="mdi mdi-clock-outline me-1" aria-hidden="true"></i>
+                        {{ $corte->corteEscuela?->nombre ?? 'Corte' }}
+                    </div>
+                    @if ($fechaLimite)
+                        <div class="fw-semibold" x-text="mensaje" aria-live="polite">
+                            {{ $diasRestantes < 0 ? 'Plazo del corte vencido' : ($diasRestantes === 0 ? 'Hoy vence el corte' : 'Quedan '.$diasRestantes.' días para el cierre') }}
+                        </div>
+                        <div>Fecha límite: <strong>{{ $fechaLimite->format('d/m/Y') }}</strong> a las 11:59 p. m. ({{ config('app.timezone') }}).</div>
+                        <div class="mt-1" x-show="segundos > 0">Tiempo restante: <strong x-text="tiempo"></strong></div>
+                    @else
+                        <div>Este corte no tiene una fecha límite configurada.</div>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+
     {{-- Contenido Principal: Acordeón de Alumnos --}}
     <div class="row">
         <div class="col-12">
