@@ -55,21 +55,8 @@ class VerificarUsuario
       }
 
       // Nueva validación para autogestión de perfil
-      if ($rolActivo && $rolActivo->hasPermissionTo('personas.perfil.principal_autogestion') && $idUsuario == auth()->id()) {
+      if ($rolActivo->hasPermissionTo('personas.perfil.principal_autogestion') && $idUsuario == auth()->id()) {
           $validado = true;
-      }
-
-      // Validar si el usuario autenticado es pariente / acudiente del usuario solicitado
-      if (!$validado && auth()->check()) {
-          if ($idUsuario == auth()->id()) {
-              $validado = true;
-          } else {
-              $esPariente = auth()->user()->parientesDelUsuario()->where('users.id', $idUsuario)->exists()
-                         || auth()->user()->usuariosDelPariente()->where('users.id', $idUsuario)->exists();
-              if ($esPariente) {
-                  $validado = true;
-              }
-          }
       }
 
       return $validado ? $next($request) : redirect()->route('pagina-no-encontrada');

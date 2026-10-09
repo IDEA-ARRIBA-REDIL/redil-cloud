@@ -2,58 +2,71 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        // 1. secciones_informes: eliminar informe_personalizado_id
-        if (Schema::hasTable('secciones_informes') && Schema::hasColumn('secciones_informes', 'informe_personalizado_id')) {
-            Schema::table('secciones_informes', function (Blueprint $table) {
-                $table->dropColumn('informe_personalizado_id');
+        if (! Schema::hasColumn('informes', 'informe_personalizado_origen_id')) {
+            Schema::table('informes', function (Blueprint $table): void {
+                $table->unsignedBigInteger('informe_personalizado_origen_id')->nullable()->unique();
             });
         }
 
-        // 2. bloques_informes: eliminar informe_personalizado_id
-        if (Schema::hasTable('bloques_informes') && Schema::hasColumn('bloques_informes', 'informe_personalizado_id')) {
-            Schema::table('bloques_informes', function (Blueprint $table) {
-                $table->dropColumn('informe_personalizado_id');
-            });
+        foreach (['secciones_informes', 'bloques_informes', 'informes_en_cola'] as $tabla) {
+            if (Schema::hasTable($tabla) && Schema::hasColumn($tabla, 'informe_personalizado_id')) {
+                Schema::table($tabla, function (Blueprint $table): void {
+                    $table->unsignedBigInteger('informe_personalizado_id')->nullable()->change();
+                });
+            }
         }
 
-        // 3. informes_en_cola: eliminar informe_personalizado_id
-        if (Schema::hasTable('informes_en_cola') && Schema::hasColumn('informes_en_cola', 'informe_personalizado_id')) {
-            Schema::table('informes_en_cola', function (Blueprint $table) {
-                $table->dropColumn('informe_personalizado_id');
-            });
+        if (! Schema::hasTable('informes_personalizados')) {
+            return;
         }
+
+        DB::transaction(function (): void {
+            $columnas = array_flip(Schema::getColumnListing('informes'));
+
+            foreach (DB::table('informes_personalizados')->orderBy('id')->get() as $origen) {
+                $destinoId = DB::table('informes')
+                    ->where('informe_personalizado_origen_id', $origen->id)
+                    ->value('id');
+
+                if ($destinoId === null) {
+                    $datos = array_intersect_key((array) $origen, $columnas);
+                    unset($datos['id']);
+                    $datos['informe_personalizado_origen_id'] = $origen->id;
+                    $datos['usa_plantilla'] = true;
+                    $datos['link'] = 'informes-personalizados.mega-informe.show';
+                    $datos['add_id_a_la_url'] = true;
+                    $destinoId = DB::table('informes')->insertGetId($datos);
+                }
+
+                foreach (['secciones_informes', 'bloques_informes', 'informes_en_cola'] as $tabla) {
+                    if (Schema::hasTable($tabla) && Schema::hasColumn($tabla, 'informe_personalizado_id')) {
+                        $relaciones = DB::table($tabla)->where('informe_personalizado_id', $origen->id);
+                        if ((clone $relaciones)->whereNotNull('informe_id')->where('informe_id', '!=', $destinoId)->exists()) {
+                            throw new RuntimeException("La relación de {$tabla} requiere revisión antes de migrar.");
+                        }
+                        $relaciones->whereNull('informe_id')->update(['informe_id' => $destinoId]);
+                    }
+                }
+            }
+
+            foreach (['secciones_informes', 'bloques_informes', 'informes_en_cola'] as $tabla) {
+                if (Schema::hasTable($tabla) && Schema::hasColumn($tabla, 'informe_personalizado_id')
+                    && DB::table($tabla)->whereNotNull('informe_personalizado_id')->whereNull('informe_id')->exists()) {
+                    throw new RuntimeException("Hay relaciones sin informe de origen en {$tabla}.");
+                }
+            }
+        });
     }
 
     /**
-     * Reverse the migrations.
+     * La transición conserva ambas referencias para permitir volver al código anterior.
      */
-    public function down(): void
-    {
-        if (Schema::hasTable('secciones_informes') && ! Schema::hasColumn('secciones_informes', 'informe_personalizado_id')) {
-            Schema::table('secciones_informes', function (Blueprint $table) {
-                $table->unsignedBigInteger('informe_personalizado_id')->nullable();
-            });
-        }
-
-        if (Schema::hasTable('bloques_informes') && ! Schema::hasColumn('bloques_informes', 'informe_personalizado_id')) {
-            Schema::table('bloques_informes', function (Blueprint $table) {
-                $table->unsignedBigInteger('informe_personalizado_id')->nullable();
-            });
-        }
-
-        if (Schema::hasTable('informes_en_cola') && ! Schema::hasColumn('informes_en_cola', 'informe_personalizado_id')) {
-            Schema::table('informes_en_cola', function (Blueprint $table) {
-                $table->unsignedBigInteger('informe_personalizado_id')->nullable();
-            });
-        }
-    }
+    public function down(): void {}
 };
