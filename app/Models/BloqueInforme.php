@@ -12,15 +12,16 @@ class BloqueInforme extends Model
 
     protected $table = 'bloques_informes';
 
-    protected $fillable = [
-        'informe_personalizado_id',
-        'nombre',
-        'ids_sedes',
-    ];
+    protected $guarded = [];
+
+    public function informe(): BelongsTo
+    {
+        return $this->belongsTo(Informe::class, 'informe_id');
+    }
 
     public function informePersonalizado(): BelongsTo
     {
-        return $this->belongsTo(InformePersonalizado::class, 'informe_personalizado_id');
+        return $this->informe();
     }
 
     /**
@@ -30,10 +31,11 @@ class BloqueInforme extends Model
      */
     public function getSedesIdsArrayAttribute(): array
     {
-        if (empty($this->ids_sedes)) {
+        $sedesStr = $this->ids_sedes ?? $this->sedes ?? '';
+        if (empty($sedesStr)) {
             return [];
         }
 
-        return array_map('intval', array_filter(explode(',', $this->ids_sedes)));
+        return array_map('intval', array_filter(explode(',', (string) $sedesStr)));
     }
 }

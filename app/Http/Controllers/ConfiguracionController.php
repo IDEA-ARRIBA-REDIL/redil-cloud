@@ -284,6 +284,14 @@ class ConfiguracionController extends Controller
                 'permission' => 'configuraciones.configuracion_gamificacion',
                 'keywords' => 'gamificacion puntos insignias niveles recompensas desafios logros medallas reglas',
             ],
+            [
+                'title' => 'Plantillas de informes',
+                'route' => 'plantillas-informes.index',
+                'icon' => 'ti-file-settings',
+                'color' => 'bg-label-secondary',
+                'permission' => 'configuraciones.subitem_plantillas_informes',
+                'keywords' => 'plantillas informes personalizados megainformes reportes metricas formulas secciones subsecciones bloques sedes configuracion capas',
+            ],
         ];
 
         // Filtrar items por permisos

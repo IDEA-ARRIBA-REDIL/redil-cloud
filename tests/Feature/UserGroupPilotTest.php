@@ -278,6 +278,28 @@ class UserGroupPilotTest extends TestCase
         $this->assertSame($targetType->id, $user->fresh()->tipo_usuario_id);
     }
 
+    public function test_asignar_sede_usa_la_principal_si_el_grupo_tiene_una_sede_inexistente(): void
+    {
+        DB::table('sedes')->insert(['id' => 7, 'default' => true]);
+        $usuario = $this->createUser();
+        $grupoId = $this->createGroup('Grupo con sede inválida');
+        DB::table('grupos')->where('id', $grupoId)->update(['sede_id' => 99]);
+
+        $usuario->asignarSede($grupoId);
+
+        $this->assertSame(7, $usuario->fresh()->sede_id);
+    }
+
+    public function test_asignar_sede_no_inventa_una_sede_si_no_hay_principal(): void
+    {
+        $usuario = $this->createUser();
+        $grupoId = $this->createGroup('Grupo sin sede');
+
+        $usuario->asignarSede($grupoId);
+
+        $this->assertNull($usuario->fresh()->sede_id);
+    }
+
     private function createUser(array $attributes = []): User
     {
         return User::create(array_merge([
@@ -297,6 +319,11 @@ class UserGroupPilotTest extends TestCase
 
     private function createPilotSchema(): void
     {
+        Schema::create('sedes', function (Blueprint $table): void {
+            $table->id();
+            $table->boolean('default')->default(false);
+        });
+
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
             $table->string('email')->unique();

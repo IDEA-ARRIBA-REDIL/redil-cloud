@@ -84,6 +84,7 @@ class SedeController extends Controller
         }
 
         $sedes = $query->orderBy('sedes.id', 'desc')->paginate(12);
+        $todasLasSedes = Sede::select('id', 'nombre', 'default')->orderBy('nombre', 'asc')->get();
 
         return view(
             'contenido.paginas.sedes.listar',
@@ -94,6 +95,7 @@ class SedeController extends Controller
                 'rolActivo' => $rolActivo,
                 'haySedeDefault' => $haySedeDefault,
                 'filtroDefault' => $filtroDefault,
+                'todasLasSedes' => $todasLasSedes,
             ]
         );
     }
@@ -407,7 +409,7 @@ class SedeController extends Controller
         );
     }
 
-    public function eliminar(Sede $sede)
+    public function eliminar(Request $request, Sede $sede)
     {
         $this->authorize('eliminar', $sede);
 
@@ -415,9 +417,19 @@ class SedeController extends Controller
             return back()->with('error', 'No es posible eliminar la sede configurada por defecto.');
         }
 
-        $sedeDefault = Sede::where('default', true)->first();
-        if (! $sedeDefault) {
-            return back()->with('error', 'No hay una sede por defecto configurada para reasignar los datos.');
+        $sedeDestinoId = $request->filled('sede_destino_id') ? (int) $request->sede_destino_id : null;
+
+        $sedeDestino = null;
+        if ($sedeDestinoId) {
+            $sedeDestino = Sede::where('id', $sedeDestinoId)->where('id', '!=', $sede->id)->first();
+        }
+
+        if (! $sedeDestino) {
+            $sedeDestino = Sede::where('default', true)->where('id', '!=', $sede->id)->first();
+        }
+
+        if (! $sedeDestino) {
+            return back()->with('error', 'No hay una sede válida disponible para reasignar los datos.');
         }
 
         $configuracion = Configuracion::find(1);
@@ -426,10 +438,10 @@ class SedeController extends Controller
             Storage::delete('img/sedes/'.$sede->foto);
         }
 
-        $sede->resetearSede();
+        $sede->resetearSede($sedeDestino->id);
         $sede->delete();
 
-        return redirect()->route('sede.lista')->with('success', 'La sede <b>'.$sede->nombre.'</b> fue eliminada con éxito.');
+        return redirect()->route('sede.lista')->with('success', 'La sede <b>'.$sede->nombre.'</b> fue eliminada con éxito y sus datos fueron trasladados a <b>'.$sedeDestino->nombre.'</b>.');
     }
 
     private function getConsolidacionData(Sede $sede, Request $request): array

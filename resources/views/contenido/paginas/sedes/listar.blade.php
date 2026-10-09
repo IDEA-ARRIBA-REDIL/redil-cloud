@@ -21,29 +21,69 @@ $configData = Helper::appClasses();
 
 @section('page-script')
 <script type="module">
+  const todasLasSedes = @json($todasLasSedes);
+
   $('.confirmacionEliminar').on('click', function ()
   {
     let nombre = $(this).data('nombre');
     let id = $(this).data('id');
 
+    // Filtrar para excluir la sede que se va a eliminar
+    let opcionesSedes = todasLasSedes.filter(s => s.id != id);
+
+    if (opcionesSedes.length === 0) {
+      Swal.fire({
+        title: 'No es posible eliminar',
+        text: 'No hay otra sede disponible para trasladar los miembros y grupos.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+        customClass: {
+          confirmButton: 'btn btn-primary waves-effect waves-light'
+        },
+        buttonsStyling: false
+      });
+      return;
+    }
+
+    let selectHtml = '<div class="text-start mt-3 mb-2">' +
+      '<label class="form-label fw-semibold text-dark mb-1">Selecciona la sede destino para trasladar personas y grupos:</label>' +
+      '<select id="swal-select-sede-destino" class="form-select">';
+
+    opcionesSedes.forEach(s => {
+      let isDefault = s.default ? 'selected' : '';
+      let defaultLabel = s.default ? ' (Sede Principal)' : '';
+      selectHtml += `<option value="${s.id}" ${isDefault}>${s.nombre}${defaultLabel}</option>`;
+    });
+
+    selectHtml += '</select></div>';
+
     Swal.fire({
-      title: "¿Estás seguro que deseas eliminar a <b>"+nombre+"</b>?",
-      html: "Esta acción no es reversible.",
+      title: "¿Estás seguro que deseas eliminar a <b>" + nombre + "</b>?",
+      html: "<p class='text-muted mb-2'>Esta acción reasignará automáticamente todos sus grupos, encargados y miembros a la sede destino:</p>" + selectHtml,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Si, eliminar',
+      confirmButtonText: '<i class="ti ti-trash me-1"></i> Confirmar y Eliminar',
       cancelButtonText: 'Cancelar',
       customClass: {
-        confirmButton: 'btn btn-primary me-3 waves-effect waves-light',
+        confirmButton: 'btn btn-danger me-3 waves-effect waves-light',
         cancelButton: 'btn btn-label-secondary waves-effect waves-light'
       },
-      buttonsStyling: false
+      buttonsStyling: false,
+      preConfirm: () => {
+        const sedeDestinoId = document.getElementById('swal-select-sede-destino').value;
+        if (!sedeDestinoId) {
+          Swal.showValidationMessage('Debes seleccionar una sede destino válida.');
+          return false;
+        }
+        return sedeDestinoId;
+      }
     }).then((result) => {
-      if (result.isConfirmed) {
-        $('#eliminarSede').attr('action',"/sede/"+id+"/eliminar");
+      if (result.isConfirmed && result.value) {
+        $('#sedeDestinoIdInput').val(result.value);
+        $('#eliminarSede').attr('action', "/sede/" + id + "/eliminar");
         $('#eliminarSede').submit();
       }
-    })
+    });
   });
 </script>
 
@@ -128,7 +168,7 @@ $configData = Helper::appClasses();
 
       <div class="card h-100 {{ $sede->default ? 'border border-2 border-primary shadow-sm' : '' }}">
         <div class="position-relative">
-          <img class="card-img-top object-fit-cover" style="height: 130px;" src="{{ $sede->foto_url }}" alt="Card imagen {{ $sede->nombre }}" />    
+          <img class="card-img-top object-fit-cover" style="height: 130px;" src="{{ $sede->foto_url }}" alt="Card imagen {{ $sede->nombre }}" />
         </div>
         <div class="card-header pb-2">
           <div class="d-flex justify-content-between">
@@ -136,7 +176,7 @@ $configData = Helper::appClasses();
               <div class="me-2 mt-1">
                 <div class="d-flex align-items-center gap-2">
                   <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $sede->tipo ? $sede->tipo->nombre : 'No definido'}}</h5>
-                 
+
                 </div>
                 <div class="client-info fw-semibold text-black">{{ $sede->nombre }}</div>
                  @if($sede->default)
@@ -252,6 +292,7 @@ $configData = Helper::appClasses();
 
   <form id="eliminarSede" method="POST" action="">
     @csrf
+    <input type="hidden" name="sede_destino_id" id="sedeDestinoIdInput" value="">
   </form>
 
 

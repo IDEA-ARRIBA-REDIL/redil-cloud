@@ -42,9 +42,12 @@ class Grupo extends Model
 
         static::updating(function (Grupo $grupo) {
             if ($grupo->isDirty('sede_id')) {
+                $sedeAnteriorId = $grupo->getOriginal('sede_id');
+                $existeSedeAnterior = $sedeAnteriorId && Sede::where('id', $sedeAnteriorId)->exists();
+
                 BitacoraSedeGrupo::create([
                     'grupo_id' => $grupo->id,
-                    'sede_id_anterior' => $grupo->getOriginal('sede_id'),
+                    'sede_id_anterior' => $existeSedeAnterior ? $sedeAnteriorId : null,
                     'sede_id_nuevo' => $grupo->sede_id,
                     'autor_id' => auth()->id(),
                 ]);

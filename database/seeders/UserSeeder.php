@@ -108,7 +108,7 @@ class UserSeeder extends Seeder
 
         $usuario3 = \App\Models\User::withTrashed()->firstOrCreate(
             ['email' => 'lider_d@redil.com'],
-            ['id' => 14636,
+            [   'id'=>14636,
                 'pais_id' => 45,
                 'password' => bcrypt('12345678'),
                 'telefono_fijo' => '435354',

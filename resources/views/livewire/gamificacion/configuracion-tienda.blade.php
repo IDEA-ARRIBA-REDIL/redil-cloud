@@ -260,7 +260,7 @@
           </div>
 
           <div class="col-12 col-lg-2 text-lg-end">
-            <button type="button" class="btn btn-outline-secondary w-100" wire:click="limpiarFiltrosSolicitudes" title="Restablecer filtros a valores por defecto">
+            <button type="button" class="btn btn-outline-secondary rounded-pill w-100" wire:click="limpiarFiltrosSolicitudes" title="Restablecer filtros a valores por defecto">
               <i class="ti ti-filter-off me-1"></i> Limpiar
             </button>
           </div>
@@ -383,9 +383,13 @@
                         </ul>
                       </div>
                     @else
-                      <span class="text-muted small d-inline-flex align-items-center gap-1 fw-medium">
-                        <i class="ti ti-ban fs-6"></i> Cerrado
-                      </span>
+                       <div class="dropdown d-inline-block">
+                        <button class="btn disabled btn-sm btn-icon btn-text-secondary rounded-pill dropdown-toggle hide-arrow shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Gestionar solicitud">
+                          <i class="ti ti-dots fs-5"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        </ul>
+                      </div>
                     @endif
                   </td>
                 </tr>
@@ -551,7 +555,7 @@
 
           <div class="col-12 col-sm-6 col-lg-3 text-lg-end">
             @if(!empty($busquedaProductos) || !empty($filtroTipoProducto))
-              <button type="button" class="btn btn-outline-secondary w-100" wire:click="limpiarFiltrosProductos">
+              <button type="button" class="btn btn-outline-secondary rounded-pill w-100" wire:click="limpiarFiltrosProductos">
                 <i class="ti ti-filter-off me-1"></i> Limpiar filtros
               </button>
             @endif
@@ -870,7 +874,7 @@
             <!-- Subir Foto del Producto -->
             <div class="mb-2" wire:ignore>
               <label class="form-label text-dark small fw-semibold">Foto del producto</label>
-              
+
               <!-- Input oculto para selección de foto -->
               <input type="file" id="inlineCropperUploadProducto" class="d-none" accept="image/png,image/jpeg,image/webp" onchange="window.handleCropperProductoChange(this, 'inlineCropperContainerProducto', 'inlineCroppingImageProducto')">
 
@@ -958,7 +962,7 @@
             <!-- Subir Foto / Portada del Producto Digital -->
             <div class="mb-2" wire:ignore>
               <label class="form-label text-dark small fw-semibold">Foto o Portada del Producto</label>
-              
+
               <!-- Input oculto para selección de foto digital -->
               <input type="file" id="inlineCropperUploadProductoDigital" class="d-none" accept="image/png,image/jpeg,image/webp" onchange="window.handleCropperProductoChange(this, 'inlineCropperContainerProductoDigital', 'inlineCroppingImageProductoDigital')">
 

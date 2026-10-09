@@ -1,16 +1,17 @@
 # Protocolo Maestro: Despliegue Git y Conexión AWS EC2 — `agenteAwsGit`
 
-Este archivo es una guía y protocolo operativo autosuficiente. Si eres un agente de IA en una nueva sesión o un desarrollador trabajando en este proyecto, **lee este documento para entender cómo realizar cambios en local, subirlos a GitHub y desplegarlos inmediatamente en el servidor AWS EC2**.
+Este archivo es una guía y protocolo operativo autosuficiente. Si eres un agente de IA en una nueva sesión o un desarrollador trabajando en este proyecto, **lee este documento para entender cómo realizar cambios en local, probarlos en local, verificarlos en el cPanel compartido, publicarlos en GitHub y finalmente actualizar el servidor AWS EC2**.
 
 ---
 
 ## 1. Arquitectura y Parámetros del Entorno
 
-El flujo de trabajo conecta el desarrollo en tu máquina local con el repositorio remoto y el servidor de producción/pruebas:
+El flujo vigente (2026-10-09) conecta cuatro etapas independientes. Local tiene aplicación y BD propias; cPanel es compartido con otro desarrollador y EC2 pertenece al cliente. La regla general se documenta en `ARCHITECTURE.md`, sección 10.0:
 
 ```
-[Entorno Local (Mac)] → [rama de integración en GitHub] → [revisión y merge a main]
-                                                        → [preflight y despliegue controlado en EC2]
+[Local + BD local] → [pruebas locales] → [SFTP a cPanel compartido]
+                   → [verificación en cPanel] → [rama de integración en GitHub]
+                   → [revisión y merge a main] → [preflight y actualización en EC2]
 ```
 
 ### Tabla de Configuración de Infraestructura
@@ -54,6 +55,15 @@ El responsable autorizó agregar las columnas y tablas nuevas y los seis permiso
 - `sudo -n -u www-data php artisan tenants:seed --class=AgregarPermisosConfiguracionSeeder --tenants=crecer --force --no-interaction` ejecuta únicamente ese seeder delimitado: crea los seis permisos que faltan y los asigna a los roles existentes `Super Administrador` y `Super Administrador Prueba`, sin sincronizar ni retirar otros permisos. Ejecutarlo como `www-data` en EC2: el archivo de caché de Spatie para `crecer` pertenece a ese usuario y una ejecución como `ubuntu` puede dejar permisos nuevos en la base de datos pero invisibles para la aplicación. Comprobar que la caché tenant se limpió y que `hasPermissionTo()` reconoce cada permiso en un proceso nuevo. No ejecutar `tenants:seed` sin `--class`, `db:seed`, `UserSeeder`, `TenantDatabaseSeeder`, `PermisoSeeder` ni `NuevoTenantSeeder` en esta liberación.
 - Antes de activar código que consulta las columnas/tablas nuevas, publicar solo las tres migraciones, simularlas con `--pretend`, ejecutarlas para `crecer`, comprobar esquema y número de usuarios, y después integrar el código funcional. No ejecutar otros seeders, comandos de jerarquía de grupos ni trabajos de informes por el mero despliegue.
 
+### Procedimiento recurrente para cambios de permisos de un tenant
+
+1. **Identificar el destino antes de escribir**: comprobar en la tabla central de dominios qué tenant atiende la URL y en ese tenant verificar `id`, `name`, `titulo` y `guard_name = web` de cada permiso, además de los nombres e ID de los roles receptores. El ID del rol que se está editando en pantalla no necesariamente es el rol activo del operador. En Manantial, `crecer.soymanantial.com` corresponde a `crecer`; no usar otro dominio como prueba de salud de ese tenant.
+2. **Preparar un cambio idempotente y limitado**: crear/buscar cada permiso por `name` + `guard_name`, y usar `titulo` solo como etiqueta visible. Asignar mediante un seeder específico a los roles existentes acordados, sin crear roles implícitamente ni usar `syncPermissions()` para reemplazar sus asignaciones. Probar la segunda ejecución del seeder y comprobar que usuarios, permisos ajenos y asignaciones previas se conservan. No ejecutar `PermisoSeeder`, `UserSeeder`, `TenantDatabaseSeeder` ni `tenants:seed` sin `--class` por un cambio puntual.
+3. **Preflight y respaldo**: revisar el diff y los permisos actualmente existentes en EC2; guardar un respaldo actualizado del esquema afectado y validar `pg_restore --list`. Registrar conteos de usuarios, permisos y asignaciones de roles antes/después. Si también hay migraciones, simular exactamente el tenant afectado con `tenants:migrate --tenants=crecer --pretend --no-interaction` antes de aplicar las autorizadas.
+4. **Ejecutar como propietario de la caché**: en este EC2 el caché de Spatie es de archivos y la entrada `spatie.permission.cache.tenant.crecer` pertenece a `www-data`. Ejecutar el seeder delimitado como `www-data` desde `/var/www/html/redil-cloud`, por ejemplo `sudo -n -u www-data php artisan tenants:seed --tenants=crecer --class=AgregarPermisosConfiguracionSeeder --force --no-interaction`. Ejecutarlo como `ubuntu` puede escribir en PostgreSQL pero dejar intacta la caché. No usar `optimize:clear` ni `permission:cache-reset` sin contexto tenant como sustituto de esta comprobación.
+5. **Verificar en un proceso nuevo de `www-data`**: comprobar que la clave del `PermissionRegistrar` corresponde al tenant, que la cantidad de permisos cacheados coincide con la base de datos y que `hasPermissionTo()` reconoce los permisos en cada rol receptor. Confirmar que el reset de caché se realizó; si falla por propiedad/permisos del archivo, corregir el usuario de ejecución antes de repetir. Si cambió una vista Blade, compilarla como `www-data` y comprobar la pantalla autenticada con el usuario responsable.
+6. **Resolver etiquetas duplicadas sin borrar a ciegas**: la vista «Otros Permisos» lista filas de `permissions`, y dos `name` distintos pueden compartir un mismo `titulo`. Comparar `id`, `name`, `guard_name`, asignaciones en `role_has_permissions` y `model_has_permissions`, y referencias en el código. Borrar solo con autorización explícita, respaldo reciente y validación transaccional del ID/nombre exactos; después verificar que el permiso válido y la caché permanezcan correctos. El 2026-10-06 se eliminó solo el ID 491 de `crecer` (nombre erróneo igual a un comando Artisan, sin asignaciones); se conservó el ID 493 `gamificacion.habilitar_gamificacion`. Respaldo previo: `/home/ubuntu/redil-deploy-backups/crecer-before-permission-491-20261006-201756.dump`.
+
 ---
 
 ## 3. Flujo de Trabajo Paso a Paso
@@ -72,6 +82,14 @@ vendor/bin/pint --dirty --format agent
 # 3. Inspeccionar cambios y comprobar sintaxis/pruebas pertinentes
 git diff path/al/archivo.php
 ```
+
+---
+
+### Paso 1.1: Promoción y verificación en cPanel compartido
+
+Antes de publicar el lote para EC2, completar las pruebas locales y promover solo sus archivos elegibles a cPanel usando el perfil de `.vscode/sftp.json` y las comprobaciones de `ARCHITECTURE.md`, sección 10.1. Comparar el estado remoto con su referencia, preservar cambios del compañero, respaldar los archivos reemplazados y verificar la transferencia. No copiar `.env`, credenciales, BD, dependencias ni archivos de usuarios entre ambientes.
+
+Verificar en cPanel el flujo afectado con el tenant y rol adecuados. Si falla, corregir localmente, repetir las pruebas y volver a verificar en cPanel. Registrar el contenido exacto aprobado; la rama publicada debe corresponder a ese lote. No avanzar a la entrega por GitHub ni a EC2 basándose solo en que SFTP terminó correctamente. Las operaciones Git y de EC2 conservan sus autorizaciones específicas; esta guía no las dispara automáticamente.
 
 ---
 

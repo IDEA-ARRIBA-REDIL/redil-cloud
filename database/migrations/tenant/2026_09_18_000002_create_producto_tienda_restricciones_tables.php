@@ -70,5 +70,14 @@ return new class extends Migration
         Schema::dropIfExists('producto_tienda_rangos_edad');
         Schema::dropIfExists('producto_tienda_estados_civiles');
         Schema::dropIfExists('producto_tienda_sedes');
+
+        Schema::table('productos_tienda', function (Blueprint $table) {
+            if (Schema::hasColumn('productos_tienda', 'genero')) {
+                $table->dropColumn('genero');
+            }
+            if (Schema::hasColumn('productos_tienda', 'visible_todos')) {
+                $table->dropColumn('visible_todos');
+            }
+        });
     }
 };

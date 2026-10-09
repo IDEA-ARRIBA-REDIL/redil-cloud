@@ -5,8 +5,8 @@ namespace App\Livewire\InformesPersonalizados;
 use App\Enums\EstadoInformeCola;
 use App\Jobs\GenerarMegaInformeJob;
 use App\Models\Grupo;
+use App\Models\Informe;
 use App\Models\InformeEnCola;
-use App\Models\InformePersonalizado;
 use App\Models\TipoGrupo;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -15,7 +15,7 @@ class MegaInformeComponent extends Component
 {
     public int $informeId;
 
-    public ?InformePersonalizado $informe = null;
+    public ?Informe $informe = null;
 
     // Campos del formulario
     public ?int $grupo_id = null;
@@ -33,7 +33,7 @@ class MegaInformeComponent extends Component
     public function mount(int $informeId): void
     {
         $this->informeId = $informeId;
-        $this->informe = InformePersonalizado::with(['secciones.subsecciones.items', 'bloques'])
+        $this->informe = Informe::with(['secciones.subsecciones.items', 'bloques'])
             ->findOrFail($informeId);
 
         $this->year = (int) date('Y');
@@ -76,6 +76,7 @@ class MegaInformeComponent extends Component
         $this->validate();
 
         $informeEnCola = InformeEnCola::create([
+            'informe_id' => $this->informeId,
             'informe_personalizado_id' => $this->informeId,
             'grupo_id' => $this->grupo_id,
             'agrupar_por_tipo_grupo_id' => $this->agrupar_por_tipo_grupo_id,
@@ -102,7 +103,10 @@ class MegaInformeComponent extends Component
             ->orderBy('orden', 'asc')
             ->get();
 
-        $ultimosInformes = InformeEnCola::where('informe_personalizado_id', $this->informeId)
+        $ultimosInformes = InformeEnCola::where(function ($q) {
+            $q->where('informe_id', $this->informeId)
+                ->orWhere('informe_personalizado_id', $this->informeId);
+        })
             ->where('usuario_creacion_id', auth()->id())
             ->with(['grupo', 'tipoGrupoAgrupacion'])
             ->latest()

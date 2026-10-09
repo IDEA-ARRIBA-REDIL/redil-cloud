@@ -31,9 +31,18 @@ $configData = Helper::appClasses();
                     <h2 class="text-black fw-bold mb-0">Inscripción exitosa</h2>
 
                     @if(isset($mensajeTipo) && $mensajeTipo== 1)
-                    <p class="text-black mt-1 mb-5"><b>{{ $usuario->nombre(3) }}</b> fue creado de manera exitosa. ¿Deseas agregar otro hijo?
+                    <p class="text-black mt-1 mb-4"><b>{{ $usuario->nombre(3) }}</b> fue creado de manera exitosa. ¿Deseas agregar otro hijo?
                     </p>
-                    <div class="col-12 d-grid gap-5 d-sm-flex justify-content-center ">
+
+                    @if(isset($formulario) && isset($usuario))
+                    <div class="col-12 mb-4 d-flex justify-content-center">
+                      <a href="{{ route('usuario.descargarTerminosMenor', ['usuario' => $usuario->id, 'formulario' => $formulario->id]) }}" class="btn btn-outline-primary rounded-pill px-5 py-2">
+                        <i class="ti ti-file-download me-1"></i> Descargar Términos y Condiciones (PDF)
+                      </a>
+                    </div>
+                    @endif
+
+                    <div class="col-12 d-grid gap-3 d-sm-flex justify-content-center ">
                       <a href="{{ url()->previous() }}" type="button" class="btn btn-primary rounded-pill px-7 py-2" >
                         <span class="align-middle me-sm-1 me-0 ">Sí, crear otro hijo</span>
                       </a>

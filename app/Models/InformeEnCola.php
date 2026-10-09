@@ -13,20 +13,7 @@ class InformeEnCola extends Model
 
     protected $table = 'informes_en_cola';
 
-    protected $fillable = [
-        'informe_personalizado_id',
-        'grupo_id',
-        'agrupar_por_tipo_grupo_id',
-        'year',
-        'periodo',
-        'semana',
-        'email',
-        'usuario_creacion_id',
-        'nombre_archivo',
-        'estado',
-        'error_message',
-        'tiempo_ejecucion_segundos',
-    ];
+    protected $guarded = [];
 
     protected function casts(): array
     {
@@ -37,9 +24,14 @@ class InformeEnCola extends Model
         ];
     }
 
+    public function informe(): BelongsTo
+    {
+        return $this->belongsTo(Informe::class, 'informe_id');
+    }
+
     public function informePersonalizado(): BelongsTo
     {
-        return $this->belongsTo(InformePersonalizado::class, 'informe_personalizado_id');
+        return $this->informe();
     }
 
     public function grupo(): BelongsTo

@@ -13,15 +13,16 @@ class SeccionInforme extends Model
 
     protected $table = 'secciones_informes';
 
-    protected $fillable = [
-        'informe_personalizado_id',
-        'nombre',
-        'orden',
-    ];
+    protected $guarded = [];
+
+    public function informe(): BelongsTo
+    {
+        return $this->belongsTo(Informe::class, 'informe_id');
+    }
 
     public function informePersonalizado(): BelongsTo
     {
-        return $this->belongsTo(InformePersonalizado::class, 'informe_personalizado_id');
+        return $this->informe();
     }
 
     public function subsecciones(): HasMany

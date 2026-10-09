@@ -257,3 +257,7 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - To filter on a particular test name: `php artisan test --compact --filter=testName` (recommended after making a change to a related file).
 
 </laravel-boost-guidelines>
+
+## Flujo de entornos vigente
+
+Antes de probar, sincronizar o desplegar, consultar `ARCHITECTURE.md`, secciones 10.0 y 10.1, y `agenteAwsGit.md` para EC2. El flujo vigente es local con BD independiente → pruebas locales → cPanel compartido por SFTP → verificación en cPanel → publicación/revisión en GitHub → actualización/verificación en EC2 del cliente. Esta regla sustituye las instrucciones antiguas que restringían el Mac a edición o indicaban subir automáticamente al terminar. No saltar etapas ni atribuir resultados de un ambiente a otro; conservar las autorizaciones específicas de Git, datos y despliegue.

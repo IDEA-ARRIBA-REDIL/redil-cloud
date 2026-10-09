@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Models\BloqueInforme;
 use App\Models\Grupo;
 use App\Models\GrupoDeGrupo;
+use App\Models\Informe;
 use App\Models\InformeEnCola;
-use App\Models\InformePersonalizado;
 use App\Models\User;
 use Carbon\Carbon;
 use DateTime;
@@ -24,12 +24,13 @@ class MegaInformeService
     /**
      * Procesa la generación del Megainforme a partir de un registro de InformeEnCola.
      *
-     * @return array{tablaHtml: string, nombreArchivo: string, informe: InformePersonalizado}
+     * @return array{tablaHtml: string, nombreArchivo: string, informe: Informe}
      */
     public function procesar(InformeEnCola $informeEnCola): array
     {
-        $informe = InformePersonalizado::with(['secciones.subsecciones.items', 'bloques'])
-            ->findOrFail($informeEnCola->informe_personalizado_id);
+        $informeId = $informeEnCola->informe_id;
+        $informe = Informe::with(['secciones.subsecciones.items', 'bloques'])
+            ->findOrFail($informeId);
 
         $anio = (int) $informeEnCola->year;
         $rango = (string) $informeEnCola->periodo;
@@ -564,7 +565,7 @@ class MegaInformeService
      * Construye los 4 niveles de cabecera HTML del Megainforme.
      */
     protected function construirThead(
-        InformePersonalizado $informe,
+        Informe $informe,
         string $thSoloMeses,
         int $colspanPorMeses,
         string $thSemanas,

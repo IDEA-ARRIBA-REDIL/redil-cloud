@@ -51,7 +51,7 @@
                                 <div class="col-6 col-md-3 col-lg-4 mb-4" wire:key="permiso-{{ $permiso->id }}">
                                     <div class="form-label mb-2">
                                         {{ str_replace('_', ' ', $permiso->titulo) }}
-                                        @if(isset($rolActivoPermissionIds[$permiso->id]))
+                                        @if($rolActivo && $rolActivo->hasPermissionTo($permiso->name))
                                             <i class="ti ti-shield-check text-success ms-1" title="Tu rol activo ya tiene este permiso"></i>
                                         @endif
                                     </div>
