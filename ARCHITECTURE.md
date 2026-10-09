@@ -356,13 +356,45 @@ Los agentes de documentación están en `.agent/workflows/`:
 - **Valkey** para cache (Redis fork)
 - **Cloudflare R2** para archivos estáticos
 
+### 10.0. Flujo vigente de desarrollo y promoción (2026-10-09)
+
+**Instrucción del responsable:** el computador actual tiene un entorno de desarrollo completo, con aplicación y base de datos locales. El flujo de promoción es secuencial:
+
+```text
+Local + BD local → pruebas locales aprobadas
+                 → cPanel compartido vía SFTP → verificación en cPanel
+                 → publicación del lote verificado en GitHub
+                 → EC2 del cliente mediante git pull --ff-only → verificación final
+```
+
+| Entorno | Propósito | Cómo recibe cambios |
+|---|---|---|
+| Local (`/Users/m/Desktop/REDIL-CLOUD`) | Implementación y pruebas con BD local independiente | Edición local; pruebas pertinentes antes de promover |
+| cPanel de desarrollo compartido | Integración y pruebas con el compañero | SFTP delimitado desde el perfil local `.vscode/sftp.json` |
+| GitHub | Historial y versión revisada que se entrega al cliente | Commit/publicación del lote que pasó local y cPanel; revisión e integración en `main` |
+| EC2 del cliente | Aplicación del cliente; no es un entorno de pruebas libre | Actualización desde el repositorio según `agenteAwsGit.md` |
+
+**Precedencia:** esta instrucción sustituye la afirmación de la sección 7 de `.agent/skills/base-desarrollo/SKILL.md` de que el Mac solo sirve para editar y que todas las pruebas ocurren en remoto. También sustituye la subida automática al terminar una implementación prevista en la sección 10.1: primero validar localmente y luego promover el lote a cPanel cuando corresponda a la etapa solicitada. Las restricciones sobre secretos, datos, cambios ajenos y operaciones remotas siguen vigentes.
+
+#### Separación y puertas de promoción
+
+1. **Local:** identificar el lote y los cambios previos; comprobar que la aplicación, pruebas y herramientas de Boost apuntan al entorno local antes de ejecutar operaciones sobre datos. Usar BD, archivos, cachés y colas propios del entorno. La autorización para pruebas locales no autoriza migraciones destructivas, seeders generales ni uso de credenciales de clientes. Las versiones detectadas localmente no acreditan las de cPanel o EC2; comprobar compatibilidad antes de promover.
+2. **cPanel compartido:** después de las pruebas locales, comparar cada archivo del lote con su referencia remota, conservar respaldos y verificar el resultado de SFTP según 10.1. Si aparece trabajo del compañero o una diferencia sin explicación, detener ese archivo y reconciliarlo antes de subir. No sincronizar toda la carpeta ni reemplazar configuraciones/BD del servidor por las locales. La subida de un archivo no demuestra que la funcionalidad haya pasado pruebas allí.
+3. **Verificación en cPanel:** comprobar el flujo afectado con el tenant y rol previstos, errores y dependencias operativas pertinentes. Si falla, corregir en local, repetir las pruebas y volver a promover únicamente los archivos corregidos. No dar por aprobado cPanel con evidencia exclusivamente local.
+4. **GitHub:** publicar solo el lote probado y revisado, sin secretos ni archivos propios de los ambientes. Los commits locales usados para seguimiento no equivalen a una liberación aprobada. Respetar las reglas de autorización Git; esta documentación no ejecuta ni autoriza por sí sola commits, pushes o merges. Registrar qué revisión/contenido pasó cPanel y asegurar que coincide con el lote publicado; cualquier cambio posterior exige revalidación.
+5. **EC2:** únicamente después de aprobar cPanel y publicar/revisar el lote en GitHub, seguir el preflight de `agenteAwsGit.md`, preservar personalizaciones del cliente, actualizar sin forzar y verificar el commit aplicado y el flujo afectado. Migraciones, seeders, cachés, assets y workers requieren el plan específico de esa entrega; no se ejecutan por defecto al hacer `pull`.
+
+Al entregar una tarea, indicar por separado: archivos del lote, pruebas locales, subida y verificación de cPanel, revisión publicada en GitHub, y actualización/verificación de EC2. Las etapas no realizadas se reportan como pendientes; una prueba local no acredita despliegue.
+
+Laravel Cloud conserva su planificación independiente en `knowledge/delivery/DESPLIEGUEREDILCLOUD.md`; no sustituye este circuito actual con cPanel y EC2. Esta actualización es documental y no implica conexiones ni despliegues.
+
 ### 10.1. Sincronización asistida SFTP desde el equipo local
 
-**Instrucción del responsable (2026-09-28):** al terminar una tarea de implementación autorizada, el agente debe subir sus archivos elegibles al cPanel de desarrollo mediante SFTP directo, sin exigir abrirlos y guardarlos uno por uno en Antigravity. No es necesario controlar el plugin del IDE. Esta alternativa sustituye el guardado manual descrito en la sección 7.2 de `.agent/skills/base-desarrollo/SKILL.md` únicamente cuando se cumplen las condiciones siguientes; no habilita comandos remotos ni modifica las demás restricciones del proyecto.
+**Instrucción del responsable (2026-09-28), subordinada al flujo actualizado de 10.0:** después de validar localmente y alcanzar la etapa de promoción a cPanel, el agente puede subir los archivos elegibles del lote mediante SFTP directo, sin exigir abrirlos y guardarlos uno por uno en Antigravity. No es necesario controlar el plugin del IDE. Esta alternativa sustituye el guardado manual descrito en la sección 7.2 de `.agent/skills/base-desarrollo/SKILL.md` únicamente cuando se cumplen las condiciones siguientes; no habilita comandos remotos ni modifica las demás restricciones del proyecto.
 
 #### Condiciones de activación
 
-- Ejecutarse en el Mac local del responsable, con usuario de sistema `macosxdarwin` y raíz real del proyecto `/Users/macosxdarwin/Desktop/REDIL-CLOUD`. Comprobar el entorno de ejecución real, no inferirlo de una ruta mencionada en el chat. Una copia en otro equipo, contenedor, worktree, CI o sesión alojada en un servidor no queda autorizada por esta regla. Ante dudas, preguntar.
+- Ejecutarse en el computador local del responsable identificado para esta tarea. La raíz actual es `/Users/m/Desktop/REDIL-CLOUD`; reemplaza la referencia anterior a `/Users/macosxdarwin/Desktop/REDIL-CLOUD`. Comprobar el entorno real y el perfil SFTP antes de promover. Una copia en un contenedor, worktree, CI, servidor u otro equipo no hereda automáticamente la autorización de subida.
 - Leer las credenciales únicamente desde `.vscode/sftp.json` local, sin imprimirlas, copiarlas a documentación ni incluirlas en el lote. El destino autorizado es el cPanel de desarrollo de la cuenta `redil2024`, raíz `/home/redil2024/public_html`, no Laravel Cloud ni infraestructura de clientes. Si el perfil, host, cuenta o destino cambia respecto del destino previamente verificado, solicitar confirmación antes de escribir.
 - Validar la identidad SSH contra una clave de host conocida. No aceptar automáticamente claves nuevas o modificadas. Respetar las aprobaciones de red y permisos que solicite la herramienta; esta instrucción no las omite.
 - La instrucción aplica durante tareas de implementación, no como vigilancia permanente de archivos ni en consultas, diagnósticos o tareas exclusivamente documentales. Si el usuario pide trabajar solo en local o no desplegar, no subir nada.

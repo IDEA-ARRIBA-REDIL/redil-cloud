@@ -131,8 +131,8 @@
     }
 
     .insignia-img-thumb {
-      width: 68px;
-      height: 68px;
+      width: 100px;
+      height: 100px;
       border-radius: 14px;
       object-fit: cover;
       flex-shrink: 0;
@@ -483,7 +483,7 @@
       font-weight: 500;
       white-space: nowrap;
     }
- 
+
 
     .historial-puntos-pos {
       color: #16a34a;
@@ -509,7 +509,7 @@
         @if($usuario->foto == "default-m.png" || $usuario->foto == "default-f.png" || !$usuario->foto)
           <div class="avatar avatar-xl">
             <span class="avatar-initial rounded-circle border border-2 border-white bg-danger text-white fw-bold fs-4">
-              {{ $usuario->inicialesNombre() }} 
+              {{ $usuario->inicialesNombre() }}
             </span>
           </div>
         @else
@@ -599,7 +599,7 @@
                     <div class="flex-grow-1 d-flex flex-column justify-content-between h-100">
                       <div>
                         <h6 class="insignia-title fw-semibold {{ $esBloqueada ? 'text-muted' : '' }} mb-1">{{ $insignia->nombre }}</h6>
-                        <p class="insignia-desc text-muted mb-2">{{ $insignia->descripcion ?: 'Completa los objetivos para desbloquear este logro.' }}</p>
+                        <p class="insignia-desc text-black mb-2">{{ $insignia->descripcion ?: 'Completa los objetivos para desbloquear este logro.' }}</p>
                       </div>
 
                       @if($esCompletada)
@@ -608,14 +608,14 @@
                           <span>Obtenida</span>
                         </div>
                       @elseif($esEnProgreso)
-                        <div class="w-100 mt-auto" style="max-width: 240px;">
+                        <div class="w-100 mt-auto">
                           <div class="progress gamificacion-progress mb-1">
                             <div class="progress-bar gamificacion-progress-bar" role="progressbar" style="width: {{ $porcentaje }}%" aria-valuenow="{{ $porcentaje }}" aria-valuemin="0" aria-valuemax="100"></div>
                           </div>
-                          <div class="text-muted fw-semibold" style="font-size: 0.8rem;">{{ $progreso->progreso_actual }} / {{ $metaCantidad }}</div>
+                          <div class="text-black fw-semibold" style="font-size: 0.8rem;">{{ $progreso->progreso_actual }} / {{ $metaCantidad }}</div>
                         </div>
                       @else
-                        <div class="text-muted insignia-status-badge d-flex align-items-center gap-1 mt-auto">
+                        <div class="text-black insignia-status-badge d-flex align-items-center gap-1 mt-auto">
                           <i class="ti ti-lock fs-6"></i>
                           <span>Bloqueada</span>
                         </div>
@@ -627,7 +627,7 @@
                 <!-- Card Vertical para Insignia con Ícono -->
                 <div class="col-12 col-md-6 col-lg-4">
                   <div class="insignia-clean-card text-center d-flex flex-column align-items-center justify-content-center h-100 {{ $esBloqueada ? 'is-locked-card' : '' }}">
-                    
+
                     <!-- Ícono de la Insignia -->
                     @if($esBloqueada)
                       <div class="insignia-icon-circle is-locked mb-2">
@@ -636,7 +636,7 @@
                     @else
                       <div class="insignia-icon-circle mb-2" style="background-color: {{ ($insignia->icono_color ?: '#166534') . '20' }}; color: {{ $insignia->icono_color ?: '#166534' }};">
                         <i class="{{ $insignia->icono_completo }}"></i>
-                      </div> 
+                      </div>
                     @endif
 
                     <!-- Nombre y Descripción -->
@@ -663,7 +663,7 @@
                       </div>
                     @endif
 
-                  </div> 
+                  </div>
                 </div>
               @endif
             @endforeach
@@ -725,7 +725,7 @@
               @endphp
 
               <div class="mision-row-card {{ $esCompletada ? 'is-completada' : '' }}" wire:key="mision-{{ $mision['id'] }}">
-                
+
                 <!-- Columna Izquierda: Ícono y Textos de la Misión -->
                 <div class="d-flex align-items-start gap-3 flex-grow-1">
                   <!-- Ícono Circular Verde Suave -->
@@ -831,17 +831,17 @@
                 $costo = $producto->costo_puntos;
                 $misPuntos = $usuario->puntos;
                 $diferencia = max(0, $costo - $misPuntos);
-                
+
                 $conteoCanjes = $canjesPorProducto[$producto->id] ?? 0;
                 $alcanzoLimite = ($producto->limite_por_usuario !== null) && ($conteoCanjes >= $producto->limite_por_usuario);
                 $sinStock = ($producto->tipo === 'fisico') && ($producto->stock !== null) && ($producto->stock <= 0);
-                
+
                 $esCanjeable = ($misPuntos >= $costo) && !$sinStock && !$alcanzoLimite;
               @endphp
 
               <div class="col-12 col-md-6" wire:key="prod-canje-{{ $producto->id }}">
                 <div class="tienda-producto-card {{ $esCanjeable ? 'is-canjeable' : '' }}">
-                  
+
                   <!-- Cabecera de la Tarjeta (Imagen o Ícono Centrado) -->
                   <div class="tienda-producto-header">
                     @if($producto->imagen_ruta)
@@ -914,7 +914,7 @@
       <div>
         <!-- Cabecera de Historial con Sub-Pestañas y Filtro de Fecha -->
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-          
+
           <!-- Filtro de Rango de Fechas (Flatpickr: por defecto 90 días) -->
           <div class="d-flex align-items-center gap-2">
             <div class="input-group input-group-sm" style="max-width: 250px;" wire:ignore>
@@ -1003,7 +1003,7 @@
                     @php
                       $esHoy = $tx->created_at->isToday();
                       $esAyer = $tx->created_at->isYesterday();
-                      
+
                       if ($esHoy) {
                           $fechaFormato = 'Hoy, ' . $tx->created_at->format('h:i A');
                       } elseif ($esAyer) {
@@ -1160,7 +1160,7 @@
     // SweetAlert2: Modal para Confirmar Canje
     $wire.on('confirmarCanjeSwal', (data) => {
       const payload = Array.isArray(data) ? data[0] : data;
-      
+
       let htmlContent = `
         <div class="text-start py-2">
           <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded bg-light border">
@@ -1221,7 +1221,7 @@
       let htmlSuccess = `
         <div class="py-2">
           <p class="text-muted mb-3">Tu solicitud de canje por <strong>"${payload.nombre}"</strong> ha sido procesada con éxito.</p>
-          
+
           <div class="p-3 bg-light rounded-3 border mb-3 text-center">
             <div class="small text-muted mb-1 text-uppercase fw-semibold">Tu Código de Canje</div>
             <div class="fs-3 fw-bold text-primary font-monospace tracking-wide">${payload.codigo}</div>
@@ -1298,11 +1298,11 @@
           <button type="button" class="btn btn-icon btn-dark rounded-circle position-absolute top-0 end-0 m-3 shadow" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1056; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255,255,255,0.2);">
             <i class="ti ti-x text-white fs-5"></i>
           </button>
-          
+
           <div class="d-flex align-items-center justify-content-center p-2 mb-2" style="min-height: 250px;">
             <img id="modalImagenSrc" src="" alt="Producto" class="img-fluid rounded-3 shadow-sm" style="max-height: 70vh; max-width: 100%; object-fit: contain; background: #ffffff;">
           </div>
-          
+
           <h6 id="modalImagenTitulo" class="text-white fw-bold mb-0 mt-2"></h6>
         </div>
       </div>

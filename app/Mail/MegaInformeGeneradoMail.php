@@ -4,8 +4,8 @@ namespace App\Mail;
 
 use App\Models\Configuracion;
 use App\Models\Iglesia;
+use App\Models\Informe;
 use App\Models\InformeEnCola;
-use App\Models\InformePersonalizado;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
@@ -19,7 +19,7 @@ class MegaInformeGeneradoMail extends Mailable
 
     public function __construct(
         public readonly InformeEnCola $informeEnCola,
-        public readonly InformePersonalizado $informe,
+        public readonly Informe $informe,
         public readonly string $filePath
     ) {}
 

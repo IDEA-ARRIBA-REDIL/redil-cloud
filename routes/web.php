@@ -40,6 +40,11 @@ foreach ($domains as $index => $domain) {
         // Autenticación de Super Admins
         Route::get('/admin/login', App\Livewire\Central\Auth\AdminLogin::class)->name('admin.login');
 
+        // Redirección amigable por si escriben /login en el dominio central
+        Route::get('/login', function () {
+            return redirect('/admin/login');
+        });
+
         // Panel Privado de Super Admins (Protegido por guard admin y suspensión)
         Route::middleware([\App\Http\Middleware\RevisarSuspensionAdmin::class, 'auth:admin'])->group(function () {
             Route::get('/admin/invitaciones', App\Livewire\Central\GestionarInvitaciones::class)->name('admin.invitaciones');

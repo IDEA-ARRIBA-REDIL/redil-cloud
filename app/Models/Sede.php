@@ -164,38 +164,45 @@ class Sede extends Model
         return $cantidad;
     }
 
-    public function resetearSede()
+    public function resetearSede(?int $sedeDestinoId = null)
     {
-        $sedeDefault = Sede::where('default', true)->first();
+        $sedeDestino = null;
+        if ($sedeDestinoId) {
+            $sedeDestino = Sede::where('id', $sedeDestinoId)->where('id', '!=', $this->id)->first();
+        }
 
-        if (! $sedeDefault) {
+        if (! $sedeDestino) {
+            $sedeDestino = Sede::where('default', true)->where('id', '!=', $this->id)->first();
+        }
+
+        if (! $sedeDestino) {
             return false;
         }
 
-        // Asigno la sede por defecto al grupo principal de la sede si existe
+        // Asigno la sede destino al grupo principal de la sede si existe
         $grupoPrincipal = $this->grupo;
         if ($grupoPrincipal) {
-            $grupoPrincipal->sede_id = $sedeDefault->id;
+            $grupoPrincipal->sede_id = $sedeDestino->id;
             $grupoPrincipal->save();
 
             // Reasignamos los encargados de ese grupo principal
             foreach ($grupoPrincipal->encargados as $encargado) {
-                $encargado->sede_id = $sedeDefault->id;
+                $encargado->sede_id = $sedeDestino->id;
                 $encargado->save();
             }
         }
 
-        // Asigno la sede por defecto a todos los usuarios de la sede
+        // Asigno la sede destino a todos los usuarios de la sede
         $asistentes = $this->usuarios()->select('id', 'sede_id')->get();
         foreach ($asistentes as $asistente) {
-            $asistente->sede_id = $sedeDefault->id;
+            $asistente->sede_id = $sedeDestino->id;
             $asistente->save();
         }
 
-        // Asigno la sede por defecto a todos los grupos de la sede
+        // Asigno la sede destino a todos los grupos de la sede
         $grupos = $this->grupos()->select('id', 'sede_id')->get();
         foreach ($grupos as $grupo) {
-            $grupo->sede_id = $sedeDefault->id;
+            $grupo->sede_id = $sedeDestino->id;
             $grupo->save();
         }
 

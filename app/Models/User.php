@@ -252,9 +252,12 @@ class User extends Authenticatable implements MustVerifyEmail
                 ]);
             }
             if ($user->isDirty('sede_id')) {
+                $sedeAnteriorId = $user->getOriginal('sede_id');
+                $existeSedeAnterior = $sedeAnteriorId && Sede::where('id', $sedeAnteriorId)->exists();
+
                 \App\Models\BitacoraSede::create([
                     'user_id' => $user->id,
-                    'sede_id_anterior' => $user->getOriginal('sede_id'),
+                    'sede_id_anterior' => $existeSedeAnterior ? $sedeAnteriorId : null,
                     'sede_id_nuevo' => $user->sede_id,
                     'autor_id' => auth()->id(),
                 ]);
@@ -1080,29 +1083,35 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function asignarSede($grupo_id = '')
     {
-        if ($grupo_id == '') {
-            // La sede con default TRUE es la sede principal
-            $sedeDefault = Sede::where('default', true)->first();
+        $sedeDefault = Sede::where('default', true)->first();
 
+        if ($grupo_id == '') {
             if (auth()->check()) {
                 $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
-                if (auth()->user()->sede_id) {
+                if (auth()->user()->sede_id && Sede::where('id', auth()->user()->sede_id)->exists()) {
                     $this->sede_id = auth()->user()->sede_id;
                 } else {
-                    $sede = Sede::find($rolActivo->lista_asistentes_sede_id);
+                    $sede = $rolActivo && $rolActivo->lista_asistentes_sede_id ? Sede::find($rolActivo->lista_asistentes_sede_id) : null;
                     $sede
                       ? $this->sede_id = $rolActivo->lista_asistentes_sede_id
-                      : $this->sede_id = $sedeDefault->id;
+                      : $this->sede_id = $sedeDefault ? $sedeDefault->id : null;
                 }
             } else {
-                $this->sede_id = $sedeDefault->id;
+                $this->sede_id = $sedeDefault ? $sedeDefault->id : null;
             }
         } else {
             $grupo = Grupo::find($grupo_id);
-            $grupo
-              ? $this->sede_id = $grupo->sede_id
-              : '';
+            if ($grupo && $grupo->sede_id) {
+                $existeSede = Sede::where('id', $grupo->sede_id)->exists();
+                if ($existeSede) {
+                    $this->sede_id = $grupo->sede_id;
+                } elseif ($sedeDefault) {
+                    $this->sede_id = $sedeDefault->id;
+                }
+            } elseif ($sedeDefault) {
+                $this->sede_id = $sedeDefault->id;
+            }
         }
 
         $this->save();

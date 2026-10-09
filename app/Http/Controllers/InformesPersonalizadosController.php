@@ -7,8 +7,8 @@ use App\Models\CampoExtraGrupo;
 use App\Models\CampoInformeExcel;
 use App\Models\ClasificacionAsistente;
 use App\Models\Grupo;
+use App\Models\Informe;
 use App\Models\InformeEnCola;
-use App\Models\InformePersonalizado;
 use App\Models\ReporteGrupo;
 use App\Models\SemanaDeshabilitada;
 use App\Models\TipoGrupo;
@@ -42,7 +42,7 @@ class InformesPersonalizadosController extends Controller
      */
     public function showMegaInforme(int $id)
     {
-        $informe = InformePersonalizado::findOrFail($id);
+        $informe = Informe::findOrFail($id);
 
         return view('contenido.paginas.informes-personalizados.mega-informe', [
             'informe' => $informe,
@@ -80,7 +80,7 @@ class InformesPersonalizadosController extends Controller
      */
     public function showInformeObreros(int $id)
     {
-        $informePersonalizado = InformePersonalizado::findOrFail($id);
+        $informePersonalizado = Informe::findOrFail($id);
         $tiposDeGrupos = TipoGrupo::select('id', 'nombre')
             ->orderBy('orden', 'asc')
             ->get();
@@ -114,7 +114,7 @@ class InformesPersonalizadosController extends Controller
      */
     public function exportarInformeObreros(Request $request, int $id)
     {
-        $informePersonalizado = InformePersonalizado::findOrFail($id);
+        $informePersonalizado = Informe::findOrFail($id);
 
         // ── 1. Campos de información principal seleccionados ──────────────────
         if ($request->filled('info_principal')) {

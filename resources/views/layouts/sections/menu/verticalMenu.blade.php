@@ -844,16 +844,10 @@
     @endif
 
     @if ($rolActivo->hasPermissionTo('informes.item_informes'))
-        <li class="menu-item">
+        <li class="menu-item {{ request()->routeIs('informe.*') || request()->routeIs('informes.*') ? 'active' : '' }}">
             <a href="{{ route('informe.lista') }}" class="menu-link">
                 <i class="menu-icon tf-icons ti ti-report"></i>
-                <div>Informes </div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('informes-personalizados.*') ? 'active' : '' }}">
-            <a href="{{ route('informes-personalizados.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons ti ti-report-analytics"></i>
-                <div>Informes Personalizados</div>
+                <div>Informes</div>
             </a>
         </li>
     @endif

@@ -1937,6 +1937,88 @@ class UserController extends Controller
         return $pdf->download('Mi QR-'.$usuario->nombre(2).'.pdf');
     }
 
+    public function generarPdfTerminosMenor(User $menor, FormularioUsuario $formulario, ?User $acudiente = null, ?TipoParentesco $tipoParentesco = null)
+    {
+        $configuracion = Configuracion::find(1);
+        $iglesia = Iglesia::find(1);
+
+        if (! $acudiente) {
+            $acudiente = auth()->user() ?? $menor->usuarioCreacion ?? $menor->parientesDelUsuario()->first() ?? $menor->usuariosDelPariente()->first();
+        }
+
+        if (! $tipoParentesco && $acudiente) {
+            // Buscamos qué parentesco tiene el acudiente respecto al menor (ej: Padre/Madre)
+            // 1. Desde la perspectiva del menor hacia el acudiente:
+            $relacionMenor = $menor->parientesDelUsuario()->where('users.id', $acudiente->id)->first();
+            if ($relacionMenor && $relacionMenor->pivot->tipo_pariente_id) {
+                $tipoParentesco = TipoParentesco::find($relacionMenor->pivot->tipo_pariente_id);
+            }
+
+            // 2. Si no se encontró, buscamos desde la perspectiva del acudiente hacia el menor:
+            if (! $tipoParentesco) {
+                $relacionAcudiente = $acudiente->parientesDelUsuario()->where('users.id', $menor->id)->first()
+                                  ?? $acudiente->usuariosDelPariente()->where('users.id', $menor->id)->first();
+                if ($relacionAcudiente && $relacionAcudiente->pivot->tipo_pariente_id) {
+                    $tipoParentesco = TipoParentesco::find($relacionAcudiente->pivot->tipo_pariente_id);
+                }
+            }
+        }
+
+        // Si el tipo de parentesco es la condición de la persona registrada (ej: Hijo/Hija, Nieto/Nieta, Sobrino/Sobrina),
+        // obtenemos el rol recíproco del acudiente (ej: Padre/Madre, Abuelo/Abuela, Tío/Tía).
+        if ($tipoParentesco && $tipoParentesco->relacionado_con) {
+            if ($tipoParentesco->para_menores || in_array($tipoParentesco->id, [2, 4, 9, 12])) {
+                $reciproco = TipoParentesco::find($tipoParentesco->relacionado_con);
+                if ($reciproco) {
+                    $tipoParentesco = $reciproco;
+                }
+            }
+        }
+
+        // Determinar el texto del parentesco según el género del acudiente (ej: "Padre" o "Madre")
+        $nombreParentescoTexto = 'Representante Legal / Acudiente';
+        if ($tipoParentesco) {
+            $nombreParentescoTexto = trim($tipoParentesco->nombre);
+            if ($acudiente && $acudiente->genero === 0 && ! empty($tipoParentesco->nombre_masculino)) {
+                $nombreParentescoTexto = $tipoParentesco->nombre_masculino;
+            } elseif ($acudiente && $acudiente->genero === 1 && ! empty($tipoParentesco->nombre_femenino)) {
+                $nombreParentescoTexto = $tipoParentesco->nombre_femenino;
+            }
+        }
+
+        $pdf = Pdf::loadView('pdf.terminos-condiciones-menor', [
+            'menor' => $menor,
+            'formulario' => $formulario,
+            'acudiente' => $acudiente,
+            'tipoParentesco' => $tipoParentesco,
+            'nombreParentescoTexto' => $nombreParentescoTexto,
+            'configuracion' => $configuracion,
+            'iglesia' => $iglesia,
+            'fechaAceptacion' => now()->format('d/m/Y h:i A'),
+        ]);
+
+        $pdf->setOptions([
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif',
+            'isHtml5ParserEnabled' => true,
+            'fontDir' => sys_get_temp_dir(),
+            'fontCache' => sys_get_temp_dir(),
+            'chroot' => realpath(base_path()),
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf;
+    }
+
+    public function descargarTerminosMenor(User $usuario, FormularioUsuario $formulario)
+    {
+        $pdf = $this->generarPdfTerminosMenor($usuario, $formulario);
+        $nombreLimpio = \Illuminate\Support\Str::slug('Terminos_y_Condiciones_'.$usuario->nombre(3));
+
+        return $pdf->download("{$nombreLimpio}.pdf");
+    }
+
     public function nuevo(FormularioUsuario $formulario, $grupoId = null)
     {
         $configuracion = Configuracion::find(1);
@@ -2760,6 +2842,27 @@ class UserController extends Controller
                         'acepto_terminos_condiciones' => true,
                     ]
                 );
+
+                // Enviar correo al acudiente con los términos y condiciones en PDF
+                try {
+                    if ($parientePrincipal && $parientePrincipal->email && ! str_contains($parientePrincipal->email, 'correopordefecto.com')) {
+                        $pdfInstancia = $this->generarPdfTerminosMenor($usuario, $formulario, $parientePrincipal, $tipoParentescoPariente);
+                        $pdfBinario = $pdfInstancia->output();
+
+                        $mailData = new stdClass;
+                        $mailData->subject = 'Términos y condiciones aceptados - Registro de '.$usuario->nombre(3);
+                        $mailData->nombre = $parientePrincipal->nombre(3);
+                        $mailData->mensaje = 'Has registrado exitosamente a <b>'.$usuario->nombre(3).'</b> como tu persona representada / dependiente. Adjunto a este mensaje encontrarás el certificado oficial con los términos y condiciones aceptados.';
+
+                        $nombreArchivoPdf = 'Terminos_y_Condiciones_'.\Illuminate\Support\Str::slug($usuario->nombre(3)).'.pdf';
+
+                        Mail::to($parientePrincipal->email)->send(
+                            new DefaultMail($mailData, $pdfBinario, $nombreArchivoPdf)
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('Error enviando PDF de términos al acudiente: '.$e->getMessage());
+                }
             }
 
             // Asignamos el tipo ROL al usuario
@@ -2829,6 +2932,7 @@ class UserController extends Controller
                     return view('contenido.paginas.usuario.inscripcion-exitosa', [
                         'mensajeTipo' => $mensajeTipo,
                         'usuario' => $usuario,
+                        'formulario' => $formulario,
                     ]);
                 }
             } else {

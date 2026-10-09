@@ -49,6 +49,7 @@ use App\Http\Controllers\PasosDeCrecimientoController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\PeticionController;
 use App\Http\Controllers\PlanLectorController;
+use App\Http\Controllers\PlantillaInformeController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProfesionController;
@@ -838,6 +839,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/usuario/{formulario?}/{usuario}/geo-asignacion', [UserController::class, 'geoAsignacion'])->name('usuario.geoAsignacion')->withTrashed();
     });
 
+    Route::get('/usuario/{usuario}/{formulario}/descargar-terminos-menor', [UserController::class, 'descargarTerminosMenor'])->name('usuario.descargarTerminosMenor');
+
     Route::post('/usuario/{formulario}/crear', [UserController::class, 'crear'])->name('usuario.crear');
     Route::post('/usuario/{pariente}/eliminar-relacion-familiar', [UserController::class, 'eliminarRelacionFamiliar'])->name('usuario.eliminarRelacionFamiliar');
     Route::post('/usuarios/excel', [UserController::class, 'listadoFinalCsv'])->name('usuario.listadoFinalCsv');
@@ -1371,9 +1374,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/informes/pagos/{informe?}', [InformesController::class, 'informePagos'])->name('informes.pagos');
 
     // Informes Personalizados (Migrados)
-    Route::get('/informes-personalizados', [InformesPersonalizadosController::class, 'index'])->name('informes-personalizados.index');
     Route::get('/informes-personalizados/obreros/{id}', [InformesPersonalizadosController::class, 'showInformeObreros'])->name('informes-personalizados.obreros.show');
     Route::post('/informes-personalizados/obreros/{id}/exportar', [InformesPersonalizadosController::class, 'exportarInformeObreros'])->name('informes-personalizados.obreros.exportar');
+    Route::get('/informes-personalizados/mega-informe/{id}', [InformesPersonalizadosController::class, 'showMegaInforme'])->name('informes-personalizados.mega-informe.show');
+    Route::get('/informes-personalizados/descargar/{id}', [InformesPersonalizadosController::class, 'descargarInformeEnCola'])->name('informes-personalizados.descargar');
 
     // Bloques Clasificacion Asistentes
     Route::get('/bloques-clasificacion', [BloqueClasificacionController::class, 'index'])->name('bloques-clasificacion');
@@ -1406,6 +1410,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/configuracion/estados-civiles', [EstadoCivilController::class, 'index'])->name('estados-civiles.index');
     Route::get('/configuracion/tipo-vinculaciones', [TipoVinculacionController::class, 'index'])->name('tipo-vinculaciones.index');
     Route::get('/configuracion/tipo-identificaciones', [TipoIdentificacionController::class, 'index'])->name('tipo-identificaciones.index');
+    Route::get('/configuracion/plantillas-informes', [PlantillaInformeController::class, 'index'])->name('plantillas-informes.index');
 
     // gestionar lista de reproducción
     Route::get('/gestionar-lista-de-reproduccion', [ListaReproducionController::class, 'listar'])->name('configuracion.gestionar-lista-reproduccion');

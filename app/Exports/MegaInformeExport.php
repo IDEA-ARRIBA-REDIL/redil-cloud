@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\InformePersonalizado;
+use App\Models\Informe;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -12,7 +12,7 @@ class MegaInformeExport implements FromView, ShouldAutoSize, WithTitle
 {
     public function __construct(
         public readonly string $tablaHtml,
-        public readonly InformePersonalizado $informe
+        public readonly Informe $informe
     ) {}
 
     public function view(): View
