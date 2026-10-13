@@ -80,7 +80,28 @@
       return val !== null && val !== undefined ? String(val).trim() : '';
     }
 
+    function normalizeValue(val) {
+      if (val === null || val === undefined) return '';
+      let str = String(val).trim().toLowerCase();
+      // Si equivale a booleano verdadero
+      if (['1', 'true', 'si', 'sí', 'on', 'activo', 'activado'].includes(str)) return '1';
+      // Si equivale a booleano falso
+      if (['0', 'false', 'no', 'off', 'inactivo', 'desactivado'].includes(str)) return '0';
+      return str;
+    }
+
     function evaluateCondition(condicion, valorEsperado, valorActual) {
+      if (condicion === 'vacio') {
+        if (Array.isArray(valorActual)) {
+          return valorActual.length === 0;
+        }
+        if (valorActual === null || valorActual === undefined) {
+          return true;
+        }
+        let norm = normalizeValue(valorActual);
+        return norm === '' || norm === '0';
+      }
+
       if (condicion === 'no_vacio') {
         if (Array.isArray(valorActual)) {
           return valorActual.length > 0;
@@ -88,18 +109,19 @@
         if (valorActual === null || valorActual === undefined) {
           return false;
         }
-        let strVal = String(valorActual).trim();
-        return strVal !== '' && strVal !== '0';
+        let norm = normalizeValue(valorActual);
+        return norm !== '' && norm !== '0';
       }
 
       if (condicion === 'igual_a') {
         if (Array.isArray(valorActual)) {
-          return valorActual.map(String).includes(String(valorEsperado));
+          let normEsperado = normalizeValue(valorEsperado);
+          return valorActual.map(normalizeValue).includes(normEsperado);
         }
         if (valorActual === null || valorActual === undefined) {
           return false;
         }
-        return String(valorActual).trim() === String(valorEsperado).trim();
+        return normalizeValue(valorActual) === normalizeValue(valorEsperado);
       }
 
       return true;
@@ -154,9 +176,20 @@
           let padreEstaInactivo = $padreWrapper.hasClass('campo-dependiente-bloqueado') || $padreWrapper.hasClass('d-none');
           let valorPadre = getFieldValue(dep.padre_name_id);
 
-          let cumple = !padreEstaInactivo && evaluateCondition(dep.condicion, dep.valor_esperado, valorPadre);
+          // Si el padre está inactivo (oculto o bloqueado), el hijo hereda el estado inactivo
+          if (padreEstaInactivo) {
+            setFieldState($hijo, false, dep.accion);
+            return;
+          }
 
-          setFieldState($hijo, cumple, dep.accion);
+          let seCumpleCondicion = evaluateCondition(dep.condicion, dep.valor_esperado, valorPadre);
+
+          // Modelo SI ... ENTONCES ...:
+          // Si la condición se cumple -> se aplica el efecto (ocultar/bloquear) -> habilitar = false
+          // Si la condición NO se cumple -> el campo se mantiene en su estado normal -> habilitar = true
+          let habilitar = !seCumpleCondicion;
+
+          setFieldState($hijo, habilitar, dep.accion);
         });
       }
     }
@@ -169,6 +202,12 @@
     // Escuchar eventos en vivo sobre cualquier input/select/switch
     $(document).on('input change select2:select select2:unselect select2:clear', 'input, select, textarea', function() {
       resolverTodasLasDependencias();
+    });
+
+    // Escuchar clics en botones de pasos (wizard), tabs y switches
+    $(document).on('click', '.btn-next, .btn-prev, .step, [data-bs-toggle="tab"], .switch, .switch-toggle-slider', function() {
+      setTimeout(resolverTodasLasDependencias, 50);
+      setTimeout(resolverTodasLasDependencias, 250);
     });
 
     // Escuchar cambios de Livewire

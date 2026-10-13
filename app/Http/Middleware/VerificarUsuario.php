@@ -15,50 +15,63 @@ class VerificarUsuario
      */
     public function handle(Request $request, Closure $next): Response
     {
-      $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
-      $idUsuario = isset($request->usuario->id) ? $request->usuario->id : $request->usuario;
-      $validado = false;
+        $idUsuario = isset($request->usuario->id) ? $request->usuario->id : $request->usuario;
+        $validado = false;
 
-      if ($rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')) {
-        $personas = auth()
-          ->user()
-          ->discipulos('todos');
+        if ($rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')) {
+            $personas = auth()
+                ->user()
+                ->discipulos('todos');
 
-        $personas = $personas->where('id',$idUsuario);
+            $personas = $personas->where('id', $idUsuario);
 
-        // Si el ID solicitado es el mismo que el del usuario logueado, se valida.
-        if ($idUsuario == auth()->id()) {
-            $validado = true;
-        }else{
-          $validado = $personas->count()>=1 ? true : false;
+            // Si el ID solicitado es el mismo que el del usuario logueado, se valida.
+            if ($idUsuario == auth()->id()) {
+                $validado = true;
+            } else {
+                $validado = $personas->count() >= 1 ? true : false;
+            }
+
         }
 
-      }
+        if ($rolActivo->hasPermissionTo('personas.lista_asistentes_todos')) {
+            $validado = true;
+        }
 
-      if ($rolActivo->hasPermissionTo('personas.lista_asistentes_todos')) {
-        $validado = true;
-      }
+        // Validar también por permisos de consolidación
+        if (! $validado && $rolActivo->hasPermissionTo('consolidacion.lista_consolidacion_solo_ministerio')) {
+            $personasConsolidacion = auth()->user()->consolidacion();
+            if ($idUsuario == auth()->id()) {
+                $validado = true;
+            } else {
+                $validado = $personasConsolidacion->where('id', $idUsuario)->count() >= 1 ? true : false;
+            }
+        }
 
-      // Validar también por permisos de consolidación
-      if (!$validado && $rolActivo->hasPermissionTo('consolidacion.lista_consolidacion_solo_ministerio')) {
-          $personasConsolidacion = auth()->user()->consolidacion();
-          if ($idUsuario == auth()->id()) {
-              $validado = true;
-          } else {
-              $validado = $personasConsolidacion->where('id', $idUsuario)->count() >= 1 ? true : false;
-          }
-      }
+        if (! $validado && $rolActivo->hasPermissionTo('consolidacion.lista_toda_consolidacion')) {
+            $validado = true;
+        }
 
-      if (!$validado && $rolActivo->hasPermissionTo('consolidacion.lista_toda_consolidacion')) {
-          $validado = true;
-      }
+        // Nueva validación para autogestión de perfil
+        if ($rolActivo && $rolActivo->hasPermissionTo('personas.perfil.principal_autogestion') && $idUsuario == auth()->id()) {
+            $validado = true;
+        }
 
-      // Nueva validación para autogestión de perfil
-      if ($rolActivo->hasPermissionTo('personas.perfil.principal_autogestion') && $idUsuario == auth()->id()) {
-          $validado = true;
-      }
+        // Validar si el usuario autenticado es pariente / acudiente del usuario solicitado
+        if (! $validado && auth()->check()) {
+            if ($idUsuario == auth()->id()) {
+                $validado = true;
+            } else {
+                $esPariente = auth()->user()->parientesDelUsuario()->where('users.id', $idUsuario)->exists()
+                           || auth()->user()->usuariosDelPariente()->where('users.id', $idUsuario)->exists();
+                if ($esPariente) {
+                    $validado = true;
+                }
+            }
+        }
 
-      return $validado ? $next($request) : redirect()->route('pagina-no-encontrada');
+        return $validado ? $next($request) : redirect()->route('pagina-no-encontrada');
     }
 }

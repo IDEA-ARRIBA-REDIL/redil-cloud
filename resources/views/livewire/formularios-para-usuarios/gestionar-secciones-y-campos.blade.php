@@ -60,8 +60,14 @@
                     @php
                       $campoPadreObj = \App\Models\CampoFormularioUsuario::find($campo->pivot->depende_de_campo_id);
                       $accionTexto = ($campo->pivot->accion_dependencia ?? 'deshabilitar') === 'ocultar' ? 'Ocultar' : 'Bloquear';
+                      $condicionBadge = match($campo->pivot->tipo_condicion) {
+                        'vacio' => 'Vacío',
+                        'no_vacio' => 'Lleno',
+                        'igual_a' => 'Valor: ' . $campo->pivot->valor_condicion,
+                        default => 'Lleno'
+                      };
                     @endphp
-                    <li class="mt-1"><i class="ti ti-git-fork ti-sm text-info"></i><span class="fw-medium mx-1">Depende de:</span> <span class="badge bg-label-info">{{ $campoPadreObj ? $campoPadreObj->nombre : 'Campo #' . $campo->pivot->depende_de_campo_id }} ({{ $campo->pivot->tipo_condicion == 'igual_a' ? 'Valor: ' . $campo->pivot->valor_condicion : 'Lleno' }} &bull; {{ $accionTexto }})</span></li>
+                    <li class="mt-1"><i class="ti ti-git-fork ti-sm text-info"></i><span class="fw-medium mx-1">Depende de:</span> <span class="badge bg-label-info">{{ $campoPadreObj ? $campoPadreObj->nombre : 'Campo #' . $campo->pivot->depende_de_campo_id }} ({{ $condicionBadge }} &bull; {{ $accionTexto }})</span></li>
                     @endif
                   </ul>
                   <div class="row g-4 mt-2">
@@ -178,10 +184,10 @@
           </div>
 
           @if($tieneDependencia)
-          <div class="p-3 mb-3 border rounded bg-light">
+          <div class="p-3 mb-3 border rounded bg-light" wire:key="box-dependencias-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}">
             <div class="mb-3 col-12">
               <label class="form-label fw-bold" for="dependeDeCampoId">Campo del cual depende</label>
-              <select id="dependeDeCampoId" name="dependeDeCampoId" wire:model.live="dependeDeCampoId" class="form-select">
+              <select id="dependeDeCampoId" name="dependeDeCampoId" wire:model.live="dependeDeCampoId" wire:key="select-padre-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}" class="form-select">
                 <option value="">-- Seleccionar campo padre --</option>
                 @foreach($this->camposDisponiblesParaDependencia as $cDisponible)
                   <option value="{{ $cDisponible->id }}">{{ $cDisponible->nombre }}</option>
@@ -191,9 +197,10 @@
 
             @if($dependeDeCampoId)
             <div class="mb-3 col-12">
-              <label class="form-label fw-bold" for="tipoCondicion">Condición para habilitar</label>
-              <select id="tipoCondicion" name="tipoCondicion" wire:model.live="tipoCondicion" class="form-select">
-                <option value="no_vacio">Cuando tenga cualquier valor (no esté vacío)</option>
+              <label class="form-label fw-bold" for="tipoCondicion">Condición a cumplir</label>
+              <select id="tipoCondicion" name="tipoCondicion" wire:model.live="tipoCondicion" wire:key="select-tipo-cond-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}" class="form-select">
+                <option value="vacio">Cuando esté vacío</option>
+                <option value="no_vacio">Cuando esté lleno</option>
                 <option value="igual_a">Cuando sea igual a un valor específico</option>
               </select>
             </div>
@@ -206,23 +213,23 @@
               @endphp
 
               @if(count($opcionesPadre) > 0)
-                <select id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" class="form-select">
+                <select id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" wire:key="select-val-cond-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}-{{ $dependeDeCampoId }}" class="form-select">
                   <option value="">-- Seleccionar valor esperado --</option>
                   @foreach($opcionesPadre as $valKey => $valLabel)
                     <option value="{{ $valKey }}">{{ $valLabel }}</option>
                   @endforeach
                 </select>
               @else
-                <input id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" type="text" placeholder="Ingresa el valor exacto esperado" class="form-control" />
+                <input id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" wire:key="input-val-cond-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}" type="text" placeholder="Ingresa el valor exacto esperado" class="form-control" />
               @endif
             </div>
             @endif
 
             <div class="mb-3 col-12">
-              <label class="form-label fw-bold" for="accionDependencia">Acción al no cumplir la condición</label>
-              <select id="accionDependencia" name="accionDependencia" wire:model.defer="accionDependencia" class="form-select">
-                <option value="deshabilitar">Deshabilitar / Bloquear campo</option>
+              <label class="form-label fw-bold" for="accionDependencia">¿Qué efecto va a tener?</label>
+              <select id="accionDependencia" name="accionDependencia" wire:model.defer="accionDependencia" wire:key="select-accion-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}" class="form-select">
                 <option value="ocultar">Ocultar campo completamente</option>
+                <option value="deshabilitar">Bloquear campo</option>
               </select>
             </div>
 

@@ -236,7 +236,6 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(PlanLectorEjemploSeeder::class);
         $this->call(PostSeeder::class);
         $this->call(TipoNotificacionSeeder::class);
-        $this->call(InformesPersonalizadosSeeder::class);
         // $this->call(AsistentesEscuelaSeeder::class);
         $this->call(GamificationEjemploSeeder::class);
         $this->call(TipoHitoSeeder::class);
