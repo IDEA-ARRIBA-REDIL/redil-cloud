@@ -1374,10 +1374,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/informes/pagos/{informe?}', [InformesController::class, 'informePagos'])->name('informes.pagos');
 
     // Informes Personalizados (Migrados)
+    Route::get('/informes-personalizados', fn () => redirect()->route('informe.lista'))->name('informes-personalizados.index');
     Route::get('/informes-personalizados/obreros/{id}', [InformesPersonalizadosController::class, 'showInformeObreros'])->name('informes-personalizados.obreros.show');
     Route::post('/informes-personalizados/obreros/{id}/exportar', [InformesPersonalizadosController::class, 'exportarInformeObreros'])->name('informes-personalizados.obreros.exportar');
     Route::get('/informes-personalizados/mega-informe/{id}', [InformesPersonalizadosController::class, 'showMegaInforme'])->name('informes-personalizados.mega-informe.show');
+    Route::get('/informes/mega-informe/{id}', [InformesPersonalizadosController::class, 'showMegaInforme'])->name('informes.mega-informe');
     Route::get('/informes-personalizados/descargar/{id}', [InformesPersonalizadosController::class, 'descargarInformeEnCola'])->name('informes-personalizados.descargar');
+    Route::get('/informes-personalizados/en-cola/descargar/{id}', [InformesPersonalizadosController::class, 'descargarInformeEnCola'])->name('informes-personalizados.en-cola.descargar');
 
     // Bloques Clasificacion Asistentes
     Route::get('/bloques-clasificacion', [BloqueClasificacionController::class, 'index'])->name('bloques-clasificacion');

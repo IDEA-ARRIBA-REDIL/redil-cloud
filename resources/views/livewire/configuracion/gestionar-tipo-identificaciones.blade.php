@@ -84,6 +84,17 @@
               </div>
             </th>
 
+            <th class="cursor-pointer user-select-none" style="width: 230px;" wire:click="sortBy('tipo_caracteres')" title="Ordenar por Formato">
+              <div class="d-inline-flex align-items-center gap-1">
+                <span>Formato / Restricción</span>
+                @if($sortField === 'tipo_caracteres')
+                  <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} text-primary ti-xs"></i>
+                @else
+                  <i class="ti ti-arrows-sort text-muted ti-xs opacity-50"></i>
+                @endif
+              </div>
+            </th>
+
             <th class="text-center cursor-pointer user-select-none" style="width: 170px;" wire:click="sortBy('formulario_donacion')" title="Ordenar por Donaciones">
               <div class="d-inline-flex align-items-center justify-content-center gap-1">
                 <span>Donaciones</span>
@@ -131,8 +142,31 @@
                   <span class="fw-semibold text-black">{{ $tipo->nombre }}</span>
                 </div>
               </td>
-              <td class="text-center">
-                  {{ $tipo->abreviatura }}
+              <td class="text-center font-monospace">
+                  <span class="badge bg-label-secondary rounded-pill px-2">{{ $tipo->abreviatura }}</span>
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                  @if(($tipo->tipo_caracteres ?? 'solo_numeros') === 'solo_numeros')
+                    <span class="badge bg-label-info rounded-pill px-2 py-1" title="Solo acepta dígitos numéricos (0-9)">
+                      <i class="ti ti-numbers ti-xs me-1"></i> Solo números
+                    </span>
+                  @elseif($tipo->tipo_caracteres === 'alfanumerico')
+                    <span class="badge bg-label-primary rounded-pill px-2 py-1" title="Acepta letras y números (A-Z, 0-9)">
+                      <i class="ti ti-letter-case ti-xs me-1"></i> Alfanumérico
+                    </span>
+                  @else
+                    <span class="badge bg-label-warning rounded-pill px-2 py-1" title="Acepta letras, números y símbolos">
+                      <i class="ti ti-regex ti-xs me-1"></i> Letras, números y símbolos
+                    </span>
+                  @endif
+
+                  @if($tipo->forzar_mayusculas ?? true)
+                    <span class="badge bg-label-dark rounded-pill px-2 py-1" title="Convierte automáticamente a mayúsculas">
+                      <i class="ti ti-arrow-up-circle ti-xs me-1"></i>ABC
+                    </span>
+                  @endif
+                </div>
               </td>
               <td class="text-center">
                 <button 
@@ -186,7 +220,7 @@
             </tr>
           @empty
             <tr>
-              <td colspan="7" class="text-center py-5">
+              <td colspan="8" class="text-center py-5">
                 <div class="avatar avatar-xl bg-label-secondary mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center">
                   <i class="ti ti-id-off ti-lg text-white"></i>
                 </div>
@@ -313,6 +347,57 @@
             <small class="text-muted d-block mt-1">
               Sigla o código corto utilizado en tablas y reportes (máx. 10 letras).
             </small>
+          </div>
+
+          <!-- Restricción de Caracteres -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="tipoCaracteres">
+              Caracteres permitidos en identificación <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="ti ti-dialpad"></i></span>
+              <select
+                id="tipoCaracteres"
+                class="form-select @error('tipo_caracteres') is-invalid @enderror"
+                wire:model="tipo_caracteres"
+              >
+                <option value="solo_numeros">Solo números (0-9) - Ej. Cédula, Tarjeta de identidad</option>
+                <option value="alfanumerico">Letras y números (Alfanumérico) - Ej. Pasaporte</option>
+                <option value="alfanumerico_simbolos">Letras, números y símbolos - Ej. Cédula extranjería</option>
+              </select>
+            </div>
+            @error('tipo_caracteres')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
+            <small class="text-muted d-block mt-1">
+              Filtra en tiempo real los caracteres que el usuario puede escribir o pegar en el campo de identificación.
+            </small>
+          </div>
+
+          <!-- Forzar Mayúsculas -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold d-block mb-2">Formato de texto</label>
+            <div class="form-check form-switch card p-3 border shadow-none mb-0">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <label class="form-check-label fw-medium text-black cursor-pointer" for="switchMayusculas">
+                    Convertir automáticamente a MAYÚSCULAS
+                  </label>
+                  <small class="text-muted d-block">
+                    Convierte las letras ingresadas a mayúsculas de forma instantánea al escribir o pegar.
+                  </small>
+                </div>
+                <input
+                  class="form-check-input ms-0 cursor-pointer"
+                  type="checkbox"
+                  id="switchMayusculas"
+                  wire:model="forzar_mayusculas"
+                >
+              </div>
+            </div>
+            @error('forzar_mayusculas')
+              <div class="invalid-feedback d-block">{{ $message }}</div>
+            @enderror
           </div>
 
           <!-- Formulario Donación -->

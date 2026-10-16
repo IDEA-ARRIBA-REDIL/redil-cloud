@@ -514,7 +514,9 @@ $configData = Helper::appClasses();
               </div>
               <h6 class="fw-bold text-black px-4">Tareas</h6>
               @php
-              $tareasAsignadas = $persona->tareasConsolidacion;
+              $tareasAsignadas = $persona->tareasConsolidacion->filter(function ($t) use ($rolActivo) {
+                  return $t->puedeSerGestionadaPorRol($rolActivo?->id);
+              });
               $tareasAsignadasIds = $tareasAsignadas->pluck('id');
               $tareasDefaultFaltantes = $tareasDefault->whereNotIn('id', $tareasAsignadasIds);
               $listaCompletaDeTareas = $tareasAsignadas->merge($tareasDefaultFaltantes)->sortBy('orden');
@@ -621,7 +623,7 @@ $configData = Helper::appClasses();
               @if (!$loop->last)
               <hr class="my-2"> @endif
               @empty
-              <p class="text-black">No hay tareas por defecto configuradas.</p>
+              <p class="text-black mb-0">No hay tareas configuradas o disponibles para tu rol.</p>
               @endforelse
             </div>
           </div>

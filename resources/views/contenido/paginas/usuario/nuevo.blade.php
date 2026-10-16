@@ -382,7 +382,7 @@ $configData = Helper::appClasses();
                 <select id="tipo_identificacion_id" name="{{ $campo->name_id }}" data-placeholder="{{$campo->placeholder}}" class="select2 form-select" data-allow-clear="true">
                   <option value="" selected>Ninguno</option>
                   @foreach ($tiposIdentificaciones as $tipoIdentificacion)
-                  <option value="{{$tipoIdentificacion->id}}" {{ old($campo->name_id) ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
+                  <option value="{{$tipoIdentificacion->id}}" data-caracteres="{{ $tipoIdentificacion->tipo_caracteres ?? 'solo_numeros' }}" data-mayusculas="{{ ($tipoIdentificacion->forzar_mayusculas ?? true) ? '1' : '0' }}" {{ old($campo->name_id) ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
                   @endforeach
                 </select>
                  <div id="error{{$campo->name_id}}"></div>
@@ -968,7 +968,7 @@ $configData = Helper::appClasses();
                 <select id="tipo_identificacion_acudiente_id"  data-placeholder="{{ $campo->placeholder }}"  name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
                   <option value="" selected>Ninguno</option>
                   @foreach ($tiposIdentificaciones as $tipoIdentificacion)
-                  <option value="{{$tipoIdentificacion->id}}" {{ old($campo->name_id)==$tipoIdentificacion->id ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
+                  <option value="{{$tipoIdentificacion->id}}" data-caracteres="{{ $tipoIdentificacion->tipo_caracteres ?? 'solo_numeros' }}" data-mayusculas="{{ ($tipoIdentificacion->forzar_mayusculas ?? true) ? '1' : '0' }}" {{ old($campo->name_id)==$tipoIdentificacion->id ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
                   @endforeach
                 </select>
                  <div id="error{{$campo->name_id}}"></div>
@@ -1224,5 +1224,6 @@ $configData = Helper::appClasses();
 <!-- modal cambio de formulario -->
 
 @include('contenido.paginas.usuario.scripts.dependencias-campos')
+@include('contenido.paginas.usuario.scripts.validacion-identificacion')
 
 @endsection

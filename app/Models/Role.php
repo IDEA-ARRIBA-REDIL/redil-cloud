@@ -115,4 +115,14 @@ class Role extends SpatieRole
             'requerido'
         );
     }
+
+    public function tareasConsolidacion(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            TareaConsolidacion::class,
+            'rol_tarea_consolidacion',
+            'rol_id',
+            'tarea_consolidacion_id'
+        )->withTimestamps();
+    }
 }

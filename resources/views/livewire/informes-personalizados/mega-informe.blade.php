@@ -1,19 +1,15 @@
-<div wire:poll.5s>
+<div>
     <!-- Encabezado del Informe -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <h4 class="mb-1">
-                        <i class="ti ti-chart-bar me-2 text-primary"></i>{{ $informe->nombre }}
-                    </h4>
-                    <p class="text-muted mb-0">{{ $informe->descripcion ?? 'Generación dinámica de métricas ministeriales avanzadas en segundo plano.' }}</p>
-                </div>
-                <a href="{{ route('informes-personalizados.index') }}" class="btn btn-label-secondary">
-                    <i class="ti ti-arrow-left me-1"></i> Volver a Informes
-                </a>
-            </div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <a href="{{ route('informe.lista') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Informes">
+                <i class="ti ti-arrow-left"></i>
+            </a>
+            <h4 class="mb-0 fw-semibold text-primary">{{ $informe->nombre }}</h4>
         </div>
+        <p class="text-black mb-0 small">
+            {{ $informe->descripcion }}
+        </p>
     </div>
 
     <div class="row">
@@ -22,14 +18,14 @@
             <div class="card h-100">
                 <div class="card-header border-bottom">
                     <h5 class="card-title mb-0">
-                        <i class="ti ti-filter me-2"></i>Filtros de Solicitud
+                        Generar informe
                     </h5>
                 </div>
                 <div class="card-body mt-4">
                     <form wire:submit.prevent="solicitarInforme">
                         <!-- Selector de Grupo Raíz -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Grupo Raíz (Ministerio) <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold">Grupo raíz <span class="text-danger">*</span></label>
                             <div wire:ignore>
                                 @livewire('grupos.grupos-para-busqueda', [
                                     'conDadosDeBaja' => 'no',
@@ -38,20 +34,20 @@
                                     'class' => 'buscador_grupos_mega'
                                 ])
                             </div>
-                            @error('grupo_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                            @error('grupo_id') <div class="text-danger small mt-1 fw-bold"><i class="ti ti-alert-circle me-1"></i>{{ $message }}</div> @enderror
                             <small class="text-muted d-block mt-1">Busca y selecciona el grupo desde el cual se extraerá la red ministerial.</small>
                         </div>
 
                         <!-- Tipo de Grupo para Agrupar -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold" for="agrupar_por_tipo_grupo_id">Agrupar por Tipo de Grupo <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold" for="agrupar_por_tipo_grupo_id">Agrupar por<span class="text-danger">*</span></label>
                             <select id="agrupar_por_tipo_grupo_id" wire:model="agrupar_por_tipo_grupo_id" class="form-select @error('agrupar_por_tipo_grupo_id') is-invalid @enderror">
                                 <option value="">Selecciona un tipo de grupo</option>
                                 @foreach($tiposDeGrupos as $tipo)
                                     <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
                                 @endforeach
                             </select>
-                            @error('agrupar_por_tipo_grupo_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            @error('agrupar_por_tipo_grupo_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
 
                         <!-- Periodo y Año -->
@@ -135,13 +131,13 @@
         </div>
 
         <!-- 2. Historial de Últimos Informes Solicitados -->
-        <div class="col-lg-7 col-12 mb-4">
+        <div class="col-lg-7 col-12 mb-4" @if($ultimosInformes->contains(fn($item) => $item->isPending() || $item->isProcessing())) wire:poll.5s @endif>
             <div class="card h-100">
                 <div class="card-header border-bottom d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="ti ti-history me-2"></i>Mis Últimas Solicitudes
+                        <i class="ti ti-history me-2"></i>Mis últimas Solicitudes
                     </h5>
-                    <span class="badge bg-label-primary rounded-pill">
+                    <span class="small text-black">
                         <i class="ti ti-refresh me-1"></i> Actualización automática
                     </span>
                 </div>
@@ -161,14 +157,15 @@
                                     @foreach($ultimosInformes as $itemCola)
                                         <tr>
                                             <td>
-                                                <div class="fw-bold">{{ $itemCola->created_at->format('d/m/Y') }}</div>
-                                                <small class="text-muted">{{ $itemCola->created_at->format('h:i A') }}</small>
+                                                <div class="fw-bold text-black">{{ $itemCola->created_at->format('Y-m-d') }}</div>
+                                                <small class="text-black">{{ $itemCola->created_at->format('h:i A') }}</small>
                                             </td>
                                             <td>
-                                                <div class="small fw-semibold">{{ $itemCola->grupo->nombre ?? 'N/A' }}</div>
+                                                <div class="small fw-semibold text-black">{{ $itemCola->grupo->nombre ?? 'N/A' }}</div>
                                                 <div class="badge bg-label-secondary mt-1">
                                                     {{ strtoupper($itemCola->periodo) }} {{ $itemCola->year }}
                                                 </div>
+                                                <div class="small text-black"><b>Agrupado por:</b> {{ $itemCola->tipoGrupoAgrupacion->nombre ?? 'N/A' }}</div>
                                             </td>
                                             <td>
                                                 @if($itemCola->isPending())
@@ -191,11 +188,11 @@
                                             </td>
                                             <td class="text-end">
                                                 @if($itemCola->isCompleted())
-                                                    <a href="{{ route('informes-personalizados.en-cola.descargar', $itemCola->id) }}" class="btn btn-sm btn-success rounded-pill">
+                                                    <a href="{{ route('informes-personalizados.descargar', $itemCola->id) }}" class="btn btn-sm btn-success rounded-pill">
                                                         <i class="ti ti-download me-1"></i> Descargar
                                                     </a>
                                                 @elseif($itemCola->isFailed())
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="Swal.fire({title: 'Detalle del Error', text: '{{ addslashes($itemCola->error_message) }}', icon: 'error'})">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="Swal.fire({title: 'Detalle del Error', text: @js($itemCola->error_message), icon: 'error'})">
                                                         <i class="ti ti-info-circle"></i>
                                                     </button>
                                                 @else
@@ -211,13 +208,43 @@
                         </div>
                     @else
                         <div class="text-center py-5">
-                            <i class="ti ti-file-analytics display-4 text-muted mb-3"></i>
-                            <h6 class="text-muted">Aún no has solicitado ningún informe para esta plantilla.</h6>
-                            <p class="text-muted small">Selecciona los filtros en el panel izquierdo y haz clic en "Solicitar Megainforme en Cola".</p>
+                            <i class="ti ti-file-analytics display-4 text-black mb-3"></i>
+                            <h6 class="text-black">Aún no has solicitado ningún informe para esta plantilla.</h6>
+                            <p class="text-black small">Selecciona los filtros en el panel izquierdo y haz clic en "Solicitar Megainforme en Cola".</p>
                         </div>
                     @endif
                 </div>
             </div>
         </div>
     </div>
+
+    @script
+    <script>
+        $wire.on('swal:success', (data) => {
+            const payload = Array.isArray(data) ? data[0] : (data?.detail || data);
+            Swal.fire({
+                icon: 'success',
+                title: payload.title || '¡Éxito!',
+                text: payload.text || '',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                },
+                buttonsStyling: false
+            });
+        });
+
+        $wire.on('swal:error', (data) => {
+            const payload = Array.isArray(data) ? data[0] : (data?.detail || data);
+            Swal.fire({
+                icon: 'warning',
+                title: payload.title || 'Atención',
+                text: payload.text || 'Por favor completa todos los campos requeridos.',
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                },
+                buttonsStyling: false
+            });
+        });
+    </script>
+    @endscript
 </div>

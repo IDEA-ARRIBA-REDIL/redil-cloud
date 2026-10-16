@@ -461,6 +461,8 @@ $configData = Helper::appClasses();
               <option value="" selected>Ninguno</option>
               @foreach ($tiposIdentificaciones as $tipoIdentificacion)
               <option value="{{ $tipoIdentificacion->id }}"
+                data-caracteres="{{ $tipoIdentificacion->tipo_caracteres ?? 'solo_numeros' }}"
+                data-mayusculas="{{ ($tipoIdentificacion->forzar_mayusculas ?? true) ? '1' : '0' }}"
                 {{ old($campo->name_id, $usuario->tipo_identificacion_id) == $tipoIdentificacion->id ? 'selected' : '' }}>
                 {{ $tipoIdentificacion->nombre }}
               </option>
@@ -1265,6 +1267,8 @@ $configData = Helper::appClasses();
               <option value="" selected>Ninguno</option>
               @foreach ($tiposIdentificaciones as $tipoIdentificacion)
               <option value="{{ $tipoIdentificacion->id }}"
+                data-caracteres="{{ $tipoIdentificacion->tipo_caracteres ?? 'solo_numeros' }}"
+                data-mayusculas="{{ ($tipoIdentificacion->forzar_mayusculas ?? true) ? '1' : '0' }}"
                 {{ old($campo->name_id, $usuario->tipo_identificacion_acudiente_id) == $tipoIdentificacion->id ? 'selected' : '' }}>
                 {{ $tipoIdentificacion->nombre }}
               </option>
@@ -1463,5 +1467,6 @@ $configData = Helper::appClasses();
 <!-- modal cambio de formulario -->
 
 @include('contenido.paginas.usuario.scripts.dependencias-campos')
+@include('contenido.paginas.usuario.scripts.validacion-identificacion')
 
 @endsection

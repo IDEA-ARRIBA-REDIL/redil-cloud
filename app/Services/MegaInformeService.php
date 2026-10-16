@@ -2,16 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\BloqueInforme;
 use App\Models\Grupo;
 use App\Models\GrupoDeGrupo;
 use App\Models\Informe;
 use App\Models\InformeEnCola;
-use App\Models\User;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use stdClass;
 
 class MegaInformeService
@@ -240,7 +237,7 @@ class MegaInformeService
                 $q->whereIn('integrantes_grupo.grupo_id', $gruposDelGrupo)
                     ->orWhere(function ($qSub) use ($idsPersonasGrupoDirecto) {
                         $qSub->whereNull('integrantes_grupo.grupo_id')
-                            ->whereIn('users.creado_por_user_id', $idsPersonasGrupoDirecto);
+                            ->whereIn('users.usuario_creacion_id', $idsPersonasGrupoDirecto);
                     });
             });
 

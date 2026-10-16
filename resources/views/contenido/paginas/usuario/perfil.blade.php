@@ -1052,7 +1052,7 @@
                       <select id="tipo_identificacion_id" name="{{ $campo->name_id }}" data-placeholder="{{$campo->placeholder}}" class="select2 form-select" data-allow-clear="true">
                         <option value="" selected>Ninguno</option>
                         @foreach ($tiposIdentificaciones as $tipoIdentificacion)
-                        <option value="{{$tipoIdentificacion->id}}" {{ old($campo->name_id, $usuario->tipo_identificacion_id )==$tipoIdentificacion->id ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
+                        <option value="{{$tipoIdentificacion->id}}" data-caracteres="{{ $tipoIdentificacion->tipo_caracteres ?? 'solo_numeros' }}" data-mayusculas="{{ ($tipoIdentificacion->forzar_mayusculas ?? true) ? '1' : '0' }}" {{ old($campo->name_id, $usuario->tipo_identificacion_id )==$tipoIdentificacion->id ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
                         @endforeach
                       </select>
                       <div id="error{{$campo->name_id}}"></div>
@@ -1278,33 +1278,17 @@
                     @endif
                     <!-- / pregunta_vives_en -->
 
-                    <!-- / ubicacion-->
-                    @if($tieneCampoPreguntaViveEn)
-                      @if($campo->nombre_bd == 'ubicacion')
-                        @livewire('Generales.barrio-localidad-buscador', [
-                          'class' => 'col-12',
-                          'label' => $campo->nombre,
-                          'nameId' => $campo->name_id,
-                          'conPreguntaAdiccional' => 'si',
-                          'mostrar' => false,
-                          'placeholder' => $campo->placeholder,
-                          'usuario' => $usuario
-                        ])
-                      @endif
-                    @else
-                      @if($campo->nombre_bd == 'ubicacion')
-                        @livewire('Generales.barrio-localidad-buscador', [
-                          'class' => $campo->pivot->class,
-                          'label' => $campo->nombre,
-                          'nameId' => $campo->name_id,
-                          'conPreguntaAdiccional' => 'no',
-                          'mostrar' => true,
-                          'placeholder' => $campo->placeholder,
-                          'usuario' => $usuario
-                        ])
-                      @endif
+                    <!-- ubicacion -->
+                    @if ($campo->nombre_bd == 'ubicacion')
+                      @livewire('Generales.barrio-localidad-buscador', [
+                        'class' => $campo->pivot->class,
+                        'label' => $campo->nombre,
+                        'nameId' => $campo->name_id,
+                        'placeholder' => $campo->placeholder,
+                        'usuario' => $usuario,
+                      ])
                     @endif
-                    <!-- / ubicacion-->
+                    <!-- / ubicacion -->
 
                     <!-- Nivel academico -->
                     @if($campo->nombre_bd == 'nivel_academico_id')
@@ -1687,7 +1671,7 @@
                       <select id="tipo_identificacion_acudiente_id"  data-placeholder="{{ $campo->placeholder }}"  name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
                         <option value="" selected>Ninguno</option>
                         @foreach ($tiposIdentificaciones as $tipoIdentificacion)
-                        <option value="{{$tipoIdentificacion->id}}" {{ old($campo->name_id, $usuario->tipo_identificacion_acudiente_id)==$tipoIdentificacion->id ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
+                        <option value="{{$tipoIdentificacion->id}}" data-caracteres="{{ $tipoIdentificacion->tipo_caracteres ?? 'solo_numeros' }}" data-mayusculas="{{ ($tipoIdentificacion->forzar_mayusculas ?? true) ? '1' : '0' }}" {{ old($campo->name_id, $usuario->tipo_identificacion_acudiente_id)==$tipoIdentificacion->id ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
                         @endforeach
                       </select>
                       <div id="error{{$campo->name_id}}"></div>
@@ -1830,4 +1814,7 @@
       <!--/ modal foto -->
     </form>
   @endif
+
+  @include('contenido.paginas.usuario.scripts.dependencias-campos')
+  @include('contenido.paginas.usuario.scripts.validacion-identificacion')
 @endsection

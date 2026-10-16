@@ -1119,13 +1119,13 @@ class UserController extends Controller
                 ->discipulos('todos');
         } elseif ($rolActivo->hasPermissionTo('personas.lista_asistentes_todos')) {
             $personas = User::withTrashed()
-                //->whereNotNull('email_verified_at')
+                // ->whereNotNull('email_verified_at')
                 ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
                 ->select('users.*', 'integrantes_grupo.grupo_id as grupo_id')
                 ->get()
                 ->unique('id');
 
-                return "sdf";
+            return 'sdf';
         }
 
         // filtrado por tipo ejemplo: "Todos o inactivo reunion o por alguno de los tipos de usuario Pastor, lider, oveja etc..."
@@ -2116,8 +2116,17 @@ class UserController extends Controller
         $campos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
             ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
             ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formulario->id)
-            ->select('campos_formulario_usuario.*', 'campo_seccion_formulario_usuario.requerido')
+            ->select(
+                'campos_formulario_usuario.*',
+                'campo_seccion_formulario_usuario.requerido',
+                'campo_seccion_formulario_usuario.depende_de_campo_id',
+                'campo_seccion_formulario_usuario.tipo_condicion',
+                'campo_seccion_formulario_usuario.valor_condicion',
+                'campo_seccion_formulario_usuario.accion_dependencia'
+            )
             ->get();
+
+        $this->resolverDependenciasCampos($campos, $request->all(), $formulario);
 
         $usuario = new User;
 
@@ -2201,8 +2210,29 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'identificacion')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'identificacion')->first();
             $validarIdentificacion = $campoTemporal->requerido ? ['string', 'required', 'max:255', Rule::unique('users', 'identificacion')] : ['string', 'nullable', 'max:255', Rule::unique('users', 'identificacion')];
+
+            // Restricción según Tipo de Identificación (solo si tipo_identificacion_id pertenece al formulario)
+            $tipoDoc = null;
+            if ($campos->where('nombre_bd', 'tipo_identificacion_id')->count() > 0 && ! empty($usuario->tipo_identificacion_id)) {
+                $tipoDoc = TipoIdentificacion::find($usuario->tipo_identificacion_id);
+                if ($tipoDoc) {
+                    if ($tipoDoc->tipo_caracteres === TipoIdentificacion::CARACTERES_SOLO_NUMEROS) {
+                        $validarIdentificacion[] = 'regex:/^[0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación solo debe contener números para este tipo de documento.';
+                    } elseif ($tipoDoc->tipo_caracteres === TipoIdentificacion::CARACTERES_ALFANUMERICO) {
+                        $validarIdentificacion[] = 'regex:/^[a-zA-Z0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación solo debe contener letras y números para este tipo de documento.';
+                    }
+                }
+            }
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarIdentificacion]);
-            $usuario->identificacion = $request[$campoTemporal->name_id];
+            $valorIden = $request[$campoTemporal->name_id] !== null ? str_replace(['.', ' '], '', (string) $request[$campoTemporal->name_id]) : null;
+            if ($valorIden !== null && (! $tipoDoc || ($tipoDoc->forzar_mayusculas ?? true))) {
+                $valorIden = strtoupper($valorIden);
+            }
+            $request->merge([$campoTemporal->name_id => $valorIden]);
+            $usuario->identificacion = $valorIden;
         }
 
         // pais_nacimiento
@@ -2336,9 +2366,30 @@ class UserController extends Controller
         // identificacion_acudiente
         if ($campos->where('nombre_bd', 'identificacion_acudiente')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'identificacion_acudiente')->first();
-            $validarIdentificacionAcudiente = $campoTemporal->requerido ? ['string', 'required'] : ['string', 'nullable'];
+            $validarIdentificacionAcudiente = $campoTemporal->requerido ? ['string', 'required', 'max:255'] : ['string', 'nullable', 'max:255'];
+
+            // Restricción según Tipo de Identificación Acudiente (solo si tipo_identificacion_acudiente_id pertenece al formulario)
+            $tipoDocAcud = null;
+            if ($campos->where('nombre_bd', 'tipo_identificacion_acudiente_id')->count() > 0 && ! empty($usuario->tipo_identificacion_acudiente_id)) {
+                $tipoDocAcud = TipoIdentificacion::find($usuario->tipo_identificacion_acudiente_id);
+                if ($tipoDocAcud) {
+                    if ($tipoDocAcud->tipo_caracteres === TipoIdentificacion::CARACTERES_SOLO_NUMEROS) {
+                        $validarIdentificacionAcudiente[] = 'regex:/^[0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación del acudiente solo debe contener números para este tipo de documento.';
+                    } elseif ($tipoDocAcud->tipo_caracteres === TipoIdentificacion::CARACTERES_ALFANUMERICO) {
+                        $validarIdentificacionAcudiente[] = 'regex:/^[a-zA-Z0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación del acudiente solo debe contener letras y números para este tipo de documento.';
+                    }
+                }
+            }
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarIdentificacionAcudiente]);
-            $usuario->identificacion_acudiente = $request[$campoTemporal->name_id];
+            $valorIdenAcud = $request[$campoTemporal->name_id] !== null ? str_replace(['.', ' '], '', (string) $request[$campoTemporal->name_id]) : null;
+            if ($valorIdenAcud !== null && (! $tipoDocAcud || ($tipoDocAcud->forzar_mayusculas ?? true))) {
+                $valorIdenAcud = strtoupper($valorIdenAcud);
+            }
+            $request->merge([$campoTemporal->name_id => $valorIdenAcud]);
+            $usuario->identificacion_acudiente = $valorIdenAcud;
         }
 
         // nombre_acudiente
@@ -2426,18 +2477,9 @@ class UserController extends Controller
 
         // ubicacion localidad y barrio
         if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
-            if ($campos->where('nombre_bd', 'pregunta_vives_en')->count() > 0) {
-                $preguntaVivesEn = $campos->where('nombre_bd', 'pregunta_vives_en')->first();
-                if ($request[$preguntaVivesEn->name_id]) {
-                    $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-                    $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
-                    $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
-                }
-            } else {
-                $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-                $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
-                $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
-            }
+            $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
+            $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
         }
 
         // tienes una peticion
@@ -2757,8 +2799,8 @@ class UserController extends Controller
 
                                 $response = Http::timeout(5)->get('https://api.biblia.com/v1/bible/content/RVR60.txt', [
                                     'passage' => $citaObjetivo,
-                                    'key'     => $key,
-                                    'style'   => 'neVersePerLineFullReference',
+                                    'key' => $key,
+                                    'style' => 'neVersePerLineFullReference',
                                     'culture' => 'es',
                                 ]);
 
@@ -3029,8 +3071,17 @@ class UserController extends Controller
         $campos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
             ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
             ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formulario->id)
-            ->select('campos_formulario_usuario.*', 'campo_seccion_formulario_usuario.requerido')
+            ->select(
+                'campos_formulario_usuario.*',
+                'campo_seccion_formulario_usuario.requerido',
+                'campo_seccion_formulario_usuario.depende_de_campo_id',
+                'campo_seccion_formulario_usuario.tipo_condicion',
+                'campo_seccion_formulario_usuario.valor_condicion',
+                'campo_seccion_formulario_usuario.accion_dependencia'
+            )
             ->get();
+
+        $this->resolverDependenciasCampos($campos, $request->all(), $formulario);
 
         // primer_nombre
         if ($campos->where('nombre_bd', 'primer_nombre')->count() > 0) {
@@ -3112,8 +3163,29 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'identificacion')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'identificacion')->first();
             $validarIdentificacion = $campoTemporal->requerido ? ['string', 'required', 'max:255', Rule::unique('users', 'identificacion')->ignore($usuario->id)] : ['string', 'nullable', 'max:255', Rule::unique('users', 'identificacion')->ignore($usuario->id)];
+
+            // Restricción según Tipo de Identificación (solo si tipo_identificacion_id pertenece al formulario)
+            $tipoDoc = null;
+            if ($campos->where('nombre_bd', 'tipo_identificacion_id')->count() > 0 && ! empty($usuario->tipo_identificacion_id)) {
+                $tipoDoc = TipoIdentificacion::find($usuario->tipo_identificacion_id);
+                if ($tipoDoc) {
+                    if ($tipoDoc->tipo_caracteres === TipoIdentificacion::CARACTERES_SOLO_NUMEROS) {
+                        $validarIdentificacion[] = 'regex:/^[0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación solo debe contener números para este tipo de documento.';
+                    } elseif ($tipoDoc->tipo_caracteres === TipoIdentificacion::CARACTERES_ALFANUMERICO) {
+                        $validarIdentificacion[] = 'regex:/^[a-zA-Z0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación solo debe contener letras y números para este tipo de documento.';
+                    }
+                }
+            }
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarIdentificacion]);
-            $usuario->identificacion = $request[$campoTemporal->name_id];
+            $valorIden = $request[$campoTemporal->name_id] !== null ? str_replace(['.', ' '], '', (string) $request[$campoTemporal->name_id]) : null;
+            if ($valorIden !== null && (! $tipoDoc || ($tipoDoc->forzar_mayusculas ?? true))) {
+                $valorIden = strtoupper($valorIden);
+            }
+            $request->merge([$campoTemporal->name_id => $valorIden]);
+            $usuario->identificacion = $valorIden;
         }
 
         // pais_nacimiento
@@ -3247,9 +3319,30 @@ class UserController extends Controller
         // identificacion_acudiente
         if ($campos->where('nombre_bd', 'identificacion_acudiente')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'identificacion_acudiente')->first();
-            $validarIdentificacionAcudiente = $campoTemporal->requerido ? ['string', 'required'] : ['string', 'nullable'];
+            $validarIdentificacionAcudiente = $campoTemporal->requerido ? ['string', 'required', 'max:255'] : ['string', 'nullable', 'max:255'];
+
+            // Restricción según Tipo de Identificación Acudiente (solo si tipo_identificacion_acudiente_id pertenece al formulario)
+            $tipoDocAcud = null;
+            if ($campos->where('nombre_bd', 'tipo_identificacion_acudiente_id')->count() > 0 && ! empty($usuario->tipo_identificacion_acudiente_id)) {
+                $tipoDocAcud = TipoIdentificacion::find($usuario->tipo_identificacion_acudiente_id);
+                if ($tipoDocAcud) {
+                    if ($tipoDocAcud->tipo_caracteres === TipoIdentificacion::CARACTERES_SOLO_NUMEROS) {
+                        $validarIdentificacionAcudiente[] = 'regex:/^[0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación del acudiente solo debe contener números para este tipo de documento.';
+                    } elseif ($tipoDocAcud->tipo_caracteres === TipoIdentificacion::CARACTERES_ALFANUMERICO) {
+                        $validarIdentificacionAcudiente[] = 'regex:/^[a-zA-Z0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación del acudiente solo debe contener letras y números para este tipo de documento.';
+                    }
+                }
+            }
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarIdentificacionAcudiente]);
-            $usuario->identificacion_acudiente = $request[$campoTemporal->name_id];
+            $valorIdenAcud = $request[$campoTemporal->name_id] !== null ? str_replace(['.', ' '], '', (string) $request[$campoTemporal->name_id]) : null;
+            if ($valorIdenAcud !== null && (! $tipoDocAcud || ($tipoDocAcud->forzar_mayusculas ?? true))) {
+                $valorIdenAcud = strtoupper($valorIdenAcud);
+            }
+            $request->merge([$campoTemporal->name_id => $valorIdenAcud]);
+            $usuario->identificacion_acudiente = $valorIdenAcud;
         }
 
         // nombre_acudiente
@@ -3337,18 +3430,9 @@ class UserController extends Controller
 
         // ubicacion localidad y barrio
         if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
-            if ($campos->where('nombre_bd', 'pregunta_vives_en')->count() > 0) {
-                $preguntaVivesEn = $campos->where('nombre_bd', 'pregunta_vives_en')->first();
-                if ($request[$preguntaVivesEn->name_id]) {
-                    $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-                    $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
-                    $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
-                }
-            } else {
-                $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-                $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
-                $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
-            }
+            $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
+            $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
         }
 
         // / seccion comprobacion campos extras
@@ -3567,12 +3651,21 @@ class UserController extends Controller
         $validacion = [];
         $mensajes = [];
 
-        $campos = $campos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
+        $campos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
             ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
             ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formulario->id)
             ->where('secciones_formulario_usuario.id', '=', $seccion)
-            ->select('campos_formulario_usuario.*', 'campo_seccion_formulario_usuario.requerido')
+            ->select(
+                'campos_formulario_usuario.*',
+                'campo_seccion_formulario_usuario.requerido',
+                'campo_seccion_formulario_usuario.depende_de_campo_id',
+                'campo_seccion_formulario_usuario.tipo_condicion',
+                'campo_seccion_formulario_usuario.valor_condicion',
+                'campo_seccion_formulario_usuario.accion_dependencia'
+            )
             ->get();
+
+        $this->resolverDependenciasCampos($campos, $request->all(), $formulario);
 
         // primer_nombre
         if ($campos->where('nombre_bd', 'primer_nombre')->count() > 0) {
@@ -3654,8 +3747,29 @@ class UserController extends Controller
         if ($campos->where('nombre_bd', 'identificacion')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'identificacion')->first();
             $validarIdentificacion = $campoTemporal->requerido ? ['string', 'required', 'max:255', Rule::unique('users', 'identificacion')->ignore($usuario->id)] : ['string', 'nullable', 'max:255', Rule::unique('users', 'identificacion')->ignore($usuario->id)];
+
+            // Restricción según Tipo de Identificación (solo si tipo_identificacion_id pertenece al formulario)
+            $tipoDoc = null;
+            if ($campos->where('nombre_bd', 'tipo_identificacion_id')->count() > 0 && ! empty($usuario->tipo_identificacion_id)) {
+                $tipoDoc = TipoIdentificacion::find($usuario->tipo_identificacion_id);
+                if ($tipoDoc) {
+                    if ($tipoDoc->tipo_caracteres === TipoIdentificacion::CARACTERES_SOLO_NUMEROS) {
+                        $validarIdentificacion[] = 'regex:/^[0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación solo debe contener números para este tipo de documento.';
+                    } elseif ($tipoDoc->tipo_caracteres === TipoIdentificacion::CARACTERES_ALFANUMERICO) {
+                        $validarIdentificacion[] = 'regex:/^[a-zA-Z0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación solo debe contener letras y números para este tipo de documento.';
+                    }
+                }
+            }
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarIdentificacion]);
-            $usuario->identificacion = $request[$campoTemporal->name_id];
+            $valorIden = $request[$campoTemporal->name_id] !== null ? str_replace(['.', ' '], '', (string) $request[$campoTemporal->name_id]) : null;
+            if ($valorIden !== null && (! $tipoDoc || ($tipoDoc->forzar_mayusculas ?? true))) {
+                $valorIden = strtoupper($valorIden);
+            }
+            $request->merge([$campoTemporal->name_id => $valorIden]);
+            $usuario->identificacion = $valorIden;
         }
 
         // pais_nacimiento
@@ -3781,9 +3895,30 @@ class UserController extends Controller
         // identificacion_acudiente
         if ($campos->where('nombre_bd', 'identificacion_acudiente')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'identificacion_acudiente')->first();
-            $validarIdentificacionAcudiente = $campoTemporal->requerido ? ['string', 'required'] : ['string', 'nullable'];
+            $validarIdentificacionAcudiente = $campoTemporal->requerido ? ['string', 'required', 'max:255'] : ['string', 'nullable', 'max:255'];
+
+            // Restricción según Tipo de Identificación Acudiente (solo si tipo_identificacion_acudiente_id pertenece al formulario)
+            $tipoDocAcud = null;
+            if ($campos->where('nombre_bd', 'tipo_identificacion_acudiente_id')->count() > 0 && ! empty($usuario->tipo_identificacion_acudiente_id)) {
+                $tipoDocAcud = TipoIdentificacion::find($usuario->tipo_identificacion_acudiente_id);
+                if ($tipoDocAcud) {
+                    if ($tipoDocAcud->tipo_caracteres === TipoIdentificacion::CARACTERES_SOLO_NUMEROS) {
+                        $validarIdentificacionAcudiente[] = 'regex:/^[0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación del acudiente solo debe contener números para este tipo de documento.';
+                    } elseif ($tipoDocAcud->tipo_caracteres === TipoIdentificacion::CARACTERES_ALFANUMERICO) {
+                        $validarIdentificacionAcudiente[] = 'regex:/^[a-zA-Z0-9]+$/';
+                        $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación del acudiente solo debe contener letras y números para este tipo de documento.';
+                    }
+                }
+            }
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarIdentificacionAcudiente]);
-            $usuario->identificacion_acudiente = $request[$campoTemporal->name_id];
+            $valorIdenAcud = $request[$campoTemporal->name_id] !== null ? str_replace(['.', ' '], '', (string) $request[$campoTemporal->name_id]) : null;
+            if ($valorIdenAcud !== null && (! $tipoDocAcud || ($tipoDocAcud->forzar_mayusculas ?? true))) {
+                $valorIdenAcud = strtoupper($valorIdenAcud);
+            }
+            $request->merge([$campoTemporal->name_id => $valorIdenAcud]);
+            $usuario->identificacion_acudiente = $valorIdenAcud;
         }
 
         // nombre_acudiente
@@ -3871,18 +4006,9 @@ class UserController extends Controller
 
         // ubicacion localidad y barrio
         if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
-            if ($campos->where('nombre_bd', 'pregunta_vives_en')->count() > 0) {
-                $preguntaVivesEn = $campos->where('nombre_bd', 'pregunta_vives_en')->first();
-                if ($request[$preguntaVivesEn->name_id]) {
-                    $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-                    $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
-                    $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
-                }
-            } else {
-                $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-                $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
-                $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
-            }
+            $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
+            $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
         }
 
         // / seccion comprobacion campos extras
@@ -4434,11 +4560,12 @@ class UserController extends Controller
             }
         }
 
-        // Asigno tipo usuario
+        // Asigno tipo usuario y sincronizo su rol dependiente
         if ($rolActivo->hasPermissionTo('personas.panel_tipos_asistente') && $rolActivo->hasPermissionTo('personas.editar_tipos_asistente')) {
             if ($request->tipo_usuario) {
                 $usuario->tipo_usuario_id = $request->tipo_usuario;
                 $usuario->save();
+                $usuario->sincronizarRolDependiente($request->tipo_usuario);
             }
         }
 
@@ -4701,5 +4828,97 @@ class UserController extends Controller
 
         // Si por alguna razón no hay un usuario, devuelve un error.
         return response()->json(['status' => 'error', 'message' => 'Usuario no autenticado.'], 401);
+    }
+
+    /**
+     * Aplica las reglas de dependencia a los campos del formulario.
+     * Si la condición se cumple (el campo se oculta o bloquea), desactiva su obligatoriedad ($campoItem->requerido = 0).
+     */
+    protected function resolverDependenciasCampos($campos, array $datos, FormularioUsuario $formulario): void
+    {
+        $todosLosCampos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
+            ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
+            ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $formulario->id)
+            ->select(
+                'campos_formulario_usuario.*',
+                'campo_seccion_formulario_usuario.requerido',
+                'campo_seccion_formulario_usuario.depende_de_campo_id',
+                'campo_seccion_formulario_usuario.tipo_condicion',
+                'campo_seccion_formulario_usuario.valor_condicion',
+                'campo_seccion_formulario_usuario.accion_dependencia'
+            )
+            ->get()
+            ->keyBy('id');
+
+        $normalizeVal = function ($val, $esSwitch = false) {
+            if ($val === null || $val === '') {
+                return $esSwitch ? '0' : '';
+            }
+            $str = mb_strtolower(trim((string) $val));
+            if (in_array($str, ['1', 'true', 'si', 'sí', 'on', 'activo', 'activado'])) {
+                return '1';
+            }
+            if (in_array($str, ['0', 'false', 'no', 'off', 'inactivo', 'desactivado'])) {
+                return '0';
+            }
+
+            return $str;
+        };
+
+        $padresInactivos = [];
+
+        for ($pasada = 0; $pasada < 3; $pasada++) {
+            foreach ($campos as $campoItem) {
+                if (! empty($campoItem->depende_de_campo_id) && isset($todosLosCampos[$campoItem->depende_de_campo_id])) {
+                    $padre = $todosLosCampos[$campoItem->depende_de_campo_id];
+
+                    if (isset($padresInactivos[$padre->id])) {
+                        $campoItem->requerido = 0;
+                        $padresInactivos[$campoItem->id] = true;
+
+                        continue;
+                    }
+
+                    $esSwitch = in_array($padre->nombre_bd, ['pregunta_vives_en', 'tienes_una_peticion'])
+                        || str_contains(strtolower($padre->name_id ?? ''), 'vives_en')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'peticion')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'switch')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'check');
+
+                    $valorPadre = $datos[$padre->name_id] ?? null;
+
+                    $cumple = false;
+                    if ($campoItem->tipo_condicion === 'vacio') {
+                        if (is_array($valorPadre)) {
+                            $cumple = count($valorPadre) === 0;
+                        } else {
+                            $norm = $normalizeVal($valorPadre, $esSwitch);
+                            $cumple = ($norm === '' || $norm === '0');
+                        }
+                    } elseif ($campoItem->tipo_condicion === 'igual_a') {
+                        if (is_array($valorPadre)) {
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = in_array($normEsperado, array_map(fn ($v) => $normalizeVal($v, $esSwitch), $valorPadre));
+                        } else {
+                            $normActual = $normalizeVal($valorPadre, $esSwitch);
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ($normActual === $normEsperado);
+                        }
+                    } else { // no_vacio
+                        if (is_array($valorPadre)) {
+                            $cumple = count($valorPadre) > 0;
+                        } else {
+                            $norm = $normalizeVal($valorPadre, $esSwitch);
+                            $cumple = ($norm !== '' && $norm !== '0');
+                        }
+                    }
+
+                    if ($cumple) {
+                        $campoItem->requerido = 0;
+                        $padresInactivos[$campoItem->id] = true;
+                    }
+                }
+            }
+        }
     }
 }

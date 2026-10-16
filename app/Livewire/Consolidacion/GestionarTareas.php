@@ -7,386 +7,432 @@ use App\Models\HistorialTareaConsolidacionUsuario;
 use App\Models\TareaConsolidacion;
 use App\Models\TareaConsolidacionUsuario;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Livewire\Component;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
-
+use Livewire\Component;
 
 class GestionarTareas extends Component
 {
-   // Propiedad para mantener al usuario actual
-  public User $usuario;
+    // Propiedad para mantener al usuario actual
+    public User $usuario;
 
-  public $historialActivo = [];
-  public $tareaActiva;
+    public $historialActivo = [];
 
-  public $nuevoDetalleHistorial = '';
-  public $historialFecha;
+    public $tareaActiva;
 
-  // Propiedades para los selects del formulario
-  public $tareas = [];
-  public $estados = [];
+    public $nuevoDetalleHistorial = '';
 
-  // Propiedades vinculadas al formulario (wire:model)
-  public $tareaSeleccionada;
-  public $estadoSeleccionado;
-  public $fecha_tarea;
-  public $detalle_tarea;
+    public $historialFecha;
 
-  // Propiedad para controlar el título del modal
-  public $modoEdicion = false;
-  public $tareaAsignadaId;
+    // Propiedades para los selects del formulario
+    public $tareas = [];
 
+    public $estados = [];
 
-  public function mount()
-  {
-      $this->estados = EstadoTareaConsolidacion::orderBy('puntaje', 'asc')->get();
-      //$this->tareas = TareaConsolidacion::orderBy('orden')->get();
-  }
+    // Propiedades vinculadas al formulario (wire:model)
+    public $tareaSeleccionada;
 
-  #[On('crearTarea')]
-  public function crearTarea($personaId)
-  {
-    $persona = User::findOrFail($personaId);
-    $this->authorize('gestionarTareasConsolidacionPolitica', $persona);
-    $this->usuario = $persona;
+    public $estadoSeleccionado;
 
-    $this->resetErrorBag();
-    $this->modoEdicion = false;
-    $this->reset(['tareaSeleccionada', 'estadoSeleccionado', 'fecha_tarea', 'detalle_tarea', 'modoEdicion', 'tareaAsignadaId']);
+    public $fecha_tarea;
 
-   // 1. Obtenemos los IDs de las tareas que el usuario YA tiene asignadas
-    $tareasAsignadasIds = $this->usuario->tareasConsolidacion()->pluck('tarea_consolidacion_id');
+    public $detalle_tarea;
 
-    // 2. Cargamos en la propiedad $tareas solo aquellas que NO están en la lista de asignadas
-    $tareasDisponibles = TareaConsolidacion::where('default', false) // <-- ¡AQUÍ ESTÁ EL NUEVO FILTRO!
-                          ->whereNotIn('id', $tareasAsignadasIds)
-                          ->orderBy('orden')
-                          ->get();
+    // Propiedad para controlar el título del modal
+    public $modoEdicion = false;
 
-    // ----> AQUÍ ESTÁ LA NUEVA LÓGICA <----
-    // 3. Verificamos si la colección de tareas disponibles está vacía
-    if ($tareasDisponibles->isEmpty()) {
-        // Si no hay tareas, enviamos una alerta y detenemos la ejecución.
-        $this->dispatch('msn',
-            msnTitulo: '¡Ya estan todas las tareas asignadas!',
-            msnTexto: 'Este usuario ya tiene todas las tareas disponibles asignadas.',
-            msnIcono: 'info'
-        );
-        return; // Detenemos la función aquí.
+    public $tareaAsignadaId;
+
+    public function mount()
+    {
+        $this->estados = EstadoTareaConsolidacion::orderBy('puntaje', 'asc')->get();
+        // $this->tareas = TareaConsolidacion::orderBy('orden')->get();
     }
 
-    // 4. Si hay tareas disponibles, continuamos con el flujo normal
-    $this->tareas = $tareasDisponibles->sortBy('nombre');
+    private function obtenerRolActivo()
+    {
+        return auth()->user()?->roles()->wherePivot('activo', true)->first();
+    }
 
-    // Guardamos la fecha de hoy en una variable
-    $fechaHoy = now()->format('Y-m-d');
+    #[On('crearTarea')]
+    public function crearTarea($personaId)
+    {
+        $persona = User::findOrFail($personaId);
+        $this->authorize('gestionarTareasConsolidacionPolitica', $persona);
+        $this->usuario = $persona;
 
-    // Establecemos la propiedad en el backend
-    $this->fecha_tarea = $fechaHoy;
+        $this->resetErrorBag();
+        $this->modoEdicion = false;
+        $this->reset(['tareaSeleccionada', 'estadoSeleccionado', 'fecha_tarea', 'detalle_tarea', 'modoEdicion', 'tareaAsignadaId']);
 
-    // Despachamos un evento para abrir el modal Y le pasamos la fecha
-    $this->dispatch('abrirModal',
-        nombreModal: 'modalcrearEditarTarea',
-        fecha: $fechaHoy
-    );
-  }
+        // 1. Obtenemos los IDs de las tareas que el usuario YA tiene asignadas
+        $tareasAsignadasIds = $this->usuario->tareasConsolidacion()->pluck('tarea_consolidacion_id');
 
-  #[On('editarTarea')]
-  public function editarTarea($tareaAsignadaId)
-  {
-    $this->resetErrorBag();
-    $tarea = TareaConsolidacionUsuario::with('user')->findOrFail($tareaAsignadaId);
-    $this->authorize('gestionarTareasConsolidacionPolitica', $tarea->user);
-    $this->usuario = $tarea->user;
+        // 2. Cargamos solo aquellas tareas no asignadas que el rol activo tiene permitido gestionar
+        $rolActivo = $this->obtenerRolActivo();
+        $tareasDisponibles = TareaConsolidacion::where('default', false)
+            ->permitidasParaRol($rolActivo?->id)
+            ->whereNotIn('id', $tareasAsignadasIds)
+            ->orderBy('orden')
+            ->get();
 
-    $this->tareas = TareaConsolidacion::orderBy('orden')->get();
+        // ----> AQUÍ ESTÁ LA NUEVA LÓGICA <----
+        // 3. Verificamos si la colección de tareas disponibles está vacía
+        if ($tareasDisponibles->isEmpty()) {
+            // Si no hay tareas, enviamos una alerta y detenemos la ejecución.
+            $this->dispatch('msn',
+                msnTitulo: '¡Ya estan todas las tareas asignadas!',
+                msnTexto: 'Este usuario ya tiene todas las tareas disponibles asignadas.',
+                msnIcono: 'info'
+            );
 
-    $this->tareaAsignadaId = $tarea->id;
-    $this->modoEdicion = true;
+            return; // Detenemos la función aquí.
+        }
 
-    $this->tareaSeleccionada = $tarea->tarea_consolidacion_id;
-    $this->estadoSeleccionado = $tarea->estado_tarea_consolidacion_id;
+        // 4. Si hay tareas disponibles, continuamos con el flujo normal
+        $this->tareas = $tareasDisponibles->sortBy('nombre');
 
-    $fechaParaEditar = Carbon::parse($tarea->fecha)->format('Y-m-d');
-    $this->fecha_tarea = $fechaParaEditar;
+        // Guardamos la fecha de hoy en una variable
+        $fechaHoy = now()->format('Y-m-d');
 
-    // Abrimos el modal y le PASAMOS la fecha que debe mostrar.
-    $this->dispatch('abrirModal',
-        nombreModal: 'modalcrearEditarTarea',
-        fecha: $fechaParaEditar
-    );
-  }
+        // Establecemos la propiedad en el backend
+        $this->fecha_tarea = $fechaHoy;
 
-  public function guardarTarea()
-  {
-      if ($this->modoEdicion) {
-          // Buscamos la asignación y la validamos contra la política de alcance
-          $tareaParaEditar = TareaConsolidacionUsuario::with('user')->findOrFail($this->tareaAsignadaId);
-          $this->authorize('gestionarTareasConsolidacionPolitica', $tareaParaEditar->user);
+        // Despachamos un evento para abrir el modal Y le pasamos la fecha
+        $this->dispatch('abrirModal',
+            nombreModal: 'modalcrearEditarTarea',
+            fecha: $fechaHoy
+        );
+    }
 
-          // --- LÓGICA PARA ACTUALIZAR ---
-          $rules = [
-              'estadoSeleccionado' => 'required|exists:estados_tarea_consolidacion,id',
-              'fecha_tarea'        => 'required|date',
-          ];
-          $messages = [
-              'estadoSeleccionado.required' => 'El campo estado es obligatorio.',
-              'fecha_tarea.required'        => 'El campo fecha es obligatorio.',
-          ];
+    #[On('editarTarea')]
+    public function editarTarea($tareaAsignadaId)
+    {
+        $this->resetErrorBag();
+        $tarea = TareaConsolidacionUsuario::with(['user', 'tareaConsolidacion.roles'])->findOrFail($tareaAsignadaId);
+        $this->authorize('gestionarTareasConsolidacionPolitica', $tarea->user);
 
-          $validated = $this->validate($rules, $messages);
+        $rolActivo = $this->obtenerRolActivo();
+        abort_if(! $tarea->tareaConsolidacion->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para gestionar esta tarea.');
 
-          $tareaParaEditar->update([
-              'estado_tarea_consolidacion_id' => $validated['estadoSeleccionado'],
-              'fecha'                         => $validated['fecha_tarea'],
-          ]);
+        $this->usuario = $tarea->user;
 
-          // Enviamos feedback al usuario
-          $this->dispatch('cerrarModal', nombreModal: 'modalcrearEditarTarea');
-          $this->dispatch('msn', msnTitulo: '¡Actualizado!', msnTexto: 'La tarea ha sido actualizada correctamente.', msnIcono: 'success');
+        $this->tareas = TareaConsolidacion::permitidasParaRol($rolActivo?->id)->orderBy('orden')->get();
 
-          //$this->dispatch('refrescar-lista');
-          $this->dispatch('refrescar-y-enfocar', personaId: $tareaParaEditar->user_id);
+        $this->tareaAsignadaId = $tarea->id;
+        $this->modoEdicion = true;
 
-      } else {
-          // --- LÓGICA PARA CREAR ---
-          if (!isset($this->usuario)) {
-              abort(403);
-          }
-          $this->authorize('gestionarTareasConsolidacionPolitica', $this->usuario);
+        $this->tareaSeleccionada = $tarea->tarea_consolidacion_id;
+        $this->estadoSeleccionado = $tarea->estado_tarea_consolidacion_id;
 
-          $rules = [
-              'tareaSeleccionada'  => 'required|exists:tareas_consolidacion,id',
-              'estadoSeleccionado' => 'required|exists:estados_tarea_consolidacion,id',
-              'fecha_tarea'        => 'required|date',
-              'detalle_tarea'      => 'nullable|string|min:5',
-          ];
-          $messages = [
-              'tareaSeleccionada.required'  => 'El campo tarea es obligatorio.',
-              'estadoSeleccionado.required' => 'El campo estado es obligatorio.',
-              'fecha_tarea.required'        => 'El campo fecha es obligatorio.',
-          ];
+        $fechaParaEditar = Carbon::parse($tarea->fecha)->format('Y-m-d');
+        $this->fecha_tarea = $fechaParaEditar;
 
-          $validated = $this->validate($rules, $messages);
+        // Abrimos el modal y le PASAMOS la fecha que debe mostrar.
+        $this->dispatch('abrirModal',
+            nombreModal: 'modalcrearEditarTarea',
+            fecha: $fechaParaEditar
+        );
+    }
 
-          DB::transaction(function () use ($validated) {
-              $nuevaTarea = TareaConsolidacionUsuario::create([
-                  'user_id'                       => $this->usuario->id,
-                  'tarea_consolidacion_id'        => $validated['tareaSeleccionada'],
-                  'estado_tarea_consolidacion_id' => $validated['estadoSeleccionado'],
-                  'fecha'                         => $validated['fecha_tarea'],
-              ]);
+    public function guardarTarea()
+    {
+        $rolActivo = $this->obtenerRolActivo();
 
-              if (!empty($validated['detalle_tarea'])) {
-                  $nuevaTarea->historial()->create([
-                      'detalle'             => $validated['detalle_tarea'],
-                      'fecha'               => $validated['fecha_tarea'],
-                      'usuario_creacion_id' => auth()->id(),
-                  ]);
-              }
-          });
+        if ($this->modoEdicion) {
+            // Buscamos la asignación y la validamos contra la política de alcance
+            $tareaParaEditar = TareaConsolidacionUsuario::with(['user', 'tareaConsolidacion.roles'])->findOrFail($this->tareaAsignadaId);
+            $this->authorize('gestionarTareasConsolidacionPolitica', $tareaParaEditar->user);
+            abort_if(! $tareaParaEditar->tareaConsolidacion->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para gestionar esta tarea.');
 
-          $this->dispatch('cerrarModal', nombreModal: 'modalcrearEditarTarea');
-          $this->dispatch('msn', msnTitulo: '¡Éxito!', msnTexto: 'La tarea ha sido asignada correctamente.', msnIcono: 'success');
-          //$this->dispatch('refrescar-lista');
-          $this->dispatch('refrescar-y-enfocar', personaId: $this->usuario->id);
-      }
+            // --- LÓGICA PARA ACTUALIZAR ---
+            $rules = [
+                'estadoSeleccionado' => 'required|exists:estados_tarea_consolidacion,id',
+                'fecha_tarea' => 'required|date',
+            ];
+            $messages = [
+                'estadoSeleccionado.required' => 'El campo estado es obligatorio.',
+                'fecha_tarea.required' => 'El campo fecha es obligatorio.',
+            ];
 
-      // Reseteamos las propiedades del formulario al final
-      $this->reset(['tareaSeleccionada', 'estadoSeleccionado', 'fecha_tarea', 'detalle_tarea', 'modoEdicion', 'tareaAsignadaId']);
-  }
+            $validated = $this->validate($rules, $messages);
 
-  #[On('eliminarTareaConfirmada')]
-  public function eliminarTarea($id)
-  {
-      $asignacion = TareaConsolidacionUsuario::with('user')->findOrFail($id);
-      $this->authorize('gestionarTareasConsolidacionPolitica', $asignacion->user);
-      $idUser = $asignacion->user_id;
+            $tareaParaEditar->update([
+                'estado_tarea_consolidacion_id' => $validated['estadoSeleccionado'],
+                'fecha' => $validated['fecha_tarea'],
+            ]);
 
-      try {
-          // Usamos una transacción para asegurar que ambas eliminaciones ocurran o ninguna
-          DB::transaction(function () use ($asignacion) {
-              //Usamos la relación para eliminar todos sus historiales
-              $asignacion->historial()->delete();
+            // Enviamos feedback al usuario
+            $this->dispatch('cerrarModal', nombreModal: 'modalcrearEditarTarea');
+            $this->dispatch('msn', msnTitulo: '¡Actualizado!', msnTexto: 'La tarea ha sido actualizada correctamente.', msnIcono: 'success');
 
-              //Eliminamos la asignación de la tarea en sí
-              $asignacion->delete();
-          });
+            // $this->dispatch('refrescar-lista');
+            $this->dispatch('refrescar-y-enfocar', personaId: $tareaParaEditar->user_id);
 
-          // 4. Enviamos una notificación de éxito
-          $this->dispatch('msn',
-              msnTitulo: '¡Eliminada!',
-              msnTexto: 'La tarea y todos sus historiales han sido eliminados.',
-              msnIcono: 'success'
-          );
-          // $this->dispatch('refrescar-lista');
-          $this->dispatch('refrescar-y-enfocar', personaId: $idUser);
+        } else {
+            // --- LÓGICA PARA CREAR ---
+            if (! isset($this->usuario)) {
+                abort(403);
+            }
+            $this->authorize('gestionarTareasConsolidacionPolitica', $this->usuario);
 
-      } catch (\Exception $e) {
-          // Si algo falla, notificamos al usuario
-          $this->dispatch('msn',
-              msnTitulo: 'Error',
-              msnTexto: 'Ocurrió un error al eliminar la tarea.',
-              msnIcono: 'error'
-          );
-      }
-  }
+            $rules = [
+                'tareaSeleccionada' => 'required|exists:tareas_consolidacion,id',
+                'estadoSeleccionado' => 'required|exists:estados_tarea_consolidacion,id',
+                'fecha_tarea' => 'required|date',
+                'detalle_tarea' => 'nullable|string|min:5',
+            ];
+            $messages = [
+                'tareaSeleccionada.required' => 'El campo tarea es obligatorio.',
+                'estadoSeleccionado.required' => 'El campo estado es obligatorio.',
+                'fecha_tarea.required' => 'El campo fecha es obligatorio.',
+            ];
 
-  #[On('actualizarEstado')]
-  public function actualizarEstado($tareaAsignadaId, $nuevoEstadoId)
-  {
-    // 1. Buscamos la asignación de tarea que vamos a actualizar y autorizamos
-    $asignacion = TareaConsolidacionUsuario::with('user')->findOrFail($tareaAsignadaId);
-    $this->authorize('gestionarTareasConsolidacionPolitica', $asignacion->user);
+            $validated = $this->validate($rules, $messages);
 
-    // 2. Actualizamos el estado y la fecha (a la fecha actual)
-    $asignacion->update([
-        'estado_tarea_consolidacion_id' => $nuevoEstadoId,
-        'fecha'                         => now(),
-    ]);
+            $tarea = TareaConsolidacion::with('roles')->findOrFail($validated['tareaSeleccionada']);
+            abort_if(! $tarea->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para gestionar esta tarea.');
 
-    // 3. (Buena práctica) Añadimos un registro al historial sobre este cambio
-    $nuevoEstadoNombre = EstadoTareaConsolidacion::find($nuevoEstadoId)->nombre;
-    $asignacion->historial()->create([
-        'detalle' => 'El estado fue cambiado a: "' . $nuevoEstadoNombre . '"',
-        'fecha'   => now(),
-        'usuario_creacion_id' => auth()->id(),
-    ]);
+            DB::transaction(function () use ($validated) {
+                $nuevaTarea = TareaConsolidacionUsuario::create([
+                    'user_id' => $this->usuario->id,
+                    'tarea_consolidacion_id' => $validated['tareaSeleccionada'],
+                    'estado_tarea_consolidacion_id' => $validated['estadoSeleccionado'],
+                    'fecha' => $validated['fecha_tarea'],
+                ]);
 
-    // 4. Enviamos una notificación de éxito
-    $this->dispatch('msn',
-        msnTitulo: '¡Estado Actualizado!',
-        msnTexto: 'La tarea se ha actualizado correctamente.',
-        msnIcono: 'success'
-    );
+                if (! empty($validated['detalle_tarea'])) {
+                    $nuevaTarea->historial()->create([
+                        'detalle' => $validated['detalle_tarea'],
+                        'fecha' => $validated['fecha_tarea'],
+                        'usuario_creacion_id' => auth()->id(),
+                    ]);
+                }
+            });
 
-     //$this->dispatch('refrescar-lista');
-     $this->dispatch('refrescar-y-enfocar', personaId: $asignacion->user_id);
-  }
+            $this->dispatch('cerrarModal', nombreModal: 'modalcrearEditarTarea');
+            $this->dispatch('msn', msnTitulo: '¡Éxito!', msnTexto: 'La tarea ha sido asignada correctamente.', msnIcono: 'success');
+            // $this->dispatch('refrescar-lista');
+            $this->dispatch('refrescar-y-enfocar', personaId: $this->usuario->id);
+        }
 
-  #[On('crearTareaDefault')]
-  public function crearTareaDefault($personaId, $tareaId, $nuevoEstadoId)
-  {
-    $persona = User::findOrFail($personaId);
-    $this->authorize('gestionarTareasConsolidacionPolitica', $persona);
+        // Reseteamos las propiedades del formulario al final
+        $this->reset(['tareaSeleccionada', 'estadoSeleccionado', 'fecha_tarea', 'detalle_tarea', 'modoEdicion', 'tareaAsignadaId']);
+    }
 
-    TareaConsolidacionUsuario::create([
-        'user_id'                       => $personaId,
-        'tarea_consolidacion_id'        => $tareaId,
-        'estado_tarea_consolidacion_id' => $nuevoEstadoId,
-        'fecha'                         => now(),
-    ]);
+    #[On('eliminarTareaConfirmada')]
+    public function eliminarTarea($id)
+    {
+        $asignacion = TareaConsolidacionUsuario::with(['user', 'tareaConsolidacion.roles'])->findOrFail($id);
+        $this->authorize('gestionarTareasConsolidacionPolitica', $asignacion->user);
 
-    $this->dispatch('cerrarModal', nombreModal: 'modalcrearEditarTarea');
-    $this->dispatch('msn', msnTitulo: '¡Éxito!', msnTexto: 'La tarea ha sido asignada correctamente.', msnIcono: 'success');
-    //$this->dispatch('refrescar-lista');
-    $this->dispatch('refrescar-y-enfocar', personaId: $personaId);
-  }
+        $rolActivo = $this->obtenerRolActivo();
+        abort_if(! $asignacion->tareaConsolidacion->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para eliminar esta tarea.');
 
-  #[On('ver-historial-tarea')]
-  public function verHistorial($tareaAsignadaId)
-  {
-      // Buscamos la asignación y cargamos sus relaciones para ser eficientes
-      $tareaUsuario = TareaConsolidacionUsuario::with([
-                          'user',
-                          'historial' => fn($query) => $query->orderBy('fecha', 'desc'),
-                          'historial.creador',
-                          'tareaConsolidacion'
-                      ])
-                      ->findOrFail($tareaAsignadaId);
+        $idUser = $asignacion->user_id;
 
-      $this->authorize('gestionarTareasConsolidacionPolitica', $tareaUsuario->user);
+        try {
+            // Usamos una transacción para asegurar que ambas eliminaciones ocurran o ninguna
+            DB::transaction(function () use ($asignacion) {
+                // Usamos la relación para eliminar todos sus historiales
+                $asignacion->historial()->delete();
 
-      // Asignamos los datos a las propiedades públicas
-      $this->tareaActiva = $tareaUsuario->tareaConsolidacion;
-      $this->historialActivo = $tareaUsuario->historial;
+                // Eliminamos la asignación de la tarea en sí
+                $asignacion->delete();
+            });
 
-      $this->tareaAsignadaId = $tareaAsignadaId;
+            // 4. Enviamos una notificación de éxito
+            $this->dispatch('msn',
+                msnTitulo: '¡Eliminada!',
+                msnTexto: 'La tarea y todos sus historiales han sido eliminados.',
+                msnIcono: 'success'
+            );
+            // $this->dispatch('refrescar-lista');
+            $this->dispatch('refrescar-y-enfocar', personaId: $idUser);
 
-      $fechaHoy = Carbon::now()->format('Y-m-d');
-      $this->historialFecha = $fechaHoy;
+        } catch (\Exception $e) {
+            // Si algo falla, notificamos al usuario
+            $this->dispatch('msn',
+                msnTitulo: 'Error',
+                msnTexto: 'Ocurrió un error al eliminar la tarea.',
+                msnIcono: 'error'
+            );
+        }
+    }
 
-      $this->dispatch('abrirModal', nombreModal: 'modalVerHistorial', fecha: $fechaHoy);
-  }
+    #[On('actualizarEstado')]
+    public function actualizarEstado($tareaAsignadaId, $nuevoEstadoId)
+    {
+        // 1. Buscamos la asignación de tarea que vamos a actualizar y autorizamos
+        $asignacion = TareaConsolidacionUsuario::with(['user', 'tareaConsolidacion.roles'])->findOrFail($tareaAsignadaId);
+        $this->authorize('gestionarTareasConsolidacionPolitica', $asignacion->user);
 
-  public function agregarNuevoHistorial()
-  {
-      // 1. Validamos que el campo no esté vacío
-      $this->validate([
-        'nuevoDetalleHistorial' => 'required|string|min:3',
-        'historialFecha'         => 'required|date',
-      ]);
+        $rolActivo = $this->obtenerRolActivo();
+        abort_if(! $asignacion->tareaConsolidacion->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para gestionar esta tarea.');
 
-      // 2. Nos aseguramos de tener una tarea activa seleccionada
-      if (!$this->tareaAsignadaId) { return; }
+        // 2. Actualizamos el estado y la fecha (a la fecha actual)
+        $asignacion->update([
+            'estado_tarea_consolidacion_id' => $nuevoEstadoId,
+            'fecha' => now(),
+        ]);
 
-      // 3. Buscamos la asignación "padre" y autorizamos
-      $asignacion = TareaConsolidacionUsuario::with('user')->findOrFail($this->tareaAsignadaId);
-      $this->authorize('gestionarTareasConsolidacionPolitica', $asignacion->user);
+        // 3. (Buena práctica) Añadimos un registro al historial sobre este cambio
+        $nuevoEstadoNombre = EstadoTareaConsolidacion::find($nuevoEstadoId)->nombre;
+        $asignacion->historial()->create([
+            'detalle' => 'El estado fue cambiado a: "'.$nuevoEstadoNombre.'"',
+            'fecha' => now(),
+            'usuario_creacion_id' => auth()->id(),
+        ]);
 
-      // 4. Creamos el nuevo registro de historial
-      $asignacion->historial()->create([
-          'detalle'             => $this->nuevoDetalleHistorial,
-          'fecha'               => $this->historialFecha,
-          'usuario_creacion_id' => auth()->id(),
-      ]);
+        // 4. Enviamos una notificación de éxito
+        $this->dispatch('msn',
+            msnTitulo: '¡Estado Actualizado!',
+            msnTexto: 'La tarea se ha actualizado correctamente.',
+            msnIcono: 'success'
+        );
 
-      // 5. ---- LA MAGIA DEL CHAT ----
-      // En lugar de cerrar el modal, reseteamos el campo de texto...
-      $this->reset('nuevoDetalleHistorial');
+        // $this->dispatch('refrescar-lista');
+        $this->dispatch('refrescar-y-enfocar', personaId: $asignacion->user_id);
+    }
 
-      // ...y refrescamos la lista de historiales para que aparezca el nuevo registro al instante.
-      $this->historialActivo = $asignacion->historial()->orderBy('fecha', 'desc')->get();
-      $this->historialFecha = now()->format('Y-m-d');
-  }
+    #[On('crearTareaDefault')]
+    public function crearTareaDefault($personaId, $tareaId, $nuevoEstadoId)
+    {
+        $persona = User::findOrFail($personaId);
+        $this->authorize('gestionarTareasConsolidacionPolitica', $persona);
 
-  public function cerrarHistorial()
-  {
-      $this->dispatch('cerrarModal', nombreModal: 'modalVerHistorial');
+        $rolActivo = $this->obtenerRolActivo();
+        $tarea = TareaConsolidacion::with('roles')->findOrFail($tareaId);
+        abort_if(! $tarea->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para gestionar esta tarea.');
 
-      // Añade 'tareaAsignadaId' al reset para limpiar el estado completamente.
-      $this->reset(['historialActivo', 'tareaActiva', 'tareaAsignadaId', 'nuevoDetalleHistorial']);
-  }
+        TareaConsolidacionUsuario::create([
+            'user_id' => $personaId,
+            'tarea_consolidacion_id' => $tareaId,
+            'estado_tarea_consolidacion_id' => $nuevoEstadoId,
+            'fecha' => now(),
+        ]);
 
-  #[On('eliminarHistorialConfirmado')]
-  public function eliminarHistorial($id)
-  {
-      $historial = HistorialTareaConsolidacionUsuario::with('tareaDelUsuario.user')->findOrFail($id);
-      $usuarioAfectado = $historial->tareaDelUsuario?->user;
-      if (!$usuarioAfectado) {
-          abort(404);
-      }
-      $this->authorize('gestionarTareasConsolidacionPolitica', $usuarioAfectado);
+        $this->dispatch('cerrarModal', nombreModal: 'modalcrearEditarTarea');
+        $this->dispatch('msn', msnTitulo: '¡Éxito!', msnTexto: 'La tarea ha sido asignada correctamente.', msnIcono: 'success');
+        // $this->dispatch('refrescar-lista');
+        $this->dispatch('refrescar-y-enfocar', personaId: $personaId);
+    }
 
-      // Guardamos el ID de la asignación "padre" antes de borrar
-      $asignacionId = $historial->tarea_consolidacion_usuario_id;
+    #[On('ver-historial-tarea')]
+    public function verHistorial($tareaAsignadaId)
+    {
+        // Buscamos la asignación y cargamos sus relaciones para ser eficientes
+        $tareaUsuario = TareaConsolidacionUsuario::with([
+            'user',
+            'historial' => fn ($query) => $query->orderBy('fecha', 'desc'),
+            'historial.creador',
+            'tareaConsolidacion.roles',
+        ])
+            ->findOrFail($tareaAsignadaId);
 
-      // Eliminamos el registro
-      $historial->delete();
+        $this->authorize('gestionarTareasConsolidacionPolitica', $tareaUsuario->user);
 
-      // ----> LÓGICA DE REFRESCO <----
-      // Si el offcanvas de historial está abierto para esta misma tarea,
-      // volvemos a cargar la colección de historiales.
-      if ($this->tareaAsignadaId == $asignacionId) {
-          $this->historialActivo = TareaConsolidacionUsuario::find($asignacionId)
-                                      ->historial()
-                                      ->orderBy('fecha', 'desc')
-                                      ->get();
-      }
+        $rolActivo = $this->obtenerRolActivo();
+        abort_if(! $tareaUsuario->tareaConsolidacion->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para ver esta tarea.');
 
-      // Enviamos la notificación de éxito
-      $this->dispatch('msn',
-          msnTitulo: '¡Eliminado!',
-          msnTexto: 'El registro del historial ha sido eliminado.',
-          msnIcono: 'success'
-      );
-  }
+        // Asignamos los datos a las propiedades públicas
+        $this->tareaActiva = $tareaUsuario->tareaConsolidacion;
+        $this->historialActivo = $tareaUsuario->historial;
 
+        $this->tareaAsignadaId = $tareaAsignadaId;
 
-  public function render()
-  {
-      return view('livewire.consolidacion.gestionar-tareas');
-  }
+        $fechaHoy = Carbon::now()->format('Y-m-d');
+        $this->historialFecha = $fechaHoy;
+
+        $this->dispatch('abrirModal', nombreModal: 'modalVerHistorial', fecha: $fechaHoy);
+    }
+
+    public function agregarNuevoHistorial()
+    {
+        // 1. Validamos que el campo no esté vacío
+        $this->validate([
+            'nuevoDetalleHistorial' => 'required|string|min:3',
+            'historialFecha' => 'required|date',
+        ]);
+
+        // 2. Nos aseguramos de tener una tarea activa seleccionada
+        if (! $this->tareaAsignadaId) {
+            return;
+        }
+
+        // 3. Buscamos la asignación "padre" y autorizamos
+        $asignacion = TareaConsolidacionUsuario::with(['user', 'tareaConsolidacion.roles'])->findOrFail($this->tareaAsignadaId);
+        $this->authorize('gestionarTareasConsolidacionPolitica', $asignacion->user);
+
+        $rolActivo = $this->obtenerRolActivo();
+        abort_if(! $asignacion->tareaConsolidacion->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para gestionar esta tarea.');
+
+        // 4. Creamos el nuevo registro de historial
+        $asignacion->historial()->create([
+            'detalle' => $this->nuevoDetalleHistorial,
+            'fecha' => $this->historialFecha,
+            'usuario_creacion_id' => auth()->id(),
+        ]);
+
+        // 5. ---- LA MAGIA DEL CHAT ----
+        // En lugar de cerrar el modal, reseteamos el campo de texto...
+        $this->reset('nuevoDetalleHistorial');
+
+        // ...y refrescamos la lista de historiales para que aparezca el nuevo registro al instante.
+        $this->historialActivo = $asignacion->historial()->orderBy('fecha', 'desc')->get();
+        $this->historialFecha = now()->format('Y-m-d');
+    }
+
+    public function cerrarHistorial()
+    {
+        $this->dispatch('cerrarModal', nombreModal: 'modalVerHistorial');
+
+        // Añade 'tareaAsignadaId' al reset para limpiar el estado completamente.
+        $this->reset(['historialActivo', 'tareaActiva', 'tareaAsignadaId', 'nuevoDetalleHistorial']);
+    }
+
+    #[On('eliminarHistorialConfirmado')]
+    public function eliminarHistorial($id)
+    {
+        $historial = HistorialTareaConsolidacionUsuario::with(['tareaDelUsuario.user', 'tareaDelUsuario.tareaConsolidacion.roles'])->findOrFail($id);
+        $usuarioAfectado = $historial->tareaDelUsuario?->user;
+        if (! $usuarioAfectado) {
+            abort(404);
+        }
+        $this->authorize('gestionarTareasConsolidacionPolitica', $usuarioAfectado);
+
+        $rolActivo = $this->obtenerRolActivo();
+        if ($historial->tareaDelUsuario?->tareaConsolidacion) {
+            abort_if(! $historial->tareaDelUsuario->tareaConsolidacion->puedeSerGestionadaPorRol($rolActivo?->id), 403, 'No tienes privilegios para gestionar esta tarea.');
+        }
+
+        // Guardamos el ID de la asignación "padre" antes de borrar
+        $asignacionId = $historial->tarea_consolidacion_usuario_id;
+
+        // Eliminamos el registro
+        $historial->delete();
+
+        // ----> LÓGICA DE REFRESCO <----
+        // Si el offcanvas de historial está abierto para esta misma tarea,
+        // volvemos a cargar la colección de historiales.
+        if ($this->tareaAsignadaId == $asignacionId) {
+            $this->historialActivo = TareaConsolidacionUsuario::find($asignacionId)
+                ->historial()
+                ->orderBy('fecha', 'desc')
+                ->get();
+        }
+
+        // Enviamos la notificación de éxito
+        $this->dispatch('msn',
+            msnTitulo: '¡Eliminado!',
+            msnTexto: 'El registro del historial ha sido eliminado.',
+            msnIcono: 'success'
+        );
+    }
+
+    public function render()
+    {
+        return view('livewire.consolidacion.gestionar-tareas');
+    }
 }

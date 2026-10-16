@@ -1,10 +1,1 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>{{ $informe->nombre }}</title>
-</head>
-<body>
-    {!! $tablaHtml !!}
-</body>
-</html>
+{!! $tablaHtml !!}

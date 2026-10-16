@@ -18,3 +18,6 @@ Schedule::command('pagos:verificar-zonapagos')
 Schedule::command('reportes:notificar-pendientes')->everyThirtyMinutes();
 
 Schedule::command('licenses:check-expiry')->dailyAt('01:00')->withoutOverlapping()->onOneServer();
+
+// Procesamiento de cola de trabajos en segundo plano (Megainformes, correos, etc.)
+Schedule::command('queue:work --stop-when-empty --tries=2')->everyMinute()->withoutOverlapping();

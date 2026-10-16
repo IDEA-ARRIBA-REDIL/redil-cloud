@@ -1,8 +1,9 @@
 @php
   $dependenciasConfig = [];
-  if (isset($formulario) && $formulario->secciones) {
-      $mapaCampos = $formulario->secciones->flatMap->campos->keyBy('id');
-      foreach ($formulario->secciones as $sec) {
+  $formTarget = $formulario ?? ($formularioAutoEditar ?? null);
+  if (isset($formTarget) && $formTarget->secciones) {
+      $mapaCampos = $formTarget->secciones->flatMap->campos->keyBy('id');
+      foreach ($formTarget->secciones as $sec) {
           foreach ($sec->campos as $c) {
               if (!empty($c->pivot->depende_de_campo_id) && isset($mapaCampos[$c->pivot->depende_de_campo_id])) {
                   $padre = $mapaCampos[$c->pivot->depende_de_campo_id];
@@ -208,6 +209,12 @@
     $(document).on('click', '.btn-next, .btn-prev, .step, [data-bs-toggle="tab"], .switch, .switch-toggle-slider', function() {
       setTimeout(resolverTodasLasDependencias, 50);
       setTimeout(resolverTodasLasDependencias, 250);
+    });
+
+    // Escuchar apertura de paneles laterales (offcanvas) y modales de Bootstrap
+    $(document).on('shown.bs.offcanvas shown.bs.modal', function() {
+      setTimeout(resolverTodasLasDependencias, 50);
+      setTimeout(resolverTodasLasDependencias, 200);
     });
 
     // Escuchar cambios de Livewire

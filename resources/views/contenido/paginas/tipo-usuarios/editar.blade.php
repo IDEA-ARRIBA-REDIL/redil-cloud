@@ -163,9 +163,9 @@ $configData = Helper::appClasses();
               <label for="id_rol_dependiente" class="form-label">Rol dependiente</label>
               <select name="id_rol_dependiente" id="id_rol_dependiente" class="form-select select2">
                 <option value="">Sin dependencia</option>
-                @foreach ($tiposUsuarios as $rol)
+                @foreach ($roles as $rol)
                 <option value="{{ $rol->id }}" {{ old('id_rol_dependiente', $tipoUsuario->id_rol_dependiente) == $rol->id ? 'selected' : '' }}>
-                  {{ $rol->nombre }}
+                  {{ $rol->name }}
                 </option>
                 @endforeach
               </select>

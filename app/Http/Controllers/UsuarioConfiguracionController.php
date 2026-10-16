@@ -3,24 +3,52 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
+use App\Models\Role;
 use App\Models\TipoUsuario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class UsuarioConfiguracionController extends Controller
 {
-    public function listar(Request $request)
+    public function listar(Request $request): View
     {
-        $buscar = $request->input('buscar');
+        // 1. Obtener y limpiar el término de búsqueda
+        $buscar = trim((string) $request->input('buscar'));
 
+        // 2. Detectar el motor de base de datos para búsqueda insensible a mayúsculas y acentos
+        $driver = DB::connection()->getDriverName();
+
+        // 3. Consultar los tipos de usuario aplicando filtros condicionales
         $tipoUsuarios = TipoUsuario::query()
-            ->when($buscar, function ($query, $buscar) {
-                return $query->where('nombre', 'like', '%'.$buscar.'%')
-                    ->orWhere('descripcion', 'like', '%'.$buscar.'%');
+            ->when($buscar !== '', function ($query) use ($buscar, $driver) {
+                $query->where(function ($q) use ($buscar, $driver) {
+                    if ($driver === 'pgsql') {
+                        // En PostgreSQL se utiliza translate() e ILIKE para ignorar acentos y mayúsculas/minúsculas
+                        $q->whereRaw(
+                            "translate(nombre, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN') ILIKE translate(?, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN')",
+                            ["%{$buscar}%"]
+                        )->orWhereRaw(
+                            "translate(coalesce(descripcion, ''), 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN') ILIKE translate(?, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN')",
+                            ["%{$buscar}%"]
+                        )->orWhereRaw(
+                            "translate(coalesce(nombre_plural, ''), 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN') ILIKE translate(?, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN')",
+                            ["%{$buscar}%"]
+                        );
+                    } else {
+                        // Alternativa para motores como SQLite o MySQL
+                        $q->whereRaw('LOWER(nombre) LIKE LOWER(?)', ["%{$buscar}%"])
+                            ->orWhereRaw("LOWER(coalesce(descripcion, '')) LIKE LOWER(?)", ["%{$buscar}%"])
+                            ->orWhereRaw("LOWER(coalesce(nombre_plural, '')) LIKE LOWER(?)", ["%{$buscar}%"]);
+                    }
+                });
             })
-            ->orderby('orden')
-            ->paginate(12);
+            ->orderBy('orden', 'asc')
+            ->paginate(12)
+            ->withQueryString();
 
+        // 4. Retornar la vista con los resultados y el término de búsqueda
         return view('contenido.paginas.tipo-usuarios.listar', [
             'tipoUsuarios' => $tipoUsuarios,
             'buscar' => $buscar,
@@ -30,9 +58,11 @@ class UsuarioConfiguracionController extends Controller
     public function creacion()
     {
         $tiposUsuarios = TipoUsuario::all();
+        $roles = Role::where('dependiente', 1)->get();
 
         return view('contenido.paginas.tipo-usuarios.creacion', [
             'tiposUsuarios' => $tiposUsuarios,
+            'roles' => $roles,
         ]);
     }
 
@@ -101,10 +131,12 @@ class UsuarioConfiguracionController extends Controller
     public function editar(TipoUsuario $tipoUsuario)
     {
         $tiposUsuarios = TipoUsuario::all();
+        $roles = Role::where('dependiente', 1)->get();
 
         return view('contenido.paginas.tipo-usuarios.editar', [
             'tipoUsuario' => $tipoUsuario,
             'tiposUsuarios' => $tiposUsuarios,
+            'roles' => $roles,
         ]);
     }
 

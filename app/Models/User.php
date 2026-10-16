@@ -2146,59 +2146,10 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($forzar || $puntajeActual <= $puntajeObjetivo) {
             \Illuminate\Support\Facades\Log::info("User::promoverTipoUsuario: Promoviendo usuario ID {$this->id} a TipoUsuario ID {$tipoObjetivo->id} (Puntaje actual: {$puntajeActual}, Objetivo: {$puntajeObjetivo}, Forzar: ".($forzar ? 'true' : 'false').')');
 
-            $nuevoRolId = $tipoObjetivo->id_rol_dependiente;
-
-            DB::transaction(function () use ($nuevoRolId, $tipoObjetivo) {
+            DB::transaction(function () use ($tipoObjetivo) {
                 $this->update(['tipo_usuario_id' => $tipoObjetivo->id]);
-
-                if ($nuevoRolId) {
-                    // Desactivar todos los roles actuales del usuario
-                    DB::table('model_has_roles')
-                        ->where('model_id', $this->id)
-                        ->where('model_type', $this->getMorphClass())
-                        ->update(['activo' => false]);
-
-                    // Obtener roles dependientes
-                    $rolesDependientesIds = Role::where('dependiente', true)->pluck('id');
-
-                    if ($rolesDependientesIds->isNotEmpty()) {
-                        DB::table('model_has_roles')
-                            ->where('model_id', $this->id)
-                            ->where('model_type', $this->getMorphClass())
-                            ->whereIn('role_id', $rolesDependientesIds)
-                            ->delete();
-                    }
-
-                    $existeRelacion = DB::table('model_has_roles')
-                        ->where('model_id', $this->id)
-                        ->where('model_type', $this->getMorphClass())
-                        ->where('role_id', $nuevoRolId)
-                        ->exists();
-
-                    if (! $existeRelacion) {
-                        DB::table('model_has_roles')->insert([
-                            'role_id' => $nuevoRolId,
-                            'model_type' => $this->getMorphClass(),
-                            'model_id' => $this->id,
-                            'activo' => true,
-                            'dependiente' => true,
-                        ]);
-                    } else {
-                        DB::table('model_has_roles')
-                            ->where('model_id', $this->id)
-                            ->where('model_type', $this->getMorphClass())
-                            ->where('role_id', $nuevoRolId)
-                            ->update([
-                                'activo' => true,
-                                'dependiente' => true,
-                            ]);
-                    }
-                }
+                $this->sincronizarRolDependiente($tipoObjetivo);
             });
-
-            if ($nuevoRolId) {
-                app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-            }
 
             return true;
         }
@@ -2206,5 +2157,79 @@ class User extends Authenticatable implements MustVerifyEmail
         \Illuminate\Support\Facades\Log::info("User::promoverTipoUsuario: Usuario ID {$this->id} ya posee un puntaje mayor ({$puntajeActual}) que el objetivo ({$puntajeObjetivo}). No se realiza cambio.");
 
         return false;
+    }
+
+    /**
+     * Sincroniza el rol dependiente del usuario asegurando que tenga única y exclusivamente
+     * el rol dependiente asociado a su TipoUsuario actual, sin alterar sus roles independientes
+     * ni desactivar innecesariamente su rol de trabajo activo.
+     *
+     * @param  TipoUsuario|int|null  $tipoUsuarioObjetivo  Tipo de usuario nuevo o null para usar el actual.
+     */
+    public function sincronizarRolDependiente(TipoUsuario|int|null $tipoUsuarioObjetivo = null): void
+    {
+        $tipoUsuario = $tipoUsuarioObjetivo instanceof TipoUsuario
+            ? $tipoUsuarioObjetivo
+            : ($tipoUsuarioObjetivo ? TipoUsuario::find($tipoUsuarioObjetivo) : $this->tipoUsuario);
+
+        $nuevoRolDependienteId = $tipoUsuario?->id_rol_dependiente ? (int) $tipoUsuario->id_rol_dependiente : null;
+
+        // 1. Obtener todos los roles dependientes actuales del usuario en model_has_roles
+        // Consideramos dependientes aquellos con dependiente = true en el pivot o en la tabla roles
+        $rolesDependientesActuales = $this->roles()
+            ->where(function ($query) {
+                $query->where('model_has_roles.dependiente', true)
+                    ->orWhere('roles.dependiente', true);
+            })
+            ->get();
+
+        // ¿El rol activo actual del usuario es alguno de los dependientes que vamos a remover?
+        $teniaRolDependienteActivo = $rolesDependientesActuales->contains(function ($r) {
+            return (bool) $r->pivot->activo;
+        });
+
+        // 2. Remover todos los roles dependientes anteriores que no coincidan con el nuevo rol
+        foreach ($rolesDependientesActuales as $rolActual) {
+            if ($rolActual->id !== $nuevoRolDependienteId) {
+                $this->roles()->detach($rolActual->id);
+            }
+        }
+
+        // 3. Si el nuevo TipoUsuario tiene un rol dependiente
+        if ($nuevoRolDependienteId) {
+            $rolExiste = Role::find($nuevoRolDependienteId);
+            if ($rolExiste) {
+                $yaLoTiene = $this->roles()->where('roles.id', $nuevoRolDependienteId)->first();
+                $cantidadActivosRestantes = $this->roles()->where('model_has_roles.activo', true)->count();
+
+                // Si el rol que estaba activo era el dependiente saliente, o si no le queda ningún rol activo:
+                $debeSerActivo = $teniaRolDependienteActivo || ($cantidadActivosRestantes < 1);
+
+                if (! $yaLoTiene) {
+                    $this->roles()->attach($nuevoRolDependienteId, [
+                        'activo' => $debeSerActivo,
+                        'dependiente' => true,
+                        'model_type' => $this->getMorphClass(),
+                    ]);
+                } else {
+                    $this->roles()->updateExistingPivot($nuevoRolDependienteId, [
+                        'dependiente' => true,
+                        'activo' => $yaLoTiene->pivot->activo || $debeSerActivo,
+                    ]);
+                }
+            }
+        } else {
+            // Si el nuevo TipoUsuario no tiene rol dependiente y el que se quitó era el activo,
+            // activar el primer rol independiente restante si existe para que no quede sin rol activo
+            if ($teniaRolDependienteActivo && $this->roles()->where('model_has_roles.activo', true)->count() < 1) {
+                $primerRol = $this->roles()->first();
+                if ($primerRol) {
+                    $this->roles()->updateExistingPivot($primerRol->id, ['activo' => true]);
+                }
+            }
+        }
+
+        // 4. Limpiar caché de permisos de Spatie
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

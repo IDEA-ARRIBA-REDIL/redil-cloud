@@ -41,6 +41,7 @@ class GenerarMegaInformeJob implements ShouldQueue
 
         if (! $informeEnCola) {
             Log::warning("GenerarMegaInformeJob: No se encontró el registro InformeEnCola ID: {$this->informeEnColaId}");
+
             return;
         }
 
@@ -56,7 +57,7 @@ class GenerarMegaInformeJob implements ShouldQueue
 
             // 3. Generar y guardar el archivo Excel en storage privado
             $nombreArchivo = $resultado['nombreArchivo'];
-            $relPath = 'informes/' . $nombreArchivo . '.xlsx';
+            $relPath = 'informes/'.$nombreArchivo.'.xlsx';
 
             // Asegurar directorio en storage
             Storage::disk('local')->makeDirectory('informes');
@@ -82,10 +83,16 @@ class GenerarMegaInformeJob implements ShouldQueue
 
             // 5. Enviar notificación por correo si tiene email configurado
             if (! empty($informeEnCola->email)) {
-                Mail::to($informeEnCola->email)->send(
-                    new MegaInformeGeneradoMail($informeEnCola, $resultado['informe'], $fullPath)
-                );
-                Log::info("GenerarMegaInformeJob: Correo enviado a {$informeEnCola->email}");
+                try {
+                    Mail::to($informeEnCola->email)->send(
+                        new MegaInformeGeneradoMail($informeEnCola, $resultado['informe'], $fullPath)
+                    );
+                    Log::info("GenerarMegaInformeJob: Correo enviado a {$informeEnCola->email}");
+                } catch (Throwable $mailEx) {
+                    Log::warning("GenerarMegaInformeJob: El informe se generó correctamente pero falló el envío de correo a {$informeEnCola->email}: ".$mailEx->getMessage(), [
+                        'exception' => $mailEx,
+                    ]);
+                }
             }
         } catch (Throwable $e) {
             $fin = microtime(true);
@@ -96,7 +103,7 @@ class GenerarMegaInformeJob implements ShouldQueue
             $informeEnCola->tiempo_ejecucion_segundos = $duracionSegundos;
             $informeEnCola->save();
 
-            Log::error("GenerarMegaInformeJob: Error al procesar InformeEnCola ID {$informeEnCola->id}: " . $e->getMessage(), [
+            Log::error("GenerarMegaInformeJob: Error al procesar InformeEnCola ID {$informeEnCola->id}: ".$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 

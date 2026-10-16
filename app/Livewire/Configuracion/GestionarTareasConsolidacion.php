@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Configuracion;
 
+use App\Models\Role;
 use App\Models\TareaConsolidacion;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -29,6 +30,10 @@ class GestionarTareasConsolidacion extends Component
 
     public bool $default = false;
 
+    public bool $todosLosRoles = true;
+
+    public array $rolesSeleccionados = [];
+
     public bool $isEditing = false;
 
     protected function rules(): array
@@ -38,6 +43,9 @@ class GestionarTareasConsolidacion extends Component
             'descripcion' => 'nullable|string|max:200',
             'orden' => 'nullable|integer|min:0|max:32767',
             'default' => 'boolean',
+            'todosLosRoles' => 'boolean',
+            'rolesSeleccionados' => 'exclude_if:todosLosRoles,true|required|array|min:1',
+            'rolesSeleccionados.*' => 'exists:roles,id',
         ];
     }
 
@@ -48,6 +56,8 @@ class GestionarTareasConsolidacion extends Component
         'descripcion.max' => 'La descripción no puede superar los 200 caracteres.',
         'orden.integer' => 'El orden debe ser un número entero.',
         'orden.min' => 'El orden no puede ser negativo.',
+        'rolesSeleccionados.required' => 'Debes seleccionar al menos un rol cuando la tarea no está disponible para todos.',
+        'rolesSeleccionados.min' => 'Debes seleccionar al menos un rol cuando la tarea no está disponible para todos.',
     ];
 
     public function updatingSearch(): void
@@ -95,7 +105,9 @@ class GestionarTareasConsolidacion extends Component
     public function crear(): void
     {
         $this->resetValidation();
-        $this->reset(['tareaId', 'nombre', 'descripcion', 'orden', 'default', 'isEditing']);
+        $this->reset(['tareaId', 'nombre', 'descripcion', 'orden', 'default', 'todosLosRoles', 'rolesSeleccionados', 'isEditing']);
+        $this->todosLosRoles = true;
+        $this->rolesSeleccionados = [];
 
         // Asignar automáticamente el siguiente orden sugerido
         $ultimoOrden = TareaConsolidacion::max('orden');
@@ -107,14 +119,26 @@ class GestionarTareasConsolidacion extends Component
     public function editar(int $id): void
     {
         $this->resetValidation();
-        $tarea = TareaConsolidacion::findOrFail($id);
+        $tarea = TareaConsolidacion::with('roles')->findOrFail($id);
         $this->tareaId = $tarea->id;
         $this->nombre = $tarea->nombre;
         $this->descripcion = $tarea->descripcion ?? '';
         $this->orden = $tarea->orden;
         $this->default = (bool) $tarea->default;
+        $this->todosLosRoles = $tarea->todos_los_roles ?? true;
+        $this->rolesSeleccionados = $tarea->roles->pluck('id')->map(fn ($rid) => (int) $rid)->toArray();
         $this->isEditing = true;
         $this->dispatch('abrir-offcanvas-tarea');
+    }
+
+    public function seleccionarTodosLosRoles(): void
+    {
+        $this->rolesSeleccionados = Role::pluck('id')->map(fn ($id) => (int) $id)->toArray();
+    }
+
+    public function deseleccionarTodosLosRoles(): void
+    {
+        $this->rolesSeleccionados = [];
     }
 
     public function guardar(): void
@@ -126,6 +150,7 @@ class GestionarTareasConsolidacion extends Component
             'descripcion' => trim($this->descripcion) !== '' ? trim($this->descripcion) : null,
             'orden' => $this->orden !== null ? (int) $this->orden : null,
             'default' => $this->default,
+            'todos_los_roles' => $this->todosLosRoles,
         ];
 
         if ($this->isEditing && $this->tareaId) {
@@ -133,11 +158,19 @@ class GestionarTareasConsolidacion extends Component
             $tarea->update($data);
             $mensaje = 'La tarea de consolidación ha sido actualizada correctamente.';
         } else {
-            TareaConsolidacion::create($data);
+            $tarea = TareaConsolidacion::create($data);
             $mensaje = 'La tarea de consolidación ha sido creada con éxito.';
         }
 
-        $this->reset(['tareaId', 'nombre', 'descripcion', 'orden', 'default', 'isEditing']);
+        // Sincronización de roles
+        if ($this->todosLosRoles) {
+            $tarea->roles()->detach();
+        } else {
+            $tarea->roles()->sync($this->rolesSeleccionados);
+        }
+
+        $this->reset(['tareaId', 'nombre', 'descripcion', 'orden', 'default', 'todosLosRoles', 'rolesSeleccionados', 'isEditing']);
+        $this->todosLosRoles = true;
         $this->dispatch('cerrar-offcanvas-tarea');
         $this->dispatch('msn', [
             'icono' => 'success',
@@ -174,6 +207,7 @@ class GestionarTareasConsolidacion extends Component
         $termino = trim($this->search);
 
         $query = TareaConsolidacion::query()
+            ->with('roles')
             ->withCount('usuarios')
             ->when($termino !== '', function ($q) use ($termino) {
                 $q->where(function ($sub) use ($termino) {
@@ -200,9 +234,11 @@ class GestionarTareasConsolidacion extends Component
         }
 
         $tareas = $query->paginate(12);
+        $todosLosRolesLista = Role::orderBy('name')->get();
 
         return view('livewire.configuracion.gestionar-tareas-consolidacion', [
             'tareas' => $tareas,
+            'todosLosRolesLista' => $todosLosRolesLista,
         ]);
     }
 }

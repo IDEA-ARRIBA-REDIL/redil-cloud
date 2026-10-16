@@ -95,6 +95,10 @@
               </div>
             </th>
 
+            <th class="text-center user-select-none" style="width: 160px;">
+              <span>Roles autorizados</span>
+            </th>
+
             <th class="text-center cursor-pointer user-select-none" style="width: 180px;" wire:click="sortBy('usuarios_count')" title="Ordenar por Asignaciones">
               <div class="d-inline-flex align-items-center justify-content-center gap-1">
                 <span>Asignaciones</span>
@@ -152,6 +156,20 @@
                   {{ $tarea->default ? 'Sí' : 'No' }}
                 </button>
               </td>
+              <td class="text-center">
+                @if($tarea->todos_los_roles)
+                  <span class="badge bg-label-success rounded-pill px-2 py-1">
+                    <i class="ti ti-world ti-xs me-1"></i> Todos
+                  </span>
+                @else
+                  <span
+                    class="badge bg-label-warning rounded-pill px-2 py-1"
+                    title="{{ $tarea->roles->pluck('name')->implode(', ') }}"
+                  >
+                    <i class="ti ti-lock ti-xs me-1"></i> {{ $tarea->roles->count() }} rol(es)
+                  </span>
+                @endif
+              </td>
               <td class="text-center text-black">
                 @if($tarea->usuarios_count > 0)
                   {{ $tarea->usuarios_count }}
@@ -186,7 +204,7 @@
             </tr>
           @empty
             <tr>
-              <td colspan="7" class="text-center py-5">
+              <td colspan="8" class="text-center py-5">
                 <div class="avatar avatar-xl bg-label-secondary mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center">
                   <i class="ti ti-list-check ti-lg text-white"></i>
                 </div>
@@ -252,11 +270,17 @@
     class="offcanvas offcanvas-end" 
     tabindex="-1" 
     id="offcanvasTareaConsolidacion" 
+    data-bs-backdrop="true"
+    data-bs-scroll="false"
     wire:ignore.self 
     aria-labelledby="offcanvasTareaConsolidacionLabel"
+    x-data="{
+      todosLosRoles: @entangle('todosLosRoles'),
+      busquedaRol: ''
+    }"
   >
-    <form wire:submit.prevent="guardar">
-      <div class="offcanvas-header border-bottom">
+    <form wire:submit.prevent="guardar" class="d-flex flex-column h-100 m-0 overflow-hidden">
+      <div class="offcanvas-header border-bottom flex-shrink-0">
         <h5 id="offcanvasTareaConsolidacionLabel" class="offcanvas-title fw-semibold text-primary">
           <i class="ti {{ $isEditing ? 'ti-pencil' : 'ti-plus' }} me-2"></i>
           {{ $isEditing ? 'Editar tarea de consolidación' : 'Nueva tarea de consolidación' }}
@@ -264,7 +288,7 @@
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
 
-      <div class="offcanvas-body my-auto mx-0 flex-grow-0 p-4">
+      <div class="offcanvas-body flex-grow-1 overflow-y-auto p-4">
         <!-- Nombre -->
         <div class="mb-3">
           <label class="form-label fw-semibold" for="tareaNombre">
@@ -340,7 +364,7 @@
           <div class="form-check form-switch ps-0">
             <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border bg-light">
               <div>
-                <label class="form-check-label fw-semibold text-dark d-block mb-1" for="switchDefault">
+                <label class="form-check-label fw-semibold text-dark d-block mb-1 cursor-pointer" for="switchDefault">
                   ¿Es tarea por defecto?
                 </label>
                 <small class="text-muted d-block">
@@ -348,7 +372,7 @@
                 </small>
               </div>
               <input 
-                class="form-check-input ms-3 fs-4" 
+                class="form-check-input ms-3 fs-4 cursor-pointer"
                 type="checkbox" 
                 id="switchDefault" 
                 wire:model="default"
@@ -356,9 +380,104 @@
             </div>
           </div>
         </div>
+
+        <!-- Switch Todos los Roles -->
+        <div class="mb-4">
+          <div class="form-check form-switch ps-0">
+            <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border bg-light">
+              <div>
+                <label class="form-check-label fw-semibold text-dark d-block mb-1 cursor-pointer" for="switchTodosLosRoles">
+                  ¿Disponible para todos los roles?
+                </label>
+                <small class="text-muted d-block">
+                  Si está marcado, cualquier consolidador podrá ver y gestionar esta tarea. Si se desmarca, solo los roles seleccionados tendrán acceso.
+                </small>
+              </div>
+              <input
+                class="form-check-input ms-3 fs-4 cursor-pointer"
+                type="checkbox"
+                id="switchTodosLosRoles"
+                x-model="todosLosRoles"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Bloque de Selección de Roles Específicos -->
+        <div class="mb-4 border rounded-3 p-3 bg-white shadow-sm" x-show="!todosLosRoles" x-cloak x-transition>
+          <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2 pb-2 border-bottom">
+            <div>
+              <label class="form-label fw-semibold text-dark mb-0">
+                Roles autorizados <span class="text-danger">*</span>
+              </label>
+              <small class="text-muted d-block" style="font-size: 0.75rem;">
+                Selecciona qué roles pueden ver y gestionar esta tarea.
+              </small>
+            </div>
+            <div class="d-flex gap-1">
+              <button
+                type="button"
+                class="btn btn-xs btn-label-primary rounded-pill px-2"
+                @click="$wire.set('rolesSeleccionados', {{ json_encode($todosLosRolesLista->pluck('id')->map(fn($id)=>(int)$id)->toArray()) }})"
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                class="btn btn-xs btn-label-secondary rounded-pill px-2"
+                @click="$wire.set('rolesSeleccionados', [])"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Buscador rápido de roles en cliente -->
+          <div class="input-group input-group-sm mb-3">
+            <span class="input-group-text bg-light"><i class="ti ti-search ti-xs"></i></span>
+            <input
+              type="text"
+              class="form-control form-control-sm"
+              placeholder="Filtrar rol por nombre..."
+              x-model="busquedaRol"
+            >
+          </div>
+
+          <!-- Listado de roles con checkboxes -->
+          <div class="roles-checkbox-container p-2 border rounded-2 bg-light" style="max-height: 240px; overflow-y: auto;">
+            <div class="row g-2">
+              @forelse($todosLosRolesLista as $rol)
+                <div
+                  class="col-12 col-sm-6"
+                  x-show="!busquedaRol || '{{ strtolower(addslashes($rol->name)) }}'.includes(busquedaRol.toLowerCase())"
+                >
+                  <div class="form-check">
+                    <input
+                      class="form-check-input rol-check-input cursor-pointer"
+                      type="checkbox"
+                      value="{{ $rol->id }}"
+                      id="rol_chk_{{ $rol->id }}"
+                      wire:model="rolesSeleccionados"
+                    >
+                    <label class="form-check-label text-dark small text-truncate d-block cursor-pointer" for="rol_chk_{{ $rol->id }}" title="{{ $rol->name }}">
+                      {{ $rol->name }}
+                    </label>
+                  </div>
+                </div>
+              @empty
+                <div class="col-12 text-center py-2 text-muted small">
+                  No hay roles registrados en el sistema.
+                </div>
+              @endforelse
+            </div>
+          </div>
+          @error('rolesSeleccionados')
+            <div class="invalid-feedback d-block mt-2">{{ $message }}</div>
+          @enderror
+        </div>
       </div>
 
-      <div class="offcanvas-footer d-flex align-items-center justify-content-end gap-3 p-4 border-top">
+      <div class="offcanvas-footer flex-shrink-0 d-flex align-items-center justify-content-end gap-3 p-4 border-top bg-white">
         <button type="button" class="btn btn-label-secondary rounded-pill px-3" data-bs-dismiss="offcanvas">
           Cancelar
         </button>
@@ -378,17 +497,20 @@
 
 @script
 <script>
-  let offcanvasElement = document.getElementById('offcanvasTareaConsolidacion');
-  let offcanvasInstance = null;
+  const getOffcanvasInstance = () => {
+    const el = document.getElementById('offcanvasTareaConsolidacion');
+    if (!el) return null;
+    return (window.bootstrap || bootstrap).Offcanvas.getOrCreateInstance(el, {
+      backdrop: true,
+      keyboard: true,
+      scroll: false
+    });
+  };
 
-  if (offcanvasElement) {
-    offcanvasInstance = new bootstrap.Offcanvas(offcanvasElement);
-  }
-
-  // Eventos de control del Offcanvas
   Livewire.on('abrir-offcanvas-tarea', () => {
-    if (offcanvasInstance) {
-      offcanvasInstance.show();
+    const inst = getOffcanvasInstance();
+    if (inst) {
+      inst.show();
       setTimeout(() => {
         const input = document.getElementById('tareaNombre');
         if (input) input.focus();
@@ -397,8 +519,12 @@
   });
 
   Livewire.on('cerrar-offcanvas-tarea', () => {
-    if (offcanvasInstance) {
-      offcanvasInstance.hide();
+    const el = document.getElementById('offcanvasTareaConsolidacion');
+    if (el) {
+      const inst = (window.bootstrap || bootstrap).Offcanvas.getInstance(el);
+      if (inst) {
+        inst.hide();
+      }
     }
   });
 

@@ -4,6 +4,7 @@ namespace App\Livewire\Usuarios\Formularios;
 
 use App\Livewire\Generales\BarrioLocalidadBuscador;
 use App\Models\CampoFormularioUsuario;
+use App\Models\TipoIdentificacion;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
@@ -44,17 +45,62 @@ class ValidarFormulario extends Component
                 ->get();
         }
 
-        // Obtener mapa de todos los campos del formulario para resolver dependencias
+        // 1. Limpiar strings vacíos en dataSeccion convirtiéndolos en null para que validadores 'nullable' pasen sin problemas
+        if (is_array($dataSeccion)) {
+            foreach ($dataSeccion as $key => $val) {
+                if ($val === '') {
+                    $dataSeccion[$key] = null;
+                }
+            }
+
+            // 1.1 Normalizar y limpiar identificación y acudiente (remover puntos/espacios y aplicar mayúsculas si corresponde)
+            if ($campos->where('nombre_bd', 'identificacion')->count() > 0) {
+                $campoIden = $campos->where('nombre_bd', 'identificacion')->first();
+                if (! empty($dataSeccion[$campoIden->name_id])) {
+                    $valorLimpio = str_replace(['.', ' '], '', (string) $dataSeccion[$campoIden->name_id]);
+                    $campoTipoDoc = $campos->where('nombre_bd', 'tipo_identificacion_id')->first();
+                    $tipoDocId = $campoTipoDoc ? ($dataSeccion[$campoTipoDoc->name_id] ?? null) : null;
+                    $tipoDoc = $tipoDocId ? TipoIdentificacion::find($tipoDocId) : null;
+                    if (! $tipoDoc || ($tipoDoc->forzar_mayusculas ?? true)) {
+                        $valorLimpio = strtoupper($valorLimpio);
+                    }
+                    $dataSeccion[$campoIden->name_id] = $valorLimpio;
+                }
+            }
+
+            if ($campos->where('nombre_bd', 'identificacion_acudiente')->count() > 0) {
+                $campoIdenAcud = $campos->where('nombre_bd', 'identificacion_acudiente')->first();
+                if (! empty($dataSeccion[$campoIdenAcud->name_id])) {
+                    $valorLimpio = str_replace(['.', ' '], '', (string) $dataSeccion[$campoIdenAcud->name_id]);
+                    $campoTipoDocAcud = $campos->where('nombre_bd', 'tipo_identificacion_acudiente_id')->first();
+                    $tipoDocAcudId = $campoTipoDocAcud ? ($dataSeccion[$campoTipoDocAcud->name_id] ?? null) : null;
+                    $tipoDocAcud = $tipoDocAcudId ? TipoIdentificacion::find($tipoDocAcudId) : null;
+                    if (! $tipoDocAcud || ($tipoDocAcud->forzar_mayusculas ?? true)) {
+                        $valorLimpio = strtoupper($valorLimpio);
+                    }
+                    $dataSeccion[$campoIdenAcud->name_id] = $valorLimpio;
+                }
+            }
+        }
+
+        // 2. Obtener mapa de todos los campos del formulario para resolver dependencias
         $todosLosCampos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
             ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
             ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $this->formulario->id)
-            ->select('campos_formulario_usuario.*')
+            ->select(
+                'campos_formulario_usuario.*',
+                'campo_seccion_formulario_usuario.requerido',
+                'campo_seccion_formulario_usuario.depende_de_campo_id',
+                'campo_seccion_formulario_usuario.tipo_condicion',
+                'campo_seccion_formulario_usuario.valor_condicion',
+                'campo_seccion_formulario_usuario.accion_dependencia'
+            )
             ->get()
             ->keyBy('id');
 
-        $normalizeVal = function ($val) {
-            if ($val === null) {
-                return '';
+        $normalizeVal = function ($val, $esSwitch = false) {
+            if ($val === null || $val === '') {
+                return $esSwitch ? '0' : '';
             }
             $str = mb_strtolower(trim((string) $val));
             if (in_array($str, ['1', 'true', 'si', 'sí', 'on', 'activo', 'activado'])) {
@@ -67,40 +113,62 @@ class ValidarFormulario extends Component
             return $str;
         };
 
-        // Modificar la propiedad requerido de cada campo según sus reglas de dependencia
-        foreach ($campos as $campoItem) {
-            if (! empty($campoItem->depende_de_campo_id) && isset($todosLosCampos[$campoItem->depende_de_campo_id])) {
-                $padre = $todosLosCampos[$campoItem->depende_de_campo_id];
-                $valorPadre = $dataSeccion[$padre->name_id] ?? null;
+        $padresInactivos = [];
 
-                $cumple = false;
-                if ($campoItem->tipo_condicion === 'vacio') {
-                    if (is_array($valorPadre)) {
-                        $cumple = count($valorPadre) === 0;
-                    } else {
-                        $norm = $normalizeVal($valorPadre);
-                        $cumple = $norm === '' || $norm === '0';
-                    }
-                } elseif ($campoItem->tipo_condicion === 'igual_a') {
-                    if (is_array($valorPadre)) {
-                        $normEsperado = $normalizeVal($campoItem->valor_condicion);
-                        $cumple = in_array($normEsperado, array_map($normalizeVal, $valorPadre));
-                    } else {
-                        $cumple = $normalizeVal($valorPadre) === $normalizeVal($campoItem->valor_condicion);
-                    }
-                } else { // no_vacio
-                    if (is_array($valorPadre)) {
-                        $cumple = count($valorPadre) > 0;
-                    } else {
-                        $norm = $normalizeVal($valorPadre);
-                        $cumple = $norm !== '' && $norm !== '0';
-                    }
-                }
+        // 3. Modificar la propiedad requerido de cada campo según sus reglas de dependencia (hasta 3 pasadas para dependencias en cadena)
+        for ($pasada = 0; $pasada < 3; $pasada++) {
+            foreach ($campos as $campoItem) {
+                if (! empty($campoItem->depende_de_campo_id) && isset($todosLosCampos[$campoItem->depende_de_campo_id])) {
+                    $padre = $todosLosCampos[$campoItem->depende_de_campo_id];
 
-                // Modelo SI ... ENTONCES ...:
-                // Si la condición se cumple -> el campo se oculta o bloquea -> se desactiva su obligatoriedad
-                if ($cumple) {
-                    $campoItem->requerido = 0;
+                    // Si el campo padre ya fue desactivado en cascada, el hijo también se desactiva
+                    if (isset($padresInactivos[$padre->id])) {
+                        $campoItem->requerido = 0;
+                        $padresInactivos[$campoItem->id] = true;
+
+                        continue;
+                    }
+
+                    $esSwitch = in_array($padre->nombre_bd, ['pregunta_vives_en', 'tienes_una_peticion'])
+                        || str_contains(strtolower($padre->name_id ?? ''), 'vives_en')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'peticion')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'switch')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'check');
+
+                    $valorPadre = $dataSeccion[$padre->name_id] ?? null;
+
+                    $cumple = false;
+                    if ($campoItem->tipo_condicion === 'vacio') {
+                        if (is_array($valorPadre)) {
+                            $cumple = count($valorPadre) === 0;
+                        } else {
+                            $norm = $normalizeVal($valorPadre, $esSwitch);
+                            $cumple = ($norm === '' || $norm === '0');
+                        }
+                    } elseif ($campoItem->tipo_condicion === 'igual_a') {
+                        if (is_array($valorPadre)) {
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = in_array($normEsperado, array_map(fn ($v) => $normalizeVal($v, $esSwitch), $valorPadre));
+                        } else {
+                            $normActual = $normalizeVal($valorPadre, $esSwitch);
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ($normActual === $normEsperado);
+                        }
+                    } else { // no_vacio
+                        if (is_array($valorPadre)) {
+                            $cumple = count($valorPadre) > 0;
+                        } else {
+                            $norm = $normalizeVal($valorPadre, $esSwitch);
+                            $cumple = ($norm !== '' && $norm !== '0');
+                        }
+                    }
+
+                    // Modelo SI ... ENTONCES ...:
+                    // Si la condición se cumple -> el campo se oculta o bloquea -> se desactiva su obligatoriedad
+                    if ($cumple) {
+                        $campoItem->requerido = 0;
+                        $padresInactivos[$campoItem->id] = true;
+                    }
                 }
             }
         }
@@ -179,6 +247,25 @@ class ValidarFormulario extends Component
             if ($this->usuario) {
                 $validarIdentificacion = $campoTemporal->requerido ? ['string', 'required', 'max:255', Rule::unique('users', 'identificacion')->ignore($this->usuario->id)] : ['string', 'nullable', 'max:255', Rule::unique('users', 'identificacion')->ignore($this->usuario->id)];
             }
+
+            // Restricción según Tipo de Identificación (solo si tipo_identificacion_id pertenece al formulario)
+            if ($campos->where('nombre_bd', 'tipo_identificacion_id')->count() > 0) {
+                $campoTipoDoc = $campos->where('nombre_bd', 'tipo_identificacion_id')->first();
+                $tipoDocId = $dataSeccion[$campoTipoDoc->name_id] ?? null;
+                if ($tipoDocId) {
+                    $tipoDoc = TipoIdentificacion::find($tipoDocId);
+                    if ($tipoDoc) {
+                        if ($tipoDoc->tipo_caracteres === TipoIdentificacion::CARACTERES_SOLO_NUMEROS) {
+                            $validarIdentificacion[] = 'regex:/^[0-9]+$/';
+                            $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación solo debe contener números para este tipo de documento.';
+                        } elseif ($tipoDoc->tipo_caracteres === TipoIdentificacion::CARACTERES_ALFANUMERICO) {
+                            $validarIdentificacion[] = 'regex:/^[a-zA-Z0-9]+$/';
+                            $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación solo debe contener letras y números para este tipo de documento.';
+                        }
+                    }
+                }
+            }
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarIdentificacion]);
         }
 
@@ -301,7 +388,26 @@ class ValidarFormulario extends Component
         // identificacion_acudiente
         if ($campos->where('nombre_bd', 'identificacion_acudiente')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'identificacion_acudiente')->first();
-            $validarIdentificacionAcudiente = $campoTemporal->requerido ? ['string', 'required'] : ['string', 'nullable'];
+            $validarIdentificacionAcudiente = $campoTemporal->requerido ? ['string', 'required', 'max:255'] : ['string', 'nullable', 'max:255'];
+
+            // Restricción según Tipo de Identificación Acudiente (solo si tipo_identificacion_acudiente_id pertenece al formulario)
+            if ($campos->where('nombre_bd', 'tipo_identificacion_acudiente_id')->count() > 0) {
+                $campoTipoDocAcud = $campos->where('nombre_bd', 'tipo_identificacion_acudiente_id')->first();
+                $tipoDocAcudId = $dataSeccion[$campoTipoDocAcud->name_id] ?? null;
+                if ($tipoDocAcudId) {
+                    $tipoDocAcud = TipoIdentificacion::find($tipoDocAcudId);
+                    if ($tipoDocAcud) {
+                        if ($tipoDocAcud->tipo_caracteres === TipoIdentificacion::CARACTERES_SOLO_NUMEROS) {
+                            $validarIdentificacionAcudiente[] = 'regex:/^[0-9]+$/';
+                            $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación del acudiente solo debe contener números para este tipo de documento.';
+                        } elseif ($tipoDocAcud->tipo_caracteres === TipoIdentificacion::CARACTERES_ALFANUMERICO) {
+                            $validarIdentificacionAcudiente[] = 'regex:/^[a-zA-Z0-9]+$/';
+                            $mensajes["{$campoTemporal->name_id}.regex"] = 'El campo Identificación del acudiente solo debe contener letras y números para este tipo de documento.';
+                        }
+                    }
+                }
+            }
+
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarIdentificacionAcudiente]);
         }
 
@@ -387,7 +493,7 @@ class ValidarFormulario extends Component
         // ubicacion localidad y barrio
         if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-            $validarUbicacion = $campoTemporal->requerido ? ['numeric', 'required'] : ['numeric', 'nullable'];
+            $validarUbicacion = $campoTemporal->requerido ? ['numeric', 'required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
         }
 
@@ -494,43 +600,159 @@ class ValidarFormulario extends Component
         $html = '';
 
         $this->paso = $dataSeccion;
+
+        // 1. Obtener todos los campos con sus dependencias para saber cuáles quedaron ocultos
+        $todosLosCampos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
+            ->leftJoin('secciones_formulario_usuario', 'campo_seccion_formulario_usuario.seccion_id', '=', 'secciones_formulario_usuario.id')
+            ->where('secciones_formulario_usuario.formulario_usuario_id', '=', $this->formulario->id)
+            ->select(
+                'campos_formulario_usuario.*',
+                'campo_seccion_formulario_usuario.requerido',
+                'campo_seccion_formulario_usuario.depende_de_campo_id',
+                'campo_seccion_formulario_usuario.tipo_condicion',
+                'campo_seccion_formulario_usuario.valor_condicion',
+                'campo_seccion_formulario_usuario.accion_dependencia'
+            )
+            ->get()
+            ->keyBy('id');
+
+        $normalizeVal = function ($val, $esSwitch = false) {
+            if ($val === null || $val === '') {
+                return $esSwitch ? '0' : '';
+            }
+            $str = mb_strtolower(trim((string) $val));
+            if (in_array($str, ['1', 'true', 'si', 'sí', 'on', 'activo', 'activado'])) {
+                return '1';
+            }
+            if (in_array($str, ['0', 'false', 'no', 'off', 'inactivo', 'desactivado'])) {
+                return '0';
+            }
+
+            return $str;
+        };
+
+        $camposOcultos = [];
+        for ($pasada = 0; $pasada < 3; $pasada++) {
+            foreach ($todosLosCampos as $campoItem) {
+                if (! empty($campoItem->depende_de_campo_id) && isset($todosLosCampos[$campoItem->depende_de_campo_id])) {
+                    $padre = $todosLosCampos[$campoItem->depende_de_campo_id];
+
+                    if (isset($camposOcultos[$padre->id])) {
+                        $camposOcultos[$campoItem->id] = true;
+
+                        continue;
+                    }
+
+                    $esSwitch = in_array($padre->nombre_bd, ['pregunta_vives_en', 'tienes_una_peticion'])
+                        || str_contains(strtolower($padre->name_id ?? ''), 'vives_en')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'peticion')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'switch')
+                        || str_contains(strtolower($padre->name_id ?? ''), 'check');
+
+                    $valorPadre = $dataSeccion[$padre->name_id] ?? null;
+
+                    $cumple = false;
+                    if ($campoItem->tipo_condicion === 'vacio') {
+                        if (is_array($valorPadre)) {
+                            $cumple = count($valorPadre) === 0;
+                        } else {
+                            $norm = $normalizeVal($valorPadre, $esSwitch);
+                            $cumple = ($norm === '' || $norm === '0');
+                        }
+                    } elseif ($campoItem->tipo_condicion === 'igual_a') {
+                        if (is_array($valorPadre)) {
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = in_array($normEsperado, array_map(fn ($v) => $normalizeVal($v, $esSwitch), $valorPadre));
+                        } else {
+                            $normActual = $normalizeVal($valorPadre, $esSwitch);
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ($normActual === $normEsperado);
+                        }
+                    } else { // no_vacio
+                        if (is_array($valorPadre)) {
+                            $cumple = count($valorPadre) > 0;
+                        } else {
+                            $norm = $normalizeVal($valorPadre, $esSwitch);
+                            $cumple = ($norm !== '' && $norm !== '0');
+                        }
+                    }
+
+                    if ($cumple) {
+                        $camposOcultos[$campoItem->id] = true;
+                    }
+                }
+            }
+        }
+
         $secciones = $this->formulario->secciones()->orderBy('orden', 'asc')->get();
         foreach ($secciones as $seccion) {
-            $html .= '
-        <div class="row px-2 py-2">
-          <div class="d-flex">
-            <div class="flex-grow-1">
-              <p class="fs-5 text-black fw-semibold m-0 ">'.$seccion->titulo.'</p>
-            </div>
-            <div class="d-flex justify-content-start">
-              <a class="btn text-info p-0 step-especifico" data-seccion="'.$seccion->orden.'"><i class="ti ti-pencil"></i></a>
-            </div>
-          </div>';
-
+            $htmlCamposSeccion = '';
             $campos = $seccion->campos()->where('visible_resumen', true)->orderBy('orden', 'asc')->get();
+
             foreach ($campos as $campo) {
-                $valor = $dataSeccion[$campo->name_id];
+                // Si el campo quedó oculto por dependencia, NO se debe mostrar en el resumen
+                if (isset($camposOcultos[$campo->id])) {
+                    continue;
+                }
+
+                $valor = $dataSeccion[$campo->name_id] ?? '';
 
                 if ($campo->nombre_bd == 'password') {
-                    $html .= '
+                    $htmlCamposSeccion .= '
             <div class="col-12 col-md-6">
               <div class="py-2 border-bottom">
                 <p class="fs-6 text-black m-0">'.$campo->nombre.'</p>
                 <p class="fs-6 text-black fw-semibold m-0">***************</p>
               </div>
             </div>';
-                } else {
-                    $html .= '
+                } elseif ($campo->nombre_bd == 'ubicacion') {
+                    $ubicacionId = $dataSeccion[$campo->name_id] ?? null;
+                    $tipoUbicacion = $dataSeccion['tipoUbicacion'] ?? null;
+                    $nombreUbicacion = '';
+                    if ($ubicacionId) {
+                        if ($tipoUbicacion == 'Localidad') {
+                            $loc = \App\Models\Localidad::find($ubicacionId);
+                            $nombreUbicacion = $loc ? $loc->nombre : $ubicacionId;
+                        } else {
+                            $barrio = \App\Models\Barrio::find($ubicacionId);
+                            if ($barrio) {
+                                $nombreUbicacion = $barrio->nombre.($barrio->localidad ? ', '.$barrio->localidad->nombre : '');
+                            } else {
+                                $loc = \App\Models\Localidad::find($ubicacionId);
+                                $nombreUbicacion = $loc ? $loc->nombre : $ubicacionId;
+                            }
+                        }
+                    }
+                    $htmlCamposSeccion .= '
             <div class="col-12 col-md-6">
               <div class="py-2 border-bottom">
                 <p class="fs-6 text-black m-0">'.$campo->nombre.'</p>
-                <p class="fs-6 text-black fw-semibold m-0">'.$valor.'</p>
+                <p class="fs-6 text-black fw-semibold m-0">'.($nombreUbicacion ?: '-').'</p>
+              </div>
+            </div>';
+                } else {
+                    $htmlCamposSeccion .= '
+            <div class="col-12 col-md-6">
+              <div class="py-2 border-bottom">
+                <p class="fs-6 text-black m-0">'.$campo->nombre.'</p>
+                <p class="fs-6 text-black fw-semibold m-0">'.($valor !== '' ? $valor : '-').'</p>
               </div>
             </div>';
                 }
             }
 
-            $html .= '</div>';
+            if (! empty($htmlCamposSeccion)) {
+                $html .= '
+          <div class="row px-2 py-2">
+            <div class="d-flex">
+              <div class="flex-grow-1">
+                <p class="fs-5 text-black fw-semibold m-0 ">'.$seccion->titulo.'</p>
+              </div>
+              <div class="d-flex justify-content-start">
+                <a class="btn text-info p-0 step-especifico" data-seccion="'.$seccion->orden.'"><i class="ti ti-pencil"></i></a>
+              </div>
+            </div>'.$htmlCamposSeccion.'</div>';
+            }
         }
         $this->dispatch('imprimirResumen', html: $html);
     }

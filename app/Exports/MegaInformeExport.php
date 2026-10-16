@@ -6,9 +6,8 @@ use App\Models\Informe;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithTitle;
 
-class MegaInformeExport implements FromView, ShouldAutoSize, WithTitle
+class MegaInformeExport implements FromView, ShouldAutoSize
 {
     public function __construct(
         public readonly string $tablaHtml,
@@ -21,10 +20,5 @@ class MegaInformeExport implements FromView, ShouldAutoSize, WithTitle
             'tablaHtml' => $this->tablaHtml,
             'informe' => $this->informe,
         ]);
-    }
-
-    public function title(): string
-    {
-        return mb_substr($this->informe->nombre, 0, 31);
     }
 }

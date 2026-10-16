@@ -243,14 +243,31 @@ $configData = Helper::appClasses();
     $(".next-step").click(function () {
       let seccionId = $(this).data('seccion');
 
-      // Obtener los datos del formulario del paso actual
-      var datosFormulario = $('#step-' + actualStep).find('input, select, textarea').serializeArray();
+      // Obtener los datos de todo el formulario para resolver dependencias entre pasos
+      var datosFormulario = $('#formulario').find('input, select, textarea').serializeArray();
 
       // Convertir los datos del formulario a un objeto
       var data = {};
       $.each(datosFormulario, function() {
         let nameInput = this.name.replace(/\[\]/g, "");
         data[nameInput] = this.value;
+      });
+
+      // Asegurar que todos los switches y checkboxes del formulario se registren ('1' si están marcados, '0' si están desmarcados)
+      $('#formulario').find('input[type="checkbox"]').each(function() {
+        let nameInput = this.name.replace(/\[\]/g, "");
+        if (nameInput) {
+          if (this.name.includes('[]')) {
+            if (!Array.isArray(data[nameInput])) {
+              data[nameInput] = [];
+            }
+            if (this.checked) {
+              data[nameInput].push(this.value);
+            }
+          } else {
+            data[nameInput] = this.checked ? (this.value || '1') : '0';
+          }
+        }
       });
 
       // Llamar al método validar del componente Livewire
@@ -288,6 +305,24 @@ $configData = Helper::appClasses();
               }
 
           });
+
+          // Asegurar que switches y checkboxes se incluyan en el resumen
+          $('#formulario').find('input[type="checkbox"]').each(function() {
+            let nameInput = this.name.replace(/\[\]/g, "");
+            if (nameInput) {
+              if (this.name.includes('[]')) {
+                if (!Array.isArray(data[nameInput])) {
+                  data[nameInput] = [];
+                }
+                if (this.checked) {
+                  data[nameInput].push(this.value);
+                }
+              } else {
+                data[nameInput] = this.checked ? (this.value || 'SI') : 'NO';
+              }
+            }
+          });
+
           Livewire.dispatch('crearResumen', { dataSeccion: data });
         }
       } else {
@@ -506,7 +541,7 @@ $configData = Helper::appClasses();
                   <select id="tipo_identificacion_id" name="{{ $campo->name_id }}" data-placeholder="{{$campo->placeholder}}" class="select2 form-select" data-allow-clear="true">
                     <option value="" selected>Ninguno</option>
                     @foreach ($tiposIdentificaciones as $tipoIdentificacion)
-                    <option value="{{$tipoIdentificacion->id}}" {{ old($campo->name_id) ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
+                    <option value="{{$tipoIdentificacion->id}}" data-caracteres="{{ $tipoIdentificacion->tipo_caracteres ?? 'solo_numeros' }}" data-mayusculas="{{ ($tipoIdentificacion->forzar_mayusculas ?? true) ? '1' : '0' }}" {{ old($campo->name_id) ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
                     @endforeach
                   </select>
                   <div id="error{{ $campo->name_id }}"></div>
@@ -1187,7 +1222,7 @@ $configData = Helper::appClasses();
                   <select id="tipo_identificacion_acudiente_id"  data-placeholder="{{ $campo->placeholder }}"  name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
                     <option value="" selected>Ninguno</option>
                     @foreach ($tiposIdentificaciones as $tipoIdentificacion)
-                    <option value="{{$tipoIdentificacion->id}}" {{ old($campo->name_id)==$tipoIdentificacion->id ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
+                    <option value="{{$tipoIdentificacion->id}}" data-caracteres="{{ $tipoIdentificacion->tipo_caracteres ?? 'solo_numeros' }}" data-mayusculas="{{ ($tipoIdentificacion->forzar_mayusculas ?? true) ? '1' : '0' }}" {{ old($campo->name_id)==$tipoIdentificacion->id ? 'selected' : '' }}>{{$tipoIdentificacion->nombre}}</option>
                     @endforeach
                   </select>
                   @if($campo->pivot->informacion_de_apoyo)
@@ -1477,5 +1512,6 @@ $configData = Helper::appClasses();
 <!-- modal cambio de formulario -->
 
 @include('contenido.paginas.usuario.scripts.dependencias-campos')
+@include('contenido.paginas.usuario.scripts.validacion-identificacion')
 
 @endsection

@@ -27,6 +27,10 @@ class GestionarTipoIdentificaciones extends Component
 
     public bool $formulario_donacion = false;
 
+    public string $tipo_caracteres = 'solo_numeros';
+
+    public bool $forzar_mayusculas = true;
+
     public bool $isEditing = false;
 
     protected function rules(): array
@@ -35,6 +39,8 @@ class GestionarTipoIdentificaciones extends Component
             'nombre' => 'required|string|min:2|max:100',
             'abreviatura' => 'required|string|min:1|max:10',
             'formulario_donacion' => 'boolean',
+            'tipo_caracteres' => 'required|in:solo_numeros,alfanumerico,alfanumerico_simbolos',
+            'forzar_mayusculas' => 'boolean',
         ];
     }
 
@@ -60,7 +66,7 @@ class GestionarTipoIdentificaciones extends Component
 
     public function sortBy(string $field): void
     {
-        $allowedFields = ['nombre', 'abreviatura', 'formulario_donacion', 'usuarios_count', 'created_at'];
+        $allowedFields = ['nombre', 'abreviatura', 'formulario_donacion', 'tipo_caracteres', 'usuarios_count', 'created_at'];
         if (! in_array($field, $allowedFields)) {
             return;
         }
@@ -79,6 +85,8 @@ class GestionarTipoIdentificaciones extends Component
     {
         $this->resetValidation();
         $this->reset(['tipoIdentificacionId', 'nombre', 'abreviatura', 'formulario_donacion', 'isEditing']);
+        $this->tipo_caracteres = 'solo_numeros';
+        $this->forzar_mayusculas = true;
         $this->dispatch('abrir-offcanvas-tipo-identificacion');
     }
 
@@ -90,6 +98,8 @@ class GestionarTipoIdentificaciones extends Component
         $this->nombre = $tipo->nombre;
         $this->abreviatura = $tipo->abreviatura;
         $this->formulario_donacion = (bool) $tipo->formulario_donacion;
+        $this->tipo_caracteres = $tipo->tipo_caracteres ?? 'solo_numeros';
+        $this->forzar_mayusculas = (bool) ($tipo->forzar_mayusculas ?? true);
         $this->isEditing = true;
         $this->dispatch('abrir-offcanvas-tipo-identificacion');
     }
@@ -102,6 +112,8 @@ class GestionarTipoIdentificaciones extends Component
             'nombre' => trim($this->nombre),
             'abreviatura' => strtoupper(trim($this->abreviatura)),
             'formulario_donacion' => (bool) $this->formulario_donacion,
+            'tipo_caracteres' => $this->tipo_caracteres,
+            'forzar_mayusculas' => (bool) $this->forzar_mayusculas,
         ];
 
         if ($this->isEditing && $this->tipoIdentificacionId) {
@@ -114,6 +126,8 @@ class GestionarTipoIdentificaciones extends Component
         }
 
         $this->reset(['tipoIdentificacionId', 'nombre', 'abreviatura', 'formulario_donacion', 'isEditing']);
+        $this->tipo_caracteres = 'solo_numeros';
+        $this->forzar_mayusculas = true;
         $this->dispatch('cerrar-offcanvas-tipo-identificacion');
         $this->dispatch('msn', [
             'icono' => 'success',
@@ -185,6 +199,8 @@ class GestionarTipoIdentificaciones extends Component
             $query->orderBy('abreviatura', $this->sortDirection);
         } elseif ($this->sortField === 'formulario_donacion') {
             $query->orderBy('formulario_donacion', $this->sortDirection);
+        } elseif ($this->sortField === 'tipo_caracteres') {
+            $query->orderBy('tipo_caracteres', $this->sortDirection);
         } else {
             $query->orderBy('nombre', $this->sortDirection);
         }

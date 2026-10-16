@@ -26,19 +26,51 @@ class MegaInformeGeneradoMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Informe Generado: ' . $this->informe->nombre,
+            subject: 'Informe Generado: '.$this->informe->nombre,
         );
     }
 
     public function content(): Content
     {
+        $mailData = new \stdClass;
+        $mailData->subject = 'Informe Generado: '.$this->informe->nombre;
+        $mailData->eyebrow = 'INFORMES Y REPORTES · REDIL CLOUD';
+        $mailData->titulo = '¡Tu informe está listo!';
+
+        $duracion = $this->informeEnCola->tiempo_ejecucion_segundos ?? 0;
+        $duracionTexto = $duracion > 60
+            ? floor($duracion / 60).' min '.($duracion % 60).' seg'
+            : $duracion.' seg';
+
+        $fechaSolicitud = $this->informeEnCola->created_at
+            ? $this->informeEnCola->created_at->format('d/m/Y h:i A')
+            : now()->format('d/m/Y h:i A');
+
+        $mailData->mensaje = '<p>Te informamos que tu informe solicitado ha sido procesado exitosamente y adjunto a este correo encontrarás el archivo Excel correspondiente.</p>'
+            .'<table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#F8F8F6;border:1px solid #EBEBEB;border-radius:8px;padding:16px;margin:16px 0 20px 0;">'
+            .'  <tr>'
+            .'    <td style="font-family:Arial,sans-serif;font-size:14px;color:#374151;line-height:1.7;">'
+            .'      <strong>Informe:</strong> '.e($this->informe->nombre).'<br>'
+            .'      <strong>Fecha de solicitud:</strong> '.$fechaSolicitud.'<br>'
+            .'      <strong>Tiempo de generación:</strong> '.$duracionTexto.'<br>'
+            .'      <strong>Archivo adjunto:</strong> '.e($this->informeEnCola->nombre_archivo).'.xlsx'
+            .'    </td>'
+            .'  </tr>'
+            .'</table>'
+            .'<p>También puedes ingresar al sistema en cualquier momento para descargar el archivo directamente desde la lista de informes generados.</p>';
+
+        $mailData->actionUrl = url('/informes-personalizados/mega-informe/'.$this->informe->id);
+        $mailData->actionText = 'Ver informe en el sistema →';
+
+        $iglesia = Iglesia::first();
+
         return new Content(
-            view: 'emails.mega-informe-generado',
+            view: 'emails.default-mail',
             with: [
-                'informe' => $this->informe,
-                'informeEnCola' => $this->informeEnCola,
+                'mailData' => $mailData,
                 'configuracion' => Configuracion::first(),
-                'iglesia' => Iglesia::first(),
+                'iglesia' => $iglesia,
+                'iglesiaObj' => $iglesia,
             ]
         );
     }
@@ -51,7 +83,7 @@ class MegaInformeGeneradoMail extends Mailable
         if (file_exists($this->filePath)) {
             return [
                 Attachment::fromPath($this->filePath)
-                    ->as($this->informeEnCola->nombre_archivo . '.xlsx')
+                    ->as($this->informeEnCola->nombre_archivo.'.xlsx')
                     ->withMime('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
             ];
         }

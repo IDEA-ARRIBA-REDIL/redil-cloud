@@ -4,14 +4,13 @@ namespace App\Livewire\InformesPersonalizados;
 
 use App\Enums\EstadoInformeCola;
 use App\Jobs\GenerarMegaInformeJob;
-use App\Models\Grupo;
 use App\Models\Informe;
 use App\Models\InformeEnCola;
 use App\Models\TipoGrupo;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
-class MegaInformeComponent extends Component
+class MegaInforme extends Component
 {
     public int $informeId;
 
@@ -73,11 +72,19 @@ class MegaInformeComponent extends Component
 
     public function solicitarInforme(): void
     {
-        $this->validate();
+        try {
+            $this->validate();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $primerError = collect($e->errors())->flatten()->first();
+            $this->dispatch('swal:error', [
+                'title' => 'Faltan campos obligatorios',
+                'text' => $primerError ?? 'Por favor completa todos los campos requeridos antes de continuar.',
+            ]);
+            throw $e;
+        }
 
         $informeEnCola = InformeEnCola::create([
             'informe_id' => $this->informeId,
-            'informe_personalizado_id' => $this->informeId,
             'grupo_id' => $this->grupo_id,
             'agrupar_por_tipo_grupo_id' => $this->agrupar_por_tipo_grupo_id,
             'year' => $this->year,
@@ -103,10 +110,7 @@ class MegaInformeComponent extends Component
             ->orderBy('orden', 'asc')
             ->get();
 
-        $ultimosInformes = InformeEnCola::where(function ($q) {
-            $q->where('informe_id', $this->informeId)
-                ->orWhere('informe_personalizado_id', $this->informeId);
-        })
+        $ultimosInformes = InformeEnCola::where('informe_id', $this->informeId)
             ->where('usuario_creacion_id', auth()->id())
             ->with(['grupo', 'tipoGrupoAgrupacion'])
             ->latest()
