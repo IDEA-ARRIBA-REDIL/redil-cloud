@@ -21,7 +21,7 @@ if (app()->environment('local')) {
     $domains[] = 'localhost:8000';
 }
 
-$domains = array_values(array_unique($domains));
+$domains = array_values(array_unique(array_filter($domains)));
 
 foreach ($domains as $index => $domain) {
     // Solo el primer dominio conservará el nombre principal ('central.'), los demás tendrán un sufijo para evitar choque en la caché.
@@ -37,33 +37,36 @@ foreach ($domains as $index => $domain) {
         Route::get('/registro', App\Livewire\Central\RegistroIglesia::class)->name('registro');
         Route::get('/activar-cuenta', App\Livewire\Central\ActivarCuentaTenant::class)->name('activar-cuenta');
 
-        // Autenticación de Super Admins
-        Route::get('/admin/login', App\Livewire\Central\Auth\AdminLogin::class)->name('admin.login');
-
         // Redirección amigable por si escriben /login en el dominio central
         Route::get('/login', function () {
             return redirect('/admin/login');
         });
 
-        // Panel Privado de Super Admins (Protegido por guard admin y suspensión)
-        Route::middleware([\App\Http\Middleware\RevisarSuspensionAdmin::class, 'auth:admin'])->group(function () {
-            Route::get('/admin/invitaciones', App\Livewire\Central\GestionarInvitaciones::class)->name('admin.invitaciones');
-            Route::get('/admin/dashboard', App\Livewire\Central\AdminDashboard::class)->name('admin.dashboard');
-            Route::get('/admin/tenants/{tenant}', App\Livewire\Central\DetalleTenant::class)->name('admin.tenants.detalle');
-            Route::get('/admin/tenants/{tenant}/marca-blanca', App\Livewire\Central\MarcaBlancaTenant::class)->name('admin.tenants.marca-blanca');
-            Route::get('/admin/super-admins', App\Livewire\Central\GestionarSuperAdmins::class)->name('admin.super-admins');
-            Route::get('/admin/planes', App\Livewire\Central\GestionarPlanes::class)->name('admin.planes');
-            Route::get('/admin/login-predeterminado', App\Livewire\Central\LoginPredeterminado::class)->name('admin.login-predeterminado');
-
-            Route::post('/admin/logout', function () {
-
-                \Illuminate\Support\Facades\Auth::guard('admin')->logout();
-                request()->session()->invalidate();
-                request()->session()->regenerateToken();
-
-                return redirect('/admin/login');
-            })->name('admin.logout');
-        });
-
     });
 }
+
+// Panel de Administración Central accesible bajo /admin/* tanto en dominios centrales como en dominios de inquilinos
+Route::name('central.')->group(function () {
+    // Autenticación de Super Admins
+    Route::get('/admin/login', App\Livewire\Central\Auth\AdminLogin::class)->name('admin.login');
+
+    // Panel Privado de Super Admins (Protegido por guard admin y suspensión)
+    Route::middleware([\App\Http\Middleware\RevisarSuspensionAdmin::class, 'auth:admin'])->group(function () {
+        Route::get('/admin/invitaciones', App\Livewire\Central\GestionarInvitaciones::class)->name('admin.invitaciones');
+        Route::get('/admin/dashboard', App\Livewire\Central\AdminDashboard::class)->name('admin.dashboard');
+        Route::get('/admin/tenants/{tenant}', App\Livewire\Central\DetalleTenant::class)->name('admin.tenants.detalle');
+        Route::get('/admin/tenants/{tenant}/marca-blanca', App\Livewire\Central\MarcaBlancaTenant::class)->name('admin.tenants.marca-blanca');
+        Route::get('/admin/super-admins', App\Livewire\Central\GestionarSuperAdmins::class)->name('admin.super-admins');
+        Route::get('/admin/planes', App\Livewire\Central\GestionarPlanes::class)->name('admin.planes');
+        Route::get('/admin/login-predeterminado', App\Livewire\Central\LoginPredeterminado::class)->name('admin.login-predeterminado');
+
+        Route::post('/admin/logout', function () {
+
+            \Illuminate\Support\Facades\Auth::guard('admin')->logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            return redirect('/admin/login');
+        })->name('admin.logout');
+    });
+});

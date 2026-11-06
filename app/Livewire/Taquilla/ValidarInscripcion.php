@@ -2,23 +2,22 @@
 
 namespace App\Livewire\Taquilla;
 
-use Livewire\Component;
-use App\Models\User;
+use App\Mail\InscripcionConfirmacionMail;
 use App\Models\Actividad;
-use App\Models\Moneda; // Necesitaremos la moneda
-use App\Models\Caja;
-use Exception; // Para manejo de errores
+use App\Models\ActividadCategoria;
+use App\Models\Caja; // Necesitaremos la moneda
+use App\Models\Compra;
+use App\Models\Inscripcion; // Para manejo de errores
 // --- ¡NUEVAS IMPORTACIONES PARA LA TRANSACCIÓN! ---
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Models\ActividadCategoria; //
-use App\Models\Compra;             //
-use App\Models\Inscripcion;        //
-use Carbon\Carbon;                // Para la fecha
-
+use App\Models\Moneda;
+use App\Models\User;
+use Carbon\Carbon; //
+use Exception;             //
+use Illuminate\Support\Facades\DB;        //
+use Illuminate\Support\Facades\Log;                // Para la fecha
 // Necesarias para el correo
 use Illuminate\Support\Facades\Mail;
-use App\Mail\InscripcionConfirmacionMail; //
+use Livewire\Component; //
 
 class ValidarInscripcion extends Component
 {
@@ -28,25 +27,21 @@ class ValidarInscripcion extends Component
 
     /**
      * El usuario que está pagando (El Padre/Comprador).
-     * @var User
      */
     public User $comprador;
 
     /**
      * El usuario que será inscrito (El Hijo o el mismo Padre).
-     * @var User
      */
     public User $usuario;
 
     /**
      * La actividad que se está validando.
-     * @var Actividad
      */
     public Actividad $actividad;
 
     /**
      * La caja activa desde donde opera el cajero.
-     * @var Caja
      */
     public Caja $cajaActiva;
 
@@ -55,8 +50,11 @@ class ValidarInscripcion extends Component
     // ===================================================================
 
     public $validacionExitosa = false;
+
     public $mensajeError = '';
+
     public $categoriasDisponibles = [];
+
     public $monedaPrincipal;
 
     /**
@@ -74,8 +72,8 @@ class ValidarInscripcion extends Component
             $this->ejecutarValidacion();
         } catch (Exception $e) {
             $this->validacionExitosa = false;
-            $this->mensajeError = 'Ocurrió un error inesperado al validar: ' . $e->getMessage();
-            Log::error('Error en Taquilla.ValidarInscripcion.mount: ' . $e->getMessage());
+            $this->mensajeError = 'Ocurrió un error inesperado al validar: '.$e->getMessage();
+            Log::error('Error en Taquilla.ValidarInscripcion.mount: '.$e->getMessage());
         }
     }
 
@@ -105,10 +103,10 @@ class ValidarInscripcion extends Component
             if ($resultado['success']) {
                 $this->validacionExitosa = true;
                 // Mapea al formato de objeto estándar que espera la vista
-                $this->categoriasDisponibles = collect($resultado['categorias'])->map(fn($cat) => (object)[
+                $this->categoriasDisponibles = collect($resultado['categorias'])->map(fn ($cat) => (object) [
                     'categoria' => $cat,
                     'estado' => 'DISPONIBLE',
-                    'motivos' => []
+                    'motivos' => [],
                 ]);
             } else {
                 $this->validacionExitosa = false;
@@ -122,10 +120,10 @@ class ValidarInscripcion extends Component
             if ($resultado) {
                 $this->validacionExitosa = true;
                 // Mapea al formato de objeto estándar
-                $this->categoriasDisponibles = $this->actividad->categorias->map(fn($cat) => (object)[
+                $this->categoriasDisponibles = $this->actividad->categorias->map(fn ($cat) => (object) [
                     'categoria' => $cat,
                     'estado' => 'DISPONIBLE',
-                    'motivos' => []
+                    'motivos' => [],
                 ]);
             } else {
                 $this->validacionExitosa = false;
@@ -148,6 +146,7 @@ class ValidarInscripcion extends Component
                 if ($inscripcionesExistentesIds->contains($item->categoria->id)) {
                     $item->estado = 'INSCRITO'; //
                 }
+
                 return $item;
             });
         }
@@ -155,10 +154,17 @@ class ValidarInscripcion extends Component
 
     /**
      * Procesa una inscripción GRATUITA (Valor = 0).
-     *
      */
     public function procesarInscripcionGratuita($categoriaId)
     {
+        // 0. Validar operatividad y horario de la caja
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+
+            return;
+        }
+
         // 1. Validación de duplicados
         $inscripcionExistente = Inscripcion::where('user_id', $this->usuario->id)
             ->where('actividad_categoria_id', $categoriaId)
@@ -166,6 +172,7 @@ class ValidarInscripcion extends Component
 
         if ($inscripcionExistente) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Este usuario ya tiene una inscripción en esta categoría.');
+
             return;
         }
 
@@ -178,6 +185,7 @@ class ValidarInscripcion extends Component
             if ($categoria->aforo > 0 && $categoria->aforo_ocupado >= $categoria->aforo) {
                 DB::rollBack();
                 $this->dispatch('notificacion', tipo: 'error', mensaje: 'El cupo para esta categoría se agotó.');
+
                 return;
             }
 
@@ -193,7 +201,7 @@ class ValidarInscripcion extends Component
                 'identificacion_comprador' => $this->comprador->identificacion,
                 'telefono_comprador' => $this->comprador->telefono_movil,
                 'email_comprador' => $this->comprador->email,
-                'actividad_id' => $this->actividad->id
+                'actividad_id' => $this->actividad->id,
             ]);
 
             // 5. Crear la Inscripción (a nombre del INSCRITO/HIJO)
@@ -204,7 +212,7 @@ class ValidarInscripcion extends Component
                 'compra_id' => $compra->id,
                 'fecha' => Carbon::now(),
                 'estado' => $this->actividad->estado_inscripcion_defecto,
-                'nombre_inscrito' => $this->usuario->nombre(4) // Nombre del Inscrito
+                'nombre_inscrito' => $this->usuario->nombre(4), // Nombre del Inscrito
             ]);
 
             // 6. Incrementar Aforo
@@ -223,14 +231,13 @@ class ValidarInscripcion extends Component
             $this->ejecutarValidacion();
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Error al procesar inscripción gratuita: ' . $e->getMessage());
+            Log::error('Error al procesar inscripción gratuita: '.$e->getMessage());
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Error al procesar la inscripción.');
         }
     }
 
     /**
      * Helper privado para enviar el correo de confirmación.
-     *
      */
     private function _enviarCorreoDeConfirmacion(Inscripcion $inscripcion)
     {
@@ -244,15 +251,13 @@ class ValidarInscripcion extends Component
             if (filter_var($emailDestinatario, FILTER_VALIDATE_EMAIL)) {
                 Mail::to($emailDestinatario)->send(new InscripcionConfirmacionMail($inscripcion, $actividad));
             } else {
-                Log::warning("No se pudo enviar correo para inscripción #{$inscripcion->id} por email inválido: " . $emailDestinatario);
+                Log::warning("No se pudo enviar correo para inscripción #{$inscripcion->id} por email inválido: ".$emailDestinatario);
             }
         } catch (Exception $e) {
-            Log::error("Fallo al enviar correo de confirmación para inscripción #{$inscripcion->id}: " . $e->getMessage());
-            $this->dispatch('notificacion', titulo: 'Fallo envio de correo',   tipo: 'warning', mensaje: 'Inscripción registrada, pero falló el envío de correo.');
+            Log::error("Fallo al enviar correo de confirmación para inscripción #{$inscripcion->id}: ".$e->getMessage());
+            $this->dispatch('notificacion', titulo: 'Fallo envio de correo', tipo: 'warning', mensaje: 'Inscripción registrada, pero falló el envío de correo.');
         }
     }
-
-
 
     /**
      * Método 'render'

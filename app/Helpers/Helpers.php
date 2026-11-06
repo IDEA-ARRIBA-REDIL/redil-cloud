@@ -410,6 +410,18 @@ class Helpers
     $item->nombre = 'Fecha';
     $camposPeticiones[] = $item;
 
+    $item = new \stdClass();
+    $item->id = 12;
+    $item->value = 'ciudad';
+    $item->nombre = 'Ciudad';
+    $camposPeticiones[] = $item;
+
+    $item = new \stdClass();
+    $item->id = 13;
+    $item->value = 'formulario_usuario_id';
+    $item->nombre = 'Formulario de origen';
+    $camposPeticiones[] = $item;
+
     return $camposPeticiones;
   }
 

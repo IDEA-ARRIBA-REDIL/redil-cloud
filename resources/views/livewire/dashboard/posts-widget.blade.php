@@ -1,5 +1,17 @@
 <div class="{{ $claseColumnas }}">
     @if ($posts->isNotEmpty())
+        @php
+            $gradients = [
+                'linear-gradient(135deg, #7367f0 0%, #a8a1f3 100%)',
+                'linear-gradient(135deg, #28c76f 0%, #81ebb1 100%)',
+                'linear-gradient(135deg, #ea5455 0%, #feb692 100%)',
+                'linear-gradient(135deg, #00cfe8 0%, #7367f0 100%)',
+                'linear-gradient(135deg, #ff9f43 0%, #ffc085 100%)',
+                'linear-gradient(135deg, #4b4b4b 0%, #282828 100%)',
+                'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            ];
+        @endphp
         <h5 class="text-black fw-bold mb-3 d-flex align-items-center justify-content-between">
             Vive Manantial
             @if ($cargandoMas)
@@ -31,9 +43,36 @@
                                 style="width: 100%; height: 0; padding-bottom: 177.77%;">
                                 @php
                                     $imgUrl = $post->image_url;
+                                    $esVideo = ($post->es_video || !empty($post->video_url));
+                                    $thumbVideo = $post->video_thumbnail_url;
+                                    if ($esVideo && !$thumbVideo && !empty($post->video_url)) {
+                                        if (preg_match('/(?:youtube\.com\/(?:shorts\/|watch\?.*v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $post->video_url, $m)) {
+                                            $thumbVideo = 'https://img.youtube.com/vi/' . $m[1] . '/hqdefault.jpg';
+                                        }
+                                    }
                                 @endphp
 
-                                @if ($imgUrl)
+                                @if ($esVideo)
+                                    <div id="capture-post-{{ $post->id }}" class="position-absolute top-0 start-0 w-100 h-100 bg-black">
+                                        @if ($thumbVideo)
+                                            <img src="{{ $thumbVideo }}" alt="Video de publicación"
+                                                class="w-100 h-100"
+                                                style="object-fit: cover; object-position: center;"
+                                                crossorigin="anonymous">
+                                        @else
+                                            <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-dark">
+                                                <i class="ti ti-brand-youtube text-white opacity-75" style="font-size: 3rem;"></i>
+                                            </div>
+                                        @endif
+                                        <!-- Ícono Play centrado -->
+                                        <div class="position-absolute top-50 start-50 translate-middle" style="z-index: 4;">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center shadow-lg"
+                                                 style="width: 44px; height: 44px; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); border: 2px solid rgba(255,255,255,0.85);">
+                                                <i class="ti ti-player-play-filled text-white" style="font-size: 1.3rem; margin-left: 2px;"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif ($imgUrl)
                                     <div id="capture-post-{{ $post->id }}" class="position-absolute top-0 start-0 w-100 h-100">
                                         <img src="{{ $imgUrl }}" alt="Publicación"
                                             class="w-100 h-100"
@@ -102,16 +141,19 @@
                                     @php
                                         $postImageUrl = $imgUrl;
                                         $postText = trim(strip_tags($post->descripcion));
+                                        $shareUrl = $post->es_video ? $post->video_url : ($imgUrl ? $postImageUrl : '');
                                     @endphp
                                     <i class="ti ti-share text-white cursor-pointer btn-share-post d-none"
                                         style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"
                                         title="Compartir"
-                                        onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($imgUrl ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
+                                        onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($shareUrl) }}, '{{ $post->es_video ? '' : 'capture-post-'.$post->id }}')"></i>
 
-                                    <i class="ti ti-download text-white cursor-pointer btn-download-post d-none"
-                                        style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"
-                                        title="Descargar imagen"
-                                        onclick="downloadPostImage(event, {{ Js::from($imgUrl ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
+                                    @if (!$post->es_video)
+                                        <i class="ti ti-download text-white cursor-pointer btn-download-post d-none"
+                                            style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"
+                                            title="Descargar imagen"
+                                            onclick="downloadPostImage(event, {{ Js::from($imgUrl ? $postImageUrl : '') }}, 'capture-post-{{ $post->id }}')"></i>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -121,192 +163,235 @@
         </div>
 
         <!-- Modal Inmersivo (Vertical Swiper) -->
-        <div class="modal fade immersive-modal" id="modalPostsInmersivo" tabindex="-1" aria-hidden="true"
-            wire:ignore.self data-bs-backdrop="false">
-            <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down modal-lg h-100 my-0 py-3">
-                <div class="modal-content bg-transparent border-0 shadow-none h-100">
-                    <div
-                        class="modal-body p-0 h-100 position-relative d-flex justify-content-center align-items-center">
-                        <!-- Contenedor con aspecto vertical máximo -->
-                        <div class="w-100 shadow-lg position-relative"
-                            style="max-width: 450px; height: 90vh; max-height: 850px; background: #000; border-radius: 15px; overflow: hidden;">
+        @teleport('body')
+            <div class="modal fade immersive-modal" id="modalPostsInmersivo" tabindex="-1" aria-hidden="true"
+                wire:ignore data-bs-backdrop="false">
+                <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down modal-lg h-100 my-0 py-3">
+                    <div class="modal-content bg-transparent border-0 shadow-none h-100">
+                        <div
+                            class="modal-body p-0 h-100 position-relative d-flex justify-content-center align-items-center">
+                            <!-- Contenedor con aspecto vertical máximo -->
+                            <div class="w-100 shadow-lg position-relative"
+                                style="max-width: 450px; height: 90vh; max-height: 850px; background: #000; border-radius: 15px; overflow: hidden;">
 
-                            <!-- Indicador Desliza -->
-                            @if ($posts->count() > 1)
-                                <div id="indicador-desliza"
-                                    class="position-absolute top-50 start-50 text-white text-center transition-all duration-500"
-                                    style="z-index: 100; opacity: 0.7; pointer-events: none; animation: bounce-vertical 2s infinite; transition: opacity 0.5s ease-out; text-shadow: 0 2px 10px rgba(0,0,0,0.8); transform: translate(-50%, -50%);">
-                                    <i class="ti ti-chevrons-up d-block mb-1" style="font-size: 3rem;"></i>
-                                    <span class="fs-4 fw-bold letter-spacing-1">DESLIZA</span>
-                                    <i class="ti ti-chevrons-down d-block mt-n1" style="font-size: 3rem;"></i>
-                                </div>
-                            @endif
+                                <!-- Indicador Desliza -->
+                                @if ($posts->count() > 1)
+                                    <div id="indicador-desliza"
+                                        class="position-absolute top-50 start-50 text-white text-center transition-all duration-500"
+                                        style="z-index: 100; opacity: 0.7; pointer-events: none; animation: bounce-vertical 2s infinite; transition: opacity 0.5s ease-out; text-shadow: 0 2px 10px rgba(0,0,0,0.8); transform: translate(-50%, -50%);">
+                                        <i class="ti ti-chevrons-up d-block mb-1" style="font-size: 3rem;"></i>
+                                        <span class="fs-4 fw-bold letter-spacing-1">DESLIZA</span>
+                                        <i class="ti ti-chevrons-down d-block mt-n1" style="font-size: 3rem;"></i>
+                                    </div>
+                                @endif
 
-                            <!-- Swiper Vertical -->
-                            <div class="swiper-container swiper swiper-posts-vertical w-100 h-100"
-                                id="swiper-posts-vertical">
-                                <div class="swiper-wrapper h-100">
-                                    @foreach ($posts as $index => $post)
-                                        <div class="swiper-slide list-post-item-vertical h-100 w-100 position-relative"
-                                            wire:key="modal-post-{{ $post->id }}">
+                                <!-- Swiper Vertical -->
+                                <div class="swiper-container swiper swiper-posts-vertical w-100 h-100"
+                                    id="swiper-posts-vertical">
+                                    <div class="swiper-wrapper h-100">
+                                        @foreach ($posts as $index => $post)
+                                            <div class="swiper-slide list-post-item-vertical h-100 w-100 position-relative"
+                                                wire:key="modal-post-{{ $post->id }}">
 
-                                            <!-- Top Header: User Info y Botón Cerrar -->
-                                            <div class="position-absolute top-0 start-0 w-100 p-3 pt-4 d-flex align-items-center justify-content-between"
-                                                style="z-index: 50; background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);">
+                                                <!-- Top Header: User Info y Botón Cerrar -->
+                                                <div class="position-absolute top-0 start-0 w-100 p-3 pt-4 d-flex align-items-center justify-content-between"
+                                                    style="z-index: 50; background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%); pointer-events: auto;">
 
-                                                <div class="d-flex align-items-center">
-                                                    @if ($post->user)
-                                                        @if ($post->user->foto == 'default-m.png' || $post->user->foto == 'default-f.png')
-                                                            <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center me-3 border border-white fw-bold fs-5 shadow"
-                                                                style="width: 45px; height: 45px;">
-                                                                {{ $post->user->inicialesNombre() }}
-                                                            </div>
+                                                    <div class="d-flex align-items-center">
+                                                        @if ($post->user)
+                                                            @if ($post->user->foto == 'default-m.png' || $post->user->foto == 'default-f.png')
+                                                                <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center me-3 border border-white fw-bold fs-5 shadow"
+                                                                    style="width: 45px; height: 45px;">
+                                                                    {{ $post->user->inicialesNombre() }}
+                                                                </div>
+                                                            @else
+                                                                <img src="{{ $post->user->foto_url }}"
+                                                                    alt="{{ $post->user->nombre(3) }}"
+                                                                    class="rounded-circle me-3 border border-white shadow"
+                                                                    width="45" height="45"
+                                                                    style="object-fit: cover;">
+                                                            @endif
+                                                            <h6 class="text-white mb-0 fw-bold"
+                                                                style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
+                                                                {{ $post->user->nombre(3) }}</h6>
                                                         @else
-                                                            <img src="{{ $post->user->foto_url }}"
-                                                                alt="{{ $post->user->nombre(3) }}"
-                                                                class="rounded-circle me-3 border border-white shadow"
-                                                                width="45" height="45"
-                                                                style="object-fit: cover;">
+                                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3 border border-white fw-bold fs-5"
+                                                                style="width: 45px; height: 45px;">
+                                                                U
+                                                            </div>
+                                                            <h6 class="text-white mb-0 fw-bold"
+                                                                style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">Usuario</h6>
                                                         @endif
-                                                        <h6 class="text-white mb-0 fw-bold"
-                                                            style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
-                                                            {{ $post->user->nombre(3) }}</h6>
-                                                    @else
-                                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3 border border-white fw-bold fs-5"
-                                                            style="width: 45px; height: 45px;">
-                                                            U
-                                                        </div>
-                                                        <h6 class="text-white mb-0 fw-bold"
-                                                            style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">Usuario</h6>
-                                                    @endif
+                                                    </div>
+                                                    <div class="d-flex align-items-center ms-auto gap-2">
+                                                        @if ($post->es_video || !empty($post->video_url))
+                                                            <button type="button" class="btn btn-sm btn-icon btn-dark rounded-circle shadow btn-toggle-sound"
+                                                                style="background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.4); width: 38px; height: 38px;"
+                                                                title="Silenciar"
+                                                                data-muted="false"
+                                                                onclick="toggleSoundPost(this)">
+                                                                <i class="ti ti-volume text-white" style="font-size: 1.2rem;"></i>
+                                                            </button>
+                                                        @endif
+                                                        <button type="button" class="btn btn-label-dark"
+                                                            data-bs-dismiss="modal" aria-label="Close"
+                                                            style="background-color: #ffffff; border-radius: 50%; padding: 10px; opacity: 1;"><i
+                                                                class="ti ti-x"></i></button>
+                                                    </div>
                                                 </div>
-                                                <button type="button" class="btn btn-label-dark ms-auto"
-                                                    data-bs-dismiss="modal" aria-label="Close"
-                                                    style="background-color: #ffffff; border-radius: 50%; padding: 10px; opacity: 1;"><i
-                                                        class="ti ti-x"></i></button>
-                                            </div>
 
-                                            @php
-                                                $imgUrlModal = $post->image_url;
-                                            @endphp
-
-                                            <!-- Fondo: Imagen o Gradiente -->
-                                            @if ($imgUrlModal)
-                                                <div id="modal-capture-post-{{ $post->id }}" class="w-100 h-100">
-                                                    <img src="{{ $imgUrlModal }}" alt="Publicación" class="w-100 h-100"
-                                                        style="object-fit: cover; object-position: center;"
-                                                        crossorigin="anonymous">
-                                                </div>
-                                            @else
                                                 @php
-                                                    $gradients = [
-                                                        'linear-gradient(135deg, #7367f0 0%, #a8a1f3 100%)',
-                                                        'linear-gradient(135deg, #28c76f 0%, #81ebb1 100%)',
-                                                        'linear-gradient(135deg, #ea5455 0%, #feb692 100%)',
-                                                        'linear-gradient(135deg, #00cfe8 0%, #7367f0 100%)',
-                                                        'linear-gradient(135deg, #ff9f43 0%, #ffc085 100%)',
-                                                        'linear-gradient(135deg, #4b4b4b 0%, #282828 100%)',
-                                                        'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-                                                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                    ];
-                                                    $selectedGradient = $gradients[$post->id % count($gradients)];
+                                                    $imgUrlModal = $post->image_url;
+                                                    $esVideo = ($post->es_video || !empty($post->video_url));
                                                 @endphp
-                                                <div id="modal-capture-post-{{ $post->id }}"
-                                                    class="w-100 h-100 d-flex align-items-center justify-content-center p-4 text-center"
-                                                    style="background: {{ $selectedGradient }};">
-                                                    <div class="text-white">
-                                                        <p class="mb-0 fw-medium"
-                                                            style="font-size: 1.2rem; line-height: 1.5; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
-                                                            {!! $post->descripcion !!}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            @endif
 
-                                            <!-- Degradado Inferior oscuro para legibilidad del texto -->
-                                            @if ($post->image_path)
-                                                <div class="position-absolute bottom-0 start-0 w-100 p-4 pb-5"
-                                                    style="z-index: 10; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%);">
-                                                    <!-- Descripción -->
-                                                    <div x-data="{ expanded: false }" class="text-white mb-2"
-                                                        style="max-height: 50vh; overflow-y: auto; cursor: pointer; margin-right: 80px;"
-                                                        @click="expanded = !expanded">
-                                                        <p class="mb-0 lh-base" :class="expanded ? '' : 'line-clamp-2'"
-                                                            style="font-size: 0.95rem; text-shadow: 0 1px 3px rgba(0,0,0,0.9);">
-                                                            {!! nl2br(strip_tags($post->descripcion)) !!}
-                                                        </p>
-                                                        <div
-                                                            x-show="!expanded && {{ strlen(strip_tags($post->descripcion)) > 80 ? 'true' : 'false' }}">
-                                                            <span class="fw-bold text-white"
-                                                                style="font-size: 0.9rem; text-shadow: 0 1px 3px rgba(0,0,0,0.9);">leer
-                                                                más</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endif
-
-                                            <!-- Botones Flotantes (Derecha Abajo) -->
-                                            <div class="position-absolute bottom-0 end-0 mb-4 me-3 d-flex flex-column align-items-center gap-4"
-                                                style="z-index: 20;">
-                                                <!-- Botón Like -->
-                                                <div class="d-flex flex-column align-items-center"
-                                                    x-data="{
-                                                        postId: {{ $post->id }},
-                                                        liked: {{ $post->likes->contains('id', auth()->id()) ? 'true' : 'false' }},
-                                                        count: {{ $post->likes->count() }},
-                                                        toggleLike() {
-                                                            this.liked = !this.liked;
-                                                            this.count = this.liked ? this.count + 1 : this.count - 1;
-                                                            $wire.toggleLike(this.postId);
-                                                            window.dispatchEvent(new CustomEvent('post-liked', { detail: { id: this.postId, liked: this.liked, count: this.count } }));
+                                                <!-- Fondo: Video, Imagen o Gradiente -->
+                                                @if ($esVideo)
+                                                    @php
+                                                        $rawUrl = trim($post->video_url ?? '');
+                                                        $isVertical = $post->es_video_vertical || str_contains($rawUrl, 'shorts') || str_contains($rawUrl, 'reels');
+                                                        $embedUrl = $post->video_embed_url;
+                                                        if (!$embedUrl && !empty($rawUrl)) {
+                                                            if (preg_match('/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/', $rawUrl, $m)) {
+                                                                $embedUrl = 'https://www.youtube.com/embed/' . $m[1];
+                                                                $isVertical = true;
+                                                            } elseif (preg_match('/(?:youtube\.com\/(?:watch\?.*v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $rawUrl, $m)) {
+                                                                $embedUrl = 'https://www.youtube.com/embed/' . $m[1];
+                                                            } elseif (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/', $rawUrl, $m)) {
+                                                                $embedUrl = 'https://player.vimeo.com/video/' . $m[1];
+                                                            } else {
+                                                                $embedUrl = $rawUrl;
+                                                            }
                                                         }
-                                                    }"
-                                                    @post-liked.window="if ($event.detail.id === postId) { liked = $event.detail.liked; count = $event.detail.count; }">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer mb-1 shadow"
-                                                        style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
-                                                        @click.stop="toggleLike()">
-                                                        <i class="ti" style="font-size: 1.8rem;"
-                                                            :class="liked ? 'ti-heart-filled text-danger' :
-                                                                'ti-heart text-white'"></i>
+                                                        $separator = str_contains($embedUrl ?? '', '?') ? '&' : '?';
+                                                        // Autoplay con sonido activo (iniciado por clic del usuario)
+                                                        $videoParams = 'autoplay=1&enablejsapi=1&playsinline=1&rel=0';
+                                                        $videoSrc = $embedUrl ? ($embedUrl . $separator . $videoParams) : '';
+                                                    @endphp
+                                                    <div id="modal-capture-post-{{ $post->id }}" 
+                                                         class="w-100 h-100 bg-black d-flex align-items-center justify-content-center position-relative overflow-hidden"
+                                                         style="z-index: 5;">
+                                                        <div class="w-100 {{ $isVertical ? 'h-100' : 'ratio ratio-16x9' }}" 
+                                                             style="{{ $isVertical ? '' : 'max-height: 100%;' }}; pointer-events: auto;">
+                                                            <iframe class="w-100 h-100 border-0 post-video-iframe"
+                                                                    data-src="{{ $videoSrc }}"
+                                                                    src=""
+                                                                    title="Video post"
+                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                    allowfullscreen>
+                                                            </iframe>
+                                                        </div>
                                                     </div>
-                                                    <span class="text-white fw-bold"
-                                                        style="font-size: 0.85rem; text-shadow: 0 1px 3px rgba(0,0,0,0.9);"
-                                                        x-text="count >= 1000 ? (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : count"></span>
+                                                @elseif ($imgUrlModal)
+                                                    <div id="modal-capture-post-{{ $post->id }}" class="w-100 h-100">
+                                                        <img src="{{ $imgUrlModal }}" alt="Publicación" class="w-100 h-100"
+                                                            style="object-fit: cover; object-position: center;"
+                                                            crossorigin="anonymous">
+                                                    </div>
+                                                @else
+                                                    @php
+                                                        $selectedGradient = $gradients[$post->id % count($gradients)];
+                                                    @endphp
+                                                    <div id="modal-capture-post-{{ $post->id }}"
+                                                        class="w-100 h-100 d-flex align-items-center justify-content-center p-4 text-center"
+                                                        style="background: {{ $selectedGradient }};">
+                                                        <div class="text-white">
+                                                            <p class="mb-0 fw-medium"
+                                                                style="font-size: 1.2rem; line-height: 1.5; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+                                                                {!! $post->descripcion !!}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                <!-- Degradado Inferior oscuro para legibilidad del texto -->
+                                                @if ($post->image_path || $esVideo)
+                                                    <div class="position-absolute bottom-0 start-0 w-100 p-4 pb-5"
+                                                        style="z-index: 10; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%); pointer-events: none;">
+                                                        <!-- Descripción -->
+                                                        <div x-data="{ expanded: false }" class="text-white mb-2"
+                                                            style="max-height: 50vh; overflow-y: auto; cursor: pointer; margin-right: 80px; pointer-events: auto;"
+                                                            @click="expanded = !expanded">
+                                                            <p class="mb-0 lh-base" :class="expanded ? '' : 'line-clamp-2'"
+                                                                style="font-size: 0.95rem; text-shadow: 0 1px 3px rgba(0,0,0,0.9);">
+                                                                {!! nl2br(strip_tags($post->descripcion)) !!}
+                                                            </p>
+                                                            <div
+                                                                x-show="!expanded && {{ strlen(strip_tags($post->descripcion)) > 80 ? 'true' : 'false' }}">
+                                                                <span class="fw-bold text-white"
+                                                                    style="font-size: 0.9rem; text-shadow: 0 1px 3px rgba(0,0,0,0.9);">leer
+                                                                    más</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                <!-- Botones Flotantes (Derecha Abajo) -->
+                                                <div class="position-absolute bottom-0 end-0 mb-4 me-3 d-flex flex-column align-items-center gap-4"
+                                                    style="z-index: 20;">
+                                                    <!-- Botón Like -->
+                                                    <div class="d-flex flex-column align-items-center"
+                                                        x-data="{
+                                                            postId: {{ $post->id }},
+                                                            liked: {{ $post->likes->contains('id', auth()->id()) ? 'true' : 'false' }},
+                                                            count: {{ $post->likes->count() }},
+                                                            toggleLike() {
+                                                                this.liked = !this.liked;
+                                                                this.count = this.liked ? this.count + 1 : this.count - 1;
+                                                                $wire.toggleLike(this.postId);
+                                                                window.dispatchEvent(new CustomEvent('post-liked', { detail: { id: this.postId, liked: this.liked, count: this.count } }));
+                                                            }
+                                                        }"
+                                                        @post-liked.window="if ($event.detail.id === postId) { liked = $event.detail.liked; count = $event.detail.count; }">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer mb-1 shadow"
+                                                            style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
+                                                            @click.stop="toggleLike()">
+                                                            <i class="ti" style="font-size: 1.8rem;"
+                                                                :class="liked ? 'ti-heart-filled text-danger' :
+                                                                    'ti-heart text-white'"></i>
+                                                        </div>
+                                                        <span class="text-white fw-bold"
+                                                            style="font-size: 0.85rem; text-shadow: 0 1px 3px rgba(0,0,0,0.9);"
+                                                            x-text="count >= 1000 ? (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : count"></span>
+                                                    </div>
+
+                                                    <!-- Botón Compartir / Descargar -->
+                                                    @php
+                                                        $postImageUrl = $imgUrlModal;
+                                                        $postText = trim(strip_tags($post->descripcion));
+                                                        $shareUrlModal = $esVideo ? ($post->video_url ?? '') : ($post->image_path ? $postImageUrl : '');
+                                                    @endphp
+                                                    <div class="d-flex flex-column align-items-center">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-share-post d-none mb-1 shadow"
+                                                            style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
+                                                            title="Compartir"
+                                                            onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($shareUrlModal) }}, '{{ $esVideo ? '' : 'modal-capture-post-'.$post->id }}')">
+                                                            <i class="ti ti-share text-white"
+                                                                style="font-size: 1.8rem;"></i>
+                                                        </div>
+
+                                                        @if (!$esVideo)
+                                                            <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-download-post d-none mb-1 shadow"
+                                                                style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
+                                                                title="Descargar imagen"
+                                                                onclick="downloadPostImage(event, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'modal-capture-post-{{ $post->id }}')">
+                                                                <i class="ti ti-download text-white"
+                                                                    style="font-size: 1.8rem;"></i>
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </div>
 
-                                                <!-- Botón Compartir / Descargar -->
-                                                @php
-                                                    $postImageUrl = $imgUrlModal;
-                                                    $postText = trim(strip_tags($post->descripcion));
-                                                @endphp
-                                                <div class="d-flex flex-column align-items-center">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-share-post d-none mb-1 shadow"
-                                                        style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
-                                                        title="Compartir"
-                                                        onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'modal-capture-post-{{ $post->id }}')">
-                                                        <i class="ti ti-share text-white"
-                                                            style="font-size: 1.8rem;"></i>
-                                                    </div>
-
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-download-post d-none mb-1 shadow"
-                                                        style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
-                                                        title="Descargar imagen"
-                                                        onclick="downloadPostImage(event, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'modal-capture-post-{{ $post->id }}')">
-                                                        <i class="ti ti-download text-white"
-                                                            style="font-size: 1.8rem;"></i>
-                                                    </div>
-                                                </div>
                                             </div>
-
-                                        </div>
-                                    @endforeach
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @endteleport
 
         @once
             <style>
@@ -367,6 +452,29 @@
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
             <script>
+                // Control interactivo de audio (YouTube / Vimeo)
+                window.toggleSoundPost = function(btn) {
+                    const slide = btn.closest('.swiper-slide');
+                    if (!slide) return;
+                    const iframe = slide.querySelector('.post-video-iframe, .post-video-iframe-nav');
+                    if (!iframe || !iframe.contentWindow) return;
+
+                    const icon = btn.querySelector('i');
+                    const isMuted = icon.classList.contains('ti-volume-off') || icon.classList.contains('ti-volume-3');
+
+                    if (isMuted) {
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: '' }), '*');
+                        iframe.contentWindow.postMessage(JSON.stringify({ method: 'setVolume', value: 1 }), '*');
+                        icon.className = 'ti ti-volume text-white';
+                        btn.setAttribute('title', 'Silenciar');
+                    } else {
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: '' }), '*');
+                        iframe.contentWindow.postMessage(JSON.stringify({ method: 'setVolume', value: 0 }), '*');
+                        icon.className = 'ti ti-volume-off text-white';
+                        btn.setAttribute('title', 'Activar sonido');
+                    }
+                };
+
                 // These functions remain global just like in VersiculoDelDia
                 async function handleSharePost(e, texto, urlImagen, captureId) {
                     const fullText = (texto ? '\"' + texto + '\"' : '');
@@ -377,6 +485,15 @@
 
                     if (navigator.share) {
                         try {
+                            // Si es enlace a video, compartir URL directamente
+                            if (urlImagen && (urlImagen.includes('youtube') || urlImagen.includes('youtu.be') || urlImagen.includes('vimeo'))) {
+                                shareData.url = urlImagen;
+                                e.stopPropagation();
+                                e.preventDefault();
+                                await navigator.share(shareData);
+                                return;
+                            }
+
                             let file;
 
                             // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
@@ -548,10 +665,17 @@
                         direction: 'vertical',
                         slidesPerView: 1,
                         spaceBetween: 0,
-                        mousewheel: true,
+                        mousewheel: {
+                            sensitivity: 0.8,
+                            thresholdDelta: 40,
+                            thresholdTime: 800, // Evita saltar varios posts de golpe (1 solo post por cada impulso)
+                        },
                         observer: true,
                         observeParents: true,
                         on: {
+                            slideChange: function() {
+                                sincronizarVideosVerticales();
+                            },
                             reachEnd: function() {
                                 if ($wire.get('hasMore') && !$wire.get('cargandoMas')) {
                                     $wire.call('loadMore');
@@ -560,6 +684,67 @@
                         }
                     });
                 }
+
+                function sincronizarVideosVerticales(forceIndex) {
+                    const activeIndex = (forceIndex !== undefined) ? forceIndex : (postsVerticalSwiper ? (postsVerticalSwiper.activeIndex || 0) : 0);
+                    const slides = document.querySelectorAll('#swiper-posts-vertical .swiper-slide');
+
+                    slides.forEach((slide, idx) => {
+                        const iframe = slide.querySelector('.post-video-iframe');
+                        const soundBtn = slide.querySelector('.btn-toggle-sound');
+                        if (iframe) {
+                            const dataSrc = iframe.getAttribute('data-src');
+                            if (idx === activeIndex) {
+                                if (dataSrc && iframe.getAttribute('src') !== dataSrc) {
+                                    iframe.setAttribute('src', dataSrc);
+                                    if (soundBtn) {
+                                        soundBtn.setAttribute('data-muted', 'false');
+                                        soundBtn.setAttribute('title', 'Silenciar');
+                                        const icon = soundBtn.querySelector('i');
+                                        if (icon) icon.className = 'ti ti-volume text-white';
+                                    }
+                                }
+                            } else {
+                                if (iframe.getAttribute('src') !== '') {
+                                    iframe.setAttribute('src', '');
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Control interactivo de audio (YouTube / Vimeo)
+                window.toggleSoundPost = function(btn) {
+                    const slide = btn.closest('.swiper-slide');
+                    if (!slide) return;
+                    const iframe = slide.querySelector('.post-video-iframe, .post-video-iframe-nav');
+                    if (!iframe || !iframe.contentWindow) return;
+
+                    let isMuted = btn.getAttribute('data-muted') !== 'false';
+                    const icon = btn.querySelector('i');
+
+                    if (isMuted) {
+                        // Unmute YouTube
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }), '*');
+                        // Unmute Vimeo
+                        iframe.contentWindow.postMessage(JSON.stringify({ method: 'setMuted', value: false }), '*');
+                        iframe.contentWindow.postMessage(JSON.stringify({ method: 'setVolume', value: 1 }), '*');
+
+                        btn.setAttribute('data-muted', 'false');
+                        btn.setAttribute('title', 'Silenciar');
+                        if (icon) icon.className = 'ti ti-volume text-white';
+                    } else {
+                        // Mute YouTube
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
+                        // Mute Vimeo
+                        iframe.contentWindow.postMessage(JSON.stringify({ method: 'setMuted', value: true }), '*');
+
+                        btn.setAttribute('data-muted', 'true');
+                        btn.setAttribute('title', 'Activar sonido');
+                        if (icon) icon.className = 'ti ti-volume-off text-white';
+                    }
+                };
 
                 function ocultarIndicadorDesliza() {
                     const indicador = document.getElementById('indicador-desliza');
@@ -602,6 +787,9 @@
                         postsVerticalSwiper.slideTo(index, 0);
                     }
 
+                    // Iniciar carga del video directamente dentro del gesto del clic
+                    sincronizarVideosVerticales(index);
+
                     // Usamos Bootstrap modal nativo si existe, si no, lo instanciamos
                     let modalInstance = bootstrap.Modal.getInstance(modalEl);
                     if (!modalInstance) {
@@ -619,8 +807,20 @@
                                 postsVerticalSwiper.update();
                                 // Forzar que dispare el redibujado de las slides
                                 postsVerticalSwiper.slideTo(postsVerticalSwiper.activeIndex, 0);
+                                sincronizarVideosVerticales();
                             }, 50);
+                        } else {
+                            sincronizarVideosVerticales();
                         }
+                    }
+                });
+
+                // Detener cualquier video al cerrar el modal
+                document.addEventListener('hide.bs.modal', function(event) {
+                    if (event.target.id === 'modalPostsInmersivo') {
+                        document.querySelectorAll('#swiper-posts-vertical .post-video-iframe').forEach(iframe => {
+                            iframe.setAttribute('src', '');
+                        });
                     }
                 });
 
@@ -637,10 +837,6 @@
                             succeed(() => {
                                 setTimeout(() => {
                                     initPostsSwiper();
-                                    if (document.getElementById('modalPostsInmersivo').classList.contains(
-                                            'show')) {
-                                        initVerticalSwiper();
-                                    }
                                     evaluarBotones();
                                 }, 50);
                             });

@@ -1,10 +1,11 @@
 @php
     $configData = Helper::appClasses();
+    $esGeneral = is_null($actividad);
 @endphp
 
 @extends('layouts/blankLayout')
 
-@section('title', 'Registrar Novedad - ' . $actividad->nombre)
+@section('title', $esGeneral ? 'Registrar Novedad' : 'Registrar Novedad - ' . $actividad->nombre)
 
 @section('vendor-style')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -53,34 +54,36 @@
             <div class="text-center mb-4">
                 @include('_partials.logo_iglesia', ['logo_negro' => true, 'width' => '180px'])
                 <h3 class="fw-bold text-primary mt-3 mb-1">Registro de Novedad o Inconsistencia</h3>
-                <p class="text-muted">Si presentas un inconveniente con los requisitos o la inscripción, infórmanos para darte soporte.</p>
+                <p class="text-muted">Si presentas algún inconveniente con tu proceso, requisitos, datos o inscripción, infórmanos para darte soporte.</p>
             </div>
 
-            <!-- Ficha Resumen de la Actividad -->
-            <div class="card card-novedad mb-4">
-                @if ($actividad->portada_url)
-                    <div class="banner-actividad" style="background-image: url('{{ $actividad->portada_url }}');"></div>
-                @endif
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                        <div>
-                            <span class="badge bg-label-primary mb-2">
-                                <i class="ti ti-calendar-event me-1"></i> {{ $actividad->tipo->nombre ?? 'Actividad' }}
-                            </span>
-                            <h4 class="mb-1 fw-bold text-dark">{{ $actividad->nombre }}</h4>
-                            @if ($actividad->descripcion_corta)
-                                <p class="text-muted mb-0 small">{{ $actividad->descripcion_corta }}</p>
-                            @endif
-                        </div>
-                        <div class="text-end">
-                            <small class="text-muted d-block"><i class="ti ti-calendar me-1"></i> Fecha inicio: <b>{{ $actividad->fecha_inicio }}</b></small>
-                            @if ($actividad->fecha_finalizacion)
-                                <small class="text-muted d-block"><i class="ti ti-calendar-check me-1"></i> Fecha fin: <b>{{ $actividad->fecha_finalizacion }}</b></small>
-                            @endif
+            <!-- Ficha Resumen de la Actividad (Solo si viene desde una actividad) -->
+            @if ($actividad)
+                <div class="card card-novedad mb-4">
+                    @if ($actividad->portada_url)
+                        <div class="banner-actividad" style="background-image: url('{{ $actividad->portada_url }}');"></div>
+                    @endif
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div>
+                                <span class="badge bg-label-primary mb-2">
+                                    <i class="ti ti-calendar-event me-1"></i> {{ $actividad->tipo->nombre ?? 'Actividad' }}
+                                </span>
+                                <h4 class="mb-1 fw-bold text-dark">{{ $actividad->nombre }}</h4>
+                                @if ($actividad->descripcion_corta)
+                                    <p class="text-muted mb-0 small">{{ $actividad->descripcion_corta }}</p>
+                                @endif
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block"><i class="ti ti-calendar me-1"></i> Fecha inicio: <b>{{ $actividad->fecha_inicio }}</b></small>
+                                @if ($actividad->fecha_finalizacion)
+                                    <small class="text-muted d-block"><i class="ti ti-calendar-check me-1"></i> Fecha fin: <b>{{ $actividad->fecha_finalizacion }}</b></small>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endif
 
             <!-- Formulario de Novedad -->
             <div class="card card-novedad">
@@ -109,6 +112,7 @@
                         $identificacionDefault = '';
                         $telefonoDefault = '';
                         $emailDefault = '';
+                        $sedeDefault = '';
 
                         if ($usuario) {
                             $partesNombre = array_filter([
@@ -121,10 +125,11 @@
                             $identificacionDefault = $usuario->identificacion ?? '';
                             $telefonoDefault = $usuario->telefono_movil ?? $usuario->telefono_fijo ?? $usuario->telefono_otro ?? '';
                             $emailDefault = $usuario->email ?? '';
+                            $sedeDefault = $usuario->sede_id ?? '';
                         }
                     @endphp
 
-                    <form action="{{ route('actividades.novedades.store', $actividad) }}" method="POST" id="formNovedad" x-data="{ charCount: 0 }">
+                    <form action="{{ $actividad ? route('actividades.novedades.store', $actividad) : route('novedades.publica.store') }}" method="POST" id="formNovedad" x-data="{ charCount: {{ strlen(old('descripcion', '')) }} }">
                         @csrf
 
                         <!-- Datos Personales -->
@@ -157,10 +162,23 @@
                                        value="{{ old('email', $emailDefault) }}">
                                 <div class="form-text">A este correo te enviaremos la respuesta formal de tu novedad.</div>
                             </div>
+
+                            <!-- Sede -->
+                            <div class="col-md-12 col-12">
+                                <label class="form-label fw-semibold" for="sede_id">Sede <span class="text-danger">*</span></label>
+                                <select id="sede_id" name="sede_id" class="form-select select2" required>
+                                    <option value="">-- Selecciona tu sede --</option>
+                                    @foreach ($sedes as $sede)
+                                        <option value="{{ $sede->id }}" {{ (string) old('sede_id', $sedeDefault) === (string) $sede->id ? 'selected' : '' }}>
+                                            {{ $sede->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
                         <!-- Campo Condicional: Materia o Escuela (Solo si es Actividad de Escuelas) -->
-                        @if ($actividad->tipo && $actividad->tipo->tipo_escuelas)
+                        @if ($actividad && $actividad->tipo && $actividad->tipo->tipo_escuelas)
                             <div class="mb-3 p-3 bg-light rounded border">
                                 <label class="form-label fw-bold text-dark" for="materia_id">
                                     <i class="ti ti-school me-1 text-primary"></i> Materia o Escuela a la que deseabas matricularte <span class="text-danger">*</span>
@@ -216,10 +234,12 @@
                         </div>
 
                         <!-- Botones de Acción -->
-                        <div class="d-flex justify-content-between align-items-center pt-2">
-                            <a href="{{ route('actividades.perfil', $actividad) }}" class="btn btn-outline-secondary rounded-pill px-4">
-                                <i class="ti ti-arrow-left me-1"></i> Volver a la actividad
-                            </a>
+                        <div class="d-flex {{ $actividad ? 'justify-content-between' : 'justify-content-end' }} align-items-center pt-2">
+                            @if ($actividad)
+                                <a href="{{ route('actividades.perfil', $actividad) }}" class="btn btn-outline-secondary rounded-pill px-4">
+                                    <i class="ti ti-arrow-left me-1"></i> Volver a la actividad
+                                </a>
+                            @endif
                             <button type="submit" id="btnEnviarNovedad" class="btn btn-primary rounded-pill px-5 shadow">
                                 <i class="ti ti-send me-1"></i> Enviar novedad
                             </button>
@@ -227,8 +247,6 @@
                     </form>
                 </div>
             </div>
-
-
 
         </div>
     </div>
@@ -264,7 +282,7 @@
                     title: '¡Novedad Registrada!',
                     html: 'Tu novedad ha sido registrada con éxito.<br><br>Nuestro equipo revisará tu novedad y será atendida en las <b>próximas 24 horas</b>.',
                     icon: 'success',
-                    confirmButtonText: 'Volver a la actividad',
+                    confirmButtonText: '{{ $actividad ? "Volver a la actividad" : "Entendido" }}',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
                     customClass: {
@@ -272,7 +290,7 @@
                     },
                     buttonsStyling: false
                 }).then(() => {
-                    window.location.href = "{{ route('actividades.perfil', $actividad) }}";
+                    window.location.href = "{{ $actividad ? route('actividades.perfil', $actividad) : route('novedades.publica.crear') }}";
                 });
             } else {
                 setTimeout(mostrarAlertaNovedad, 100);

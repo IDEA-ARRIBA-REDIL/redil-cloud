@@ -12,27 +12,31 @@ use App\Http\Controllers\Auth\ReactivacionCuentaController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['guest', 'throttle:auth'])->group(function () {
+Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->middleware('throttle:auth');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:auth');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:auth')
         ->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:auth')
         ->name('password.store');
 
     // Rutas para la reactivación de cuenta (Usuarios que están como SoftDeleted)
@@ -40,6 +44,7 @@ Route::middleware(['guest', 'throttle:auth'])->group(function () {
         ->name('auth.reactivar');
 
     Route::post('reactivar-cuenta', [ReactivacionCuentaController::class, 'enviarEnlaceReactivacion'])
+        ->middleware('throttle:auth')
         ->name('auth.reactivar.enviar');
 
     // Esta ruta usa el middleware 'signed' para verificar que la URL no haya sido alterada

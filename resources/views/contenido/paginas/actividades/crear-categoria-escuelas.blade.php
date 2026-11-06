@@ -128,20 +128,15 @@
                                 @enderror
                             </div>
 
-
                             <div class="col-12 col-md-6">
                                 <label class="form-label" for="materia_periodo_id">Materia asociada</label>
                                 <select name="materia_periodo_id" id="materia_periodo_id"
                                     class="select2 form-select @error('materia_periodo_id') is-invalid @enderror" required>
                                     <option value="">Seleccione una materia</option>
                                     @foreach ($materiasPeriodo as $mp)
-                                        {{-- CAMBIO CLAVE: Usamos la directiva @disabled de Blade para bloquear la opción si su ID está en el array de materias usadas. --}}
                                         <option value="{{ $mp->id }}" @selected(old('materia_periodo_id') == $mp->id)
                                             @disabled(in_array($mp->id, $materiasUsadasIds))>
-
                                             {{ $mp->materia->nombre }}
-
-                                            {{-- AÑADIDO: Mostramos un texto informativo si la materia ya está asignada. --}}
                                             @if (in_array($mp->id, $materiasUsadasIds))
                                                 (Ya asignada)
                                             @endif
@@ -153,7 +148,17 @@
                                 @enderror
                             </div>
 
-                            {{-- El resto del formulario se mantiene igual --}}
+                            <div class="col-12 col-md-6">
+                                <label class="form-label" for="aforo">Aforo (Opcional, dejar vacío para ilimitado)</label>
+                                <input type="number" name="aforo" id="aforo" min="0"
+                                    class="form-control @error('aforo') is-invalid @enderror"
+                                    placeholder="Sin límite"
+                                    value="{{ old('aforo') }}" />
+                                @error('aforo')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             <div class="col-12" x-data="{ esGratuita: {{ old('es_gratuita') ? 'true' : 'false' }} }">
                                 <div class="form-check form-switch form-switch-lg mb-2">
                                     <input type="checkbox" name="es_gratuita" id="es_gratuita" class="form-check-input"
@@ -177,6 +182,114 @@
                                     @endforelse
                                 </div>
                             </div>
+
+                            {{-- SECCIÓN: RESTRICCIONES POR CATEGORÍA --}}
+                            @if ($actividad->restriccion_por_categoria == true)
+                            <div class="col-12">
+                                <hr>
+                                <h5 class="mb-3 fw-semibold">Restricciones por categoría</h5>
+                                <div class="row g-4">
+
+                                    {{-- Género --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="genero">Género</label>
+                                        <select required name="genero" id="genero" class="select2 form-select">
+                                            <option value="3" @selected(old('genero', 3)==3)>Ambos</option>
+                                            <option value="1" @selected(old('genero')==1)>Hombres</option>
+                                            <option value="2" @selected(old('genero')==2)>Mujeres</option>
+                                        </select>
+                                        @error('genero')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Vinculación a grupo --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="vinculacion_grupo">Vinculación a grupo</label>
+                                        <select required name="vinculacion_grupo" id="vinculacion_grupo" class="select2 form-select">
+                                            <option value="3" @selected(old('vinculacion_grupo', 3)==3)>Ambos</option>
+                                            <option value="1" @selected(old('vinculacion_grupo')==1)>Pertenece a grupo</option>
+                                            <option value="2" @selected(old('vinculacion_grupo')==2)>No pertenece</option>
+                                        </select>
+                                        @error('vinculacion_grupo')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Actividad en grupo --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="actividad_grupo">Actividad en grupo</label>
+                                        <select required name="actividad_grupo" id="actividad_grupo" class="select2 form-select">
+                                            <option value="3" @selected(old('actividad_grupo', 3)==3)>Ambos</option>
+                                            <option value="1" @selected(old('actividad_grupo')==1)>Activos</option>
+                                            <option value="2" @selected(old('actividad_grupo')==2)>Inactivos</option>
+                                        </select>
+                                        @error('actividad_grupo')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Sedes habilitadas --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="sedes">Sedes habilitadas</label>
+                                        <select name="sedes[]" id="sedes" class="select2 form-select" multiple>
+                                            @foreach ($sedes as $sede)
+                                            <option value="{{ $sede->id }}" @selected(in_array($sede->id, old('sedes', [])))>
+                                                {{ $sede->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('sedes')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Rangos de edad --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="rangos_edad">Rangos de edad</label>
+                                        <select name="rangos_edad[]" id="rangos_edad" class="select2 form-select" multiple>
+                                            @foreach ($rangosEdad as $rango)
+                                            <option value="{{ $rango->id }}" @selected(in_array($rango->id, old('rangos_edad', [])))>
+                                                {{ $rango->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- Tipos de usuario --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="tipo_usuarios">Tipos de usuario</label>
+                                        <select name="tipo_usuarios[]" id="tipo_usuarios" class="select2 form-select" multiple>
+                                            @foreach ($tipoUsuarios as $tipo)
+                                            <option value="{{ $tipo->id }}" @selected(in_array($tipo->id, old('tipo_usuarios', [])))>
+                                                {{ $tipo->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- Estados civiles --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="estados_civiles">Estados civiles</label>
+                                        <select name="estados_civiles[]" id="estados_civiles" class="select2 form-select" multiple>
+                                            @foreach ($estadosCiviles as $estado)
+                                            <option value="{{ $estado->id }}" @selected(in_array($estado->id, old('estados_civiles', [])))>
+                                                {{ $estado->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- Tipos de servicios --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="tipo_servicios">Tipos de servicios</label>
+                                        <select name="tipo_servicios[]" id="tipo_servicios" class="select2 form-select" multiple>
+                                            @foreach ($tipoServicios as $tipoSer)
+                                            <option value="{{ $tipoSer->id }}" @selected(in_array($tipoSer->id, old('tipo_servicios', [])))>
+                                                {{ $tipoSer->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
 

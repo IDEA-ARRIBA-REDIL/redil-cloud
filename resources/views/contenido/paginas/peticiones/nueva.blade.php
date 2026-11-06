@@ -131,6 +131,13 @@ $configData = Helper::appClasses();
           $('#nombre_externo').parent().append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
           isValid = false;
         }
+
+        // Validar Ciudad
+        let ciudad = $('#ciudad').val().trim();
+        if (!ciudad) {
+          $('#ciudad').parent().append('<div class="text-danger form-label custom-error mt-1">Este campo es obligatorio.</div>');
+          isValid = false;
+        }
       }
 
       // Validar Tipo de petición
@@ -278,6 +285,10 @@ $configData = Helper::appClasses();
                                   <option value="{{ $pais->id }}" {{ old('pais_id', 1) == $pais->id ? 'selected' : '' }}>{{ $pais->nombre }}</option>
                               @endforeach
                           </select>
+                      </div>
+                      <div class="mb-3 col-md-12">
+                          <label class="form-label" for="ciudad">Ciudad</label>
+                          <input type="text" id="ciudad" name="ciudad" class="form-control" value="{{ old('ciudad') }}" placeholder="Ej: Medellín, Bogotá, Miami...">
                       </div>
                   </div>
                 </div>

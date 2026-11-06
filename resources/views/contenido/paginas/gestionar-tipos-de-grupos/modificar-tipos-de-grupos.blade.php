@@ -425,6 +425,8 @@ $configuracion = \App\Models\Configuracion::find(1);
       </div>
     </div>
 
+    @include('contenido.paginas.gestionar-tipos-de-grupos.seccion-restricciones-roles')
+
   </div>
 
   <!-- botonera -->

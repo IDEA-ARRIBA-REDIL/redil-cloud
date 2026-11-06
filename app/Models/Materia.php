@@ -88,6 +88,11 @@ class Materia extends Model
             ->withPivot('estado', 'al_iniciar', 'estado_paso_crecimiento_usuario_id', 'indice');
     }
 
+    public function tareasIniciar(): HasMany
+    {
+        return $this->hasMany(MateriaTareaIniciar::class, 'materia_id');
+    }
+
     public function tareasRequisito(): HasMany
     {
         return $this->hasMany(MateriaTareaRequisito::class, 'materia_id');

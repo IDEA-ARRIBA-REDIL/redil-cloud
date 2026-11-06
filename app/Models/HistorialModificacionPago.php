@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class HistorialModificacionPago extends Model
@@ -25,32 +24,32 @@ class HistorialModificacionPago extends Model
 
     public function asesor()
     {
-        return $this->belongsTo(User::class, 'asesor_id');
+        return $this->belongsTo(User::class, 'asesor_id')->withTrashed();
     }
 
     public function caja()
     {
-        return $this->belongsTo(Caja::class, 'caja_id');
+        return $this->belongsTo(Caja::class, 'caja_id')->withTrashed();
     }
 
     public function puntoDePago()
     {
-        return $this->belongsTo(PuntoDePago::class, 'punto_de_pago_id');
+        return $this->belongsTo(PuntoDePago::class, 'punto_de_pago_id')->withTrashed();
     }
 
     public function compra()
     {
-        return $this->belongsTo(Compra::class, 'compra_id');
+        return $this->belongsTo(Compra::class, 'compra_id')->withTrashed();
     }
 
     public function pago()
     {
-        return $this->belongsTo(Pago::class, 'pago_id');
+        return $this->belongsTo(Pago::class, 'pago_id')->withTrashed();
     }
 
     public function usuarioAfectado()
     {
-        return $this->belongsTo(User::class, 'usuario_afectado_id');
+        return $this->belongsTo(User::class, 'usuario_afectado_id')->withTrashed();
     }
 
     public function actividad()

@@ -190,24 +190,37 @@ $configData = Helper::appClasses();
     let timeoutId;
     const delay = 1000; // Tiempo en milisegundos después de dejar de escribir para enviar el formulario
 
-    buscarInput.addEventListener('input', function() {
-        clearTimeout(timeoutId); // Limpiar cualquier timeout anterior
+    if (buscarInput) {
+      buscarInput.addEventListener('input', function() {
+          clearTimeout(timeoutId); // Limpiar cualquier timeout anterior
 
-        if (this.value.length >= 3) {
-          filtroBuscarInput.value = this.value;
-          timeoutId = setTimeout(() => {
-              formularioBuscar.submit();
-          }, delay);
-        }else if(this.value.length == 0)
-        {
-          formularioBuscar.submit();
+          if (this.value.length >= 3) {
+            if (filtroBuscarInput) {
+              filtroBuscarInput.value = this.value;
+            }
+            timeoutId = setTimeout(() => {
+                formularioBuscar.submit();
+            }, delay);
+          } else if (this.value.length == 0) {
+            if (filtroBuscarInput) {
+              filtroBuscarInput.value = "";
+            }
+            formularioBuscar.submit();
+          }
+      });
+    }
+
+    if (btnBorrarBusquedaPorPalabra) {
+      btnBorrarBusquedaPorPalabra.addEventListener('click', function() {
+        if (buscarInput) {
+          buscarInput.value = "";
         }
-    });
-
-    btnBorrarBusquedaPorPalabra.addEventListener('click', function() {
-      buscarInput.value = "";
-      formularioBuscar.submit();
-    });
+        if (filtroBuscarInput) {
+          filtroBuscarInput.value = "";
+        }
+        formularioBuscar.submit();
+      });
+    }
 </script>
 
 <script>
@@ -314,7 +327,7 @@ $configData = Helper::appClasses();
         <div class="input-group input-group-merge bg-white">
           <input id="buscar" name="buscar" type="text" value="{{$parametrosBusqueda->buscar}}" class="form-control" placeholder="Busqueda..." aria-describedby="btnBusqueda">
           @if($parametrosBusqueda->buscar)
-          <span id="borrarBusquedaPorPalabra" class="input-group-text"><i class="ti ti-x"></i></span>
+          <span id="borrarBusquedaPorPalabra" class="input-group-text cursor-pointer"><i class="ti ti-x"></i></span>
           @else
           <span class="input-group-text"><i class="ti ti-search"></i></span>
           @endif
@@ -357,7 +370,7 @@ $configData = Helper::appClasses();
 
           <div class="user-profile-header d-flex flex-row text-start mb-2 ">
             <div class="flex-grow-1 mt-n5 mx-auto text-start">
-              @if($persona->foto == "default-m.png" || $persona->foto == "default-f.png")
+              @if(! $persona->tieneFoto())
               <div class="avatar avatar-xl">
                 <span class="avatar-initial rounded-circle border border-3 border-white bg-info"> {{ $persona->inicialesNombre() }} </span>
               </div>
@@ -428,11 +441,11 @@ $configData = Helper::appClasses();
                   @endif
 
                   @if($rolActivo->hasPermissionTo('personas.opcion_cambiar_contrasena_asistente'))
-                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalCambioContrasena" onclick="event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', 'usuarios/{{$persona->id}}/cambiar-contrasena');">Cambiar contraseña</a></li>
+                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalCambioContrasena" onclick="event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', '{{ route('usuario.cambiarContrasena', $persona) }}');">Cambiar contraseña</a></li>
 
                   <form method="POST" id="cambiarContraseñaDefault_{{$persona->id}}" action="{{ route('usuario.cambiarContrasenaDefault',  ['usuario' => $persona ]) }}">
                     @csrf
-                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('cambiarContraseñaDefault_{{$persona->id}}').submit();">Cambiar contraseña default</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); confirmarCambioContrasenaDefault('cambiarContraseñaDefault_{{$persona->id}}', '{{ addslashes($persona->nombre(3)) }}');">Cambiar contraseña default</a></li>
                   </form>
                   @endif
 
@@ -463,10 +476,17 @@ $configData = Helper::appClasses();
           </div>
 
 
-          <div class="d-flex my-2 mb-5">
+          <div class="d-flex my-2 mb-5 align-items-center flex-wrap gap-1">
+            @if($persona->tipoUsuario)
             <span class="badge rounded-pill px-6 fw-light " style="background-color: {{ $persona->tipoUsuario->color }}">
               <i class="{{ $persona->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $persona->tipoUsuario->nombre }}</span>
             </span>
+            @endif
+            @if(is_null($persona->email_verified_at))
+            <span class="badge rounded-pill bg-label-warning px-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Correo no verificado">
+              <i class="ti ti-mail-off fs-6 me-1"></i>No verificado
+            </span>
+            @endif
           </div>
 
           <div class="d-flex flex-column mb-3">
@@ -517,12 +537,13 @@ $configData = Helper::appClasses();
             @endif
 
             <!-- Servicios prestados en grupos  -->
-            @if($persona->ultimoTipoServicioGrupo())
+            @php($ultimoTipoServicioGrupo = $persona->ultimoTipoServicioGrupo())
+            @if($ultimoTipoServicioGrupo)
             <div class="d-flex flex-row  mb-3">
               <i class="ti ti-circle-check text-black"></i>
               <div class="d-flex flex-column">
                 <small class="text-black ms-1">Servicios prestados en grupos:</small>
-                <small class="fw-semibold ms-1 text-black">{{ $persona->ultimoTipoServicioGrupo()->nombre }}</small>
+                <small class="fw-semibold ms-1 text-black">{{ $ultimoTipoServicioGrupo->nombre }}</small>
               </div>
             </div>
             @endif
@@ -532,14 +553,15 @@ $configData = Helper::appClasses();
 
             <div class="border my-10">
               
-            @foreach ($persona->roles()->get() as $role)
+            @foreach ($persona->roles as $role)
               <span class="fw-bold text-black">{{ $role->name }},</span>
             @endforeach
             </div>
 
             <span class="fw-bold text-black">Encargados</span>
-            @if($persona->encargadosDirectos()->count() > 0)
-              @foreach($persona->encargadosDirectos() as $encargado)
+            @php($encargadosDirectos = $persona->encargadosDirectos())
+            @if($encargadosDirectos->isNotEmpty())
+              @foreach($encargadosDirectos as $encargado)
               <div class="d-flex flex-row">
                   <i class="{{ $encargado->icono }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $encargado->tipo_usuario }}"></i>
                 <div class="d-flex flex-column">
@@ -578,46 +600,7 @@ $configData = Helper::appClasses();
     @endif
   </div>
 
-  <!-- Modal cambio de contraseña -->
-  <div class="modal fade" id="modalCambioContrasena" aria-hidden="true">
-    <div class="modal-dialog modal-md" role="document">
-      <form id="formCambioContrasena" class="forms-sample" method="POST" action="">
-        @csrf
-        <div class="modal-content">
-          <div class="modal-header d-flex flex-column">
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-
-            <div class="text-center mb-4">
-              <h3 class="role-title mb-2"><i class="ti ti-password ti-lg"></i> Cambio de contraseña</h3>
-              <p class="text-muted">La contraseña debe contener como mínimo 5 caracteres, una letra minúscula y un número.</p>
-            </div>
-
-            <div class="row">
-
-              <!-- Nueva Contrasena -->
-              <div class="col-12 mb-3">
-                <label class="form-label" for="nueva_contrasena">Nueva contraseña</label>
-                <input id="nueva_contrasena" name="password" value="" type="password" class="form-control" required pattern="(?=.*\d)(?=.*[A-Za-z]).{5,}" title="La contraseña debe contener como minimo 5 caracteres alfanumericos, es decir, debe contener como minimo letras y numeros.  "/>
-              </div>
-
-              <!-- Confirmar Contrasena -->
-              <div class="col-12 mb-3">
-                <label class="form-label" for="confirmar_contrasena">Confirmar contraseña</label>
-                <input id="confirmar_contrasena" name="password_confirmation" value="" type="password" class="form-control" required pattern="(?=.*\d)(?=.*[A-Za-z]).{5,}" title="La contraseña debe contener como minimo 5 caracteres alfanumericos, es decir, debe contener como minimo letras y numeros.  "/>
-              </div>
-
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cerrar</button>
-            <button type="submit" class="btn btn-primary"><i class="ti ti-donwload ml-3"></i> Guardar </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
+  @include('contenido.paginas.usuario.modal-cambio-contrasena')
 
   <!-- offcanvas busqueda avanzada -->
   <form id="busquedaAvanzada" class="forms-sample" method="GET" action="{{ route('usuario.lista', $tipo) }}">

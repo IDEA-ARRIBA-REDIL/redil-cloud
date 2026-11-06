@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Controllers\OfrendaDonacionController;
 use App\Models\EstadoPago;
 use App\Models\Matricula;
+use App\Models\Ofrenda;
 use App\Models\Pago;
 use App\Services\ZonaPagosService;
 use Illuminate\Console\Command;
@@ -52,10 +54,13 @@ class VerificarPagosPendientes extends Command
             // 1. Proceso para pagos PENDIENTES (Consultar pasarela ZonaPagos)
             $contadorActualizados = $this->verificarPagosPendientesZonaPagos();
 
+            // 1.1 Proceso para ofrendas online PENDIENTES
+            $contadorOfrendasActualizadas = $this->verificarOfrendasPendientesZonaPagos();
+
             // 2. NUEVA FUNCIÓN DEDICADA SEPARADA: Proceso exclusivo para limpiar matrículas de pagos ANULADOS / RECHAZADOS
             $contadorLimpiadas = $this->limpiarMatriculasDePagosAnulados();
 
-            $mensaje = "Sonda ZonaPagos: Proceso finalizado. Se actualizaron {$contadorActualizados} pagos pendientes y se eliminaron {$contadorLimpiadas} matrículas de pagos anulados.";
+            $mensaje = "Sonda ZonaPagos: Proceso finalizado. Se actualizaron {$contadorActualizados} pagos pendientes, {$contadorOfrendasActualizadas} ofrendas pendientes y se eliminaron {$contadorLimpiadas} matrículas de pagos anulados.";
             Log::info($mensaje);
             $this->info($mensaje);
 
@@ -178,11 +183,17 @@ class VerificarPagosPendientes extends Command
                 $tipoCompra = strtoupper(trim($datosTransaccion['str_campo1'] ?? ''));
 
                 if ($tipoCompra === 'ESCUELAS') {
-                    $matricula = $pago->matricula;
+                    $matricula = $pago->matricula ?: \App\Models\Matricula::where(function ($query) use ($pago) {
+                        $query->where('referencia_pago', (string) $pago->id)
+                            ->orWhere('referencia_pago', (string) $pago->compra_id)
+                            ->orWhere('pago_id', $pago->id)
+                            ->orWhere('compra_id', $pago->compra_id);
+                    })->first();
 
                     if ($matricula) {
                         $matricula->update(['estado_pago_matricula' => 'pagada']);
-                        $this->info("    - Matrícula ID {$matricula->id} actualizada a 'pagada'.");
+                        $matricula->aplicarEfectosMatricula();
+                        $this->info("    - Matrícula ID {$matricula->id} actualizada a 'pagada' y efectos de inicio aplicados.");
                     }
                 } elseif ($compra && $compra->inscripciones->isNotEmpty()) {
                     $compra->inscripciones()->update(['estado' => true]);
@@ -231,5 +242,40 @@ class VerificarPagosPendientes extends Command
         }
 
         return $contadorLimpiadas;
+    }
+
+    /**
+     * Consulta a ZonaPagos el estado de las ofrendas online (ingresada_por = 3) pendientes.
+     */
+    public function verificarOfrendasPendientesZonaPagos(): int
+    {
+        $ofrendasPendientes = Ofrenda::where('ingresada_por', 3)
+            ->whereHas('estadoPago', function ($query) {
+                $query->where('estado_pendiente', true);
+            })
+            ->with(['estadoPago', 'tipoOfrenda', 'destinatarioRelacion', 'moneda', 'usuario', 'tipoPago'])
+            ->get();
+
+        if ($ofrendasPendientes->isEmpty()) {
+            $this->info('    - No se encontraron ofrendas online pendientes por consultar.');
+
+            return 0;
+        }
+
+        $this->info("    - {$ofrendasPendientes->count()} ofrendas online pendientes encontradas para verificar con ZonaPagos.");
+        $ofrendaController = app(OfrendaDonacionController::class);
+        $contadorActualizadas = 0;
+
+        foreach ($ofrendasPendientes as $ofrenda) {
+            $estadoAnterior = $ofrenda->estado_pago_id;
+            $ofrendaController->verificarYActualizarOfrenda($ofrenda);
+
+            if ($ofrenda->estado_pago_id !== $estadoAnterior) {
+                $contadorActualizadas++;
+                $this->info("    - Ofrenda ID {$ofrenda->id} actualizada.");
+            }
+        }
+
+        return $contadorActualizadas;
     }
 }

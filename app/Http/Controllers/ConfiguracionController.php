@@ -43,6 +43,14 @@ class ConfiguracionController extends Controller
                 'keywords' => 'roles permisos accesos privilegios seguridad perfiles usuarios administradores',
             ],
             [
+                'title' => 'Permisos',
+                'route' => 'configuracion.gestionar-permisos',
+                'icon' => 'ti-shield-lock',
+                'color' => 'bg-label-secondary',
+                'permission' => 'configuraciones.subitem_permisos',
+                'keywords' => 'permisos roles privilegios accesos seguridad matriz capacidades autorizaciones asignacion masiva',
+            ],
+            [
                 'title' => 'Zonas',
                 'route' => 'configuracion.gestionar-zonas',
                 'icon' => 'ti-map-pin',
@@ -73,7 +81,7 @@ class ConfiguracionController extends Controller
                 'route' => 'notificaciones.configuracion',
                 'icon' => 'ti-bell-ringing',
                 'color' => 'bg-label-secondary',
-                'permission' => 'configuraciones.subitem_general',
+                'permission' => \App\Services\PermisosCuentaInicial::NOTIFICACIONES,
                 'keywords' => 'notificaciones alertas correos avisos email push recordatorios mensajes plantillas',
             ],
             [
@@ -273,7 +281,7 @@ class ConfiguracionController extends Controller
                 'route' => 'tipo-hitos.listarTipoHitos',
                 'icon' => 'ti-trophy',
                 'color' => 'bg-label-secondary',
-                'permission' => ['hitos.gestionar', 'configuraciones.item_configuraciones'],
+                'permission' => 'hitos.gestionar',
                 'keywords' => 'tipos hitos logros metas avances celebraciones etapas reconocimientos',
             ],
             [

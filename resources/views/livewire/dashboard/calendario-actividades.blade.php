@@ -58,6 +58,37 @@
         </div>
 
         <style>
+            /* Ajustes responsivos para el contenedor del calendario en dashboard */
+            .dashboard-calendar-card .fc .fc-view-harness {
+                margin: 0 !important;
+            }
+            .dashboard-calendar-card .fc-view-container {
+                margin: 0 !important;
+            }
+            .dashboard-calendar-card .fc-scrollgrid {
+                border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
+                border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+                width: 100% !important;
+            }
+            .dashboard-calendar-card .fc-daygrid-day-frame {
+                min-height: 48px !important;
+                overflow: hidden !important;
+            }
+            .dashboard-calendar-card .fc-daygrid-day-top {
+                display: flex !important;
+                flex-direction: row-reverse !important;
+                justify-content: flex-start !important;
+                padding: 2px 4px !important;
+            }
+            .dashboard-calendar-card .fc-daygrid-day-number {
+                float: none !important;
+                padding: 2px 4px !important;
+                font-size: 0.8rem !important;
+                line-height: 1.2 !important;
+                font-weight: 500 !important;
+                display: inline-block !important;
+            }
+
             @media (max-width: 991.98px) {
                 .dashboard-calendar-card .app-calendar-sidebar {
                     position: static !important;
@@ -66,6 +97,30 @@
                     left: 0 !important;
                     border-bottom: 1px solid rgba(0,0,0,0.125) !important;
                     border-right: none !important;
+                }
+            }
+
+            @media (max-width: 575.98px) {
+                .dashboard-calendar-card .fc-col-header-cell-cushion {
+                    padding: 4px 2px !important;
+                    font-size: 0.75rem !important;
+                }
+                .dashboard-calendar-card .fc-daygrid-day-number {
+                    padding: 1px 2px !important;
+                    font-size: 0.72rem !important;
+                }
+                .dashboard-calendar-card .fc-daygrid-day-frame {
+                    min-height: 40px !important;
+                }
+                .dashboard-calendar-card .fc-toolbar {
+                    gap: 0.5rem;
+                }
+                .dashboard-calendar-card .fc-toolbar-title {
+                    font-size: 1rem !important;
+                }
+                .dashboard-calendar-card .fc-button {
+                    padding: 0.25rem 0.5rem !important;
+                    font-size: 0.75rem !important;
                 }
             }
         </style>

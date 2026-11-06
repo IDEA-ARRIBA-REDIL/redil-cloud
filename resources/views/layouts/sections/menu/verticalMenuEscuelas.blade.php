@@ -13,6 +13,7 @@
       <div style="padding-left: 20px !important;" class="app-brand mt-5 demo p-0 mb-3">
             <a href="{{ url('/') }}" class="app-brand-link">
                 @include('_partials.macros', [
+                        'contexto_logo' => 'menu_escuelas',
                     'width' => '120px'
                 ])
             </a>

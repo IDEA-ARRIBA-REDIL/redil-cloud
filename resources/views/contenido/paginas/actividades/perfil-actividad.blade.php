@@ -466,8 +466,19 @@ $configData = Helper::appClasses();
 
             <div class="card-body">
 
-                {{-- REGLA 1: Validación de Fechas (Aplica a todo) --}}
-                @if (Carbon\Carbon::now()->between($actividad->fecha_visualizacion, $actividad->fecha_cierre))
+                {{-- REGLA 1: Validación de Fechas y Estado (Aplica a todo) --}}
+                @php
+                    $inscripcionesAbiertas = $actividad->inscripcionesAbiertas();
+                    $motivoCierre = $actividad->motivoCierreInscripciones();
+                    $fechaInicioInscripcion = $actividad->fecha_visualizacion ? Carbon\Carbon::parse($actividad->fecha_visualizacion) : null;
+                    $fechaFinInscripcion = $actividad->fecha_cierre
+                        ? Carbon\Carbon::parse($actividad->fecha_cierre)
+                        : ($actividad->fecha_finalizacion
+                            ? Carbon\Carbon::parse($actividad->fecha_finalizacion)
+                            : ($actividad->fecha_inicio ? Carbon\Carbon::parse($actividad->fecha_inicio) : null));
+                @endphp
+
+                @if ($inscripcionesAbiertas)
 
                 {{-- REGLA 2: Validación de Inicio de Sesión --}}
                 @if ($actividad->tipo->requiere_inicio_sesion && Auth::guest())
@@ -655,8 +666,16 @@ $configData = Helper::appClasses();
                 @else
                 {{-- Si la REGLA 1 falla --}}
                 <div class="alert alert-warning">
-                    <h6 class="alert-heading mb-1">Inscripciones cerradas</h6>
-                    <p class="mb-0 small">La fecha para registrarse en esta actividad ha finalizado.</p>
+                    @if ($motivoCierre === 'proximamente')
+                        <h6 class="alert-heading mb-1">Inscripciones próximamente</h6>
+                        <p class="mb-0 small">Las inscripciones para esta actividad estarán disponibles a partir del {{ $fechaInicioInscripcion?->format('d/m/Y') }}.</p>
+                    @elseif ($motivoCierre === 'inactiva')
+                        <h6 class="alert-heading mb-1">Actividad no disponible</h6>
+                        <p class="mb-0 small">Esta actividad no se encuentra activa en este momento.</p>
+                    @else
+                        <h6 class="alert-heading mb-1">Inscripciones cerradas</h6>
+                        <p class="mb-0 small">La fecha para registrarse en esta actividad ha finalizado{{ $fechaFinInscripcion ? ' (' . $fechaFinInscripcion->format('d/m/Y') . ')' : '' }}.</p>
+                    @endif
                 </div>
                 @endif
 

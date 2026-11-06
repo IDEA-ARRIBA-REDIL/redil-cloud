@@ -6,6 +6,7 @@ use App\Http\Requests\UpdateConfiguracionGeneralRequest;
 use App\Models\Configuracion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ConfiguracionGeneralController extends Controller
@@ -153,7 +154,23 @@ class ConfiguracionGeneralController extends Controller
             'label_campo_3_informe_evidencias_grupo' => $validated['labelCampo3InformeEvidenciasGrupo'] ?? null,
             'campo_3_informe_evidencias_grupo_obligatorio' => $on('campo3InformeEvidenciasGrupoObligatorio'),
 
+            // --- Donaciones / Ofrendas Online ---
+            'mensaje_donacion_ofrenda' => $request->input('mensajeDonacionOfrenda'),
+
         ];
+
+        if ($request->hasFile('bannerDonacionOfrenda')) {
+            $archivoBanner = $request->file('bannerDonacionOfrenda');
+            $directorioDonaciones = 'img/donaciones';
+
+            if (! empty($configuracion->banner_donacion_ofrenda) && Storage::disk('public')->exists($directorioDonaciones.'/'.$configuracion->banner_donacion_ofrenda)) {
+                Storage::disk('public')->delete($directorioDonaciones.'/'.$configuracion->banner_donacion_ofrenda);
+            }
+
+            $nombreBanner = 'banner-donaciones-'.time().'.'.$archivoBanner->getClientOriginalExtension();
+            $archivoBanner->storeAs($directorioDonaciones, $nombreBanner, 'public');
+            $datos['banner_donacion_ofrenda'] = $nombreBanner;
+        }
 
         if (! empty($datos['dia_corte_reportes_grupos'])) {
             $datos['dias_plazo_reporte_grupo'] = null;

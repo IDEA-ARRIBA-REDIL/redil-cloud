@@ -66,11 +66,9 @@ class ZonaPagosController extends Controller
 
         // Enrutador inteligente basado en prefijos
         if (str_starts_with($idReferencia, 'O-')) {
-            $ofrendaId = substr($idReferencia, 2);
+            $ofrendaId = (int) substr($idReferencia, 2);
 
-            // TODO: Crear ruta para ofrenda finalizada cuando se desarrolle el módulo
-            // return redirect()->route('ofrendas.finalizada', ['ofrenda' => $ofrendaId]);
-            return redirect('/');
+            return app(OfrendaDonacionController::class)->retornoUsuario($ofrendaId);
         } elseif (str_starts_with($idReferencia, 'P-') || str_starts_with($idReferencia, 'A-')) {
             $pagoId = substr($idReferencia, 2);
 
@@ -168,12 +166,18 @@ class ZonaPagosController extends Controller
             $tipoCompra = strtoupper(trim($datosTransaccion['str_campo1'] ?? ''));
 
             if ($tipoCompra === 'ESCUELAS') {
-                // Usamos la relación definida en el modelo Pago
-                $matricula = $pago->matricula;
+                // Usamos la relación definida en el modelo Pago con fallback por referencia_pago/compra_id
+                $matricula = $pago->matricula ?: \App\Models\Matricula::where(function ($query) use ($pago) {
+                    $query->where('referencia_pago', (string) $pago->id)
+                        ->orWhere('referencia_pago', (string) $pago->compra_id)
+                        ->orWhere('pago_id', $pago->id)
+                        ->orWhere('compra_id', $pago->compra_id);
+                })->first();
 
                 if ($matricula) {
                     $matricula->update(['estado_pago_matricula' => 'pagada']);
-                    Log::info("ZonaPagos Callback: Matrícula ID {$matricula->id} actualizada a 'pagada'.");
+                    $matricula->aplicarEfectosMatricula();
+                    Log::info("ZonaPagos Callback: Matrícula ID {$matricula->id} actualizada a 'pagada' y efectos de inicio aplicados.");
                 } else {
                     Log::warning("ZonaPagos Callback: No se encontró matrícula para Pago ID {$pago->id}.");
                 }
@@ -210,15 +214,7 @@ class ZonaPagosController extends Controller
     {
         Log::info("ZonaPagos Callback: Procesando Ofrenda ID {$ofrendaId}.");
 
-        // TODO: Implementar la lógica para ofrendas.
-        // Ej: $ofrenda = Ofrenda::find($ofrendaId);
-        // Verificar en ZonaPagos, buscar estado y actualizar.
-
-        return response()->json([
-            'status' => 'success',
-            'ofrenda_id' => $ofrendaId,
-            'message' => 'Callback de ofrenda recibido. Lógica pendiente de implementar.',
-        ]);
+        return app(OfrendaDonacionController::class)->procesarCallbackOfrenda((int) $ofrendaId);
     }
 
     /**

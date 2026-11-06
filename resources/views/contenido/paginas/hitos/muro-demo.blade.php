@@ -15,11 +15,11 @@
 
 <style>
 :root{
-  --bg:#070916;
+  --bg:#10344c;
   --text:#f8f9ff;
-  --muted:#a9adc3;
+  --muted:#b3c7d8;
   --accent:#f2c66d;
-  --border:rgba(255,255,255,.14);
+  --border:rgba(255,255,255,.18);
   --font-display:'Fraunces', Georgia, serif;
   --font-body:'Inter', -apple-system, sans-serif;
 }
@@ -36,75 +36,49 @@ button{font:inherit}
 
 .app{
   position:relative; width:100%; height:100dvh; overflow:hidden;
-  background:linear-gradient(180deg,#171b3a 0%,#10142e 44%,#080a19 100%);
+  background:#143c54;
   display:flex; flex-direction:column;
   isolation:isolate;
   touch-action:none;
 }
 
 /* =========================================================
-   CAPAS 2D DEL PAISAJE (PARALLAX CÓSMICO)
+   CAPAS DE ESCENARIO 2.5D (FONDO, INTERMEDIA Y FRONTAL)
    ========================================================= */
-.sky{
-  position:absolute; z-index:-8; inset:0;
-  background:
-    radial-gradient(circle at 50% 25%,rgba(255,200,119,.15),transparent 22%),
-    radial-gradient(circle at 50% 40%,rgba(133,103,255,.12),transparent 35%),
-    linear-gradient(180deg,#24294f 0%,#141938 42%,#080a19 100%);
+.scenic-layer{
+  position:absolute; inset:0; width:100%; height:100%;
+  pointer-events:none; overflow:hidden;
 }
-.stars{
-  position:absolute; z-index:-7; inset:0; opacity:.25;
-  background-image:
-    radial-gradient(circle,#fff 0 1px,transparent 1.2px),
-    radial-gradient(circle,#fff 0 1px,transparent 1.2px);
-  background-size:83px 83px,127px 127px;
-  background-position:15px 20px,70px 46px;
-  mask-image:linear-gradient(180deg,#000,transparent 62%);
+.scenic-layer img{
+  width:100%; height:100%;
+  object-fit:cover;
+  object-position:bottom center;
+  display:block;
 }
-.layer{
-  position:absolute; left:-18%; width:136%; pointer-events:none;
+
+/* Capa 1: Fondo más atrás (Textura papel/lienzo azul) */
+.layer-1-fondo{
+  z-index:0;
+}
+
+/* Capa 2: Intermedia (Malla de curvas y ondas 3D blancas) */
+.layer-2-intermedia{
+  z-index:1;
+  opacity:.95;
   will-change:transform;
-}
-.clouds{
-  z-index:-5; top:6%; height:22%; opacity:.15;
-  animation:cloudPan 36s linear infinite;
-}
-.mountains-back{
-  z-index:-4; bottom:14%; height:46%; opacity:.38;
-  animation:mountainBack 48s linear infinite alternate;
-}
-.mountains-front{
-  z-index:-3; bottom:5%; height:40%; opacity:.75;
-  animation:mountainFront 34s linear infinite alternate-reverse;
-}
-.layer svg{width:100%; height:100%; display:block}
-
-@keyframes cloudPan{
-  from{transform:translate3d(-4%,0,0)}
-  to{transform:translate3d(18%,0,0)}
-}
-@keyframes mountainBack{
-  from{transform:translate3d(-3%,0,0)}
-  to{transform:translate3d(6%,0,0)}
-}
-@keyframes mountainFront{
-  from{transform:translate3d(-5%,0,0)}
-  to{transform:translate3d(4%,0,0)}
+  transform-origin:center center;
 }
 
-.horizon-glow{
-  position:absolute; z-index:0; left:50%; top:22%;
-  width:min(40vw,500px); aspect-ratio:1;
-  transform:translate(-50%,-50%);
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(255,217,143,.18),rgba(156,121,255,.09) 45%,transparent 72%);
-  filter:blur(10px); pointer-events:none;
+/* Capa 3: Frontal (Ola curva azul marina al frente del túnel) */
+.layer-3-frontal{
+  z-index:20;
 }
+
 .vignette{
-  position:absolute; z-index:3; inset:0; pointer-events:none;
+  position:absolute; z-index:2; inset:0; pointer-events:none;
   background:
-    linear-gradient(180deg,rgba(2,3,11,.3),transparent 20%,transparent 75%,rgba(2,3,10,.65)),
-    radial-gradient(ellipse at center,transparent 0 45%,rgba(3,4,12,.12) 65%,rgba(2,3,10,.75) 100%);
+    linear-gradient(180deg,rgba(10,28,48,.32) 0%,transparent 20%,transparent 75%,rgba(10,28,48,.45) 100%),
+    radial-gradient(ellipse at center,transparent 45%,rgba(8,24,42,.22) 75%,rgba(5,18,32,.55) 100%);
 }
 
 /* =========================================================
@@ -173,7 +147,7 @@ button{font:inherit}
    TUNNEL ESCENE (ESCENARIO 3D INTERPOLADO)
    ========================================================= */
 .tunnel-wrap{
-  position:relative; flex:1 1 0%; min-height:0; width:100%;
+  position:relative; z-index:10; flex:1 1 0%; min-height:0; width:100%;
 }
 .tunnel-scene{
   position:absolute; inset:0; overflow:hidden;
@@ -280,14 +254,14 @@ button{font:inherit}
    ========================================================= */
 .scrubber{
   position:relative; z-index:35; flex-shrink:0;
-  background:#080a1a;
+  background:#0c2236;
   border-top:1px solid var(--border);
-  box-shadow:0 -10px 30px rgba(0,0,0,.5);
+  box-shadow:0 -10px 30px rgba(0,0,0,.35);
 }
 .scrubber-ruler{
   position:relative; height:40px; padding:0 clamp(20px,5vw,50px);
   display:flex; align-items:center;
-  background:rgba(12,15,36,.95);
+  background:rgba(9,28,45,.88);
   border-bottom:1px solid rgba(255,255,255,.08);
 }
 .scrubber-ruler-track{
@@ -327,7 +301,7 @@ button{font:inherit}
 .scrubber-legend{
   display:flex; align-items:center; gap:16px;
   padding:9px clamp(20px,5vw,50px); overflow-x:auto; white-space:nowrap;
-  background:#080a1a;
+  background:#091b2c;
 }
 .legend-chip{
   display:flex; align-items:center; gap:6px; font-size:11px;
@@ -455,48 +429,19 @@ button{font:inherit}
 
 <body>
 <div class="app">
-  <!-- Paisaje Parallax 2D -->
-  <div class="sky"></div>
-  <div class="stars"></div>
-
-  <!-- Nubes animadas -->
-  <div class="layer clouds" aria-hidden="true">
-    <svg viewBox="0 0 1800 300" preserveAspectRatio="none">
-      <g fill="#ffffff">
-        <g transform="translate(60 55)">
-          <ellipse cx="130" cy="95" rx="125" ry="30"/>
-          <circle cx="125" cy="67" r="53"/>
-          <circle cx="201" cy="82" r="43"/>
-        </g>
-        <g transform="translate(720 5) scale(.82)">
-          <ellipse cx="130" cy="95" rx="125" ry="30"/>
-          <circle cx="125" cy="67" r="53"/>
-          <circle cx="201" cy="82" r="43"/>
-        </g>
-        <g transform="translate(1370 76) scale(.66)">
-          <ellipse cx="130" cy="95" rx="125" ry="30"/>
-          <circle cx="125" cy="67" r="53"/>
-          <circle cx="201" cy="82" r="43"/>
-        </g>
-      </g>
-    </svg>
+  <!-- =========================================================
+       CAPAS DE ESCENARIO 2.5D
+       ========================================================= -->
+  <!-- Capa 1: Fondo más atrás (Textura papel/lienzo azul) -->
+  <div class="scenic-layer layer-1-fondo" aria-hidden="true">
+    <img src="{{ asset('assets/img/backgrounds/hitos-capa-1-fondo.jpg') }}" alt="Fondo textura">
   </div>
 
-  <!-- Montañas fondo -->
-  <div class="layer mountains-back" aria-hidden="true">
-    <svg viewBox="0 0 1900 520" preserveAspectRatio="none">
-      <path d="M0 520V300L160 195l125 95 185-175 165 162 220-210 165 185 165-135 145 145 205-230 185 202 150-115 180 190V520Z" fill="#3b3363"/>
-    </svg>
+  <!-- Capa 2: Intermedia (Malla de curvas y ondas 3D blancas) -->
+  <div class="scenic-layer layer-2-intermedia" id="layer2Ondas" aria-hidden="true">
+    <img src="{{ asset('assets/img/backgrounds/hitos-capa-2-ondas.png') }}" alt="Ondas intermedias">
   </div>
 
-  <!-- Montañas frente -->
-  <div class="layer mountains-front" aria-hidden="true">
-    <svg viewBox="0 0 1900 520" preserveAspectRatio="none">
-      <path d="M0 520V350l185-140 160 108 205-198 170 174 190-132 172 169 195-221 188 207 168-111 146 136 196-176 171 173V520Z" fill="#131732"/>
-    </svg>
-  </div>
-
-  <div class="horizon-glow"></div>
   <div class="vignette"></div>
 
   <!-- 1. Cabecera Superior -->
@@ -540,6 +485,11 @@ button{font:inherit}
     <button type="button" class="tunnel-nav next" id="navNext" aria-label="Siguiente">
       <i class="ti ti-chevron-right fs-4"></i>
     </button>
+  </div>
+
+  <!-- Capa 3: Frontal (Ola curva azul marina al frente del túnel) -->
+  <div class="scenic-layer layer-3-frontal" aria-hidden="true">
+    <img src="{{ asset('assets/img/backgrounds/hitos-capa-3-frontal.png') }}" alt="Ola frontal">
   </div>
 
   <!-- 3. Scrubber / Línea de Tiempo Fija en la Parte Inferior (Solo Desktop) -->
@@ -846,6 +796,15 @@ button{font:inherit}
       if(yearSelect.value !== currentHitoYear && yearSelect.querySelector(`option[value="${currentHitoYear}"]`)){
         yearSelect.value = currentHitoYear;
       }
+    }
+
+    // Parallax sutil en Capa 2 (Ondas intermedias) sincronizado con el desplazamiento
+    const layer2Ondas = document.getElementById('layer2Ondas');
+    if(layer2Ondas){
+      const progRatio = maxProgress <= 0 ? 0 : clamp(current, 0, maxProgress) / maxProgress;
+      const shiftX = (progRatio - 0.5) * -26;
+      const shiftY = (progRatio - 0.5) * -12;
+      layer2Ondas.style.transform = `translate3d(${shiftX.toFixed(1)}px, ${shiftY.toFixed(1)}px, 0) scale(1.04)`;
     }
 
     requestAnimationFrame(render);

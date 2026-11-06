@@ -135,9 +135,24 @@
   <div class="col">
     <div class="card h-100 shadow-sm border-0 overflow-hidden position-relative" style="border-radius: 15px;">
       
-      <!-- Imagen -->
-      <div class="card-img-top position-relative overflow-hidden" style="width: 100%; height: 0; padding-bottom: 100%; background-color: #f8f9fa;">
-        @if($post->image_url)
+      <!-- Imagen o Video -->
+      <div class="card-img-top position-relative overflow-hidden" style="width: 100%; height: 0; padding-bottom: 100%; background-color: #000;">
+        @if($post->es_video)
+          @if($post->video_thumbnail_url)
+            <img src="{{ $post->video_thumbnail_url }}" 
+                 alt="Video de publicación" 
+                 class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: cover; object-position: center;">
+          @else
+            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark text-white">
+              <i class="ti ti-brand-youtube" style="font-size: 3rem;"></i>
+            </div>
+          @endif
+          <div class="position-absolute top-50 start-50 translate-middle">
+            <span class="badge rounded-pill bg-danger d-flex align-items-center gap-1 px-3 py-2 shadow">
+              <i class="ti ti-player-play-filled"></i> Video
+            </span>
+          </div>
+        @elseif($post->image_url)
           <img src="{{ $post->image_url }}" 
                alt="Imagen de publicación" 
                class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: cover; object-position: center;">
@@ -193,10 +208,14 @@
           <div class="dropdown zindex-2 p-1">
             <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i> </button>
             <ul class="dropdown-menu dropdown-menu-end">
-              @if($post->image_url)
+              @if(!$post->es_video && $post->image_url)
                 <a class="dropdown-item cursor-pointer" href="javascript:void(0)"
                     onclick="downloadImage({{ Js::from($post->image_url) }}, {{ Js::from($post->id) }})">
                   <i class="ti ti-download me-1"></i> Descargar imagen
+                </a>
+              @elseif($post->es_video && $post->video_url)
+                <a class="dropdown-item cursor-pointer" href="{{ $post->video_url }}" target="_blank">
+                  <i class="ti ti-brand-youtube me-1"></i> Ver video
                 </a>
               @endif
               @if ($rolActivo->hasPermissionTo('posts.opcion_modificar_publicacion'))

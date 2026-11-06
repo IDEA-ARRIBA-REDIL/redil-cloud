@@ -22,6 +22,44 @@ class TenancyServiceProvider extends ServiceProvider
     // By default, no namespace is used to support the callable array syntax.
     public static string $controllerNamespace = '';
 
+    public static function esPeticionAdminCentral(\Illuminate\Http\Request $request): bool
+    {
+        if ($request->is('admin', 'admin/*')) {
+            return true;
+        }
+        if (! $request->is('livewire/update') || ! $request->isMethod('POST')) {
+            return false;
+        }
+        $components = $request->input('components');
+        if (! is_array($components) || $components === []) {
+            return false;
+        }
+        foreach ($components as $component) {
+            if (! is_array($component)) {
+                return false;
+            }
+            $snapshot = $component['snapshot'] ?? null;
+            if (! is_string($snapshot)) {
+                return false;
+            }
+            $snapshot = json_decode($snapshot, true);
+            if (! is_array($snapshot) || ! is_string($snapshot['checksum'] ?? null)
+                || ! is_string($snapshot['memo']['name'] ?? null)
+                || ! is_string($snapshot['memo']['path'] ?? null)
+                || ! str_starts_with($snapshot['memo']['name'], 'central.')
+                || ! str_starts_with(ltrim($snapshot['memo']['path'] ?? '', '/'), 'admin/')) {
+                return false;
+            }
+            $checksum = $snapshot['checksum'];
+            unset($snapshot['checksum']);
+            if (! hash_equals($checksum, \Livewire\Mechanisms\HandleComponents\Checksum::generate($snapshot))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function events()
     {
         return [
@@ -99,7 +137,23 @@ class TenancyServiceProvider extends ServiceProvider
 
     public function register()
     {
-        //
+        $this->app->bind(Middleware\InitializeTenancyByDomain::class, function ($app) {
+            return new class($app->make(\Stancl\Tenancy\Tenancy::class), $app->make(\Stancl\Tenancy\Resolvers\DomainTenantResolver::class)) extends Middleware\InitializeTenancyByDomain
+            {
+                public function handle($request, \Closure $next)
+                {
+                    if (TenancyServiceProvider::esPeticionAdminCentral($request)) {
+                        if ($this->tenancy->initialized) {
+                            $this->tenancy->end();
+                        }
+
+                        return $next($request);
+                    }
+
+                    return parent::handle($request, $next);
+                }
+            };
+        });
     }
 
     public function boot()
@@ -128,9 +182,9 @@ class TenancyServiceProvider extends ServiceProvider
         Livewire::setUpdateRoute(function ($handle) {
             return Route::post('/livewire/update', $handle)
                 ->middleware([
+                    \App\Http\Middleware\InicializarTenantLivewire::class,
                     'web',
                     'universal',
-                    Middleware\InitializeTenancyByDomain::class,
                     \App\Http\Middleware\RevisarSuspensionTenant::class,
                 ]);
         });
@@ -252,6 +306,7 @@ class TenancyServiceProvider extends ServiceProvider
             // Even higher priority than the initialization middleware
             Middleware\PreventAccessFromCentralDomains::class,
 
+            \App\Http\Middleware\InicializarTenantLivewire::class,
             Middleware\InitializeTenancyByDomain::class,
             Middleware\InitializeTenancyBySubdomain::class,
             Middleware\InitializeTenancyByDomainOrSubdomain::class,

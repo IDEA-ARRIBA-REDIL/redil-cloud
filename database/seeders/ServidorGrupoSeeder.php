@@ -13,12 +13,12 @@ class ServidorGrupoSeeder extends Seeder
     public function run(): void
     {
         ServidorGrupo::firstOrCreate([
-            'grupo_id' => 2,
+            'grupo_id' => 27,
             'user_id' => 6,
         ]);
 
         ServidorGrupo::firstOrCreate([
-            'grupo_id' => 2,
+            'grupo_id' => 27,
             'user_id' => 3,
         ]);
     }

@@ -184,7 +184,7 @@
 
                                             @if($horarioBase)
                                                 @php
-                                                     $dias = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
+                                                     $dias = [0 => 'Domingo', 1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
                                                      $dia = $dias[$horarioBase->dia] ?? 'N/D';
                                                      $inicio = \Carbon\Carbon::parse($horarioBase->hora_inicio)->format('h:i A');
                                                      $fin = \Carbon\Carbon::parse($horarioBase->hora_fin)->format('h:i A');

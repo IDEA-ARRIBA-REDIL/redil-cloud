@@ -100,6 +100,8 @@ class PostController extends Controller
             'estadosCiviles' => 'nullable|array',
             'rangosEdad' => 'nullable|array',
             'tiposUsuario' => 'nullable|array',
+            'tipo_contenido' => 'nullable|in:imagen,video',
+            'video_url' => 'nullable|url|max:500',
         ]);
 
         DB::beginTransaction();
@@ -113,15 +115,23 @@ class PostController extends Controller
             $post->visible_todos = $request->has('visible_todos');
             $post->genero = $request->genero ?? 3;
 
-            // Manejo de la imagen base64 (recortada)
-            if ($request->imagen_base64) {
-                $imagenPartes = explode(';base64,', $request->imagen_base64);
-                $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'post-' . time() . '.jpg';
-                $path = 'img/publicaciones/' . $nombreFoto;
+            $tipoContenido = $request->input('tipo_contenido', 'imagen');
 
-                \Illuminate\Support\Facades\Storage::disk()->put($path, $imagenBase64);
-                $post->image_path = $nombreFoto;
+            if ($tipoContenido === 'video') {
+                $post->video_url = $request->video_url;
+                $post->image_path = null;
+            } else {
+                $post->video_url = null;
+                // Manejo de la imagen base64 (recortada)
+                if ($request->imagen_base64) {
+                    $imagenPartes = explode(';base64,', $request->imagen_base64);
+                    $imagenBase64 = base64_decode($imagenPartes[1]);
+                    $nombreFoto = 'post-' . time() . '.jpg';
+                    $path = 'img/publicaciones/' . $nombreFoto;
+
+                    \Illuminate\Support\Facades\Storage::disk()->put($path, $imagenBase64);
+                    $post->image_path = $nombreFoto;
+                }
             }
 
             $post->save();
@@ -231,6 +241,8 @@ class PostController extends Controller
             'estadosCiviles' => 'nullable|array',
             'rangosEdad' => 'nullable|array',
             'tiposUsuario' => 'nullable|array',
+            'tipo_contenido' => 'nullable|in:imagen,video',
+            'video_url' => 'nullable|url|max:500',
         ]);
 
         DB::beginTransaction();
@@ -242,23 +254,38 @@ class PostController extends Controller
             $post->visible_todos = $request->has('visible_todos');
             $post->genero = $request->genero ?? 3;
 
-            // Manejo de la imagen base64 (recortada)
-            if ($request->imagen_base64) {
-                // Borrar imagen anterior si existe
+            $tipoContenido = $request->input('tipo_contenido', 'imagen');
+
+            if ($tipoContenido === 'video') {
+                // Si tenía una imagen previa, la eliminamos físicamente
                 if ($post->image_path) {
                     $oldPath = 'img/publicaciones/' . $post->image_path;
                     if (\Illuminate\Support\Facades\Storage::disk()->exists($oldPath)) {
                         \Illuminate\Support\Facades\Storage::disk()->delete($oldPath);
                     }
+                    $post->image_path = null;
                 }
+                $post->video_url = $request->video_url;
+            } else {
+                $post->video_url = null;
+                // Manejo de la imagen base64 (recortada)
+                if ($request->imagen_base64) {
+                    // Borrar imagen anterior si existe
+                    if ($post->image_path) {
+                        $oldPath = 'img/publicaciones/' . $post->image_path;
+                        if (\Illuminate\Support\Facades\Storage::disk()->exists($oldPath)) {
+                            \Illuminate\Support\Facades\Storage::disk()->delete($oldPath);
+                        }
+                    }
 
-                $imagenPartes = explode(';base64,', $request->imagen_base64);
-                $imagenBase64 = base64_decode($imagenPartes[1]);
-                $nombreFoto = 'post-' . time() . '.jpg';
-                $path = 'img/publicaciones/' . $nombreFoto;
+                    $imagenPartes = explode(';base64,', $request->imagen_base64);
+                    $imagenBase64 = base64_decode($imagenPartes[1]);
+                    $nombreFoto = 'post-' . time() . '.jpg';
+                    $path = 'img/publicaciones/' . $nombreFoto;
 
-                \Illuminate\Support\Facades\Storage::disk()->put($path, $imagenBase64);
-                $post->image_path = $nombreFoto;
+                    \Illuminate\Support\Facades\Storage::disk()->put($path, $imagenBase64);
+                    $post->image_path = $nombreFoto;
+                }
             }
 
             $post->save();

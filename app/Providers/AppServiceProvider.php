@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Services\InstagramService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Nightwatch\Facades\Nightwatch;
+use Laravel\Nightwatch\Records\OutgoingRequest;
+use Laravel\Nightwatch\Records\Request;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +25,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrap();
+
+        Nightwatch::redactOutgoingRequests(function (OutgoingRequest $request): void {
+            $request->url = InstagramService::redactTelemetryUrl($request->url);
+        });
+        Nightwatch::redactRequests(function (Request $request): void {
+            if ($request->routeName === 'instagram.callback') {
+                $request->url = InstagramService::redactTelemetryUrl($request->url);
+                $request->payload->remove('code');
+                $request->payload->remove('state');
+            }
+        });
 
         \Livewire\Livewire::setUpdateRoute(function ($handle) {
             $middleware = ['web'];

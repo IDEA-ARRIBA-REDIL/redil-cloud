@@ -100,16 +100,21 @@
             <div class="content">
                 @php
                     $nombreAsistente =
-                        $inscripcion->user?->nombre(3) ?? ($compra->nombre_completo_comprador ?? 'Invitado');
-                    if ($inscripcion->user) {
+                        $inscripcion?->user?->nombre(3) ?? ($compra->nombre_completo_comprador ?? 'Invitado');
+                    if ($inscripcion?->user) {
                         $datosQrArray = [
                             'id' => $inscripcion->user->id,
                             'tipo' => 'verificar_asistencia_inscripcion_usuario',
                         ];
-                    } else {
+                    } elseif ($inscripcion) {
                         $datosQrArray = [
                             'id' => $inscripcion->id,
                             'tipo' => 'verificar_asistencia_inscripcion_invitado',
+                        ];
+                    } else {
+                        $datosQrArray = [
+                            'id' => $matricula?->id ?? $compra->id,
+                            'tipo' => 'verificar_matricula_escuela',
                         ];
                     }
                     $datosParaQr = json_encode($datosQrArray);
@@ -118,15 +123,17 @@
                 {{-- SECCIÓN DE LA ACTIVIDAD --}}
                 <div class="section">
                     <div class="section-title">Actividad</div>
-                    <div class="section-content">{{ $actividad->nombre }}</div>
+                    <div class="section-content">{{ $actividad?->nombre ?? 'Actividad' }}</div>
                 </div>
 
                 {{-- SECCIÓN DE FECHA --}}
-                <div class="section">
-                    <div class="section-title">Fecha</div>
-                    <div class="section-content">
-                        {{ Carbon\Carbon::parse($actividad->fecha_inicio)->translatedFormat('d F, Y') }}</div>
-                </div>
+                @if ($actividad?->fecha_inicio)
+                    <div class="section">
+                        <div class="section-title">Fecha</div>
+                        <div class="section-content">
+                            {{ Carbon\Carbon::parse($actividad->fecha_inicio)->translatedFormat('d F, Y') }}</div>
+                    </div>
+                @endif
 
                 {{-- SECCIÓN DEL PARTICIPANTE --}}
                 <div class="section">
@@ -141,11 +148,24 @@
                         <table>
                             <tr>
                                 <td style="width: 50%;">
+                                    <div class="section-title">Sede de Matrícula (Clases)</div>
+                                    <div class="section-content">
+                                        {{ $matricula->sede?->nombre ?? $matricula->horarioMateriaPeriodo?->horarioBase?->aula?->sede?->nombre ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td style="width: 50%;">
+                                    <div class="section-title">Sede Entrega de Material</div>
+                                    <div class="section-content">{{ $matricula->materialSede?->nombre ?? $compra->destinatario?->nombre ?? 'N/A' }}</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%;">
                                     <div class="section-title">Horario</div>
                                     <div class="section-content">
                                         @php
-                                            $horarioBase = $matricula->horarioMateriaPeriodo->horarioBase;
+                                            $horarioBase = $matricula->horarioMateriaPeriodo?->horarioBase;
                                             $dias = [
+                                                0 => 'Dom',
                                                 1 => 'Lun',
                                                 2 => 'Mar',
                                                 3 => 'Mié',
@@ -154,19 +174,19 @@
                                                 6 => 'Sáb',
                                                 7 => 'Dom',
                                             ];
-                                            $dia = $dias[$horarioBase->dia] ?? 'N/D';
-                                            $ini = \Carbon\Carbon::parse($horarioBase->hora_inicio)->format('h:i A');
-                                            $fin = \Carbon\Carbon::parse($horarioBase->hora_fin)->format('h:i A');
-                                            $aula = $horarioBase->aula->nombre ?? 'N/D';
+                                            $dia = isset($horarioBase->dia) ? ($dias[$horarioBase->dia] ?? 'N/D') : 'N/D';
+                                            $ini = !empty($horarioBase->hora_inicio) ? \Carbon\Carbon::parse($horarioBase->hora_inicio)->format('h:i A') : '';
+                                            $fin = !empty($horarioBase->hora_fin) ? \Carbon\Carbon::parse($horarioBase->hora_fin)->format('h:i A') : '';
+                                            $aula = $horarioBase?->aula?->nombre ?? 'N/D';
                                         @endphp
-                                        {{ $dia }} | {{ $ini }} - {{ $fin }}<br>
-                                        <span style="font-size: 14px; font-weight: normal;">Aula:
-                                            {{ $aula }}</span>
+                                        {{ $dia }} | {{ $ini }} - {{ $fin }}
                                     </div>
                                 </td>
                                 <td style="width: 50%;">
-                                    <div class="section-title">Sede Material</div>
-                                    <div class="section-content">{{ $matricula->materialSede->nombre ?? 'N/A' }}</div>
+                                    <div class="section-title">Aula</div>
+                                    <div class="section-content">
+                                        {{ $aula }}
+                                    </div>
                                 </td>
                             </tr>
                         </table>
@@ -175,22 +195,24 @@
                 {{-- =============================================================================== --}}
 
                 {{-- ===================== NUEVA SECCIÓN DE PAGO ===================== --}}
-                <div class="section">
-                    <div class="section-title">Resumen de Pago</div>
-                    <table>
-                        <tr>
-                            <td style="width: 50%;">
-                                <div class="section-title">Valor Pagado</div>
-                                <div class="section-content">{{ number_format($pago->valor, 2) }}
-                                    {{ $pago->moneda->nombre_corto }}</div>
-                            </td>
-                            <td style="width: 50%;">
-                                <div class="section-title">Estado</div>
-                                <div class="section-content">{{ $pago->estadoPago->nombre }}</div>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
+                @if ($pago)
+                    <div class="section">
+                        <div class="section-title">Resumen de Pago</div>
+                        <table>
+                            <tr>
+                                <td style="width: 50%;">
+                                    <div class="section-title">Valor Pagado</div>
+                                    <div class="section-content">{{ number_format($pago->valor, 2) }}
+                                        {{ $pago->moneda?->nombre_corto }}</div>
+                                </td>
+                                <td style="width: 50%;">
+                                    <div class="section-title">Estado</div>
+                                    <div class="section-content">{{ $pago->estadoPago?->nombre ?? 'Aprobado' }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                @endif
                 {{-- =================================================================== --}}
 
                 {{-- SECCIÓN DEL CÓDIGO QR --}}

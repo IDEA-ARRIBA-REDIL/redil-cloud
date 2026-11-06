@@ -66,7 +66,7 @@
                   @endif
                 </div>
 
-                <span class="text-white badge rounded-pill bg-primary ">Tipo: {{ $formulario->tipo->nombre}}</span>
+                <span class="badge rounded-pill bg-primary text-white" style="color: white !important;">Tipo: {{ $formulario->tipo->nombre}}</span>
               </div>
             </div>
 

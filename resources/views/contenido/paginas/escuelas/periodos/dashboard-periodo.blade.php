@@ -17,50 +17,89 @@
 @section('page-script')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const materias = {{ Illuminate\Support\Js::from($dashboard['materias']) }};
         const dibujadas = new Set();
-        const dibujar = function (materia) {
-            if (dibujadas.has(materia.id) || typeof ApexCharts === 'undefined') return;
-            dibujadas.add(materia.id);
-            const resumen = materia.resumen;
-            if (resumen.estudiantes > 0) {
-                new ApexCharts(document.getElementById('grafico-resultados-' + materia.id), {
-                    chart: { type: 'donut', height: 270, toolbar: { show: false } },
-                    series: [resumen.aprobados, resumen.riesgo, resumen.pendientes],
-                    labels: [materia.cerrada ? 'Aprobados' : 'Cumplirían hoy', materia.cerrada ? 'Reprobados' : 'En riesgo hoy', 'Sin evaluar'],
-                    colors: ['#28c76f', '#ea5455', '#ff9f43'],
-                    legend: { position: 'bottom' },
-                    plotOptions: { pie: { donut: { size: '62%' } } },
-                    dataLabels: { enabled: true }
-                }).render();
-                new ApexCharts(document.getElementById('grafico-generos-' + materia.id), {
-                    chart: { type: 'bar', height: 270, toolbar: { show: false } },
-                    series: [{ name: 'Estudiantes', data: Object.values(resumen.generos) }],
-                    xaxis: { categories: Object.keys(resumen.generos) },
-                    yaxis: { min: 0, forceNiceScale: true, decimalsInFloat: 0 },
-                    colors: ['#7367f0', '#00cfe8', '#82868b'],
-                    plotOptions: { bar: { distributed: true, borderRadius: 4, columnWidth: '50%' } },
-                    legend: { show: false }, dataLabels: { enabled: true }
-                }).render();
+
+        function inicializarGrafico(contenedor) {
+            if (!contenedor || dibujadas.has(contenedor.id) || typeof ApexCharts === 'undefined') return;
+            dibujadas.add(contenedor.id);
+
+            if (contenedor.id.startsWith('grafico-resultados-')) {
+                const aprobados = parseInt(contenedor.dataset.aprobados || 0);
+                const riesgo = parseInt(contenedor.dataset.riesgo || 0);
+                const pendientes = parseInt(contenedor.dataset.pendientes || 0);
+                const cerrada = contenedor.dataset.cerrada === '1';
+
+                if (aprobados + riesgo + pendientes > 0) {
+                    new ApexCharts(contenedor, {
+                        chart: { type: 'donut', height: 230, toolbar: { show: false } },
+                        series: [aprobados, riesgo, pendientes],
+                        labels: [cerrada ? 'Aprobados' : 'Cumplirían hoy', cerrada ? 'Reprobados' : 'Van a perder', 'Sin evaluar'],
+                        colors: ['#28c76f', '#ea5455', '#ff9f43'],
+                        legend: { position: 'bottom' },
+                        plotOptions: { pie: { donut: { size: '60%' } } },
+                        dataLabels: { enabled: true }
+                    }).render();
+                }
+            } else if (contenedor.id.startsWith('grafico-bloqueo-')) {
+                const noBloqueadas = parseInt(contenedor.dataset.nobloqueadas || 0);
+                const bloqueadas = parseInt(contenedor.dataset.bloqueadas || 0);
+
+                if (noBloqueadas + bloqueadas > 0) {
+                    new ApexCharts(contenedor, {
+                        chart: { type: 'donut', height: 230, toolbar: { show: false } },
+                        series: [noBloqueadas, bloqueadas],
+                        labels: ['No bloqueadas', 'Bloqueadas'],
+                        colors: ['#28c76f', '#ea5455'],
+                        legend: { position: 'bottom' },
+                        plotOptions: { pie: { donut: { size: '60%' } } },
+                        dataLabels: { enabled: true }
+                    }).render();
+                }
+            } else if (contenedor.id.startsWith('grafico-generos-')) {
+                const fem = parseInt(contenedor.dataset.femenino || 0);
+                const masc = parseInt(contenedor.dataset.masculino || 0);
+                const sin = parseInt(contenedor.dataset.sin || 0);
+
+                if (fem + masc + sin > 0) {
+                    new ApexCharts(contenedor, {
+                        chart: { type: 'bar', height: 230, toolbar: { show: false } },
+                        series: [{ name: 'Estudiantes', data: [fem, masc, sin] }],
+                        xaxis: { categories: ['Femenino', 'Masculino', 'Sin registrar'] },
+                        yaxis: { min: 0, forceNiceScale: true, decimalsInFloat: 0 },
+                        colors: ['#7367f0', '#00cfe8', '#82868b'],
+                        plotOptions: { bar: { distributed: true, borderRadius: 4, columnWidth: '45%' } },
+                        legend: { show: false }, dataLabels: { enabled: true }
+                    }).render();
+                }
+            } else if (contenedor.id.startsWith('grafico-asistencias-')) {
+                const presentes = parseInt(contenedor.dataset.presentes || 0);
+                const ausentes = parseInt(contenedor.dataset.ausentes || 0);
+
+                if (presentes + ausentes > 0) {
+                    new ApexCharts(contenedor, {
+                        chart: { type: 'bar', height: 230, toolbar: { show: false } },
+                        series: [{ name: 'Registros', data: [presentes, ausentes] }],
+                        xaxis: { categories: ['Asistencias', 'Inasistencias'] },
+                        yaxis: { min: 0, forceNiceScale: true, decimalsInFloat: 0 },
+                        colors: ['#28c76f', '#ea5455'],
+                        plotOptions: { bar: { distributed: true, borderRadius: 4, columnWidth: '40%' } },
+                        legend: { show: false }, dataLabels: { enabled: true }
+                    }).render();
+                }
             }
-            if (resumen.registrosAsistencia > 0) {
-                new ApexCharts(document.getElementById('grafico-asistencias-' + materia.id), {
-                    chart: { type: 'bar', height: 270, toolbar: { show: false } },
-                    series: [{ name: 'Registros', data: [resumen.presentes, resumen.ausentes] }],
-                    xaxis: { categories: ['Asistencias', 'Inasistencias'] },
-                    yaxis: { min: 0, forceNiceScale: true, decimalsInFloat: 0 },
-                    colors: ['#28c76f', '#ea5455'],
-                    plotOptions: { bar: { distributed: true, borderRadius: 4, columnWidth: '45%' } },
-                    legend: { show: false }, dataLabels: { enabled: true }
-                }).render();
+        }
+
+        // Renderizar gráficos cuando se abre un collapse
+        document.querySelectorAll('.collapse').forEach(function (panel) {
+            panel.addEventListener('shown.bs.collapse', function () {
+                panel.querySelectorAll('.apex-chart-container').forEach(inicializarGrafico);
+            });
+            if (panel.classList.contains('show')) {
+                panel.querySelectorAll('.apex-chart-container').forEach(inicializarGrafico);
             }
-        };
-        materias.forEach(function (materia) {
-            const panel = document.getElementById('detalle-materia-' + materia.id);
-            if (!panel) return;
-            panel.addEventListener('shown.bs.collapse', function () { dibujar(materia); });
-            if (panel.classList.contains('show')) dibujar(materia);
         });
+
+        // Confirmaciones SweetAlert para cierre/reapertura de materias
         document.querySelectorAll('.accion-cierre-materia').forEach(function (formulario) {
             formulario.addEventListener('submit', function (evento) {
                 evento.preventDefault();

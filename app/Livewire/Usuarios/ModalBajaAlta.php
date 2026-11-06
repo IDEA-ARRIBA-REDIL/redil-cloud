@@ -2,161 +2,263 @@
 
 namespace App\Livewire\Usuarios;
 
-use App\Models\Configuracion;
 use App\Models\IntegranteGrupo;
 use App\Models\ReporteBajaAlta;
 use App\Models\TipoBajaAlta;
 use App\Models\User;
+use App\Services\UserDependencyService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\On;
-use Livewire\Component;
 use Livewire\Attributes\Validate;
+use Livewire\Component;
 
 class ModalBajaAlta extends Component
 {
-  public $titulo = "", $respuesta = " bn";
-  public $usuarioId, $tipo, $grupoId, $redirect;
-  public $motivosBajasAltas;
+    public string $titulo = '';
 
-  #[Validate('required')]
-  public $motivo;
-  public $observacion;
+    public ?int $usuarioId = null;
 
-  public function mount()
-  {
-    $this->motivosBajasAltas = collect();
-  }
+    public ?string $tipo = null;
 
-  #[On('abrirModalBajaAlta')]
-  public function abrirModalBajaAlta($usuarioId, $tipo)
-  {
-    $usuario = User::withTrashed()->find($usuarioId);
-    $this->tipo = $tipo;
+    public ?int $grupoId = null;
 
-    $this->titulo = $tipo == 'alta' ?  "Dar de alta a <b>" . $usuario->nombre(3) . "</b>" : "Dar de baja a <b>" . $usuario->nombre(3) . "</b>";
-    $this->usuarioId = $usuario->id;
+    public ?string $redirect = null;
 
-    if ($this->tipo == 'alta')
-      $this->motivosBajasAltas = TipoBajaAlta::where('dado_alta', true)->get();
-    elseif ($this->tipo == 'baja')
-      $this->motivosBajasAltas = TipoBajaAlta::where('dado_baja', true)->get();
+    public Collection $motivosBajasAltas;
 
-    $this->dispatch('abrirModal', nombreModal: 'modaBajaAlta');
-  }
+    #[Validate('required', message: 'El motivo es obligatorio.')]
+    public ?int $motivo = null;
 
-  #[On('comprobarSiTieneRegistros')]
-  public function comprobarSiTieneRegistros($usuarioId)
-  {
-    $usuario = User::find($usuarioId);
+    public ?string $observacion = null;
 
-    $tieneRegistros = 1;
-    $htmlRegistros = '
-      <p>No es recomendado eliminar a <b>' . $usuario->nombre(3) . '</b> debido a que tiene registros en el sistema</p>
-      <ul class="text-start">
-      <li> Ha sido reportado en las reuniones </li>
-      <li> Tiene matriculas </li>
-      </ul>
-      <p>¿Deseas darle de baja?</p>
-      ';
-    // Falta código para determinar si tiene ofrandas, reportes de grupo, inscripciones, matriculas etc...
-
-
-    if ($tieneRegistros > 0) {
-      // Recomienda dar de baja y no eliminar
-
-      $this->dispatch(
-        'msnTieneRegistros',
-        msnIcono: 'warning',
-        msnTitulo: '¡Precaución!',
-        msnTexto: $htmlRegistros,
-        id: $usuario->id
-      );
-    } else {
-      // Preguntas si esta seguro que quiere eliminar
-
+    public function mount(): void
+    {
+        $this->motivosBajasAltas = collect();
     }
 
+    #[On('abrirModalBajaAlta')]
+    public function abrirModalBajaAlta(int|string $usuarioId, string $tipo): void
+    {
+        $usuario = User::withTrashed()->find($usuarioId);
 
+        if (! $usuario) {
+            return;
+        }
 
-    //$this->dispatch('abrirModal', nombreModal: 'modaBajaAlta');
+        $this->tipo = $tipo;
+        $this->usuarioId = $usuario->id;
+        $this->titulo = $tipo === 'alta'
+            ? 'Dar de alta a <b>'.$usuario->nombre(3).'</b>'
+            : 'Dar de baja a <b>'.$usuario->nombre(3).'</b>';
 
-  }
+        if ($this->tipo === 'alta') {
+            $this->motivosBajasAltas = TipoBajaAlta::where('dado_alta', true)->get();
+        } elseif ($this->tipo === 'baja') {
+            $this->motivosBajasAltas = TipoBajaAlta::where('dado_baja', true)->get();
+        }
 
-  #[On('confirmarEliminacion')]
-  public function confirmarEliminacion($usuarioId)
-  {
-
-    $usuario = User::withTrashed()->find($usuarioId);
-    $this->dispatch(
-      'msnConfirmarEliminacion',
-      msnIcono: 'warning',
-      msnTitulo: '¿Estás seguro que deseas eliminar a <b>' . $usuario->nombre(3) . '</b>?',
-      msnTexto: 'Esta acción no es reversible.',
-      id: $usuario->id
-    );
-  }
-
-  public function eliminacionForzada($usuarioId)
-  {
-    $usuario = User::withTrashed()->find($usuarioId);
-
-    // Elimino los archivos
-    Storage::delete('archivos/usuario/'.$usuario->archivo_a);
-    Storage::delete('archivos/usuario/'.$usuario->archivo_b);
-    Storage::delete('archivos/usuario/'.$usuario->archivo_c);
-    Storage::delete('archivos/usuario/'.$usuario->archivo_d);
-
-    // Elimino foto
-    Storage::delete('img/usuario/fotos/'.$usuario->foto);
-   
-    // Eliminar parentezco
-    $usuario->parientesDelUsuario()->detach();
-    $usuario->usuariosDelPariente()->detach();
-    IntegranteGrupo::where("user_id", $usuario->id)->delete();
-    $usuario->forceDelete();
-
-    return redirect('/usuarios')->with('success', "<b>" . $usuario->nombre(3) . "</b> fue eliminado con éxito.");
-  }
-
-  public function editarBajaAlta($usuarioId, $tipo)
-  {
-    $this->validate();
-    $usuario = User::withTrashed()->find($usuarioId);
-    $reporte = new ReporteBajaAlta();
-    $reporte->observaciones = $this->observacion;
-    $reporte->tipo_baja_alta_id = $this->motivo;
-    $reporte->user_id = $usuario->id;
-    $reporte->fecha = Carbon::now()->format('Y-m-d');
-    if ($tipo == 'baja') {
-      $reporte->dado_baja = TRUE;
-      $usuario->delete();
-      $mensaje = "<b>" . $usuario->nombre(3) . "</b> fue dado de baja con éxito.";
-    } elseif ($tipo == 'alta') {
-      $reporte->dado_baja = FALSE;
-      $usuario->restore();
-
-      if (isset($this->grupoId) && $this->grupoId != "") {
-        // Elimino las relaciones que haya tenido con otros grupos
-        IntegranteGrupo::where('user_id', $usuario->id)->delete();
-
-        // agrego al grupo
-        $usuario->cambiarGrupo($this->grupoId);
-      }
-
-      $mensaje = "<b>" . $usuario->nombre(3) . "</b> fue dado de alta con éxito.";
+        $this->dispatch('abrirModal', nombreModal: 'modaBajaAlta');
     }
-    $reporte->save();
 
+    #[On('comprobarSiTieneRegistros')]
+    public function comprobarSiTieneRegistros(int|string $usuarioId, UserDependencyService $dependencyService): void
+    {
+        $usuario = User::withTrashed()->find($usuarioId);
 
-    if (isset($redirect) && $redirect != "") {
-    } else {
-      return redirect(request()->header('Referer'))->with('success', $mensaje);
+        if (! $usuario) {
+            return;
+        }
+
+        $resumen = $dependencyService->obtenerResumenRegistros($usuario);
+        $tieneRegistros = $dependencyService->tieneRegistrosCriticos($usuario);
+
+        if ($tieneRegistros) {
+            $htmlRegistros = $dependencyService->generarHtmlResumen($resumen, $usuario);
+
+            $this->dispatch(
+                'msnTieneRegistros',
+                msnIcono: 'warning',
+                msnTitulo: '¡Historial activo detectado!',
+                msnTexto: $htmlRegistros,
+                id: $usuario->id
+            );
+        } else {
+            $this->dispatch(
+                'msnConfirmarEliminarSinRegistros',
+                msnIcono: 'question',
+                msnTitulo: '¿Qué acción deseas realizar con <b>'.$usuario->nombre(3).'</b>?',
+                msnTexto: 'Esta persona no registra historial ni dependencias en el sistema. Puedes descartarla eliminándola o registrar su salida dándola de baja.',
+                id: $usuario->id
+            );
+        }
     }
-  }
 
-  public function render()
-  {
-    return view('livewire.usuarios.modal-baja-alta');
-  }
+    /**
+     * Elimina definitivamente (Purga total) a un usuario que no tiene dependencias activas.
+     */
+    public function eliminarSinRegistros(int|string $usuarioId, ?UserDependencyService $dependencyService = null): mixed
+    {
+        $rolActivo = auth()->user()?->roles()->wherePivot('activo', true)->first();
+
+        $tienePermiso = $rolActivo && (
+            $rolActivo->hasPermissionTo('personas.eliminar_asistentes_forzadamente') ||
+            $rolActivo->hasPermissionTo('personas.opcion_eliminar_asistente')
+        );
+
+        if (! $tienePermiso) {
+            $this->dispatch('alertaError', mensaje: 'No tienes permisos para eliminar personas.');
+
+            return null;
+        }
+
+        $usuario = User::withTrashed()->find($usuarioId);
+
+        if (! $usuario) {
+            return null;
+        }
+
+        $dependencyService = $dependencyService ?: app(UserDependencyService::class);
+        $nombre = $usuario->nombre(3);
+
+        try {
+            $dependencyService->ejecutarPurgaTotal($usuario);
+        } catch (\Throwable $e) {
+            $this->dispatch('alertaError', mensaje: 'Ocurrió un error al intentar eliminar los datos: '.$e->getMessage());
+
+            return null;
+        }
+
+        $urlDestino = request()->header('Referer') ?: url('/usuarios');
+
+        return redirect($urlDestino)->with('success', "<b>{$nombre}</b> fue eliminado definitivamente con éxito.");
+    }
+
+    #[On('confirmarEliminacion')]
+    public function confirmarEliminacion(int|string $usuarioId, ?UserDependencyService $dependencyService = null): void
+    {
+        $rolActivo = auth()->user()?->roles()->wherePivot('activo', true)->first();
+
+        $tienePermiso = $rolActivo && (
+            $rolActivo->hasPermissionTo('personas.eliminar_asistentes_forzadamente') ||
+            $rolActivo->hasPermissionTo('personas.opcion_eliminar_asistente')
+        );
+
+        if (! $tienePermiso) {
+            $this->dispatch('alertaError', mensaje: 'No tienes privilegios para realizar una eliminación forzada.');
+
+            return;
+        }
+
+        $usuario = User::withTrashed()->find($usuarioId);
+
+        if (! $usuario) {
+            return;
+        }
+
+        $dependencyService = $dependencyService ?: app(UserDependencyService::class);
+        $resumen = $dependencyService->obtenerResumenRegistros($usuario);
+        $htmlResumenPurga = $dependencyService->generarHtmlResumenPurga($resumen, $usuario);
+
+        $this->dispatch(
+            'msnConfirmarEliminacion',
+            msnIcono: 'warning',
+            msnTitulo: '¿Deseas eliminar definitivamente a <b>'.$usuario->nombre(3).'</b>?',
+            msnTexto: $htmlResumenPurga,
+            id: $usuario->id
+        );
+    }
+
+    /**
+     * Ejecuta la eliminación forzada total tras confirmar la contraseña del usuario logueado.
+     */
+    public function eliminacionForzada(int|string $usuarioId, ?string $password = null, ?UserDependencyService $dependencyService = null): mixed
+    {
+        $rolActivo = auth()->user()?->roles()->wherePivot('activo', true)->first();
+
+        $tienePermiso = $rolActivo && (
+            $rolActivo->hasPermissionTo('personas.eliminar_asistentes_forzadamente') ||
+            $rolActivo->hasPermissionTo('personas.opcion_eliminar_asistente')
+        );
+
+        if (! $tienePermiso) {
+            $this->dispatch('alertaError', mensaje: 'No tienes privilegios para realizar una eliminación forzada.');
+
+            return null;
+        }
+
+        if (empty($password) || ! Hash::check($password, auth()->user()->password)) {
+            $this->dispatch('alertaError', mensaje: 'La contraseña ingresada es incorrecta. No se realizó ninguna acción.');
+
+            return null;
+        }
+
+        $usuario = User::withTrashed()->find($usuarioId);
+
+        if (! $usuario) {
+            $this->dispatch('alertaError', mensaje: 'El usuario ya no existe o no fue encontrado.');
+
+            return null;
+        }
+
+        $dependencyService = $dependencyService ?: app(UserDependencyService::class);
+        $nombre = $usuario->nombre(3);
+
+        try {
+            $dependencyService->ejecutarPurgaTotal($usuario);
+        } catch (\Throwable $e) {
+            $this->dispatch('alertaError', mensaje: 'Ocurrió un error al intentar eliminar los datos: '.$e->getMessage());
+
+            return null;
+        }
+
+        $urlDestino = request()->header('Referer') ?: url('/usuarios/dados-de-baja');
+
+        return redirect($urlDestino)->with('success', "<b>{$nombre}</b> fue eliminado definitivamente del sistema.");
+    }
+
+    public function editarBajaAlta(int|string $usuarioId, string $tipo): mixed
+    {
+        $this->validate();
+        $usuario = User::withTrashed()->find($usuarioId);
+
+        if (! $usuario) {
+            return null;
+        }
+
+        $reporte = new ReporteBajaAlta;
+        $reporte->observaciones = $this->observacion;
+        $reporte->tipo_baja_alta_id = $this->motivo;
+        $reporte->user_id = $usuario->id;
+        $reporte->fecha = Carbon::now()->format('Y-m-d');
+
+        if ($tipo === 'baja') {
+            $reporte->dado_baja = true;
+            $usuario->delete();
+            $mensaje = '<b>'.$usuario->nombre(3).'</b> fue dado de baja con éxito.';
+        } elseif ($tipo === 'alta') {
+            $reporte->dado_baja = false;
+            $usuario->restore();
+
+            if (! empty($this->grupoId)) {
+                IntegranteGrupo::where('user_id', $usuario->id)->delete();
+                $usuario->cambiarGrupo($this->grupoId);
+            }
+
+            $mensaje = '<b>'.$usuario->nombre(3).'</b> fue dado de alta con éxito.';
+        }
+
+        $reporte->save();
+
+        $urlDestino = request()->header('Referer') ?: url('/usuarios');
+
+        return redirect($urlDestino)->with('success', $mensaje);
+    }
+
+    public function render(): View
+    {
+        return view('livewire.usuarios.modal-baja-alta');
+    }
 }

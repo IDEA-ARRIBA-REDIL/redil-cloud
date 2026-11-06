@@ -138,24 +138,39 @@
         <div class="card-header"><h5 class="card-title">Resultados de la búsqueda ({{ $horarios->count() }})</h5></div>
         <div class="card-body">
              @forelse ($horarios as $horario)
+                @php
+                    $totalMatriculados = (int) ($horario->matriculas_count ?? $horario->estados_academicos_count ?? 0);
+                @endphp
                 <div class="card mb-3" style="{{ $loop->even ? 'background-color: #f3f3f3;' : '' }}">
                     <div class="card-body p-0">
-                        <div class="row align-items-center p-3">
+                        <div class="row align-items-center p-3 g-2">
                             <div class="col-md-3"><strong>Materia:</strong> {{ $horario->materiaPeriodo->materia->nombre ?? 'N/A' }}</div>
-                            <div class="col-md-3"><strong>Horario:</strong> {{ $horario->horarioBase->dia_semana ?? 'N/A' }} {{ $horario->horarioBase->hora_inicio_formato ?? '' }}</div>
+                            <div class="col-md-2"><strong>Horario:</strong> {{ $horario->horarioBase->dia_semana ?? 'N/A' }} {{ $horario->horarioBase->hora_inicio_formato ?? '' }}</div>
                             <div class="col-md-2"><strong>Sede:</strong> {{ $horario->horarioBase->aula->sede->nombre ?? 'N/A' }}</div>
                             <div class="col-md-2"><strong>Aula:</strong> {{ $horario->horarioBase->aula->nombre ?? 'N/A' }}</div>
+                            <div class="col-md-1">
+                                <strong>Alumnos:</strong>
+                                <span class="badge rounded-pill {{ $totalMatriculados > 0 ? 'bg-label-primary' : 'bg-label-secondary' }}">
+                                    {{ $totalMatriculados }}
+                                </span>
+                            </div>
                             <div class="col-md-2 text-md-end">
-                                @if($horario->maestros->isNotEmpty())
-                                    <a class="btn btn-outline-secondary rounded-pill"
-                                        href="{{ route('maestros.dashboardClase', ['maestro' => $horario->maestros->first(), 'horarioAsignado' => $horario]) }}">
-                                        Acceder
-                                    </a>
+                                @if ($totalMatriculados > 0)
+                                    @if($horario->maestros->isNotEmpty())
+                                        <a class="btn btn-outline-secondary rounded-pill"
+                                            href="{{ route('maestros.dashboardClase', ['maestro' => $horario->maestros->first(), 'horarioAsignado' => $horario]) }}">
+                                            Acceder
+                                        </a>
+                                    @else
+                                        <a class="btn btn-outline-secondary rounded-pill"
+                                            href="{{ route('maestros.dashboardClase', ['maestro' => $user->id, 'horarioAsignado' => $horario]) }}">
+                                            Acceder
+                                        </a>
+                                    @endif
                                 @else
-                                    <a class="btn btn-outline-secondary rounded-pill"
-                                        href="{{ route('maestros.dashboardClase', ['maestro' => $user->id, 'horarioAsignado' => $horario]) }}">
-                                        Acceder
-                                    </a>
+                                    <button type="button" class="btn btn-outline-secondary rounded-pill opacity-50" disabled title="No hay alumnos matriculados en este horario">
+                                        Sin alumnos
+                                    </button>
                                 @endif
                             </div>
                         </div>

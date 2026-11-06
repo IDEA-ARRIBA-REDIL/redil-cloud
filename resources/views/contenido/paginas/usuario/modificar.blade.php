@@ -332,7 +332,7 @@ $configData = Helper::appClasses();
   @csrf
   @method('PATCH')
 
-  @foreach ($formulario->secciones as $seccion)
+  @foreach ($secciones as $seccion)
   <div class="col-md-12">
     <div class="card mb-4">
       <h5 class="card-header text-black fw-semibold">
@@ -1004,6 +1004,7 @@ $configData = Helper::appClasses();
               <option value="">Ninguno</option>
               @foreach ($sedes as $sede)
               <option value="{{ $sede->id }}"
+                data-localidades="{{ $sede->localidades->pluck('id')->toJson() }}"
                 {{ old($campo->name_id, $usuario->sede_id) == $sede->id ? 'selected' : '' }}>
                 {{ ucwords($sede->nombre) }}
               </option>
@@ -1343,7 +1344,7 @@ $configData = Helper::appClasses();
       <input class="form-check-input" type="checkbox" name="habeas" @checked(old('habeas')) required
         id="habeas">
       <label class="form-check-label" for="habeas">
-        <b>Términos y condiciones</b>
+        <b>{{ $formulario->label_terminos_condiciones ?: 'Términos y Condiciones' }}</b>
       </label>
       <br>
       {{ $formulario->mensaje_terminos_condiciones_resumen }}
@@ -1366,7 +1367,7 @@ $configData = Helper::appClasses();
                 aria-label="Close"></button>
               <div class="mb-6">
                 <h4 class="mb-2 text-center fw-semibold">
-                  {{ $formulario->label_terminos_condiciones }}
+                  {{ $formulario->label_terminos_condiciones ?: 'Términos y Condiciones' }}
                 </h4>
                 <p></p>
               </div>
@@ -1468,5 +1469,6 @@ $configData = Helper::appClasses();
 
 @include('contenido.paginas.usuario.scripts.dependencias-campos')
 @include('contenido.paginas.usuario.scripts.validacion-identificacion')
+@include('contenido.paginas.usuario.scripts.filtro-sedes-localidad')
 
 @endsection

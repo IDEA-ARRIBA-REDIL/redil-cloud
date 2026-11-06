@@ -82,10 +82,12 @@
                     <p class="mb-0 text-heading text-black fw-semibold">
                       {{ $persona->nombre(4) }}
                     </p>
+                    @if($persona->tipoUsuario)
                     <p class="small mb-0"><i
                         class="{{ $persona->tipoUsuario->icono }} fs-6"></i>
                       {{ $persona->tipoUsuario->nombre }}
                     </p>
+                    @endif
                   </div>
                   <div class="">
                     <button wire:click="abrirModalOfrendaEspecifica({{ $persona->id }})"

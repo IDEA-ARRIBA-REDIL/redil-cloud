@@ -16,6 +16,7 @@ class TipoHitosController extends Controller
      */
     public function listarTipoHitos(): View
     {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'hitos.gestionar');
         $tiposHitos = TipoHito::withCount('hitos')->paginate(12);
 
         return view('contenido.paginas.tipo-hitos.listar-tipo-hitos', [
@@ -28,6 +29,8 @@ class TipoHitosController extends Controller
      */
     public function creacionTipoHitos(): View
     {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'hitos.gestionar');
+
         return view('contenido.paginas.tipo-hitos.crear-tipo-hitos');
     }
 
@@ -36,6 +39,7 @@ class TipoHitosController extends Controller
      */
     public function crearTipoHitos(Request $request): RedirectResponse
     {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'hitos.gestionar');
         $request->validate([
             'nombre' => 'required|string|max:100',
             'slug' => 'nullable|string|max:50|unique:tipo_hitos,slug',
@@ -79,6 +83,7 @@ class TipoHitosController extends Controller
      */
     public function actualizacionTipoHitos(int $id): View
     {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'hitos.gestionar');
         $tipoHito = TipoHito::findOrFail($id);
 
         return view('contenido.paginas.tipo-hitos.editar-tipo-hitos', [
@@ -91,6 +96,7 @@ class TipoHitosController extends Controller
      */
     public function actualizarTipoHitos(Request $request, int $id): RedirectResponse
     {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'hitos.gestionar');
         $tipoHito = TipoHito::findOrFail($id);
 
         $request->validate([
@@ -130,6 +136,7 @@ class TipoHitosController extends Controller
      */
     public function eliminarTipoHitos(int $id): RedirectResponse
     {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'hitos.gestionar');
         $tipoHito = TipoHito::findOrFail($id);
 
         // Protección para slugs del sistema
@@ -154,6 +161,7 @@ class TipoHitosController extends Controller
      */
     public function toggleEstado(int $id): JsonResponse
     {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'hitos.gestionar');
         $tipoHito = TipoHito::findOrFail($id);
         $tipoHito->activo = ! $tipoHito->activo;
         $tipoHito->save();

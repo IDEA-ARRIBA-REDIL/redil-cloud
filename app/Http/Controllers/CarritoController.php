@@ -564,24 +564,37 @@ class CarritoController extends Controller
             'compra.carritos.categoria.monedas',
             'moneda',
         ]);
+
+        // Carga de matrícula para actividades de escuelas
+        $matricula = \App\Models\Matricula::where(function ($query) use ($pago) {
+            $query->where('referencia_pago', (string) $pago->id)
+                ->orWhere('referencia_pago', (string) $pago->compra_id)
+                ->orWhere('pago_id', $pago->id)
+                ->orWhere('compra_id', $pago->compra_id);
+        })->with([
+            'escuela',
+            'sede',
+            'materialSede',
+            'horarioMateriaPeriodo.materiaPeriodo.materia',
+            'horarioMateriaPeriodo.horarioBase.aula.sede',
+            'horarioMateriaPeriodo.horarioBase.aula.tipo',
+        ])->first();
+
+        if ($matricula) {
+            $pago->setRelation('matricula', $matricula);
+        }
+
         $inscripcion = $pago->compra->inscripciones->first();
 
-        if ($inscripcion) {
-            // 2. Determinamos la dirección de correo del destinatario.
-            $emailDestinatario = $inscripcion->user?->email ?? $pago->compra->email_comprador;
+        $emailDestinatario = $inscripcion?->user?->email ?? $pago->compra->email_comprador;
 
-            // 3. Verificamos que tengamos un email antes de intentar enviar.
-            if ($emailDestinatario) {
-                try {
-                    $compra = $pago->compra;
-                    $actividad = $pago->compra->actividad;
-                    $inscripcion = Inscripcion::where('compra_id', $compra->id)->first();
-                    // 4. Enviamos el correo usando nuestra nueva clase Mailable.
-                    Mail::to($emailDestinatario)->send(new CompraConfirmacionMail($compra, $pago, $inscripcion, $actividad));
-                } catch (\Exception $e) {
-                    // Si el envío falla, lo registramos pero no detenemos el flujo.
-                    Log::error("Fallo al enviar correo de confirmación para inscripción #{$inscripcion->id}: ".$e->getMessage());
-                }
+        if ($emailDestinatario) {
+            try {
+                $compra = $pago->compra;
+                $actividad = $pago->compra->actividad;
+                Mail::to($emailDestinatario)->send(new CompraConfirmacionMail($compra, $pago, $inscripcion, $actividad, $matricula));
+            } catch (\Exception $e) {
+                Log::error("Fallo al enviar correo de confirmación para compra #{$pago->compra_id}: ".$e->getMessage());
             }
         }
         // --- FIN DE LA LÓGICA DE ENVÍO DE CORREO ---
@@ -602,7 +615,7 @@ class CarritoController extends Controller
             ];
         } else {
             $datosQrArray = [
-                'id' => $inscripcion->id,
+                'id' => $inscripcion?->id ?? $matricula?->id ?? $pago->compra_id,
                 'nombre' => 'invitado',
                 'tipo' => 'verificar_asistencia_inscripcion_invitado',
             ]; // Nombre más genérico
@@ -772,7 +785,7 @@ class CarritoController extends Controller
             ];
         } else {
             $datosQrArray = [
-                'id' => $inscripcion->id,
+                'id' => $inscripcion?->id ?? $matricula?->id ?? $pago->compra_id,
                 'nombre' => 'invitado',
                 'tipo' => 'verificar_asistencia_inscripcion_invitado',
             ]; // Nombre más genérico

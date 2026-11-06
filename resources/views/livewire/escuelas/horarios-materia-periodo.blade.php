@@ -77,9 +77,8 @@
                                         </li>
 
                                         <li>
-                                            <button class="dropdown-item "
-                                                wire:click="confirmarEliminarHorarioMP({{ $hmp->id }})"
-                                                wire:confirm="¿Estás seguro de eliminar este horario del período? Esta acción solo desvincula el horario, no elimina el horario base (plantilla).">
+                                            <button class="dropdown-item"
+                                                wire:click="confirmarEliminarHorarioMP({{ $hmp->id }})">
                                                 Eliminar
                                             </button>
                                         </li>
@@ -220,25 +219,85 @@
                     @enderror
                 </div>
 
-                {{-- Selección de Horario Base (dependiente de Aula) --}}
+                {{-- Selección Múltiple de Horarios Base (dependiente de Aula) --}}
                 <div class="mb-3">
-                    <label for="horario_base_id_seleccionado_nuevo" class="form-label">3. Seleccionar horario base
-                    </label>
-                    <select required wire:model="horario_base_id_seleccionado"
-                        class="form-select @error('horario_base_id_seleccionado') is-invalid @enderror"
-                        id="horario_base_id_seleccionado_nuevo" @if (!$aula_id_formulario || $horarios_base_formulario->isEmpty()) disabled @endif>
-                        <option value="">-- Seleccionar un horario base --</option>
-                        @if ($aula_id_formulario && $horarios_base_formulario->count() > 0)
-                            @foreach ($horarios_base_formulario as $hb)
-                                <option value="{{ $hb->id }}">{{ $hb->display_info }}</option>
-                            @endforeach
-                        @elseif($aula_id_formulario && $horarios_base_formulario->isEmpty())
-                            <option value="" disabled>No hay horarios base activos para esta materia en esta
-                                aula, o ya están asignados.</option>
+                    <label class="form-label">3. Seleccionar horario(s) base</label>
+
+                    @if (!$aula_id_formulario)
+                        <select class="form-select" disabled>
+                            <option value="">-- Seleccionar un horario base --</option>
+                        </select>
+                    @elseif ($horarios_base_formulario->isEmpty())
+                        <select class="form-select" disabled>
+                            <option value="">No hay horarios base activos para esta materia en esta aula, o ya están asignados.</option>
+                        </select>
+                    @else
+                        @php
+                            $totalDisponibles = $horarios_base_formulario->count();
+                            $totalSeleccionados = count($horarios_base_seleccionados);
+                            $todosSeleccionados = $totalDisponibles > 0 && $totalSeleccionados === $totalDisponibles;
+                        @endphp
+
+                        <div class="position-relative" x-data="{ open: false }" @click.outside="open = false">
+                            <button type="button"
+                                class="form-select text-start d-flex justify-content-between align-items-center @error('horarios_base_seleccionados') is-invalid @enderror"
+                                @click="open = !open">
+                                <span class="text-truncate">
+                                    @if ($totalSeleccionados === 0)
+                                        -- Seleccionar uno o más horarios base --
+                                    @elseif ($todosSeleccionados)
+                                        Todos los horarios seleccionados ({{ $totalSeleccionados }})
+                                    @elseif ($totalSeleccionados === 1)
+                                        1 horario seleccionado
+                                    @else
+                                        {{ $totalSeleccionados }} horarios seleccionados
+                                    @endif
+                                </span>
+                            </button>
+
+                            <div x-show="open" x-transition
+                                class="border rounded bg-white shadow-sm mt-1 p-2 w-100"
+                                style="max-height: 260px; overflow-y: auto; z-index: 1060;">
+                                <div class="form-check pb-2 mb-2 border-bottom">
+                                    <input class="form-check-input" type="checkbox"
+                                        id="hb_select_all"
+                                        wire:click="toggleSeleccionarTodosHorariosBase"
+                                        @checked($todosSeleccionados)>
+                                    <label class="form-check-label fw-semibold text-primary" for="hb_select_all" style="cursor: pointer;">
+                                        Seleccionar todos ({{ $totalDisponibles }})
+                                    </label>
+                                </div>
+
+                                @foreach ($horarios_base_formulario as $hb)
+                                    <div class="form-check py-1" wire:key="hb-option-{{ $hb->id }}">
+                                        <input class="form-check-input" type="checkbox"
+                                            value="{{ $hb->id }}"
+                                            id="hb_opt_{{ $hb->id }}"
+                                            wire:model.live="horarios_base_seleccionados">
+                                        <label class="form-check-label text-dark small" for="hb_opt_{{ $hb->id }}" style="cursor: pointer;">
+                                            {{ $hb->display_info }}
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        @if ($totalSeleccionados > 0)
+                            <div class="mt-2 d-flex flex-wrap gap-1">
+                                @foreach ($horarios_base_formulario->whereIn('id', $horarios_base_seleccionados) as $hbSel)
+                                    <span class="badge bg-label-primary rounded-pill">
+                                        {{ $hbSel->dia_semana }} {{ $hbSel->hora_inicio_formato ?? $hbSel->hora_inicio }} - {{ $hbSel->hora_fin_formato ?? $hbSel->hora_fin }}
+                                    </span>
+                                @endforeach
+                            </div>
                         @endif
-                    </select>
-                    @error('horario_base_id_seleccionado')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                    @endif
+
+                    @error('horarios_base_seleccionados')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                    @error('horarios_base_seleccionados.*')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
@@ -366,47 +425,26 @@
     @push('scripts')
         <script>
             document.addEventListener('livewire:init', () => {
-                // Tu nueva lógica para abrir offcanvas
+                // Abrir offcanvas
                 Livewire.on('abrirOffcanvas', (event) => {
-                alert
-                    const detail = Array.isArray(event) ? event[0] : event;
-                    const nombreOffCanvas = detail.nombreModal;
+                    const detail = Array.isArray(event) ? event[0] : (event?.detail || event);
+                    const nombreOffCanvas = detail?.nombreModal;
+                    if (!nombreOffCanvas) return;
 
                     const offcanvasElement = document.getElementById(nombreOffCanvas);
-                    if (!offcanvasElement) {
-                        // console.warn(`Offcanvas con ID '${nombreOffCanvas}' no encontrado.`);
-                        return;
-                    }
-
-                    let backdrop = document.querySelector('.offcanvas-backdrop.show');
-                    if (!backdrop) {
-                        backdrop = document.createElement('div');
-                        backdrop.className = 'offcanvas-backdrop fade';
-                        document.body.appendChild(backdrop);
-                        void backdrop.offsetWidth;
-                        backdrop.classList.add('show');
-                    }
+                    if (!offcanvasElement) return;
 
                     var offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement, {
                         backdrop: true
                     });
                     offcanvas.show();
-
-                    const backdropToRemove = backdrop;
-
-                    function handleHidden() {
-                        if (backdropToRemove && backdropToRemove.parentNode) {
-                            backdropToRemove.remove();
-                        }
-                        offcanvasElement.removeEventListener('hidden.bs.offcanvas', handleHidden);
-                    }
-                    offcanvasElement.addEventListener('hidden.bs.offcanvas', handleHidden);
                 });
 
-                // Tu nueva lógica para cerrar offcanvas
+                // Cerrar offcanvas
                 Livewire.on('cerrarOffcanvas', (event) => {
-                    const detail = Array.isArray(event) ? event[0] : event;
-                    const nombreOffCanvas = detail.nombreModal;
+                    const detail = Array.isArray(event) ? event[0] : (event?.detail || event);
+                    const nombreOffCanvas = detail?.nombreModal;
+                    if (!nombreOffCanvas) return;
 
                     const offcanvasElement = document.getElementById(nombreOffCanvas);
                     if (offcanvasElement) {
@@ -415,19 +453,60 @@
                             bsOffcanvas.hide();
                         }
                     }
+                    document.querySelectorAll('.offcanvas-backdrop').forEach(el => el.remove());
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
                 });
 
                 ['offcanvasNuevoHorarioMP', 'offcanvasEditarHorarioMP'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
-                        el.addEventListener('hidden.bs.offcanvas', event => {
-                            // Lógica para resetear formulario si se cierra externamente
-                            // if ( (id === 'offcanvasEditarHorarioMP' && @this.horarioMPEditando) ||
-                            //      (id === 'offcanvasNuevoHorarioMP' && !@this.horarioMPEditando && !@this.get('__flash.mensaje_exito_hmp')) ) {
-                            //     @this.call('resetearFormulario');
-                            // }
+                        el.addEventListener('hidden.bs.offcanvas', () => {
+                            document.querySelectorAll('.offcanvas-backdrop').forEach(b => b.remove());
+                            @this.call('resetearFormulario');
                         });
                     }
+                });
+
+                // Notificaciones SweetAlert2
+                Livewire.on('notificacionHMP', (event) => {
+                    const data = Array.isArray(event) ? event[0] : (event?.detail || event);
+                    Swal.fire({
+                        title: data?.titulo || (data?.tipo === 'success' ? '¡Éxito!' : 'Aviso'),
+                        text: data?.mensaje || '',
+                        icon: data?.tipo || 'info',
+                        confirmButtonText: 'Aceptar',
+                        customClass: {
+                            confirmButton: 'btn btn-primary rounded-pill px-4'
+                        },
+                        buttonsStyling: false
+                    });
+                });
+
+                // Confirmación SweetAlert2 para eliminar HorarioMateriaPeriodo sin matrículas
+                Livewire.on('confirmarEliminarHorarioMPEvento', (event) => {
+                    const data = Array.isArray(event) ? event[0] : (event?.detail || event);
+                    const detalleHorario = [data?.dia, data?.hora, data?.aula].filter(Boolean).join(' • ');
+
+                    Swal.fire({
+                        title: '¿Eliminar horario del período?',
+                        html: detalleHorario
+                            ? `Estás a punto de desvincular el horario <b>${detalleHorario}</b> de este período.<br>Esta acción no elimina el horario base (plantilla).`
+                            : '¿Estás seguro de eliminar este horario del período?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar',
+                        customClass: {
+                            confirmButton: 'btn btn-danger rounded-pill me-2 px-4',
+                            cancelButton: 'btn btn-outline-secondary rounded-pill px-4'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        if (result.isConfirmed && data?.id) {
+                            @this.call('eliminarHorarioMP', data.id);
+                        }
+                    });
                 });
             });
         </script>

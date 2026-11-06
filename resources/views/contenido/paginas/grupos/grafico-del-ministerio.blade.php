@@ -1026,7 +1026,6 @@
                     'tipoBuscador' => 'lista',
                     'redirect' => 'grupo.graficoDelMinisterio',
                     'conDadosDeBaja' => 'no',
-                    'soloVerificados' => false,
                 ]) 
             </div>
         </div>        

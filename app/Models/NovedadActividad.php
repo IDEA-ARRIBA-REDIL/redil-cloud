@@ -34,6 +34,11 @@ class NovedadActividad extends Model
         return $this->belongsTo(Actividad::class, 'actividad_id');
     }
 
+    public function sede(): BelongsTo
+    {
+        return $this->belongsTo(Sede::class, 'sede_id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -89,10 +94,23 @@ class NovedadActividad extends Model
         return $query;
     }
 
-    public function scopeActividad(Builder $query, ?int $actividadId): Builder
+    public function scopeActividad(Builder $query, int|string|null $actividadFiltro): Builder
     {
-        if ($actividadId) {
-            return $query->where('actividad_id', $actividadId);
+        if ($actividadFiltro === 'general') {
+            return $query->whereNull('actividad_id');
+        }
+
+        if ($actividadFiltro && is_numeric($actividadFiltro)) {
+            return $query->where('actividad_id', (int) $actividadFiltro);
+        }
+
+        return $query;
+    }
+
+    public function scopeSede(Builder $query, ?int $sedeId): Builder
+    {
+        if ($sedeId) {
+            return $query->where('sede_id', $sedeId);
         }
 
         return $query;

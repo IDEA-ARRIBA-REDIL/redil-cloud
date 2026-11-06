@@ -168,7 +168,7 @@ $configData = Helper::appClasses();
 
       <div class="card h-100 {{ $sede->default ? 'border border-2 border-primary shadow-sm' : '' }}">
         <div class="position-relative">
-          <img class="card-img-top object-fit-cover" style="height: 130px;" src="{{ $sede->foto_url }}" alt="Card imagen {{ $sede->nombre }}" />
+          <img class="card-img-top object-fit-cover" style="height: 130px;" src="{{ $sede->foto_url }}" alt="Card imagen {{ $sede->nombre }}" />    
         </div>
         <div class="card-header pb-2">
           <div class="d-flex justify-content-between">
@@ -176,7 +176,7 @@ $configData = Helper::appClasses();
               <div class="me-2 mt-1">
                 <div class="d-flex align-items-center gap-2">
                   <h5 class="mb-0 fw-semibold text-black lh-sm">{{ $sede->tipo ? $sede->tipo->nombre : 'No definido'}}</h5>
-
+                 
                 </div>
                 <div class="client-info fw-semibold text-black">{{ $sede->nombre }}</div>
                  @if($sede->default)

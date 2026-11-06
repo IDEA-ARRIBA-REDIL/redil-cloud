@@ -21,8 +21,8 @@
       input.dataset.restriccionInicializada = 'true';
 
       function obtenerConfiguracionActual() {
-        const selectedOption = select.options && select.selectedIndex >= 0
-          ? select.options[select.selectedIndex]
+        const selectedOption = select.options && select.selectedIndex >= 0 
+          ? select.options[select.selectedIndex] 
           : null;
 
         if (!selectedOption || !selectedOption.value) {

@@ -101,7 +101,7 @@ class ReporteGrupoSeeder extends Seeder
 
         // grupo 2
         $reporte = ReporteGrupo::firstOrCreate([
-            'grupo_id' => 2,
+            'grupo_id' => 27,
             'fecha' => '2026-01-30',
         ], [
             'cantidad_asistencias' => rand(5, 15),
@@ -115,7 +115,7 @@ class ReporteGrupoSeeder extends Seeder
         $reporte->usuarios()->syncWithoutDetaching([9 => ['asistio' => true]]);
 
         $reporte = ReporteGrupo::firstOrCreate([
-            'grupo_id' => 2,
+            'grupo_id' => 27,
             'fecha' => '2025-12-12',
         ], [
             'cantidad_asistencias' => rand(5, 15),
@@ -129,7 +129,7 @@ class ReporteGrupoSeeder extends Seeder
         $reporte->usuarios()->syncWithoutDetaching([9 => ['asistio' => true]]);
 
         $reporte = ReporteGrupo::firstOrCreate([
-            'grupo_id' => 2,
+            'grupo_id' => 27,
             'fecha' => '2026-01-14',
         ], [
             'cantidad_asistencias' => rand(5, 15),
@@ -143,7 +143,7 @@ class ReporteGrupoSeeder extends Seeder
         $reporte->usuarios()->syncWithoutDetaching([9 => ['asistio' => true]]);
 
         $reporte = ReporteGrupo::firstOrCreate([
-            'grupo_id' => 2,
+            'grupo_id' => 27,
             'fecha' => '2026-01-21',
         ], [
             'cantidad_asistencias' => rand(5, 15),
@@ -157,7 +157,7 @@ class ReporteGrupoSeeder extends Seeder
         $reporte->usuarios()->syncWithoutDetaching([9 => ['asistio' => true]]);
 
         $reporte = ReporteGrupo::firstOrCreate([
-            'grupo_id' => 2,
+            'grupo_id' => 27,
             'fecha' => '2026-01-28',
         ], [
             'cantidad_asistencias' => rand(5, 15),

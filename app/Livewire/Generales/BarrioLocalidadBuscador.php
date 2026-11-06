@@ -35,7 +35,7 @@ class BarrioLocalidadBuscador extends Component
 
       if($oldUbicacion)
       {
-        $this->seleccionarUbicacion ($oldUbicacion, $oldTipoUbicacion);
+        $this->seleccionarUbicacion ($oldUbicacion, $oldTipoUbicacion, false);
       }else{
 
         if($this->usuario){
@@ -44,9 +44,9 @@ class BarrioLocalidadBuscador extends Component
 
           if($this->usuario->barrio && $this->usuario->barrio->id)
           {
-            $this->seleccionarUbicacion ($this->usuario->barrio->id, 'Barrio');
+            $this->seleccionarUbicacion ($this->usuario->barrio->id, 'Barrio', false);
           }elseif($this->usuario->localidad && $this->usuario->localidad->id){
-            $this->seleccionarUbicacion ($this->usuario->localidad->id, 'Localidad');
+            $this->seleccionarUbicacion ($this->usuario->localidad->id, 'Localidad', false);
           }
         }
       }
@@ -64,29 +64,36 @@ class BarrioLocalidadBuscador extends Component
       $this->verListaBusqueda = false;
     }
 
-    public function seleccionarUbicacion($ubicacionId, $tipo)
+    public function seleccionarUbicacion($ubicacionId, $tipo, $interactivo = true)
     {
 
       if($tipo=="Localidad")
       {
         $this->ubicacionSeleccionada = Localidad::find($ubicacionId);
         $this->tipoUbicacionSeleccionada = $tipo;
+        $this->localidadId = $this->ubicacionSeleccionada ? $this->ubicacionSeleccionada->id : '';
       }else{
         $this->ubicacionSeleccionada = Barrio::find($ubicacionId);
         $this->tipoUbicacionSeleccionada = $tipo;
+        $this->localidadId = $this->ubicacionSeleccionada ? $this->ubicacionSeleccionada->localidad_id : '';
       }
 
       $this->verInputBusqueda = false;
       $this->verListaBusqueda = false;
+
+      $this->dispatch('ubicacion-seleccionada', localidadId: $this->localidadId, interactivo: $interactivo);
     }
 
     public function quitarSeleccion()
     {
       $this->ubicacionSeleccionada = null;
       $this->tipoUbicacionSeleccionada = null;
+      $this->localidadId = '';
       $this->verInputBusqueda = true;
       $this->verListaBusqueda = true;
       $this->busqueda = '';
+
+      $this->dispatch('ubicacion-limpiada', interactivo: true);
     }
 
     #[On('mostrarBuscadorUbicacion')]

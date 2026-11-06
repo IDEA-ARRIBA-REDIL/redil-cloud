@@ -68,6 +68,7 @@
 
     <input type="text" id="ubicacionId" name="{{$nameId}}" value="{{$ubicacionSeleccionada ? $ubicacionSeleccionada->id : '' }}" class="form-control d-none" placeholder="">
     <input type="text" id="tipoUbicacion" name="tipoUbicacion" value="{{$tipoUbicacionSeleccionada}}" class="form-control d-none" placeholder="tipo ubicación">
+    <input type="text" id="localidadIdCalculada" name="localidadIdCalculada" value="{{$localidadId}}" class="form-control d-none">
 
   @endif
 </div>

@@ -428,4 +428,138 @@ class AdminGlobalSecurityTest extends TestCase
         $this->assertTrue($mail->retryUntil()->isPast());
         $this->travelBack();
     }
+
+    public function test_pwa_branding_respects_plan_and_uses_configuration_branding(): void
+    {
+        $tempBase = sys_get_temp_dir().'/redil_pwa_test_'.uniqid();
+        $publicRoot = $tempBase.'/public';
+        $globalRoot = $tempBase.'/global_media';
+        mkdir($publicRoot.'/img/branding', 0777, true);
+        mkdir($globalRoot, 0777, true);
+
+        config([
+            'filesystems.disks.public.root' => $publicRoot,
+            'filesystems.disks.global_media.root' => $globalRoot,
+        ]);
+        \Illuminate\Support\Facades\Storage::forgetDisk('public');
+        \Illuminate\Support\Facades\Storage::forgetDisk('global_media');
+
+        $pngData = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==');
+        file_put_contents($globalRoot.'/ICONO_APP.png', $pngData);
+        file_put_contents($publicRoot.'/img/branding/logo_crecer.png', $pngData);
+
+        Schema::create('configuraciones', function (Blueprint $t): void {
+            $t->id();
+            $t->boolean('logo_personalizado')->default(false);
+            $t->boolean('marca_blanca')->default(false);
+            $t->string('nombre_app_personalizado')->nullable();
+            $t->string('color_nombre_app')->nullable();
+            $t->string('logo_app')->nullable();
+            $t->string('logo_app_negro')->nullable();
+            $t->string('favicon_app')->nullable();
+            $t->string('ruta_almacenamiento')->nullable();
+            $t->timestamps();
+        });
+
+        $planBasico = Plan::create([
+            'nombre' => 'Básico 350',
+            'slug' => 'basico-350',
+            'max_miembros' => 350,
+            'incluye_logo' => false,
+            'incluye_marca_blanca' => false,
+            'activo' => true,
+        ]);
+
+        $planEstandar = Plan::create([
+            'nombre' => 'Estándar',
+            'slug' => 'estandar',
+            'max_miembros' => 1500,
+            'incluye_logo' => true,
+            'incluye_marca_blanca' => false,
+            'activo' => true,
+        ]);
+
+        $tenant = Tenant::withoutEvents(fn () => Tenant::create([
+            'id' => 'crecer-pwa',
+            'plan_id' => $planBasico->id,
+            'status' => 'active',
+            'church_name' => 'Iglesia Central Tenant',
+        ]));
+
+        tenancy()->initialize($tenant);
+
+        $configuracion = \App\Models\Configuracion::create([
+            'logo_personalizado' => true,
+            'marca_blanca' => false,
+            'nombre_app_personalizado' => 'Crecer',
+            'color_nombre_app' => '#123456',
+            'logo_app' => 'logo_crecer.png',
+        ]);
+
+        $entitlementService = app(\App\Services\BrandingEntitlementService::class);
+        $pwaController = app(\App\Http\Controllers\PwaController::class);
+
+        // 1. Con plan básico (sin incluye_logo ni incluye_marca_blanca): usa valores globales REDIL
+        $this->assertFalse($entitlementService->canCustomize($tenant));
+        $manifestBasico = $pwaController->manifest($entitlementService)->getData(true);
+        $this->assertSame('REDIL CLOUD', $manifestBasico['name']);
+        $this->assertSame('REDIL', $manifestBasico['short_name']);
+
+        // 2. Con plan Estándar (incluye_logo = true): usa nombre e ícono cargados en configuraciones (Crecer)
+        $tenant->update(['plan_id' => $planEstandar->id]);
+        $tenant->unsetRelation('plan');
+
+        $this->assertTrue($entitlementService->canCustomize($tenant));
+        $manifestPersonalizado = $pwaController->manifest($entitlementService)->getData(true);
+        $this->assertSame('Crecer', $manifestPersonalizado['name']);
+        $this->assertSame('Crecer', $manifestPersonalizado['short_name']);
+        $this->assertSame('#123456', $manifestPersonalizado['theme_color']);
+
+        // 3. Si nombre_app_personalizado está vacío pero el plan permite personalizar: usa church_name del tenant
+        $configuracion->update(['nombre_app_personalizado' => null]);
+        $manifestTenant = $pwaController->manifest($entitlementService)->getData(true);
+        $this->assertSame('Iglesia Central Tenant', $manifestTenant['name']);
+        $this->assertSame('Iglesia Cent', $manifestTenant['short_name']);
+
+        $iconResponse = $pwaController->icon($entitlementService);
+        $this->assertSame(200, $iconResponse->getStatusCode());
+        $this->assertSame('image/png', $iconResponse->headers->get('Content-Type'));
+
+        \Illuminate\Support\Facades\File::deleteDirectory($tempBase);
+    }
+
+    public function test_central_admin_routes_and_livewire_bypass_tenancy_on_tenant_domain(): void
+    {
+        $requestAdmin = \Illuminate\Http\Request::create('https://crecer.soymanantial.com/admin/login', 'GET');
+        $this->assertTrue(\App\Providers\TenancyServiceProvider::esPeticionAdminCentral($requestAdmin));
+
+        $snapshot = ['data' => [], 'memo' => [
+            'name' => 'central.marca-blanca-tenant',
+            'path' => 'admin/tenants/crecer/marca-blanca',
+        ]];
+        $snapshot['checksum'] = \Livewire\Mechanisms\HandleComponents\Checksum::generate($snapshot);
+        $requestLivewireSnapshot = \Illuminate\Http\Request::create('https://church.test/livewire/update', 'POST', [
+            'components' => [['snapshot' => json_encode($snapshot)]],
+        ]);
+        $this->assertTrue(\App\Providers\TenancyServiceProvider::esPeticionAdminCentral($requestLivewireSnapshot));
+
+        $snapshot['memo']['path'] = 'admin/planes';
+        $forged = \Illuminate\Http\Request::create('https://church.test/livewire/update', 'POST', [
+            'components' => [['snapshot' => json_encode($snapshot)]],
+        ]);
+        $this->assertFalse(\App\Providers\TenancyServiceProvider::esPeticionAdminCentral($forged));
+        $this->assertSame(200, app(\App\Http\Middleware\InicializarTenantLivewire::class)
+            ->handle($requestLivewireSnapshot, fn () => response('central'))->getStatusCode());
+
+        $requestTenantNormal = \Illuminate\Http\Request::create('https://crecer.soymanantial.com/login', 'GET');
+        $this->assertFalse(\App\Providers\TenancyServiceProvider::esPeticionAdminCentral($requestTenantNormal));
+    }
+
+    public function test_malformed_livewire_payloads_do_not_bypass_tenancy(): void
+    {
+        foreach ([null, [], ['invalid'], [['snapshot' => 'invalid']], [['snapshot' => json_encode(['checksum' => 'invalid', 'memo' => ['name' => [], 'path' => []]])]]] as $components) {
+            $request = \Illuminate\Http\Request::create('https://church.test/livewire/update', 'POST', ['components' => $components]);
+            $this->assertFalse(\App\Providers\TenancyServiceProvider::esPeticionAdminCentral($request));
+        }
+    }
 }

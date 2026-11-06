@@ -275,13 +275,7 @@
                                     {{-- Opción Solicitar Anulación (Solo si la caja permite modificación y está en horario) --}}
                                     @if ($compra->estado != 4 && $compra->estado != 5 && $compra->estado != 6)
                                         @php
-                                            $horaActual = now()->format('H:i:s');
-                                            $fueraDeHorario = false;
-                                            if ($cajaActiva->hora_apertura && $cajaActiva->hora_cierre) {
-                                                $apertura = \Carbon\Carbon::parse($cajaActiva->hora_apertura)->format('H:i:s');
-                                                $cierre = \Carbon\Carbon::parse($cajaActiva->hora_cierre)->format('H:i:s');
-                                                $fueraDeHorario = ($horaActual < $apertura || $horaActual > $cierre);
-                                            }
+                                            $fueraDeHorario = ! $cajaActiva->estaEnHorario();
                                             $permiteModificar = (bool) $cajaActiva->permite_modificar_registros;
                                         @endphp
 
@@ -330,15 +324,15 @@
                                 <div class="d-flex flex-column col-12 col-md-6">
                                     <small class="text-dark"><i class="ti ti-activity me-2"></i>Actividad:</small>
                                     <small class="fw-semibold text-black "
-                                        title="{{ $compra->actividad->nombre ?? 'N/A' }}">
-                                        {{ $compra->actividad->nombre ?? 'Actividad no encontrada' }}
+                                        title="{{ $compra->actividad?->nombre ?? 'N/A' }}">
+                                        {{ $compra->actividad?->nombre ?? 'Actividad no encontrada' }}
                                     </small>
                                 </div>
                                 <div class="d-flex flex-column col-12 col-md-6">
                                     <small class="text-dark"><i class="ti ti-category-2 me-2"></i>Categoria:</small>
                                     @foreach ($compra->inscripciones as $inscripcion)
                                         <small
-                                            class="fw-semibold text-black">{{ $inscripcion->categoriaActividad->nombre ?? 'Categoría' }}
+                                            class="fw-semibold text-black">{{ $inscripcion->categoriaActividad?->nombre ?? 'Categoría' }}
                                         </small>
                                     @endforeach
                                 </div>
@@ -348,8 +342,8 @@
 
                         <div class="border-top pt-3">
                             @php
-                                $permiteAbonos = $compra->actividad->tipo->permite_abonos ?? false;
-                                $esEscuela = $compra->actividad->tipo->tipo_escuelas ?? false;
+                                $permiteAbonos = $compra->actividad?->tipo?->permite_abonos ?? false;
+                                $esEscuela = $compra->actividad?->tipo?->tipo_escuelas ?? false;
                                 // Filtrar pagos no anulados
                                 $pagosActivos = $compra->pagos->where('anulado_pdp', false);
                                 $totalPagado = $pagosActivos->sum('valor');

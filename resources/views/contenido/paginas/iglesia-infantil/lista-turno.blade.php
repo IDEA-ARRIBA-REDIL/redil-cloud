@@ -616,7 +616,6 @@
                                                 @livewire('Usuarios.usuarios-para-busqueda', [
                                                     'queUsuariosCargar' => 'todos',
                                                     'tipoBuscador' => 'unico',
-                                                    'soloVerificados' => false,
                                                     'conDadosDeBaja' => 'no',
                                                     'placeholder' => 'Buscar adulto responsable...',
                                                     'label' => ''

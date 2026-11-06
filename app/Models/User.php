@@ -6,6 +6,7 @@ use App\Notifications\MiRestablecimientoDeContrasena;
 use App\Notifications\MiVerificacionDeCorreo;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -113,11 +114,23 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
+     * Comprueba si el usuario tiene una foto de perfil personalizada y existe en el disco.
+     */
+    public function tieneFoto(): bool
+    {
+        if (empty($this->foto) || $this->foto === 'default-m.png' || $this->foto === 'default-f.png') {
+            return false;
+        }
+
+        return Storage::exists('img/usuario/fotos/'.$this->foto);
+    }
+
+    /**
      * Get the user's photo URL.
      */
     public function getFotoUrlAttribute(): string
     {
-        if ($this->foto && $this->foto !== '' && $this->foto !== 'default-m.png' && $this->foto !== 'default-f.png') {
+        if ($this->tieneFoto()) {
             return tenant_asset('img/usuario/fotos/'.$this->foto);
         }
 
@@ -236,17 +249,23 @@ class User extends Authenticatable implements MustVerifyEmail
 
         static::updating(function ($user) {
             if ($user->isDirty('tipo_usuario_id')) {
+                $tipoUsuarioAnteriorId = $user->getOriginal('tipo_usuario_id');
+                $existeTipoUsuarioAnterior = $tipoUsuarioAnteriorId && TipoUsuario::where('id', $tipoUsuarioAnteriorId)->exists();
+
                 \App\Models\BitacoraTipoUsuario::create([
                     'user_id' => $user->id,
-                    'tipo_usuario_id_anterior' => $user->getOriginal('tipo_usuario_id'),
+                    'tipo_usuario_id_anterior' => $existeTipoUsuarioAnterior ? $tipoUsuarioAnteriorId : null,
                     'tipo_usuario_id_nuevo' => $user->tipo_usuario_id,
                     'autor_id' => auth()->id(),
                 ]);
             }
             if ($user->isDirty('estado_civil_id')) {
+                $estadoCivilAnteriorId = $user->getOriginal('estado_civil_id');
+                $existeEstadoCivilAnterior = $estadoCivilAnteriorId && EstadoCivil::where('id', $estadoCivilAnteriorId)->exists();
+
                 \App\Models\BitacoraEstadoCivil::create([
                     'user_id' => $user->id,
-                    'estado_civil_id_anterior' => $user->getOriginal('estado_civil_id'),
+                    'estado_civil_id_anterior' => $existeEstadoCivilAnterior ? $estadoCivilAnteriorId : null,
                     'estado_civil_id_nuevo' => $user->estado_civil_id,
                     'autor_id' => auth()->id(),
                 ]);
@@ -331,7 +350,35 @@ class User extends Authenticatable implements MustVerifyEmail
 
         // 3. Limpiamos la caché de permisos de Spatie.
         // ¡Este paso es crucial! Sin él, los permisos no se actualizarán de inmediato.
+        $this->unsetRelation('rolActivo');
+        $this->unsetRelation('roles');
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+
+    /**
+     * Asegura que el usuario tenga un rol activo.
+     * Si no tiene ninguno activo pero tiene roles asociados, activa preferentemente
+     * el rol dependiente, o en su defecto el primer rol disponible.
+     */
+    public function asegurarRolActivo(): ?Role
+    {
+        $rolActivo = $this->roles()->wherePivot('activo', true)->first();
+
+        if ($rolActivo) {
+            return $rolActivo;
+        }
+
+        // 1. Buscar rol prioritario: primero dependiente, luego cualquier rol asignado
+        $rolParaActivar = $this->roles()->wherePivot('dependiente', true)->first()
+            ?? $this->roles()->first();
+
+        if ($rolParaActivar) {
+            $this->switchActiveRole($rolParaActivar);
+
+            return $rolParaActivar;
+        }
+
+        return null;
     }
 
     /*
@@ -394,13 +441,29 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Reutiliza el rol cargado para el usuario durante el grafico ministerial.
+     */
+    public function rolActivoParaPermisos(): ?Role
+    {
+        if ($this->relationLoaded('rolActivo')) {
+            $rolActivo = $this->getRelation('rolActivo');
+
+            if ($rolActivo === null || ($rolActivo instanceof Role
+                && (string) $rolActivo->pivot?->model_id === (string) $this->getKey()
+                && (bool) $rolActivo->pivot?->activo)) {
+                return $rolActivo;
+            }
+        }
+
+        return $this->roles()->wherePivot('activo', true)->first();
+    }
+
+    /**
      * Determina permisos exclusivamente desde el rol activo del usuario.
      */
     public function hasPermissionTo($permission, $guardName = null): bool
     {
-        $rolActivo = $this->roles()
-            ->wherePivot('activo', true)
-            ->first();
+        $rolActivo = $this->rolActivoParaPermisos();
 
         return $rolActivo?->hasPermissionTo($permission, $guardName) ?? false;
     }
@@ -618,78 +681,145 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Grupo::class, 'grupos_excluidos', 'user_id', 'grupo_id')->withTimestamps();
     }
 
-    public function encargadosDirectos()
+    /**
+     * @return Collection<int, User>
+     */
+    public function encargadosDirectos(): Collection
     {
-        $lideres = $this->gruposDondeAsiste()
-            ->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
-            ->leftJoin('users AS encargados', 'encargados_grupo.user_id', '=', 'encargados.id')
-            ->leftJoin('tipo_usuarios', 'encargados.tipo_usuario_id', '=', 'tipo_usuarios.id')
-            ->whereNotNull('encargados.id')
-            ->selectRaw(
-                "encargados.id, CONCAT(encargados.primer_nombre, ' ',encargados.primer_apellido) as nombre, encargados.primer_nombre, encargados.primer_apellido, encargados.segundo_nombre, encargados.segundo_apellido, foto,
-        tipo_usuarios.nombre as tipo_usuario, tipo_usuarios.color, tipo_usuarios.icono"
-            )
-            ->get()
-            ->unique('id');
+        if ($this->relationLoaded('gruposDondeAsiste') && $this->gruposDondeAsiste->every(
+            fn (Grupo $grupo): bool => $grupo->relationLoaded('encargadosConEliminados')
+        )) {
+            return $this->gruposDondeAsiste
+                ->flatMap(fn (Grupo $grupo): Collection => $grupo->encargadosConEliminados)
+                ->unique('id')
+                ->map(fn (User $encargado): User => $encargado->paraListadoDeEncargados());
+        }
 
-        return $lideres;
+        return User::withTrashed()
+            ->join('encargados_grupo', 'users.id', '=', 'encargados_grupo.user_id')
+            ->join('grupos', 'grupos.id', '=', 'encargados_grupo.grupo_id')
+            ->join('integrantes_grupo', 'grupos.id', '=', 'integrantes_grupo.grupo_id')
+            ->where('integrantes_grupo.user_id', $this->id)
+            ->with('tipoUsuario')
+            ->select('users.*')
+            ->get()
+            ->unique('id')
+            ->map(fn (User $encargado): User => $encargado->paraListadoDeEncargados());
     }
 
-    // trae los lideres ascendentes
-    public function lideres($tipo = 'objeto')
+    /**
+     * Conserva los alias de presentación sin modificar el modelo precargado.
+     */
+    public function paraListadoDeEncargados(): static
     {
-        $array_lideres = [];
-        $array_ids_lideres_no_repetidos = [];
-        $array_ids_nuevos_lideres = [];
+        $encargado = clone $this;
+        $encargado->forceFill([
+            'nombre' => $this->primer_nombre.' '.$this->primer_apellido,
+            'tipo_usuario' => $this->tipoUsuario?->nombre,
+            'color' => $this->tipoUsuario?->color,
+            'icono' => $this->tipoUsuario?->icono,
+        ])->syncOriginal();
 
-        $ids_grupos_asistentes = IntegranteGrupo::where('integrantes_grupo.user_id', $this->id)
-            ->select('grupo_id')
-            ->pluck('grupo_id')
-            ->toArray();
+        return $encargado;
+    }
 
-        array_push($array_ids_lideres_no_repetidos, $this->id);
-        // Nueva variable para evitar los lideres excluídos en la jerarquía de líderes
-        $ids_grupos_recorridos = $ids_grupos_asistentes;
+    /**
+     * @return Builder<User>|array<int, int>
+     */
+    public function lideres(string $tipo = 'objeto'): Builder|array
+    {
+        $lideresIds = self::idsLideresPorUsuarios([$this->id])[$this->id];
 
-        while (count($array_ids_lideres_no_repetidos) > 0) {
-            $array_ids_nuevos_lideres = [];
-            $grupos = Grupo::whereIn('grupos.id', $ids_grupos_asistentes)->get();
+        return $tipo === 'objeto' ? User::query()->whereIn('users.id', $lideresIds) : $lideresIds;
+    }
 
-            foreach ($grupos as $grupo) {
-                $array_ids_nuevos_lideres = array_merge(
-                    $array_ids_nuevos_lideres,
-                    $grupo->encargados()->select('users.id')
-                        ->pluck('users.id')
-                        ->toArray()
-                );
+    /**
+     * Comparte consultas entre raíces, conservando sus exclusiones por separado.
+     * La caché de aristas solo vive durante este recorrido.
+     *
+     * @param  array<int, int>  $usuariosIds
+     * @return array<int, array<int, int>>
+     */
+    public static function idsLideresPorUsuarios(array $usuariosIds): array
+    {
+        $usuariosIds = array_values(array_unique($usuariosIds));
+        if ($usuariosIds === []) {
+            return [];
+        }
+
+        $pertenencias = IntegranteGrupo::query()->whereIn('user_id', $usuariosIds)
+            ->get(['user_id', 'grupo_id'])->groupBy('user_id');
+        $pendientes = [];
+        $gruposRecorridos = [];
+        $lideres = [];
+        $encargadosPorGrupo = [];
+        $gruposPorUsuario = [];
+        foreach ($usuariosIds as $usuarioId) {
+            $pendientes[$usuarioId] = $pertenencias->get($usuarioId, collect())->pluck('grupo_id')->unique()->all();
+            $gruposRecorridos[$usuarioId] = [];
+            $lideres[$usuarioId] = [];
+        }
+
+        while (collect($pendientes)->contains(fn (array $ids): bool => $ids !== [])) {
+            $gruposIds = array_values(array_unique(array_merge(...array_values($pendientes))));
+            $sinConsultar = array_values(array_diff($gruposIds, array_keys($encargadosPorGrupo)));
+            if ($sinConsultar !== []) {
+                foreach ($sinConsultar as $grupoId) {
+                    $encargadosPorGrupo[$grupoId] = [];
+                }
+                $encargados = User::query()
+                    ->join('encargados_grupo', 'users.id', '=', 'encargados_grupo.user_id')
+                    ->join('grupos', 'grupos.id', '=', 'encargados_grupo.grupo_id')
+                    ->whereIn('grupos.id', $sinConsultar)
+                    ->get(['users.id', 'encargados_grupo.grupo_id']);
+                foreach ($encargados as $encargado) {
+                    $encargadosPorGrupo[$encargado->grupo_id][] = $encargado->id;
+                }
             }
 
-            $array_ids_nuevos_lideres = array_values(array_unique($array_ids_nuevos_lideres));
+            $nuevosPorRaiz = [];
+            foreach ($pendientes as $usuarioId => $grupos) {
+                $nuevos = [];
+                foreach ($grupos as $grupoId) {
+                    $gruposRecorridos[$usuarioId][$grupoId] = true;
+                    $nuevos = array_merge($nuevos, $encargadosPorGrupo[$grupoId]);
+                }
+                $nuevosPorRaiz[$usuarioId] = array_values(array_diff(array_unique($nuevos), $lideres[$usuarioId]));
+                $lideres[$usuarioId] = array_merge($lideres[$usuarioId], $nuevosPorRaiz[$usuarioId]);
+            }
 
-            $ids_grupos_asistentes = IntegranteGrupo::whereIn('integrantes_grupo.user_id', $array_ids_nuevos_lideres)
-                ->select('grupo_id')
-                ->pluck('grupo_id')
-                ->toArray();
-
-            $array_ids_lideres_no_repetidos = array_diff($array_ids_nuevos_lideres, $array_lideres);
-            $array_ids_lideres_no_repetidos = array_values(array_unique($array_ids_lideres_no_repetidos));
-            $array_lideres = array_merge($array_lideres, $array_ids_nuevos_lideres);
-            // Nuevo array merge para evitar los lideres excluídos en la jerarquía de líderes
-            $ids_grupos_recorridos = array_merge($ids_grupos_recorridos, $ids_grupos_asistentes);
+            $nuevosIds = array_values(array_unique(array_merge(...array_values($nuevosPorRaiz))));
+            $sinConsultar = array_values(array_diff($nuevosIds, array_keys($gruposPorUsuario)));
+            if ($sinConsultar !== []) {
+                foreach ($sinConsultar as $usuarioId) {
+                    $gruposPorUsuario[$usuarioId] = [];
+                }
+                $pertenencias = IntegranteGrupo::query()->whereIn('user_id', $sinConsultar)->get(['user_id', 'grupo_id']);
+                foreach ($pertenencias as $pertenencia) {
+                    $gruposPorUsuario[$pertenencia->user_id][] = $pertenencia->grupo_id;
+                }
+            }
+            foreach ($nuevosPorRaiz as $usuarioId => $nuevos) {
+                $grupos = [];
+                foreach ($nuevos as $liderId) {
+                    $grupos = array_merge($grupos, $gruposPorUsuario[$liderId]);
+                }
+                $pendientes[$usuarioId] = array_values(array_diff(array_unique($grupos), array_keys($gruposRecorridos[$usuarioId])));
+            }
         }
-        // Nuevas líneas para evitar los lideres excluídos en la jerarquía de líderes
-        $ids_asistentes_excluidos = GrupoExcluido::whereIn('grupo_id', $ids_grupos_recorridos)
-            ->select('user_id')
-            ->pluck('user_id')
-            ->toArray();
 
-        $array_lideres = array_diff($array_lideres, $ids_asistentes_excluidos);
-
-        if ($tipo == 'objeto') {
-            $array_lideres = User::whereIn('users.id', $array_lideres);
+        $todosGruposIds = array_values(array_unique(array_merge(...array_map('array_keys', $gruposRecorridos))));
+        $exclusiones = GrupoExcluido::query()->whereIn('grupo_id', $todosGruposIds)
+            ->get(['grupo_id', 'user_id'])->groupBy('grupo_id');
+        foreach ($lideres as $usuarioId => $ids) {
+            $excluidos = [];
+            foreach (array_keys($gruposRecorridos[$usuarioId]) as $grupoId) {
+                $excluidos = array_merge($excluidos, $exclusiones->get($grupoId, collect())->pluck('user_id')->all());
+            }
+            $lideres[$usuarioId] = array_values(array_diff($ids, $excluidos));
         }
 
-        return $array_lideres;
+        return $lideres;
     }
 
     // relacion para saber que usuarios sirven en un grupo
@@ -848,9 +978,7 @@ class User extends Authenticatable implements MustVerifyEmail
     // obtiene los formularios correspondientes al rol de usuario
     public function formularios($tipoId, $edad)
     {
-        $rolActivo = $this->roles()
-            ->wherePivot('activo', true)
-            ->first();
+        $rolActivo = $this->rolActivoParaPermisos();
 
         return $rolActivo
             ?->formularios()
@@ -929,23 +1057,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->get();
     }
 
-    public function gruposMinisterio($tipo = 'objeto')
+    /**
+     * @return Builder<Grupo>|array<int, int>
+     */
+    public function gruposMinisterio(string $tipo = 'objeto'): Builder|array
     {
         $rolActivo = $this->roles()->wherePivot('activo', true)->first();
 
         // Verificación rápida de rol Sede
         if ($rolActivo && $rolActivo->lista_asistentes_sede_id) {
             $sedeId = $rolActivo->lista_grupos_sede_id;
-            // Si el rol tiene una sede asignada para ver grupos, retornamos esos grupos
-            if ($tipo == 'objeto') {
-                return Grupo::whereHas('sede', function ($q) use ($sedeId) {
-                    $q->where('id', $sedeId);
-                })->get();
-            } else {
-                return Grupo::whereHas('sede', function ($q) use ($sedeId) {
-                    $q->where('id', $sedeId);
-                })->pluck('id')->toArray();
-            }
+            $grupos = Grupo::whereHas('sede', function ($q) use ($sedeId) {
+                $q->where('id', $sedeId);
+            });
+
+            return $tipo === 'objeto' ? $grupos : $grupos->pluck('id')->all();
         }
 
         // CTE Recursivo para jerarquía de ministerio
@@ -1263,10 +1389,19 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $rolActivo = $this->roles()->wherePivot('activo', true)->first();
 
-        // Verifica si es administrador de una sede
-        if (Zona::find($rolActivo->zona_de_consolidacion_id ?? null)) {
+        if ($lista == 'sin-eliminados') {
+            $discipulosQuery = User::query(); // Inicia la consulta sin eliminados (por defecto)
+        } elseif ($lista == 'solo-eliminados') {
+            $discipulosQuery = User::onlyTrashed(); // Inicia la consulta solo con eliminados
+        } else {
+            $discipulosQuery = User::withTrashed(); // Inicia la consulta con y sin eliminados
+        }
 
-            $zona = Zona::find($rolActivo->zona_de_consolidacion_id);
+        // Cascada de 4 niveles para resolver el alcance de consolidación:
+        // NIVEL 1: Zona de consolidación asignada al rol
+        $zona = ! empty($rolActivo->zona_de_consolidacion_id) ? Zona::find($rolActivo->zona_de_consolidacion_id) : null;
+
+        if ($zona) {
             $sedesIds = $zona->sedes()->select('sedes.id')
                 ->pluck('sedes.id')
                 ->toArray();
@@ -1275,80 +1410,51 @@ class User extends Authenticatable implements MustVerifyEmail
                 ->pluck('localidades.id')
                 ->toArray();
 
-            if ($lista == 'sin-eliminados') {
-                $discipulosQuery = User::query(); // Inicia la consulta sin eliminados (por defecto)
-            } elseif ($lista == 'solo-eliminados') {
-                $discipulosQuery = User::onlyTrashed(); // Inicia la consulta solo con eliminados
-            } else {
-                $discipulosQuery = User::withTrashed(); // Inicia la consulta con y sin eliminados
-            }
-
             $discipulos = $discipulosQuery->where(function ($query) use ($sedesIds, $localidadesIds) {
-                if (! empty($sedesIds)) {
+                if (! empty($sedesIds) && ! empty($localidadesIds)) {
+                    $query->whereIn('users.sede_id', $sedesIds)
+                        ->whereIn('users.localidad_id', $localidadesIds);
+                } elseif (! empty($sedesIds)) {
                     $query->whereIn('users.sede_id', $sedesIds);
-                }
-
-                if (! empty($localidadesIds)) {
+                } elseif (! empty($localidadesIds)) {
                     $query->whereIn('users.localidad_id', $localidadesIds);
+                } else {
+                    $query->whereRaw('1 = 0');
                 }
             });
         } else {
-            $gruposIds = $this->gruposMinisterio()
-                ->select('id')
-                ->pluck('id')
-                ->toArray();
+            // NIVEL 2: Encargado de una o más sedes (lidera el grupo principal de una sede)
+            $sedesEncargadasIds = Sede::whereHas('grupo.encargados', function ($q) {
+                $q->where('users.id', $this->id);
+            })->pluck('id')->toArray();
 
-            $asistentes_sin_grupo_creados_por_este_asistente = User::where('usuario_creacion_id', $this->id)
-                ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
-                ->whereNull('integrantes_grupo.user_id')
-                ->select('users.id')
-                ->pluck('users.id')
-                ->unique('users.id')
-                ->toArray();
-
-            if (count($gruposIds) == 0) {
-                $gruposIds = [0];
+            if (! empty($sedesEncargadasIds)) {
+                $discipulos = $discipulosQuery->whereIn('users.sede_id', $sedesEncargadasIds);
             }
-
-            if (count($asistentes_sin_grupo_creados_por_este_asistente) == 0) {
-                $asistentes_sin_grupo_creados_por_este_asistente = [0];
+            // NIVEL 3: Coordinador de sede (lista_asistentes_sede_id en el rol activo)
+            elseif ($rolActivo && ! empty($rolActivo->lista_asistentes_sede_id) && Sede::find($rolActivo->lista_asistentes_sede_id)) {
+                $discipulos = $discipulosQuery->where('users.sede_id', $rolActivo->lista_asistentes_sede_id);
             }
+            // NIVEL 4: Jerarquía de sus grupos (ministerio tradicional)
+            else {
+                $gruposIds = $this->gruposMinisterio(tipo: 'array');
+                if (empty($gruposIds)) {
+                    $gruposIds = [0];
+                }
 
-            if ($lista == 'sin-eliminados') {
-                $discipulos = User::leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id') // Dados de alta
-                    ->where(function ($query) use ($gruposIds, $asistentes_sin_grupo_creados_por_este_asistente) {
-                        $query->whereRaw(
-                            'integrantes_grupo.grupo_id IN ('.
-                              implode(',', $gruposIds).
-                              ') or users.id IN ('.
-                              implode(',', $asistentes_sin_grupo_creados_por_este_asistente).
-                              ')'
-                        );
-                    })
-                    ->whereNull('users.deleted_at'); // Dados de alta
-            } elseif ($lista == 'solo-eliminados') {
-                $discipulos = User::leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
-                    ->where(function ($query) use ($gruposIds, $asistentes_sin_grupo_creados_por_este_asistente) {
-                        $query->whereRaw(
-                            'integrantes_grupo.grupo_id IN ('.
-                              implode(',', $gruposIds).
-                              ') or users.id IN ('.
-                              implode(',', $asistentes_sin_grupo_creados_por_este_asistente).
-                              ')'
-                        );
-                    })
-                    ->whereNotNull('users.deleted_at'); // Dados de baja
-            } else {
-                $discipulos = User::withTrashed()
-                    ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
-                    ->where(function ($query) use ($gruposIds, $asistentes_sin_grupo_creados_por_este_asistente) {
-                        $query->whereRaw(
-                            'integrantes_grupo.grupo_id IN ('.
-                              implode(',', $gruposIds).
-                              ') or users.id IN ('.
-                              implode(',', $asistentes_sin_grupo_creados_por_este_asistente).
-                              ')'
-                        );
+                $asistentesSinGrupoIds = User::where('usuario_creacion_id', $this->id)
+                    ->doesntHave('gruposDondeAsiste')
+                    ->pluck('id')
+                    ->toArray();
+
+                if (empty($asistentesSinGrupoIds)) {
+                    $asistentesSinGrupoIds = [0];
+                }
+
+                $discipulos = $discipulosQuery->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
+                    ->where(function ($query) use ($gruposIds, $asistentesSinGrupoIds) {
+                        $query->whereIn('integrantes_grupo.grupo_id', $gruposIds)
+                            ->orWhereIn('users.id', $asistentesSinGrupoIds);
                     });
             }
         }

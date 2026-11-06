@@ -26,9 +26,9 @@ class ResumenPeriodoService
         $materias = $periodo->materiasPeriodo->keyBy('id');
         $estadosCierre = app(GestionCierreMateriaService::class)->estados($materias->keys()->all());
         $horarios = $materias->flatMap->horariosMateriaPeriodo->keyBy('id');
-        $matriculas = $periodo->matriculas()->with('user:id,genero')
+        $matriculas = $periodo->matriculas()->with(['user:id,genero', 'sede:id,nombre'])
             ->whereNotIn('estado_pago_matricula', ['anulada', 'rechazada'])
-            ->get(['id', 'user_id', 'periodo_id', 'horario_materia_periodo_id', 'bloqueado']);
+            ->get(['id', 'user_id', 'periodo_id', 'horario_materia_periodo_id', 'sede_id', 'bloqueado']);
         $notaMinima = Calificaciones::query()
             ->where('sistema_calificacion_id', $periodo->sistema_calificaciones_id)
             ->where('aprobado', true)->min('nota_minima');
@@ -66,6 +66,9 @@ class ResumenPeriodoService
             $matricula = $grupo->first();
             $horario = $horarios->get($matricula->horario_materia_periodo_id);
             $materia = $materias->get($horario?->materia_periodo_id);
+            $sede = $horario?->horarioBase?->aula?->sede ?? $matricula->sede;
+            $sedeId = $sede?->id;
+            $sedeNombre = $sede?->nombre ?? 'Sin sede asignada';
             $clave = $matricula->user_id.'-'.$matricula->horario_materia_periodo_id;
             $itemsHorario = $itemsPorHorario->get($matricula->horario_materia_periodo_id, collect());
             $pesoConfigurado = $itemsHorario->sum(fn ($item): float => (float) $item->porcentaje * (float) $item->cortePeriodo->porcentaje / 100);
@@ -100,6 +103,8 @@ class ResumenPeriodoService
                 },
                 'materiaId' => $materia?->id,
                 'nivelId' => $materia?->nivel_id,
+                'sedeId' => $sedeId,
+                'sedeNombre' => $sedeNombre,
                 'estado' => $estado,
                 'motivos' => $motivos,
                 'bloqueada' => $bloqueada,
@@ -130,6 +135,117 @@ class ResumenPeriodoService
             'asistenciasMinimas' => $materia->habilitar_asistencias ? $materia->asistencias_minimas : null,
             'resumen' => $this->resumir($filasPorMateria->get($materia->id, collect())),
         ])->sortBy('nombre')->values();
+
+        $sedesMap = collect();
+        foreach ($materias as $materia) {
+            foreach ($materia->horariosMateriaPeriodo as $horario) {
+                $sede = $horario->horarioBase?->aula?->sede;
+                if ($sede) {
+                    $sedesMap->put((string) $sede->id, [
+                        'id' => $sede->id,
+                        'nombre' => $sede->nombre,
+                    ]);
+                }
+            }
+        }
+        foreach ($matriculas as $mat) {
+            $horario = $horarios->get($mat->horario_materia_periodo_id);
+            $sede = $horario?->horarioBase?->aula?->sede ?? $mat->sede;
+            if ($sede) {
+                $sedesMap->put((string) $sede->id, [
+                    'id' => $sede->id,
+                    'nombre' => $sede->nombre,
+                ]);
+            }
+        }
+        if ($sedesMap->isEmpty()) {
+            $sedesMap->put('general', [
+                'id' => null,
+                'nombre' => 'Sede Principal / Sin sede',
+            ]);
+        }
+
+        $filasPorSede = $filas->groupBy(fn (array $fila): string => (string) ($fila['sedeId'] ?? 'general'));
+
+        $detalleSedes = $sedesMap->map(function (array $sedeInfo, string $sedeClave) use ($materias, $filasPorSede, $estadosCierre, $periodo, $notaMinima): array {
+            $filasEstaSede = $filasPorSede->get($sedeClave, collect());
+            $resumenSede = $this->resumir($filasEstaSede);
+            $bloqueadosSede = $filasEstaSede->where('bloqueada', true)->count();
+
+            $materiasEstaSede = $materias->filter(function (MateriaPeriodo $materia) use ($sedeInfo, $filasEstaSede): bool {
+                $tieneHorarios = $materia->horariosMateriaPeriodo->contains(function ($h) use ($sedeInfo): bool {
+                    return $sedeInfo['id'] !== null && (int) $h->horarioBase?->aula?->sede_id === (int) $sedeInfo['id'];
+                });
+                $tieneMatriculas = $filasEstaSede->contains('materiaId', $materia->id);
+
+                return $tieneHorarios || $tieneMatriculas || $sedeInfo['id'] === null;
+            })->map(function (MateriaPeriodo $materia) use ($sedeInfo, $filasEstaSede, $estadosCierre, $periodo, $notaMinima): array {
+                $filasMat = $filasEstaSede->where('materiaId', $materia->id);
+                $resMat = $this->resumir($filasMat);
+                $horariosSede = $materia->horariosMateriaPeriodo->filter(function ($h) use ($sedeInfo): bool {
+                    return $sedeInfo['id'] === null || (int) $h->horarioBase?->aula?->sede_id === (int) $sedeInfo['id'];
+                });
+
+                return [
+                    'id' => $materia->id,
+                    'nombre' => $materia->materia?->nombre ?? 'Materia no disponible',
+                    'nivel' => $materia->nivel?->nombre ?? 'Sin nivel',
+                    'nivelId' => $materia->nivel_id,
+                    'cerrada' => ! $periodo->estado || $materia->finalizado,
+                    'finalizada' => $materia->finalizado,
+                    'estadoCierre' => $estadosCierre[$materia->id] ?? null,
+                    'sedes' => $materia->horariosMateriaPeriodo->map(fn ($horario) => $horario->horarioBase?->aula?->sede)
+                        ->filter()->unique('id')->sortBy('nombre')->map(fn ($sede): array => ['id' => $sede->id, 'nombre' => $sede->nombre])->values()->all(),
+                    'notaMinima' => $materia->habilitar_calificaciones ? $notaMinima : null,
+                    'evaluaNotas' => $materia->habilitar_calificaciones,
+                    'asistenciasMinimas' => $materia->habilitar_asistencias ? $materia->asistencias_minimas : null,
+                    'horariosCount' => $horariosSede->count(),
+                    'horarios' => $horariosSede->map(fn ($h) => [
+                        'id' => $h->id,
+                        'aula' => $h->horarioBase?->aula?->nombre ?? 'Sin aula',
+                        'dia' => $h->horarioBase?->dia_semana ?? 'Día no definido',
+                        'horario' => ($h->horarioBase?->hora_inicio_formato ?? '').' - '.($h->horarioBase?->hora_fin_formato ?? ''),
+                    ])->values()->all(),
+                    'matriculados' => $resMat['estudiantes'],
+                    'aprobados' => $resMat['aprobados'],
+                    'bloqueados' => $filasMat->where('bloqueada', true)->count(),
+                    'van_a_perder' => $resMat['riesgo'],
+                    'sin_evaluar' => $resMat['pendientes'],
+                    'notaPromedio' => $resMat['notaPromedio'],
+                    'asistencia' => $resMat['asistencia'],
+                    'promedioAsistencias' => $resMat['promedioAsistencias'],
+                    'registrosAsistencia' => $resMat['registrosAsistencia'],
+                    'presentes' => $resMat['presentes'],
+                    'ausentes' => $resMat['ausentes'],
+                    'calificadas' => $resMat['calificadas'],
+                    'evaluaciones' => $resMat['evaluaciones'],
+                    'avanceCalificacion' => $resMat['avanceCalificacion'],
+                    'generos' => $resMat['generos'],
+                    'motivos' => $resMat['motivos'],
+                    'resumen' => $resMat,
+                ];
+            })->sortBy('nombre')->values();
+
+            return [
+                'id' => $sedeInfo['id'],
+                'clave' => $sedeClave,
+                'nombre' => $sedeInfo['nombre'],
+                'estudiantes' => $resumenSede['estudiantes'],
+                'aprobados' => $resumenSede['aprobados'],
+                'bloqueados' => $bloqueadosSede,
+                'van_a_perder' => $resumenSede['riesgo'],
+                'sin_evaluar' => $resumenSede['pendientes'],
+                'resumen' => $resumenSede,
+                'materias' => $materiasEstaSede,
+            ];
+        })->sort(function (array $a, array $b): int {
+            if ($a['estudiantes'] !== $b['estudiantes']) {
+                return $b['estudiantes'] <=> $a['estudiantes'];
+            }
+
+            return strcmp($a['nombre'], $b['nombre']);
+        })->values();
+
         $niveles = $periodo->nivelesPeriodo->mapWithKeys(fn ($nivel): array => [$nivel->nivel_escuela_id => $nivel->nivelEscuela?->nombre ?? 'Nivel no disponible']);
         foreach ($materias as $materia) {
             $niveles->put($materia->nivel_id ?? 'sin-nivel', $materia->nivel?->nombre ?? 'Sin nivel / materias independientes');
@@ -142,6 +258,7 @@ class ResumenPeriodoService
             'excluidas' => $periodo->matriculas()->withTrashed()->count() - $matriculas->count(),
             'bloqueadas' => $matriculas->where('bloqueado', true)->count(),
             'materias' => $detalleMaterias,
+            'sedes' => $detalleSedes,
             'horarios' => $horarios->count(),
             'niveles' => $niveles->map(fn (string $nombre, int|string $id): array => [
                 'nombre' => $nombre,

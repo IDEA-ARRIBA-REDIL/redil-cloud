@@ -47,37 +47,29 @@ $configData = Helper::appClasses();
       time_24hr: true,
     };
 
-    // Funciones auxiliares para semana (Lunes-Domingo)
-    function getMonday(d) {
-      d = new Date(d);
-      var day = d.getDay(),
-          diff = d.getDate() - day + (day == 0 ? -6 : 1); 
-      return new Date(d.setDate(diff));
-    }
-
-    function getSunday(d) {
-        d = new Date(d);
-        var day = d.getDay(),
-            diff = d.getDate() + (day == 0 ? 0 : 7 - day); 
-        return new Date(d.setDate(diff));
-    }
-
     const fp = flatpickr(".flatpickr-range", {
       mode: "range",
       dateFormat: "Y-m-d",
       locale: "es",
-      weekNumbers: true,
+      weekNumbers: false,
+      conjunction: " a ",
       onChange: function(selectedDates, dateStr, instance) {
          document.getElementById('filtro_rapido').value = "";
-      },
-      onClose: function(selectedDates, dateStr, instance) {
-          if (selectedDates.length > 0) {
-              const start = getMonday(selectedDates[0]);
-              const end = getSunday(selectedDates[selectedDates.length - 1]);
-              instance.setDate([start, end], true);
-          }
       }
     });
+
+    // Función auxiliar para formatear fechas a YYYY-MM-DD
+    function formatFechaYMD(date) {
+      const d = new Date(date);
+      let month = '' + (d.getMonth() + 1);
+      let day = '' + d.getDate();
+      const year = d.getFullYear();
+
+      if (month.length < 2) month = '0' + month;
+      if (day.length < 2) day = '0' + day;
+
+      return [year, month, day].join('-');
+    }
 
     // Función global para el filtro rápido de fechas
     window.seleccionarRango = function(tipo) {
@@ -86,7 +78,10 @@ $configData = Helper::appClasses();
       let inicio, fin;
       const hoy = new Date();
       
-      if (tipo === 'este_mes') {
+      if (tipo === 'ultimos_30_dias') {
+        fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 30);
+      } else if (tipo === 'este_mes') {
         inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
         fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
       } else if (tipo === 'mes_pasado') {
@@ -95,20 +90,14 @@ $configData = Helper::appClasses();
       } else if (tipo === 'este_ano') {
         inicio = new Date(hoy.getFullYear(), 0, 1);
         fin = new Date(hoy.getFullYear(), 11, 31);
-      } else if (tipo === 'trimestre_actual') {
-        const mesActual = hoy.getMonth();
-        const inicioMesTrimestre = Math.floor(mesActual / 3) * 3;
-        inicio = new Date(hoy.getFullYear(), inicioMesTrimestre, 1);
-        fin = new Date(hoy.getFullYear(), inicioMesTrimestre + 3, 0);
+      } else if (tipo === 'ano_pasado') {
+        inicio = new Date(hoy.getFullYear() - 1, 0, 1);
+        fin = new Date(hoy.getFullYear() - 1, 11, 31);
       }
 
-      // Ajustar a semanas completas
-      inicio = getMonday(inicio);
-      fin = getSunday(fin);
-
-      const fp = document.querySelector("#rango_fechas")._flatpickr;
-      if (fp) {
-        fp.setDate([inicio, fin]);
+      const inputRango = document.querySelector("#rango_fechas");
+      if (inputRango && inputRango._flatpickr) {
+        inputRango._flatpickr.setDate([inicio, fin], false);
       }
     };
 
@@ -508,20 +497,38 @@ $configData = Helper::appClasses();
             <span class="input-group-text bg-transparent border-none"><i class="ti ti-calendar text-black"></i></span>
             <select class="form-select text-black border-none" id="filtro_rapido" onchange="seleccionarRango(this.value)" >
                 <option value="">Rango de fecha</option>
+                <option value="ultimos_30_dias">Últimos 30 días</option>
                 <option value="este_mes">Este mes</option>
                 <option value="mes_pasado">Mes pasado</option>
                 <option value="este_ano">Este año</option>
-                <option value="trimestre_actual">Trimestre actual</option>
+                <option value="ano_pasado">Año pasado</option>
             </select>
           </div>
       </div>
 
       <!-- Flatpickr Range -->
       <div class="col-12 col-md-3 border-end border-gray p-0 d-flex">
-          <input type="text" class="form-control  border-none flatpickr-range text-center" id="rango_fechas" name="rango_fechas" value="{{ $rangoFechas }}" placeholder="DD/MM/AAAA - DD/MM/AAAA">
+          <input type="text" class="form-control  border-none flatpickr-range text-center" id="rango_fechas" name="rango_fechas" value="{{ $rangoFechas }}" placeholder="AAAA-MM-DD a AAAA-MM-DD">
       </div>
             
-      @if($esVistaDetalle)
+      @if($esSoloMinisterio)
+        @if($sedesDisponibles->count() > 1)
+        <div class="col-12 col-md-6 border-end border-gray p-0 d-flex align-items-center">
+          <select name="sedes_seleccionadas[]" class="selectpicker form-select border-none w-100" multiple data-actions-box="true" data-select-all-text="Todas" data-deselect-all-text="Borrar" data-style="btn-default border-0" data-live-search="true" title="Sedes de tu ministerio...">
+            @foreach($sedesDisponibles as $sede)
+                <option value="{{ $sede->id }}" {{ in_array($sede->id, $sedesSeleccionadas) ? 'selected' : '' }}>{{ $sede->nombre }}</option>
+            @endforeach
+          </select>
+        </div>
+        @else
+        <div class="col-12 col-md-6 border-end border-gray px-3 d-flex align-items-center">
+          <input type="hidden" name="sedes_seleccionadas[]" value="{{ $sedesDisponibles->first()?->id }}">
+          <span class="badge bg-label-primary fs-6 py-2 px-3">
+            <i class="ti ti-building me-1"></i> {{ $sedesDisponibles->first()?->nombre ?? 'Sin sede asignada' }}
+          </span>
+        </div>
+        @endif
+      @elseif($esVistaDetalle)
       <div class="col-12 col-md-6 border-end border-gray p-0 d-flex align-items-center">
         <input type="hidden" name="bloque_detalle_id" value="{{ $bloqueActual->id }}">
           <!-- Fila de Filtro de Sedes (Vista Detalle) -->  
@@ -588,6 +595,13 @@ $configData = Helper::appClasses();
         <h4 class="mb-4 text-black fw-semibold text-uppercase">Total cosecha
           @if($esVistaDetalle)
               <span class="text-primary">{{ $bloqueActual->nombre }}</span>
+          @elseif($esSoloMinisterio)
+          <div class="d-flex">
+            <span class="text-black small fw-normal">
+              <b>Sedes:</b>
+              {{ $sedesDisponibles->whereIn('id', $sedesSeleccionadas)->pluck('nombre')->implode(', ') }}
+            </span>
+          </div>
           @else
           <div class="d-flex">
             <span class="text-black small fw-normal">
@@ -811,7 +825,7 @@ $configData = Helper::appClasses();
                 <div>
                   <h6 class="card-title mb-0 fw-bold">Tipo de vinculación semanal</h6>
                   <small class="text-black">
-                    Histórico semanal según tipo de vinculación
+                    Histórico semanal según tipo de vinculación (Lunes a Domingo)
                   </small>
                 </div>
               </div>
@@ -848,7 +862,9 @@ $configData = Helper::appClasses();
                     xaxis: {
                         categories: dataVinc.labels,
                         labels: {
-                            style: { fontSize: '10px', fontFamily: 'Poppins' }
+                            style: { fontSize: '10px', fontFamily: 'Poppins' },
+                            rotate: -20,
+                            rotateAlways: dataVinc.labels.length > 5
                         }
                     },
                     yaxis: {
@@ -863,6 +879,9 @@ $configData = Helper::appClasses();
                         fontFamily: 'Poppins'
                     },
                     tooltip: {
+                         x: {
+                            formatter: function (val) { return "Semana: " + val; }
+                         },
                          y: {
                             formatter: function (val) { return val + " personas" }
                         }
@@ -873,6 +892,7 @@ $configData = Helper::appClasses();
         });
     </script>
 
+    @if(!$esSoloMinisterio || $sedesDisponibles->count() > 1)
     <hr class="my-5">
 
     <!-- Sección de Detalles por Bloque/Sede -->
@@ -880,6 +900,8 @@ $configData = Helper::appClasses();
       <h5 class="text-black fw-semibold text-uppercase mb-0">
           @if($esVistaDetalle)
               Detalle por Sedes: <span class="text-primary">{{ $bloqueActual->nombre }}</span>
+          @elseif($esSoloMinisterio)
+              Detalle por sedes de tu ministerio
           @else
               Detalle por bloques
           @endif
@@ -906,7 +928,7 @@ $configData = Helper::appClasses();
                                 <div class="card mb-3">
                                     <div class="card-body py-3 border-bottom">
                                         <h5 class="card-title mb-0 fw-semibold">
-                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_total', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalCosecha }}</a>
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_total', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalCosecha }}</a>
                                         </h5>
                                         <small class="text-black">Total cosecha</small> 
                                     </div>
@@ -914,7 +936,7 @@ $configData = Helper::appClasses();
                                 <div class="card mb-3">
                                     <div class="card-body py-3 border-bottom">
                                         <h5 class="card-title mb-0 fw-semibold">
-                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'deserciones', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->cosechaDesercion }}</a>
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'deserciones', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->cosechaDesercion }}</a>
                                         </h5>
                                         <small class="text-black">Deserciones</small>
                                     </div>
@@ -922,7 +944,7 @@ $configData = Helper::appClasses();
                                 <div class="card mb-3">
                                     <div class="card-body py-3 border-bottom">
                                         <h5 class="card-title mb-0 fw-semibold">
-                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_efectiva', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->cosechaEfectiva }}</a>
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_efectiva', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->cosechaEfectiva }}</a>
                                         </h5>
                                         <small class="text-black">Cosecha efectiva</small>
                                     </div>
@@ -955,7 +977,7 @@ $configData = Helper::appClasses();
                                     @foreach($dato->vinculacionesCosecha as $vinc)
                                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
                                             {{ $vinc->nombre }}
-                                                <a class="fw-semibold" href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_vinculacion_' . $vinc->id, $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $vinc->usuarios_count }}</a>
+                                                <a class="fw-semibold" href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_vinculacion_' . $vinc->id, ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $vinc->usuarios_count }}</a>
                                            
                                         </li>
                                     @endforeach
@@ -970,6 +992,7 @@ $configData = Helper::appClasses();
                                 <div class="card h-100 border">
                                     <div class="card-header py-2">
                                         <h6 class="card-title mb-0 fw-bold fs-6">Cosecha por semanas</h6>
+                                        <small class="text-muted" style="font-size: 11px;">(Lunes a Domingo)</small>
                                     </div>
                                     <div class="card-body p-2">
                                         <div id="cosechaSemanalChart{{ $dato->id }}"></div>
@@ -981,6 +1004,7 @@ $configData = Helper::appClasses();
                                 <div class="card h-100 border">
                                     <div class="card-header py-2">
                                         <h6 class="card-title mb-0 fw-bold fs-6">Tipo de vinculación semanal</h6>
+                                        <small class="text-muted" style="font-size: 11px;">(Lunes a Domingo)</small>
                                     </div>
                                     <div class="card-body p-2">
                                         <div id="vinculacionSemanalChart{{ $dato->id }}"></div>
@@ -1014,10 +1038,19 @@ $configData = Helper::appClasses();
                                         colors: ['#7367f0', '#ea5455'],
                                         xaxis: {
                                             categories: dataSemanal{{ $dato->id }}.map(item => item.x),
-                                            labels: { style: { fontSize: '9px' } }
+                                            labels: {
+                                                style: { fontSize: '9px' },
+                                                rotate: -20,
+                                                rotateAlways: dataSemanal{{ $dato->id }}.length > 5
+                                            }
                                         },
                                         yaxis: { labels: { formatter: val => Math.floor(val) } },
-                                        legend: { show: false }
+                                        legend: { show: false },
+                                        tooltip: {
+                                            x: {
+                                                formatter: function (val) { return "Semana: " + val; }
+                                            }
+                                        }
                                     };
                                     new ApexCharts(document.querySelector("#cosechaSemanalChart{{ $dato->id }}"), optionsSemanal{{ $dato->id }}).render();
                                 }
@@ -1046,19 +1079,31 @@ $configData = Helper::appClasses();
                                         },
                                         xaxis: {
                                             categories: dataVinc{{ $dato->id }}.labels,
-                                            labels: { style: { fontSize: '9px' } }
+                                            labels: {
+                                                style: { fontSize: '9px' },
+                                                rotate: -20,
+                                                rotateAlways: dataVinc{{ $dato->id }}.labels.length > 5
+                                            }
                                         },
                                         yaxis: {
                                             labels: { formatter: val => Math.floor(val) }
                                         },
-                                        legend: {  fontSize: '10px' }
+                                        legend: {  fontSize: '10px' },
+                                        tooltip: {
+                                            x: {
+                                                formatter: function (val) { return "Semana: " + val; }
+                                            },
+                                            y: {
+                                                formatter: function (val) { return val + " personas"; }
+                                            }
+                                        }
                                     };
                                     new ApexCharts(document.querySelector("#vinculacionSemanalChart{{ $dato->id }}"), optionsVinc{{ $dato->id }}).render();
                                 }
                             });
                         </script>
 
-                        @if(!$esVistaDetalle)
+                        @if($tipoDesglose == 'bloque')
                         <div class="d-flex justify-content-end py-2 ">
                               <!-- Botón para ir al Drill-Down del Bloque -->
                               <a href="{{ route('consolidacion.dashboard', array_merge(request()->except(['sede_id', 'bloque_id']), ['bloque_detalle_id' => $dato->id, 'tab' => 'indicador-1'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
@@ -1073,6 +1118,7 @@ $configData = Helper::appClasses();
             </div>
         @endforeach
     </div>
+    @endif
 
 
   </div> <!-- Fin Tab 1 -->
@@ -1239,7 +1285,7 @@ $configData = Helper::appClasses();
                 <div>
                   <h6 class="card-title mb-0 fw-bold">Matrículas por semana</h6>
                   <small class="text-black">
-                    Histórico de matrículas por semana
+                    Histórico semanal de matrículas en escuelas (Lunes a Domingo)
                   </small>
                 </div>
               </div>
@@ -1277,8 +1323,10 @@ $configData = Helper::appClasses();
                     },
                     xaxis: {
                         categories: dataMatriculas.map(item => item.x),
-                         labels: {
-                            style: { fontSize: '10px', fontFamily: 'Poppins' }
+                        labels: {
+                            style: { fontSize: '10px', fontFamily: 'Poppins' },
+                            rotate: -20,
+                            rotateAlways: dataMatriculas.length > 5
                         }
                     },
                     yaxis: {
@@ -1288,6 +1336,9 @@ $configData = Helper::appClasses();
                         }
                     },
                     tooltip: {
+                         x: {
+                            formatter: function (val) { return "Semana: " + val; }
+                         },
                          y: {
                             formatter: function (val) { return val + " matrículas" }
                         }
@@ -1298,12 +1349,15 @@ $configData = Helper::appClasses();
         });
     </script>
     
+    @if(!$esSoloMinisterio || $sedesDisponibles->count() > 1)
     <hr class="my-5">
 
     <div class="d-flex justify-content-between align-items-center mb-4 mt-5">
       <h5 class="text-black fw-semibold text-uppercase mb-0">
           @if($esVistaDetalle)
               Detalle por Sedes: <span class="text-primary">{{ $bloqueActual->nombre }}</span>
+          @elseif($esSoloMinisterio)
+              Detalle por sedes de tu ministerio
           @else
               Detalle por bloques
           @endif
@@ -1331,7 +1385,7 @@ $configData = Helper::appClasses();
                                 <div class="card mb-3">
                                     <div class="card-body py-3">
                                         <h5 class="card-title mb-0 fw-semibold">
-                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'total_matriculas', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalMatriculas }}</a>
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'total_matriculas', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalMatriculas }}</a>
                                         </h5>
                                         <small class="text-black">Total matrículas</small> 
                                     </div>
@@ -1342,7 +1396,7 @@ $configData = Helper::appClasses();
                                 <div class="card mb-3 ">
                                     <div class="card-body py-3">
                                         <h5 class="card-title mb-0 fw-semibold">
-                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'matriculas_efectivos', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->matriculasEfectivos }}</a>
+                                            <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'matriculas_efectivos', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->matriculasEfectivos }}</a>
                                         </h5>
                                         <small class="text-black">Matrículas efectivas</small> 
                                     </div>
@@ -1447,7 +1501,7 @@ $configData = Helper::appClasses();
                                     <div class="card-header d-flex justify-content-between">
                                         <div>
                                             <h6 class="card-title mb-0 fw-bold">Matrículas por semana</h6>
-                                            <small class="text-black">Histórico de matrículas por semana</small>
+                                            <small class="text-black">Histórico de matrículas por semana (Lunes a Domingo)</small>
                                         </div>
                                     </div>
                                     <div class="card-body">                  
@@ -1484,13 +1538,18 @@ $configData = Helper::appClasses();
                                         xaxis: {
                                             categories: dataMatriculas{{ $dato->id }}.map(item => item.x),
                                             labels: {
-                                                style: { fontSize: '9px', fontFamily: 'Poppins' }
+                                                style: { fontSize: '9px', fontFamily: 'Poppins' },
+                                                rotate: -20,
+                                                rotateAlways: dataMatriculas{{ $dato->id }}.length > 5
                                             }
                                         },
                                         yaxis: {
                                             labels: { formatter: val => Math.floor(val) }
                                         },
                                         tooltip: {
+                                            x: {
+                                                formatter: function (val) { return "Semana: " + val; }
+                                            },
                                             y: { formatter: val => val + " matrículas" }
                                         }
                                     };
@@ -1499,7 +1558,7 @@ $configData = Helper::appClasses();
                             });
                         </script>
                         
-                        @if(!$esVistaDetalle)
+                        @if($tipoDesglose == 'bloque')
                         <div class="d-flex justify-content-end py-2 ">
                               <a href="{{ route('consolidacion.dashboard', array_merge(request()->except(['sede_id', 'bloque_id']), ['bloque_detalle_id' => $dato->id, 'tab' => 'escuelas'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
                                   Ver detalle sedes
@@ -1604,6 +1663,7 @@ $configData = Helper::appClasses();
             </script>
         @endforeach
     </div>
+    @endif
   </div>
 
   <!-- Tab 3: Membresías -->
@@ -1841,10 +1901,13 @@ $configData = Helper::appClasses();
    
 
     <!-- Sección de Detalles por Bloque/Sede -->
+    @if(!$esSoloMinisterio || $sedesDisponibles->count() > 1)
     <div class="mb-4 mt-5">
       <h4 class="text-black fw-semibold text-uppercase mb-0">
           @if($esVistaDetalle)
               Detalle por Sedes: <span class="text-primary">{{ $bloqueActual->nombre }}</span>
+          @elseif($esSoloMinisterio)
+              Detalle por sedes de tu ministerio
           @else
               Detalle por bloques
           @endif
@@ -1871,7 +1934,7 @@ $configData = Helper::appClasses();
                           <div class="col-md-4 mb-3">
                               <div class="p-3 rounded h-100">
                                   <h5 class="mb-0 fw-bold text-black">
-                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'total_miembros', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalMiembros }}</a>
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'total_miembros', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalMiembros }}</a>
                                   </h5>
                                   <small class="text-black">Total miembros</small>
                               </div>
@@ -1940,7 +2003,7 @@ $configData = Helper::appClasses();
                           <div class="col-md-4 mb-3">
                               <div class="p-3 rounded h-100">
                                   <h5 class="mb-0 fw-bold text-black">
-                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'union_libre_matriculados', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalUnionLibreMatriculados }}</a>
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'union_libre_matriculados', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->totalUnionLibreMatriculados }}</a>
                                   </h5>
                                   <small class="text-black">Unión libre matriculados</small>
                               </div>
@@ -1948,7 +2011,7 @@ $configData = Helper::appClasses();
                           <div class="col-md-4 mb-3">
                               <div class="p-3 rounded h-100">
                                   <h5 class="mb-0 fw-bold text-black">
-                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'miembros_formalizados', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->miembrosFormalizados }}</a>
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'miembros_formalizados', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->miembrosFormalizados }}</a>
                                   </h5>
                                   <small class="text-black">Miembros que estaban en unión libre</small>
                               </div>
@@ -1956,7 +2019,7 @@ $configData = Helper::appClasses();
                           <div class="col-md-4 mb-3">
                               <div class="p-3 rounded h-100">
                                   <h5 class="mb-0 fw-bold text-black">
-                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'pendientes_membresia_union_libre', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->pendientesMembresiaUnionLibre }}</a>
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'pendientes_membresia_union_libre', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->pendientesMembresiaUnionLibre }}</a>
                                   </h5>
                                   <small class="text-black">Pendientes por membresía (Unión libre)</small>
                               </div>
@@ -1986,7 +2049,7 @@ $configData = Helper::appClasses();
                           <div class="col-md-4 mb-3">
                               <div class="p-3 rounded h-100">
                                   <h5 class="mb-0 fw-bold text-black">
-                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'miembros_ubicados', $esVistaDetalle ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->miembrosUbicados }}</a>
+                                    <a href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'miembros_ubicados', ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $dato->miembrosUbicados }}</a>
                                   </h5>
                                   <small class="text-black">Miembros ubicados en grupo</small>
                               </div>
@@ -2009,7 +2072,7 @@ $configData = Helper::appClasses();
 
                         </div>
                          
-                        @if(!$esVistaDetalle)
+                        @if($tipoDesglose == 'bloque')
                         <div class="d-flex justify-content-end py-2">
                               <!-- Botón para ir al Drill-Down del Bloque -->
                               <a href="{{ route('consolidacion.dashboard', array_merge(request()->except(['sede_id', 'bloque_id']), ['bloque_detalle_id' => $dato->id, 'tab' => 'indicador-3'])) }}" class="btn btn-sm rounded-pill btn-outline-secondary ms-2 z-index-2 position-relative" style="z-index: 5;">
@@ -2023,6 +2086,7 @@ $configData = Helper::appClasses();
             </div>
         @endforeach
     </div>
+    @endif
   </div> <!-- Fin Tab Content (End of Indicator 3 content) -->
 
 <script>

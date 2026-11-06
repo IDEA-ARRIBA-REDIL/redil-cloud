@@ -10,23 +10,21 @@
 
 @section('content')
 <div class="container-fluid mt-4">
-    {{-- Header --}}
-    <div class="row g-4 mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-center">
-            <div>
-                <h4 class="mb-1 fw-bold text-dark d-flex align-items-center">
-                    <i class="ti ti-trophy me-2 text-primary"></i> Tipos de Hitos
-                </h4>
-                <p class="text-muted mb-0">Administra las clasificaciones, comportamientos y capacidades de los hitos congregacionales.</p>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ route('configuracion.index') }}" class="btn btn-outline-secondary rounded-pill px-3">
-                    <i class="ti ti-arrow-left me-1"></i> Configuración
+    {{-- Header de Navegación y Acciones --}}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+                    <i class="ti ti-arrow-left"></i>
                 </a>
-                <a href="{{ route('tipo-hitos.creacionTipoHitos') }}" class="btn btn-primary rounded-pill px-4">
-                    <i class="ti ti-plus me-1"></i> Crear nuevo
-                </a>
+                <h4 class="mb-0 fw-semibold text-primary">Tipos de hitos</h4>
             </div>
+            <p class="text-black mb-0 small">Administra las clasificaciones, comportamientos y capacidades de los hitos congregacionales.</p>
+        </div>
+        <div>
+            <a href="{{ route('tipo-hitos.creacionTipoHitos') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <i class="ti ti-plus me-1"></i> Crear nuevo
+            </a>
         </div>
     </div>
 

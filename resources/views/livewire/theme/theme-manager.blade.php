@@ -43,7 +43,7 @@
                     @endif
 
                     <div class="row g-4">
-                        @foreach($settings[$activeCategory] as $setting)
+                        @foreach($settings[$activeCategory] ?? [] as $setting)
                             <div class="col-sm-6 col-lg-4" wire:key="card-{{ $setting['id'] }}">
                                 <div class="card border rounded h-100 transition-all hover-shadow {{ $editingId === $setting['id'] ? 'border-primary' : '' }}">
                                     <!-- Preview Section -->
@@ -104,6 +104,9 @@
                                                     </div>
                                                     
                                                     @error('editingValue')
+                                                        <div class="text-danger mt-1" style="font-size: 0.75rem;">{{ $message }}</div>
+                                                    @enderror
+                                                    @error('editingValue2')
                                                         <div class="text-danger mt-1" style="font-size: 0.75rem;">{{ $message }}</div>
                                                     @enderror
                                                 </div>

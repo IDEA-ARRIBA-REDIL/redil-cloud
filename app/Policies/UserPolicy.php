@@ -26,13 +26,23 @@ class UserPolicy
             return false;
         }
 
-        $rolActivo = $usuarioLogueado->roles()->wherePivot('activo', true)->first();
+        $rolActivo = $usuarioLogueado->rolActivoParaPermisos();
 
         if (! $rolActivo) {
             return false;
         }
 
-        return $this->tienePermiso($rolActivo, 'personas.subitem_nuevo_asistente');
+        if (! $this->tienePermiso($rolActivo, 'personas.subitem_nuevo_asistente')) {
+            return false;
+        }
+
+        // Verificar que el formulario esté asignado al rol activo del usuario
+        if (! $formulario->roles()->where('roles.id', $rolActivo->id)->exists()) {
+            return false;
+        }
+
+        // Verificar si el usuario cumple la restricción de edad para operar este formulario
+        return $formulario->puedeSerOperadoPor($usuarioLogueado);
     }
 
     public function modificarUsuarioPolitica(?User $usuarioLogueado, ?FormularioUsuario $formulario = null): bool
@@ -45,7 +55,7 @@ class UserPolicy
             return false;
         }
 
-        $rolActivo = $usuarioLogueado->roles()->wherePivot('activo', true)->first();
+        $rolActivo = $usuarioLogueado->rolActivoParaPermisos();
 
         if (! $rolActivo) {
             return false;
@@ -56,7 +66,7 @@ class UserPolicy
 
     public function verPerfilUsuarioPolitica(User $usuarioLogueado, User $usuarioUrl, string $nombrePermiso): bool
     {
-        $rolActivo = $usuarioLogueado->roles()->wherePivot('activo', true)->first();
+        $rolActivo = $usuarioLogueado->rolActivoParaPermisos();
 
         if (! $rolActivo) {
             return false;
@@ -84,7 +94,7 @@ class UserPolicy
     public function relacionesFamiliaresUsuarioPolitica(User $usuarioLogueado, User $usuarioUrl): bool
     {
         // Obtenemos el rol activo del usuario que está realizando la acción.
-        $rolActivo = $usuarioLogueado->roles()->wherePivot('activo', true)->first();
+        $rolActivo = $usuarioLogueado->rolActivoParaPermisos();
 
         // Si por alguna razón no hay un rol activo, denegamos el permiso.
         if (! $rolActivo) {
@@ -105,7 +115,7 @@ class UserPolicy
 
     public function geoasignacionUsuarioPolitica(User $usuarioLogueado, User $usuarioUrl): bool
     {
-        $rolActivo = $usuarioLogueado->roles()->wherePivot('activo', true)->first();
+        $rolActivo = $usuarioLogueado->rolActivoParaPermisos();
 
         if (! $rolActivo) {
             return false;
@@ -122,7 +132,7 @@ class UserPolicy
 
     public function informacionCongregacionalPolitica(User $usuarioLogueado, User $usuarioUrl): bool
     {
-        $rolActivo = $usuarioLogueado->roles()->wherePivot('activo', true)->first();
+        $rolActivo = $usuarioLogueado->rolActivoParaPermisos();
 
         if (! $rolActivo) {
             return false;
@@ -142,7 +152,7 @@ class UserPolicy
      */
     public function gestionarTareasConsolidacionPolitica(User $usuarioLogueado, User $persona): bool
     {
-        $rolActivo = $usuarioLogueado->roles()->wherePivot('activo', true)->first();
+        $rolActivo = $usuarioLogueado->rolActivoParaPermisos();
 
         if (! $rolActivo) {
             return false;

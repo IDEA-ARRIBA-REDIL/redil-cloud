@@ -113,7 +113,12 @@ class EscuelaController extends Controller
      */
     public function gestionarEscuelas()
     {
-        $escuelas = Escuela::all();
+        $escuelas = Escuela::withCount([
+            'matriculas',
+            'periodos as periodos_activos_count' => function ($query) {
+                $query->where('estado', true);
+            },
+        ])->get();
         // Considera usar auth()->user() directamente si no necesitas específicamente el modelo User asociado al rol
         $rolActivo = auth()->user()->roles()->where('activo', true)->first();
         // $usuario = User::find($rolActivo->pivot->model_id); // Esto podría fallar si el rol no es de tipo User
@@ -385,15 +390,15 @@ class EscuelaController extends Controller
         //    Usamos Eager Loading para cargar todas las relaciones necesarias de una sola vez
         $matriculas = Matricula::whereIn('periodo_id', $periodosActivosIds)
             ->with([
-                // Carga el usuario y selecciona solo las columnas necesarias
-                'user:id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,identificacion',
-                // Carga la relación con el periodo
-                'periodo:id,nombre',
-                // Carga las relaciones anidadas para obtener la materia y el horario
-                'horarioMateriaPeriodo.materiaPeriodo.materia:id,nombre',
+                // Carga el usuario con su sede asignada
+                'user:id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,identificacion,sede_id',
+                'user.sede:id,nombre',
+                // Carga la relación con el periodo con fechas y sistema de calificaciones
+                'periodo:id,nombre,fecha_fin,sistema_calificaciones_id',
+                // Carga las relaciones anidadas para obtener la materia, configuración de notas/asistencias y el horario
+                'horarioMateriaPeriodo.materiaPeriodo.materia:id,nombre,habilitar_calificaciones,habilitar_asistencias,asistencias_minimas',
                 'horarioMateriaPeriodo.horarioBase.aula:id,nombre',
-                // Carga la sede asociada directamente a la matrícula (si existe la relación)
-                // Si la sede viene del aula, ajusta esta línea
+                // Carga la sede asociada directamente a la matrícula
                 'sede:id,nombre',
             ])
             ->orderBy('periodo_id') // Ordena por periodo

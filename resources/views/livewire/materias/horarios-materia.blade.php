@@ -173,7 +173,7 @@
                             <option value="{{ $sede->id }}">{{ $sede->nombre }}</option>
                         @endforeach
                     </select>
-                    @error('sede_id')
+                    @error('sedeAula')
                         <span class="text-danger">{{ $message }}</span>
                     @enderror
                 </div>
@@ -408,7 +408,6 @@
             </div>
         </div>
     </div>
-</div>
 
 
 @assets
@@ -431,50 +430,102 @@
 
         $(document).ready(function() {
             // Configurar cierre controlado
-
-
             Livewire.on('filtrosAplicados', () => {
                 $('#addEventSidebarFiltros').offcanvas('hide');
             });
 
-            // Agregar este nuevo listener
+            // Reiniciar los selects del offcanvas de filtros
             Livewire.on('resetearFiltrosOffcanvas', () => {
-                // Reiniciar los selects del offcanvas de filtros
                 $('#addEventSidebarFiltros select').val('').trigger('change');
             });
 
+            // Abrir Offcanvas
+            Livewire.on('abrirOffcanvas', (event) => {
+                const detail = Array.isArray(event) ? event[0] : (event?.detail || event);
+                const nombreOffCanvas = detail?.nombreModal;
+                if (!nombreOffCanvas) return;
 
-            // Agrega estos nuevos listeners
-            Livewire.on('abrirOffcanvas', () => {
+                const offcanvasElement = document.getElementById(nombreOffCanvas);
+                if (!offcanvasElement) return;
 
-
-                const nombreOffCanvas = event.detail.nombreModal;
-                $('#' + nombreOffCanvas).offcanvas('show');
-
-
-                const backdrop = document.createElement('div');
-                backdrop.className = 'offcanvas-backdrop fade show';
-                document.body.appendChild(backdrop);
-
-                var offcanvasElement = document.getElementById(nombreOffCanvas);
-                var offcanvas = new bootstrap.Offcanvas(offcanvasElement, {
+                let offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasElement, {
                     backdrop: true
                 });
                 offcanvas.show();
-                offcanvasElement.addEventListener('hidden.bs.offcanvas', () => {
-                    backdrop.remove();
-                });
-
-
             });
 
-            Livewire.on('cerrarOffcanvas', () => {
-                const nombreOffCanvas = event.detail.nombreModal;
-                $('#' + nombreOffCanvas).offcanvas('hide');
+            // Cerrar Offcanvas
+            Livewire.on('cerrarOffcanvas', (event) => {
+                const detail = Array.isArray(event) ? event[0] : (event?.detail || event);
+                const nombreOffCanvas = detail?.nombreModal;
+                if (!nombreOffCanvas) return;
+
+                const offcanvasElement = document.getElementById(nombreOffCanvas);
+                if (offcanvasElement) {
+                    const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                    if (offcanvas) {
+                        offcanvas.hide();
+                    } else {
+                        $('#' + nombreOffCanvas).offcanvas('hide');
+                    }
+                }
                 $('.offcanvas-backdrop').remove();
+                document.body.classList.remove('offcanvas-backdrop');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
             });
 
+            // Limpiar formulario cuando se cierra el offcanvas de creación o edición con la X
+            ['offcanvasRight', 'offcanvasEditar'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('hidden.bs.offcanvas', () => {
+                        $('.offcanvas-backdrop').remove();
+                        @this.call('resetearFormulario');
+                    });
+                }
+            });
 
+            // Alerta de notificación general (éxito, advertencia, error)
+            Livewire.on('notificacion', (event) => {
+                const data = Array.isArray(event) ? event[0] : (event?.detail || event);
+                Swal.fire({
+                    title: data?.titulo || (data?.tipo === 'success' ? '¡Éxito!' : 'Aviso'),
+                    text: data?.mensaje || '',
+                    icon: data?.tipo || 'info',
+                    confirmButtonText: 'Aceptar',
+                    customClass: {
+                        confirmButton: 'btn btn-primary rounded-pill px-4'
+                    },
+                    buttonsStyling: false
+                });
+            });
+
+            // Confirmación SweetAlert2 para eliminar horario sin matrículas
+            Livewire.on('confirmarEliminarHorario', (event) => {
+                const data = Array.isArray(event) ? event[0] : (event?.detail || event);
+                const detalleHorario = [data?.dia, data?.hora, data?.aula].filter(Boolean).join(' • ');
+
+                Swal.fire({
+                    title: '¿Eliminar horario?',
+                    html: detalleHorario
+                        ? `Estás a punto de eliminar el horario <b>${detalleHorario}</b>.<br>Esta acción no se puede deshacer.`
+                        : '¿Estás seguro de que deseas eliminar este horario?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar',
+                    customClass: {
+                        confirmButton: 'btn btn-danger rounded-pill me-2 px-4',
+                        cancelButton: 'btn btn-outline-secondary rounded-pill px-4'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed && data?.id) {
+                        @this.call('eliminarHorario', data.id);
+                    }
+                });
+            });
         });
     </script>
 @endpush

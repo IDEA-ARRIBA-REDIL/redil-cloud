@@ -40,7 +40,7 @@ class UsuariosParaBusqueda extends Component
 
     public $queUsuariosCargar;  // Para saber si carga 'todos' los usuarios o los 'discipulos'
 
-    public $soloVerificados = true;  // Trae los usuarios con email verificado
+    public $soloVerificados = null;  // Deprecado: ahora se gobierna por el permiso 'personas.mostrar_asistentes_no_verificados'
 
     public $tipoBuscador;  // Parametro para saber si es de tipo = lista, multiple o unico.
 
@@ -222,7 +222,7 @@ class UsuariosParaBusqueda extends Component
     public function seleccionarUsuarios($usuarioId = null)
     {
         $agregar = true;
-        $msnTexto = 'No tienes los privilegios suficientes para desvincular a la persona de este grupo. Por favor, consulte a su administrador.';
+        $msnTexto = 'No tienes los privilegios suficientes para asignar a la persona de este grupo. Por favor, consulte a su administrador.';
 
         if ($usuarioId) {
             $user = User::withTrashed()->find($usuarioId);
@@ -704,6 +704,9 @@ class UsuariosParaBusqueda extends Component
 
     public function render()
     {
+        $rolActivo = $this->rolActivo ?? auth()->user()?->roles()->wherePivot('activo', true)->first();
+        $puedeVerNoVerificados = $rolActivo && $rolActivo->hasPermissionTo('personas.mostrar_asistentes_no_verificados');
+
         if ($this->queUsuariosCargar == 'todos') {
             $query = User::withTrashed()
                 // ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
@@ -712,7 +715,7 @@ class UsuariosParaBusqueda extends Component
         } elseif ($this->queUsuariosCargar == 'discipulos') {
             $query = auth()
                 ->user()
-                ->discipulos('todos')->toQuery();
+                ->discipulos('todos', ! $puedeVerNoVerificados, true);
         } elseif ($this->queUsuariosCargar == 'grupo') {
             $query = User::withTrashed()
                 ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
@@ -724,7 +727,7 @@ class UsuariosParaBusqueda extends Component
                 ->select('users.*');
         }
 
-        if ($this->soloVerificados) {
+        if (! $puedeVerNoVerificados) {
             $query = $query->whereNotNull('email_verified_at');
         }
 

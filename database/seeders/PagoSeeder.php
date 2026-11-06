@@ -13,7 +13,7 @@ class PagoSeeder extends Seeder
     public function run(): void
     {
         //
-        Pago::firstOrCreate([
+        /*Pago::firstOrCreate([
             'compra_id' => 1,
             'tipo_pago_id' => 1,
             'estado_pago_id' => 3,
@@ -27,6 +27,6 @@ class PagoSeeder extends Seeder
             'historial_carga_de_archivo_id' => 0,
             'comision' => 0,
             'valor_neto' => '40000',
-        ]);
+        ]);*/
     }
 }

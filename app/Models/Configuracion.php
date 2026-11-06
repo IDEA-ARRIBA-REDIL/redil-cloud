@@ -14,6 +14,8 @@ class Configuracion extends Model
 
     protected $guarded = ['id', 'singleton_key'];
 
+    protected $hidden = ['instagram_access_token'];
+
     /**
      * @return array<string, string>
      */
@@ -86,6 +88,10 @@ class Configuracion extends Model
             'envio_material' => 'boolean',
             'edad_minima_consolidacion' => 'integer',
             'marca_blanca' => 'boolean',
+            'instagram_access_token' => 'encrypted',
+            'instagram_expires_at' => 'datetime',
+            'instagram_connected_at' => 'datetime',
+            'instagram_refreshed_at' => 'datetime',
         ];
     }
 
@@ -93,5 +99,14 @@ class Configuracion extends Model
     public function rangoEdad(): HasMany
     {
         return $this->hasMany(RangoEdad::class);
+    }
+
+    public function getBannerDonacionOfrendaUrlAttribute(): ?string
+    {
+        if (empty($this->banner_donacion_ofrenda)) {
+            return null;
+        }
+
+        return tenant_asset('img/donaciones/'.$this->banner_donacion_ofrenda);
     }
 }

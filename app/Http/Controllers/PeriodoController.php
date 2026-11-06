@@ -2,46 +2,39 @@
 
 namespace App\Http\Controllers;
 
-
 // use Illuminate\Support\Facades\Storage; // Comentado si no se usa
-use Illuminate\View\View;
+use App\Exports\HorariosPeriodoExport;
 // use Illuminate\Validation\Rule; // Comentado si no se usa aquí
-use App\Helpers\Helpers; // Asumiendo que existe y se usa
-use Illuminate\Support\Facades\DB;
-use stdClass; // Asegúrate que stdClass esté disponible o importado
-use Illuminate\Support\Facades\Auth; // Comentado si no se usa
-use Illuminate\Support\Facades\Session; // Comentado si no se usa
-use Illuminate\Support\Facades\Log; // Para registrar errores
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Http\Request; // Importante para recibir los filtros
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\RedirectResponse;
-use App\Models\Configuracion;
-use App\Models\SistemaCalificacion;
-use App\Models\Periodo;
-use App\Models\MateriaPeriodo;
-use App\Models\MateriaAprobadaUsuario;
-use App\Models\Sede;
-use App\Models\Escuela;
-use App\Models\CorteEscuela; // Importar CorteEscuela
-use App\Models\CortePeriodo; // Importar CortePeriodo
-use App\Jobs\FinalizarPeriodoJob;
-use App\Models\MatriculaHorarioMateriaPeriodo; // <-- Añadir este import
-use App\Models\TrasladoMatriculaLog;      // <-- Añadir este import
-use App\Exports\HorariosPeriodoExport; // <-- Importa la nueva clase
-use App\Exports\InformeFinalPeriodoExport;
-use Maatwebsite\Excel\Facades\Excel;   // <-- Importa el Facade de Excel
+// Asumiendo que existe y se usa
 use App\Exports\InformeFinalMateriaExport;
-
-
-
+use App\Exports\InformeFinalPeriodoExport; // Asegúrate que stdClass esté disponible o importado
+// Comentado si no se usa
+// Comentado si no se usa
+use App\Jobs\FinalizarPeriodoJob; // Para registrar errores
+use App\Models\Configuracion;
+use App\Models\CorteEscuela; // Importante para recibir los filtros
+use App\Models\CortePeriodo;
+use App\Models\Escuela;
+use App\Models\MateriaAprobadaUsuario;
+use App\Models\MateriaPeriodo;
+use App\Models\Periodo;
+use App\Models\Sede;
+use App\Models\SistemaCalificacion;
+use App\Models\TrasladoMatriculaLog;
+use Illuminate\Http\RedirectResponse; // Importar CorteEscuela
+use Illuminate\Http\Request; // Importar CortePeriodo
+use Illuminate\Support\Facades\DB;
+// <-- Añadir este import
+use Illuminate\Support\Facades\Log;      // <-- Añadir este import
+use Illuminate\Support\Facades\Redirect; // <-- Importa la nueva clase
+use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;   // <-- Importa el Facade de Excel
+use stdClass;
 
 class PeriodoController extends Controller
 {
     /**
      * Muestra el formulario para crear un nuevo periodo.
-     *
-     * @return \Illuminate\View\View
      */
     public function crear(): View
     {
@@ -56,7 +49,6 @@ class PeriodoController extends Controller
             return [$escuela->id => $escuela->cortesEscuela->sortBy('orden')];
         });
 
-
         return view('contenido.paginas.escuelas.periodos.crear-periodo', [
             'configuracion' => $configuracion,
             'escuelas' => $escuelas, // Lista de escuelas para el select
@@ -69,7 +61,6 @@ class PeriodoController extends Controller
     /**
      * Guarda un nuevo periodo y sus cortes asociados.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function guardar(Request $request)
@@ -96,14 +87,14 @@ class PeriodoController extends Controller
                 function ($attribute, $value, $fail) use ($request) {
                     static $sumaCalculada = false;
                     static $sumaPorcentajes = 0;
-                    if (!$sumaCalculada && is_array($request->input('cortes'))) {
+                    if (! $sumaCalculada && is_array($request->input('cortes'))) {
                         $sumaPorcentajes = collect($request->input('cortes'))->sum('porcentaje');
                         if (abs($sumaPorcentajes - 100) > 0.01) {
                             $fail("La suma de los porcentajes de los cortes debe ser exactamente 100%. Suma actual: {$sumaPorcentajes}%.");
                         }
                         $sumaCalculada = true;
                     }
-                }
+                },
             ],
         ], [
             // Mensajes de error personalizados
@@ -136,7 +127,7 @@ class PeriodoController extends Controller
 
         try {
             // 2. Crear la instancia de Periodo
-            $periodo = new Periodo();
+            $periodo = new Periodo;
             $periodo->nombre = $validatedData['nombre'];
             $periodo->escuela_id = $validatedData['escuelaId'];
             $periodo->sistema_calificaciones_id = $validatedData['sistema_calificacion_id'];
@@ -148,7 +139,7 @@ class PeriodoController extends Controller
 
             // 3. Crear los CortesPeriodo asociados
             foreach ($validatedData['cortes'] as $corteData) {
-                $cortePeriodo = new CortePeriodo();
+                $cortePeriodo = new CortePeriodo;
                 $cortePeriodo->periodo_id = $periodo->id;
                 $cortePeriodo->corte_escuela_id = $corteData['corte_escuela_id'];
                 $cortePeriodo->fecha_inicio = $corteData['fecha_inicio'];
@@ -160,7 +151,7 @@ class PeriodoController extends Controller
 
             // 4. Asociar las Sedes al Periodo (relación muchos a muchos)
             // Verifica que el array 'sedes' exista y no esté vacío antes de sincronizar
-            if (!empty($validatedData['sedes'])) {
+            if (! empty($validatedData['sedes'])) {
                 // sync() se encarga de añadir/quitar registros en la tabla pívot
                 // para que coincidan exactamente con los IDs proporcionados.
                 $periodo->sedes()->sync($validatedData['sedes']);
@@ -170,7 +161,6 @@ class PeriodoController extends Controller
                 // $periodo->sedes()->sync([]); // Esto eliminaría todas las asociaciones
             }
 
-
             DB::commit(); // Confirmar transacción
 
             // 5. Redireccionar con mensaje de éxito
@@ -179,19 +169,16 @@ class PeriodoController extends Controller
                 ->with('success', '¡Periodo, cortes y sedes creados exitosamente!');
         } catch (\Exception $e) {
             DB::rollBack(); // Revertir transacción en caso de error
-            Log::error("Error al guardar periodo: " . $e->getMessage());
+            Log::error('Error al guardar periodo: '.$e->getMessage());
 
             return redirect()->route('periodo.crear')
-                ->withErrors(['error_general' => 'Ocurrió un error inesperado al guardar el periodo: ' . $e->getMessage()])
+                ->withErrors(['error_general' => 'Ocurrió un error inesperado al guardar el periodo: '.$e->getMessage()])
                 ->withInput();
         }
     }
 
     /**
      * Muestra la vista para actualizar un periodo existente.
-     *
-     * @param  \App\Models\Periodo  $periodo
-     * @return \Illuminate\View\View
      */
     public function actualizar(Periodo $periodo): View
     {
@@ -228,11 +215,11 @@ class PeriodoController extends Controller
 
         // Agrupamos las estadísticas en un array para pasarlo a la vista
         $estadisticas = [
-            'totalMatriculas'   => $totalMatriculas,
-            'totalAprobadas'    => $totalAprobadas,
-            'totalNoAprobadas'  => $totalNoAprobadas,
-            'totalBloqueadas'   => $totalBloqueadas,
-            'totalTraslados'    => $totalTraslados,
+            'totalMatriculas' => $totalMatriculas,
+            'totalAprobadas' => $totalAprobadas,
+            'totalNoAprobadas' => $totalNoAprobadas,
+            'totalBloqueadas' => $totalBloqueadas,
+            'totalTraslados' => $totalTraslados,
         ];
 
         // --- FIN: LÓGICA PARA ESTADÍSTICAS ---
@@ -251,18 +238,17 @@ class PeriodoController extends Controller
 
     public function exportarHorarios(Periodo $periodo)
     {
-        $fileName = 'horarios-' . \Str::slug($periodo->nombre) . '-' . now()->format('Y-m-d') . '.xlsx';
+        $fileName = 'horarios-'.\Str::slug($periodo->nombre).'-'.now()->format('Y-m-d').'.xlsx';
 
         return Excel::download(new HorariosPeriodoExport($periodo), $fileName);
     }
 
     public function informeFinal(Periodo $periodo)
     {
-        $fileName = 'informe-final-' . \Str::slug($periodo->nombre) . '-' . now()->format('Y-m-d') . '.xlsx';
+        $fileName = 'informe-final-'.\Str::slug($periodo->nombre).'-'.now()->format('Y-m-d').'.xlsx';
 
         return Excel::download(new InformeFinalPeriodoExport($periodo), $fileName);
     }
-
 
     public function eliminar($periodo)
     {
@@ -282,7 +268,6 @@ class PeriodoController extends Controller
             'fecha_limite_maestro' => 'nullable|date_format:Y-m-d',
             'sedes' => 'required|array', // 'sometimes' porque podría no enviarse si no hay cambios o se quieren desasociar todas
 
-
             // Validación para los cortes (si también permites actualizarlos aquí)
             // Si los cortes se gestionan en otra interfaz, puedes omitir esta parte.
             // Por ahora, asumiremos que los cortes del periodo NO se actualizan desde este formulario.
@@ -300,7 +285,6 @@ class PeriodoController extends Controller
             // 2. Actualizar los datos del Periodo
             $periodo->nombre = $validatedData['nombre'];
 
-
             $periodo->sistema_calificaciones_id = $validatedData['sistema_calificacion_id'];
             $periodo->fecha_inicio = $validatedData['fecha_inicio'];
             $periodo->fecha_fin = $validatedData['fecha_fin'];
@@ -315,7 +299,6 @@ class PeriodoController extends Controller
             $sedesParaSincronizar = $request->input('sedes', []); // Default a array vacío si no se envía
             $periodo->sedes()->sync($sedesParaSincronizar);
 
-
             // NOTA: La actualización de CortePeriodo es más compleja.
             // Si necesitas actualizar los cortes (fechas, porcentajes),
             // requeriría iterar sobre los cortes enviados, compararlos con los existentes,
@@ -329,10 +312,10 @@ class PeriodoController extends Controller
                 ->with('success', '¡Periodo actualizado exitosamente!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al actualizar periodo ID {$periodo->id}: " . $e->getMessage());
+            Log::error("Error al actualizar periodo ID {$periodo->id}: ".$e->getMessage());
 
             return redirect()->route('periodo.actualizar', $periodo->id)
-                ->withErrors(['error_general' => 'Ocurrió un error inesperado al actualizar el periodo: ' . $e->getMessage()])
+                ->withErrors(['error_general' => 'Ocurrió un error inesperado al actualizar el periodo: '.$e->getMessage()])
                 ->withInput();
         }
     }
@@ -357,9 +340,10 @@ class PeriodoController extends Controller
             FinalizarPeriodoJob::dispatch($periodo);
 
             // Devolvemos al usuario inmediatamente con un mensaje de éxito
-            return redirect()->route('periodo.gestionar')->with('success', 'El proceso de finalización para el periodo "' . $periodo->nombre . '" ha comenzado. Se te notificará cuando termine.');
+            return redirect()->route('periodo.gestionar')->with('success', 'El proceso de finalización para el periodo "'.$periodo->nombre.'" ha comenzado. Se te notificará cuando termine.');
         } catch (\Exception $e) {
-            Log::error("Error al despachar el Job FinalizarPeriodoJob para el periodo ID {$periodo->id}: " . $e->getMessage());
+            Log::error("Error al despachar el Job FinalizarPeriodoJob para el periodo ID {$periodo->id}: ".$e->getMessage());
+
             return redirect()->route('periodo.gestionar')->with('error', 'Hubo un error al intentar iniciar el proceso de finalización.');
         }
     }
@@ -394,16 +378,26 @@ class PeriodoController extends Controller
         $filtroEscuelaId = $request->input('escuelaId');
         $filtroAnio = $request->input('anioFiltro');
 
-        // Construcción de la consulta base con Eager Loading
-        $queryPeriodos = Periodo::query()->with(['escuela', 'sistemaCalificaciones', 'sedes', 'matriculas']);
+        // Construcción de la consulta base con Eager Loading y contadores de matrículas
+        $queryPeriodos = Periodo::query()
+            ->with(['escuela', 'sistemaCalificaciones', 'sedes'])
+            ->withCount([
+                'matriculas',
+                'matriculas as matriculas_activas_count' => function ($query) {
+                    $query->where('bloqueado', false);
+                },
+                'matriculas as matriculas_bloqueadas_count' => function ($query) {
+                    $query->where('bloqueado', true);
+                },
+            ]);
 
         // --- INICIO DE LÓGICA DE FILTRADO COMPLETA ---
 
         // Aplicar filtro por Nombre
         if ($filtroNombre) {
-            $queryPeriodos->where('nombre', 'ilike', '%' . $filtroNombre . '%');
-            $tag = new stdClass();
-            $tag->label = 'Nombre: ' . $filtroNombre;
+            $queryPeriodos->where('nombre', 'ilike', '%'.$filtroNombre.'%');
+            $tag = new stdClass;
+            $tag->label = 'Nombre: '.$filtroNombre;
             $tag->field = 'filtro_nombre';
             $tag->value = $filtroNombre;
             $tagsBusqueda[] = $tag;
@@ -414,8 +408,8 @@ class PeriodoController extends Controller
         if ($filtroEscuelaId) {
             $queryPeriodos->where('escuela_id', $filtroEscuelaId);
             $escuelaSeleccionada = $escuelas->find($filtroEscuelaId);
-            $tag = new stdClass();
-            $tag->label = 'Escuela: ' . $escuelaSeleccionada->nombre;
+            $tag = new stdClass;
+            $tag->label = 'Escuela: '.$escuelaSeleccionada->nombre;
             $tag->field = 'escuelaId';
             $tag->value = $filtroEscuelaId;
             $tagsBusqueda[] = $tag;
@@ -428,8 +422,8 @@ class PeriodoController extends Controller
                 $query->where('sedes.id', $filtroSedeId);
             });
             $sedeSeleccionada = $sedes->find($filtroSedeId);
-            $tag = new stdClass();
-            $tag->label = 'Sede: ' . $sedeSeleccionada->nombre;
+            $tag = new stdClass;
+            $tag->label = 'Sede: '.$sedeSeleccionada->nombre;
             $tag->field = 'sedeFiltro';
             $tag->value = $filtroSedeId;
             $tagsBusqueda[] = $tag;
@@ -439,8 +433,8 @@ class PeriodoController extends Controller
         // Aplicar filtro por Estado (Activo/Inactivo)
         if ($request->filled('estado')) { // filled() verifica que no sea nulo ni vacío
             $queryPeriodos->where('estado', $filtroEstado);
-            $tag = new stdClass();
-            $tag->label = 'Estado: ' . ($filtroEstado == '1' ? 'Activo' : 'Inactivo');
+            $tag = new stdClass;
+            $tag->label = 'Estado: '.($filtroEstado == '1' ? 'Activo' : 'Inactivo');
             $tag->field = 'estado';
             $tag->value = $filtroEstado;
             $tagsBusqueda[] = $tag;
@@ -450,8 +444,8 @@ class PeriodoController extends Controller
         // Aplicar filtro por Año de Inicio
         if ($filtroAnio) {
             $queryPeriodos->whereYear('fecha_inicio', $filtroAnio);
-            $tag = new stdClass();
-            $tag->label = 'Año: ' . $filtroAnio;
+            $tag = new stdClass;
+            $tag->label = 'Año: '.$filtroAnio;
             $tag->field = 'anioFiltro';
             $tag->value = $filtroAnio;
             $tagsBusqueda[] = $tag;
@@ -476,7 +470,7 @@ class PeriodoController extends Controller
             'filtroEstadoActual' => $filtroEstado,
             'filtroEscuelaIdActual' => $filtroEscuelaId,
             'filtroAnioActual' => $filtroAnio,
-            'rolActivo' => $rolActivo
+            'rolActivo' => $rolActivo,
         ]);
     }
 
@@ -484,10 +478,10 @@ class PeriodoController extends Controller
     {
 
         $configuracion = Configuracion::find(1);
+
         return view('contenido.paginas.escuelas.periodos.listado-alumnos-periodo', [
             'configuracion' => $configuracion,
             'periodo' => $periodo,
-
 
         ]);
     }
@@ -496,9 +490,9 @@ class PeriodoController extends Controller
     {
         $periodo->estado = true;
         $periodo->save();
+
         return redirect()->route('periodo.gestionar')->with('success', 'Se habilito correctamente el periodo.');
     }
-
 
     public function cortes(Periodo $periodo): View
     {
@@ -530,11 +524,9 @@ class PeriodoController extends Controller
     {
         $configuracion = Configuracion::find(1);
 
-
         return view('contenido.paginas.escuelas.periodos.gestionar-horarios-materia-periodo', [
             'configuracion' => $configuracion,
             'materiaPeriodo' => $materiaPeriodo,
-
 
         ]);
     }
@@ -542,7 +534,7 @@ class PeriodoController extends Controller
     public function exportarInformeFinalMateria(MateriaPeriodo $materiaPeriodo)
     {
         // 1. Verificación de seguridad: Solo permite la descarga si la materia está finalizada.
-        if (!$materiaPeriodo->finalizado) {
+        if (! $materiaPeriodo->finalizado) {
             return redirect()->back()->with('mensaje_error', 'No se puede generar el informe de una materia que no ha sido finalizada.');
         }
 

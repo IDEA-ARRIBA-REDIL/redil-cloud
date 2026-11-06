@@ -152,6 +152,11 @@
                                     <i class="ti ti-chart-bar me-2"></i> Dashboard del periodo
                                 </a>
                             </li>
+                            <li>
+                                <a href="{{ route('periodo.dashboard-horarios', $periodo->id) }}" class="dropdown-item">
+                                    <i class="ti ti-calendar-time me-2"></i> Dashboard de horarios
+                                </a>
+                            </li>
                              @if( $rolActivo->hasPermissionTo('escuelas.opcion_modificar_periodo'))
                             <li>
                                 <a href="{{ route('periodo.actualizar', $periodo->id) }}" class="dropdown-item">
@@ -166,7 +171,7 @@
                             </li>
                              <li>
                                 <a href="{{ route('periodo.exportarHorarios', $periodo->id) }}" class="dropdown-item">
-                                    Listado horarios
+                                    <i class="ti ti-file-spreadsheet me-2"></i> Exportar horarios (Excel)
                                 </a>
                             </li>
 
@@ -242,46 +247,62 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="row justify-content-between mb-2">
-                    <div class="col-12 col-md-6 align-items-center">
+                @php
+                    $totalMatriculas = $periodo->matriculas_count ?? ($periodo->matriculas ? $periodo->matriculas->count() : 0);
+                    $matriculasActivas = $periodo->matriculas_activas_count ?? ($periodo->matriculas ? $periodo->matriculas->where('bloqueado', false)->count() : 0);
+                    $matriculasBloqueadas = $periodo->matriculas_bloqueadas_count ?? ($periodo->matriculas ? $periodo->matriculas->where('bloqueado', true)->count() : 0);
+                @endphp
 
-                        <div class="d-flex flex-column">
-                            <small class="text-muted"> <i class="ti ti-id text-black me-2"></i>Total
-                                matrículas:</small>
-                            <small class="fw-semibold text-black">
-                                {{ $periodo->matriculas ? $periodo->matriculas->count() : '0' }}
-                            </small>
+                <!-- Bloque destacado de matrículas -->
+                <div class="p-2 mb-3 rounded border bg-lighter d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="badge rounded bg-label-primary p-2 me-2">
+                            <i class="ti ti-users fs-5"></i>
                         </div>
-
+                        <div>
+                            <small class="text-muted d-block fw-medium" style="font-size: 0.72rem;">Matrículas activas</small>
+                            <span class="fw-bold text-primary fs-5 lh-1">{{ number_format($matriculasActivas) }}</span>
+                            <small class="text-muted" style="font-size: 0.75rem;">/ {{ number_format($totalMatriculas) }} total</small>
+                        </div>
                     </div>
-                     <div class="col-12 col-md-6 align-items-center">
-                        <div class="d-flex flex-column text-star">
-                            <small class="text-muted"> <i class="ti ti-calendar-month me-2"></i> Fecha
-                                Lim maestros:</small>
-                            <small class="fw-semibold text-black">
-                                {{ \Carbon\Carbon::parse($periodo->fecha_maxima_entrega_notas)->format('d/m/Y') }}
-                            </small>
-                        </div>
-                        </div>
-
+                    <div>
+                        @if ($matriculasBloqueadas > 0)
+                            <span class="badge bg-label-danger rounded-pill fw-semibold" title="Matrículas actualmente bloqueadas">
+                                <i class="ti ti-lock me-1"></i>{{ $matriculasBloqueadas }} {{ $matriculasBloqueadas === 1 ? 'bloqueada' : 'bloqueadas' }}
+                            </span>
+                        @else
+                            <span class="badge bg-label-success rounded-pill fw-semibold" title="No hay matrículas bloqueadas">
+                                <i class="ti ti-circle-check me-1"></i>0 bloqueadas
+                            </span>
+                        @endif
+                    </div>
                 </div>
-                <div class="row justify-content-between mb-2">
-                    <div class="col-12 col-md-6 align-items-center">
 
-                        <div class="d-flex flex-column text-star">
-                            <small class="text-muted"> <i class="ti ti-calendar-month me-2"></i> Fecha
-                                inicio:</small>
+                <div class="row justify-content-between mb-2">
+                    <div class="col-12 col-md-6 align-items-center mb-2">
+                        <div class="d-flex flex-column text-start">
+                            <small class="text-muted"> <i class="ti ti-calendar-event me-1"></i> Fecha inicio:</small>
                             <small class="fw-semibold text-black">
                                 {{ \Carbon\Carbon::parse($periodo->fecha_inicio)->format('d/m/Y') }}
                             </small>
                         </div>
                     </div>
-                    <div class="col-12 col-md-6 align-items-center">
-
-                        <div class="d-flex flex-column text-star">
-                            <small class="text-muted"> <i class="ti ti-calendar-month me-2"></i>Fecha fin:</small>
+                    <div class="col-12 col-md-6 align-items-center mb-2">
+                        <div class="d-flex flex-column text-start">
+                            <small class="text-muted"> <i class="ti ti-calendar-event me-1"></i> Fecha fin:</small>
                             <small class="fw-semibold text-black">
                                 {{ \Carbon\Carbon::parse($periodo->fecha_fin)->format('d/m/Y') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row justify-content-between">
+                    <div class="col-12 align-items-center">
+                        <div class="d-flex flex-column text-start">
+                            <small class="text-muted"> <i class="ti ti-calendar-time me-1"></i> Fecha límite notas (maestros):</small>
+                            <small class="fw-semibold text-black">
+                                {{ \Carbon\Carbon::parse($periodo->fecha_maxima_entrega_notas)->format('d/m/Y') }}
                             </small>
                         </div>
                     </div>

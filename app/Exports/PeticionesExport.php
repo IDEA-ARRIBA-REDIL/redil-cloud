@@ -87,6 +87,12 @@ class PeticionesExport implements FromView
         $peticiones = $peticiones->whereIn('tipo_peticion_id', $this->parametrosBusqueda->filtroTipoPeticiones);
       }
 
+      // filtro por formularios de usuario
+      if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->filtroFormularios))
+      {
+        $peticiones = $peticiones->whereIn('formulario_usuario_id', $this->parametrosBusqueda->filtroFormularios);
+      }
+
       // Busqueda por palabra clave
       if ($this->parametrosBusqueda &&  isset($this->parametrosBusqueda->buscar)) {
         $buscar = htmlspecialchars($this->parametrosBusqueda->buscar);
@@ -116,7 +122,7 @@ class PeticionesExport implements FromView
       $peticiones = $peticiones->toQuery()
         ->leftJoin('users', 'peticiones.user_id', '=', 'users.id')
         ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
-        ->with(['pais', 'tipoPeticion', 'autorCreacion', 'asignado'])
+        ->with(['pais', 'tipoPeticion', 'autorCreacion', 'asignado', 'formularioUsuario'])
         ->get();
 
       $peticiones->map(function ($peticion) {

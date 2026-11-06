@@ -51,11 +51,13 @@
               </div>
 
 
+              @if($persona->tipoUsuario)
               <div class="d-flex my-2 mb-5">
                 <span class="badge rounded-pill px-6 fw-light " style="background-color: {{ $persona->tipoUsuario->color }}">
                   <i class="{{ $persona->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $persona->tipoUsuario->nombre }}</span>
                 </span>
               </div>
+              @endif
 
               <div class="d-flex flex-column mb-3">
                   @if(isset($persona->tipoUsuario->id))

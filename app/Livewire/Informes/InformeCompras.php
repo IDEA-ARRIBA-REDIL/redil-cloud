@@ -305,7 +305,6 @@ class InformeCompras extends Component
             'pagos.actividadCategoria',
             'pagos.caja',
             'categorias.actividadCategoria',
-            'estadoPago',
         ])
             ->orderBy('fecha', 'desc');
 
@@ -331,22 +330,7 @@ class InformeCompras extends Component
         }
 
         if (! empty($f['estado'])) {
-            $estado = $f['estado'];
-
-            // 4 = Abonada
-            if ($estado == '4') {
-                $query->whereHas('abonos');
-            } else {
-                $query->whereHas('estadoPago', function ($q) use ($estado) {
-                    if ($estado == '1') { // Pendiente
-                        $q->where('estado_pendiente', true);
-                    } elseif ($estado == '2') { // Pagada/Finalizada
-                        $q->where('estado_final_inscripcion', true);
-                    } elseif ($estado == '3') { // Anulada
-                        $q->where('estado_anulado_inscripcion', true);
-                    }
-                });
-            }
+            $query->estadoInforme($f['estado']);
         }
 
         if (! empty($f['moneda_id'])) {
@@ -369,21 +353,10 @@ class InformeCompras extends Component
         return $this->obtenerComprasQuery()->paginate(9);
     }
 
-    private function calcularTotales()
+    private function calcularTotales(): \Illuminate\Support\Collection
     {
-        $query = $this->obtenerComprasQuery();
-
-        $stats = $query->get()->groupBy('moneda_id')->map(function ($compras) {
-            $moneda = $compras->first()->moneda;
-
-            return [
-                'moneda' => $moneda ? $moneda->nombre : 'Desconocida',
-                'total' => $compras->sum('valor'),
-                'count' => $compras->count(),
-            ];
-        });
-
-        return $stats;
+        return app(\App\Services\TotalesFinancierosService::class)
+            ->porMoneda($this->obtenerComprasQuery());
     }
 
     public function exportarExcel()

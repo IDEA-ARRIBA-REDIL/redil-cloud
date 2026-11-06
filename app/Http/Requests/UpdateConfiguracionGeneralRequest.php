@@ -77,6 +77,9 @@ class UpdateConfiguracionGeneralRequest extends FormRequest
             'mensajeExisteAutoMatricula' => ['nullable', 'string'],
 
             'edadMinimaConsolidacion' => ['required', 'integer', 'min:0'],
+
+            'mensajeDonacionOfrenda' => ['nullable', 'string', 'max:50000'],
+            'bannerDonacionOfrenda' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
         ];
     }
 
@@ -107,17 +110,24 @@ class UpdateConfiguracionGeneralRequest extends FormRequest
 
     protected function passedValidation(): void
     {
-        if (! is_string($this->input('mensajeBienvenida'))) {
-            return;
-        }
-
         $config = HTMLPurifier_Config::createDefault();
         $config->set('HTML.Allowed', 'p[class|style],br,strong,b,em,i,u,s,h1,h2,h3,h4,h5,h6,span[class|style],ol,ul,li,a[href|target|rel],blockquote,img[src|alt|width|height]');
         $config->set('CSS.AllowedProperties', ['color', 'background-color', 'text-align', 'font-size', 'font-family']);
         $config->set('Attr.AllowedFrameTargets', ['_blank']);
 
-        $this->merge([
-            'mensajeBienvenida' => (new HTMLPurifier($config))->purify($this->input('mensajeBienvenida')),
-        ]);
+        $purifier = new HTMLPurifier($config);
+        $merged = [];
+
+        if (is_string($this->input('mensajeBienvenida'))) {
+            $merged['mensajeBienvenida'] = $purifier->purify($this->input('mensajeBienvenida'));
+        }
+
+        if (is_string($this->input('mensajeDonacionOfrenda'))) {
+            $merged['mensajeDonacionOfrenda'] = $purifier->purify($this->input('mensajeDonacionOfrenda'));
+        }
+
+        if (! empty($merged)) {
+            $this->merge($merged);
+        }
     }
 }

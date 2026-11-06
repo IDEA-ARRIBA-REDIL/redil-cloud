@@ -10,10 +10,23 @@
 @endsection
 
 @section('content')
-  <div class="row g-4 mb-4">
-    <div class="col-12 text-end">
-      <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalCrear">
-        <i class="ti ti-plus me-1"></i> Nuevo Tipo Servicio
+  <!-- Header de Navegación y Acciones -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+          <i class="ti ti-arrow-left"></i>
+        </a>
+        <h4 class="mb-0 fw-semibold text-primary">Servicios de actividades</h4>
+      </div>
+      <p class="text-black mb-0 small">
+        Administra los tipos de servicios asignables a las actividades y eventos.
+      </p>
+    </div>
+
+    <div>
+      <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrear">
+        <i class="ti ti-plus me-1"></i> Nuevo tipo servicio
       </button>
     </div>
   </div>

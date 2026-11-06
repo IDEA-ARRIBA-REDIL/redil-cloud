@@ -8,6 +8,7 @@ use App\Models\Actividad;
 use App\Models\Configuracion;
 use App\Models\Iglesia;
 use App\Models\NovedadActividad;
+use App\Models\Sede;
 use App\Models\TipoNovedad;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +30,9 @@ class GestionNovedades extends Component
 
     #[Url(history: true)]
     public string $filtroActividadId = '';
+
+    #[Url(history: true)]
+    public string $filtroSedeId = '';
 
     #[Url(history: true)]
     public string $filtroTipoNovedadId = '';
@@ -56,6 +60,30 @@ class GestionNovedades extends Component
 
     public string $nuevoTipoDescripcion = '';
 
+    /**
+     * Verifica si el usuario autenticado o su rol activo tiene permisos de gestión de novedades.
+     */
+    public function puedeGestionarNovedades(): bool
+    {
+        $usuario = Auth::user();
+        if (! $usuario) {
+            return false;
+        }
+
+        $permisosGestion = [
+            'novedades.gestionar_novedades',
+            'actividades.gestionar_novedades',
+        ];
+
+        if ($usuario->hasAnyPermission($permisosGestion)) {
+            return true;
+        }
+
+        $rolActivo = $usuario->roles()->wherePivot('activo', true)->first();
+
+        return $rolActivo ? $rolActivo->hasAnyPermission($permisosGestion) : false;
+    }
+
     public function updatingBusqueda(): void
     {
         $this->resetPage();
@@ -67,6 +95,11 @@ class GestionNovedades extends Component
     }
 
     public function updatingFiltroActividadId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFiltroSedeId(): void
     {
         $this->resetPage();
     }
@@ -91,6 +124,7 @@ class GestionNovedades extends Component
         $this->reset([
             'filtroEstado',
             'filtroActividadId',
+            'filtroSedeId',
             'filtroTipoNovedadId',
             'filtroFechaInicio',
             'filtroFechaFin',
@@ -105,7 +139,7 @@ class GestionNovedades extends Component
     public function verNovedad(int $id): void
     {
         $this->novedadSeleccionadaId = $id;
-        $this->novedadSeleccionada = NovedadActividad::with(['actividad.tipo', 'tipoNovedad', 'materia', 'respondidoPor'])->find($id);
+        $this->novedadSeleccionada = NovedadActividad::with(['actividad.tipo', 'sede', 'tipoNovedad', 'materia', 'respondidoPor'])->find($id);
 
         if ($this->novedadSeleccionada) {
             $this->mensajeRespuesta = $this->novedadSeleccionada->respuesta ?? '';
@@ -128,7 +162,7 @@ class GestionNovedades extends Component
      */
     public function cambiarEstado(int $novedadId, string $estado): void
     {
-        if (! Auth::user()->can('actividades.gestionar_novedades')) {
+        if (! $this->puedeGestionarNovedades()) {
             $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'Acceso denegado', msnTexto: 'No tienes permisos para gestionar novedades.');
 
             return;
@@ -148,7 +182,7 @@ class GestionNovedades extends Component
      */
     public function enviarRespuesta(): void
     {
-        if (! Auth::user()->can('actividades.gestionar_novedades')) {
+        if (! $this->puedeGestionarNovedades()) {
             $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'Acceso denegado', msnTexto: 'No tienes permisos para responder novedades.');
 
             return;
@@ -176,13 +210,17 @@ class GestionNovedades extends Component
             // Preparación del correo con DefaultMail y la vista estándar emails.default-mail
             $iglesia = Iglesia::find(1);
             $configuracion = Configuracion::find(1);
+            $actividad = $this->novedadSeleccionada->actividad;
+            $contextoTitulo = $actividad ? $actividad->nombre : ($iglesia?->nombre ?? 'Soporte General');
 
             $mailData = new stdClass;
-            $mailData->subject = "Respuesta a tu novedad - {$this->novedadSeleccionada->actividad->nombre}";
+            $mailData->subject = "Respuesta a tu novedad - {$contextoTitulo}";
             $mailData->eyebrow = 'ATENCIÓN DE NOVEDAD · '.strtoupper(now()->translatedFormat('F Y'));
             $mailData->titulo = "Hola, {$this->novedadSeleccionada->nombre}";
-            $mailData->subtitulo = "Hemos revisado tu reporte sobre la actividad: {$this->novedadSeleccionada->actividad->nombre}";
-            $mailData->preheader = "Respuesta a tu novedad sobre {$this->novedadSeleccionada->actividad->nombre}";
+            $mailData->subtitulo = $actividad
+                ? "Hemos revisado tu reporte sobre la actividad: {$actividad->nombre}"
+                : 'Hemos revisado tu novedad registrada en nuestra plataforma';
+            $mailData->preheader = "Respuesta a tu novedad: {$this->novedadSeleccionada->asunto}";
 
             // Cuerpo del correo con el formato del mensaje del asesor
             $mensajeHtml = '<p>Estimado(a) <strong>'.e($this->novedadSeleccionada->nombre).'</strong>,</p>';
@@ -190,11 +228,14 @@ class GestionNovedades extends Component
             $mensajeHtml .= '<div style="background-color: #f3f4f6; border-left: 4px solid #0099d9; padding: 14px 16px; margin: 16px 0; border-radius: 4px; font-style: italic;">';
             $mensajeHtml .= nl2br(e($this->mensajeRespuesta));
             $mensajeHtml .= '</div>';
-            $mensajeHtml .= '<p>Puedes ingresar nuevamente al perfil de la actividad para verificar tu inscripción o proceso:</p>';
+
+            if ($actividad) {
+                $mensajeHtml .= '<p>Puedes ingresar nuevamente al perfil de la actividad para verificar tu inscripción o proceso:</p>';
+                $mailData->boton_texto = 'Ver Actividad';
+                $mailData->boton_url = route('actividades.perfil', $this->novedadSeleccionada->actividad_id);
+            }
 
             $mailData->mensaje = $mensajeHtml;
-            $mailData->boton_texto = 'Ver Actividad';
-            $mailData->boton_url = route('actividades.perfil', $this->novedadSeleccionada->actividad_id);
 
             Mail::to($this->novedadSeleccionada->email)->send(new DefaultMail($mailData));
 
@@ -212,7 +253,7 @@ class GestionNovedades extends Component
      */
     public function crearTipoNovedad(): void
     {
-        if (! Auth::user()->can('actividades.gestionar_novedades')) {
+        if (! $this->puedeGestionarNovedades()) {
             $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'Acceso denegado', msnTexto: 'No tienes permisos para administrar tipos de novedad.');
 
             return;
@@ -227,7 +268,7 @@ class GestionNovedades extends Component
         ]);
 
         TipoNovedad::create([
-            'nombre' => trim($nuevoTipoNombre ?? $this->nuevoTipoNombre),
+            'nombre' => trim($this->nuevoTipoNombre),
             'descripcion' => trim($this->nuevoTipoDescripcion),
             'activo' => true,
         ]);
@@ -241,7 +282,7 @@ class GestionNovedades extends Component
      */
     public function toggleTipoNovedad(int $tipoId): void
     {
-        if (! Auth::user()->can('actividades.gestionar_novedades')) {
+        if (! $this->puedeGestionarNovedades()) {
             $this->dispatch('msn', msnIcono: 'error', msnTitulo: 'Acceso denegado', msnTexto: 'No tienes permisos para modificar tipos de novedad.');
 
             return;
@@ -262,11 +303,12 @@ class GestionNovedades extends Component
      */
     public function exportarExcel()
     {
-        $nombreArchivo = 'novedades_actividades_'.now()->format('Ymd_His').'.xlsx';
+        $nombreArchivo = 'novedades_'.now()->format('Ymd_His').'.xlsx';
 
         return Excel::download(new NovedadesExport(
             estado: $this->filtroEstado ?: null,
-            actividadId: $this->filtroActividadId ? (int) $this->filtroActividadId : null,
+            actividadId: $this->filtroActividadId ?: null,
+            sedeId: $this->filtroSedeId ? (int) $this->filtroSedeId : null,
             tipoNovedadId: $this->filtroTipoNovedadId ? (int) $this->filtroTipoNovedadId : null,
             desde: $this->filtroFechaInicio ?: null,
             hasta: $this->filtroFechaFin ?: null,
@@ -277,9 +319,10 @@ class GestionNovedades extends Component
     public function render()
     {
         $novedades = NovedadActividad::query()
-            ->with(['actividad.tipo', 'tipoNovedad', 'materia', 'respondidoPor'])
+            ->with(['actividad.tipo', 'sede', 'tipoNovedad', 'materia', 'respondidoPor'])
             ->estado($this->filtroEstado ?: null)
-            ->actividad($this->filtroActividadId ? (int) $this->filtroActividadId : null)
+            ->actividad($this->filtroActividadId ?: null)
+            ->sede($this->filtroSedeId ? (int) $this->filtroSedeId : null)
             ->tipoNovedad($this->filtroTipoNovedadId ? (int) $this->filtroTipoNovedadId : null)
             ->fecha($this->filtroFechaInicio ?: null, $this->filtroFechaFin ?: null)
             ->buscar($this->busqueda ?: null)
@@ -293,7 +336,9 @@ class GestionNovedades extends Component
         $conteoTotal = NovedadActividad::count();
 
         $actividades = Actividad::orderBy('id', 'desc')->take(50)->get();
+        $sedes = Sede::orderBy('nombre')->get();
         $tiposNovedad = TipoNovedad::orderBy('id')->get();
+        $puedeGestionar = $this->puedeGestionarNovedades();
 
         return view('livewire.actividades.gestion-novedades', [
             'novedades' => $novedades,
@@ -302,7 +347,9 @@ class GestionNovedades extends Component
             'conteoFinalizados' => $conteoFinalizados,
             'conteoTotal' => $conteoTotal,
             'actividades' => $actividades,
+            'sedes' => $sedes,
             'tiposNovedad' => $tiposNovedad,
+            'puedeGestionar' => $puedeGestionar,
         ]);
     }
 }

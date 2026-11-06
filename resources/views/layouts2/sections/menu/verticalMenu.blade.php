@@ -5,9 +5,10 @@
     use App\Models\Configuracion;
     $configData = Helper::appClasses();
 
-    $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-    $formularios = $rolActivo->formularios()->where('tipo_formulario_id', '=', 1)->get();
-    $formularioMenores = $rolActivo->formularios()->where('tipo_formulario_id', '=', 4)->get();
+    $usuarioAutenticado = auth()->user();
+    $rolActivo = $usuarioAutenticado->roles()->wherePivot('activo', true)->first();
+    $formularios = $rolActivo ? $rolActivo->formularios()->where('tipo_formulario_id', '=', 1)->get()->filter(fn($f) => $f->puedeSerOperadoPor($usuarioAutenticado)) : collect();
+    $formularioMenores = $rolActivo ? $rolActivo->formularios()->where('tipo_formulario_id', '=', 4)->get()->filter(fn($f) => $f->puedeSerOperadoPor($usuarioAutenticado)) : collect();
     $grupo = auth()->user()->gruposEncargados()->first();
     $configuracion = Configuracion::find(1);
 @endphp
@@ -22,6 +23,7 @@
                 @else
                     <span class="app-brand-logo demo p-0">
                         @include('_partials.macros', [
+                        'contexto_logo' => 'menu_general',
                             'height' => '40px',
                             'width' => '40px',
                             'fill' => '#3772e4',

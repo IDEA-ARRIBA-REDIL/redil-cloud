@@ -11,7 +11,6 @@ use App\Services\LoginBrandingResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
@@ -51,28 +50,61 @@ class AuthenticatedSessionController extends Controller
      * PASO 3 COMO EL TIENE ESE REQUEST LA SESSION YA CARGADA PERO ADEMAS TIENE LA RUTA EL PREGUNTA QUE SI INTENDED TIENE CUALQUIER COSA QUE LO REDIRIJA
      * ALLA Y SINO HAY RUTA DE INTENDED EL ENTIENDE QUE DEBE REDIRIGIRSE AL HOME
      */
-    public function store(LoginRequest $request)
+    public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        // Obtener la URL guardada
-        // $redirectUrl = Session::get('url.intended');
-
-        // Limpiar la sesión
-        /*$crearHijo = Session::get('crearHijo');
-        if($crearHijo == 'si')
-        {
-          $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-          $formulario = $rolActivo->formularios()->where('tipo_formulario_id', '=', 4)->orderBy('edad_minima','asc')->first();
-
-          if($formulario)
-          return Redirect::to("/usuario/$formulario->id/nuevo");
-        }*/
-
         // Obtenemos el usuario autenticado
         $user = Auth::user();
+
+        // Validamos la restricción de edad mínima para logueo
+        $configuracion = Configuracion::first();
+
+        if ($configuracion && $configuracion->edad_minima_logueo > 0) {
+            if (! $user->fecha_nacimiento) {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')
+                    ->withInput($request->only('email'))
+                    ->with('error', 'Para iniciar sesión es necesario tener registrada su fecha de nacimiento. Por favor contacte al administrador.');
+            }
+
+            if ($user->edad() < $configuracion->edad_minima_logueo) {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')
+                    ->withInput($request->only('email'))
+                    ->with('error', "No cumples con la edad mínima requerida ({$configuracion->edad_minima_logueo} años) para acceder al sistema.");
+            }
+        }
+
+        // Aseguramos que el usuario tenga un rol activo si tiene roles asignados
+        $rolActivo = $user->asegurarRolActivo();
+
+        if (! $rolActivo) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->with('error', 'Su usuario aún no tiene ningún rol asignado. Por favor contacte al administrador.');
+        }
+
+        // Aseguramos que el usuario tenga un rol activo si tiene roles asignados
+        $rolActivo = $user->asegurarRolActivo();
+
+        if (! $rolActivo) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->with('error', 'Su usuario aún no tiene ningún rol asignado. Por favor contacte al administrador.');
+        }
 
         // Verificamos si tiene hijos y si NUNCA se le ha mostrado el modal
         if ($user->tiene_hijos && $user->mostrar_modal_agregar_hijos) {

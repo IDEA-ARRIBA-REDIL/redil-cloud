@@ -59,7 +59,7 @@
 
         @if(Route::is('dashboard'))
         <div class="">
-            <p class="text-white fs-5 my-auto">Hola, <b>{{ $usuario->nombre(2) }}</b> </p>
+            <p class="dashboard-greeting fs-5 my-auto">Hola, <b>{{ $usuario->nombre(2) }}</b> </p>
         </div>
         @endif
 

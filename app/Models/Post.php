@@ -17,6 +17,7 @@ class Post extends Model
     protected $fillable = [
         'user_id',
         'image_path',
+        'video_url',
         'descripcion',
         'fecha_inicio',
         'fecha_fin',
@@ -30,6 +31,15 @@ class Post extends Model
         'fecha_fin' => 'date',
         'visualizar_siempre' => 'boolean',
         'visible_todos' => 'boolean',
+    ];
+
+    protected $appends = [
+        'image_url',
+        'es_video',
+        'video_plataforma',
+        'es_video_vertical',
+        'video_embed_url',
+        'video_thumbnail_url',
     ];
 
     /**
@@ -161,6 +171,95 @@ class Post extends Model
 
         if (\Illuminate\Support\Facades\Storage::disk()->exists($path)) {
             return tenant_asset($path);
+        }
+
+        return null;
+    }
+
+    /**
+     * Determina si la publicación es de tipo video.
+     */
+    public function getEsVideoAttribute(): bool
+    {
+        return !empty($this->video_url);
+    }
+
+    /**
+     * Obtiene la plataforma del video (youtube o vimeo).
+     */
+    public function getVideoPlataformaAttribute(): ?string
+    {
+        if (!$this->video_url) {
+            return null;
+        }
+
+        $url = strtolower($this->video_url);
+        if (str_contains($url, 'youtube.com') || str_contains($url, 'youtu.be')) {
+            return 'youtube';
+        }
+        if (str_contains($url, 'vimeo.com')) {
+            return 'vimeo';
+        }
+
+        return null;
+    }
+
+    /**
+     * Determina si el video tiene formato vertical (Shorts / Reels / TikTok).
+     */
+    public function getEsVideoVerticalAttribute(): bool
+    {
+        if (!$this->video_url) {
+            return false;
+        }
+
+        $url = strtolower($this->video_url);
+        return str_contains($url, 'shorts') || str_contains($url, 'reels') || str_contains($url, 'tiktok.com');
+    }
+
+    /**
+     * Genera la URL normalizada para insertar en un <iframe>.
+     */
+    public function getVideoEmbedUrlAttribute(): ?string
+    {
+        if (!$this->video_url) {
+            return null;
+        }
+
+        $url = trim($this->video_url);
+
+        // 1. YouTube Shorts (formato: youtube.com/shorts/{id})
+        if (preg_match('/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/', $url, $matches)) {
+            return 'https://www.youtube.com/embed/' . $matches[1];
+        }
+
+        // 2. YouTube estándar o corto (watch?v={id} o youtu.be/{id})
+        if (preg_match('/(?:youtube\.com\/(?:watch\?.*v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $url, $matches)) {
+            return 'https://www.youtube.com/embed/' . $matches[1];
+        }
+
+        // 3. Vimeo (vimeo.com/{id})
+        if (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/', $url, $matches)) {
+            return 'https://player.vimeo.com/video/' . $matches[1];
+        }
+
+        return $url;
+    }
+
+    /**
+     * Genera la URL de miniatura automática si es posible (ej: YouTube).
+     */
+    public function getVideoThumbnailUrlAttribute(): ?string
+    {
+        if (!$this->video_url) {
+            return null;
+        }
+
+        $url = trim($this->video_url);
+
+        // Extraer ID de YouTube (shorts, watch o youtu.be)
+        if (preg_match('/(?:youtube\.com\/(?:shorts\/|watch\?.*v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $url, $matches)) {
+            return 'https://img.youtube.com/vi/' . $matches[1] . '/hqdefault.jpg';
         }
 
         return null;

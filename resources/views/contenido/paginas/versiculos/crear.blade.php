@@ -40,7 +40,7 @@
 
                     // Renderizamos la previsualización
                     renderizarPrevisualizacionVersiculo(selection);
-                } else if (data && typeof data === 'object' && data.versiculos) {
+                } else if (data && typeof data === 'object' && data.versiculos && data.versiculos.length > 0) {
                     document.getElementById('version_uri').value = data.version;
                     document.getElementById('libro_nombre').value = data.libro;
                     document.getElementById('cita_referencia').value = data.cita;
@@ -48,6 +48,13 @@
                     document.getElementById('texto_versiculo').value = JSON.stringify([data]);
 
                     renderizarPrevisualizacionVersiculo(data);
+                } else {
+                    document.getElementById('version_uri').value = '';
+                    document.getElementById('libro_nombre').value = '';
+                    document.getElementById('cita_referencia').value = '';
+                    document.getElementById('texto_versiculo').value = '';
+
+                    renderizarPrevisualizacionVersiculo(null);
                 }
             });
 

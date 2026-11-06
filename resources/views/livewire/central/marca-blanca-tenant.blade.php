@@ -63,10 +63,48 @@
 
         <div class="card mb-4">
             <div class="card-header border-bottom">
+                <h5 class="mb-1">Logos por ubicación</h5>
+                <p class="text-muted mb-0">Elige cada logo según el fondo de esa sección. Cambiar uno no modifica los demás ni los colores del tema.</p>
+            </div>
+            <div class="card-body pt-4">
+                <div class="row g-4">
+                    @foreach ([
+                        'logoLogin' => ['Logo del login', 'Pantalla de acceso. Para fondo blanco, utiliza un logo oscuro.', 'bg-light'],
+                        'logoMenuGeneral' => ['Logo del menú general', 'Menú principal. Para fondo negro, utiliza un logo blanco.', 'bg-dark'],
+                        'logoMenuEscuelas' => ['Logo del menú de escuelas', 'Menú del módulo de escuelas. Elige un logo que contraste con su fondo.', 'bg-dark'],
+                    ] as $campo => [$etiqueta, $ayuda, $fondo])
+                        <div class="col-md-4" wire:key="marca-{{ $campo }}">
+                            <label class="form-label" for="{{ $campo }}File">{{ $etiqueta }}</label>
+                            <div class="rounded border mb-3 p-3 {{ $fondo }} d-flex align-items-center justify-content-center" style="min-height: 120px;">
+                                @if($this->{$campo.'File'})
+                                    <img src="{{ $this->{$campo.'File'}->temporaryUrl() }}" alt="Vista previa: {{ $etiqueta }}" style="width: 180px; height: 90px; object-fit: contain;">
+                                @elseif($this->{$campo.'Url'})
+                                    <img src="{{ $this->{$campo.'Url'} }}" alt="{{ $etiqueta }} actual" style="width: 180px; height: 90px; object-fit: contain;">
+                                @else
+                                    <span class="small {{ $fondo === 'bg-dark' ? 'text-white' : 'text-muted' }}">Se utiliza el logo de respaldo.</span>
+                                @endif
+                            </div>
+                            <input id="{{ $campo }}File" type="file" class="form-control" wire:model="{{ $campo }}File" accept="image/png,image/jpeg" @disabled(! $planIncluyeLogo)>
+                            <div class="form-text">{{ $ayuda }} PNG o JPG, máximo 2 MB.</div>
+                            <div wire:loading wire:target="{{ $campo }}File" class="small text-muted mt-1">Cargando vista previa...</div>
+                            @error($campo.'File') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header border-bottom">
                 <h5 class="mb-0">Identidad de marca</h5>
             </div>
             <div class="card-body pt-4">
                 <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="nombreAppPersonalizado">Nombre de la aplicación (PWA / Web)</label>
+                        <input id="nombreAppPersonalizado" type="text" class="form-control" wire:model="nombreAppPersonalizado" placeholder="{{ $tenant->church_name }}" @disabled(! $planIncluyeLogo && ! $planIncluyeMarcaBlanca)>
+                        @error('nombreAppPersonalizado') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label" for="nombreCreador">Nombre del creador</label>
                         <input id="nombreCreador" type="text" class="form-control" wire:model="nombreCreador" @disabled(! $planIncluyeMarcaBlanca)>
@@ -108,7 +146,7 @@
             <div class="card-body pt-4">
                 <div class="row g-4">
                     <div class="col-md-4">
-                        <label class="form-label" for="logoAppFile">Logo principal</label>
+                        <label class="form-label" for="logoAppFile">Logo de respaldo general</label>
                         @if($logoAppFile)
                             <img src="{{ $logoAppFile->temporaryUrl() }}" class="d-block rounded border mb-3 p-2 bg-dark" alt="Vista previa del logo" style="width: 180px; height: 90px; object-fit: contain;">
                         @elseif($logoAppUrl)
@@ -121,7 +159,7 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label" for="logoAppNegroFile">Logo para fondo claro</label>
+                        <label class="form-label" for="logoAppNegroFile">Logo de respaldo para fondo claro</label>
                         @if($logoAppNegroFile)
                             <img src="{{ $logoAppNegroFile->temporaryUrl() }}" class="d-block rounded border mb-3 p-2 bg-light" alt="Vista previa del logo para fondo claro" style="width: 180px; height: 90px; object-fit: contain;">
                         @elseif($logoAppNegroUrl)
@@ -148,7 +186,7 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="guardar,logoAppFile,logoAppNegroFile,faviconAppFile">
+        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="guardar,logoAppFile,logoAppNegroFile,faviconAppFile,logoLoginFile,logoMenuGeneralFile,logoMenuEscuelasFile">
             <span wire:loading.remove wire:target="guardar">Guardar configuración</span>
             <span wire:loading wire:target="guardar">Guardando...</span>
         </button>

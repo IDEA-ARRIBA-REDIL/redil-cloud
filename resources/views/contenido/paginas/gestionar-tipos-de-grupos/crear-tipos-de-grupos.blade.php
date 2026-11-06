@@ -363,6 +363,8 @@ $configData = Helper::appClasses();
       </div>
     </div>
 
+    @include('contenido.paginas.gestionar-tipos-de-grupos.seccion-restricciones-roles')
+
   </div>
 
   <!-- botonera -->

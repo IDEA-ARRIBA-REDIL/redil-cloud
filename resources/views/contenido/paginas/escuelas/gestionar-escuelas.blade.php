@@ -112,7 +112,7 @@
 
                     <div class="card-body">
                         <div class="col-12 col-md-12">
-                            <div class="d-flex flex-column mb-3">
+                            <div class="d-flex flex-column">
                                 <div class="d-flex flex-row align-items-center justify-content-between mb-2">
                                     <div class="d-flex align-items-center">
                                         <i class="ti ti-notebook text-black me-1"></i>
@@ -134,7 +134,33 @@
                                             <small class="fw-semibold ms-1 text-black">No</small>
                                         @endif
                                     </div>
-                                  
+                                </div>
+
+                                <div class="d-flex flex-row align-items-center justify-content-between pt-2 border-top">
+                                    <div class="d-flex align-items-center" title="Total de matrículas registradas en esta escuela">
+                                        <i class="ti ti-users text-primary me-1"></i>
+                                        <small class="text-black">Matrículas: </small>
+                                        <span class="badge rounded-pill bg-label-primary ms-1 fw-bold">
+                                            {{ number_format($escuela->matriculas_count ?? $escuela->matriculas()->count()) }}
+                                        </span>
+                                    </div>
+
+                                    @php
+                                        $periodosActivos = $escuela->periodos_activos_count ?? $escuela->periodos()->where('estado', true)->count();
+                                    @endphp
+                                    <div class="d-flex align-items-center" title="Cantidad de periodos activos actualmente">
+                                        <i class="ti ti-calendar-check text-success me-1"></i>
+                                        <small class="text-black">Periodos activos: </small>
+                                        @if ($periodosActivos > 0)
+                                            <span class="badge rounded-pill bg-label-success ms-1 fw-bold">
+                                                {{ $periodosActivos }}
+                                            </span>
+                                        @else
+                                            <span class="badge rounded-pill bg-label-secondary ms-1 fw-bold">
+                                                0
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>

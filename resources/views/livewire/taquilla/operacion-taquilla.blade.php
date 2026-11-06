@@ -32,6 +32,13 @@
                     text-align: justify;
                 }
             }
+
+            .card-descripcion p {
+                margin-bottom: 0.25rem;
+            }
+            .card-descripcion p:last-child {
+                margin-bottom: 0;
+            }
         </style>
     @endsection
 
@@ -39,14 +46,29 @@
         @vite(['resources/assets/vendor/libs/flatpickr/flatpickr.js', 'resources/assets/vendor/libs/pickr/pickr.js', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js', 'resources/assets/vendor/libs/select2/select2.js', 'resources/assets/vendor/libs/moment/moment.js', 'resources/js/app.js'])
     @endsection
 
-    {{-- Cabecera de Taquilla Activa (Sin cambios) --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    {{-- Cabecera de Taquilla Activa --}}
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h4 class="mb-0 fw-semibold text-primary">Taquilla de pago</h4>
-            <p class="mb-0 text-black">
-                Operando desde: <strong class="text-dark">{{ $cajaActiva->nombre }}</strong>
-                ({{ $cajaActiva->puntoDePago->nombre }})
-            </p>
+            <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
+                <span class="text-black">
+                    Operando desde: <strong class="text-dark">{{ $cajaActiva->nombre }}</strong>
+                    ({{ $cajaActiva->puntoDePago->nombre }})
+                </span>
+                @if ($cajaActiva->horario_atencion)
+                    <span class="badge {{ $cajaActiva->estaEnHorario() ? 'bg-label-success' : 'bg-label-danger' }} rounded-pill">
+                        <i class="ti ti-clock me-1"></i>{{ $cajaActiva->horario_atencion }}
+                        @if (! $cajaActiva->estaEnHorario())
+                            (Fuera de horario)
+                        @endif
+                    </span>
+                @endif
+                @if (! $cajaActiva->estado)
+                    <span class="badge bg-label-secondary rounded-pill">
+                        <i class="ti ti-lock me-1"></i>Inactiva
+                    </span>
+                @endif
+            </div>
         </div>
         <a href="{{ route('taquilla.mis-cajas') }}" class="btn btn-sm btn-outline-secondary rounded-pill">
             <i class="ti ti-logout me-1"></i>
@@ -68,7 +90,30 @@
         </div>
         <div class="card-body">
 
-            <form id="form-verificar-requisitos" wire:submit.prevent="verificarRequisitos">
+            @if (! $cajaActiva->estado)
+                <div class="alert alert-secondary d-flex align-items-center p-3 mb-0" role="alert">
+                    <i class="ti ti-lock fs-2 me-3 text-secondary flex-shrink-0"></i>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-1 text-secondary">Caja inactiva o cerrada</h6>
+                        <p class="mb-0 text-black">
+                            La caja <strong>{{ $cajaActiva->nombre }}</strong> se encuentra actualmente inactiva o cerrada. No es posible realizar búsquedas ni procesar transacciones.
+                        </p>
+                    </div>
+                </div>
+            @elseif (! $cajaActiva->estaEnHorario())
+                <div class="alert alert-danger d-flex align-items-center p-3 mb-0" role="alert">
+                    <i class="ti ti-clock-off fs-2 me-3 text-danger flex-shrink-0"></i>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-1 text-danger">Caja fuera de horario de atención</h6>
+                        <p class="mb-0 text-black">
+                            La caja <strong>{{ $cajaActiva->nombre }}</strong> tiene un horario de atención establecido de 
+                            <strong>{{ $cajaActiva->horario_atencion }}</strong>. 
+                            Por fuera de este horario las búsquedas de asistentes y el registro de pagos o inscripciones se encuentran bloqueados.
+                        </p>
+                    </div>
+                </div>
+            @else
+                <form id="form-verificar-requisitos" wire:submit.prevent="verificarRequisitos">
 
                 <div class="row g-3">
 
@@ -166,6 +211,7 @@
                 </div>
 
             </form>
+            @endif
         </div>
     </div>
 
@@ -174,7 +220,7 @@
     SECCIÓN 2: Resultados de Livewire (Diseño Actualizado)
     ==================================================================
   --}}
-    @if ($verificacionEnviada)
+    @if ($verificacionEnviada && $cajaActiva->puedeOperar())
         <div class="card">
 
             @if ($validacionExitosa)
@@ -195,12 +241,12 @@
                         @forelse($categoriasDisponibles as $item)
                             @php $categoria = $item->categoria; @endphp
                             <div class="col-12 col-md-6 col-lg-4">
-                                <div class="card h-100 border shadow-sm ">
+                                <div class="card h-100 border shadow-sm">
 
                                     {{-- 1. CARD HEADER (Título, Estado, Precio) --}}
-                                    <div style="background-color:#F9F9F9!important" class="card-header py-3 px-4">
+                                    <div style="background-color:#F8F9FA!important" class="card-header py-3 px-4 border-bottom">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h5 class="mb-0 fw-semibold text-black">{{ $categoria->nombre }}</h5>
+                                            <h5 class="mb-0 fw-semibold text-black text-truncate me-2" title="{{ $categoria->nombre }}">{{ $categoria->nombre }}</h5>
 
                                             @php
                                                 $precio = $categoria
@@ -211,62 +257,59 @@
                                             @endphp
 
                                             {{-- Badges de Estado --}}
-                                            @switch($item->estado)
-                                                @case('INSCRITO')
-                                                @case('APROBADA')
-                                                    <span class="mb-0 ms-2 px-2 btn btn-sm btn-success text-white rounded-pill">
-                                                        {{ $item->estado == 'APROBADA' ? 'Aprobada' : 'Ya inscrito' }}
-                                                    </span>
-                                                @break
+                                            <div class="flex-shrink-0">
+                                                @switch($item->estado)
+                                                    @case('INSCRITO')
+                                                    @case('APROBADA')
+                                                        <span class="badge bg-success rounded-pill px-2.5 py-1.5">
+                                                            <i class="ti ti-circle-check me-1"></i>{{ $item->estado == 'APROBADA' ? 'Aprobada' : 'Ya inscrito' }}
+                                                        </span>
+                                                    @break
 
-                                                @case('ABONO_PENDIENTE')
-                                                    <span
-                                                        class="mb-0 ms-2 px-2 badge bg-warning text-white rounded-pill">Abono</span>
-                                                @break
+                                                    @case('ABONO_PENDIENTE')
+                                                        <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1.5">
+                                                            <i class="ti ti-clock me-1"></i>Abono
+                                                        </span>
+                                                    @break
 
-                                                @case('BLOQUEADA')
-                                                    <span
-                                                        class="mb-0 ms-2 px-2 btn btn-sm btn-danger text-white rounded-pill">No
-                                                        permitida</span>
-                                                @break
+                                                    @case('BLOQUEADA')
+                                                        <span class="badge bg-danger rounded-pill px-2.5 py-1.5">
+                                                            <i class="ti ti-lock me-1"></i>No permitida
+                                                        </span>
+                                                    @break
 
-                                                @case('DISPONIBLE')
-                                                    <span
-                                                        class="mb-0 ms-2 px-2 fw-bold badge btn-primary text-white rounded-pill">
-                                                        @if ($valor <= 0)
-                                                            GRATIS
-                                                        @else
-                                                            {{ $monedaPrincipal->nombre_corto }}
-                                                            ${{ number_format($valor, 0, ',', '.') }}
-                                                        @endif
-                                                    </span>
-                                                @break
-                                            @endswitch
+                                                    @case('DISPONIBLE')
+                                                        <span class="badge bg-primary text-white rounded-pill px-2.5 py-1.5 fw-bold">
+                                                            @if ($valor <= 0)
+                                                                GRATIS
+                                                            @else
+                                                                {{ $monedaPrincipal->nombre_corto }}
+                                                                ${{ number_format($valor, 0, ',', '.') }}
+                                                            @endif
+                                                        </span>
+                                                    @break
+                                                @endswitch
+                                            </div>
                                         </div>
                                     </div>
 
                                     {{-- 2. CARD BODY (Descripción, Bloqueo, Botones, Costo) --}}
-                                    <div class="card-body mt-4 d-flex flex-column">
+                                    <div class="card-body p-4 d-flex flex-column">
 
                                         {{-- 2a. BLOQUE DE BLOQUEO (Diseño Imagen 2) --}}
                                         @if ($item->estado == 'BLOQUEADA')
-                                            <div class="alert alert-danger  p-3 mb-3 h-100 d-flex text-start"
+                                            <div class="alert alert-danger p-3 mb-3 h-100 d-flex text-start"
                                                 role="alert">
-                                                {{-- Aseguramos el borde rojo --}}
-
                                                 <div class="d-flex align-items-start me-3">
-                                                    {{-- 1. ÍCONO DE BLOQUEO (Columna Izquierda) --}}
-                                                    <i style="padding-top: 50%;    font-size: 30px !important;"
-                                                        class="ti ti-lock "></i>
+                                                    <i style="padding-top: 50%; font-size: 30px !important;"
+                                                        class="ti ti-lock"></i>
                                                 </div>
 
                                                 <div class="d-flex flex-column flex-grow-1">
-                                                    {{-- 2. CONTENIDO (Columna Derecha) --}}
                                                     <h6 class="alert-heading fw-semibold mb-1">
                                                         No cumples los requisitos:
                                                     </h6>
 
-                                                    {{-- Lista de Motivos (Seguimos usando la lista sin estilo de Bootstrap) --}}
                                                     <ul class="mb-0 ps-0 fw-semibold list-unstyled small">
                                                         @foreach ($item->motivos as $motivo)
                                                             <li class="small text-start">
@@ -277,39 +320,40 @@
                                                 </div>
                                             </div>
 
-                                            {{-- 2b. DESCRIPCIÓN (Cuando está disponible) --}}
+                                            {{-- 2b. DESCRIPCIÓN (Cuando está disponible o inscrito) --}}
                                         @else
-                                            <p style="  display: -webkit-box;
-																																															-webkit-box-orient: vertical;
-																																															-webkit-line-clamp: 3;
-																																															overflow: hidden;
-																																															text-overflow: ellipsis;
-																																															text-align: left;"
-                                                class="text-black small mb-3">
-                                                {{-- Selecciona Materia o Actividad --}}
-                                                @if ($actividadSeleccionada->tipo->tipo_escuelas)
-                                                    {{ $categoria->materia->descripcion ?? 'Sin descripción de materia.' }}
+                                            @php
+                                                $descRaw = $actividadSeleccionada->tipo->tipo_escuelas
+                                                    ? ($categoria->materiaPeriodo?->descripcion ?? $categoria->materiaPeriodo?->materia?->descripcion ?? $categoria->materia?->descripcion ?? '')
+                                                    : ($actividadSeleccionada->descripcion ?? '');
+                                                $descTexto = trim(strip_tags($descRaw));
+                                            @endphp
+
+                                            <div class="card-descripcion text-secondary small mb-3" style="display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; text-overflow: ellipsis; text-align: left; min-height: 2.8em; line-height: 1.45;">
+                                                @if ($descTexto !== '')
+                                                    {!! $descRaw !!}
                                                 @else
-                                                    {{ $actividadSeleccionada->descripcion ?? 'Sin descripción de actividad.' }}
+                                                    <span class="text-muted fst-italic">
+                                                        {{ $actividadSeleccionada->tipo->tipo_escuelas ? 'Sin descripción de materia.' : 'Sin descripción de actividad.' }}
+                                                    </span>
                                                 @endif
-                                            </p>
+                                            </div>
                                         @endif
 
                                         {{-- 2c. DETALLES DE CUPOS Y ACCIÓN --}}
-
-                                        <div class="mt-auto pt-3">
+                                        <div class="mt-auto pt-2">
 
                                             {{-- Detalles de Cupos/Costo (para tarjetas NO BLOQUEADAS) --}}
                                             @if ($item->estado != 'BLOQUEADA')
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded-3">
                                                     <div class="small">
-                                                        <span class="d-block text-muted">Cupos:</span>
-                                                        <strong>{{ $categoria->aforo_ocupado ?? 0 }} /
+                                                        <span class="d-block text-muted small fw-medium">Cupos totales:</span>
+                                                        <strong class="text-dark fs-6">{{ $categoria->aforo_ocupado ?? 0 }} /
                                                             {{ $categoria->aforo > 0 ? $categoria->aforo : '∞' }}</strong>
                                                     </div>
                                                     <div class="small text-end">
-                                                        <span class="d-block text-muted">Costo:</span>
-                                                        <strong class="text-primary">
+                                                        <span class="d-block text-muted small fw-medium">Costo:</span>
+                                                        <strong class="text-primary fs-6">
                                                             @if ($valor <= 0)
                                                                 GRATIS
                                                             @else
@@ -322,19 +366,20 @@
                                             @endif
 
                                             {{-- Botones de Acción --}}
-                                            <hr>
+                                            <hr class="my-3">
                                             <div class="text-end">
                                                 @switch($item->estado)
                                                     @case('DISPONIBLE')
                                                         @if ($valor <= 0)
                                                             {{-- BOTÓN GRATIS --}}
                                                             <button type="button"
-                                                                class="btn btn-primary btn-md rounded-pill "
+                                                                class="btn btn-primary btn-sm rounded-pill w-100"
                                                                 wire:click="procesarInscripcionGratuita({{ $categoria->id }})"
                                                                 wire:loading.attr="disabled"
                                                                 wire:target="procesarInscripcionGratuita({{ $categoria->id }})">
                                                                 <span wire:loading.remove
                                                                     wire:target="procesarInscripcionGratuita({{ $categoria->id }})">
+                                                                    <i class="ti ti-check me-1"></i>
                                                                     @if ($actividadSeleccionada->tipo->tipo_escuelas)
                                                                         Matricular (Gratis)
                                                                     @else
@@ -358,6 +403,7 @@
                                                                 'modo' => 'compra',
                                                             ]) }}"
                                                                 class="btn btn-primary btn-sm rounded-pill w-100">
+                                                                <i class="ti ti-shopping-cart me-1"></i>
                                                                 @if ($actividadSeleccionada->tipo->tipo_escuelas)
                                                                     Procesar matrícula
                                                                 @else
@@ -392,9 +438,9 @@
 
                                                     @case('BLOQUEADA')
                                                         <button type="button"
-                                                            class="btn bg-light btn-disabled  btn-sm rounded-pill w-100"
+                                                            class="btn btn-outline-secondary btn-sm rounded-pill w-100 text-muted"
                                                             disabled>
-                                                            No Disponible
+                                                            <i class="ti ti-lock me-1"></i> No disponible
                                                         </button>
                                                     @break
 
@@ -402,7 +448,7 @@
                                                     @case('APROBADA')
                                                         <button type="button"
                                                             class="btn btn-success btn-sm rounded-pill w-100" disabled>
-                                                            {{ $item->estado == 'APROBADA' ? 'Aprobada' : 'Ya nnscrito' }}
+                                                            <i class="ti ti-circle-check me-1"></i> {{ $item->estado == 'APROBADA' ? 'Aprobada' : 'Ya inscrito' }}
                                                         </button>
                                                     @break
                                                 @endswitch

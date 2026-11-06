@@ -210,8 +210,9 @@
                                     </div>
                                 @else
                                     <div class="avatar avatar-xl">
-                                        <img src="{{ $maestro->user->foto_url }}"
-                                           alt="{{ $maestro->user->foto ?? 'foto' }}"
+                                        <img src="{{ $asesor->user->foto_url }}"
+                                            alt="{{ $asesor->user->foto ?? 'foto' }}"
+                                            class="avatar-initial rounded-circle border border-3 border-white bg-info">
                                     </div>
                                 @endif
 

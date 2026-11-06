@@ -20,7 +20,13 @@
       @foreach($grupos as $grupo)
       <a href="{{ $redirect ? route($redirect, $grupo) : 'javascript:;'}}" @if($multiple) wire:click="seleccionarGrupos({{$grupo->id}})" @else wire:click="seleccionarGrupo({{$grupo->id}})" @endif class="dropdown-item d-flex align-items-center p-2 mb-1 border">
         <div class="flex-shrink-0 me-3">
-          <img src="{{ $grupo->tipoGrupo?->imagen_url }}" alt="Icono {{ $grupo->tipoGrupo?->nombre }}" class="rounded" style="width: 50px; height: 50px; object-fit: contain;padding: 4px;">
+          @if($grupo->tipoGrupo && $grupo->tipoGrupo->tiene_icono)
+            <img src="{{ $grupo->tipoGrupo->imagen_url }}" alt="Icono {{ $grupo->tipoGrupo->nombre }}" class="rounded-circle" style="width: 50px; height: 50px; min-width: 50px; object-fit: contain; padding: 4px; background-color: {{ $grupo->tipoGrupo->color ?? '#f8f9fa' }};">
+          @else
+            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 50px; height: 50px; min-width: 50px; background-color: {{ $grupo->tipoGrupo?->color ?? '#6c757d' }};">
+              <i class="ti ti-users-group text-white fs-3"></i>
+            </div>
+          @endif
         </div>
         <div class="flex-grow-1 me-2 text-black">
           <p class="fs-7 text-wrap m-0">{{ $grupo->nombre }}</p>
@@ -66,8 +72,14 @@
       @foreach($gruposSeleccionados as $grupoSel)
       <div wire:key="{{ $grupoSel->id }}-grupo" class="dropdown-item w-100 mx-0 d-flex p-2 mt-1 border flex-grow-1">
         <div class="flex-fill d-flex align-items-center">
-          <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSel->tipoGrupo?->color ?? '#6c757d' }}">
-            <i class="ti ti-users-group text-white" style="font-size: 4.0rem !important"></i>
+          <div class="flex-shrink-0 me-3">
+            @if($grupoSel->tipoGrupo && $grupoSel->tipoGrupo->tiene_icono)
+              <img src="{{ $grupoSel->tipoGrupo->imagen_url }}" alt="Icono {{ $grupoSel->tipoGrupo->nombre }}" class="rounded-circle" style="width: 60px; height: 60px; min-width: 60px; object-fit: contain; padding: 4px; background-color: {{ $grupoSel->tipoGrupo->color ?? '#f8f9fa' }};">
+            @else
+              <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; min-width: 60px; background-color: {{ $grupoSel->tipoGrupo?->color ?? '#6c757d' }};">
+                <i class="ti ti-users-group text-white" style="font-size: 2.2rem !important"></i>
+              </div>
+            @endif
           </div>
           <div class="flex-grow-1 me-2">
             <p class="fs-5 text-wrap m-0">{{ $grupoSel->nombre }}</p>
@@ -93,8 +105,14 @@
           @if($estiloSeleccion == 'pequeno')
           <div class="dropdown-item w-100 m-0 d-flex p-1 mt-1 border flex-grow-1">
             <div class="flex-fill d-flex align-items-center">
-              <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSeleccionado->tipoGrupo?->color ?? '#6c757d' }}">
-                <i class="ti ti-users-group text-white" style="font-size: 1.6rem !important"></i>
+              <div class="flex-shrink-0 me-3">
+                @if($grupoSeleccionado->tipoGrupo && $grupoSeleccionado->tipoGrupo->tiene_icono)
+                  <img src="{{ $grupoSeleccionado->tipoGrupo->imagen_url }}" alt="Icono {{ $grupoSeleccionado->tipoGrupo->nombre }}" class="rounded-circle" style="width: 38px; height: 38px; min-width: 38px; object-fit: contain; padding: 2px; background-color: {{ $grupoSeleccionado->tipoGrupo->color ?? '#f8f9fa' }};">
+                @else
+                  <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 38px; height: 38px; min-width: 38px; background-color: {{ $grupoSeleccionado->tipoGrupo?->color ?? '#6c757d' }};">
+                    <i class="ti ti-users-group text-white" style="font-size: 1.4rem !important"></i>
+                  </div>
+                @endif
               </div>
               <div class="flex-grow-1 me-2">
                 <p class="fs-6 text-wrap m-0 mt-1 fw-bold">{{ $grupoSeleccionado->nombre }}</p>
@@ -111,8 +129,14 @@
         @else
         <div class="dropdown-item w-100 mx-0 d-flex p-2 mt-1 border  flex-grow-1">
           <div class="flex-fill d-flex align-items-center">
-            <div class="d-flex align-items-center justify-content-center rounded me-3" style="background-color: {{$grupoSeleccionado->tipoGrupo?->color ?? '#6c757d' }}">
-              <i class="ti ti-users-group text-white" style="font-size: 4.0rem !important"></i>
+            <div class="flex-shrink-0 me-3">
+              @if($grupoSeleccionado->tipoGrupo && $grupoSeleccionado->tipoGrupo->tiene_icono)
+                <img src="{{ $grupoSeleccionado->tipoGrupo->imagen_url }}" alt="Icono {{ $grupoSeleccionado->tipoGrupo->nombre }}" class="rounded-circle" style="width: 60px; height: 60px; min-width: 60px; object-fit: contain; padding: 4px; background-color: {{ $grupoSeleccionado->tipoGrupo->color ?? '#f8f9fa' }};">
+              @else
+                <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 60px; height: 60px; min-width: 60px; background-color: {{ $grupoSeleccionado->tipoGrupo?->color ?? '#6c757d' }};">
+                  <i class="ti ti-users-group text-white" style="font-size: 2.2rem !important"></i>
+                </div>
+              @endif
             </div>
             <div class="flex-grow-1 me-2">
               <p class="fs-5 text-wrap m-0">{{ $grupoSeleccionado->nombre }}</p>

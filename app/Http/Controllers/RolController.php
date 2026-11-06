@@ -24,4 +24,14 @@ class RolController extends Controller
 
         return view('contenido.paginas.roles-privilegios.editar-permisos-rol', compact('role'));
     }
+
+    public function gestionarPermisos(): View
+    {
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        if ($rolActivo) {
+            $rolActivo->verificacionDelPermiso('configuraciones.subitem_permisos');
+        }
+
+        return view('contenido.paginas.roles-privilegios.gestionar-permisos');
+    }
 }

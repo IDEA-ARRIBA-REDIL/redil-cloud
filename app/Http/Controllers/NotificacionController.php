@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
-use Illuminate\Http\Request;
 
 class NotificacionController extends Controller
 {
@@ -23,6 +22,7 @@ class NotificacionController extends Controller
      */
     public function configuracion(): \Illuminate\Contracts\View\View
     {
+        \App\Services\PermisosCuentaInicial::autorizarNotificaciones(auth()->user());
         $configuracion = Configuracion::find(1);
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 

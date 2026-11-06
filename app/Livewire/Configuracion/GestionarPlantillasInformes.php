@@ -20,6 +20,11 @@ use Livewire\Component;
 
 class GestionarPlantillasInformes extends Component
 {
+    public function boot(): void
+    {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'configuraciones.subitem_plantillas_informes');
+    }
+
     // =========================================================================
     // ESTADO GENERAL
     // =========================================================================
@@ -31,84 +36,122 @@ class GestionarPlantillasInformes extends Component
     // FORMULARIO: INFORME / PLANTILLA
     // =========================================================================
     public ?int $editInformeId = null;
+
     public string $informeNombre = '';
+
     public string $informeDescripcion = '';
+
     public string $informeLink = 'informes-personalizados.mega-informe.show';
+
     public string $informeNombreBoton = 'Configurar y Solicitar';
+
     public ?int $informeTipoInformeId = 1;
+
     public bool $formInformeActivo = true;
+
     public bool $informeAddIdUrl = true;
+
     public bool $informeSeleccioneDiaCorte = false;
+
     public bool $informeClasificaciones = false;
 
     // =========================================================================
     // FORMULARIO: SECCIÓN
     // =========================================================================
     public ?int $seccionId = null;
+
     public string $seccionNombre = '';
+
     public int $seccionOrden = 0;
 
     // =========================================================================
     // FORMULARIO: SUBSECCIÓN
     // =========================================================================
     public ?int $subseccionId = null;
+
     public ?int $subseccionSeccionId = null;
+
     public string $subseccionNombre = '';
+
     public int $subseccionOrden = 0;
 
     // =========================================================================
     // FORMULARIO: BLOQUE (SEDES)
     // =========================================================================
     public ?int $bloqueId = null;
+
     public string $bloqueNombre = '';
+
     public array $bloqueSedesIds = [];
 
     // =========================================================================
     // FORMULARIO: ITEM (MÉTRICAS / FÓRMULAS)
     // =========================================================================
     public ?int $itemId = null;
+
     public ?int $itemSubseccionId = null;
+
     public string $itemNombre = '';
+
     public int $itemOrden = 0;
+
     public string $itemTipo = 'metrica'; // 'metrica' | 'operacion' | 'totalizador'
 
     // Temporalidad
     public string $itemDesgloseTemporal = 'ninguno'; // 'ninguno' | 'mes' | 'semanas'
+
     public bool $itemVisualizarPorMes = false;
+
     public bool $itemVisualizarPorSemanas = false;
+
     public bool $itemFechaCreacion = false;
 
     // Paso 1
     public ?int $itemPasoCrecimientoId = null;
+
     public ?int $itemEstadoPasoCrecimiento = null;
+
     public bool $itemFiltrarFechaPasoCrecimiento = false;
 
     // Comparación Paso 2 / Dilación
     public ?string $itemParametroComparacion = null; // 'paso-crecimiento' | 'fecha-creacion' | null
+
     public ?int $itemPasoCrecimientoId2 = null;
+
     public bool $itemNoExistePasoCrecimientoId2 = false;
+
     public ?int $itemEstadoPasoCrecimiento2 = null;
+
     public bool $itemFiltrarFechaPasoCrecimiento2 = false;
+
     public ?int $itemCantidadDiasDilacion = null;
 
     // Personas & Demografía
     public int $itemGrupoPersonas = 1; // 1: Todos, 2: Alta/Activos, 3: Baja/Eliminados
+
     public array $itemTiposVinculacionIds = [];
+
     public array $itemEstadosCivilesIds = [];
 
     // Bajas / Altas
     public ?int $itemTipoBajaAltaId = null;
+
     public ?int $itemEstadoReporteDadoBaja = null; // null, 0 (alta), 1 (baja)
+
     public bool $itemFiltrarFechaReporteBajaAlta = false;
 
     // Matrículas
     public ?string $itemEstadoMatricula = null;
+
     public bool $itemFiltroFechaMatricula = false;
 
     // Operaciones & Totalizadores
     public ?int $itemOperacion = null; // 1: +, 2: -, 3: *, 4: /, 5: Promedio
+
     public ?int $itemItemA = null;
+
     public ?int $itemItemB = null;
+
     public array $itemTotalizarItemsIds = [];
 
     public function mount(): void
@@ -138,7 +181,7 @@ class GestionarPlantillasInformes extends Component
             'editInformeId', 'informeNombre', 'informeDescripcion',
             'informeLink', 'informeNombreBoton', 'informeTipoInformeId',
             'formInformeActivo', 'informeAddIdUrl',
-            'informeSeleccioneDiaCorte', 'informeClasificaciones'
+            'informeSeleccioneDiaCorte', 'informeClasificaciones',
         ]);
         $this->informeLink = 'informes-personalizados.mega-informe.show';
         $this->informeNombreBoton = 'Configurar y Solicitar';
@@ -241,7 +284,7 @@ class GestionarPlantillasInformes extends Component
         $original = Informe::with(['secciones.subsecciones.items', 'bloques'])->findOrFail($id);
 
         $nuevoInforme = Informe::create([
-            'nombre' => $original->nombre . ' (Copia)',
+            'nombre' => $original->nombre.' (Copia)',
             'descripcion' => $original->descripcion,
             'link' => $original->link,
             'nombre_boton' => $original->nombre_boton,
@@ -553,7 +596,7 @@ class GestionarPlantillasInformes extends Component
             'itemGrupoPersonas', 'itemTiposVinculacionIds', 'itemEstadosCivilesIds',
             'itemTipoBajaAltaId', 'itemEstadoReporteDadoBaja', 'itemFiltrarFechaReporteBajaAlta',
             'itemEstadoMatricula', 'itemFiltroFechaMatricula',
-            'itemOperacion', 'itemItemA', 'itemItemB', 'itemTotalizarItemsIds'
+            'itemOperacion', 'itemItemA', 'itemItemB', 'itemTotalizarItemsIds',
         ]);
 
         $this->itemSubseccionId = $subseccionId;

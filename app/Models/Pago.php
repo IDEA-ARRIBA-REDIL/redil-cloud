@@ -16,6 +16,8 @@ class Pago extends Model
 
     protected $guarded = [];
 
+    protected $casts = ['gateway_response' => 'array', 'valor' => 'decimal:2', 'comision' => 'decimal:2', 'valor_neto' => 'decimal:2'];
+
     public function compra(): BelongsTo
     {
         return $this->belongsTo(Compra::class);
@@ -48,7 +50,7 @@ class Pago extends Model
 
     public function matricula(): HasOne
     {
-        return $this->hasOne(Matricula::class, 'referencia_pago');
+        return $this->hasOne(Matricula::class, 'pago_id');
     }
 
     public function actividadCategoria(): BelongsTo

@@ -2,34 +2,38 @@
 
 namespace App\Livewire\Taquilla;
 
-use Livewire\Component;
-use App\Models\User;
+use App\Mail\InscripcionConfirmacionMail;
+use App\Models\AbonoCategoria;
 use App\Models\Actividad;
 use App\Models\ActividadCategoria;
+use App\Models\ActividadCategoriaMoneda;
 use App\Models\Caja;
-use App\Models\Moneda;
-use App\Models\TipoPago;
 use App\Models\Compra;
-use App\Models\Pago;
+use App\Models\EstadoPago;
 use App\Models\Inscripcion;
-use App\Models\AbonoCategoria; //
-use App\Models\ActividadCategoriaMoneda; //
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-use App\Mail\InscripcionConfirmacionMail;
-use Illuminate\Support\Facades\Mail;
+use App\Models\Moneda;
+use App\Models\Pago;
+use App\Models\TipoPago;
+use App\Models\User; //
+use App\Services\EstadoFinancieroService; //
 use Carbon\Carbon;
 use Exception;
-use Livewire\Attributes\Validate;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Livewire\Component;
 
 class ProcesarAbono extends Component
 {
     // --- PROPIEDADES RECIBIDAS (PROPS) ---
     public User $usuario;
+
     public Actividad $actividad;
+
     public Caja $cajaActiva;
+
     public ActividadCategoria $categoria;
+
     public Moneda $moneda;
 
     // ===================================================================
@@ -49,24 +53,37 @@ class ProcesarAbono extends Component
 
     // --- Lógica de Abonos (Adaptada de AbonoCarrito.php) ---
     public ?Compra $compraActual = null;
+
     public $primeraVez = true; // ¿Es el primer pago de este usuario para esta actividad?
+
     public $valorTotalCategoria = 0;
+
     public $totalYaPagado = 0;
+
     public $valorMinimoAbono = 0; // El mínimo requerido HOY
+
     public $valorMaximoAbono = 0; // El total restante
+
     public $mensajeAbono = ''; // Mensaje de ayuda (ej. "Fecha límite: ...")
+
     public $abonosFinalizados = false;
 
     // --- Lógica de Campos Adicionales ---
     public $camposAdicionales = [];
+
     public $camposAdicionalesModelo;
 
     // --- Lógica de Pagos Divididos ---
     public $tiposPagoDisponibles = [];
+
     public $pagos = [];
+
     public $valorRestante = 0; // El restante de *esta* transacción
+
     public $nuevoPagoValor;
+
     public $nuevoPagoTipoId;
+
     public $nuevoPagoVoucher = '';
 
     /**
@@ -79,11 +96,17 @@ class ProcesarAbono extends Component
      */
     public function mount(User $comprador, User $usuario, Actividad $actividad, Caja $cajaActiva, ActividadCategoria $categoria, Moneda $moneda)
     {
+        $this->cajaActiva = $cajaActiva;
+
+        // 0. Validar operatividad y horario de la caja
+        if (! $this->cajaActiva->puedeOperar()) {
+            return redirect()->route('taquilla.operar', $this->cajaActiva);
+        }
+
         // 1. Asignar propiedades
         $this->comprador = $comprador;
         $this->inscrito = $usuario; // Asigna el 'usuario' entrante a nuestra propiedad 'inscrito'
         $this->actividad = $actividad;
-        $this->cajaActiva = $cajaActiva;
         $this->categoria = $categoria;
         $this->moneda = $moneda;
 
@@ -126,7 +149,7 @@ class ProcesarAbono extends Component
 
         // 2. Obtener el TOTAL YA PAGADO por el usuario
         $this->totalYaPagado = 0;
-        if (!$this->primeraVez) {
+        if (! $this->primeraVez) {
             //
             $this->totalYaPagado = Pago::where('compra_id', $this->compraActual->id)
                 ->where('moneda_id', $monedaId)
@@ -166,7 +189,7 @@ class ProcesarAbono extends Component
             $this->abonosFinalizados = true;
             $this->mensajeAbono = '¡Felicitaciones! Ya has completado todos los pagos para esta actividad.';
         } elseif ($fechaLimiteAbonoActual) {
-            $this->mensajeAbono = 'Fecha límite para este abono: ' . Carbon::parse($fechaLimiteAbonoActual)->format('d/m/Y');
+            $this->mensajeAbono = 'Fecha límite para este abono: '.Carbon::parse($fechaLimiteAbonoActual)->format('d/m/Y');
         }
     }
 
@@ -177,10 +200,19 @@ class ProcesarAbono extends Component
 
     public function anadirPago()
     {
+        // 0. Validar operatividad y horario de la caja
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+
+            return;
+        }
+
         $valor = floatval($this->nuevoPagoValor);
 
         if ($valor <= 0) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'El valor debe ser mayor a cero.');
+
             return;
         }
 
@@ -189,19 +221,22 @@ class ProcesarAbono extends Component
             if ($valor != $this->valorMinimoAbono) {
                 $this->dispatch('notificacion',
                     tipo: 'error',
-                    mensaje: 'Esta actividad solo permite pagos con el valor exacto del abono ($' . number_format($this->valorMinimoAbono) . ').'
+                    mensaje: 'Esta actividad solo permite pagos con el valor exacto del abono ($'.number_format($this->valorMinimoAbono).').'
                 );
+
                 return;
             }
         }
 
         // ¡CAMBIO! Validamos contra el máximo posible (total restante)
         if ($valor > $this->valorMaximoAbono) {
-            $this->dispatch('notificacion', tipo: 'error', mensaje: 'El valor no puede ser mayor que el total restante (' . $this->valorMaximoAbono . ').');
+            $this->dispatch('notificacion', tipo: 'error', mensaje: 'El valor no puede ser mayor que el total restante ('.$this->valorMaximoAbono.').');
+
             return;
         }
         if ($valor > $this->valorRestante) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'El valor no puede ser mayor que el restante de esta transacción.');
+
             return;
         }
 
@@ -209,6 +244,7 @@ class ProcesarAbono extends Component
 
         if ($tipoPago && $tipoPago->codigo_datafono && empty($this->nuevoPagoVoucher)) {
             $this->addError('nuevoPagoVoucher', 'El código es obligatorio.');
+
             return;
         }
         $this->resetErrorBag('nuevoPagoVoucher');
@@ -245,6 +281,14 @@ class ProcesarAbono extends Component
 
     public function confirmarAbono()
     {
+        // 0. Validar operatividad y horario de la caja
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+
+            return;
+        }
+
         // 1. Validar Campos Adicionales (solo si es la primera vez)
         if ($this->primeraVez) {
             $this->validarCamposAdicionales();
@@ -255,11 +299,13 @@ class ProcesarAbono extends Component
 
         if ($totalPagadoEstaTransaccion <= 0) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Debe añadir al menos un pago.');
+
             return;
         }
         // Validamos que el pago de HOY cumpla el MÍNIMO requerido
         if ($totalPagadoEstaTransaccion < $this->valorMinimoAbono) {
-            $this->dispatch('notificacion', tipo: 'error', mensaje: 'El pago debe ser de al menos $' . number_format($this->valorMinimoAbono));
+            $this->dispatch('notificacion', tipo: 'error', mensaje: 'El pago debe ser de al menos $'.number_format($this->valorMinimoAbono));
+
             return;
         }
 
@@ -280,6 +326,7 @@ class ProcesarAbono extends Component
                             titulo: '¡Caja Llena!',
                             mensaje: "La caja ya ha alcanzado su tope de dinero para {$tipoPago->nombre}. Debe solicitar una recolección antes de recibir más pagos de este tipo."
                         );
+
                         return;
                     }
                 }
@@ -302,6 +349,7 @@ class ProcesarAbono extends Component
                 if ($categoria->aforo > 0 && $categoria->aforo_ocupado >= $categoria->aforo) {
                     $this->dispatch('notificacion', tipo: 'error', titulo: '¡Límite Superado!', mensaje: 'Los cupos se agotaron.');
                     DB::rollBack();
+
                     return;
                 }
 
@@ -321,7 +369,7 @@ class ProcesarAbono extends Component
                     'identificacion_comprador' => $this->comprador->identificacion,
                     'telefono_comprador' => $this->comprador->telefono_movil,
                     'email_comprador' => $this->comprador->email,
-                    'metodo_pago_id' => 0
+                    'metodo_pago_id' => 0,
                 ]);
 
                 // Crear Inscripción (Usa solo $this->inscrito)
@@ -346,11 +394,22 @@ class ProcesarAbono extends Component
             }
 
             // 5. Crear los registros de Pagos (divididos)
+            $finanzas = app(EstadoFinancieroService::class);
             foreach ($this->pagos as $pagoInfo) {
+                $tipoPagoId = (int) $pagoInfo['tipo_pago_id'];
+                try {
+                    $estadoPagoId = $finanzas->estadoAprobado($tipoPagoId)->id;
+                } catch (\Throwable) {
+                    $estadoPago = EstadoPago::where('tipo_pago_id', $tipoPagoId)
+                        ->where('estado_final_inscripcion', true)
+                        ->first();
+                    $estadoPagoId = $estadoPago?->id ?? 3;
+                }
+
                 Pago::create([
                     'compra_id' => $compra->id,
-                    'tipo_pago_id' => $pagoInfo['tipo_pago_id'],
-                    'estado_pago_id' => 3, // Aprobado
+                    'tipo_pago_id' => $tipoPagoId,
+                    'estado_pago_id' => $estadoPagoId,
                     'moneda_id' => $this->moneda->id,
                     'valor' => $pagoInfo['valor'],
                     'fecha' => now(),
@@ -384,11 +443,12 @@ class ProcesarAbono extends Component
 
             // 9. Notificar y Redirigir
             $this->dispatch('notificacion', tipo: 'success', mensaje: '¡Abono procesado con éxito!');
+
             return redirect()->route('taquilla.compraFinalizada', $compra);
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Error al procesar abono en taquilla: ' . $e->getMessage());
-            $this->dispatch('notificacion', tipo: 'error', mensaje: 'Error al procesar el abono: ' . $e->getMessage());
+            Log::error('Error al procesar abono en taquilla: '.$e->getMessage());
+            $this->dispatch('notificacion', tipo: 'error', mensaje: 'Error al procesar el abono: '.$e->getMessage());
         }
     }
 
@@ -402,11 +462,11 @@ class ProcesarAbono extends Component
         $mensajes = [];
         foreach ($this->camposAdicionalesModelo as $campo) {
             if ($campo->obligatorio) { //
-                $reglas['camposAdicionales.' . $campo->id] = 'required';
-                $mensajes['camposAdicionales.' . $campo->id . '.required'] = "El campo '{$campo->nombre}' es obligatorio.";
+                $reglas['camposAdicionales.'.$campo->id] = 'required';
+                $mensajes['camposAdicionales.'.$campo->id.'.required'] = "El campo '{$campo->nombre}' es obligatorio.";
             }
         }
-        if (!empty($reglas)) {
+        if (! empty($reglas)) {
             $this->validate($reglas, $mensajes);
         }
     }
@@ -427,7 +487,7 @@ class ProcesarAbono extends Component
                 Mail::to($emailDestinatario)->send(new InscripcionConfirmacionMail($inscripcion, $actividad));
             }
         } catch (Exception $e) {
-            Log::error("Fallo al enviar correo para inscripción #{$inscripcion->id}: " . $e->getMessage());
+            Log::error("Fallo al enviar correo para inscripción #{$inscripcion->id}: ".$e->getMessage());
             $this->dispatch('notificacion', tipo: 'warning', mensaje: 'Abono registrado, pero falló el envío de correo.');
         }
     }

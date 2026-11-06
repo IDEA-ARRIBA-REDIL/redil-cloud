@@ -719,6 +719,11 @@
                             <div class="col-12 mb-4">
                                 @livewire('escuelas.materias.gestionar-pasos-iniciar', ['materia' => $materia])
                             </div>
+
+                            {{-- Tareas al Iniciar --}}
+                            <div class="col-12 mb-4">
+                                @livewire('escuelas.materias.gestionar-tareas-iniciar', ['materia' => $materia])
+                            </div>
                             <hr class="my-4">
 
                             {{-- 1. Procesos Prerrequisito --}}

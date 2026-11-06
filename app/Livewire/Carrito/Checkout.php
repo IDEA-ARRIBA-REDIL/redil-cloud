@@ -281,14 +281,30 @@ class Checkout extends Component
             'fecha' => now(),
         ]);
 
-        // Si es escuelas, actualizar matrícula
-        if ($this->actividad->tipo->tipo_escuelas) {
-            \App\Models\Matricula::where('referencia_pago', $pagoParaProcesar->id)
-                ->update(['tipo_pago_id' => $this->tipoPagoSeleccionado]);
-        }
-
         // Verificar el estado para actualizar la compra
         $estado = \App\Models\EstadoPago::find($this->estadoPagoSeleccionado);
+
+        // Si es escuelas, actualizar matrícula
+        if ($this->actividad->tipo->tipo_escuelas) {
+            $matriculas = \App\Models\Matricula::where(function ($query) use ($pagoParaProcesar) {
+                $query->where('referencia_pago', (string) $pagoParaProcesar->id)
+                    ->orWhere('referencia_pago', (string) $pagoParaProcesar->compra_id)
+                    ->orWhere('pago_id', $pagoParaProcesar->id)
+                    ->orWhere('compra_id', $pagoParaProcesar->compra_id);
+            })->get();
+
+            foreach ($matriculas as $mat) {
+                $datosMat = ['tipo_pago_id' => $this->tipoPagoSeleccionado];
+                if ($estado && $estado->estado_final_inscripcion) {
+                    $datosMat['estado_pago_matricula'] = 'pagada';
+                    $datosMat['estado_pago_id'] = $estado->id;
+                }
+                $mat->update($datosMat);
+                if ($estado && $estado->estado_final_inscripcion) {
+                    $mat->aplicarEfectosMatricula();
+                }
+            }
+        }
 
         // Actualizar el estado de la compra basado en flags del EstadoPago
         if ($estado->estado_final_inscripcion) {
@@ -468,8 +484,18 @@ class Checkout extends Component
                         if ($compra) {
                             $compra->update(['estado' => 3]);
                             $tipoCompra = strtoupper(trim($datosTransaccion['str_campo1'] ?? ''));
-                            if ($tipoCompra === 'ESCUELAS' && $pago->matricula) {
-                                $pago->matricula->update(['estado_pago_matricula' => 'pagada']);
+                            if ($tipoCompra === 'ESCUELAS') {
+                                $matricula = $pago->matricula ?: Matricula::where(function ($query) use ($pago) {
+                                    $query->where('referencia_pago', (string) $pago->id)
+                                        ->orWhere('referencia_pago', (string) $pago->compra_id)
+                                        ->orWhere('pago_id', $pago->id)
+                                        ->orWhere('compra_id', $pago->compra_id);
+                                })->first();
+
+                                if ($matricula) {
+                                    $matricula->update(['estado_pago_matricula' => 'pagada']);
+                                    $matricula->aplicarEfectosMatricula();
+                                }
                             } elseif ($compra->inscripciones->isNotEmpty()) {
                                 $compra->inscripciones()->update(['estado' => true]);
                             }

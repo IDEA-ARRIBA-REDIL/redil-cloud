@@ -51,30 +51,30 @@
                                 <span class="badge bg-label-primary rounded-pill">Finalizada</span>
                                 @break
                                 @default
-                                <span class="badge bg-label-secondary ">Desconocido</span>
+                                <span class="badge bg-label-secondary">Desconocido</span>
                                 @endswitch
                             </div>
-
-
                         </div>
 
-                        {{-- Lógica de botones de aprobación --}}
-                        @if($actividad->tiene_invitados)
                         <div>
-                            @if ($inscripcion->estado == 3)
-                            {{-- Botón para REVERTIR/DESAPROBAR --}}
-                            <button wire:click="desaprobarInscripcion({{ $inscripcion->id }})" class="btn btn-sm btn-outline-warning" wire:loading.attr="disabled">
-                                <i class="ti ti-logout me-1"></i>
-                                Revertir aprobación
-                            </button>
-                            @else
-                            {{-- Botón para APROBAR --}}
-                            <button wire:click="aprobarInscripcion({{ $inscripcion->id }})" class="btn btn-primary btn-sm rounded-pill shadow-sm" wire:loading.attr="disabled">
-                                <i class="mdi mdi-check-circle-outline me-1"></i>
-                                Aprobar inscripción
-                            </button>
+                            {{-- Lógica de botones de aprobación --}}
+                            @if($actividad->tiene_invitados)
+                                @if ($inscripcion->estado == 3)
+                                {{-- Botón para REVERTIR/DESAPROBAR --}}
+                                <button wire:click="desaprobarInscripcion({{ $inscripcion->id }})" class="btn btn-sm btn-outline-warning" wire:loading.attr="disabled">
+                                    <i class="ti ti-logout me-1"></i>
+                                    Revertir aprobación
+                                </button>
+                                @else
+                                {{-- Botón para APROBAR --}}
+                                <button wire:click="aprobarInscripcion({{ $inscripcion->id }})" class="btn btn-primary btn-sm rounded-pill shadow-sm" wire:loading.attr="disabled">
+                                    <i class="mdi mdi-check-circle-outline me-1"></i>
+                                    Aprobar inscripción
+                                </button>
+                                @endif
                             @endif
-                             <button type="button"
+
+                            <button type="button"
                                     onclick="confirmarEliminacion({{ $comprador->id }})"
                                     class="btn btn-sm ms-3 btn-outline-danger waves-effect"
                                     wire:loading.attr="disabled">
@@ -82,30 +82,48 @@
                                 Eliminar registro
                             </button>
                         </div>
-                        @endif
+                    </div>
+                    @else
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fw-semibold">
+                                Estado de compra:
+                                @switch($comprador->estado)
+                                @case(1)
+                                <span class="badge bg-label-warning rounded-pill">Pendiente de pago</span>
+                                @break
+                                @case(2)
+                                <span class="badge bg-label-danger rounded-pill">Rechazada</span>
+                                @break
+                                @case(3)
+                                <span class="badge bg-label-primary rounded-pill">Finalizada</span>
+                                @break
+                                @default
+                                <span class="badge bg-label-secondary">Sin inscripción</span>
+                                @endswitch
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button"
+                                    onclick="confirmarEliminacion({{ $comprador->id }})"
+                                    class="btn btn-sm btn-outline-danger waves-effect"
+                                    wire:loading.attr="disabled">
+                                <i class="ti ti-trash me-1"></i>
+                                Eliminar registro
+                            </button>
+                        </div>
                     </div>
                     @endif
 
-
-
-
-                    {{-- ====================== FIN DEL CAMBIO ====================== --}}
-
                     {{-- Listado de preguntas y respuestas (sin cambios en la lógica) --}}
                     <div class="row g-4">
-                        {{-- INICIO DEL CÓDIGO AÑADIDO: Input para invitados --}}
-                        {{-- Input para invitados (ahora siempre visible si la actividad lo permite) --}}
-                        @if ($actividad->tiene_invitados)
-                         {{-- ===================== INICIO DEL CÓDIGO AÑADIDO ===================== --}}
+                        {{-- Input para invitados (ahora visible solo si la actividad lo permite y existe inscripción) --}}
+                        @if ($actividad->tiene_invitados && $inscripcion)
                          @php
-                        // ===================== INICIO DE LA MODIFICACIÓN =====================
-                        // Ahora obtenemos el dato directamente de la inscripción. ¡Mucho más simple!
                         $invitadosSolicitados = $inscripcion->limite_invitados ?? 0;
-                        // ====================== FIN DE LA MODIFICACIÓN ======================
                          @endphp
 
                     <div class="alert alert-info d-flex align-items-center" role="alert">
-
                           <i class="ti ti-users-group"></i>
                         <div>
                             @if ($inscripcion->estado == 3)
@@ -115,7 +133,6 @@
                             @endif
                         </div>
                     </div>
-                    {{-- ====================== FIN DEL CÓDIGO AÑADIDO ====================== --}}
 
                         <div class="mt-3">
                             <label for="invitados-{{$inscripcion->id}}" class="form-label">Cupos para invitados aprobados:</label>
@@ -133,25 +150,32 @@
                                 </button>
                                 @endif
                             </div>
-                            {{-- Nota: El valor se carga desde el método render del componente --}}
                         </div>
                         @endif
-                        {{-- FIN DEL CÓDIGO AÑADIDO --}}
 
-                        {{-- INICIO DEL CÓDIGO AÑADIDO --}}
-                        @if($inscripcion->categoriaActividad)
+                        {{-- Información de categoría y cupos disponibles con protección completa contra null --}}
                         @php
-                        $aforoDisponible = $inscripcion->categoriaActividad->aforo - $inscripcion->categoriaActividad->aforo_ocupado;
+                        $categoriaActividad = $inscripcion?->categoriaActividad ?? $comprador->carritos->first()?->categoria;
+                        @endphp
+
+                        @if($categoriaActividad)
+                        @php
+                        $aforoDisponible = $categoriaActividad->aforo !== null 
+                            ? max(0, (int) $categoriaActividad->aforo - (int) ($categoriaActividad->aforo_ocupado ?? 0)) 
+                            : 'Sin límite';
                         @endphp
 
                         <div class="p-3 d-flex mb-3" style="color:black; font-size:14px;border: solid 2px #95CDDF;border-radius: 14px;">
                             <i class="ti ti-bulb text-secondary me-2"></i>
-                            <p class="m-0 text-start">Límite sugerido para esta categoría:<strong> {{ $inscripcion->categoriaActividad->limite_invitados ?? 'N/A' }} </strong>
-                                Cupos totales aún disponibles en la categoría: <strong>{{ $aforoDisponible }}</strong>. </p>
+                            <p class="m-0 text-start">
+                                Categoría: <strong>{{ $categoriaActividad->nombre }}</strong>
+                                @if($categoriaActividad->limite_invitados)
+                                | Límite sugerido para invitados: <strong>{{ $categoriaActividad->limite_invitados }}</strong>
+                                @endif
+                                | Cupos disponibles en categoría: <strong>{{ $aforoDisponible }}</strong>.
+                            </p>
                         </div>
-
                         @endif
-                        {{-- FIN DEL CÓDIGO AÑADIDO --}}
 
                         @foreach ($elementosFormulario as $elemento)
                         {{-- 2. Cada elemento ahora es una columna responsiva --}}

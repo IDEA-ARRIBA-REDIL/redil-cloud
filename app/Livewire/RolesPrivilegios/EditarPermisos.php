@@ -8,6 +8,12 @@ use Spatie\Permission\Models\Role;
 
 class EditarPermisos extends Component
 {
+    public function boot(): void
+    {
+        abort_unless(auth()->user()?->roles()->wherePivot('activo', true)
+            ->whereHas('permissions', fn ($query) => $query->where('name', 'configuraciones.subitem_roles'))->exists(), 403);
+    }
+
     public $role;
 
     public $rolActivo;
@@ -89,6 +95,7 @@ class EditarPermisos extends Component
             'Temas' => 'temas.',
             'Iglesia' => 'iglesia.',
             'Actividades' => 'actividades.',
+            'Novedades' => 'novedades.',
             'Puntos de pago' => 'pdp.',
             'Peticiones' => 'peticiones.',
             'Padres' => 'padres.',

@@ -161,7 +161,7 @@ class GrupoSeeder extends Seeder
         );
 
         DB::table('integrantes_grupo')->updateOrInsert(
-            ['grupo_id' => 2, 'user_id' => 6]
+            ['grupo_id' => 27, 'user_id' => 6]
         );
 
         DB::table('integrantes_grupo')->updateOrInsert(
@@ -169,7 +169,7 @@ class GrupoSeeder extends Seeder
         );
 
         DB::table('integrantes_grupo')->updateOrInsert(
-            ['grupo_id' => 2, 'user_id' => 7]
+            ['grupo_id' => 27, 'user_id' => 7]
         );
 
         DB::table('integrantes_grupo')->updateOrInsert(

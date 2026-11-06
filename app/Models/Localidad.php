@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Localidad extends Model
@@ -22,5 +23,10 @@ class Localidad extends Model
     public function barrios(): HasMany
     {
       return $this->HasMany(Barrio::class);
+    }
+
+    public function sedes(): BelongsToMany
+    {
+      return $this->belongsToMany(Sede::class, 'localidad_sede');
     }
 }

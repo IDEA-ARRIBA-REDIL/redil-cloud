@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AulasExport;
 use App\Models\Aula;
-use App\Models\TipoAula;
 use App\Models\Sede;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
-use stdClass; // Para los tags de búsqueda
-use App\Exports\AulasExport; // Importa la nueva clase de exportación
+use App\Models\TipoAula;
+use Carbon\Carbon; // Para los tags de búsqueda
+use Illuminate\Http\Request; // Importa la nueva clase de exportación
 use Maatwebsite\Excel\Facades\Excel; // Importa el Facade de Excel
-use Illuminate\Support\Str; // Para generar el nombre del archivo (opcional pero recomendado)
-use Carbon\Carbon; // Para añadir fecha al nombre del archivo (opcional)
+// Para generar el nombre del archivo (opcional pero recomendado)
+use stdClass; // Para añadir fecha al nombre del archivo (opcional)
 
 class AulaController extends Controller
 {
@@ -40,9 +39,9 @@ class AulaController extends Controller
 
         // Aplicar filtro por Nombre (insensible a mayúsculas/minúsculas)
         if ($filtroNombre) {
-            $queryAulas->where('nombre', 'ilike', '%' . $filtroNombre . '%'); // Usamos ILIKE para PostgreSQL
+            $queryAulas->where('nombre', 'ilike', '%'.$filtroNombre.'%'); // Usamos ILIKE para PostgreSQL
 
-            $tag = new stdClass();
+            $tag = new stdClass;
             $tag->label = $filtroNombre;
             $tag->field = 'filtro_nombre_aula'; // ID del input en el HTML
             $tag->value = $filtroNombre;
@@ -55,8 +54,8 @@ class AulaController extends Controller
             $queryAulas->where('sede_id', $filtroSedeId);
             $sedeModel = Sede::find($filtroSedeId);
             if ($sedeModel) {
-                $tag = new stdClass();
-                $tag->label = 'Sede: ' . $sedeModel->nombre;
+                $tag = new stdClass;
+                $tag->label = 'Sede: '.$sedeModel->nombre;
                 $tag->field = 'filtro_sede'; // ID del select en el HTML
                 $tag->value = $filtroSedeId;
                 $tagsBusqueda[] = $tag;
@@ -69,8 +68,8 @@ class AulaController extends Controller
             $queryAulas->where('tipo_aula_id', $filtroTipoAulaId);
             $tipoAulaModel = TipoAula::find($filtroTipoAulaId);
             if ($tipoAulaModel) {
-                $tag = new stdClass();
-                $tag->label = 'Tipo: ' . $tipoAulaModel->nombre;
+                $tag = new stdClass;
+                $tag->label = 'Tipo: '.$tipoAulaModel->nombre;
                 $tag->field = 'filtro_tipo_aula'; // ID del select en el HTML
                 $tag->value = $filtroTipoAulaId;
                 $tagsBusqueda[] = $tag;
@@ -97,6 +96,7 @@ class AulaController extends Controller
     public function editar($aulaId)
     {
         $aula = Aula::with(['sede', 'tipo'])->findOrFail($aulaId);
+
         return response()->json($aula);
     }
 
@@ -125,7 +125,7 @@ class AulaController extends Controller
 
         $aula->save();
 
-        return redirect()->route('aulas.gestionar')->with('success', 'Aula actualizada exitosamente.');
+        return redirect()->route('aulas.gestionar', $this->obtenerFiltrosRedireccion($request))->with('success', 'Aula actualizada exitosamente.');
     }
 
     /**
@@ -147,8 +147,7 @@ class AulaController extends Controller
             'descripcion' => 'nullable|string',
         ]);
 
-
-        $aula = new Aula();
+        $aula = new Aula;
         $aula->nombre = $request->nombre;
         $aula->sede_id = $request->sede_id;
         $aula->direccion = $request->direccion;
@@ -161,13 +160,10 @@ class AulaController extends Controller
         }
         $aula->save();
 
-
-
-
-        return redirect()->route('aulas.gestionar')->with('success', 'Aula creada exitosamente.');
+        return redirect()->route('aulas.gestionar', $this->obtenerFiltrosRedireccion($request))->with('success', 'Aula creada exitosamente.');
     }
 
-    public function eliminar($aulaId)
+    public function eliminar(Request $request, $aulaId)
     {
         // Busca el aula o lanza una excepción si no existe
         $aula = Aula::findOrFail($aulaId);
@@ -178,7 +174,26 @@ class AulaController extends Controller
         // Ahora elimina el aula
         $aula->delete();
 
-        return redirect()->route('aulas.gestionar')->with('success', 'Aula eliminada exitosamente.');
+        return redirect()->route('aulas.gestionar', $this->obtenerFiltrosRedireccion($request))->with('success', 'Aula eliminada exitosamente.');
+    }
+
+    /**
+     * Obtiene los parámetros de filtrado y paginación activos desde el request actual o la URL previa.
+     */
+    private function obtenerFiltrosRedireccion(Request $request): array
+    {
+        $claves = ['filtro_nombre_aula', 'filtro_sede', 'filtro_tipo_aula', 'page'];
+        $filtros = $request->only($claves);
+
+        if (empty($filtros)) {
+            $queryPrevia = parse_url(url()->previous(), PHP_URL_QUERY);
+            if ($queryPrevia) {
+                parse_str($queryPrevia, $parametrosPrevios);
+                $filtros = array_intersect_key($parametrosPrevios, array_flip($claves));
+            }
+        }
+
+        return array_filter($filtros, fn ($valor) => ! is_null($valor) && $valor !== '');
     }
 
     public function exportarExcel(Request $request) // Recibe el Request para pasar filtros

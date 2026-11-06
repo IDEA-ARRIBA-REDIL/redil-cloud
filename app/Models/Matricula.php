@@ -19,6 +19,9 @@ class Matricula extends Model
         'periodo_id',
         'horario_materia_periodo_id',
         'referencia_pago',
+        'compra_id',
+        'pago_id',
+        'estado_pago_matricula',
         'valor_a_pagar',
         'valor_pagado',
         'fecha_pago',
@@ -44,6 +47,15 @@ class Matricula extends Model
         'bloqueado' => 'boolean',
         'fecha_bloqueo' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Matricula $matricula) {
+            \Illuminate\Support\Facades\DB::table('matricula_horario_materia_periodo')
+                ->where('matricula_id', $matricula->id)
+                ->delete();
+        });
+    }
 
     public function user(): BelongsTo
     {
@@ -108,12 +120,12 @@ class Matricula extends Model
 
     public function compra(): BelongsTo
     {
-        return $this->belongsTo(Compra::class, 'referencia_pago');
+        return $this->belongsTo(Compra::class, 'compra_id');
     }
 
     public function pago(): BelongsTo
     {
-        return $this->belongsTo(Pago::class, 'referencia_pago');
+        return $this->belongsTo(Pago::class, 'pago_id');
     }
 
     /**
@@ -122,33 +134,7 @@ class Matricula extends Model
      */
     public static function limpiarMatriculasDePagoFallido(Pago $pago): void
     {
-        try {
-            $referencias = [$pago->id, (string) $pago->id];
-            if ($pago->compra_id) {
-                $referencias[] = $pago->compra_id;
-                $referencias[] = (string) $pago->compra_id;
-            }
-
-            $matriculas = self::whereIn('referencia_pago', $referencias)
-                ->orWhere(function ($query) use ($pago) {
-                    if ($pago->compra && $pago->compra->user_id) {
-                        $query->where('user_id', $pago->compra->user_id)
-                            ->where('estado_pago_matricula', '!=', 'pagada');
-                    }
-                })
-                ->get();
-
-            foreach ($matriculas as $matricula) {
-                self::borrarMatriculaYRelaciones($matricula);
-            }
-
-            if ($pago->compra && $pago->compra->estado != 3) {
-                $pago->compra->carritos()->delete();
-                $pago->compra->inscripciones()->where('estado', '!=', true)->delete();
-            }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("Error al limpiar matrícula de pago fallido (Pago ID {$pago->id}): ".$e->getMessage());
-        }
+        app(\App\Services\EstadoFinancieroService::class)->limpiarReservasFallidas($pago);
     }
 
     /**
@@ -229,6 +215,115 @@ class Matricula extends Model
             \Illuminate\Support\Facades\Log::error("Error eliminando matrícula ID {$matriculaId} tabla por tabla: ".$e->getMessage());
 
             return false;
+        }
+    }
+
+    /**
+     * Aplica los efectos académicos y de progreso configurados para la matrícula:
+     * 1. Promoción a Tipo de Usuario Inicial (materia / nivel).
+     * 2. Asignación automática de Pasos de Crecimiento configurados "Al Iniciar" (materia / nivel).
+     */
+    public function aplicarEfectosMatricula(): void
+    {
+        if (! $this->user_id) {
+            \Illuminate\Support\Facades\Log::warning("Matricula::aplicarEfectosMatricula: No se encontró user_id para Matricula ID {$this->id}");
+
+            return;
+        }
+
+        $usuario = $this->relationLoaded('user') ? $this->user : User::find($this->user_id);
+        if (! $usuario) {
+            \Illuminate\Support\Facades\Log::warning("Matricula::aplicarEfectosMatricula: No se encontró usuario para Matricula ID {$this->id}");
+
+            return;
+        }
+
+        if (! $this->horario_materia_periodo_id) {
+            \Illuminate\Support\Facades\Log::warning("Matricula::aplicarEfectosMatricula: No se encontró horario_materia_periodo_id para Matricula ID {$this->id}");
+
+            return;
+        }
+
+        // Obtener la materia a través de horarioMateriaPeriodo -> materiaPeriodo -> materia
+        $horario = $this->relationLoaded('horarioMateriaPeriodo') ? $this->horarioMateriaPeriodo : HorarioMateriaPeriodo::find($this->horario_materia_periodo_id);
+        $materia = $horario?->materiaPeriodo?->materia;
+
+        if (! $materia) {
+            \Illuminate\Support\Facades\Log::warning("Matricula::aplicarEfectosMatricula: No se encontró materia para Matricula ID {$this->id}");
+
+            return;
+        }
+
+        \Illuminate\Support\Facades\Log::info("Matricula::aplicarEfectosMatricula: Aplicando efectos para Usuario ID {$usuario->id} en Materia '{$materia->nombre}' (ID {$materia->id})");
+
+        // 1. Tipo de Usuario Inicial de la Materia
+        if ($materia->tipo_usuario_inicial_id) {
+            $usuario->promoverTipoUsuario($materia->tipo_usuario_inicial_id);
+        }
+
+        // 2. Pasos de Crecimiento configurados "Al Iniciar" en la Materia
+        $pasosIniciar = $materia->pasosCrecimiento()
+            ->wherePivot('al_iniciar', 1)
+            ->orderBy('materia_paso_crecimiento.indice')
+            ->get();
+
+        foreach ($pasosIniciar as $paso) {
+            $estadoId = $paso->pivot->estado_paso_crecimiento_usuario_id ?? $paso->pivot->estado;
+            if ($estadoId) {
+                CrecimientoUsuario::procesarPaso(
+                    userId: $usuario->id,
+                    pasoCrecimientoId: $paso->id,
+                    estadoObjetivoId: (int) $estadoId,
+                    detalle: 'Asignado automáticamente al iniciar matrícula en: '.$materia->nombre,
+                    fecha: now()
+                );
+            }
+        }
+
+        // 3. Tareas de Consolidación configuradas "Al Iniciar" en la Materia
+        if (method_exists($materia, 'tareasIniciar')) {
+            $tareasIniciar = $materia->tareasIniciar()
+                ->orderBy('indice')
+                ->get();
+
+            foreach ($tareasIniciar as $tareaConfig) {
+                if ($tareaConfig->tarea_consolidacion_id && $tareaConfig->estado_tarea_consolidacion_id) {
+                    TareaConsolidacionUsuario::procesarTarea(
+                        userId: $usuario->id,
+                        tareaConsolidacionId: $tareaConfig->tarea_consolidacion_id,
+                        estadoObjetivoId: $tareaConfig->estado_tarea_consolidacion_id,
+                        observaciones: 'Asignado automáticamente al iniciar matrícula en: '.$materia->nombre,
+                        fecha: now()
+                    );
+                }
+            }
+        }
+
+        // 4. Si la materia pertenece a un Nivel, aplicar también efectos de inicio del Nivel si aplican
+        if ($materia->nivel_id && $materia->nivel) {
+            $nivel = $materia->nivel;
+
+            if ($nivel->tipo_usuario_inicial_id) {
+                $usuario->promoverTipoUsuario($nivel->tipo_usuario_inicial_id);
+            }
+
+            $pasosNivelIniciar = $nivel->pasosCrecimiento()
+                ->wherePivot('al_iniciar', 1)
+                ->orderBy('nivel_paso_crecimiento.indice')
+                ->get();
+
+            foreach ($pasosNivelIniciar as $pasoNivel) {
+                $estadoId = $pasoNivel->pivot->estado_paso_crecimiento_usuario_id ?? $pasoNivel->pivot->estado;
+                if ($estadoId) {
+                    CrecimientoUsuario::procesarPaso(
+                        userId: $usuario->id,
+                        pasoCrecimientoId: $pasoNivel->id,
+                        estadoObjetivoId: (int) $estadoId,
+                        detalle: 'Asignado automáticamente (Nivel: '.$nivel->nombre.') al iniciar matrícula en: '.$materia->nombre,
+                        fecha: now()
+                    );
+                }
+            }
         }
     }
 }

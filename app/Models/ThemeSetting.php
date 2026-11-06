@@ -8,8 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class ThemeSetting extends Model
 {
     use HasFactory;
-    //protected $fillable = ['name', 'value', 'category', 'description', 'is_active'];
+
+    // protected $fillable = ['name', 'value', 'category', 'description', 'is_active'];
     protected $guarded = [];
+
+    protected function casts(): array
+    {
+        return ['gradient' => 'boolean', 'is_active' => 'boolean'];
+    }
 
     public static function getColorValue($name, $default = null)
     {

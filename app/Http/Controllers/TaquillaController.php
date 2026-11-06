@@ -15,7 +15,6 @@ use App\Models\Moneda;
 use App\Models\Pago;
 use App\Models\TipoPago;
 use App\Models\User; // ¡Asegúrate de que estén todas!
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -121,8 +120,15 @@ class TaquillaController extends Controller
      * Muestra la página de pago.
      * (¡MODIFICADO! Asegúrate de que los nombres de variables coincidan)
      */
-    public function mostrarPaginaDePago(Request $request, Caja $cajaActiva, User $comprador, User $inscrito, Actividad $actividad, ActividadCategoria $categoria, $modo = 'propia'): View
+    public function mostrarPaginaDePago(Request $request, Caja $cajaActiva, User $comprador, User $inscrito, Actividad $actividad, ActividadCategoria $categoria, $modo = 'propia'): View|\Illuminate\Http\RedirectResponse
     {
+        // 1. Validar que la caja esté activa y dentro de su horario de atención
+        if (! $cajaActiva->puedeOperar()) {
+            $mensaje = $cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+
+            return redirect()->route('taquilla.operar', $cajaActiva)->with('error', $mensaje);
+        }
+
         $monedaPrincipal = Moneda::where('default', true)->first() ?? Moneda::find(1);
         $esEscuela = $actividad->tipo->tipo_escuelas;
         $esAbono = $actividad->tipo->permite_abonos && ! $esEscuela;
@@ -154,25 +160,71 @@ class TaquillaController extends Controller
             'actividad',
             'actividad.tipo', // ¡NUEVO! Necesario para saber si permite abonos
             'moneda',
-            'pagos', // ¡Esta línea es correcta! Carga la moneda desde compra.moneda_id
-            'pagos.tipoPago', // Los pagos realizados
+            'pagos', // Carga los pagos realizados
+            'pagos.tipoPago',
             'pagos.estadoPago',
+            'destinatario',
             'inscripciones.user', // El/los Inscrito(s)
             'inscripciones.categoriaActividad' // La(s) Categoría(s)
         );
 
-        // 2. Obtener la primera inscripción (para el ticket PDF y el QR)
+        // 2. Obtener la primera inscripción (para el ticket PDF y el QR si aplica)
         $inscripcion = $compra->inscripciones->first();
 
-        // 3. Buscar si existe una matrícula asociada a esta compra (Escuelas)
-        $matricula = \App\Models\Matricula::where('referencia_pago', $compra->id)
-            ->with(['horarioMateriaPeriodo.horarioBase.aula', 'sede', 'materialSede'])
-            ->first();
+        // 3. Buscar si existen matrículas asociadas a esta compra (Escuelas)
+        $pagoIds = $compra->pagos->pluck('id')->filter()->all();
+        $referencias = array_merge(
+            [$compra->id, (string) $compra->id],
+            $pagoIds,
+            array_map('strval', $pagoIds)
+        );
 
-        // 4. Generar los datos para el QR (usando el ID de la inscripción)
-        $datosParaQr = (string) $inscripcion->id;
+        $matriculas = \App\Models\Matricula::where(function ($query) use ($compra, $referencias, $pagoIds) {
+            $query->where('compra_id', $compra->id)
+                ->orWhereIn('referencia_pago', $referencias);
+            if (! empty($pagoIds)) {
+                $query->orWhereIn('pago_id', $pagoIds);
+            }
+        })
+            ->with([
+                'horarioMateriaPeriodo.horarioBase.aula.sede',
+                'horarioMateriaPeriodo.horarioBase.aula.tipo',
+                'horarioMateriaPeriodo.horarioBase.materia',
+                'horarioMateriaPeriodo.materiaPeriodo.materia',
+                'sede',
+                'materialSede',
+                'escuela',
+                'user',
+            ])
+            ->latest('id')
+            ->get();
 
-        // ¡Esta línea ahora funcionará gracias al 'use DNS2D;'!
+        // Fallback: Si no está vinculada por id/referencia directa, buscar por usuario y fecha cercana
+        if ($matriculas->isEmpty() && $compra->user_id) {
+            $matriculas = \App\Models\Matricula::where('user_id', $compra->user_id)
+                ->whereBetween('created_at', [
+                    $compra->created_at->copy()->subMinutes(30),
+                    $compra->created_at->copy()->addMinutes(30),
+                ])
+                ->with([
+                    'horarioMateriaPeriodo.horarioBase.aula.sede',
+                    'horarioMateriaPeriodo.horarioBase.aula.tipo',
+                    'horarioMateriaPeriodo.horarioBase.materia',
+                    'horarioMateriaPeriodo.materiaPeriodo.materia',
+                    'sede',
+                    'materialSede',
+                    'escuela',
+                    'user',
+                ])
+                ->latest('id')
+                ->get();
+        }
+
+        $matricula = $matriculas->first();
+
+        // 4. Generar los datos para el QR de forma segura
+        $datosParaQr = (string) ($inscripcion?->id ?? $matricula?->id ?? $compra->id);
+
         $qrCode = DNS2D::getBarcodePNG($datosParaQr, 'QRCODE');
 
         // 5. Enviar el Correo de Confirmación (con el Ticket PDF)
@@ -210,7 +262,8 @@ class TaquillaController extends Controller
             'titulo' => $titulo,
             'mensaje' => $mensaje,
             'qrCodeBase64' => $qrCode, // Pasamos el QR a la vista
-            'matricula' => $matricula, // Pasamos la matrícula a la vista
+            'matricula' => $matricula, // Pasamos la matrícula principal
+            'matriculas' => $matriculas, // Pasamos la colección completa de matrículas
         ]);
     }
 
@@ -270,17 +323,8 @@ class TaquillaController extends Controller
         }
 
         // 3. Validar Horario de Operación de la Caja especificada
-        $horaActual = now()->format('H:i:s');
-        if ($cajaActual->hora_apertura && $cajaActual->hora_cierre) {
-            $apertura = Carbon::parse($cajaActual->hora_apertura)->format('H:i:s');
-            $cierre = Carbon::parse($cajaActual->hora_cierre)->format('H:i:s');
-
-            if ($horaActual < $apertura || $horaActual > $cierre) {
-                $hApertura = Carbon::parse($cajaActual->hora_apertura)->format('g:i A');
-                $hCierre = Carbon::parse($cajaActual->hora_cierre)->format('g:i A');
-
-                return back()->with('error', "Operación no permitida: La caja '{$cajaActual->nombre}' se encuentra fuera de su horario de atención ({$hApertura} - {$hCierre}).");
-            }
+        if (! $cajaActual->estaEnHorario()) {
+            return back()->with('error', "Operación no permitida: La caja '{$cajaActual->nombre}' se encuentra fuera de su horario de atención ({$cajaActual->horario_atencion}).");
         }
 
         // 4. Validar estado actual de la compra
@@ -366,14 +410,15 @@ class TaquillaController extends Controller
                 }
             }
 
-            // 3. Restaurar Cupos en Horario (Si es Escuela)
-            $matricula = \App\Models\Matricula::where('referencia_pago', $compra->id)->first();
-            if ($matricula) {
+            // 3. Restaurar Cupos en Horario (Si es Escuela) y eliminar registros académicos
+            $matriculas = \App\Models\Matricula::where('referencia_pago', $compra->id)->get();
+            foreach ($matriculas as $matricula) {
                 $horario = $matricula->horarioMateriaPeriodo;
                 if ($horario) {
                     $horario->increment('cupos_disponibles');
                 }
-                // Eliminar Matrícula (SoftDelete si aplica, o hard delete si no tiene trait)
+                // Eliminar estado académico asociado explícitamente y luego la matrícula (soft delete)
+                \App\Models\MatriculaHorarioMateriaPeriodo::where('matricula_id', $matricula->id)->delete();
                 $matricula->delete();
             }
 

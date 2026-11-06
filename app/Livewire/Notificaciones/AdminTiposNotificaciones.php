@@ -12,6 +12,11 @@ class AdminTiposNotificaciones extends Component
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        \App\Services\PermisosCuentaInicial::autorizarNotificaciones(auth()->user());
+    }
+
     public string $search = '';
 
     public bool $readyToLoad = false;

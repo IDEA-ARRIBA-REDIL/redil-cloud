@@ -48,7 +48,7 @@ class ConsolidacionController extends Controller
         return view('contenido.paginas.consolidacion.bloques');
     }
 
-    public function listar(Request $request, $tipo = 'sin-tareas')
+    public function listar(Request $request, $tipo = 'todos')
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('consolidacion.subitem_lista_consolidacion');
@@ -88,10 +88,40 @@ class ConsolidacionController extends Controller
         $parametrosBusqueda['filtroPorEstadoNivelAcademico'] = $request->filtroPorEstadoNivelAcademico;
         $parametrosBusqueda['filtroPorSede'] = $request->filtroPorSede;
 
+        // Procesamiento del filtro de rango de fechas de creación
+        $rangoFechas = $request->rango_fechas;
+        $fechaInicio = null;
+        $fechaFin = null;
+
+        if ($rangoFechas) {
+            $fechas = explode(' a ', $rangoFechas);
+            if (count($fechas) >= 2) {
+                $fechaInicio = Carbon::parse(trim($fechas[0]))->startOfDay();
+                $fechaFin = Carbon::parse(trim($fechas[1]))->endOfDay();
+            } else {
+                $fechaInicio = Carbon::parse(trim($fechas[0]))->startOfDay();
+                $fechaFin = Carbon::parse(trim($fechas[0]))->endOfDay();
+            }
+        } else {
+            // Rango predeterminado: últimos 30 días
+            $fechaInicio = Carbon::now()->subDays(30)->startOfDay();
+            $fechaFin = Carbon::now()->endOfDay();
+            $rangoFechas = $fechaInicio->format('Y-m-d').' a '.$fechaFin->format('Y-m-d');
+        }
+
+        $parametrosBusqueda['rango_fechas'] = $rangoFechas;
         $parametrosBusqueda['textoBusqueda'] = '';
         $parametrosBusqueda['tagsBusqueda'] = [];
         $parametrosBusqueda['bandera'] = '';
         $parametrosBusqueda['tipo'] = $tipo;
+
+        // Agregar tag del rango de fechas
+        $tagFecha = new stdClass;
+        $tagFecha->label = 'Fecha creación: '.$rangoFechas;
+        $tagFecha->field = 'rango_fechas';
+        $tagFecha->value = $rangoFechas;
+        $tagFecha->fieldAux = '';
+        $parametrosBusqueda['tagsBusqueda'][] = $tagFecha;
 
         $parametrosBusqueda = (object) $parametrosBusqueda;
 
@@ -142,10 +172,15 @@ class ConsolidacionController extends Controller
 
             // Solo aplicamos el filtro si la edad mínima es mayor que 0
             if ($edadMinima > 0) {
-                // Usamos whereRaw para aplicar la función de edad de PostgreSQL
-                // y pasamos el valor como un "binding" (?) para seguridad.
-                $personasQuery->whereRaw('EXTRACT(YEAR FROM AGE(fecha_nacimiento)) >= ?', [$edadMinima]);
+                // Usamos whereRaw para aplicar la función de edad de PostgreSQL y excluimos nulos
+                $personasQuery->whereNotNull('fecha_nacimiento')
+                    ->whereRaw('EXTRACT(YEAR FROM AGE(fecha_nacimiento)) >= ?', [$edadMinima]);
             }
+        }
+
+        // Filtro por rango de fechas de creación de los usuarios
+        if ($fechaInicio && $fechaFin) {
+            $personasQuery->whereBetween('users.created_at', [$fechaInicio, $fechaFin]);
         }
 
         // Calculamos los indicadores ANTES de aplicar los filtros de tipo ('todos', 'sin-tareas')
@@ -153,6 +188,16 @@ class ConsolidacionController extends Controller
         $indicadoresQuery = clone $personasQuery;
         $indicadoresGenerales = [];
 
+        // 1. Indicador: Todas (Principal)
+        $item = new stdClass;
+        $item->nombre = 'Todas';
+        $item->url = 'todos';
+        $item->cantidad = (clone $indicadoresQuery)->count();
+        $item->color = '#fff';
+        $item->icono = 'ti ti-asterisk';
+        $indicadoresGenerales[] = $item;
+
+        // 2. Indicador: Sin tareas
         $item = new stdClass;
         $item->nombre = 'Sin tareas';
         $item->url = 'sin-tareas';
@@ -161,6 +206,7 @@ class ConsolidacionController extends Controller
         $item->icono = 'ti ti-user-off';
         $indicadoresGenerales[] = $item;
 
+        // 3. Indicadores: Filtros dinámicos
         $filtrosDinamicos = FiltroConsolidacion::with('condiciones')->orderBy('orden')->get();
 
         foreach ($filtrosDinamicos as $filtro) {
@@ -200,14 +246,6 @@ class ConsolidacionController extends Controller
             $item->icono = $filtro->icono ?? 'ti ti-filter';
             $indicadoresGenerales[] = $item;
         }
-
-        $item = new stdClass;
-        $item->nombre = 'Todas';
-        $item->url = 'todos';
-        $item->cantidad = (clone $indicadoresQuery)->count(); // Usamos clone para no alterar la consulta
-        $item->color = '#fff';
-        $item->icono = 'ti ti-asterisk';
-        $indicadoresGenerales[] = $item;
 
         //  APLICAMOS LOS FILTROS DE TIPO
         if ($tipo == 'sin-tareas') {
@@ -274,6 +312,7 @@ class ConsolidacionController extends Controller
             'indicadoresGenerales' => $indicadoresGenerales,
             'parametrosBusqueda' => $parametrosBusqueda,
             'tipo' => $tipo,
+            'rangoFechas' => $rangoFechas,
             'sedes' => $sedes,
             'tiposUsuarios' => $tiposUsuarios,
             'rangosEdad' => $rangosEdad,
@@ -729,38 +768,106 @@ class ConsolidacionController extends Controller
         ]);
     }
 
-    public function dashboard(Request $request)
+    /**
+     * Determina el alcance de datos de consolidación según los privilegios del rol activo.
+     */
+    private function getAlcanceConsolidacion(): array
     {
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        if (! $rolActivo) {
+            abort(403, 'No tienes un rol activo asignado.');
+        }
+
         $rolActivo->verificacionDelPermiso('consolidacion.dashboard_consolidacion');
 
-        // return Matricula::get();
-        // return User::find(17);
+        $esTodaConsolidacion = $rolActivo->hasPermissionTo('consolidacion.lista_toda_consolidacion');
+        $esSoloMinisterio = $rolActivo->hasPermissionTo('consolidacion.lista_consolidacion_solo_ministerio');
 
-        /* $matricula = Matricula::firstOrCreate([
-                     "id"=> 1,
-                     "user_id"=> 17,
-                     "periodo_id"=> 1,
-                     "horario_materia_periodo_id"=> 1,
-                     "referencia_pago"=> null,
-                     "valor_a_pagar"=> null,
-                     "valor_pagado"=> null,
-                     "fecha_pago"=> null,
-                     "estado_pago_matricula"=> "finalizada",
-                     "observacion"=> null,
-                     "fecha_matricula"=> "2026-04-08T05:00:00.000000Z",
-                     "sede_id"=> 1,
-                     "material_sede_id"=> 2,
-                     "trasladado"=> false,
-                     "fecha_bloqueo"=> null,
-                     "bloqueado"=> false,
-                     "escuela_id"=> 1,
-                     "tipo_pago_id"=> null
-                 ]);
+        if (! $esTodaConsolidacion && ! $esSoloMinisterio) {
+            abort(403, 'No tienes privilegios de consolidación para consultar este informe.');
+        }
 
-                 return $matricula;*/
+        $esSoloMinisterioFinal = ($esSoloMinisterio && ! $esTodaConsolidacion);
+        $idsPersonasMinisterio = null;
+        $sedesInfluencia = collect();
+        $filtroLocalidadesIds = [];
 
-        // Lógica para Rango de Fechas (Semanas)
+        if ($esSoloMinisterioFinal) {
+            $user = auth()->user();
+
+            // NIVEL 1: Zona de consolidación asignada al rol
+            $zona = ! empty($rolActivo->zona_de_consolidacion_id) ? Zona::with(['sedes', 'localidades'])->find($rolActivo->zona_de_consolidacion_id) : null;
+
+            if ($zona) {
+                $sedesInfluencia = $zona->sedes;
+                $filtroLocalidadesIds = $zona->localidades->pluck('id')->toArray();
+                $idsPersonasMinisterio = null; // Cobertura territorial
+            } else {
+                // NIVEL 2: Encargado de una o más sedes (lidera el grupo principal de una sede)
+                $sedesEncargadas = Sede::whereHas('grupo.encargados', function ($q) use ($user) {
+                    $q->where('users.id', $user->id);
+                })->get();
+
+                if ($sedesEncargadas->isNotEmpty()) {
+                    $sedesInfluencia = $sedesEncargadas;
+                    $idsPersonasMinisterio = null; // Cobertura territorial sobre sus sedes encargadas
+                }
+                // NIVEL 3: Coordinador de sede (lista_asistentes_sede_id en el rol activo)
+                elseif (! empty($rolActivo->lista_asistentes_sede_id) && Sede::find($rolActivo->lista_asistentes_sede_id)) {
+                    $sedesInfluencia = Sede::where('id', $rolActivo->lista_asistentes_sede_id)->get();
+                    $idsPersonasMinisterio = null; // Cobertura territorial sobre su sede asignada
+                }
+                // NIVEL 4: Jerarquía de sus grupos (ministerio tradicional)
+                else {
+                    $personasMinisterio = $user->consolidacion('con-y-sin-eliminados');
+                    $idsPersonasMinisterio = $personasMinisterio ? $personasMinisterio->pluck('id')->unique()->filter()->values()->toArray() : [];
+                    if (empty($idsPersonasMinisterio)) {
+                        $idsPersonasMinisterio = [0];
+                    }
+
+                    $sedesIdsDeMisPersonas = User::withTrashed()
+                        ->whereIn('id', $idsPersonasMinisterio)
+                        ->whereNotNull('sede_id')
+                        ->pluck('sede_id')
+                        ->unique()
+                        ->toArray();
+                    $sedesInfluencia = Sede::whereIn('id', $sedesIdsDeMisPersonas)->get();
+                }
+            }
+        }
+
+        return [
+            'rolActivo' => $rolActivo,
+            'esTodaConsolidacion' => $esTodaConsolidacion,
+            'esSoloMinisterio' => $esSoloMinisterioFinal,
+            'idsPersonasMinisterio' => $idsPersonasMinisterio,
+            'sedesInfluencia' => $sedesInfluencia,
+            'filtroLocalidadesIds' => $filtroLocalidadesIds,
+        ];
+    }
+
+    public function dashboard(Request $request)
+    {
+        $alcance = $this->getAlcanceConsolidacion();
+        $rolActivo = $alcance['rolActivo'];
+        $esSoloMinisterio = $alcance['esSoloMinisterio'];
+        $esTodaConsolidacion = $alcance['esTodaConsolidacion'];
+        $idsPersonasMinisterio = $alcance['idsPersonasMinisterio'];
+        $sedesInfluencia = $alcance['sedesInfluencia'];
+        $filtroLocalidadesIds = $alcance['filtroLocalidadesIds'] ?? [];
+
+        $filtroAlcanceMinisterioCallback = function ($query) use ($esSoloMinisterio, $idsPersonasMinisterio, $filtroLocalidadesIds) {
+            if ($esSoloMinisterio) {
+                if ($idsPersonasMinisterio !== null) {
+                    $query->whereIn('users.id', $idsPersonasMinisterio);
+                }
+                if (! empty($filtroLocalidadesIds)) {
+                    $query->whereIn('users.localidad_id', $filtroLocalidadesIds);
+                }
+            }
+        };
+
+        // Lógica para Rango de Fechas
         $rangoFechas = $request->rango_fechas;
 
         if ($rangoFechas) {
@@ -773,78 +880,95 @@ class ConsolidacionController extends Controller
                 $fin = Carbon::parse(trim($fechas[0]))->endOfDay();
             }
         } else {
-            // Default: Este mes
-            $inicio = Carbon::now()->startOfMonth();
-            $fin = Carbon::now()->endOfMonth();
+            // Default: Últimos 30 días
+            $inicio = Carbon::now()->subDays(30)->startOfDay();
+            $fin = Carbon::now()->endOfDay();
             $rangoFechas = $inicio->format('Y-m-d').' a '.$fin->format('Y-m-d');
         }
 
         // --- LÓGICA DE FILTROS Y VISTAS ---
 
-        // 1. Verificar si estamos en "Vista Detalle" (Drill Down)
-        $bloqueDetalleId = $request->bloque_detalle_id ?? null;
-        $esVistaDetalle = ! empty($bloqueDetalleId);
-        $bloqueActual = null;
-        $sedesDisponibles = collect();
-        $sedesSeleccionadas = [];
+        if ($esSoloMinisterio) {
+            // Usuario con alcance limitado a su ministerio / zona
+            $esVistaDetalle = false; // No hay bloques
+            $bloqueActual = null;
+            $tipoDesglose = 'sede';
+            $bloquesDisponibles = collect();
+            $bloquesSeleccionados = [];
+            $sedesDisponibles = $sedesInfluencia;
 
-        // Switch de filtros
-        $bloquesDisponibles = collect();
-        $bloquesSeleccionados = [];
+            if ($request->has('sedes_seleccionadas')) {
+                $sedesSeleccionadas = (array) $request->sedes_seleccionadas;
+            } else {
+                $sedesSeleccionadas = $sedesDisponibles->pluck('id')->toArray();
+            }
 
-        // IDs finales sobre los cuales filtrar la data general
-        $sedesIdsFiltrar = [];
+            $sedesIdsFiltrar = $sedesDisponibles->whereIn('id', $sedesSeleccionadas)->pluck('id')->toArray();
+            if (empty($sedesIdsFiltrar)) {
+                $sedesIdsFiltrar = $sedesDisponibles->pluck('id')->toArray();
+            }
+        } else {
+            // Usuario con alcance global (toda consolidación)
+            $bloqueDetalleId = $request->bloque_detalle_id ?? null;
+            $esVistaDetalle = ! empty($bloqueDetalleId);
+            $bloqueActual = null;
+            $sedesDisponibles = collect();
+            $sedesSeleccionadas = [];
+            $bloquesDisponibles = collect();
+            $bloquesSeleccionados = [];
+            $sedesIdsFiltrar = [];
+            $tipoDesglose = 'bloque';
 
-        // DATA PARA LA VISTA
-        $datosDesglose = []; // Ya sea por Bloque o por Sede
-        $tipoDesglose = 'bloque'; // 'bloque' o 'sede'
+            if ($esVistaDetalle) {
+                $bloqueActual = BloqueDashboardConsolidacion::with('sedes')->find($bloqueDetalleId);
 
-        $esPeticionFiltro = $request->has('rango_fechas');
+                if ($bloqueActual) {
+                    $tipoDesglose = 'sede';
+                    $sedesDisponibles = $bloqueActual->sedes;
 
-        // Caso 1: VISTA DETALLE (Viendo un bloque específico)
-        if ($esVistaDetalle) {
-            $bloqueActual = BloqueDashboardConsolidacion::with('sedes')->find($bloqueDetalleId);
+                    if ($request->has('sedes_seleccionadas')) {
+                        $sedesSeleccionadas = $request->sedes_seleccionadas;
+                    } else {
+                        $sedesSeleccionadas = $sedesDisponibles->pluck('id')->toArray();
+                    }
 
-            if ($bloqueActual) {
-                $tipoDesglose = 'sede';
-                $sedesDisponibles = $bloqueActual->sedes; // Sedes de ESTE bloque
-
-                // Si el selector no está en el request, asumimos "seleccionar todo" (cambio de vista o primer ingreso).
-                if ($request->has('sedes_seleccionadas')) {
-                    $sedesSeleccionadas = $request->sedes_seleccionadas;
+                    $sedesIdsFiltrar = $sedesDisponibles->whereIn('id', $sedesSeleccionadas)->pluck('id')->toArray();
                 } else {
-                    $sedesSeleccionadas = $sedesDisponibles->pluck('id')->toArray();
+                    $esVistaDetalle = false;
+                }
+            }
+
+            if (! $esVistaDetalle) {
+                $bloquesDisponibles = BloqueDashboardConsolidacion::with('sedes')->get();
+
+                if ($request->has('bloques_seleccionados')) {
+                    $bloquesSeleccionados = $request->bloques_seleccionados;
+                } else {
+                    $bloquesSeleccionados = $bloquesDisponibles->pluck('id')->toArray();
                 }
 
-                // IDs filtrar son exactamente los seleccionados (que son validos para este bloque)
-                // Filtramos $sedesSeleccionadas para asegurar que pertenezcan al bloque (seguridad)
-                $sedesIdsFiltrar = $sedesDisponibles->whereIn('id', $sedesSeleccionadas)->pluck('id')->toArray();
-
-            } else {
-                // Si el bloque no existe, volver a vista general (fallback)
-                $esVistaDetalle = false;
-            }
-        }
-
-        // Caso 2: VISTA GENERAL (Viendo todos los bloques)
-        if (! $esVistaDetalle) {
-            $bloquesDisponibles = BloqueDashboardConsolidacion::with('sedes')->get();
-
-            if ($request->has('bloques_seleccionados')) {
-                $bloquesSeleccionados = $request->bloques_seleccionados;
-            } else {
-                $bloquesSeleccionados = $bloquesDisponibles->pluck('id')->toArray();
-            }
-
-            if (! empty($bloquesSeleccionados)) {
-                $bloquesFiltrados = $bloquesDisponibles->whereIn('id', $bloquesSeleccionados);
-                foreach ($bloquesFiltrados as $bloque) {
-                    $sedesIdsFiltrar = array_merge($sedesIdsFiltrar, $bloque->sedes->pluck('id')->toArray());
+                if (! empty($bloquesSeleccionados)) {
+                    $bloquesFiltrados = $bloquesDisponibles->whereIn('id', $bloquesSeleccionados);
+                    foreach ($bloquesFiltrados as $bloque) {
+                        $sedesIdsFiltrar = array_merge($sedesIdsFiltrar, $bloque->sedes->pluck('id')->toArray());
+                    }
                 }
             }
         }
 
         $sedesIdsFiltrar = array_unique($sedesIdsFiltrar);
+
+        // --- CONFIGURACIÓN Y CALLBACKS DE FILTROS ---
+        $configuracion = Configuracion::find(1);
+        $edadMinimaConsolidacion = (int) ($configuracion->edad_minima_consolidacion ?? 0);
+
+        // 1. Filtro de edad mínima de consolidación (excluye menores y personas sin fecha de nacimiento)
+        $filtroEdadConsolidacionCallback = function ($query) use ($edadMinimaConsolidacion) {
+            if ($edadMinimaConsolidacion > 0) {
+                $query->whereNotNull('fecha_nacimiento')
+                    ->whereRaw('EXTRACT(YEAR FROM AGE(fecha_nacimiento)) >= ?', [$edadMinimaConsolidacion]);
+            }
+        };
 
         // --- CALLBACK DE FILTRO GENERAL (Aplica para ambos casos) ---
         $filtroSedesCallback = function ($query) use ($inicio, $fin, $sedesIdsFiltrar) {
@@ -879,7 +1003,9 @@ class ConsolidacionController extends Controller
                         });
                 });
             })
+            ->tap($filtroEdadConsolidacionCallback)
             ->tap($filtroSedesCallback)
+            ->tap($filtroAlcanceMinisterioCallback)
             ->count();
 
         // Lógica para Cosecha Efectiva
@@ -907,7 +1033,9 @@ class ConsolidacionController extends Controller
                             ->where('dado_baja', false);
                     });
             })
+            ->tap($filtroEdadConsolidacionCallback)
             ->tap($filtroSedesCallback)
+            ->tap($filtroAlcanceMinisterioCallback)
             ->count();
 
         $cosechaDesercion = $totalCosecha - $cosechaEfectiva;
@@ -929,7 +1057,9 @@ class ConsolidacionController extends Controller
                         });
                 });
             })
+            ->tap($filtroEdadConsolidacionCallback)
             ->tap($filtroSedesCallback)
+            ->tap($filtroAlcanceMinisterioCallback)
             ->pluck('id');
 
         $vinculacionesCosecha = TipoVinculacion::withCount(['usuarios' => function ($query) use ($userIdsCosecha) {
@@ -938,7 +1068,7 @@ class ConsolidacionController extends Controller
 
         // --- Helpers para Desglose y Métricas ---
 
-        $limiteEdad = Configuracion::where('id', 1)->value('limite_menor_edad') ?? 18;
+        $limiteEdad = $configuracion->limite_menor_edad ?? 18;
 
         $calcDistribucion = function ($coleccion, $limite) {
             $adultos = 0;
@@ -984,7 +1114,7 @@ class ConsolidacionController extends Controller
         // --- Lógica para Desglose (Bloques o Sedes) ---
 
         // Helper para calcular métricas de un conjunto de IDs de Sede
-        $calcularMetricasIdsSedes = function ($idsSedes) use ($inicio, $fin) {
+        $calcularMetricasIdsSedes = function ($idsSedes) use ($inicio, $fin, $filtroEdadConsolidacionCallback, $filtroAlcanceMinisterioCallback) {
             // Callback local
             $filtroLocal = function ($query) use ($inicio, $fin, $idsSedes) {
                 if (! empty($idsSedes)) {
@@ -1003,13 +1133,29 @@ class ConsolidacionController extends Controller
                     $q->whereHas('bitacorasTipoUsuario', function ($sub) use ($inicio, $fin) {
                         $sub->whereBetween('created_at', [$inicio, $fin])->whereRaw('id = (SELECT MAX(b2.id) FROM bitacora_tipos_usuarios as b2 WHERE b2.user_id = bitacora_tipos_usuarios.user_id AND b2.created_at BETWEEN ? AND ?) AND tipo_usuario_id_nuevo IN (SELECT id FROM tipos_usuario WHERE habilitado_para_consolidacion = true OR es_miembro_oficial = true)', [$inicio, $fin]);
                     });
-                })->tap($filtroLocal)->count();
+                })
+                ->tap($filtroEdadConsolidacionCallback)
+                ->tap($filtroLocal)
+                ->tap($filtroAlcanceMinisterioCallback)
+                ->count();
 
             return $total;
         };
 
         // Por simplicidad, rehago el calculo completo iterativo para asegurar consistencia con el código anterior
         // pero adaptado al tipo de desglose
+
+        $mesesCortos = [
+            1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr', 5 => 'May', 6 => 'Jun',
+            7 => 'Jul', 8 => 'Ago', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dic',
+        ];
+
+        $formatearRangoSemana = function (Carbon $fecha) use ($mesesCortos) {
+            $iniSem = $fecha->copy()->startOfWeek();
+            $finSem = $fecha->copy()->endOfWeek();
+
+            return $iniSem->format('d').' '.$mesesCortos[$iniSem->month].' - '.$finSem->format('d').' '.$mesesCortos[$finSem->month];
+        };
 
         $itemsAProcesar = []; // Lista de objetos (Bloques o Sedes)
 
@@ -1056,7 +1202,11 @@ class ConsolidacionController extends Controller
                                 });
                             });
                     });
-                })->tap($filtroItem)->count();
+                })
+                ->tap($filtroEdadConsolidacionCallback)
+                ->tap($filtroItem)
+                ->tap($filtroAlcanceMinisterioCallback)
+                ->count();
 
             // 2. Efectiva
             $efectivaItem = User::withTrashed()->whereBetween('created_at', [$inicio, $fin])
@@ -1079,7 +1229,11 @@ class ConsolidacionController extends Controller
                         ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
                             $sub->whereBetween('created_at', [$inicio, $fin])->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])->where('dado_baja', false);
                         });
-                })->tap($filtroItem)->count();
+                })
+                ->tap($filtroEdadConsolidacionCallback)
+                ->tap($filtroItem)
+                ->tap($filtroAlcanceMinisterioCallback)
+                ->count();
 
             // 3. Vinculaciones
             $idsItem = User::withTrashed()->whereBetween('created_at', [$inicio, $fin])
@@ -1092,7 +1246,11 @@ class ConsolidacionController extends Controller
                                     ->orWhere('es_miembro_oficial', true);
                             });
                     });
-                })->tap($filtroItem)->pluck('id');
+                })
+                ->tap($filtroEdadConsolidacionCallback)
+                ->tap($filtroItem)
+                ->tap($filtroAlcanceMinisterioCallback)
+                ->pluck('id');
 
             $vinculacionesItem = TipoVinculacion::withCount(['usuarios' => function ($query) use ($idsItem) {
                 $query->withTrashed()->whereIn('users.id', $idsItem);
@@ -1159,7 +1317,11 @@ class ConsolidacionController extends Controller
                                 $q->where('habilitado_para_consolidacion', true);
                             });
                     });
-                })->tap($filtroItem)->pluck('created_at');
+                })
+                ->tap($filtroEdadConsolidacionCallback)
+                ->tap($filtroItem)
+                ->tap($filtroAlcanceMinisterioCallback)
+                ->pluck('created_at');
 
             // 2. Desercion Semanal Item
             $fechasDesercionItem = User::withTrashed()
@@ -1177,7 +1339,11 @@ class ConsolidacionController extends Controller
                     $sub->whereBetween('created_at', [$inicio, $fin])
                         ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
                         ->where('dado_baja', true);
-                })->tap($filtroItem)->pluck('created_at');
+                })
+                ->tap($filtroEdadConsolidacionCallback)
+                ->tap($filtroItem)
+                ->tap($filtroAlcanceMinisterioCallback)
+                ->pluck('created_at');
 
             $cosechaPorSemanaItem = $fechasCosechaItem->groupBy(function ($d) {
                 return Carbon::parse($d)->startOfWeek()->format('Y-m-d');
@@ -1191,12 +1357,12 @@ class ConsolidacionController extends Controller
 
             foreach ($periodoItem as $fecha) {
                 $lunes = $fecha->format('Y-m-d');
-                $domingoLabel = $fecha->copy()->endOfWeek()->format('y-m-d');
+                $rangoSemanaLabel = $formatearRangoSemana($fecha);
 
                 $cant = isset($cosechaPorSemanaItem[$lunes]) ? $cosechaPorSemanaItem[$lunes]->count() : 0;
                 $cantDes = isset($desercionPorSemanaItem[$lunes]) ? $desercionPorSemanaItem[$lunes]->count() : 0;
 
-                $itemGraficaSemanal[] = ['x' => $domingoLabel, 'y' => $cant, 'y_desercion' => $cantDes];
+                $itemGraficaSemanal[] = ['x' => $rangoSemanaLabel, 'y' => $cant, 'y_desercion' => $cantDes];
             }
 
             // 3. Vinculacion Semanal Item
@@ -1209,7 +1375,11 @@ class ConsolidacionController extends Controller
                                 $q->where('habilitado_para_consolidacion', true);
                             });
                     });
-                })->tap($filtroItem)->select('id', 'created_at', 'tipo_vinculacion_id')->get();
+                })
+                ->tap($filtroEdadConsolidacionCallback)
+                ->tap($filtroItem)
+                ->tap($filtroAlcanceMinisterioCallback)
+                ->select('id', 'created_at', 'tipo_vinculacion_id')->get();
 
             $agrupadoVincItem = $cosechaVinculadaItem->groupBy(function ($u) {
                 return Carbon::parse($u->created_at)->startOfWeek()->format('Y-m-d');
@@ -1226,8 +1396,8 @@ class ConsolidacionController extends Controller
 
             foreach ($periodoItem as $fecha) {
                 $lunes = $fecha->format('Y-m-d');
-                $domingoLabel = $fecha->copy()->endOfWeek()->format('y-m-d');
-                $itemGraficaVinculacion['labels'][] = $domingoLabel;
+                $rangoSemanaLabel = $formatearRangoSemana($fecha);
+                $itemGraficaVinculacion['labels'][] = $rangoSemanaLabel;
 
                 foreach ($tiposVinculacion as $tv) {
                     $c = (isset($agrupadoVincItem[$lunes]) && isset($agrupadoVincItem[$lunes][$tv->id])) ? $agrupadoVincItem[$lunes][$tv->id]->count() : 0;
@@ -1245,9 +1415,9 @@ class ConsolidacionController extends Controller
             $itemGraficaMatriculasSemanal = [];
             foreach ($periodoItem as $fecha) {
                 $lunes = $fecha->format('Y-m-d');
-                $domingoLabel = $fecha->copy()->endOfWeek()->format('y-m-d');
+                $rangoSemanaLabel = $formatearRangoSemana($fecha);
                 $cant = isset($matriculasPorSemanaItem[$lunes]) ? $matriculasPorSemanaItem[$lunes]->count() : 0;
-                $itemGraficaMatriculasSemanal[] = ['x' => $domingoLabel, 'y' => $cant];
+                $itemGraficaMatriculasSemanal[] = ['x' => $rangoSemanaLabel, 'y' => $cant];
             }
 
             // 4. Bautismos vs Traslados
@@ -1551,7 +1721,9 @@ class ConsolidacionController extends Controller
                         });
                 });
             })
+            ->tap($filtroEdadConsolidacionCallback)
             ->tap($filtroSedesCallback)
+            ->tap($filtroAlcanceMinisterioCallback)
             ->pluck('created_at');
 
         // Obtenemos las fechas de creación de las DESERCIONES (Bajas)
@@ -1575,7 +1747,9 @@ class ConsolidacionController extends Controller
                     ->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])
                     ->where('dado_baja', true);
             })
+            ->tap($filtroEdadConsolidacionCallback)
             ->tap($filtroSedesCallback)
+            ->tap($filtroAlcanceMinisterioCallback)
             ->pluck('created_at');
 
         // Agrupamos por semana (Lunes a Domingo)
@@ -1602,14 +1776,13 @@ class ConsolidacionController extends Controller
 
         foreach ($periodo as $fecha) {
             $lunes = $fecha->format('Y-m-d');
-            // El usuario prefiere solo el último día de la semana en formato año-mes-día (ej: 26-01-11)
-            $domingoLabel = $fecha->copy()->endOfWeek()->format('y-m-d');
+            $rangoSemanaLabel = $formatearRangoSemana($fecha);
 
             $cantidad = isset($cosechaPorSemana[$lunes]) ? $cosechaPorSemana[$lunes]->count() : 0;
             $cantidadDesercion = isset($desercionPorSemana[$lunes]) ? $desercionPorSemana[$lunes]->count() : 0;
 
             $datosGraficaSemanal[] = [
-                'x' => $domingoLabel,
+                'x' => $rangoSemanaLabel,
                 'y' => $cantidad,
                 'y_desercion' => $cantidadDesercion,
             ];
@@ -1617,7 +1790,7 @@ class ConsolidacionController extends Controller
 
         // --- Lógica para Gráfica Semanal por Vinculación ---
         $datosVinculacionSemanal = [
-            'labels' => [], // Fechas (Domingos)
+            'labels' => [], // Rangos de semanas (Lunes - Domingo)
             'series' => [],  // [ {name: 'Amigo', data: [...]}, ... ]
         ];
 
@@ -1639,7 +1812,9 @@ class ConsolidacionController extends Controller
                         });
                 });
             })
+            ->tap($filtroEdadConsolidacionCallback)
             ->tap($filtroSedesCallback)
+            ->tap($filtroAlcanceMinisterioCallback)
             ->select('id', 'created_at', 'tipo_vinculacion_id')
             ->get();
 
@@ -1661,8 +1836,8 @@ class ConsolidacionController extends Controller
         // Recorremos el periodo para llenar las labels y los datos
         foreach ($periodo as $fecha) {
             $lunes = $fecha->format('Y-m-d');
-            $domingoLabel = $fecha->copy()->endOfWeek()->format('y-m-d');
-            $datosVinculacionSemanal['labels'][] = $domingoLabel;
+            $rangoSemanaLabel = $formatearRangoSemana($fecha);
+            $datosVinculacionSemanal['labels'][] = $rangoSemanaLabel;
 
             foreach ($tiposVinculacion as $tv) {
                 $count = 0;
@@ -1689,12 +1864,12 @@ class ConsolidacionController extends Controller
         // Reusamos $periodo ya calculado
         foreach ($periodo as $fecha) {
             $lunes = $fecha->format('Y-m-d');
-            $domingoLabel = $fecha->copy()->endOfWeek()->format('y-m-d');
+            $rangoSemanaLabel = $formatearRangoSemana($fecha);
 
             $cantidad = isset($matriculasPorSemana[$lunes]) ? $matriculasPorSemana[$lunes]->count() : 0;
 
             $datosMatriculasSemanal[] = [
-                'x' => $domingoLabel,
+                'x' => $rangoSemanaLabel,
                 'y' => $cantidad,
             ];
         }
@@ -1723,7 +1898,9 @@ class ConsolidacionController extends Controller
                             ->where('dado_baja', false);
                     });
             })
-            ->tap($filtroSedesCallback);
+            ->tap($filtroEdadConsolidacionCallback)
+            ->tap($filtroSedesCallback)
+            ->tap($filtroAlcanceMinisterioCallback);
 
         $totalMiembros = (clone $queryBaseMiembros)->count();
         $miembrosUbicados = (clone $queryBaseMiembros)->whereHas('bitacorasIntegranteGrupo', function ($query) use ($inicio, $fin) {
@@ -1836,7 +2013,10 @@ class ConsolidacionController extends Controller
             'trasladosAdultos',
             'trasladosMenores',
             'bautismosAdultos',
-            'bautismosMenores'
+            'bautismosMenores',
+            'esSoloMinisterio',
+            'esTodaConsolidacion',
+            'sedesInfluencia'
         ));
     }
 
@@ -1915,6 +2095,15 @@ class ConsolidacionController extends Controller
         $tiposTarea = TareaConsolidacion::orderBy('orden')->get();
         $estadosTarea = EstadoTareaConsolidacion::all();
 
+        $configuracion = Configuracion::find(1);
+        $edadMinimaConsolidacion = (int) ($configuracion->edad_minima_consolidacion ?? 0);
+        $filtroEdadConsolidacionCallback = function ($query) use ($edadMinimaConsolidacion) {
+            if ($edadMinimaConsolidacion > 0) {
+                $query->whereNotNull('fecha_nacimiento')
+                    ->whereRaw('EXTRACT(YEAR FROM AGE(fecha_nacimiento)) >= ?', [$edadMinimaConsolidacion]);
+            }
+        };
+
         foreach ($zonasParaReporte as $zona) {
             $sedeIds = $zona->sedes->pluck('id');
 
@@ -1931,7 +2120,8 @@ class ConsolidacionController extends Controller
                                     ->orWhere('es_miembro_oficial', true);
                             });
                         });
-                });
+                })
+                ->tap($filtroEdadConsolidacionCallback);
 
             $zona->totalCosecha = $cosechaZonaQuery->count();
 
@@ -2247,7 +2437,16 @@ class ConsolidacionController extends Controller
             $rangoFechas = Carbon::parse($inicio)->format('Y-m-d').' a '.Carbon::parse($fin)->format('Y-m-d');
         }
 
-        $query = User::withTrashed();
+        $configuracion = Configuracion::find(1);
+        $edadMinimaConsolidacion = (int) ($configuracion->edad_minima_consolidacion ?? 0);
+        $filtroEdadConsolidacionCallback = function ($query) use ($edadMinimaConsolidacion) {
+            if ($edadMinimaConsolidacion > 0) {
+                $query->whereNotNull('fecha_nacimiento')
+                    ->whereRaw('EXTRACT(YEAR FROM AGE(fecha_nacimiento)) >= ?', [$edadMinimaConsolidacion]);
+            }
+        };
+
+        $query = User::withTrashed()->tap($filtroEdadConsolidacionCallback);
         $paso = null;
 
         switch ($kpi) {
@@ -2414,54 +2613,70 @@ class ConsolidacionController extends Controller
         $sedeEspecificaId = $request->sede_id;
 
         // Preparar filtros base
-        $bloquesSeleccionados = BloqueDashboardConsolidacion::whereIn('id', $bloquesIds)->get();
-        if ($bloquesSeleccionados->isEmpty()) {
-            $bloquesSeleccionados = BloqueDashboardConsolidacion::all();
-        }
-
-        $sedesPermitidasIds = $bloquesSeleccionados->flatMap(function ($b) {
-            return $b->sedes->pluck('id');
-        })->unique()->toArray();
-        if (! empty($sedesIdsRequest)) {
-            $sedesPermitidasIds = array_intersect($sedesPermitidasIds, $sedesIdsRequest);
-        }
+        $alcance = $this->getAlcanceConsolidacion();
+        $esSoloMinisterio = $alcance['esSoloMinisterio'];
+        $idsPersonasMinisterio = $alcance['idsPersonasMinisterio'];
+        $sedesInfluencia = $alcance['sedesInfluencia'];
+        $filtroLocalidadesIds = $alcance['filtroLocalidadesIds'] ?? [];
 
         $sedeDetalle = null;
         $bloqueDetalle = null;
 
-        if ($sedeEspecificaId) {
-            $sedesPermitidasIds = [$sedeEspecificaId];
-            $sedeDetalle = Sede::find($sedeEspecificaId);
-        } elseif ($bloqueEspecificoId) {
-            $bloqueFiltrado = BloqueDashboardConsolidacion::find($bloqueEspecificoId);
-            $bloqueDetalle = $bloqueFiltrado;
-            if ($bloqueFiltrado) {
-                // Si hay un bloque específico, sus sedes son la base.
-                $sedesBloque = $bloqueFiltrado->sedes->pluck('id')->toArray();
+        if ($esSoloMinisterio) {
+            $bloquesSeleccionados = collect();
+            $sedesPermitidasIds = $sedesInfluencia->pluck('id')->toArray();
+            if ($sedeEspecificaId) {
+                $sedesPermitidasIds = array_intersect([$sedeEspecificaId], $sedesPermitidasIds);
+                $sedeDetalle = Sede::find($sedeEspecificaId);
+            } elseif (! empty($sedesIdsRequest)) {
+                $sedesPermitidasIds = array_intersect($sedesPermitidasIds, $sedesIdsRequest);
+            }
+        } else {
+            $bloquesSeleccionados = BloqueDashboardConsolidacion::whereIn('id', $bloquesIds)->get();
+            if ($bloquesSeleccionados->isEmpty()) {
+                $bloquesSeleccionados = BloqueDashboardConsolidacion::all();
+            }
 
-                // Si además hay un filtro global de sedes, intersectamos.
-                if (! empty($sedesIdsRequest)) {
-                    $sedesPermitidasIds = array_intersect($sedesIdsRequest, $sedesBloque);
-                    // Si el filtro global es incompatible con el bloque clicado, priorizamos el bloque.
-                    if (empty($sedesPermitidasIds)) {
+            $sedesPermitidasIds = $bloquesSeleccionados->flatMap(function ($b) {
+                return $b->sedes->pluck('id');
+            })->unique()->toArray();
+            if (! empty($sedesIdsRequest)) {
+                $sedesPermitidasIds = array_intersect($sedesPermitidasIds, $sedesIdsRequest);
+            }
+
+            if ($sedeEspecificaId) {
+                $sedesPermitidasIds = [$sedeEspecificaId];
+                $sedeDetalle = Sede::find($sedeEspecificaId);
+            } elseif ($bloqueEspecificoId) {
+                $bloqueFiltrado = BloqueDashboardConsolidacion::find($bloqueEspecificoId);
+                $bloqueDetalle = $bloqueFiltrado;
+                if ($bloqueFiltrado) {
+                    // Si hay un bloque específico, sus sedes son la base.
+                    $sedesBloque = $bloqueFiltrado->sedes->pluck('id')->toArray();
+
+                    // Si además hay un filtro global de sedes, intersectamos.
+                    if (! empty($sedesIdsRequest)) {
+                        $sedesPermitidasIds = array_intersect($sedesIdsRequest, $sedesBloque);
+                        // Si el filtro global es incompatible con el bloque clicado, priorizamos el bloque.
+                        if (empty($sedesPermitidasIds)) {
+                            $sedesPermitidasIds = $sedesBloque;
+                        }
+                    } else {
                         $sedesPermitidasIds = $sedesBloque;
                     }
-                } else {
-                    $sedesPermitidasIds = $sedesBloque;
                 }
             }
         }
 
         // Fechas
-        $inicio = Carbon::now()->startOfMonth()->toDateTimeString();
-        $fin = Carbon::now()->toDateTimeString();
-
         if ($rangoFechas) {
             $fechas = explode(' a ', $rangoFechas);
-            $inicio = Carbon::parse($fechas[0])->startOfDay()->toDateTimeString();
-            $fechaRawFin = isset($fechas[1]) ? $fechas[1] : $fechas[0];
+            $inicio = Carbon::parse(trim($fechas[0]))->startOfDay()->toDateTimeString();
+            $fechaRawFin = isset($fechas[1]) ? trim($fechas[1]) : trim($fechas[0]);
             $fin = Carbon::parse($fechaRawFin)->endOfDay()->toDateTimeString();
         } else {
+            $inicio = Carbon::now()->subDays(30)->startOfDay()->toDateTimeString();
+            $fin = Carbon::now()->endOfDay()->toDateTimeString();
             $rangoFechas = Carbon::parse($inicio)->format('Y-m-d').' a '.Carbon::parse($fin)->format('Y-m-d');
         }
 
@@ -2484,7 +2699,29 @@ class ConsolidacionController extends Controller
             }
         };
 
-        $query = User::withTrashed()->tap($filtroSedesCallback);
+        $configuracion = Configuracion::find(1);
+        $edadMinimaConsolidacion = (int) ($configuracion->edad_minima_consolidacion ?? 0);
+
+        // Filtro de edad mínima de consolidación (excluye menores y personas sin fecha de nacimiento)
+        $filtroEdadConsolidacionCallback = function ($query) use ($edadMinimaConsolidacion) {
+            if ($edadMinimaConsolidacion > 0) {
+                $query->whereNotNull('fecha_nacimiento')
+                    ->whereRaw('EXTRACT(YEAR FROM AGE(fecha_nacimiento)) >= ?', [$edadMinimaConsolidacion]);
+            }
+        };
+
+        $query = User::withTrashed()
+            ->tap($filtroEdadConsolidacionCallback)
+            ->tap($filtroSedesCallback);
+
+        if ($esSoloMinisterio) {
+            if ($idsPersonasMinisterio !== null) {
+                $query->whereIn('users.id', $idsPersonasMinisterio);
+            }
+            if (! empty($filtroLocalidadesIds)) {
+                $query->whereIn('users.localidad_id', $filtroLocalidadesIds);
+            }
+        }
 
         switch ($kpi) {
             // ================= TAB 1: COSECHA =================
@@ -2598,6 +2835,7 @@ class ConsolidacionController extends Controller
                 break;
             case 'matriculas_union_libre':
                 $matriculadosEfectivosIds = User::withTrashed()
+                    ->tap($filtroEdadConsolidacionCallback)
                     ->whereIn('sede_id', $sedesPermitidasIds)
                     ->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('fecha_matricula', [$inicio, $fin])
@@ -2716,6 +2954,7 @@ class ConsolidacionController extends Controller
             case 'union_libre_matriculados':
                 // Parte A: Pendientes (Matriculados en periodo en Unión Libre)
                 $idsA = User::withTrashed()->whereBetween('created_at', [$inicio, $fin])
+                    ->tap($filtroEdadConsolidacionCallback)
                     ->tap($filtroSedesCallback)
                     ->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('fecha_matricula', [$inicio, $fin])
@@ -2730,6 +2969,7 @@ class ConsolidacionController extends Controller
 
                 // Parte B: Miembros Formalizados (Matrimonio actual, Union Libre previo)
                 $idsB = User::withTrashed()->whereBetween('created_at', [$inicio, $fin])
+                    ->tap($filtroEdadConsolidacionCallback)
                     ->tap($filtroSedesCallback)
                     ->whereHas('bitacorasTipoUsuario', function ($subQuery) use ($inicio, $fin) {
                         $subQuery->whereBetween('created_at', [$inicio, $fin])
@@ -2792,6 +3032,7 @@ class ConsolidacionController extends Controller
                 break;
             case 'pendientes_membresia_union_libre':
                 $idsMatriculados = User::withTrashed()
+                    ->tap($filtroEdadConsolidacionCallback)
                     ->tap($filtroSedesCallback)
                     ->whereHas('matriculas', function ($q) use ($inicio, $fin) {
                         $q->whereBetween('fecha_matricula', [$inicio, $fin])
@@ -2900,14 +3141,30 @@ class ConsolidacionController extends Controller
                 $fin = Carbon::parse(trim($fechas[0]))->endOfDay();
             }
         } else {
-            $inicio = Carbon::now()->startOfMonth();
-            $fin = Carbon::now()->endOfMonth();
+            $inicio = Carbon::now()->subDays(30)->startOfDay();
+            $fin = Carbon::now()->endOfDay();
         }
 
-        $esVistaDetalle = $request->has('bloque_detalle_id') && ! empty($request->bloque_detalle_id);
+        $alcance = $this->getAlcanceConsolidacion();
+        $esSoloMinisterio = $alcance['esSoloMinisterio'];
+        $idsPersonasMinisterio = $alcance['idsPersonasMinisterio'];
+        $sedesInfluencia = $alcance['sedesInfluencia'];
+        $filtroLocalidadesIds = $alcance['filtroLocalidadesIds'] ?? [];
+
+        $esVistaDetalle = ! $esSoloMinisterio && $request->has('bloque_detalle_id') && ! empty($request->bloque_detalle_id);
 
         $bloquesIterar = collect();
-        if ($esVistaDetalle) {
+        if ($esSoloMinisterio) {
+            $sedesAExportar = $sedesInfluencia;
+            if ($request->has('sedes_seleccionadas') && is_array($request->sedes_seleccionadas)) {
+                $sedesAExportar = $sedesAExportar->whereIn('id', $request->sedes_seleccionadas);
+            }
+            $bloqueVirtual = (object) [
+                'nombre' => 'SEDES DE TU MINISTERIO',
+                'sedes' => $sedesAExportar,
+            ];
+            $bloquesIterar->push($bloqueVirtual);
+        } elseif ($esVistaDetalle) {
             $bloque = BloqueDashboardConsolidacion::with('sedes')->find($request->bloque_detalle_id);
             if ($bloque) {
                 if ($request->has('sedes_seleccionadas') && is_array($request->sedes_seleccionadas)) {
@@ -2937,7 +3194,13 @@ class ConsolidacionController extends Controller
 
         foreach ($bloquesIterar as $bloque) {
             foreach ($bloque->sedes as $sede) {
-                $metricasSede = $this->getCosechaMetricsForExport([$sede->id], $inicio, $fin);
+                $metricasSede = $this->getCosechaMetricsForExport(
+                    [$sede->id],
+                    $inicio,
+                    $fin,
+                    $esSoloMinisterio ? $idsPersonasMinisterio : null,
+                    $esSoloMinisterio ? $filtroLocalidadesIds : []
+                );
 
                 $fila = [
                     'Sede / Bloque' => $sede->nombre,
@@ -2983,7 +3246,13 @@ class ConsolidacionController extends Controller
             }
 
             $sedesBloqueIds = $bloque->sedes->pluck('id')->toArray();
-            $metricasBloque = $this->getCosechaMetricsForExport($sedesBloqueIds, $inicio, $fin);
+            $metricasBloque = $this->getCosechaMetricsForExport(
+                $sedesBloqueIds,
+                $inicio,
+                $fin,
+                $esSoloMinisterio ? $idsPersonasMinisterio : null,
+                $esSoloMinisterio ? $filtroLocalidadesIds : []
+            );
 
             $filaBloque = [
                 'Sede / Bloque' => 'TOTAL: '.strtoupper($bloque->nombre),
@@ -3031,8 +3300,19 @@ class ConsolidacionController extends Controller
         return Excel::download(new DashboardCosechaExport($dataExport, $titulosVinculaciones, $filtrosExtra), 'Dashboard_Cosecha_'.$inicio->format('Y-m-d').'_al_'.$fin->format('Y-m-d').'.xlsx');
     }
 
-    private function getCosechaMetricsForExport($sedesItemIds, $inicio, $fin)
+    private function getCosechaMetricsForExport($sedesItemIds, $inicio, $fin, $idsPersonasMinisterio = null, $localidadesIds = [])
     {
+        $configuracion = Configuracion::find(1);
+        $edadMinimaConsolidacion = (int) ($configuracion->edad_minima_consolidacion ?? 0);
+
+        // Filtro de edad mínima de consolidación (excluye menores y personas sin fecha de nacimiento)
+        $filtroEdadConsolidacionCallback = function ($query) use ($edadMinimaConsolidacion) {
+            if ($edadMinimaConsolidacion > 0) {
+                $query->whereNotNull('fecha_nacimiento')
+                    ->whereRaw('EXTRACT(YEAR FROM AGE(fecha_nacimiento)) >= ?', [$edadMinimaConsolidacion]);
+            }
+        };
+
         $filtroItem = function ($query) use ($inicio, $fin, $sedesItemIds) {
             if (! empty($sedesItemIds)) {
                 $query->whereHas('bitacorasSede', function ($subQuery) use ($inicio, $fin, $sedesItemIds) {
@@ -3042,6 +3322,15 @@ class ConsolidacionController extends Controller
                 });
             } else {
                 $query->whereRaw('1 = 0');
+            }
+        };
+
+        $filtroAlcanceCallback = function ($query) use ($idsPersonasMinisterio, $localidadesIds) {
+            if ($idsPersonasMinisterio !== null) {
+                $query->whereIn('users.id', $idsPersonasMinisterio);
+            }
+            if (! empty($localidadesIds)) {
+                $query->whereIn('users.localidad_id', $localidadesIds);
             }
         };
 
@@ -3057,7 +3346,11 @@ class ConsolidacionController extends Controller
                             });
                         });
                 });
-            })->tap($filtroItem)->count();
+            })
+            ->tap($filtroEdadConsolidacionCallback)
+            ->tap($filtroItem)
+            ->tap($filtroAlcanceCallback)
+            ->count();
 
         $efectivaItem = User::withTrashed()->whereBetween('created_at', [$inicio, $fin])
             ->where(function ($q) use ($inicio, $fin) {
@@ -3079,7 +3372,11 @@ class ConsolidacionController extends Controller
                     ->orWhereHas('reportesBajaAlta', function ($sub) use ($inicio, $fin) {
                         $sub->whereBetween('created_at', [$inicio, $fin])->whereRaw('id = (SELECT MAX(r2.id) FROM reporte_bajas_altas as r2 WHERE r2.user_id = reporte_bajas_altas.user_id AND r2.created_at BETWEEN ? AND ?)', [$inicio, $fin])->where('dado_baja', false);
                     });
-            })->tap($filtroItem)->count();
+            })
+            ->tap($filtroEdadConsolidacionCallback)
+            ->tap($filtroItem)
+            ->tap($filtroAlcanceCallback)
+            ->count();
 
         $idsItem = User::withTrashed()->whereBetween('created_at', [$inicio, $fin])
             ->where(function ($q) use ($inicio, $fin) {
@@ -3091,7 +3388,11 @@ class ConsolidacionController extends Controller
                                 ->orWhere('es_miembro_oficial', true);
                         });
                 });
-            })->tap($filtroItem)->pluck('id');
+            })
+            ->tap($filtroEdadConsolidacionCallback)
+            ->tap($filtroItem)
+            ->tap($filtroAlcanceCallback)
+            ->pluck('id');
 
         $vinculacionesDB = TipoVinculacion::withCount(['usuarios' => function ($query) use ($idsItem) {
             $query->withTrashed()->whereIn('users.id', $idsItem);

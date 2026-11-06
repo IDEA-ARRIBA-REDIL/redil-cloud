@@ -107,17 +107,49 @@
                             <h5 class="fw-semibold">Detalles de la inscripción</h5>
                             <dl class="row mb-5 p-4 text-heading">
 
-                                {{-- Iteramos sobre las INSCripciones, no los carritos --}}
-                                @foreach ($compra->inscripciones as $insc)
+                                {{-- Iteramos sobre las inscripciones si existen, o sobre las matrículas si es escuela --}}
+                                @if ($compra->inscripciones->isNotEmpty())
+                                    @foreach ($compra->inscripciones as $insc)
+                                        <dt class="col-md-8 col-12">
+                                            <span class="d-block text-black mb-2">Inscrito:
+                                                <strong>{{ $insc->user?->nombre(3) ?? $compra->nombre_completo_comprador }}</strong></span>
+                                            <span class="d-block text-black mb-2">{{ $insc->categoriaActividad?->nombre }}</span>
+                                        </dt>
+                                        <dd class="col-md-4 col-12 fw-medium text-md-end text-sm-start text-heading">
+                                            {{-- El precio lo tomamos del total de la compra --}}
+                                        </dd>
+                                    @endforeach
+                                @elseif (isset($matriculas) && $matriculas->isNotEmpty())
+                                    @foreach ($matriculas as $matItem)
+                                        @php
+                                            $materiaItem = $matItem->horarioMateriaPeriodo?->horarioBase?->materia?->nombre 
+                                                ?? $matItem->horarioMateriaPeriodo?->materiaPeriodo?->materia?->nombre 
+                                                ?? 'Matrícula Escuela';
+                                            $alumnoItem = $matItem->user?->nombre(3) ?? ($matItem->user?->name ?? $compra->nombre_completo_comprador);
+                                        @endphp
+                                        <dt class="col-md-8 col-12">
+                                            <span class="d-block text-black mb-1">Alumno matriculado:
+                                                <strong>{{ $alumnoItem }}</strong></span>
+                                            <span class="d-block text-muted small mb-2"><i class="ti ti-book me-1"></i>{{ $materiaItem }}</span>
+                                        </dt>
+                                        <dd class="col-md-4 col-12 fw-medium text-md-end text-sm-start text-heading">
+                                        </dd>
+                                    @endforeach
+                                @elseif (isset($matricula) && $matricula)
+                                    @php
+                                        $materiaItem = $matricula->horarioMateriaPeriodo?->horarioBase?->materia?->nombre 
+                                            ?? $matricula->horarioMateriaPeriodo?->materiaPeriodo?->materia?->nombre 
+                                            ?? 'Matrícula Escuela';
+                                        $alumnoItem = $matricula->user?->nombre(3) ?? ($matricula->user?->name ?? $compra->nombre_completo_comprador);
+                                    @endphp
                                     <dt class="col-md-8 col-12">
-                                        <span class="d-block text-black mb-2">Inscrito:
-                                            <strong>{{ $insc->user->nombre(3) }}</strong></span>
-                                        <span class="d-block text-black mb-2">{{ $insc->categoriaActividad->nombre }}</span>
+                                        <span class="d-block text-black mb-1">Alumno matriculado:
+                                            <strong>{{ $alumnoItem }}</strong></span>
+                                        <span class="d-block text-muted small mb-2"><i class="ti ti-book me-1"></i>{{ $materiaItem }}</span>
                                     </dt>
                                     <dd class="col-md-4 col-12 fw-medium text-md-end text-sm-start text-heading">
-                                        {{-- El precio lo tomamos del total de la compra --}}
                                     </dd>
-                                @endforeach
+                                @endif
                                 <hr>
                                 @if ($esAbono)
                                     <dt class="col-md-8 col-12 text-black   fw-bold">Abono a compra por total de
@@ -145,56 +177,115 @@
 
 
                     {{-- 2.5. Detalles de Matrícula (ESCUELAS) --}}
-                    @if (isset($matricula) && $matricula)
-                        <div class="row px-6 py-9 rounded mb-5 shadow border-top-0 border-5 ">
-                            <h5 class="fw-semibold">Detalles de la Matrícula</h5>
-                            <div class="row equal-cols">
-                                <div class="col-md-6  equal-col-height col-12">
+                    @php
+                        $coleccionMatriculas = (isset($matriculas) && $matriculas->isNotEmpty()) 
+                            ? $matriculas 
+                            : (isset($matricula) && $matricula ? collect([$matricula]) : collect());
+                    @endphp
 
-                                    <p class="p-0 m-0 text-black">Horario</p>
-                                    @php
-                                        $horarioBase = $matricula->horarioMateriaPeriodo->horarioBase;
-                                        $dias = [
-                                            1 => 'Lun',
-                                            2 => 'Mar',
-                                            3 => 'Mié',
-                                            4 => 'Jue',
-                                            5 => 'Vie',
-                                            6 => 'Sáb',
-                                            7 => 'Dom',
-                                        ];
-                                        $dia = $dias[$horarioBase->dia] ?? 'N/D';
-                                        $ini = \Carbon\Carbon::parse($horarioBase->hora_inicio)->format('h:i A');
-                                        $fin = \Carbon\Carbon::parse($horarioBase->hora_fin)->format('h:i A');
-                                        $aula = $horarioBase->aula->nombre ?? 'N/D';
-                                    @endphp
-                                    <p class="pb-2 fw-bold text-black ">
-                                        {{ $dia }} | {{ $ini }} - {{ $fin }}
+                    @if ($coleccionMatriculas->isNotEmpty())
+                        @foreach ($coleccionMatriculas as $indiceMat => $mat)
+                            @php
+                                $horarioBase = $mat->horarioMateriaPeriodo?->horarioBase;
+                                $dias = [
+                                    0 => 'Domingo',
+                                    1 => 'Lunes',
+                                    2 => 'Martes',
+                                    3 => 'Miércoles',
+                                    4 => 'Jueves',
+                                    5 => 'Viernes',
+                                    6 => 'Sábado',
+                                    7 => 'Domingo',
+                                ];
+                                $diaTexto = isset($horarioBase->dia) ? ($dias[$horarioBase->dia] ?? 'N/D') : 'N/D';
+                                $ini = !empty($horarioBase->hora_inicio) ? \Carbon\Carbon::parse($horarioBase->hora_inicio)->format('h:i A') : '';
+                                $fin = !empty($horarioBase->hora_fin) ? \Carbon\Carbon::parse($horarioBase->hora_fin)->format('h:i A') : '';
+                                $horarioCompleto = ($diaTexto !== 'N/D' ? $diaTexto : '') . ($ini && $fin ? " | {$ini} - {$fin}" : '');
 
-                                    </p>
-                                    <hr>
+                                $aulaModel = $horarioBase?->aula;
+                                $aulaNombre = $aulaModel?->nombre ?? 'N/D';
+                                $aulaTipo = $aulaModel?->tipo?->nombre ?? null;
+
+                                // Sede de matrícula (donde se dictan las clases)
+                                $sedeMatricula = $mat->sede?->nombre 
+                                    ?? $aulaModel?->sede?->nombre 
+                                    ?? 'No especificada';
+
+                                // Sede para envío o entrega de material
+                                $sedeMaterial = $mat->materialSede?->nombre 
+                                    ?? $compra->destinatario?->nombre 
+                                    ?? 'No especificada';
+
+                                // Datos académicos adicionales
+                                $escuelaNombre = $mat->escuela?->nombre 
+                                    ?? $mat->horarioMateriaPeriodo?->materiaPeriodo?->periodo?->escuela?->nombre;
+                                $materiaNombre = $horarioBase?->materia?->nombre 
+                                    ?? $mat->horarioMateriaPeriodo?->materiaPeriodo?->materia?->nombre;
+                                $alumnoMatriculado = $mat->user?->nombre(3) ?? ($mat->user?->name ?? null);
+                            @endphp
+
+                            <div class="row px-6 py-9 rounded mb-5 shadow border-top-0 border-5 border-primary">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-semibold text-primary mb-0">
+                                        <i class="ti ti-school me-2"></i>Detalles de la Matrícula Académica
+                                        @if ($coleccionMatriculas->count() > 1)
+                                            <span class="badge bg-label-primary ms-2">#{{ $indiceMat + 1 }}</span>
+                                        @endif
+                                    </h5>
+                                    @if ($escuelaNombre)
+                                        <span class="badge bg-label-secondary">{{ $escuelaNombre }}</span>
+                                    @endif
                                 </div>
-                                <div class="col-md-6 equal-col-height col-12">
 
-                                    <p class="p-0 m-0 text-black ">
+                                <div class="row equal-cols g-3">
+                                    @if ($alumnoMatriculado || $materiaNombre)
+                                        @if ($alumnoMatriculado)
+                                            <div class="col-md-6 col-12">
+                                                <p class="p-0 m-0 text-muted small"><i class="ti ti-user me-1"></i>Alumno</p>
+                                                <p class="pb-2 fw-bold text-black border-bottom">{{ $alumnoMatriculado }}</p>
+                                            </div>
+                                        @endif
+                                        @if ($materiaNombre)
+                                            <div class="col-md-6 col-12">
+                                                <p class="p-0 m-0 text-muted small"><i class="ti ti-book me-1"></i>Materia / Nivel</p>
+                                                <p class="pb-2 fw-bold text-black border-bottom">{{ $materiaNombre }}</p>
+                                            </div>
+                                        @endif
+                                    @endif
 
-                                        Aula:
-                                    </p>
-                                    <p class="pb-2 fw-bold text-black ">{{ $aula }}</p>
-                                    <hr>
+                                    <div class="col-md-6 col-12">
+                                        <p class="p-0 m-0 text-muted small"><i class="ti ti-map-pin me-1"></i>Sede de matrícula (Clases)</p>
+                                        <p class="pb-2 fw-bold text-black border-bottom">
+                                            {{ $sedeMatricula }}
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 col-12">
+                                        <p class="p-0 m-0 text-muted small"><i class="ti ti-chalkboard me-1"></i>Aula asignada</p>
+                                        <p class="pb-2 fw-bold text-black border-bottom">
+                                            {{ $aulaNombre }}
+                                            @if ($aulaTipo)
+                                                <span class="badge bg-label-info ms-1">{{ $aulaTipo }}</span>
+                                            @endif
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 col-12">
+                                        <p class="p-0 m-0 text-muted small"><i class="ti ti-clock me-1"></i>Horario</p>
+                                        <p class="pb-2 fw-bold text-black border-bottom">
+                                            {{ $horarioCompleto ?: 'N/D' }}
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 col-12">
+                                        <p class="p-0 m-0 text-muted small"><i class="ti ti-package me-1"></i>Sede para entrega de material</p>
+                                        <p class="pb-2 fw-bold text-black border-bottom">
+                                            {{ $sedeMaterial }}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="col-md-6   equal-col-height col-12">
-
-                                    <p class="p-0 m-0 text-black">Sede para envío de material</p>
-                                    <p class="pb-2 fw-bold text-black ">
-                                        {{ $matricula->materialSede->nombre ?? 'N/A' }}
-                                    </p>
-
-                                    <hr>
-                                </div>
-
                             </div>
-                        </div>
+                        @endforeach
                     @endif
 
                     {{-- 3. Información del Comprador (Adaptado de tu ejemplo) --}}
@@ -282,7 +373,7 @@
 
                     {{-- Botón para volver a la taquilla --}}
                     @php
-                        $cajaId = $compra->pagos->first()->registro_caja_id ?? null;
+                        $cajaId = $compra->pagos->first()?->registro_caja_id ?? null;
                     @endphp
                     @if ($cajaId)
                         <a href="{{ route('taquilla.operar', $cajaId) }}" class="btn btn-primary rounded-pill px-4">

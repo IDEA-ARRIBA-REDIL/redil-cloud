@@ -92,27 +92,8 @@ class MatriculaNivelService
                 // 5. Actualizar cupos
                 $horario->decrement('cupos_disponibles');
 
-                // 6. ASIGNACIÓN DE PASOS DE CRECIMIENTO (Regla 4)
-                $materia = $horario->materiaPeriodo->materia;
-                $pasoIniciar = $materia->pasosCrecimiento()->wherePivot('al_iniciar', true)->first();
-
-                if ($pasoIniciar) {
-                    $estadoId = $pasoIniciar->pivot->estado_paso_crecimiento_usuario_id ?? $pasoIniciar->pivot->estado;
-
-                    if ($estadoId) {
-                        CrecimientoUsuario::updateOrCreate(
-                            [
-                                'user_id' => $alumno->id,
-                                'paso_crecimiento_id' => $pasoIniciar->id,
-                            ],
-                            [
-                                'estado_id' => $estadoId,
-                                'fecha' => now(),
-                                'detalle' => 'Asignado automáticamente (Matrícula por Nivel) en: '.$materia->nombre,
-                            ]
-                        );
-                    }
-                }
+                // 6. ASIGNACIÓN DE PASOS DE CRECIMIENTO Y TIPO USUARIO (Regla 4)
+                $matriculaIndividual->aplicarEfectosMatricula();
             }
 
             return $matriculaNivel;

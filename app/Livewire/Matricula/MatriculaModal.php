@@ -145,11 +145,6 @@ class MatriculaModal extends Component
             'escuela_id' => $this->escuelaId,
         ]);
 
-        // --- ACTUALIZACIÓN DE TIPO DE USUARIO (SOLICITUD: Tipo Usuario Inicial) ---
-        if ($this->materia->tipo_usuario_inicial_id) {
-            $this->usuario->update(['tipo_usuario_id' => $this->materia->tipo_usuario_inicial_id]);
-        }
-
         EstadoAcademico::create([
             'user_id' => $this->usuario->id,
             'horario_materia_periodo_id' => $this->horarioId,
@@ -158,30 +153,8 @@ class MatriculaModal extends Component
             'estado_aprobacion' => 'cursando',
         ]);
 
-        // --- ASIGNACIÓN AUTOMÁTICA DE PASO DE CRECIMIENTO ---
-        // Buscamos si la materia tiene configurado un paso para asignar "Al iniciar"
-        $pasoIniciar = $this->materia->pasosCrecimiento()->wherePivot('al_iniciar', true)->first();
-
-        if ($pasoIniciar) {
-            $pasoId = $pasoIniciar->id;
-            // Priorizamos el nuevo campo estado_paso_crecimiento_usuario_id, con fallback al campo estado antiguo
-            $estadoId = $pasoIniciar->pivot->estado_paso_crecimiento_usuario_id ?? $pasoIniciar->pivot->estado;
-
-            if ($pasoId && $estadoId) {
-                // Sincronizamos el paso con el usuario sin borrar los que ya tenga (syncWithoutDetaching)
-                CrecimientoUsuario::updateOrCreate(
-                    [
-                        'user_id' => $this->usuario->id,
-                        'paso_crecimiento_id' => $pasoIniciar->id,
-                    ],
-                    [
-                        'estado_id' => $estadoId,
-                        'fecha' => now(),
-                        'detalle' => 'Asignado automáticamente al iniciar matrícula en: '.$this->materia->nombre,
-                    ]
-                );
-            }
-        }
+        // --- EFECTOS ACADÉMICOS DE MATRÍCULA (Tipo Usuario Inicial, Pasos de Crecimiento) ---
+        $nuevaMatricula->aplicarEfectosMatricula();
 
         $this->closeModal();
 

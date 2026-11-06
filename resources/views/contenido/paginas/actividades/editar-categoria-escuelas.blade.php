@@ -113,12 +113,10 @@
                                     class="select2 form-select @error('materia_periodo_id') is-invalid @enderror" required>
                                     <option value="">Seleccione una materia</option>
                                     @foreach ($materiasPeriodo as $mp)
-                                        <option value="{{ $mp->id }}" {{-- 1. La opción se preselecciona si es la que ya está guardada --}}
-                                            @selected(old('materia_periodo_id', $categoria->materia_periodo_id) == $mp->id) {{-- 2. La opción se deshabilita si su ID está en la lista de usadas --}} @disabled(in_array($mp->id, $materiasUsadasIds))>
-
+                                        <option value="{{ $mp->id }}"
+                                            @selected(old('materia_periodo_id', $categoria->materia_periodo_id) == $mp->id)
+                                            @disabled(in_array($mp->id, $materiasUsadasIds))>
                                             {{ $mp->materia->nombre }}
-
-                                            {{-- 3. Se muestra un texto informativo si está usada por otra categoría --}}
                                             @if (in_array($mp->id, $materiasUsadasIds))
                                                 (Ya asignada a otra categoría)
                                             @endif
@@ -130,7 +128,16 @@
                                 @enderror
                             </div>
 
-
+                            <div class="col-12 col-md-6">
+                                <label class="form-label" for="aforo">Aforo (Opcional, dejar vacío para ilimitado)</label>
+                                <input type="number" name="aforo" id="aforo" min="0"
+                                    class="form-control @error('aforo') is-invalid @enderror"
+                                    placeholder="Sin límite"
+                                    value="{{ old('aforo', $categoria->aforo) }}" />
+                                @error('aforo')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
                             <div class="col-12 " x-data="{ esGratuita: {{ old('es_gratuita', $categoria->es_gratuita) ? 'true' : 'false' }} }">
                                 <div class="form-check form-switch form-switch-lg mb-2 {{ $categoria->es_gratuita ==  false ? 'd-none' : '' }}">
@@ -157,49 +164,119 @@
                                     @endforelse
                                 </div>
                             </div>
-                            <div class="row d-none">
 
-                            {{-- NUEVA SECCIÓN: PASOS DE CRECIMIENTO --}}
+                            {{-- SECCIÓN: RESTRICCIONES POR CATEGORÍA --}}
                             @if($actividad->restriccion_por_categoria == true)
-                            <div class="col-12 mt-4">
-                                <hr class="my-4">
-                                <h6 class="text-primary mb-3">
-                                    <i class="ti ti-stairs-up me-2"></i>
-                                   Pasos de Crecimiento
-                                </h6>
+                            <div class="col-12">
+                                <hr>
+                                <h5 class="mb-3 fw-semibold">Restricciones por categoría</h5>
+                                <div class="row g-4">
 
-                                <div class="mb-3">
-                                    @livewire('actividad-categoria.gestionar-pasos-requisito', ['categoria' => $categoria])
-                                </div>
+                                    {{-- Género --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="genero">Género</label>
+                                        <select required name="genero" id="genero" class="select2 form-select">
+                                            <option value="3" @selected(old('genero', $categoria->genero ?? 3) == 3)>Ambos</option>
+                                            <option value="1" @selected(old('genero', $categoria->genero) == 1)>Hombres</option>
+                                            <option value="2" @selected(old('genero', $categoria->genero) == 2)>Mujeres</option>
+                                        </select>
+                                        @error('genero')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
 
-                                <div class="mb-3">
-                                    @livewire('actividad-categoria.gestionar-pasos-culminados', ['categoria' => $categoria])
+                                    {{-- Vinculación a grupo --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="vinculacion_grupo">Vinculación a grupo</label>
+                                        <select required name="vinculacion_grupo" id="vinculacion_grupo" class="select2 form-select">
+                                            <option value="3" @selected(old('vinculacion_grupo', $categoria->vinculacion_grupo ?? 3) == 3)>Ambos</option>
+                                            <option value="1" @selected(old('vinculacion_grupo', $categoria->vinculacion_grupo) == 1)>Pertenece a grupo</option>
+                                            <option value="2" @selected(old('vinculacion_grupo', $categoria->vinculacion_grupo) == 2)>No pertenece</option>
+                                        </select>
+                                        @error('vinculacion_grupo')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Actividad en grupo --}}
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="actividad_grupo">Actividad en grupo</label>
+                                        <select required name="actividad_grupo" id="actividad_grupo" class="select2 form-select">
+                                            <option value="3" @selected(old('actividad_grupo', $categoria->actividad_grupo ?? 3) == 3)>Ambos</option>
+                                            <option value="1" @selected(old('actividad_grupo', $categoria->actividad_grupo) == 1)>Activos</option>
+                                            <option value="2" @selected(old('actividad_grupo', $categoria->actividad_grupo) == 2)>Inactivos</option>
+                                        </select>
+                                        @error('actividad_grupo')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Sedes habilitadas --}}
+                                    @php $sedesGuardadas = $categoria->sedes->pluck('id')->toArray(); @endphp
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="sedes">Sedes habilitadas</label>
+                                        <select name="sedes[]" id="sedes" class="select2 form-select" multiple>
+                                            @foreach ($sedes as $sede)
+                                            <option value="{{ $sede->id }}" @selected(in_array($sede->id, old('sedes', $sedesGuardadas)))>
+                                                {{ $sede->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('sedes')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    {{-- Rangos de edad --}}
+                                    @php $rangosGuardados = $categoria->rangosEdad->pluck('id')->toArray(); @endphp
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="rangos_edad">Rangos de edad</label>
+                                        <select name="rangos_edad[]" id="rangos_edad" class="select2 form-select" multiple>
+                                            @foreach ($rangosEdad as $rango)
+                                            <option value="{{ $rango->id }}" @selected(in_array($rango->id, old('rangos_edad', $rangosGuardados)))>
+                                                {{ $rango->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- Tipos de usuario --}}
+                                    @php $tiposUsuariosGuardados = $categoria->tipoUsuarios->pluck('id')->toArray(); @endphp
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="tipo_usuarios">Tipos de usuario</label>
+                                        <select name="tipo_usuarios[]" id="tipo_usuarios" class="select2 form-select" multiple>
+                                            @foreach ($tipoUsuarios as $tipo)
+                                            <option value="{{ $tipo->id }}" @selected(in_array($tipo->id, old('tipo_usuarios', $tiposUsuariosGuardados)))>
+                                                {{ $tipo->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- Estados civiles --}}
+                                    @php $estadosCivilesGuardados = $categoria->estadosCiviles->pluck('id')->toArray(); @endphp
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="estados_civiles">Estados civiles</label>
+                                        <select name="estados_civiles[]" id="estados_civiles" class="select2 form-select" multiple>
+                                            @foreach ($estadosCiviles as $estado)
+                                            <option value="{{ $estado->id }}" @selected(in_array($estado->id, old('estados_civiles', $estadosCivilesGuardados)))>
+                                                {{ $estado->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- Tipos de servicios --}}
+                                    @php $tipoServiciosGuardados = $categoria->tipoServicios->pluck('id')->toArray(); @endphp
+                                    <div class="col-lg-6 col-sm-12">
+                                        <label class="form-label" for="tipo_servicios">Tipos de servicios</label>
+                                        <select name="tipo_servicios[]" id="tipo_servicios" class="select2 form-select" multiple>
+                                            @foreach ($tipoServicios as $tipoSer)
+                                            <option value="{{ $tipoSer->id }}" @selected(in_array($tipoSer->id, old('tipo_servicios', $tipoServiciosGuardados)))>
+                                                {{ $tipoSer->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
                                 </div>
                             </div>
                             @endif
-
-                            {{-- NUEVA SECCIÓN: TAREAS DE CONSOLIDACIÓN --}}
-                            @if($actividad->restriccion_por_categoria == true)
-                            <div class="col-12 mt-4">
-                                <hr class="my-4">
-                                <h6 class="text-primary mb-3">
-                                    <i class="ti ti-clipboard-check me-2"></i>
-                                   Tareas de Consolidación
-                                </h6>
-
-                                {{-- Tareas Requisito --}}
-                                <div class="mb-3">
-                                    @livewire('actividad-categoria.gestionar-tareas-requisito', ['categoria' => $categoria])
-                                </div>
-
-                                {{-- Tareas a Culminar --}}
-                                <div class="mb-3">
-                                    @livewire('actividad-categoria.gestionar-tareas-culminadas', ['categoria' => $categoria])
-                                </div>
-                            </div>
-                            @endif
-                            {{-- FIN SECCIÓN: TAREAS DE CONSOLIDACIÓN --}}
-                            </div>
                         </div>
                     </div>
 

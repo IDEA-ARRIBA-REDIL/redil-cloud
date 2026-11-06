@@ -387,7 +387,7 @@
                         <button class="btn disabled btn-sm btn-icon btn-text-secondary rounded-pill dropdown-toggle hide-arrow shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Gestionar solicitud">
                           <i class="ti ti-dots fs-5"></i>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">                            
                         </ul>
                       </div>
                     @endif
@@ -874,7 +874,7 @@
             <!-- Subir Foto del Producto -->
             <div class="mb-2" wire:ignore>
               <label class="form-label text-dark small fw-semibold">Foto del producto</label>
-
+              
               <!-- Input oculto para selección de foto -->
               <input type="file" id="inlineCropperUploadProducto" class="d-none" accept="image/png,image/jpeg,image/webp" onchange="window.handleCropperProductoChange(this, 'inlineCropperContainerProducto', 'inlineCroppingImageProducto')">
 
@@ -962,7 +962,7 @@
             <!-- Subir Foto / Portada del Producto Digital -->
             <div class="mb-2" wire:ignore>
               <label class="form-label text-dark small fw-semibold">Foto o Portada del Producto</label>
-
+              
               <!-- Input oculto para selección de foto digital -->
               <input type="file" id="inlineCropperUploadProductoDigital" class="d-none" accept="image/png,image/jpeg,image/webp" onchange="window.handleCropperProductoChange(this, 'inlineCropperContainerProductoDigital', 'inlineCroppingImageProductoDigital')">
 

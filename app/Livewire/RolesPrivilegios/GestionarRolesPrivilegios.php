@@ -12,6 +12,12 @@ use Spatie\Permission\Models\Role; // <-- 1. Asegúrate de importar esto
 
 class GestionarRolesPrivilegios extends Component
 {
+    public function boot(): void
+    {
+        abort_unless(auth()->user()?->roles()->wherePivot('activo', true)
+            ->whereHas('permissions', fn ($query) => $query->where('name', 'configuraciones.subitem_roles'))->exists(), 403);
+    }
+
     public $busqueda = '';
 
     public $hola = '..';
@@ -159,8 +165,6 @@ class GestionarRolesPrivilegios extends Component
 
     /**
      * 1. Activa todos los permisos de un bloque para el rol que se está editando en el modal.
-     *
-     * @param  string  $etiquetaBloque
      */
     public function activarTodosBloque(string $etiquetaBloque): void
     {
@@ -191,8 +195,6 @@ class GestionarRolesPrivilegios extends Component
 
     /**
      * 2. Desactiva todos los permisos de un bloque para el rol que se está editando en el modal.
-     *
-     * @param  string  $etiquetaBloque
      */
     public function desactivarTodosBloque(string $etiquetaBloque): void
     {
@@ -392,6 +394,7 @@ class GestionarRolesPrivilegios extends Component
             'Temas' => 'temas.',
             'Iglesia' => 'iglesia.',
             'Actividades' => 'actividades.',
+            'Novedades' => 'novedades.',
             'Puntos de pago' => 'pdp.',
             'Peticiones' => 'peticiones.',
             'Padres' => 'padres.',

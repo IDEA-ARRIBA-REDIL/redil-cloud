@@ -2,13 +2,12 @@
 
 namespace App\Livewire\Taquilla;
 
-use Livewire\Component;
-use App\Models\Caja;
 use App\Models\Actividad;
-use App\Models\User;
+use App\Models\Caja;
 use App\Models\Configuracion;
-use Illuminate\Http\Request;
-use Livewire\Attributes\On; // ¡Importante! Para el listener
+use App\Models\User;
+use Livewire\Attributes\On;
+use Livewire\Component; // ¡Importante! Para el listener
 
 class GestionTaquilla extends Component
 {
@@ -16,18 +15,25 @@ class GestionTaquilla extends Component
 
     // Modelos principales
     public Caja $cajaActiva;
+
     public ?User $comprador = null;
+
     public ?User $usuarioAValidar = null; // El inscrito
+
     public ?Actividad $actividadSeleccionada = null;
 
     // Colecciones para los <select>
     public $actividadesDisponibles = [];
+
     public $parientes = []; // ¡Esta es la propiedad clave!
 
     // Propiedades para "form sticky" y estado de la UI
     public $compradorIdActual;
+
     public $actividadIdActual;
+
     public $inscritoIdActual;
+
     public $esInscripcionPropia = true; // El radio button
 
     /**
@@ -45,6 +51,7 @@ class GestionTaquilla extends Component
             // El 'inscritoIdActual' se valida dinámicamente
         ];
     }
+
     protected $messages = [
         'actividadIdActual.required' => 'Debes seleccionar una actividad.',
     ];
@@ -68,7 +75,6 @@ class GestionTaquilla extends Component
      * ¡ESTA ES LA MAGIA!
      * Este método "escucha" el evento 'usuario-seleccionado'
      * emitido por el componente 'usuarios-para-busqueda'.
-     *
      */
     #[On('usuario-seleccionado')]
     public function cargarParientes($id)
@@ -96,6 +102,16 @@ class GestionTaquilla extends Component
      */
     public function verificarRequisitos()
     {
+        // 0. Si la caja no puede operar, bloquear búsqueda
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+            $this->addError('cajaActiva', $mensaje);
+            $this->verificacionEnviada = false;
+
+            return;
+        }
+
         $this->validate(); // Valida las 'rules()'
 
         // Determinamos el ID del inscrito basado en el radio button
@@ -105,6 +121,7 @@ class GestionTaquilla extends Component
 
         if (empty($this->inscritoIdActual)) {
             $this->addError('inscritoIdActual', 'Debes seleccionar un familiar a inscribir.');
+
             return;
         }
 

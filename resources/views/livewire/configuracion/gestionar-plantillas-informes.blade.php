@@ -109,7 +109,7 @@
     </div>
   </div>
 
-  @include('layouts.status-msn')
+  @include('layouts.status-msn') 
 
   <!-- SELECTOR DE INFORME Y ACCIONES -->
   <div class="card shadow-sm border-0 mb-4">
@@ -343,8 +343,8 @@
                                                       $itemAObj = $itemsDelInforme->firstWhere('id', $item->item_a);
                                                       $itemBObj = $itemsDelInforme->firstWhere('id', $item->item_b);
                                                     @endphp
-                                                    [{{ $itemAObj ? $itemAObj->nombre : 'Ítem #'.$item->item_a }}]
-                                                    <strong>{{ $simbolo }}</strong>
+                                                    [{{ $itemAObj ? $itemAObj->nombre : 'Ítem #'.$item->item_a }}] 
+                                                    <strong>{{ $simbolo }}</strong> 
                                                     [{{ $itemBObj ? $itemBObj->nombre : 'Ítem #'.$item->item_b }}]
                                                   </span>
                                                 @elseif(!empty($item->totalizar_items))

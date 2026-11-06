@@ -779,11 +779,23 @@ class ActividadController extends Controller
             ->pluck('materia_periodo_id')
             ->toArray();
 
+        // Opciones para las restricciones de categoría
+        $sedes = Sede::all();
+        $rangosEdad = RangoEdad::all();
+        $tipoUsuarios = TipoUsuario::all();
+        $estadosCiviles = EstadoCivil::all();
+        $tipoServicios = TipoServicioGrupo::all();
+
         return view('contenido.paginas.actividades.crear-categoria-escuelas', [
             'actividad' => $actividad,
             'monedasActividad' => $actividad->monedas,
             'materiasPeriodo' => $materiasPeriodo,
             'materiasUsadasIds' => $materiasUsadasIds, // Pasamos el nuevo array a la vista
+            'sedes' => $sedes,
+            'rangosEdad' => $rangosEdad,
+            'tipoUsuarios' => $tipoUsuarios,
+            'estadosCiviles' => $estadosCiviles,
+            'tipoServicios' => $tipoServicios,
         ]);
     }
 
@@ -795,11 +807,17 @@ class ActividadController extends Controller
         $categoriaActividad->actividad_id = $actividad->id;
         $categoriaActividad->nombre = $request->nombre;
         $categoriaActividad->aforo = $request->aforo;
-        $categoriaActividad->limite_compras = $request->limite_compras;
         $categoriaActividad->es_gratuita = $request->has('es_gratuita');
         $categoriaActividad->materia_periodo_id = $request->materia_periodo_id;
         $categoriaActividad->aforo_ocupado = 0;
         $categoriaActividad->limite_compras = 1;
+
+        if ($actividad->restriccion_por_categoria) {
+            $categoriaActividad->genero = $request->genero;
+            $categoriaActividad->vinculacion_grupo = $request->vinculacion_grupo;
+            $categoriaActividad->actividad_grupo = $request->actividad_grupo;
+        }
+
         $categoriaActividad->save();
 
         // 3. Lógica para guardar los precios (igual que antes)
@@ -817,8 +835,16 @@ class ActividadController extends Controller
         }
         $categoriaActividad->monedas()->sync($valoresParaSincronizar);
 
-        // 4. Redirección
-        // NOTA: Asumo que la ruta para volver es 'actividades.categoriasEscuelas'. Ajusta si es diferente.
+        // 4. Sincronización de restricciones si la actividad lo requiere
+        if ($actividad->restriccion_por_categoria) {
+            $categoriaActividad->sedes()->sync($request->sedes ?? []);
+            $categoriaActividad->rangosEdad()->sync($request->rangos_edad ?? []);
+            $categoriaActividad->tipoUsuarios()->sync($request->tipo_usuarios ?? []);
+            $categoriaActividad->estadosCiviles()->sync($request->estados_civiles ?? []);
+            $categoriaActividad->tipoServicios()->sync($request->tipo_servicios ?? []);
+        }
+
+        // 5. Redirección
         return redirect()->route('actividades.categoriasEscuelas', $actividad)
             ->with('success', 'Categoría de escuela "'.$categoriaActividad->nombre.'" creada exitosamente.');
     }
@@ -837,12 +863,24 @@ class ActividadController extends Controller
             ->pluck('materia_periodo_id')
             ->toArray();
 
+        // Opciones para las restricciones de categoría (igual que en editarCategoria)
+        $sedes = Sede::all();
+        $rangosEdad = RangoEdad::all();
+        $tipoUsuarios = TipoUsuario::all();
+        $estadosCiviles = EstadoCivil::all();
+        $tipoServicios = TipoServicioGrupo::all();
+
         return view('contenido.paginas.actividades.editar-categoria-escuelas', [
             'categoria' => $categoria,
             'actividad' => $actividad,
             'monedasActividad' => $actividad->monedas,
             'materiasPeriodo' => $materiasPeriodo,
             'materiasUsadasIds' => $materiasUsadasIds, // Pasamos el array de IDs usados a la vista
+            'sedes' => $sedes,
+            'rangosEdad' => $rangosEdad,
+            'tipoUsuarios' => $tipoUsuarios,
+            'estadosCiviles' => $estadosCiviles,
+            'tipoServicios' => $tipoServicios,
         ]);
     }
 
@@ -863,6 +901,13 @@ class ActividadController extends Controller
         $categoria->limite_compras = 1;
         $categoria->es_gratuita = $request->has('es_gratuita');
         $categoria->materia_periodo_id = $request->materia_periodo_id;
+
+        if ($actividad->restriccion_por_categoria) {
+            $categoria->genero = $request->genero;
+            $categoria->vinculacion_grupo = $request->vinculacion_grupo;
+            $categoria->actividad_grupo = $request->actividad_grupo;
+        }
+
         $categoria->save();
 
         // 3. Sincronización de precios (usar sync es ideal para actualizaciones)
@@ -880,7 +925,16 @@ class ActividadController extends Controller
         }
         $categoria->monedas()->sync($valoresParaSincronizar);
 
-        // 4. Redirección
+        // 4. Sincronización de restricciones si la actividad lo requiere
+        if ($actividad->restriccion_por_categoria) {
+            $categoria->sedes()->sync($request->sedes ?? []);
+            $categoria->rangosEdad()->sync($request->rangos_edad ?? []);
+            $categoria->tipoUsuarios()->sync($request->tipo_usuarios ?? []);
+            $categoria->estadosCiviles()->sync($request->estados_civiles ?? []);
+            $categoria->tipoServicios()->sync($request->tipo_servicios ?? []);
+        }
+
+        // 5. Redirección
         return redirect()->route('actividades.categoriasEscuelas', $actividad)
             ->with('success', 'Categoría de escuela "'.$categoria->nombre.'" actualizada exitosamente.');
     }

@@ -4,7 +4,7 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Gestión de Novedades de Actividades')
+@section('title', 'Gestión de Novedades')
 
 @section('vendor-style')
     @vite([

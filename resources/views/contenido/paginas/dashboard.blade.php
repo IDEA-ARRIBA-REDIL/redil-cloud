@@ -28,199 +28,243 @@
 
 
 @section('vendor-style')
-    @vite([
-        'resources/assets/vendor/libs/fullcalendar/fullcalendar.scss',
-    ])
+    @vite(['resources/assets/vendor/libs/fullcalendar/fullcalendar.scss'])
 @endsection
 
 @section('page-style')
-    @vite([
-        'resources/assets/vendor/libs/swiper/swiper.scss',
-        'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
-        'resources/assets/vendor/scss/pages/app-calendar.scss'
-    ])
+    @vite(['resources/assets/vendor/libs/swiper/swiper.scss', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss', 'resources/assets/vendor/scss/pages/app-calendar.scss'])
+    @php($dashboardColors = class_exists(\App\Services\DashboardThemeService::class) ? app(\App\Services\DashboardThemeService::class)->colors() : [])
     <style>
+        :root {
+            @foreach ($dashboardColors as $variable => $value)
+                --{{ $variable }}: {{ $value }};
+            @endforeach
+        }
+
+        .dashboard-header {
+            background: var(--dashboard-header-background, #2F5D50) !important;
+        }
+
+        .dashboard-header h5,
+        .dashboard-greeting {
+            color: var(--dashboard-header-text, #ffffff) !important;
+        }
+
+        .gamificacion-dashboard-card h5 {
+            color: inherit !important;
+        }
+
+        .dashboard-devotional {
+            background: var(--dashboard-devotional-background, #2D5046);
+            color: var(--dashboard-devotional-text, #ffffff);
+        }
+
+        .dashboard-devotional h5,
+        .dashboard-devotional p,
+        .dashboard-devotional .btn {
+            color: inherit !important;
+        }
+
+        .dashboard-devotional .btn {
+            border-color: currentColor !important;
+        }
+
+        .dashboard-devotional .btn:hover {
+            background: transparent !important;
+            opacity: .85;
+        }
+
         /* Estilos para el header y navbar solo para dashboard  */
+        .dashboard-header {
+            margin-left: -1.5rem;
+            margin-right: -1.5rem;
+            padding: 100px 1.5rem 80px 1.5rem;
+            margin-top: -6.7rem;
+        }
+
+        /* Estilos para el navbar SOLO cuando está en el tope de la página */
+        .layout-navbar.navbar-at-top {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            box-shadow: none !important;
+            border: none !important;
+            background-color: transparent !important;
+        }
+
+        /* Eapps Instagram Feed - Ajustes  */
+
+        .eapps-instagram-feed-title {
+            font-size: 24px;
+            font-weight: 700 !important;
+            text-align: start !important;
+            line-height: 32px;
+            padding: 24px 10px;
+            color: #000;
+            font-family: 'Poppins';
+        }
+
+        #container-instagram {
+            background: #fff;
+            margin-top: 10px;
+            padding: 20px;
+            width: 97%;
+            margin-left: 12px;
+            border-radius: 10px;
+        }
+
+        .eapps-instagram-feed-posts-item-template-classic {
+            border: 2px solid rgb(255 255 255);
+        }
+
+        #rueda-vida-card {
+            margin-top: -140px !important;
+        }
+
+        /* El degradado/difuminado superior también solo debería quitarse en el tope */
+        .layout-navbar-fixed .layout-page.navbar-at-top:before {
+            background: none !important;
+            backdrop-filter: none !important;
+        }
+
+
+        @media (min-width: 1200px) {
             .dashboard-header {
-                margin-left: -1.5rem;
-                margin-right: -1.5rem;
-                padding: 100px 1.5rem 80px 1.5rem;
-                margin-top: -6.7rem;
+                padding-left: 2rem;
+                padding-right: 2rem;
+            }
+        }
+
+        @media (min-width: 1400px) {
+
+            .container-xxl,
+            .container-xl,
+            .container-lg,
+            .container-md,
+            .container-sm,
+            .container {
+                max-width: 100% !important;
             }
 
-            /* Estilos para el navbar SOLO cuando está en el tope de la página */
-            .layout-navbar.navbar-at-top {
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                box-shadow: none !important;
-                border: none !important;
-                background-color: transparent !important;
+            .ajuste {
+                padding-left: 10rem !important;
+                padding-right: 10rem !important;
             }
-            /* Eapps Instagram Feed - Ajustes  */
+        }
 
-            .eapps-instagram-feed-title
- {
-    font-size: 24px;
-    font-weight: 700 !important;
-    text-align: start !important;
-    line-height: 32px;
-    padding: 24px 10px;
-    color: #000;
-    font-family: 'Poppins';
-}
-
-#container-instagram{
-    background: #fff;
-    margin-top: 10px;
-    padding: 20px;
-    width: 97%;
-    margin-left: 12px;
-    border-radius: 10px;
-}
-.eapps-instagram-feed-posts-item-template-classic {
-    border: 2px solid rgb(255 255 255);
-}
+        @media (max-width: 767px) {
+            .dashboard-header {
+                padding: 100px 1.5rem 50px 1.5rem !important;
+            }
 
             #rueda-vida-card {
-                margin-top: -140px !important;
+                margin-top: 0px !important;
             }
+        }
 
-            /* El degradado/difuminado superior también solo debería quitarse en el tope */
-            .layout-navbar-fixed .layout-page.navbar-at-top:before {
-                background: none !important;
-                backdrop-filter: none !important;
-            }
-
-
-            @media (min-width: 1200px) {
-                .dashboard-header {
-                    padding-left: 2rem;
-                    padding-right: 2rem;
-                }
-            }
-
-            @media (min-width: 1400px) {
-                .container-xxl, .container-xl, .container-lg, .container-md, .container-sm, .container {
-                    max-width: 100% !important;
-                }
-
-                .ajuste{
-                    padding-left: 10rem !important;
-                    padding-right: 10rem  !important;
-                }
-            }
-
-            @media (max-width: 767px) {
-                .dashboard-header {
-                    padding: 100px 1.5rem 50px 1.5rem !important;
-                }
-                #rueda-vida-card {
-                    margin-top: 0px !important;
-                }
-            }
         /* fin de estilos para el header y navbar */
 
         /* Estilos para los botones de acción */
-            .action-buttons-container {
-                margin-top: -90px;
-                display: flex;
-                gap: 15px;
-                padding: 0 10px 20px 10px;
-                overflow-x: auto;
-                scrollbar-width: none;
-            }
+        .action-buttons-container {
+            margin-top: -90px;
+            display: flex;
+            gap: 15px;
+            padding: 0 10px 20px 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
 
-            .action-buttons-container::-webkit-scrollbar {
-                display: none;
-            }
+        .action-buttons-container::-webkit-scrollbar {
+            display: none;
+        }
 
+        .action-card {
+            min-width: 110px;
+            height: 110px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .action-icon-container {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-icon-container img,
+        .action-icon-container span {
+            font-size: 35px;
+        }
+
+        .action-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #444;
+            margin: 0;
+            text-align: center;
+        }
+
+        @media (max-width: 767px) {
             .action-card {
-                min-width: 110px;
-                height: 110px;
-                background: #fff;
-                border-radius: 16px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-                transition: all 0.3s ease;
-                cursor: pointer;
-                border: none;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 5px;
+                background: transparent !important;
+                box-shadow: none !important;
+                min-width: 110px !important;
+                height: auto !important;
+                padding: 0 !important;
             }
 
-            .action-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            .action-buttons-container {
+                margin-top: -60px;
             }
 
             .action-icon-container {
-                width: 50px;
-                height: 50px;
-                margin-bottom: 5px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                width: 70px !important;
+                height: 70px !important;
+                background: #fff !important;
+                border-radius: 50% !important;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+                margin-bottom: 12px !important;
+                border: 1px solid #eee;
             }
 
-            .action-icon-container img, .action-icon-container span {
-                font-size: 35px;
+            .action-icon-container img {
+                width: 55px !important;
+                height: 55px !important;
             }
 
             .action-title {
-                font-size: 0.9rem;
-                font-weight: 600;
-                color: #444;
-                margin: 0;
-                text-align: center;
+                font-size: 1rem !important;
+                color: #222 !important;
             }
+        }
 
-            @media (max-width: 767px) {
-                .action-card {
-                    background: transparent !important;
-                    box-shadow: none !important;
-                    min-width: 110px !important;
-                    height: auto !important;
-                    padding: 0 !important;
-                }
-
-                .action-buttons-container {
-                    margin-top: -60px;
-                }
-
-                .action-icon-container {
-                    width: 70px !important;
-                    height: 70px !important;
-                    background: #fff !important;
-                    border-radius: 50% !important;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
-                    margin-bottom: 12px !important;
-                    border: 1px solid #eee;
-                }
-
-                .action-icon-container img {
-                    width: 55px !important;
-                    height: 55px !important;
-                }
-
-                .action-title {
-                    font-size: 1rem !important;
-                    color: #222 !important;
-                }
-            }
         /* fin de estilos para los botones de acción */
 
-       #swiper-temas .swiper-pagination{
-            position:unset !important;
+        #swiper-temas .swiper-pagination {
+            position: unset !important;
 
-       }
+        }
 
         /* Estilos para las flechas de navegación de Swiper */
 
-        .btn-banner-mas :hover{
+        .btn-banner-mas :hover {}
 
-        }
         .swiper-button-next-banners,
         .swiper-button-prev-banners {
             width: 40px !important;
@@ -243,10 +287,9 @@
 
         /* Estilos para el banner de Gamificación */
         .gamificacion-dashboard-card {
-            background: #14532d;
-            background: linear-gradient(135deg, #3b762b 0%, #1f3d1a 100%);
+            background: var(--dashboard-points-background, linear-gradient(135deg, #3b762b 0%, #1f3d1a 100%));
             border-radius: 16px;
-            color: #ffffff;
+            color: var(--dashboard-points-text, #ffffff);
             transition: all 0.25s ease-in-out;
             cursor: pointer;
         }
@@ -260,7 +303,7 @@
             background: rgba(255, 255, 255, 0.27);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            color: #ffffff;
+            color: var(--dashboard-points-text, #ffffff);
             font-weight: 700;
             font-size: 0.95rem;
             padding: 0.35rem 1rem;
@@ -273,28 +316,23 @@
 @endsection
 
 @section('vendor-script')
-    @vite([
-        'resources/assets/vendor/libs/fullcalendar/fullcalendar.js',
-        'resources/assets/vendor/libs/swiper/swiper.js',
-        'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
-        'resources/assets/vendor/libs/moment/moment.js'
-    ])
+    @vite(['resources/assets/vendor/libs/fullcalendar/fullcalendar.js', 'resources/assets/vendor/libs/swiper/swiper.js', 'resources/assets/vendor/libs/sweetalert2/sweetalert2.js', 'resources/assets/vendor/libs/moment/moment.js'])
 @endsection
 
 @section('page-script')
     {{-- Notificaciones: activar / blocked --}}
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const navbar = document.querySelector('.layout-navbar');
             const layoutPage = document.querySelector('.layout-page');
 
             function handleScroll() {
                 if (window.scrollY > 10) {
                     navbar.classList.remove('navbar-at-top');
-                    if(layoutPage) layoutPage.classList.remove('navbar-at-top');
+                    if (layoutPage) layoutPage.classList.remove('navbar-at-top');
                 } else {
                     navbar.classList.add('navbar-at-top');
-                    if(layoutPage) layoutPage.classList.add('navbar-at-top');
+                    if (layoutPage) layoutPage.classList.add('navbar-at-top');
                 }
             }
 
@@ -302,7 +340,7 @@
             handleScroll(); // Ejecutar al cargar para setear estado inicial
         });
 
-        (function () {
+        (function() {
             const esMobil = window.innerWidth < 900;
             if (!esMobil) return;
 
@@ -428,31 +466,34 @@
         setTimeout(initTemasSwiper, 500);
     </script>
 
-    @if($mostrarAlertaLicencia)
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let htmlContent = '';
-            @if($diasRestantesLicencia > 0)
-                htmlContent += 'Tu licencia de software REDIL está próxima a vencer en <strong>{{ intval($diasRestantesLicencia) }} días</strong> ({{ \Carbon\Carbon::parse($iglesiaData->fecha_vencimiento_licencia)->format("d/m/Y") }}).<br><br>';
-            @elseif($diasRestantesLicencia == 0)
-                htmlContent += 'Tu licencia de software REDIL vence <strong>hoy</strong>.<br><br>';
-            @else
-                htmlContent += 'Tu licencia de software REDIL ha <strong>vencido</strong> hace {{ abs(intval($diasRestantesLicencia)) }} días.<br><br>';
-            @endif
-            htmlContent += '{{ $iglesiaData->mensaje_vencimiento_licencia ?? "Por favor, comunícate con soporte o renueva tu plan para evitar interrupciones en el servicio." }}';
+    @if ($mostrarAlertaLicencia)
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                let htmlContent = '';
+                @if ($diasRestantesLicencia > 0)
+                    htmlContent +=
+                        'Tu licencia de software REDIL está próxima a vencer en <strong>{{ intval($diasRestantesLicencia) }} días</strong> ({{ \Carbon\Carbon::parse($iglesiaData->fecha_vencimiento_licencia)->format('d/m/Y') }}).<br><br>';
+                @elseif ($diasRestantesLicencia == 0)
+                    htmlContent += 'Tu licencia de software REDIL vence <strong>hoy</strong>.<br><br>';
+                @else
+                    htmlContent +=
+                        'Tu licencia de software REDIL ha <strong>vencido</strong> hace {{ abs(intval($diasRestantesLicencia)) }} días.<br><br>';
+                @endif
+                htmlContent +=
+                    '{{ $iglesiaData->mensaje_vencimiento_licencia ?? 'Por favor, comunícate con soporte o renueva tu plan para evitar interrupciones en el servicio.' }}';
 
-            Swal.fire({
-                title: '¡Aviso importante!',
-                html: htmlContent,
-                icon: 'warning',
-                confirmButtonText: 'Entendido',
-                customClass: {
-                    confirmButton: 'btn btn-primary rounded-pill'
-                },
-                buttonsStyling: false
+                Swal.fire({
+                    title: '¡Aviso importante!',
+                    html: htmlContent,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    customClass: {
+                        confirmButton: 'btn btn-primary rounded-pill'
+                    },
+                    buttonsStyling: false
+                });
             });
-        });
-    </script>
+        </script>
     @endif
 @endsection
 
@@ -481,8 +522,8 @@
 
     <div class="">
 
-        <div class="dashboard-header ajuste " style="background: #2F5D50 !important;">
-            <h5 class="text-white fw-normal">¿Qué deseas hacer hoy?</h5>
+        <div class="dashboard-header ajuste">
+            <h5 class="fw-normal">¿Qué deseas hacer hoy?</h5>
         </div>
 
         <div class="row ajuste">
@@ -493,7 +534,8 @@
                     <div class="action-card">
                         <div class="action-icon-container">
                             <a href="{{ route('escuelas.dashboard') }}">
-                            <img src="{{ Storage::disk('global_media')->url('Funcionalidad-escuelas.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
+                                <img src="{{ Storage::disk('global_media')->url('Funcionalidad-escuelas.png') }}"
+                                    style="width: 45px; height: 45px; object-fit: contain;">
                             </a>
                         </div>
                         <p class="action-title">Academia</p>
@@ -503,7 +545,8 @@
                     <div class="action-card">
                         <div class="action-icon-container">
                             <a href="{{ request()->routeIs('grupo.lista') ? 'active' : '' }}">
-                            <img src="{{ Storage::disk('global_media')->url('Funcionalidad-grupos.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
+                                <img src="{{ Storage::disk('global_media')->url('Funcionalidad-grupos.png') }}"
+                                    style="width: 45px; height: 45px; object-fit: contain;">
                             </a>
                         </div>
                         <p class="action-title">Grupos</p>
@@ -513,7 +556,8 @@
                     <div>
                         <div class="action-card" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBirthday">
                             <div class="action-icon-container">
-                                <img src="{{ Storage::disk('global_media')->url('Funcionalidad-cumpleaños.png') }}" style="width: 45px; height: 45px; object-fit: contain;">
+                                <img src="{{ Storage::disk('global_media')->url('Funcionalidad-cumpleaños.png') }}"
+                                    style="width: 45px; height: 45px; object-fit: contain;">
                             </div>
                             <p class="action-title">Cumpleaños</p>
                         </div>
@@ -524,36 +568,42 @@
             <div class="col-12 col-md-6">
 
                 @if ($rolActivo->hasPermissionTo('rueda_de_la_vida.item_rueda_de_la_vida'))
-                 <div id="rueda-vida-card" class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
-                    <a href="{{ route('ruedaDeLaVida.gestor') }}" class="text-decoration-none">
-                    <div class="row g-0">
-                        <div class="col-3 col-lg-3 col-xxl-2 bg-warning bg-opacity-25">
-                            <img class="card-img card-img-start object-fit-cover h-100 " src="{{Storage::disk('global_media')->url('/rueda-de-la-vida/img-card-dashboard.png')  }}" alt="Card image">
-                        </div>
-                        <div class="col-8 col-lg-8 col-xxl-9 bg-warning bg-opacity-25 card-body d-flex align-items-start flex-column justify-content-center">
+                    <div id="rueda-vida-card" class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+                        <a href="{{ route('ruedaDeLaVida.gestor') }}" class="text-decoration-none">
+                            <div class="row g-0">
+                                <div class="col-3 col-lg-3 col-xxl-2 bg-warning bg-opacity-25">
+                                    <img class="card-img card-img-start object-fit-cover h-100 "
+                                        src="{{ Storage::disk('global_media')->url('/rueda-de-la-vida/img-card-dashboard.png') }}"
+                                        alt="Card image">
+                                </div>
+                                <div
+                                    class="col-8 col-lg-8 col-xxl-9 bg-warning bg-opacity-25 card-body d-flex align-items-start flex-column justify-content-center">
 
-                            <h5 class="card-title text-black mb-0 fw-semibold">Rueda de la vida</h5>
-                            <p class="card-text text-black text-decoration-none fs-6" style="font-size: 0.8rem !important;">Establece tus metas y mejora tu promedio con Dios.</p>
+                                    <h5 class="card-title text-black mb-0 fw-semibold">Rueda de la vida</h5>
+                                    <p class="card-text text-black text-decoration-none fs-6"
+                                        style="font-size: 0.8rem !important;">Establece tus metas y mejora tu promedio con
+                                        Dios.</p>
 
-                        </div>
-                        <div class="col-1 d-flex align-items-center bg-warning bg-opacity-25">
-                            <button class="btn btn-icon rounded-pill btn-text-dark waves-effect">
-                                <i class="ti ti-chevron-right"></i>
-                            </button>
-                        </div>
+                                </div>
+                                <div class="col-1 d-flex align-items-center bg-warning bg-opacity-25">
+                                    <button class="btn btn-icon rounded-pill btn-text-dark waves-effect">
+                                        <i class="ti ti-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </a>
                     </div>
-                   </a>
-                </div>
                 @endif
             </div>
 
         </div>
 
-        <div id="row-contenido-general" class="row ajuste">          
+        <div id="row-contenido-general" class="row ajuste">
 
             {{--  habilitar notificaciones (solo móvil, solo si no están activas) --}}
             <div id="banner-notif-permiso" class="col-12 my-2 " style="display:none;">
-                <div style="
+                <div
+                    style="
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     border-radius: 16px;
                     padding: 14px 18px;
@@ -565,9 +615,11 @@
                     <span style="font-size:28px;flex-shrink:0;">🔔</span>
                     <div style="flex:1;">
                         <p style="margin:0;color:white;font-weight:700;font-size:14px;">Activa las notificaciones</p>
-                        <p style="margin:0;color:rgba(255,255,255,0.8);font-size:12px;">Recibe avisos importantes en tiempo real.</p>
+                        <p style="margin:0;color:rgba(255,255,255,0.8);font-size:12px;">Recibe avisos importantes en tiempo
+                            real.</p>
                     </div>
-                    <button onclick="pedirPermisoNotificaciones()" style="
+                    <button onclick="pedirPermisoNotificaciones()"
+                        style="
                         background: white;
                         color: #667eea;
                         border: none;
@@ -579,7 +631,8 @@
                         white-space: nowrap;
                         flex-shrink: 0;
                     ">Activar</button>
-                    <button onclick="cerrarBannerNotif()" style="
+                    <button onclick="cerrarBannerNotif()"
+                        style="
                         background: transparent;
                         border: none;
                         color: rgba(255,255,255,0.7);
@@ -593,7 +646,8 @@
 
             {{-- notificaciones bloqueadas (denied) --}}
             <div id="banner-notif-bloqueado" class="col-12 mb-2" style="display:none;">
-                <div style="
+                <div
+                    style="
                     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
                     border-radius: 16px;
                     padding: 14px 18px;
@@ -605,14 +659,16 @@
                     <span style="font-size:28px;flex-shrink:0;margin-top:2px;">🔕</span>
                     <div style="flex:1;">
                         <p style="margin:0 0 3px;color:white;font-weight:700;font-size:14px;">Notificaciones bloqueadas</p>
-                        <p style="margin:0 0 8px;color:rgba(255,255,255,0.9);font-size:12px;line-height:1.5;"
-                        >Para recibirlas, ve a la <strong>configuración de tu navegador</strong>, busca los permisos de este sitio y cambia las notificaciones a <strong>Permitir</strong>.</p>
+                        <p style="margin:0 0 8px;color:rgba(255,255,255,0.9);font-size:12px;line-height:1.5;">Para
+                            recibirlas, ve a la <strong>configuración de tu navegador</strong>, busca los permisos de este
+                            sitio y cambia las notificaciones a <strong>Permitir</strong>.</p>
                         <p style="margin:0;color:rgba(255,255,255,0.75);font-size:11px;">
                             📱 Android: Menú → Configuración → Configuración del sitio → Notificaciones<br>
                             🍏 iOS: Configuración → Safari → Notificaciones
                         </p>
                     </div>
-                    <button onclick="cerrarBannerBloqueado()" style="
+                    <button onclick="cerrarBannerBloqueado()"
+                        style="
                         background: transparent;
                         border: none;
                         color: rgba(255,255,255,0.7);
@@ -628,87 +684,90 @@
 
             <!-- Banner de Gamificación / Perfil del Usuario -->
             @auth
-            @if ($rolActivo && $rolActivo->hasPermissionTo('gamificacion.habilitar_gamificacion'))
-            <div class="col-12 my-2">
-                <a href="{{ route('gamificacion.index') }}" class="text-decoration-none">
-                    <div class="card gamificacion-dashboard-card border-0 shadow-sm p-5" style="border-radius: 15px;">
-                    
+                @if ($rolActivo && $rolActivo->hasPermissionTo('gamificacion.habilitar_gamificacion'))
+                    <div class="col-12 my-2">
+                        <a href="{{ route('gamificacion.index') }}" class="text-decoration-none">
+                            <div class="card gamificacion-dashboard-card border-0 shadow-sm p-5" style="border-radius: 15px;">
 
-                        <div class="d-flex">
-                        
-                            <div class="d-flex flex-column align-items-start gap-2">
-                                <h5 class="text-white mb-0 fw-semibold">¡Hola, {{ auth()->user()->nombre(2) }}!</h5>
-                                <div class="gamificacion-puntos-badge">
-                                    <i class="ti ti-coins text-warning fs-5"></i>
-                                    <span>{{ number_format(auth()->user()->puntos ?? 0) }} Puntos</span>
+
+                                <div class="d-flex">
+
+                                    <div class="d-flex flex-column align-items-start gap-2">
+                                        <h5 class="mb-0 fw-semibold">¡Hola, {{ auth()->user()->nombre(2) }}!</h5>
+                                        <div class="gamificacion-puntos-badge">
+                                            <i class="ti ti-coins text-warning fs-5"></i>
+                                            <span>{{ number_format(auth()->user()->puntos ?? 0) }} Puntos</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex-grow-1 d-flex justify-content-end align-items-center">
+                                        <button class="btn btn-icon rounded-pill btn-text-dark waves-effect">
+                                            <i class="ti ti-chevron-right"></i>
+                                        </button>
+                                    </div>
+
                                 </div>
+
                             </div>
-
-                            <div class="flex-grow-1 d-flex justify-content-end align-items-center">
-                                <button class="btn btn-icon rounded-pill btn-text-dark waves-effect">
-                                    <i class="ti ti-chevron-right"></i>
-                                </button>
-                            </div>
-
-                        </div>
-
+                        </a>
                     </div>
-                </a>
-            </div>
-            @endif
+                @endif
             @endauth
 
-            
+
 
             @livewire('dashboard.versiculo-del-dia', ['claseColumnas' => 'col-12  col-lg-6 mt-3'])
 
-            <div id="col-racha-tiempo-con-dios" class="col-12  col-lg-6 mt-3" >
+            <div id="col-racha-tiempo-con-dios" class="col-12  col-lg-6 mt-3">
 
                 <h5 class="text-black fw-bold">Racha</h5>
 
                 <div class="card shadow" style="border-radius: 15px;">
                     <div class="card-body">
-                       <div class="border-bottom">
-                       @livewire('TiempoConDios.racha-semanal', [
-                            'tamaño' => '70px',
-                            'formato' => 'compacto',
-                        ])
-                       </div> 
+                        <div class="border-bottom">
+                            @livewire('TiempoConDios.racha-semanal', [
+                                'tamaño' => '70px',
+                                'formato' => 'compacto',
+                            ])
+                        </div>
 
-                       <div>
-                        @livewire('TiempoConDios.racha-diaria', [
-                            'largoLinea' => '40px', 
-                            'ocultarDispositivosMoviles' => false,  
-                            'mostrarRacha' => true,
-                            'mostrar-animacion' => 'false'
-                        ])
-                       </div>
+                        <div>
+                            @livewire('TiempoConDios.racha-diaria', [
+                                'largoLinea' => '40px',
+                                'ocultarDispositivosMoviles' => false,
+                                'mostrarRacha' => true,
+                                'mostrar-animacion' => 'false',
+                            ])
+                        </div>
                     </div>
                 </div>
 
                 <div class="card border-0 shadow-sm overflow-hidden mt-3" style="border-radius: 15px;">
                     <div class="d-flex flex-column flex-sm-row">
                         <!-- Contenedor de Texto: Crece para ocupar el espacio disponible -->
-                        <div class="flex-grow-1 px-8 py-10 d-flex flex-column justify-content-center text-white" style="background-color: #2D5046;">
+                        <div class="dashboard-devotional flex-grow-1 px-8 py-10 d-flex flex-column justify-content-center">
                             <div class="mb-4">
-                                <h5 class="text-white mb-2">Mi tiempo con Dios</h5>
+                                <h5 class="mb-2">Mi tiempo con Dios</h5>
                                 <p class="opacity-75 fw-light mb-0" style="font-size: 0.9rem;">
                                     Dedica tiempo diario a tu relación íntima con Él.
                                 </p>
                             </div>
 
                             <div>
-                                <a href="{{ route('tiempoConDios.historial') }}" class="btn btn-outline-light rounded-pill px-4 py-2 mt-5" style="border-width: 1.5px; font-weight: 500;">
+                                <a href="{{ route('tiempoConDios.historial') }}"
+                                    class="btn btn-outline-light rounded-pill px-4 py-2 mt-5"
+                                    style="border-width: 1.5px; font-weight: 500;">
                                     Comenzar
                                 </a>
                             </div>
                         </div>
 
                         <!-- Contenedor de Animación: Ajuste flexible -->
-                        <div class="d-flex align-items-center justify-content-center bg-white p-3" style="min-width: 180px;">
+                        <div class="d-flex align-items-center justify-content-center bg-white p-3"
+                            style="min-width: 180px;">
                             @livewire('TiempoConDios.racha-animacion', [
                                 'ancho' => '160px',
-                                'alto' => '160px'
+                                'alto' => '160px',
                             ])
                         </div>
                     </div>
@@ -732,16 +791,18 @@
                                     @endif
                                     <div class="card shadow-none border-0 overflow-hidden rounded-3 position-relative">
                                         <img class=" w-100 " style="height: auto;width:100px;"
-                                            src="{{ $banner->imagen_vinculada }}"
-                                            alt="{{ $banner->nombre }}">
+                                            src="{{ $banner->imagen_vinculada }}" alt="{{ $banner->nombre }}">
                                         <div class="card-img-overlay d-flex flex-column justify-content-end p-4"
                                             style="background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);">
                                             <div class="d-flex flex-row align-items-center ">
-                                                    <h6 class="text-white fw-semibold mb-0">{{ $banner->nombre }}</h6>
-                                                    @if ($banner->link)
-                                                        <small  style="    color: white;
-                                                                        border: solid 1px #fff !important;" class="btn-banner-mas btn btn-outline-ligght   rounded-pill ms-3">Ver más</small>
-                                                    @endif
+                                                <h6 class="text-white fw-semibold mb-0">{{ $banner->nombre }}</h6>
+                                                @if ($banner->link)
+                                                    <small
+                                                        style="    color: white;
+                                                                        border: solid 1px #fff !important;"
+                                                        class="btn-banner-mas btn btn-outline-ligght   rounded-pill ms-3">Ver
+                                                        más</small>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -778,7 +839,8 @@
                                     <div class="card border rounded-3 shadow-sm h-100">
                                         <div class="card-body">
                                             <div class="d-flex flex-row justify-content-between mb-2">
-                                                <p class="fw-semibold text-black text-truncate mb-0">{{ $actividad->nombre }}
+                                                <p class="fw-semibold text-black text-truncate mb-0">
+                                                    {{ $actividad->nombre }}
                                                 </p>
                                                 <span
                                                     class="badge rounded-pill bg-label-info">{{ $actividad->tipo->es_gratuita ? 'Gratuita' : 'De pago' }}</span>
@@ -820,22 +882,20 @@
             </div>
 
             @if ($rolActivo && $rolActivo->hasPermissionTo('dashboard.dashboard_mostrar_calendario'))
-
-            aqui estoy si entre
                 @livewire('dashboard.calendario-actividades', [
-                    'claseColumnas' => 'col-12 col-lg-12 mt-3'
+                    'claseColumnas' => 'col-12 col-lg-12 mt-3',
                 ])
             @endif
 
             <!-- Elfsight Instagram Feed | Iglesia Manantial de Vida Eterna -->
-            @if(1==2)
-            <h5 class="text-black fw-bold  mt-3">Siguenos en Instagram</h5>
+            @if (1 == 2)
+                <h5 class="text-black fw-bold  mt-3">Siguenos en Instagram</h5>
 
-            <div id="container-instagram" class="col-12 col-lg-12">
+                <div id="container-instagram" class="col-12 col-lg-12">
 
-                <script src="https://elfsightcdn.com/platform.js" async></script>
-                <div class="elfsight-app-867b00f3-dd5b-4505-9098-befd1df883a8" data-elfsight-app-lazy></div>
-            </div>
+                    <script src="https://elfsightcdn.com/platform.js" async></script>
+                    <div class="elfsight-app-867b00f3-dd5b-4505-9098-befd1df883a8" data-elfsight-app-lazy></div>
+                </div>
             @endif
             @livewire('dashboard.posts-widget', ['claseColumnas' => 'col-12 col-lg-12 mt-3 d-nonex'])
 
@@ -857,8 +917,7 @@
                                         <div class="position-relative">
                                             <a href="{{ route('tema.ver', $tema) }}">
                                                 <img class="card-img-top object-fit-cover" style="height: 160px;"
-                                                    src="{{ $tema->portada_url }}"
-                                                    alt="{{ $tema->titulo }}">
+                                                    src="{{ $tema->portada_url }}" alt="{{ $tema->titulo }}">
                                             </a>
                                         </div>
                                         <div class="card-body p-3">
@@ -893,7 +952,7 @@
             <div class="modal-dialog modal-md modal-dialog-centered modal-simple">
                 <div class="modal-content p-0">
                     <div class="modal-header border-bottom d-flex justify-content-between px-5 pb-3">
-                        <p class="text-black fw-semibold mb-0">¿Deseas registrar a tus hijos menor de edad?</p>
+                        <p class="text-black fw-semibold mb-0">¿Deseas registrar a tus hijos menores de edad?</p>
                         <button type="button" class="btn btn-sm" data-bs-dismiss="modal" aria-label="Close"><i
                                 class="ti ti-x ti-sm"></i></button>
                     </div>

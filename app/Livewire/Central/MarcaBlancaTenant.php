@@ -17,6 +17,30 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
 {
     use WithFileUploads;
 
+    private const LOGOS_POR_UBICACION = [
+        'logo_login' => 'logoLogin',
+        'logo_menu_general' => 'logoMenuGeneral',
+        'logo_menu_escuelas' => 'logoMenuEscuelas',
+    ];
+
+    public ?string $logoLoginActual = null;
+
+    public ?string $logoMenuGeneralActual = null;
+
+    public ?string $logoMenuEscuelasActual = null;
+
+    public ?string $logoLoginUrl = null;
+
+    public ?string $logoMenuGeneralUrl = null;
+
+    public ?string $logoMenuEscuelasUrl = null;
+
+    public ?TemporaryUploadedFile $logoLoginFile = null;
+
+    public ?TemporaryUploadedFile $logoMenuGeneralFile = null;
+
+    public ?TemporaryUploadedFile $logoMenuEscuelasFile = null;
+
     public Tenant $tenant;
 
     public bool $planIncluyeLogo = false;
@@ -28,6 +52,8 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
     public bool $logoPersonalizado = false;
 
     public bool $marcaBlanca = false;
+
+    public ?string $nombreAppPersonalizado = null;
 
     public ?string $nombreCreador = null;
 
@@ -75,6 +101,7 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
         return [
             'logoPersonalizado' => ['boolean'],
             'marcaBlanca' => ['boolean'],
+            'nombreAppPersonalizado' => ['nullable', 'string', 'max:100'],
             'nombreCreador' => ['nullable', 'string', 'max:100'],
             'urlCreador' => ['nullable', 'url', 'max:255'],
             'colorNombreApp' => ['nullable', 'string', 'max:50'],
@@ -83,6 +110,9 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
             'versionApp' => ['nullable', 'string', 'max:20'],
             'logoAppFile' => [$this->planIncluyeLogo ? 'nullable' : 'prohibited', 'image', 'mimes:png,jpg,jpeg', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
             'logoAppNegroFile' => [$this->planIncluyeLogo ? 'nullable' : 'prohibited', 'image', 'mimes:png,jpg,jpeg', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
+            'logoLoginFile' => [$this->planIncluyeLogo ? 'nullable' : 'prohibited', 'image', 'mimes:png,jpg,jpeg', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
+            'logoMenuGeneralFile' => [$this->planIncluyeLogo ? 'nullable' : 'prohibited', 'image', 'mimes:png,jpg,jpeg', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
+            'logoMenuEscuelasFile' => [$this->planIncluyeLogo ? 'nullable' : 'prohibited', 'image', 'mimes:png,jpg,jpeg', 'max:2048', 'dimensions:max_width=4096,max_height=4096'],
             'faviconAppFile' => [$this->planIncluyeLogo ? 'nullable' : 'prohibited', 'file', 'mimes:ico,png', 'max:512'],
         ];
     }
@@ -97,6 +127,12 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
             'logoAppNegroFile.dimensions' => 'El logo para fondo claro no puede superar los 4096 px de ancho o alto.',
             'logoAppFile.prohibited' => 'El plan actual no permite cargar un logo personalizado.',
             'logoAppNegroFile.prohibited' => 'El plan actual no permite cargar un logo personalizado.',
+            'logoLoginFile.prohibited' => 'El plan actual no permite cargar un logo personalizado.',
+            'logoLoginFile.dimensions' => 'El logo no puede superar los 4096 px de ancho o alto.',
+            'logoMenuGeneralFile.prohibited' => 'El plan actual no permite cargar un logo personalizado.',
+            'logoMenuGeneralFile.dimensions' => 'El logo no puede superar los 4096 px de ancho o alto.',
+            'logoMenuEscuelasFile.prohibited' => 'El plan actual no permite cargar un logo personalizado.',
+            'logoMenuEscuelasFile.dimensions' => 'El logo no puede superar los 4096 px de ancho o alto.',
             'faviconAppFile.prohibited' => 'El plan actual no permite cargar un favicon personalizado.',
         ];
     }
@@ -113,6 +149,10 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
             'favicon_app' => $this->prepararArchivo($this->faviconAppFile, 'favicon'),
         ];
 
+        foreach (self::LOGOS_POR_UBICACION as $campo => $propiedad) {
+            $archivos[$campo] = $this->prepararLogo($this->{$propiedad.'File'}, $campo);
+        }
+
         $incluyeLogo = $this->planIncluyeLogo;
         $incluyeMarcaBlanca = $this->planIncluyeMarcaBlanca;
 
@@ -125,6 +165,9 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
             $datos = [
                 'logo_personalizado' => $incluyeLogo && $validated['logoPersonalizado'],
                 'marca_blanca' => $incluyeMarcaBlanca && $validated['marcaBlanca'],
+                'nombre_app_personalizado' => ($incluyeLogo || $incluyeMarcaBlanca)
+                    ? $validated['nombreAppPersonalizado']
+                    : $configuracion->nombre_app_personalizado,
                 'nombre_creador' => $validated['nombreCreador'],
                 'url_creador' => $validated['urlCreador'],
                 'color_nombre_app' => $validated['colorNombreApp'],
@@ -137,8 +180,10 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
                 if ($incluyeLogo) {
                     foreach (array_filter($archivos) as $campo => $archivo) {
                         $ruta = $directorio.'/'.$archivo['nombre'];
-                        abort_unless(Storage::put($ruta, $archivo['contenido']), 500, 'No fue posible guardar el archivo de marca.');
                         $rutasNuevas[] = $ruta;
+                        foreach (array_unique([config('filesystems.default'), 'public']) as $disco) {
+                            abort_unless(Storage::disk($disco)->put($ruta, $archivo['contenido']), 500, 'No fue posible guardar el archivo de marca.');
+                        }
                         $archivosAnteriores[] = $configuracion->{$campo};
                         $datos[$campo] = $archivo['nombre'];
                     }
@@ -146,23 +191,29 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
 
                 $configuracion->update($datos);
             } catch (Throwable $throwable) {
-                Storage::delete($rutasNuevas);
+                foreach (array_unique([config('filesystems.default'), 'public']) as $disco) {
+                    Storage::disk($disco)->delete($rutasNuevas);
+                }
 
                 throw $throwable;
             }
 
             Cache::forget('configuracion_global');
 
-            foreach (array_filter($archivosAnteriores) as $archivoAnterior) {
+            $archivosEnUso = $configuracion->only(['logo_app', 'logo_app_negro', 'favicon_app', ...array_keys(self::LOGOS_POR_UBICACION)]);
+            foreach (array_unique(array_filter($archivosAnteriores)) as $archivoAnterior) {
+                if (in_array($archivoAnterior, $archivosEnUso, true)) {
+                    continue;
+                }
                 $rutaAnterior = $directorio.'/'.$archivoAnterior;
 
-                if (Storage::exists($rutaAnterior)) {
-                    Storage::delete($rutaAnterior);
+                foreach (array_unique([config('filesystems.default'), 'public']) as $disco) {
+                    Storage::disk($disco)->delete($rutaAnterior);
                 }
             }
         });
 
-        $this->reset('logoAppFile', 'logoAppNegroFile', 'faviconAppFile');
+        $this->reset('logoAppFile', 'logoAppNegroFile', 'faviconAppFile', 'logoLoginFile', 'logoMenuGeneralFile', 'logoMenuEscuelasFile');
         $this->cargarConfiguracion();
         session()->flash('success', 'La configuración de marca se actualizó correctamente.');
     }
@@ -194,6 +245,7 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
         $datos = $this->tenant->run(fn (): array => Configuracion::firstOrFail()->only([
             'logo_personalizado',
             'marca_blanca',
+            'nombre_app_personalizado',
             'nombre_creador',
             'url_creador',
             'color_nombre_app',
@@ -203,10 +255,12 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
             'logo_app',
             'logo_app_negro',
             'favicon_app',
+            ...array_keys(self::LOGOS_POR_UBICACION),
         ]));
 
         $this->logoPersonalizado = (bool) $datos['logo_personalizado'];
         $this->marcaBlanca = (bool) $datos['marca_blanca'];
+        $this->nombreAppPersonalizado = $datos['nombre_app_personalizado'];
         $this->nombreCreador = $datos['nombre_creador'];
         $this->urlCreador = $datos['url_creador'];
         $this->colorNombreApp = $datos['color_nombre_app'];
@@ -221,6 +275,10 @@ class MarcaBlancaTenant extends ComponenteAdminCentral
         $this->logoAppUrl = $this->urlAssetTenant($domain, $this->logoAppActual);
         $this->logoAppNegroUrl = $this->urlAssetTenant($domain, $this->logoAppNegroActual);
         $this->faviconAppUrl = $this->urlAssetTenant($domain, $this->faviconAppActual);
+        foreach (self::LOGOS_POR_UBICACION as $campo => $propiedad) {
+            $this->{$propiedad.'Actual'} = $datos[$campo] ?? null;
+            $this->{$propiedad.'Url'} = $this->urlAssetTenant($domain, $this->{$propiedad.'Actual'});
+        }
     }
 
     /**

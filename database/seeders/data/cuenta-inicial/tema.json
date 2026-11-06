@@ -1,0 +1,812 @@
+[
+    {
+        "class": "primary",
+        "value": "#4db997",
+        "nombre": "Color texto primario",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "secondary",
+        "value": "#63e3bb",
+        "nombre": "Color texto secundario",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "success",
+        "value": "#13964f",
+        "nombre": "Color texto exitoso",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "info",
+        "value": "#0099cc",
+        "nombre": "Color texto informativo",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "warning",
+        "value": "#f3aa01",
+        "nombre": "Color texto precaución",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "danger",
+        "value": "#aa1e1e",
+        "nombre": "Color texto alerta",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "light",
+        "value": "#ccf6e9",
+        "nombre": "Color texto claro",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "dark",
+        "value": "#000000",
+        "nombre": "Color texto oscuro",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "gray",
+        "value": "#8b8b8b",
+        "nombre": "Color texto gris",
+        "value2": "#f0f8ff00",
+        "category": "colors",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-primary",
+        "value": "#63e3bb",
+        "nombre": "Color botón primario",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-secondary",
+        "value": "#4db997",
+        "nombre": "Color botón secundario",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-success",
+        "value": "#13964f",
+        "nombre": "Color botón exitoso",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-info",
+        "value": "#0099cc",
+        "nombre": "Color botón información",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-warning",
+        "value": "#f3aa01",
+        "nombre": "Color botón precaucón",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-danger",
+        "value": "#aa1e1e",
+        "nombre": "Color botón alerta",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-light",
+        "value": "#ccf6e9",
+        "nombre": "Color botón claro",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-dark",
+        "value": "#000000",
+        "nombre": "Color botón oscuro",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-gray",
+        "value": "#8b8b8b",
+        "nombre": "Color botón gris",
+        "value2": "#f0f8ff00",
+        "category": "button",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-primary",
+        "value": "#63e3bb",
+        "nombre": "Color backround primario",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-secondary",
+        "value": "#4db997",
+        "nombre": "Color backround secundario",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-success",
+        "value": "#13964f",
+        "nombre": "Color backround exitoso",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-info",
+        "value": "#0099cc",
+        "nombre": "Color backround información",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-warning",
+        "value": "#f3aa01",
+        "nombre": "Color backround precaucón",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-danger",
+        "value": "#aa1e1e",
+        "nombre": "Color backround alerta",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-light",
+        "value": "#ccf6e9",
+        "nombre": "Color backround claro",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-dark",
+        "value": "#000000",
+        "nombre": "Color backround oscuro",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "theme-bg-gray",
+        "value": "#8b8b8b",
+        "nombre": "Color backround gris",
+        "value2": "#f0f8ff00",
+        "category": "background",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-primary",
+        "value": "#4db997",
+        "nombre": "Color botón text primario",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-secondary",
+        "value": "#63e3bb",
+        "nombre": "Color botón text secundario",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-success",
+        "value": "#13964f",
+        "nombre": "Color botón text exitoso",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-info",
+        "value": "#0099cc",
+        "nombre": "Color botón text información",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-warning",
+        "value": "#f3aa01",
+        "nombre": "Color botón text precaucón",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-danger",
+        "value": "#aa1e1e",
+        "nombre": "Color botón text alerta",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-light",
+        "value": "#ccf6e9",
+        "nombre": "Color botón text claro",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-dark",
+        "value": "#000000",
+        "nombre": "Color botón text oscuro",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-text-gray",
+        "value": "#8b8b8b",
+        "nombre": "Color botón text gris",
+        "value2": "#f0f8ff00",
+        "category": "button-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-primary",
+        "value": "#4db997",
+        "nombre": "Hover primario",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-secondary",
+        "value": "#63e3bb",
+        "nombre": "Hover secundario",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-success",
+        "value": "#0e743c",
+        "nombre": "Hover exitoso",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-info",
+        "value": "#02779d",
+        "nombre": "Hover informativo",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-warning",
+        "value": "#ca8d02",
+        "nombre": "Hover precaución",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-danger",
+        "value": "#781414",
+        "nombre": "Hover alerta",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-light",
+        "value": "#ccf6e9",
+        "nombre": "Hover claro",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-dark",
+        "value": "#000000",
+        "nombre": "Hover oscuro",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "btn-gray",
+        "value": "#8b8b8b",
+        "nombre": "Hover gris",
+        "value2": "#f0f8ff00",
+        "category": "hover",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-primary",
+        "value": "#63e3bb",
+        "nombre": "Label primaria",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-secondary",
+        "value": "#4db997",
+        "nombre": "Label secundario",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-success",
+        "value": "#13964f",
+        "nombre": "Label exitoso",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-info",
+        "value": "#0099cc",
+        "nombre": "Label informatico",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-warning",
+        "value": "#f3aa01",
+        "nombre": "Label precaución",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-danger",
+        "value": "#aa1e1e",
+        "nombre": "Label alerta",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-light",
+        "value": "#ccf6e9",
+        "nombre": "Label claro",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-dark",
+        "value": "#000000",
+        "nombre": "Label oscuro",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-gray",
+        "value": "#8b8b8b",
+        "nombre": "Label gris",
+        "value2": "#f0f8ff00",
+        "category": "label",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "alert-primary",
+        "value": "#4db997",
+        "nombre": "alert primario",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": " alert-secondary",
+        "value": "#63e3bb",
+        "nombre": "alert secundario",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "alert-success",
+        "value": "#13964f",
+        "nombre": "alert exitoso",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "alert-info",
+        "value": "#0099cc",
+        "nombre": "alert información",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "alert-warning",
+        "value": "#f3aa01",
+        "nombre": "alert precaucón",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "alert-danger",
+        "value": "#aa1e1e",
+        "nombre": "alert alerta",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "alert-light",
+        "value": "#ccf6e9",
+        "nombre": "alert claro",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "alert-dark",
+        "value": "#000000",
+        "nombre": "alert oscuro",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "alert-gray",
+        "value": "#8b8b8b",
+        "nombre": "alert gris",
+        "value2": "#f0f8ff00",
+        "category": "alert alert-text",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-primary",
+        "value": "#ccf6e9",
+        "nombre": "Label Claro primaria",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-secondary",
+        "value": "#63e3bb8c",
+        "nombre": "Label Claro secundario",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-success",
+        "value": "#13964f8c",
+        "nombre": "Label Claro exitoso",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-info",
+        "value": "#0099cc8c",
+        "nombre": "Label Claro informatico",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-warning",
+        "value": "#f3aa018c",
+        "nombre": "Label Claro precaución",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-danger",
+        "value": "#aa1e1e8c",
+        "nombre": "Label Claro alerta",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-light",
+        "value": "#ffffff",
+        "nombre": "Label Claro claro",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-dark",
+        "value": "#0000008c",
+        "nombre": "Label Claro oscuro",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-label-claro-gray",
+        "value": "#8b8b8b8c",
+        "nombre": "Label Claro gris",
+        "value2": "#f0f8ff00",
+        "category": "label-claro",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "active",
+        "value": "#63e3bb",
+        "nombre": "active",
+        "value2": "#f0f8ff00",
+        "category": "active",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "disabled",
+        "value": "#c9c9c9",
+        "nombre": "inactive",
+        "value2": "#f0f8ff00",
+        "category": "disabled",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-login-left",
+        "value": "#ffffff",
+        "nombre": "Fondo login",
+        "value2": "#ffffff",
+        "category": "login",
+        "gradient": true,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "color-dark-texto",
+        "value": "#8b8b8b",
+        "nombre": "Color letra para fondo oscuro",
+        "value2": "#f0f8ff00",
+        "category": "login",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "color-white-texto",
+        "value": "#141621",
+        "nombre": "Color letra para fondo claro",
+        "value2": "#f0f8ff00",
+        "category": "login",
+        "gradient": false,
+        "is_active": false,
+        "description": null
+    },
+    {
+        "class": "bg-menu-theme",
+        "value": "#000000",
+        "nombre": "Fondo Menu",
+        "value2": "#000000",
+        "category": "menu",
+        "gradient": true,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-menu-theme .menu-item",
+        "value": "#ccf6e9",
+        "nombre": "Color Texto Menu",
+        "value2": "#f0f8ff00",
+        "category": "menu",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-menu-theme-escuelas",
+        "value": "#000000",
+        "nombre": "Fondo Menu Escuelas",
+        "value2": "#202020",
+        "category": "menu",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    },
+    {
+        "class": "bg-menu-theme-escuelas .menu-item",
+        "value": "#ccf6e9",
+        "nombre": "Color Texto Escuelas",
+        "value2": "#f0f8ff00",
+        "category": "menu",
+        "gradient": false,
+        "is_active": true,
+        "description": null
+    }
+]

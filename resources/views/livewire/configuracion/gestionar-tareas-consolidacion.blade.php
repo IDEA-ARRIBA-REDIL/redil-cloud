@@ -5,7 +5,7 @@
       <div class="d-flex align-items-center gap-2 mb-1">
         <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
           <i class="ti ti-arrow-left"></i>
-        </a>
+        </a> 
         <h4 class="mb-0 fw-semibold text-primary">Tareas de consolidación</h4>
       </div>
       <p class="text-black mb-0 small">
@@ -57,12 +57,10 @@
 
     <!-- Tabla de Tareas de Consolidación -->
     <div class="table-responsive text-nowrap">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover align-middle mb-0 table-tareas-consolidacion">
         <thead class="table-light">
           <tr>
-            <th class="ps-4" style="width: 70px;">#</th>
-            
-            <th class="text-center cursor-pointer user-select-none" style="width: 110px;" wire:click="sortBy('orden')" title="Ordenar por Orden">
+            <th class="ps-3 text-center cursor-pointer user-select-none" style="width: 75px;" wire:click="sortBy('orden')" title="Ordenar por Orden">
               <div class="d-inline-flex align-items-center justify-content-center gap-1">
                 <span>Orden</span>
                 @if($sortField === 'orden')
@@ -84,9 +82,9 @@
               </div>
             </th>
 
-            <th class="text-center cursor-pointer user-select-none" style="width: 170px;" wire:click="sortBy('default')" title="Ordenar por Tarea por defecto">
+            <th class="text-center cursor-pointer user-select-none" style="width: 110px;" wire:click="sortBy('default')" title="Ordenar por Tarea por defecto">
               <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                <span>¿Por defecto?</span>
+                <span>¿Default?</span>
                 @if($sortField === 'default')
                   <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} text-primary ti-xs"></i>
                 @else
@@ -95,13 +93,13 @@
               </div>
             </th>
 
-            <th class="text-center user-select-none" style="width: 160px;">
-              <span>Roles autorizados</span>
+            <th class="text-center user-select-none" style="width: 125px;">
+              <span>Roles</span>
             </th>
 
-            <th class="text-center cursor-pointer user-select-none" style="width: 180px;" wire:click="sortBy('usuarios_count')" title="Ordenar por Asignaciones">
+            <th class="text-center cursor-pointer user-select-none" style="width: 85px;" wire:click="sortBy('usuarios_count')" title="Ordenar por Asignaciones">
               <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                <span>Asignaciones</span>
+                <span>Asig.</span>
                 @if($sortField === 'usuarios_count')
                   <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} text-primary ti-xs"></i>
                 @else
@@ -110,9 +108,9 @@
               </div>
             </th>
 
-            <th class="cursor-pointer user-select-none" style="width: 190px;" wire:click="sortBy('created_at')" title="Ordenar por Fecha de creación">
+            <th class="cursor-pointer user-select-none d-none d-xl-table-cell" style="width: 110px;" wire:click="sortBy('created_at')" title="Ordenar por Fecha de creación">
               <div class="d-inline-flex align-items-center gap-1">
-                <span>Fecha de creación</span>
+                <span>Creado</span>
                 @if($sortField === 'created_at')
                   <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} text-primary ti-xs"></i>
                 @else
@@ -121,34 +119,34 @@
               </div>
             </th>
 
-            <th class="text-center pe-4" style="width: 130px;">Acciones</th>
+            <th class="text-center pe-3 acciones-sticky" style="width: 90px;">Acciones</th>
           </tr>
         </thead>
         <tbody class="table-border-bottom-0">
           @forelse($tareas as $tarea)
             <tr>
-              <td class="ps-4 text-muted small">
-                {{ $loop->iteration + ($tareas->currentPage() - 1) * $tareas->perPage() }}
-              </td>
-              <td class="text-center">
+              <td class="ps-3 text-center">
                 <span class="badge bg-label-secondary px-2 py-1 fs-tiny rounded-pill fw-semibold">
-                  #{{ $tarea->orden ?? '0' }}
+                  #{{ $tarea->orden ?? ($loop->iteration + ($tareas->currentPage() - 1) * $tareas->perPage()) }}
                 </span>
               </td>
               <td>
                 <div class="d-flex flex-column">
                   <span class="fw-semibold text-dark">{{ $tarea->nombre }}</span>
                   @if(!empty($tarea->descripcion))
-                    <small class="text-muted text-truncate" style="max-width: 320px;" title="{{ $tarea->descripcion }}">
+                    <small class="text-muted text-truncate" style="max-width: 260px;" title="{{ $tarea->descripcion }}">
                       {{ $tarea->descripcion }}
                     </small>
                   @endif
+                  <small class="text-muted fs-tiny mt-1 d-xl-none">
+                    <i class="ti ti-calendar ti-xs me-1"></i>{{ $tarea->created_at ? $tarea->created_at->format('d/m/Y') : 'N/A' }}
+                  </small>
                 </div>
               </td>
               <td class="text-center">
                 <button 
                   type="button" 
-                  class="btn btn-sm py-1 px-3 rounded-pill {{ $tarea->default ? 'btn-label-primary' : 'btn-label-secondary' }}"
+                  class="btn btn-xs py-1 px-3 rounded-pill {{ $tarea->default ? 'btn-label-primary' : 'btn-label-secondary' }}"
                   wire:click="toggleDefault({{ $tarea->id }})"
                   title="Clic para cambiar estado por defecto"
                 >
@@ -162,8 +160,8 @@
                     <i class="ti ti-world ti-xs me-1"></i> Todos
                   </span>
                 @else
-                  <span
-                    class="badge bg-label-warning rounded-pill px-2 py-1"
+                  <span 
+                    class="badge bg-label-warning rounded-pill px-2 py-1 cursor-pointer" 
                     title="{{ $tarea->roles->pluck('name')->implode(', ') }}"
                   >
                     <i class="ti ti-lock ti-xs me-1"></i> {{ $tarea->roles->count() }} rol(es)
@@ -172,15 +170,15 @@
               </td>
               <td class="text-center text-black">
                 @if($tarea->usuarios_count > 0)
-                  {{ $tarea->usuarios_count }}
+                  <span class="badge bg-label-info rounded-pill px-2 py-1 fw-semibold">{{ $tarea->usuarios_count }}</span>
                 @else
-                  0 
+                  <span class="text-muted">0</span> 
                 @endif
               </td>
-              <td class="text-black small">
-                {{ $tarea->created_at ? $tarea->created_at->format('Y-m-d h:i A') : 'N/A' }}
+              <td class="text-black small d-none d-xl-table-cell">
+                {{ $tarea->created_at ? $tarea->created_at->format('d/m/Y') : 'N/A' }}
               </td>
-              <td class="text-center pe-4">
+              <td class="text-center pe-3 acciones-sticky">
                 <div class="d-inline-flex gap-1">
                   <button 
                     type="button" 
@@ -204,7 +202,7 @@
             </tr>
           @empty
             <tr>
-              <td colspan="8" class="text-center py-5">
+              <td colspan="7" class="text-center py-5">
                 <div class="avatar avatar-xl bg-label-secondary mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center">
                   <i class="ti ti-list-check ti-lg text-white"></i>
                 </div>
@@ -246,6 +244,22 @@
   </div>
 
   <style>
+    /* Columna de Acciones Sticky a la derecha */
+    .table-tareas-consolidacion .acciones-sticky {
+      position: sticky;
+      right: 0;
+      background-color: #ffffff;
+      box-shadow: -3px 0 6px rgba(0, 0, 0, 0.05);
+      z-index: 2;
+    }
+    .table-tareas-consolidacion thead .acciones-sticky {
+      background-color: #f8f9fa;
+      z-index: 3;
+    }
+    .table-tareas-consolidacion tbody tr:hover .acciones-sticky {
+      background-color: #f5f5f9;
+    }
+
     /* Oculta los botones de texto « Anterior / Siguiente » del bloque mobile */
     .pagination-clean nav > div:first-child {
       display: none !important;
@@ -274,9 +288,9 @@
     data-bs-scroll="false"
     wire:ignore.self 
     aria-labelledby="offcanvasTareaConsolidacionLabel"
-    x-data="{
-      todosLosRoles: @entangle('todosLosRoles'),
-      busquedaRol: ''
+    x-data="{ 
+      todosLosRoles: @entangle('todosLosRoles'), 
+      busquedaRol: '' 
     }"
   >
     <form wire:submit.prevent="guardar" class="d-flex flex-column h-100 m-0 overflow-hidden">
@@ -372,7 +386,7 @@
                 </small>
               </div>
               <input 
-                class="form-check-input ms-3 fs-4 cursor-pointer"
+                class="form-check-input ms-3 fs-4 cursor-pointer" 
                 type="checkbox" 
                 id="switchDefault" 
                 wire:model="default"
@@ -393,10 +407,10 @@
                   Si está marcado, cualquier consolidador podrá ver y gestionar esta tarea. Si se desmarca, solo los roles seleccionados tendrán acceso.
                 </small>
               </div>
-              <input
-                class="form-check-input ms-3 fs-4 cursor-pointer"
-                type="checkbox"
-                id="switchTodosLosRoles"
+              <input 
+                class="form-check-input ms-3 fs-4 cursor-pointer" 
+                type="checkbox" 
+                id="switchTodosLosRoles" 
                 x-model="todosLosRoles"
               >
             </div>
@@ -415,16 +429,16 @@
               </small>
             </div>
             <div class="d-flex gap-1">
-              <button
-                type="button"
-                class="btn btn-xs btn-label-primary rounded-pill px-2"
+              <button 
+                type="button" 
+                class="btn btn-xs btn-label-primary rounded-pill px-2" 
                 @click="$wire.set('rolesSeleccionados', {{ json_encode($todosLosRolesLista->pluck('id')->map(fn($id)=>(int)$id)->toArray()) }})"
               >
                 Todos
               </button>
-              <button
-                type="button"
-                class="btn btn-xs btn-label-secondary rounded-pill px-2"
+              <button 
+                type="button" 
+                class="btn btn-xs btn-label-secondary rounded-pill px-2" 
                 @click="$wire.set('rolesSeleccionados', [])"
               >
                 Limpiar
@@ -435,10 +449,10 @@
           <!-- Buscador rápido de roles en cliente -->
           <div class="input-group input-group-sm mb-3">
             <span class="input-group-text bg-light"><i class="ti ti-search ti-xs"></i></span>
-            <input
-              type="text"
-              class="form-control form-control-sm"
-              placeholder="Filtrar rol por nombre..."
+            <input 
+              type="text" 
+              class="form-control form-control-sm" 
+              placeholder="Filtrar rol por nombre..." 
               x-model="busquedaRol"
             >
           </div>
@@ -447,16 +461,16 @@
           <div class="roles-checkbox-container p-2 border rounded-2 bg-light" style="max-height: 240px; overflow-y: auto;">
             <div class="row g-2">
               @forelse($todosLosRolesLista as $rol)
-                <div
-                  class="col-12 col-sm-6"
+                <div 
+                  class="col-12 col-sm-6" 
                   x-show="!busquedaRol || '{{ strtolower(addslashes($rol->name)) }}'.includes(busquedaRol.toLowerCase())"
                 >
                   <div class="form-check">
-                    <input
-                      class="form-check-input rol-check-input cursor-pointer"
-                      type="checkbox"
-                      value="{{ $rol->id }}"
-                      id="rol_chk_{{ $rol->id }}"
+                    <input 
+                      class="form-check-input rol-check-input cursor-pointer" 
+                      type="checkbox" 
+                      value="{{ $rol->id }}" 
+                      id="rol_chk_{{ $rol->id }}" 
                       wire:model="rolesSeleccionados"
                     >
                     <label class="form-check-label text-dark small text-truncate d-block cursor-pointer" for="rol_chk_{{ $rol->id }}" title="{{ $rol->name }}">

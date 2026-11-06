@@ -53,6 +53,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -106,14 +107,13 @@ class UserController extends Controller
         return redirect(config('app.frontend_url').'/dashboard?verified=1');
     }
 
-    public function switchRole(Request $request, Role $role)
+    public function switchRole(Request $request, Role $role): RedirectResponse
     {
-        // Llamamos al método que creamos en el modelo User.
-        // ¡Mira qué limpio queda el controlador!
+        // 1. Activar el nuevo rol en el usuario autenticado.
         $request->user()->switchActiveRole($role);
 
-        // Redirigimos al usuario a la página anterior con un mensaje de éxito.
-        return back()->with('success', 'Has cambiado al rol: '.$role->name);
+        // 2. Redirigir a la página principal (dashboard) para prevenir errores de autorización de la vista anterior.
+        return redirect()->route('dashboard')->with('success', 'Has cambiado al rol: '.$role->name);
     }
 
     /**
@@ -294,20 +294,29 @@ class UserController extends Controller
         $parametrosBusqueda->bandera = '';
         $parametrosBusqueda->tipo = $tipo;
 
+        // Comprobar permiso para ver personas sin correo verificado
+        $puedeVerNoVerificados = $rolActivo && $rolActivo->hasPermissionTo('personas.mostrar_asistentes_no_verificados');
+
+        if ($tipo === 'no-verificados' && ! $puedeVerNoVerificados) {
+            abort(403, 'No tienes privilegios para visualizar personas no verificadas.');
+        }
+
         // OBTENCIÓN DEL QUERY BUILDER BASE
         $query = null;
 
         if ($rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')) {
-            $query = auth()->user()->discipulos('todos', true, true); // true para returnQuery
+            $query = auth()->user()->discipulos('todos', ! $puedeVerNoVerificados, true); // true para returnQuery
         }
 
         if ($rolActivo->hasPermissionTo('personas.lista_asistentes_todos')) {
             $query = User::withTrashed()
-                ->whereNotNull('email_verified_at')
                 ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
-                ->whereIn('tipo_usuario_id', $tiposUsuarios->pluck('id')->toArray())
                 ->select('users.*', 'integrantes_grupo.grupo_id as grupo_id')
                 ->distinct('users.id');
+
+            if (! $puedeVerNoVerificados) {
+                $query->whereNotNull('email_verified_at');
+            }
             // Nota: discipulos() ya maneja lógica de joins complejos. Si 'todos' es realmente TODOS, este query directo está bien.
         }
 
@@ -333,7 +342,25 @@ class UserController extends Controller
             $item->es_global = true;
             $indicadoresGenerales[] = $item;
 
-            // 2. Sin grupo
+            // 2. No verificados (si tiene el permiso)
+            if ($puedeVerNoVerificados) {
+                $qNoVerificados = clone $query;
+                $countNoVerificados = $qNoVerificados->whereNull('users.deleted_at')
+                    ->whereNull('users.email_verified_at')
+                    ->count('users.id');
+
+                $item = new stdClass;
+                $item->nombre = 'No verificados';
+                $item->url = 'no-verificados';
+                $item->cantidad = $countNoVerificados;
+                $item->color = 'bg-label-warning';
+                $item->imagen = 'personas/indicadores/indicador_general.png';
+                $item->icono = 'ti ti-mail-off';
+                $item->es_global = true;
+                $indicadoresGenerales[] = $item;
+            }
+
+            // 3. Sin grupo
             $qSinGrupo = clone $query;
             $countSinGrupo = $qSinGrupo->whereNull('users.deleted_at')
                 ->whereNull('integrantes_grupo.grupo_id') // Asume que el join ya está hecho en discipulos() o arriba
@@ -465,7 +492,11 @@ class UserController extends Controller
 
             // Paginación final
             // orderBy debe ir al final
-            $personas = $query->orderBy('users.id', 'desc')->paginate(12);
+            $personas = $query->with([
+                'roles',
+                'tipoUsuario',
+                'gruposDondeAsiste.encargadosConEliminados.tipoUsuario',
+            ])->orderBy('users.id', 'desc')->paginate(12);
         }
 
         return view('contenido.paginas.usuario.listar', [
@@ -488,6 +519,7 @@ class UserController extends Controller
             'rolActivo' => $rolActivo,
             'camposExtras' => $camposExtras,
             'configuracion' => $configuracion,
+            'puedeVerNoVerificados' => $puedeVerNoVerificados,
         ]);
     }
 
@@ -526,19 +558,18 @@ class UserController extends Controller
         // Busqueda textual
         if ($parametrosBusqueda->buscar != '') {
 
-            $buscar = htmlspecialchars($parametrosBusqueda->buscar);
+            $buscar = trim(str_replace(["'"], '', htmlspecialchars($parametrosBusqueda->buscar)));
             $buscarSaneado = Helpers::sanearStringConEspacios($buscar);
-            $buscar = str_replace(["'"], '', $buscar);
             $buscar_array = explode(' ', $buscar);
 
             $personas->where(function ($q) use ($buscarSaneado, $buscar) {
                 $q->whereRaw("LOWER( translate( CONCAT_WS(' ', primer_nombre, segundo_nombre, primer_apellido, segundo_apellido ) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
                     ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', primer_nombre, primer_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
                     ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', primer_nombre, segundo_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
-                    ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', segundo_apellido, segundo_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
+                    ->orWhereRaw("LOWER( translate( CONCAT_WS(' ', primer_apellido, segundo_apellido) ,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜÑñ','aeiouAEIOUaeiouAEIOUNn')) LIKE LOWER(?)", ['%'.$buscarSaneado.'%'])
                     ->orWhereRaw('LOWER(telefono_movil) LIKE LOWER(?)', [$buscar.'%'])
                     ->orWhereRaw('LOWER(email) LIKE LOWER(?)', ['%'.$buscar.'%'])
-                    ->orWhereRaw('LOWER(identificacion) LIKE LOWER(?)', [$buscar.'%']);
+                    ->orWhereRaw('LOWER(identificacion) LIKE LOWER(?)', ['%'.$buscar.'%']);
             });
 
             $parametrosBusqueda->textoBusqueda .= '<b>, Con busqueda: </b>"'.$buscar.'" ';
@@ -609,6 +640,11 @@ class UserController extends Controller
             }
 
             $personas->whereNull('users.deleted_at');
+
+            if ($parametrosBusqueda->tipo == 'no-verificados') {
+                $parametrosBusqueda->textoBusqueda = 'No verificados';
+                $personas->whereNull('users.email_verified_at');
+            }
 
             if ($parametrosBusqueda->tipo == 'sin-grupo') {
                 $parametrosBusqueda->textoBusqueda = 'Sin grupo';
@@ -864,7 +900,7 @@ class UserController extends Controller
                 $parametrosBusqueda->tagsBusqueda[] = $tag;
             }
 
-            $personas = $personas->whereIn('id', $idUserPasoCrecimiento);
+            $personas = $personas->whereIn('users.id', $idUserPasoCrecimiento);
         }
 
         return $personas;
@@ -1003,7 +1039,7 @@ class UserController extends Controller
                     ->pluck('user_id')
                     ->toArray();
 
-                $personas = $personas->whereIn('id', $idsUsers);
+                $personas = $personas->whereIn('users.id', $idsUsers);
                 $parametrosBusqueda->textoBusqueda .= '"Ministerio completo"';
             } else {
                 $labelFiltroTipoMinisterio = ', ministerio directo';
@@ -1012,7 +1048,7 @@ class UserController extends Controller
                     ->pluck('user_id')
                     ->toArray();
 
-                $personas = $personas->whereIn('id', $idsUsers);
+                $personas = $personas->whereIn('users.id', $idsUsers);
                 $parametrosBusqueda->textoBusqueda .= '"Ministerio directo"';
                 $parametrosBusqueda->bandera = 1;
             }
@@ -1539,11 +1575,10 @@ class UserController extends Controller
         $profesiones = Profesion::orderBy('nombre', 'asc')->get();
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
-        $sedes = Sede::orderBy('nombre', 'asc')->get();
+        $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
         $tiposIdentificaciones = TipoIdentificacion::orderBy('nombre', 'asc')->get();
         $tiposDeEstadosCiviles = EstadoCivil::orderBy('nombre', 'asc')->get();
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
-        $sedes = Sede::orderBy('nombre', 'asc')->get();
         $dataQr = [
             'id' => $usuario->id,
             'nombre' => $usuario->nombre(3),
@@ -1628,8 +1663,9 @@ class UserController extends Controller
             ->get()
             ->pluck('name')
             ->toArray();
-        $encargadosAscendentes = $usuario
-            ->lideres()
+        $lideresIds = $usuario->lideres('array');
+        $encargadosAscendentes = User::query()->whereIn('users.id', $lideresIds)
+            ->with('tipoUsuario')
             ->select(
                 'id',
                 'primer_nombre',
@@ -1642,8 +1678,7 @@ class UserController extends Controller
             ->orderby('tipo_usuario_id', 'asc')
             ->get();
 
-        $gruposAscendentes = $usuario
-            ->lideres()
+        $gruposAscendentes = User::query()->whereIn('users.id', $lideresIds)
             ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
             ->leftJoin('grupos', 'integrantes_grupo.grupo_id', '=', 'grupos.id')
             ->leftJoin('tipo_grupos', 'grupos.tipo_grupo_id', '=', 'tipo_grupos.id')
@@ -2050,7 +2085,7 @@ class UserController extends Controller
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
-        $sedes = Sede::orderBy('nombre', 'asc')->get();
+        $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
         $tipoPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
         $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
         $tiposIdentificaciones = TipoIdentificacion::orderBy('nombre', 'asc')->get();
@@ -2104,6 +2139,8 @@ class UserController extends Controller
 
     public function crear(Request $request, FormularioUsuario $formulario)
     {
+        $this->authorize('nuevoUsuarioPolitica', [User::class, $formulario]);
+
         $configuracion = Configuracion::find(1);
         $rolActivo = null;
 
@@ -2782,6 +2819,7 @@ class UserController extends Controller
                     $peticion->tipo_peticion_id = $request[$campoTipoDePetición->name_id];
                     $peticion->fecha = $fechaPeticion;
                     $peticion->pais_id = $usuario->pais_id;
+                    $peticion->formulario_usuario_id = $formulario->id;
                     $peticion->save();
 
                     // Enviar el correo
@@ -2828,7 +2866,6 @@ class UserController extends Controller
                         }
 
                         Mail::to($usuario->email)->send(new DefaultMail($mailData));
-                        // Mail::to('softjuancarlos@gmail.com')->send(new DefaultMail($mailData));
                     }
                 }
             }
@@ -2951,7 +2988,6 @@ class UserController extends Controller
                 }
 
                 Mail::to($usuario->email)->send(new DefaultMail($mailData));
-                // Mail::to('softjuancarlos@gmail.com')->send(new DefaultMail($mailData));
             }
 
             event(new Registered($usuario));
@@ -3016,7 +3052,7 @@ class UserController extends Controller
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
-        $sedes = Sede::orderBy('nombre', 'asc')->get();
+        $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
         $tipoPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
         $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
         $tiposIdentificaciones = TipoIdentificacion::orderBy('nombre', 'asc')->get();
@@ -3028,6 +3064,9 @@ class UserController extends Controller
 
         // $aux=Input::get('aux');
         $aux = null;
+
+        $secciones = $formulario->secciones()->orderBy('orden', 'asc')->get();
+        $cantidadTotalSecciones = $secciones->count();
 
         return view('contenido.paginas.usuario.modificar', [
             'configuracion' => $configuracion,
@@ -3054,6 +3093,8 @@ class UserController extends Controller
             'fechaHoy' => $fechaHoy,
             'aux' => $aux,
             'usuario' => $usuario,
+            'secciones' => $secciones,
+            'cantidadTotalSecciones' => $cantidadTotalSecciones,
         ]);
     }
 

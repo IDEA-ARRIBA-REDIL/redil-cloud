@@ -51,4 +51,9 @@ class Peticion extends Model
     {
         return $this->belongsTo(User::class, 'asignacion_peticion_id');
     }
+
+    public function formularioUsuario(): BelongsTo
+    {
+        return $this->belongsTo(FormularioUsuario::class, 'formulario_usuario_id');
+    }
 }

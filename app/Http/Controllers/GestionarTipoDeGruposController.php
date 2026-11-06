@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Configuracion;
+use App\Models\Role;
 use App\Models\TipoGrupo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class GestionarTipoDeGruposController extends Controller
 {
@@ -16,14 +14,24 @@ class GestionarTipoDeGruposController extends Controller
      */
     public function listar(Request $request)
     {
-        $buscar = $request->input('buscar');
+        $buscar = trim($request->input('buscar', ''));
 
         $tiposGrupos = TipoGrupo::query()
-            ->when($buscar, function ($query, $buscar) {
-                return $query->where('nombre', 'like', '%'.$buscar.'%')
-                    ->orWhere('descripcion', 'like', '%'.$buscar.'%');
+            ->when($buscar !== '', function ($query) use ($buscar) {
+                $query->where(function ($q) use ($buscar) {
+                    $q->whereRaw(
+                        "translate(nombre, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN') ILIKE translate(?, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN')",
+                        ["%{$buscar}%"]
+                    )->orWhereRaw(
+                        "translate(COALESCE(nombre_plural, ''), 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN') ILIKE translate(?, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN')",
+                        ["%{$buscar}%"]
+                    )->orWhereRaw(
+                        "translate(COALESCE(descripcion, ''), 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN') ILIKE translate(?, 'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ', 'aeiouAEIOUaeiouAEIOUnN')",
+                        ["%{$buscar}%"]
+                    );
+                });
             })
-            ->orderby('orden')
+            ->orderBy('orden')
             ->paginate(12);
 
         return view('contenido.paginas.gestionar-tipos-de-grupos.gestionar-tipos-de-grupos', [
@@ -38,10 +46,13 @@ class GestionarTipoDeGruposController extends Controller
     public function nuevo()
     {
         $tiposGrupos = TipoGrupo::all();
+        $roles = Role::orderBy('name', 'asc')->get();
 
         // Aquí devuelves la vista con el formulario para crear un nuevo grupo
         return view('contenido.paginas.gestionar-tipos-de-grupos.crear-tipos-de-grupos', [
             'tiposGrupos' => $tiposGrupos,
+            'roles' => $roles,
+            'rolesRestringidos' => collect([]),
         ]);
     }
 
@@ -51,9 +62,21 @@ class GestionarTipoDeGruposController extends Controller
      */
     public function editarTipoDeGrupo(TipoGrupo $tipoGrupo)
     {
+        $roles = Role::orderBy('name', 'asc')->get();
+        $rolesRestringidos = $tipoGrupo->privilegiosRoles()
+            ->where(function ($q) {
+                $q->where('asignar_encargado', false)
+                    ->orWhere('desvincular_encargado', false)
+                    ->orWhere('asignar_asistente', false)
+                    ->orWhere('desvincular_asistente', false);
+            })
+            ->get();
+
         // Devuelve LA MISMA VISTA de formulario, pero esta vez le pasa el objeto $tipoGrupo.
         return view('contenido.paginas.gestionar-tipos-de-grupos.modificar-tipos-de-grupos', [
             'tipoGrupo' => $tipoGrupo,
+            'roles' => $roles,
+            'rolesRestringidos' => $rolesRestringidos,
         ]);
     }
 
@@ -163,7 +186,10 @@ class GestionarTipoDeGruposController extends Controller
             $tipoGrupo->save();
         }
 
-        // 🔹 8. Redirigir con mensaje de éxito
+        // 🔹 8. Sincronizar privilegios por rol
+        $this->sincronizarPrivilegiosRoles($request, $tipoGrupo);
+
+        // 🔹 9. Redirigir con mensaje de éxito
         return redirect()
             ->route('gestionar-tipos-de-grupos.listar')
             ->with('success', 'Tipo de grupo "'.$tipoGrupo->nombre.'" creado correctamente.');
@@ -270,7 +296,48 @@ class GestionarTipoDeGruposController extends Controller
         // 🔹 Actualizar el registro
         $tipoGrupo->save();
 
+        // 🔹 Sincronizar privilegios por rol
+        $this->sincronizarPrivilegiosRoles($request, $tipoGrupo);
+
         return redirect()->route('gestionar-tipos-de-grupos.editarTipoDeGrupo', $tipoGrupo->id)
             ->with('success', 'El tipo de grupo "'.$tipoGrupo->nombre.'" fue actualizado correctamente.');
+    }
+
+    /**
+     * Sincroniza los privilegios de vincular/desvincular encargados e integrantes por rol.
+     * Solo se guardan los roles que tengan al menos una restricción (negación).
+     */
+    protected function sincronizarPrivilegiosRoles(Request $request, TipoGrupo $tipoGrupo): void
+    {
+        if (! $request->has('gestionar_privilegios_roles')) {
+            return;
+        }
+
+        $syncData = [];
+        $restriccionesInput = $request->input('restricciones_roles', []);
+
+        foreach ($restriccionesInput as $item) {
+            $rolId = $item['rol_id'] ?? null;
+            if (! $rolId) {
+                continue;
+            }
+
+            $denegarAsignarEncargado = ! empty($item['denegar_asignar_encargado']);
+            $denegarDesvincularEncargado = ! empty($item['denegar_desvincular_encargado']);
+            $denegarAsignarAsistente = ! empty($item['denegar_asignar_asistente']);
+            $denegarDesvincularAsistente = ! empty($item['denegar_desvincular_asistente']);
+
+            // Si el rol tiene al menos una negación, se persiste su restricción en la tabla pivote
+            if ($denegarAsignarEncargado || $denegarDesvincularEncargado || $denegarAsignarAsistente || $denegarDesvincularAsistente) {
+                $syncData[$rolId] = [
+                    'asignar_encargado' => ! $denegarAsignarEncargado,
+                    'desvincular_encargado' => ! $denegarDesvincularEncargado,
+                    'asignar_asistente' => ! $denegarAsignarAsistente,
+                    'desvincular_asistente' => ! $denegarDesvincularAsistente,
+                ];
+            }
+        }
+
+        $tipoGrupo->privilegiosRoles()->sync($syncData);
     }
 }

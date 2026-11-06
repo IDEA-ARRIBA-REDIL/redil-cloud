@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Usuarios')
+@section('title', 'Consolidación')
 
 <!-- Page Styles -->
 @section('page-style')
@@ -29,6 +29,30 @@ $configData = Helper::appClasses();
 @endsection
 
 @section('page-script')
+
+<script>
+  // Función global para mostrar el mensaje/overlay de carga durante filtrados y recargas
+  window.mostrarCargandoConsolidacion = function(titulo = 'Cargando resultados...', subtitulo = 'Por favor espera un momento') {
+    const overlay = document.getElementById('loadingOverlayConsolidacion');
+    if (overlay) {
+      const tituloEl = document.getElementById('loadingOverlayTitulo');
+      const subtituloEl = document.getElementById('loadingOverlaySubtitulo');
+      if (tituloEl && titulo) tituloEl.textContent = titulo;
+      if (subtituloEl && subtitulo) subtituloEl.textContent = subtitulo;
+      overlay.classList.remove('d-none');
+      overlay.style.display = 'flex';
+    }
+  };
+
+  // Ocultar overlay si el usuario regresa con el botón Atrás del navegador (bfcache)
+  window.addEventListener('pageshow', function() {
+    const overlay = document.getElementById('loadingOverlayConsolidacion');
+    if (overlay) {
+      overlay.classList.add('d-none');
+      overlay.style.display = 'none';
+    }
+  });
+</script>
 
 <script type="module">
 
@@ -67,6 +91,105 @@ $configData = Helper::appClasses();
     $("#" + selectId + " > option").prop("selected", true);
     $("#" + selectId).trigger("change");
   });
+
+  // Definición de idioma español y separador ' a ' para flatpickr
+  if (typeof flatpickr !== 'undefined') {
+    flatpickr.l10ns.es = {
+      weekdays: {
+        shorthand: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+        longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+      },
+      months: {
+        shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+        longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+      },
+      ordinal: () => 'º',
+      firstDayOfWeek: 1,
+      rangeSeparator: ' a ',
+      time_24hr: true,
+    };
+  }
+
+  // Flatpickr para el filtro de rango de fechas de creación
+  let timeoutRangoFecha;
+  const delayRangoFecha = 800; // Tiempo prudente de ejecución (800ms)
+
+  function padZero(num) {
+    return num < 10 ? '0' + num : num;
+  }
+
+  function formatFechaYMD(d) {
+    return d.getFullYear() + '-' + padZero(d.getMonth() + 1) + '-' + padZero(d.getDate());
+  }
+
+  const fpListado = flatpickr("#rango_fechas", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    locale: "es",
+    conjunction: " a ",
+    weekNumbers: false,
+    onChange: function(selectedDates, dateStr, instance) {
+      document.getElementById('filtro_rapido_fecha').value = "";
+      if (selectedDates.length === 2) {
+        clearTimeout(timeoutRangoFecha);
+        timeoutRangoFecha = setTimeout(() => {
+          if (typeof window.mostrarCargandoConsolidacion === 'function') {
+            window.mostrarCargandoConsolidacion('Filtrando por fechas...', 'Actualizando consolidación...');
+          }
+          document.getElementById('formRangoFechas').submit();
+        }, delayRangoFecha);
+      }
+    }
+  });
+
+  // Asegurar que si el input ya traía un rango inicial, flatpickr lo reconozca
+  const valorInicialRango = "{{ $rangoFechas }}";
+  if (valorInicialRango && valorInicialRango.includes(' a ')) {
+    const partes = valorInicialRango.split(' a ');
+    if (partes.length === 2 && fpListado) {
+      fpListado.setDate([partes[0].trim(), partes[1].trim()], false);
+    }
+  }
+
+  // Función global para selección de preset de fechas
+  window.seleccionarRangoListado = function(tipo) {
+    if (!tipo) return;
+
+    let inicio, fin;
+    const hoy = new Date();
+
+    if (tipo === 'ultimos_30_dias') {
+      fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 30);
+    } else if (tipo === 'mes_pasado') {
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+      fin = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    } else if (tipo === 'este_ano') {
+      inicio = new Date(hoy.getFullYear(), 0, 1);
+      fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    } else if (tipo === 'ano_pasado') {
+      inicio = new Date(hoy.getFullYear() - 1, 0, 1);
+      fin = new Date(hoy.getFullYear() - 1, 11, 31);
+    }
+
+    if (inicio && fin) {
+      const fechaFormateada = formatFechaYMD(inicio) + ' a ' + formatFechaYMD(fin);
+      const fp = document.querySelector("#rango_fechas")._flatpickr;
+      if (fp) {
+        fp.setDate([inicio, fin], false);
+      } else {
+        document.getElementById('rango_fechas').value = fechaFormateada;
+      }
+
+      clearTimeout(timeoutRangoFecha);
+      timeoutRangoFecha = setTimeout(() => {
+        if (typeof window.mostrarCargandoConsolidacion === 'function') {
+          window.mostrarCargandoConsolidacion('Filtrando por fechas...', 'Actualizando consolidación...');
+        }
+        document.getElementById('formRangoFechas').submit();
+      }, 300);
+    }
+  };
 </script>
 
 <script>
@@ -103,7 +226,7 @@ $configData = Helper::appClasses();
 
 <script>
   window.addEventListener('refrescar-lista', event => {
-    // Opcional: un pequeño delay para que el usuario alcance a ver el mensaje de éxito.
+    window.mostrarCargandoConsolidacion('Actualizando datos...', 'Por favor espera un momento...');
     setTimeout(() => {
       location.reload();
     }, 1000); // 1 segundo de espera
@@ -134,10 +257,33 @@ $configData = Helper::appClasses();
       // Limpiamos el ID del storage para que no se repita en la siguiente recarga
       sessionStorage.removeItem('enfocarPersonaId');
     }
+
+    // Listener para envío del formulario de filtros avanzados (Offcanvas)
+    const formAvanzado = document.getElementById('busquedaAvanzada');
+    if (formAvanzado) {
+      formAvanzado.addEventListener('submit', function() {
+        window.mostrarCargandoConsolidacion('Aplicando filtros...', 'Actualizando consolidación...');
+      });
+    }
+
+    // Listener para los enlaces de las cards del carrusel Swiper (Todas, Sin tareas, etc.)
+    document.querySelectorAll('#swiper-with-pagination-cards a').forEach(enlace => {
+      enlace.addEventListener('click', function() {
+        window.mostrarCargandoConsolidacion('Cargando categoría...', 'Actualizando consolidación...');
+      });
+    });
+
+    // Listener para paginación
+    document.querySelectorAll('.pagination a').forEach(enlace => {
+      enlace.addEventListener('click', function() {
+        window.mostrarCargandoConsolidacion('Cargando página...', 'Por favor espera un momento...');
+      });
+    });
   });
 
   // Escuchamos el nuevo evento 'refrescar-y-enfocar'
   window.addEventListener('refrescar-y-enfocar', event => {
+    window.mostrarCargandoConsolidacion('Actualizando y enfocando...', 'Por favor espera un momento...');
     // Guardamos el ID de la persona en el sessionStorage del navegador
     sessionStorage.setItem('enfocarPersonaId', event.detail.personaId);
 
@@ -156,24 +302,40 @@ $configData = Helper::appClasses();
     let timeoutId;
     const delay = 1000; // Tiempo en milisegundos después de dejar de escribir para enviar el formulario
 
-    buscarInput.addEventListener('input', function() {
-        clearTimeout(timeoutId); // Limpiar cualquier timeout anterior
+    if (buscarInput) {
+      buscarInput.addEventListener('input', function() {
+          clearTimeout(timeoutId); // Limpiar cualquier timeout anterior
 
-        if (this.value.length >= 3) {
-          filtroBuscarInput.value = this.value;
-          timeoutId = setTimeout(() => {
-              formularioBuscar.submit();
-          }, delay);
-        }else if(this.value.length == 0)
-        {
-          formularioBuscar.submit();
+          if (this.value.length >= 3) {
+            if (filtroBuscarInput) {
+              filtroBuscarInput.value = this.value;
+            }
+            timeoutId = setTimeout(() => {
+                window.mostrarCargandoConsolidacion('Buscando personas...', 'Filtrando consolidación...');
+                formularioBuscar.submit();
+            }, delay);
+          } else if(this.value.length == 0) {
+            if (filtroBuscarInput) {
+              filtroBuscarInput.value = "";
+            }
+            window.mostrarCargandoConsolidacion('Restableciendo búsqueda...', 'Actualizando consolidación...');
+            formularioBuscar.submit();
+          }
+      });
+    }
+
+    if (btnBorrarBusquedaPorPalabra) {
+      btnBorrarBusquedaPorPalabra.addEventListener('click', function() {
+        if (buscarInput) {
+          buscarInput.value = "";
         }
-    });
-
-    btnBorrarBusquedaPorPalabra.addEventListener('click', function() {
-      buscarInput.value = "";
-      formularioBuscar.submit();
-    });
+        if (filtroBuscarInput) {
+          filtroBuscarInput.value = "";
+        }
+        window.mostrarCargandoConsolidacion('Restableciendo búsqueda...', 'Actualizando consolidación...');
+        formularioBuscar.submit();
+      });
+    }
 </script>
 
 <script>
@@ -216,14 +378,35 @@ $configData = Helper::appClasses();
           const inputAux = form.querySelector('[id="' + fieldAux + '"]');
           inputAux.value = '';
         }
+      } else if (field === 'rango_fechas') {
+        // Si se elimina el tag del rango de fechas, se resetea al valor por defecto
+        const inputRango = document.getElementById('rango_fechas');
+        if (inputRango) {
+          inputRango.value = '';
+        }
+        const inputFiltroRango = document.getElementById('filtroRangoFechas');
+        if (inputFiltroRango) {
+          inputFiltroRango.value = '';
+        }
       }
 
+      window.mostrarCargandoConsolidacion('Actualizando filtros...', 'Por favor espera un momento...');
       form.submit();
     });
   });
 </script>
 
 <script>
+  function abrirOffcanvasUltimaPeticion(personaId)
+  {
+    const el = document.getElementById('offcanvasUltimaPeticion');
+    if (el) {
+      const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(el);
+      bsOffcanvas.show();
+    }
+    Livewire.dispatch('cargarUltimaPeticion', { personaId: personaId });
+  }
+
   function darBajaAlta(usuarioId, tipo)
   {
     Livewire.dispatch('abrirModalBajaAlta', { usuarioId: usuarioId, tipo: tipo });
@@ -243,10 +426,65 @@ $configData = Helper::appClasses();
 @endsection
 
 @section('content')
+
+  <!-- Overlay de Mensaje de Carga durante Filtrado y Actualización -->
+  <div id="loadingOverlayConsolidacion" class="d-none" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(2px); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+    <div class="card shadow-lg border-0 px-4 py-3 rounded-4 d-flex flex-row align-items-center gap-3" style="background: #ffffff; min-width: 280px; box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;">
+      <div class="spinner-border text-primary" role="status" style="width: 2.2rem; height: 2.2rem;">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <div>
+        <h6 class="fw-bold mb-0 text-dark" id="loadingOverlayTitulo">Cargando resultados...</h6>
+        <small class="text-muted" id="loadingOverlaySubtitulo">Por favor espera un momento</small>
+      </div>
+    </div>
+  </div>
+
 <h4 class="mb-1 fw-semibold text-primary">Consolidación</h4>
 
+<!-- Filtro de Rango de Fechas de Creación -->
+<form id="formRangoFechas" action="{{ route('consolidacion.lista', $tipo) }}" method="GET" class="mt-3">
+  @if($parametrosBusqueda->buscar)
+    <input type="hidden" name="buscar" value="{{ $parametrosBusqueda->buscar }}">
+  @endif
+  @if(is_numeric($parametrosBusqueda->filtroPorSexo))
+    <input type="hidden" name="filtroPorSexo" value="{{ $parametrosBusqueda->filtroPorSexo }}">
+  @endif
+  @if(is_numeric($parametrosBusqueda->filtroPorEstadoNivelAcademico))
+    <input type="hidden" name="filtroPorEstadoNivelAcademico" value="{{ $parametrosBusqueda->filtroPorEstadoNivelAcademico }}">
+  @endif
+  @foreach(['filtroPorSede', 'filtroPorTipoDeUsuario', 'filtroPorRangoEdad', 'filtroPorEstadosCiviles', 'filtroPorTiposVinculaciones', 'filtroPorOcupacion', 'filtroPorProfesion', 'filtroPorNivelAcademico'] as $arrayFilter)
+    @if(isset($parametrosBusqueda->$arrayFilter) && is_array($parametrosBusqueda->$arrayFilter))
+      @foreach($parametrosBusqueda->$arrayFilter as $val)
+        <input type="hidden" name="{{ $arrayFilter }}[]" value="{{ $val }}">
+      @endforeach
+    @endif
+  @endforeach
+
+  <div class="row bg-white rounded-3 p-0 m-0 shadow-sm border border-gray align-items-center" style="max-width: 600px;">
+    <!-- Rango Predefinido -->
+    <div class="col-12 col-sm-6 border-end border-gray p-0 d-flex">
+      <div class="input-group input-group-merge">
+        <span class="input-group-text bg-transparent border-0"><i class="ti ti-calendar text-black"></i></span>
+        <select class="form-select text-black border-0" id="filtro_rapido_fecha" onchange="seleccionarRangoListado(this.value)">
+          <option value="">Rango predeterminado</option>
+          <option value="ultimos_30_dias">Últimos 30 días</option>
+          <option value="mes_pasado">Mes pasado</option>
+          <option value="este_ano">Este año</option>
+          <option value="ano_pasado">Año pasado</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Flatpickr Range -->
+    <div class="col-12 col-sm-6 p-0 d-flex">
+      <input type="text" class="form-control border-0 flatpickr-range-listado text-center text-black" id="rango_fechas" name="rango_fechas" value="{{ $rangoFechas }}" placeholder="AAAA-MM-DD a AAAA-MM-DD">
+    </div>
+  </div>
+</form>
+
 @include('layouts.status-msn')
-<div class="row pt-5">
+<div class="row pt-4">
   <div class="swiper-container swiper-container-horizontal swiper swiper-card-advance-bg" id="swiper-with-pagination-cards">
     <div class="swiper-wrapper">
       <!-- Cards with few info -->
@@ -255,7 +493,7 @@ $configData = Helper::appClasses();
         <div class="row equal-height-row  g-2">
           @foreach($chunk as $indicador )
           <div class="col equal-height-col col-lg-3 col-12">
-            <a href="{{ route('consolidacion.lista', $indicador->url) }}">
+            <a href="{{ route('consolidacion.lista', ['tipo' => $indicador->url, 'rango_fechas' => $rangoFechas]) }}">
               <div class="card border rounded-3 shadow-sm" style="border-bottom: 10px solid {{ $indicador->color}} !important; ">
                 <div class="card-body d-flex flex-row p-3">
 
@@ -286,12 +524,13 @@ $configData = Helper::appClasses();
 <hr>
 
   <form id="formBuscar" class="forms-sample" method="GET" action="{{ route('consolidacion.lista', $tipo) }}">
+    <input type="hidden" name="rango_fechas" value="{{ $rangoFechas }}">
     <div class="row mt-5">
       <div class="col-9 col-md-4">
         <div class="input-group input-group-merge bg-white">
           <input id="buscar" name="buscar" type="text" value="{{$parametrosBusqueda->buscar}}" class="form-control" placeholder="Busqueda..." aria-describedby="btnBusqueda">
           @if($parametrosBusqueda->buscar)
-          <span id="borrarBusquedaPorPalabra" class="input-group-text"><i class="ti ti-x"></i></span>
+          <span id="borrarBusquedaPorPalabra" class="input-group-text cursor-pointer"><i class="ti ti-x"></i></span>
           @else
           <span class="input-group-text"><i class="ti ti-search"></i></span>
           @endif
@@ -310,7 +549,7 @@ $configData = Helper::appClasses();
             </button>
           @endforeach
           @if($parametrosBusqueda->bandera == 1)
-            <a type="button" href="{{ route('consolidacion.lista', $tipo) }}" class="btn btn-xs rounded-pill btn-secondary remove-tag ps-2 pe-1 mt-1">
+            <a type="button" href="{{ route('consolidacion.lista', ['tipo' => $tipo, 'rango_fechas' => $rangoFechas]) }}" onclick="window.mostrarCargandoConsolidacion('Restableciendo filtros...', 'Por favor espera un momento...');" class="btn btn-xs rounded-pill btn-secondary remove-tag ps-2 pe-1 mt-1">
               <span class="align-middle">Quitar todos los filtros <i class="ti ti-x"></i> </span>
             </a>
           @endif
@@ -337,9 +576,11 @@ $configData = Helper::appClasses();
                   <small class="text-black"><i>Ultima actualización:</i> {{ $persona->ultimaActividadTarea()->pivot->updated_at ?? 'Sin actividad' }} </small>
                 </div>
 
+                @if($persona->tipoUsuario)
                 <span class="badge rounded-pill fw-light me-1" style="background-color: {{ $persona->tipoUsuario->color }}">
                   <i class="{{ $persona->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $persona->tipoUsuario->nombre }}</span>
                 </span>
+                @endif
               </div>
             </div>
 
@@ -354,6 +595,12 @@ $configData = Helper::appClasses();
                         x-data
                         @click="$dispatch('crearTarea', { personaId: {{ $persona->id }} })">
                         Agregar tarea
+                      </a>
+                    </li>
+
+                    <li>
+                      <a class="dropdown-item" href="javascript:void(0);" onclick="abrirOffcanvasUltimaPeticion({{ $persona->id }})">
+                        Última petición
                       </a>
                     </li>
                     
@@ -402,11 +649,11 @@ $configData = Helper::appClasses();
                     @endif
 
                     @if($rolActivo->hasPermissionTo('personas.opcion_cambiar_contrasena_asistente'))
-                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalCambioContrasena" onclick="event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', 'usuarios/{{$persona->id}}/cambiar-contrasena');">Cambiar contraseña</a></li>
+                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalCambioContrasena" onclick="event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', '{{ route('usuario.cambiarContrasena', $persona) }}');">Cambiar contraseña</a></li>
 
                     <form method="POST" id="cambiarContraseñaDefault_{{$persona->id}}" action="{{ route('usuario.cambiarContrasenaDefault',  ['usuario' => $persona ]) }}">
                       @csrf
-                      <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('cambiarContraseñaDefault_{{$persona->id}}').submit();">Cambiar contraseña default</a></li>
+                      <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); confirmarCambioContrasenaDefault('cambiarContraseñaDefault_{{$persona->id}}', '{{ addslashes($persona->nombre(3)) }}');">Cambiar contraseña default</a></li>
                     </form>
                     @endif
 
@@ -504,6 +751,11 @@ $configData = Helper::appClasses();
                 @else
                    <small class="fw-semibold text-success">No</small>
                 @endif
+              </div>
+
+              <div class="col-6 d-flex flex-column mt-1">
+                <small class="text-black">Fecha de creación</small>
+                <small class="fw-semibold text-black">{{ $persona->created_at ? $persona->created_at->format('d-m-Y') : 'No especificada' }}</small>
               </div>
 
             </div>
@@ -662,6 +914,7 @@ $configData = Helper::appClasses();
 
     <!-- offcanvas busqueda avanzada -->
   <form id="busquedaAvanzada" class="forms-sample" method="GET" action="{{ route('consolidacion.lista', $tipo) }}">
+    <input type="hidden" id="filtroRangoFechas" name="rango_fechas" value="{{ $rangoFechas }}">
     <div class="offcanvas offcanvas-end event-sidebar modalSelect2"  tabindex="-1" id="modalBusquedaAvanzada" aria-labelledby="modalBusquedaAvanzadaLabel">
         <div class="offcanvas-header my-1 px-8">
             <h4 class="offcanvas-title fw-bold text-primary" id="modalBusquedaAvanzadaLabel">
@@ -788,7 +1041,9 @@ $configData = Helper::appClasses();
   </form>
 
   @livewire('Consolidacion.gestionar-tareas')
-   @livewire('Usuarios.modal-baja-alta')
+  @livewire('Usuarios.modal-baja-alta')
+  @livewire('Consolidacion.offcanvas-ultima-peticion')
 
+  @include('contenido.paginas.usuario.modal-cambio-contrasena')
 
 @endsection

@@ -12,6 +12,15 @@ use Illuminate\View\View;
 
 class UsuarioConfiguracionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function (Request $request, \Closure $next): \Symfony\Component\HttpFoundation\Response {
+            \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'configuraciones.subitem_tipo_de_usuarios');
+
+            return $next($request);
+        });
+    }
+
     public function listar(Request $request): View
     {
         // 1. Obtener y limpiar el término de búsqueda
@@ -58,7 +67,7 @@ class UsuarioConfiguracionController extends Controller
     public function creacion()
     {
         $tiposUsuarios = TipoUsuario::all();
-        $roles = Role::where('dependiente', 1)->get();
+        $roles = Role::orderBy('name', 'asc')->get();
 
         return view('contenido.paginas.tipo-usuarios.creacion', [
             'tiposUsuarios' => $tiposUsuarios,
@@ -131,7 +140,7 @@ class UsuarioConfiguracionController extends Controller
     public function editar(TipoUsuario $tipoUsuario)
     {
         $tiposUsuarios = TipoUsuario::all();
-        $roles = Role::where('dependiente', 1)->get();
+        $roles = Role::orderBy('name', 'asc')->get();
 
         return view('contenido.paginas.tipo-usuarios.editar', [
             'tipoUsuario' => $tipoUsuario,

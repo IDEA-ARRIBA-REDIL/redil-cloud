@@ -68,7 +68,7 @@
                     if (result.isConfirmed) {
                         // Reemplaza esto con la ruta correcta si es diferente o si usas un form POST
                         // Ejemplo: $('#formEliminarAula-' + aulaId).submit();
-                        window.location.href = '/aulas/' + aulaId + '/eliminar';
+                        window.location.href = '/aulas/' + aulaId + '/eliminar' + window.location.search;
                     }
                 });
             });
@@ -250,7 +250,7 @@
             @endif
         </div>
     </div>
-    <form method="POST" action="{{ route('aulas.guardar') }}">
+    <form method="POST" action="{{ route('aulas.guardar', request()->query()) }}">
         @csrf
         <div class="offcanvas offcanvas-end" tabindex="-1" id="addAulaSidebar" aria-labelledby="addAulaSidebarLabel">
             <div class="offcanvas-header">
@@ -303,7 +303,7 @@
         </div>
     </form>
 
-    <form method="POST" id="formEditarAula" action="{{ route('aulas.actualizar') }}">
+    <form method="POST" id="formEditarAula" action="{{ route('aulas.actualizar', request()->query()) }}">
         @csrf
         @method('PUT')
         <input type="hidden" name="id" id="editar_aula_id">

@@ -16,7 +16,7 @@ class SincronizarJerarquiaGruposCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'grupos:sincronizar-jerarquia
+    protected $signature = 'grupos:sincronizar-jerarquia 
                             {--tenant= : ID del inquilino (tenant) específico}
                             {--forzar : Reconstruir la jerarquía completa sin evaluar cambios recientes}';
 
@@ -40,6 +40,7 @@ class SincronizarJerarquiaGruposCommand extends Command
                 $tenant = Tenant::find($tenantId);
                 if (! $tenant) {
                     $this->error("El inquilino '{$tenantId}' no fue encontrado.");
+
                     return self::FAILURE;
                 }
 
@@ -62,6 +63,7 @@ class SincronizarJerarquiaGruposCommand extends Command
             }
 
             $this->info('¡Sincronización en todos los inquilinos finalizada exitosamente!');
+
             return self::SUCCESS;
         }
 
@@ -85,6 +87,7 @@ class SincronizarJerarquiaGruposCommand extends Command
 
         if ($grupos->isEmpty()) {
             $this->warn("{$prefijo}No se encontraron grupos activos.");
+
             return self::SUCCESS;
         }
 

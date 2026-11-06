@@ -9,6 +9,7 @@ use App\Mail\DefaultMail;
 use App\Models\CampoExtra;
 use App\Models\CampoInformeExcel;
 use App\Models\Configuracion;
+use App\Models\FormularioUsuario;
 use App\Models\Pais;
 use App\Models\PasoCrecimiento;
 use App\Models\Peticion;
@@ -66,7 +67,8 @@ class PeticionController extends Controller
 
       if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas')) {
         $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
+          ->leftJoin('sedes', 'users.sede_id', '=', 'sedes.id')
+          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', 'sedes.nombre as nombre_sede', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
           ->get();
       }
 
@@ -218,7 +220,8 @@ class PeticionController extends Controller
 
       if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas')) {
         $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
+          ->leftJoin('sedes', 'users.sede_id', '=', 'sedes.id')
+          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', 'sedes.nombre as nombre_sede', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
           ->get();
       }
     }
@@ -395,6 +398,7 @@ class PeticionController extends Controller
     $camposPeticiones = Helpers::camposPeticiones();
     $configuracion = Configuracion::find(1);
     $tiposPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
+    $formulariosUsuario = FormularioUsuario::select('id', 'nombre', 'titulo')->orderBy('nombre', 'asc')->get();
     $paises = Pais::select('id', 'nombre')->orderBy('nombre', 'asc')->get();
     $sedes = Sede::select('id', 'nombre')->orderBy('nombre', 'asc')->get();
     $peticiones = collect();
@@ -416,7 +420,8 @@ class PeticionController extends Controller
 
       if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas')) {
         $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
+          ->leftJoin('sedes', 'users.sede_id', '=', 'sedes.id')
+          ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', 'sedes.nombre as nombre_sede', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
           ->get();
       }
     }
@@ -504,6 +509,31 @@ class PeticionController extends Controller
       }
     }
 
+    // filtro por formularios de usuario
+    $filtroFormularios = [];
+    if ($request->filtroFormularios && is_array($request->filtroFormularios) && count($request->filtroFormularios) > 0) {
+      $filtroFormularios = $request->filtroFormularios;
+      $peticiones = $peticiones->whereIn('formulario_usuario_id', $filtroFormularios);
+
+      $titulosFormularios = FormularioUsuario::whereIn('id', $filtroFormularios)
+        ->get()
+        ->map(fn($f) => $f->titulo ?? $f->nombre)
+        ->toArray();
+
+      $textoBusqueda .= '<b>, Formularios: </b>"' . implode(', ', $titulosFormularios) . '"';
+      $bandera = 1;
+
+      $formulariosFiltro = FormularioUsuario::whereIn('id', $filtroFormularios)->get();
+      foreach ($formulariosFiltro as $formItem) {
+        $tag = new stdClass();
+        $tag->label = 'Formulario: ' . ($formItem->titulo ?? $formItem->nombre);
+        $tag->field = 'filtroFormularios';
+        $tag->value = $formItem->id;
+        $tag->fieldAux = '';
+        $tagsBusqueda[] = $tag;
+      }
+    }
+
     // filtro por paises
     $filtroPaises = [];
     if ($request->filtroPaises) {
@@ -572,6 +602,32 @@ class PeticionController extends Controller
       }
     }
 
+    // filtro por origen (registrados / externos / todas)
+    $filtroOrigen = $request->filtroOrigen;
+    if ($filtroOrigen === 'registrados') {
+      $peticiones = $peticiones->whereNotNull('user_id');
+      $textoBusqueda .= '<b>, Solicitante: </b>"Solo registrados"';
+      $bandera = 1;
+
+      $tag = new stdClass();
+      $tag->label = 'Solo registrados';
+      $tag->field = 'filtroOrigen';
+      $tag->value = 'registrados';
+      $tag->fieldAux = '';
+      $tagsBusqueda[] = $tag;
+    } elseif ($filtroOrigen === 'externos') {
+      $peticiones = $peticiones->whereNull('user_id');
+      $textoBusqueda .= '<b>, Solicitante: </b>"Solo externos"';
+      $bandera = 1;
+
+      $tag = new stdClass();
+      $tag->label = 'Solo externos';
+      $tag->field = 'filtroOrigen';
+      $tag->value = 'externos';
+      $tag->fieldAux = '';
+      $tagsBusqueda[] = $tag;
+    }
+
     // filtro por rango de fecha
     $filtroFechaIni = $request->filtroFechaIni ? $request->filtroFechaIni : Carbon::now()->firstOfYear()->format('Y-m-d');
     $filtroFechaFin = $request->filtroFechaFin ? $request->filtroFechaFin : Carbon::now()->format('Y-m-d');
@@ -579,7 +635,7 @@ class PeticionController extends Controller
     $textoBusqueda .= '<b>, Rango </b> Del ' . $filtroFechaIni . ' al ' . $filtroFechaFin;
 
 
-    // Busqueda por palabra clave
+    // Busqueda por palabra clave (nombres, correos, ciudad)
     if ($request->buscar) {
       $buscar = htmlspecialchars($request->buscar);
       $buscar = Helpers::sanearStringConEspacios($buscar);
@@ -588,22 +644,32 @@ class PeticionController extends Controller
 
       foreach ($buscar_array as $palabra) {
         $peticiones = $peticiones->filter(function ($peticion) use ($palabra) {
-          $respuesta  = false !== stristr(Helpers::sanearStringConEspacios($peticion->primer_nombre), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->segundo_nombre), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->primer_apellido), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->segundo_apellido), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->identificacion), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->direccion), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->telefono_movil), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->email), $palabra);
+          $nombre = $peticion->user_id
+            ? trim(($peticion->primer_nombre ?? '') . ' ' . ($peticion->segundo_nombre ?? '') . ' ' . ($peticion->primer_apellido ?? '') . ' ' . ($peticion->segundo_apellido ?? ''))
+            : ($peticion->nombre_externo ?? '');
 
-          return $respuesta;
+          $email = $peticion->user_id ? ($peticion->email ?? '') : ($peticion->email_externo ?? '');
+          $ciudad = $peticion->ciudad ?? '';
+          $telefonos = $peticion->user_id
+            ? (($peticion->telefono_fijo ?? '') . ' ' . ($peticion->telefono_movil ?? '') . ' ' . ($peticion->telefono_otro ?? ''))
+            : ($peticion->telefono_externo ?? '');
+
+          $textoCompleto = Helpers::sanearStringConEspacios($nombre . ' ' . $email . ' ' . $ciudad . ' ' . $telefonos);
+
+          return false !== stristr($textoCompleto, $palabra);
         });
       }
 
       $buscar = $request->buscar;
       $textoBusqueda .=  '<b>, Con busqueda: </b>"' . $buscar . '" ';
       $bandera = 1;
+
+      $tag = new stdClass();
+      $tag->label = 'Búsqueda: ' . $buscar;
+      $tag->field = 'buscar';
+      $tag->value = $buscar;
+      $tag->fieldAux = '';
+      $tagsBusqueda[] = $tag;
     }
 
     if ($peticiones->count() > 0) {
@@ -615,10 +681,13 @@ class PeticionController extends Controller
           },
           'asignado' => function ($query) {
             $query->withTrashed();
-          }
+          },
+          'pais',
+          'formularioUsuario'
         ])
         ->leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-        ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
+        ->leftJoin('sedes', 'users.sede_id', '=', 'sedes.id')
+        ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', 'sedes.nombre as nombre_sede', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
         ->orderBy('peticiones.id', 'desc')->paginate(12);
       $peticiones->map(function ($peticion) {
 
@@ -633,11 +702,13 @@ class PeticionController extends Controller
 
           $peticion->telefonosUsuario = $telefonosArray && is_array($telefonosArray) ? implode(", ", $telefonosArray) : ' Sin datos';
           $peticion->emailUsuario = $peticion->email ?: 'Sin dato';
+          $peticion->nombreSede = $peticion->nombre_sede ?? ($peticion->usuario?->sede?->nombre);
         } else {
           $peticion->nombreUsuario = $peticion->nombre_externo . ' (Externo)';
           $peticion->fotoUsuario = null;
           $peticion->telefonosUsuario = $peticion->telefono_externo ?: 'Sin dato';
           $peticion->emailUsuario = $peticion->email_externo ?: 'Sin dato';
+          $peticion->nombreSede = null;
         }
 
         // usuarioCreacion =
@@ -670,6 +741,8 @@ class PeticionController extends Controller
       'tipo' => $tipo,
       'tiposPeticiones' => $tiposPeticiones,
       'filtroTipoPeticiones' => $filtroTipoPeticiones,
+      'formulariosUsuario' => $formulariosUsuario,
+      'filtroFormularios' => $filtroFormularios,
       'buscar' => $buscar,
       'filtroFechaIni' => $filtroFechaIni,
       'filtroFechaFin' => $filtroFechaFin,
@@ -687,6 +760,7 @@ class PeticionController extends Controller
       'sedes' => $sedes,
       'filtroSedes' => $filtroSedes,
       'filtroAsignacion' => $filtroAsignacion,
+      'filtroOrigen' => $filtroOrigen,
       'meses' => $meses
     ]);
   }
@@ -802,6 +876,7 @@ class PeticionController extends Controller
         $reglas['telefono_externo'] = 'nullable|string|max:50';
         $reglas['genero_externo'] = 'required|in:0,1';
         $reglas['pais_id'] = 'required|integer';
+        $reglas['ciudad'] = 'required|string|max:255';
         $reglas['g-recaptcha-response'] = ['required', new \App\Rules\Recaptcha];
 
         $mensajes['nombre_externo.required'] = 'El nombre completo es obligatorio.';
@@ -809,6 +884,7 @@ class PeticionController extends Controller
         $mensajes['email_externo.email'] = 'Por favor, ingresa un correo electrónico válido.';
         $mensajes['genero_externo.required'] = 'El género es obligatorio.';
         $mensajes['pais_id.required'] = 'El país es obligatorio.';
+        $mensajes['ciudad.required'] = 'La ciudad es obligatoria.';
         $mensajes['g-recaptcha-response.required'] = 'Por favor, verifica que no eres un robot.';
       }
     } else {
@@ -821,11 +897,13 @@ class PeticionController extends Controller
             $reglas['telefono_externo'] = 'nullable|string|max:50';
             $reglas['genero_externo'] = 'required|in:0,1';
             $reglas['pais_id'] = 'required|integer';
+            $reglas['ciudad'] = 'required|string|max:255';
 
             $mensajes['nombre_externo.required'] = 'El nombre completo es obligatorio.';
             $mensajes['email_externo.email'] = 'Por favor, ingresa un correo electrónico válido.';
             $mensajes['genero_externo.required'] = 'El género es obligatorio.';
             $mensajes['pais_id.required'] = 'El país es obligatorio.';
+            $mensajes['ciudad.required'] = 'La ciudad es obligatoria.';
           } else {
             $reglas['persona'] = 'required|integer';
             $mensajes['persona.required'] = 'Debes seleccionar a una persona de la lista.';
@@ -853,6 +931,7 @@ class PeticionController extends Controller
         $peticion->telefono_externo = $request->telefono_externo;
         $peticion->genero_externo = $request->genero_externo;
         $peticion->pais_id = $request->pais_id;
+        $peticion->ciudad = $request->ciudad;
         $emailDestino = $request->email_externo;
         $nombreDestino = $request->nombre_externo;
       }
@@ -866,6 +945,7 @@ class PeticionController extends Controller
           $peticion->telefono_externo = $request->telefono_externo;
           $peticion->genero_externo = $request->genero_externo;
           $peticion->pais_id = $request->pais_id;
+          $peticion->ciudad = $request->ciudad;
           $emailDestino = $request->email_externo;
           $nombreDestino = $request->nombre_externo;
         } elseif ($crearPeticionOtros && $request->persona) {
@@ -938,6 +1018,36 @@ class PeticionController extends Controller
   {
     $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
     $rolActivo->verificacionDelPermiso('peticiones.opcion_eliminacion_masiva');
+
+    // 1. Eliminación específica por selección múltiple de IDs
+    if ($request->filled('peticiones_ids')) {
+      $ids = json_decode($request->peticiones_ids, true);
+      if (is_array($ids) && count($ids) > 0) {
+        $query = Peticion::whereIn('id', $ids);
+
+        // Si solo tiene cobertura sobre su ministerio
+        if (!$rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas') && $rolActivo->hasPermissionTo('peticiones.lista_peticiones_solo_ministerio')) {
+          $misIds = auth()->user()->misPeticiones()->pluck('id')->all();
+          $query->whereIn('id', $misIds);
+        }
+
+        $peticionesAEliminar = $query->get();
+        $cantidad = 0;
+        foreach ($peticionesAEliminar as $pet) {
+          $pet->seguimientos()->delete();
+          $pet->delete();
+          $cantidad++;
+        }
+
+        $mensaje = $cantidad > 1
+          ? "Las <b>" . $cantidad . "</b> peticiones seleccionadas fueron eliminadas con éxito."
+          : "La petición seleccionada fue eliminada con éxito.";
+
+        return back()->with('success', $mensaje);
+      }
+    }
+
+    // 2. Fallback: Eliminación por filtros de búsqueda
     $peticiones = [];
     $parametrosBusqueda = json_decode($request->parametrosBusqueda);
 
@@ -977,6 +1087,11 @@ class PeticionController extends Controller
     // filtro por tipo peticiones
     if ($parametrosBusqueda && isset($parametrosBusqueda->filtroTipoPeticiones)) {
       $peticiones = $peticiones->whereIn('tipo_peticion_id', $parametrosBusqueda->filtroTipoPeticiones);
+    }
+
+    // filtro por formularios de usuario
+    if ($parametrosBusqueda && isset($parametrosBusqueda->filtroFormularios)) {
+      $peticiones = $peticiones->whereIn('formulario_usuario_id', $parametrosBusqueda->filtroFormularios);
     }
 
     // Busqueda por palabra clave

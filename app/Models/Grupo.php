@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class Grupo extends Model
@@ -97,6 +98,11 @@ class Grupo extends Model
             ->withTimestamps();
     }
 
+    public function encargadosConEliminados(): BelongsToMany
+    {
+        return $this->encargados()->withTrashed();
+    }
+
     // funcion para crear relacion entre reportes de grupo y grupos
     public function reportes(): HasMany
     {
@@ -156,18 +162,15 @@ class Grupo extends Model
         return \Illuminate\Support\Facades\Storage::disk('global_media')->url('grupos/banner-default.jpg');
     }
 
-    public function encargadosDirectos()
+    /**
+     * @return Collection<int, User>
+     */
+    public function encargadosDirectos(): Collection
     {
-        $lideres = $this->encargados()
-            ->leftJoin('tipo_usuarios', 'users.tipo_usuario_id', '=', 'tipo_usuarios.id')
-            ->selectRaw(
-                "users.id, CONCAT(users.primer_nombre, ' ',users.primer_apellido) as nombre, users.primer_nombre, users.primer_apellido, users.segundo_nombre, users.segundo_apellido, foto, genero,
-        tipo_usuarios.nombre as tipo_usuario, tipo_usuarios.color, tipo_usuarios.icono"
-            )
-            ->get()
-            ->unique('id');
+        $this->loadMissing('encargados.tipoUsuario');
 
-        return $lideres;
+        return $this->encargados->unique('id')
+            ->map(fn (User $encargado): User => $encargado->paraListadoDeEncargados());
     }
 
     public function gruposMinisterio($tipo = 'objeto', $listaAsistentes = 'sin-eliminados')
@@ -300,23 +303,22 @@ class Grupo extends Model
         return $grupos_ministerio;
     }
 
-    public function gruposAscendentes($tipo = 'objeto')
+    public function gruposAscendentes(string $tipo = 'objeto'): Collection|array
     {
         $arrayEncargadosIds = [];
 
         // Obtener los IDs de usuarios excluidos del grupo
         $idsUsuariosExcluidos = $this->gruposExcluidos()->pluck('users.id')->toArray();
 
-        // Obtener todos los encargados del grupo
-        $encargados = $this->encargados()->get();
-        $arrayEncargadosIds = $encargados->pluck('id')->toArray();
+        $encargadosIds = $this->encargados()->pluck('users.id')->all();
+        $arrayEncargadosIds = $encargadosIds;
+        $lideresPorEncargado = User::idsLideresPorUsuarios($encargadosIds);
 
-        foreach ($encargados as $encargado) {
-            // Obtener los IDs de los líderes del encargado que no están excluidos
-            $lideresIds = $encargado->lideres()->whereNotIn('users.id', $idsUsuariosExcluidos)->select('users.id')->pluck('users.id')->toArray();
-
-            // Fusionar los IDs de líderes en el array principal, evitando duplicados
-            $arrayEncargadosIds = array_unique(array_merge($arrayEncargadosIds, $lideresIds));
+        foreach ($lideresPorEncargado as $lideresIds) {
+            $arrayEncargadosIds = array_unique(array_merge(
+                $arrayEncargadosIds,
+                array_diff($lideresIds, $idsUsuariosExcluidos)
+            ));
         }
 
         // return User::whereIn('id',$arrayEncargadosIds)->get();
@@ -456,7 +458,7 @@ class Grupo extends Model
 
     // Esta función me permite obtener todas las personas que se encuentran vinculadas en su cobertura
     // tiene la opcion de incluir las personas de este grupo o solo la cobertura
-    public function ministerioDelGrupo($tipo = 'objeto', $lista = 'sin-eliminados', $incluirEsteGrupo = true)
+    public function ministerioDelGrupo(string $tipo = 'objeto', string $lista = 'sin-eliminados', bool $incluirEsteGrupo = true): Collection|array
     {
         // Obtenemos los IDs de los grupos del ministerio (subgrupos)
         $arrGruposIds = $this->gruposMinisterio()->pluck('id');
@@ -479,13 +481,11 @@ class Grupo extends Model
             default => null, // "sin-eliminados" es el comportamiento por defecto de Eloquent
         };
 
-        // Obtenemos la colección de usuarios únicos por su ID
-        $discipulos = $query->get()->unique('id');
-
-        // Devolvemos el resultado según el tipo solicitado
-        if ($tipo != 'objeto') {
-            return $discipulos->pluck('id')->all(); // ->all() lo convierte en un array simple
+        if ($tipo !== 'objeto') {
+            return $query->select('users.id')->distinct()->pluck('users.id')->all();
         }
+
+        $discipulos = $query->get()->unique('id');
 
         return $discipulos;
         /* return $discipulos; // Por defecto, devuelve la colección de objetos User

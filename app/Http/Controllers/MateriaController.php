@@ -10,6 +10,7 @@ use App\Models\HorarioBase;
 use App\Models\HorarioMateriaPeriodo;
 use App\Models\Materia;
 use App\Models\MateriaTareaCulminada;
+use App\Models\MateriaTareaIniciar;
 use App\Models\MateriaTareaRequisito;
 use App\Models\Matricula;
 use App\Models\PasoCrecimiento;
@@ -206,6 +207,7 @@ class MateriaController extends Controller
         $this->guardarPasosIniciarList($materia, $request->pasos_iniciar);
         $this->guardarPasosCulminadosList($materia, $request->pasos_culminados);
         $this->guardarTareasPrerrequisito($materia, $request->tareas_prerrequisito);
+        $this->guardarTareasIniciar($materia, $request->tareas_iniciar);
         $this->guardarTareasCulminadas($materia, $request->tareas_culminadas);
         $this->guardarProcesosPrerrequisito($materia, $request->proceso_prerrequisito);
 
@@ -308,6 +310,26 @@ class MateriaController extends Controller
                 if (str_contains($tareaCompleta, '|')) {
                     [$tareaId, $estadoId] = explode('|', $tareaCompleta);
                     MateriaTareaRequisito::create([
+                        'materia_id' => $materia->id,
+                        'tarea_consolidacion_id' => $tareaId,
+                        'estado_tarea_consolidacion_id' => $estadoId,
+                        'indice' => $indice++,
+                    ]);
+                }
+            }
+        }
+    }
+
+    private function guardarTareasIniciar(Materia $materia, $tareas)
+    {
+        MateriaTareaIniciar::where('materia_id', $materia->id)->delete();
+
+        if ($tareas) {
+            $indice = 1;
+            foreach ($tareas as $tareaCompleta) {
+                if (str_contains($tareaCompleta, '|')) {
+                    [$tareaId, $estadoId] = explode('|', $tareaCompleta);
+                    MateriaTareaIniciar::create([
                         'materia_id' => $materia->id,
                         'tarea_consolidacion_id' => $tareaId,
                         'estado_tarea_consolidacion_id' => $estadoId,

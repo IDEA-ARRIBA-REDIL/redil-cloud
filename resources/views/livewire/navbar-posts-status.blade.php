@@ -1,5 +1,17 @@
 <div>
     @if ($posts->isNotEmpty())
+        @php
+            $gradients = [
+                'linear-gradient(135deg, #7367f0 0%, #a8a1f3 100%)',
+                'linear-gradient(135deg, #28c76f 0%, #81ebb1 100%)',
+                'linear-gradient(135deg, #ea5455 0%, #feb692 100%)',
+                'linear-gradient(135deg, #00cfe8 0%, #7367f0 100%)',
+                'linear-gradient(135deg, #ff9f43 0%, #ffc085 100%)',
+                'linear-gradient(135deg, #4b4b4b 0%, #282828 100%)',
+                'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            ];
+        @endphp
         <!-- Botón de Estado (Estilo WhatsApp) -->
         <li class="nav-item ms-2 me-3 d-flex align-items-center">
             <a class="nav-link p-0 position-relative cursor-pointer" onclick="openNavbarPostModal(0)"
@@ -8,19 +20,28 @@
                     style="border-color: #28c76f !important; padding: 2px;">
                     @php
                         $latestPost = $posts->first();
+                        $latestEsVideo = ($latestPost->es_video || !empty($latestPost->video_url));
+                        $latestThumb = $latestPost->video_thumbnail_url;
+                        if ($latestEsVideo && !$latestThumb && !empty($latestPost->video_url)) {
+                            if (preg_match('/(?:youtube\.com\/(?:shorts\/|watch\?.*v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $latestPost->video_url, $m)) {
+                                $latestThumb = 'https://img.youtube.com/vi/' . $m[1] . '/hqdefault.jpg';
+                            }
+                        }
                     @endphp
 
-                    @if ($latestPost->image_url)
+                    @if ($latestEsVideo && $latestThumb)
+                        <img src="{{ $latestThumb }}"
+                            alt="Estado" class="rounded-circle w-100 h-100 object-fit-cover">
+                    @elseif ($latestPost->image_url)
                         <img src="{{ $latestPost->image_url }}"
                             alt="Estado" class="rounded-circle w-100 h-100 object-fit-cover">
+                    @elseif ($latestEsVideo)
+                        <div class="rounded-circle w-100 h-100 d-flex align-items-center justify-content-center bg-dark text-white"
+                            style="font-size: 0.85rem;">
+                            <i class="ti ti-brand-youtube"></i>
+                        </div>
                     @else
                         @php
-                            $gradients = [
-                                'linear-gradient(135deg, #7367f0 0%, #a8a1f3 100%)',
-                                'linear-gradient(135deg, #28c76f 0%, #81ebb1 100%)',
-                                'linear-gradient(135deg, #ea5455 0%, #feb692 100%)',
-                                'linear-gradient(135deg, #00cfe8 0%, #7367f0 100%)',
-                            ];
                             $selectedGradient = $gradients[$latestPost->id % count($gradients)];
                         @endphp
                         <div class="rounded-circle w-100 h-100 d-flex align-items-center justify-content-center text-white"
@@ -35,7 +56,7 @@
         <!-- Modal Inmersivo Navbar (Aislado, Z-index aplicado mediante CSS cuando está activo) -->
         @teleport('body')
             <div class="modal fade border-0 immersive-modal" id="modalNavbarPostsInmersivo" tabindex="-1"
-                aria-hidden="true" wire:ignore.self data-bs-backdrop="false">
+                aria-hidden="true" wire:ignore data-bs-backdrop="false">
                 <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down modal-lg h-100 my-0 py-0">
                     <div class="modal-content bg-transparent border-0 shadow-none h-100">
                         <div
@@ -92,15 +113,68 @@
                                                                 style="text-shadow: 0 1px 3px rgba(0,0,0,0.8);">Usuario</h6>
                                                         @endif
                                                     </div>
-                                                    <button type="button" class="btn btn-label-dark ms-auto mt-2 me-2"
-                                                        data-bs-dismiss="modal" aria-label="Close"
-                                                        style="background-color: #ffffff; border-radius: 50%; padding: 10px; opacity: 1;"><i
-                                                            class="ti ti-x"></i></button>
+                                                    <div class="d-flex align-items-center ms-auto gap-2">
+                                                        @if ($post->es_video || !empty($post->video_url))
+                                                            <button type="button" class="btn btn-sm btn-icon btn-dark rounded-circle shadow btn-toggle-sound"
+                                                                style="background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.4); width: 38px; height: 38px;"
+                                                                title="Silenciar"
+                                                                data-muted="false"
+                                                                onclick="toggleSoundPost(this)">
+                                                                <i class="ti ti-volume text-white" style="font-size: 1.2rem;"></i>
+                                                            </button>
+                                                        @endif
+                                                        <button type="button" class="btn btn-label-dark"
+                                                            data-bs-dismiss="modal" aria-label="Close"
+                                                            style="background-color: #ffffff; border-radius: 50%; padding: 10px; opacity: 1;"><i
+                                                                class="ti ti-x"></i></button>
+                                                    </div>
                                                 </div>
 
-                                                @if ($post->image_url)
+                                                @php
+                                                    $imgUrlModal = $post->image_url;
+                                                    $esVideo = ($post->es_video || !empty($post->video_url));
+                                                @endphp
+
+                                                <!-- Fondo: Video, Imagen o Gradiente -->
+                                                @if ($esVideo)
+                                                    @php
+                                                        $rawUrl = trim($post->video_url ?? '');
+                                                        $isVertical = $post->es_video_vertical || str_contains($rawUrl, 'shorts') || str_contains($rawUrl, 'reels');
+                                                        $embedUrl = $post->video_embed_url;
+                                                        if (!$embedUrl && !empty($rawUrl)) {
+                                                            if (preg_match('/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/', $rawUrl, $m)) {
+                                                                $embedUrl = 'https://www.youtube.com/embed/' . $m[1];
+                                                                $isVertical = true;
+                                                            } elseif (preg_match('/(?:youtube\.com\/(?:watch\?.*v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/', $rawUrl, $m)) {
+                                                                $embedUrl = 'https://www.youtube.com/embed/' . $m[1];
+                                                            } elseif (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)/', $rawUrl, $m)) {
+                                                                $embedUrl = 'https://player.vimeo.com/video/' . $m[1];
+                                                            } else {
+                                                                $embedUrl = $rawUrl;
+                                                            }
+                                                        }
+                                                        $separator = str_contains($embedUrl ?? '', '?') ? '&' : '?';
+                                                        // Autoplay con sonido activo (iniciado por clic del usuario)
+                                                        $videoParams = 'autoplay=1&enablejsapi=1&playsinline=1&rel=0';
+                                                        $videoSrc = $embedUrl ? ($embedUrl . $separator . $videoParams) : '';
+                                                    @endphp
+                                                    <div id="nav-modal-capture-{{ $post->id }}" 
+                                                         class="w-100 h-100 bg-black d-flex align-items-center justify-content-center position-relative overflow-hidden"
+                                                         style="z-index: 5;">
+                                                        <div class="w-100 {{ $isVertical ? 'h-100' : 'ratio ratio-16x9' }}" 
+                                                             style="{{ $isVertical ? '' : 'max-height: 100%;' }}; pointer-events: auto;">
+                                                            <iframe class="w-100 h-100 border-0 post-video-iframe-nav"
+                                                                    data-src="{{ $videoSrc }}"
+                                                                    src=""
+                                                                    title="Video post"
+                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                    allowfullscreen>
+                                                            </iframe>
+                                                        </div>
+                                                    </div>
+                                                @elseif ($imgUrlModal)
                                                     <div id="nav-modal-capture-{{ $post->id }}" class="w-100 h-100">
-                                                        <img src="{{ $post->image_url }}"
+                                                        <img src="{{ $imgUrlModal }}"
                                                             alt="Publicación" class="w-100 h-100"
                                                             style="object-fit: cover; object-position: center;"
                                                             crossorigin="anonymous">
@@ -122,11 +196,11 @@
                                                 @endif
 
                                                 <!-- Degradado Inferior e Info -->
-                                                @if ($post->image_path)
+                                                @if ($post->image_path || $esVideo)
                                                     <div class="position-absolute bottom-0 start-0 w-100 p-4 pb-5"
-                                                        style="z-index: 10; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%);">
+                                                        style="z-index: 10; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%); pointer-events: none;">
                                                         <div x-data="{ expanded: false }" class="text-white mb-2"
-                                                            style="max-height: 50vh; overflow-y: auto; cursor: pointer; margin-right: 80px;"
+                                                            style="max-height: 35vh; overflow-y: auto; cursor: pointer; margin-right: 80px; pointer-events: auto;"
                                                             @click="expanded = !expanded">
                                                             <p class="mb-0 lh-base" :class="expanded ? '' : 'line-clamp-2'"
                                                                 style="font-size: 0.95rem; text-shadow: 0 1px 3px rgba(0,0,0,0.9);">
@@ -172,25 +246,28 @@
 
                                                     <!-- Botón Compartir / Descargar -->
                                                     @php
-                                                        $postImageUrl = $post->image_url;
+                                                        $postImageUrl = $imgUrlModal;
                                                         $postText = trim(strip_tags($post->descripcion));
+                                                        $shareUrlModal = $esVideo ? ($post->video_url ?? '') : ($post->image_path ? $postImageUrl : '');
                                                     @endphp
                                                     <div class="d-flex flex-column align-items-center">
                                                         <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-share-post d-none mb-1 shadow"
                                                             style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
                                                             title="Compartir"
-                                                            onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($postImageUrl) }}, 'nav-modal-capture-{{ $post->id }}')">
+                                                            onclick="handleSharePost(event, {{ Js::from($postText) }}, {{ Js::from($shareUrlModal) }}, '{{ $esVideo ? '' : 'nav-modal-capture-'.$post->id }}')">
                                                             <i class="ti ti-share text-white"
                                                                 style="font-size: 1.8rem;"></i>
                                                         </div>
 
-                                                        <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-download-post d-none mb-1 shadow"
-                                                            style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
-                                                            title="Descargar imagen"
-                                                            onclick="downloadPostImage(event, {{ Js::from($postImageUrl) }}, 'nav-modal-capture-{{ $post->id }}')">
-                                                            <i class="ti ti-download text-white"
-                                                                style="font-size: 1.8rem;"></i>
-                                                        </div>
+                                                        @if (!$esVideo)
+                                                            <div class="rounded-circle d-flex align-items-center justify-content-center cursor-pointer btn-download-post d-none mb-1 shadow"
+                                                                style="width: 50px; height: 50px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);"
+                                                                title="Descargar imagen"
+                                                                onclick="downloadPostImage(event, {{ Js::from($post->image_path ? $postImageUrl : '') }}, 'nav-modal-capture-{{ $post->id }}')">
+                                                                <i class="ti ti-download text-white"
+                                                                    style="font-size: 1.8rem;"></i>
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
@@ -253,6 +330,14 @@
 
                     if (navigator.share) {
                         try {
+                            if (urlImagen && (urlImagen.includes('youtube') || urlImagen.includes('youtu.be') || urlImagen.includes('vimeo'))) {
+                                shareData.url = urlImagen;
+                                e.stopPropagation();
+                                e.preventDefault();
+                                await navigator.share(shareData);
+                                return;
+                            }
+
                             let file;
 
                             // PRIORIDAD 1: Intentar compartir el archivo original (preserva proporción y calidad)
@@ -420,10 +505,17 @@
                             direction: 'vertical',
                             slidesPerView: 1,
                             spaceBetween: 0,
-                            mousewheel: true,
+                            mousewheel: {
+                                sensitivity: 0.8,
+                                thresholdDelta: 40,
+                                thresholdTime: 800, // Evita saltar varios posts de golpe (1 solo post por cada impulso)
+                            },
                             observer: true,
                             observeParents: true,
                             on: {
+                                slideChange: function() {
+                                    sincronizarVideosNavbar();
+                                },
                                 reachEnd: function() {
                                     if ($wire.get('hasMore') && !$wire.get('cargandoMas')) {
                                         $wire.call('loadMore');
@@ -433,6 +525,67 @@
                         });
                     });
                 }
+
+                function sincronizarVideosNavbar(forceIndex) {
+                    const activeIndex = (forceIndex !== undefined) ? forceIndex : (navbarPostsSwiper ? (navbarPostsSwiper.activeIndex || 0) : 0);
+                    const slides = document.querySelectorAll('#swiper-posts-vertical-navbar .swiper-slide');
+
+                    slides.forEach((slide, idx) => {
+                        const iframe = slide.querySelector('.post-video-iframe-nav');
+                        const soundBtn = slide.querySelector('.btn-toggle-sound');
+                        if (iframe) {
+                            const dataSrc = iframe.getAttribute('data-src');
+                            if (idx === activeIndex) {
+                                if (dataSrc && iframe.getAttribute('src') !== dataSrc) {
+                                    iframe.setAttribute('src', dataSrc);
+                                    if (soundBtn) {
+                                        soundBtn.setAttribute('data-muted', 'false');
+                                        soundBtn.setAttribute('title', 'Silenciar');
+                                        const icon = soundBtn.querySelector('i');
+                                        if (icon) icon.className = 'ti ti-volume text-white';
+                                    }
+                                }
+                            } else {
+                                if (iframe.getAttribute('src') !== '') {
+                                    iframe.setAttribute('src', '');
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Control interactivo de audio (YouTube / Vimeo)
+                window.toggleSoundPost = function(btn) {
+                    const slide = btn.closest('.swiper-slide');
+                    if (!slide) return;
+                    const iframe = slide.querySelector('.post-video-iframe, .post-video-iframe-nav');
+                    if (!iframe || !iframe.contentWindow) return;
+
+                    let isMuted = btn.getAttribute('data-muted') !== 'false';
+                    const icon = btn.querySelector('i');
+
+                    if (isMuted) {
+                        // YouTube: unMute y volumen 100
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }), '*');
+                        // Vimeo: setMuted false y setVolume 1
+                        iframe.contentWindow.postMessage(JSON.stringify({ method: 'setMuted', value: false }), '*');
+                        iframe.contentWindow.postMessage(JSON.stringify({ method: 'setVolume', value: 1 }), '*');
+
+                        btn.setAttribute('data-muted', 'false');
+                        btn.setAttribute('title', 'Silenciar');
+                        if (icon) icon.className = 'ti ti-volume text-white';
+                    } else {
+                        // YouTube: mute
+                        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*');
+                        // Vimeo: setMuted true
+                        iframe.contentWindow.postMessage(JSON.stringify({ method: 'setMuted', value: true }), '*');
+
+                        btn.setAttribute('data-muted', 'true');
+                        btn.setAttribute('title', 'Activar sonido');
+                        if (icon) icon.className = 'ti ti-volume-off text-white';
+                    }
+                };
 
                 function resetearIndicadorNav() {
                     const indicador = document.getElementById('indicador-desliza-navbar');
@@ -455,6 +608,9 @@
                     const modalEl = document.getElementById('modalNavbarPostsInmersivo');
                     if (!modalEl) return;
 
+                    // Iniciar carga del video directamente con el gesto del clic
+                    sincronizarVideosNavbar(index);
+
                     let modalInstance = bootstrap.Modal.getInstance(modalEl);
                     if (!modalInstance) {
                         modalInstance = new bootstrap.Modal(modalEl);
@@ -471,12 +627,12 @@
 
                         if (!navbarPostsSwiper) {
                             initNavbarVerticalSwiper();
-                            // slide to index needs to happen after init completes (async if loading CDN)
                             setTimeout(() => {
                                 if (navbarPostsSwiper && window.navPostIndexToSlide !== undefined) {
                                     navbarPostsSwiper.slideTo(window.navPostIndexToSlide, 0);
                                     window.navPostIndexToSlide = undefined;
                                 }
+                                sincronizarVideosNavbar();
                             }, 200);
                         } else {
                             // Forzar el recálculo de dimensiones cuando el modal ya es visible
@@ -488,7 +644,17 @@
                             } else {
                                 navbarPostsSwiper.slideTo(navbarPostsSwiper.activeIndex, 0);
                             }
+                            sincronizarVideosNavbar();
                         }
+                    }
+                });
+
+                // Detener cualquier video al cerrar el modal del navbar
+                document.addEventListener('hide.bs.modal', function(event) {
+                    if (event.target.id === 'modalNavbarPostsInmersivo') {
+                        document.querySelectorAll('#swiper-posts-vertical-navbar .post-video-iframe-nav').forEach(iframe => {
+                            iframe.setAttribute('src', '');
+                        });
                     }
                 });
 
@@ -500,11 +666,6 @@
                         if (component.name === 'navbar-posts-status') {
                             succeed(() => {
                                 setTimeout(() => {
-                                    if (document.getElementById('modalNavbarPostsInmersivo') && document
-                                        .getElementById('modalNavbarPostsInmersivo').classList.contains(
-                                            'show')) {
-                                        initNavbarVerticalSwiper();
-                                    }
                                     evaluarBotonesNavbar();
                                 }, 50);
                             });

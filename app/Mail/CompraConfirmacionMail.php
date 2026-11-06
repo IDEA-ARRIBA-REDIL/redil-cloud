@@ -5,17 +5,15 @@ namespace App\Mail;
 use App\Models\Actividad;
 use App\Models\Compra;
 use App\Models\Inscripcion;
+use App\Models\Matricula;
 use App\Models\Pago;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Mail\Mailables\Attachment;
-
-use App\Models\Matricula; // Importar Matricula
+use Illuminate\Queue\SerializesModels; // Importar Matricula
 
 class CompraConfirmacionMail extends Mailable
 {
@@ -23,16 +21,25 @@ class CompraConfirmacionMail extends Mailable
 
     // Propiedades para todos los datos que necesitamos
     public Compra $compra;
-    public Pago $pago;
-    public Inscripcion $inscripcion;
-    public Actividad $actividad;
+
+    public ?Pago $pago;
+
+    public ?Inscripcion $inscripcion;
+
+    public ?Actividad $actividad;
+
     public ?Matricula $matricula; // Nueva propiedad opcional
 
     /**
      * El constructor ahora acepta todos los objetos necesarios.
      */
-    public function __construct(Compra $compra, Pago $pago, Inscripcion $inscripcion, Actividad $actividad, ?Matricula $matricula = null)
-    {
+    public function __construct(
+        Compra $compra,
+        ?Pago $pago = null,
+        ?Inscripcion $inscripcion = null,
+        ?Actividad $actividad = null,
+        ?Matricula $matricula = null
+    ) {
         $this->compra = $compra;
         $this->pago = $pago;
         $this->inscripcion = $inscripcion;
@@ -42,8 +49,10 @@ class CompraConfirmacionMail extends Mailable
 
     public function envelope(): Envelope
     {
+        $nombreActividad = $this->actividad?->nombre ?? 'Actividad';
+
         return new Envelope(
-            subject: 'Confirmación de compra: ' . $this->actividad->nombre,
+            subject: 'Confirmación de compra: '.$nombreActividad,
         );
     }
 
@@ -79,7 +88,7 @@ class CompraConfirmacionMail extends Mailable
         ]);
 
         return [
-            Attachment::fromData(fn() => $pdf->output(), 'Ticket-Compra-' . $this->compra->id . '.pdf')
+            Attachment::fromData(fn () => $pdf->output(), 'Ticket-Compra-'.$this->compra->id.'.pdf')
                 ->withMime('application/pdf'),
         ];
     }

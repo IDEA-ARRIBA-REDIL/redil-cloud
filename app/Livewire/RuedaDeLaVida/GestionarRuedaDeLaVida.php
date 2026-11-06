@@ -11,6 +11,11 @@ use Livewire\Component;
 
 class GestionarRuedaDeLaVida extends Component
 {
+    public function boot(): void
+    {
+        \App\Services\PermisosCuentaInicial::autorizar(auth()->user(), 'rueda_de_la_vida.item_rueda_de_la_vida');
+    }
+
     public string $tabActiva = 'secciones';
 
     public array $seccionesActivas = [];

@@ -2,22 +2,22 @@
 
 namespace App\Livewire\Taquilla;
 
-use Livewire\Component;
-use App\Models\Caja;
+use App\Mail\InscripcionConfirmacionMail;
 use App\Models\Actividad;
-use App\Models\User;
-use App\Models\Configuracion;
-use App\Models\Moneda;
-use App\Models\Inscripcion;
 use App\Models\ActividadCategoria;
+use App\Models\Caja;
 use App\Models\Compra;
+use App\Models\Configuracion;
+use App\Models\Inscripcion;
+use App\Models\Moneda;
+use App\Models\User;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\InscripcionConfirmacionMail;
-use Carbon\Carbon;
-use Livewire\Attributes\On; // ¡Importante! Para el listener
+use Livewire\Attributes\On;
+use Livewire\Component; // ¡Importante! Para el listener
 
 class OperacionTaquilla extends Component
 {
@@ -26,22 +26,33 @@ class OperacionTaquilla extends Component
 
     // --- Estado del Comprador (Paso 1) ---
     public ?User $comprador = null; // El que paga (el padre)
+
     public $compradorIdActual;
+
     public $parientes = []; // Lista de parientes del comprador
 
     // --- Estado del Formulario de Búsqueda (Paso 2) ---
     public $actividadesDisponibles = [];
+
     public $actividadIdActual;
+
     public $esInscripcionPropia = true; //
+
     public $inscritoIdActual;
 
     // --- Estado de Validación (Paso 3) ---
     public $verificacionEnviada = false; // Controla si se muestra el bloque de resultados
+
     public $validacionExitosa = false;
+
     public $mensajeError = '';
+
     public $categoriasDisponibles = []; // Los "cards" de categorías
+
     public ?User $usuarioAValidar = null; // El que se inscribe (el hijo)
+
     public ?Actividad $actividadSeleccionada = null;
+
     public $monedaPrincipal;
 
     /**
@@ -53,6 +64,7 @@ class OperacionTaquilla extends Component
             'actividadIdActual' => 'required',
         ];
     }
+
     protected $messages = [
         'actividadIdActual.required' => 'Debes seleccionar una actividad.',
     ];
@@ -78,11 +90,18 @@ class OperacionTaquilla extends Component
      * ¡ACCIÓN CLAVE 1!
      * Escucha el evento 'usuario-seleccionado' del componente 'usuarios-para-busqueda'.
      * Carga los parientes INMEDIATAMENTE.
-     *
      */
     #[On('usuario-seleccionado')]
     public function cargarParientes($id)
     {
+        // 0. Si la caja no puede operar, no permitir avanzar
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+
+            return;
+        }
+
         $this->compradorIdActual = $id;
         $this->comprador = User::find($id);
 
@@ -106,6 +125,16 @@ class OperacionTaquilla extends Component
      */
     public function verificarRequisitos()
     {
+        // 0. Si la caja no puede operar (cerrada o fuera de horario), bloquear búsqueda
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+            $this->addError('cajaActiva', $mensaje);
+            $this->verificacionEnviada = false;
+
+            return;
+        }
+
         $this->validate(); // Valida las 'rules()'
 
         // 1. Ocultar resultados anteriores
@@ -119,6 +148,7 @@ class OperacionTaquilla extends Component
 
         if (empty($this->inscritoIdActual)) {
             $this->addError('inscritoIdActual', 'Debes seleccionar un familiar a inscribir.');
+
             return;
         }
 
@@ -132,8 +162,8 @@ class OperacionTaquilla extends Component
             $this->ejecutarValidacionInterna();
         } catch (Exception $e) {
             $this->validacionExitosa = false;
-            $this->mensajeError = 'Ocurrió un error inesperado al validar: ' . $e->getMessage();
-            Log::error('Error en Taquilla.OperacionTaquilla.verificarRequisitos: ' . $e->getMessage());
+            $this->mensajeError = 'Ocurrió un error inesperado al validar: '.$e->getMessage();
+            Log::error('Error en Taquilla.OperacionTaquilla.verificarRequisitos: '.$e->getMessage());
         }
 
         // 5. Mostrar el bloque de resultados (éxito o error)
@@ -156,16 +186,24 @@ class OperacionTaquilla extends Component
     /**
      * ¡ACCIÓN CLAVE 4!
      * Lógica de inscripción gratuita (copiada de ValidarInscripcion.php)
-     *
      */
     public function procesarInscripcionGratuita($categoriaId)
     {
+        // 0. Validar operatividad y horario de la caja
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+
+            return;
+        }
+
         // 1. Validación de duplicados
         $inscripcionExistente = Inscripcion::where('user_id', $this->usuarioAValidar->id)
             ->where('actividad_categoria_id', $categoriaId)
             ->exists();
         if ($inscripcionExistente) {
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Este usuario ya tiene una inscripción en esta categoría.');
+
             return;
         }
 
@@ -177,6 +215,7 @@ class OperacionTaquilla extends Component
             if ($categoria->aforo > 0 && $categoria->aforo_ocupado >= $categoria->aforo) {
                 DB::rollBack();
                 $this->dispatch('notificacion', tipo: 'error', mensaje: 'El cupo para esta categoría se agotó.');
+
                 return;
             }
 
@@ -191,7 +230,7 @@ class OperacionTaquilla extends Component
                 'identificacion_comprador' => $this->comprador->identificacion,
                 'telefono_comprador' => $this->comprador->telefono_movil,
                 'email_comprador' => $this->comprador->email,
-                'actividad_id' => $this->actividadSeleccionada->id
+                'actividad_id' => $this->actividadSeleccionada->id,
             ]);
 
             // 5. Crear Inscripción (a nombre del INSCRITO)
@@ -201,7 +240,7 @@ class OperacionTaquilla extends Component
                 'compra_id' => $compra->id,
                 'fecha' => Carbon::now(),
                 'estado' => $this->actividadSeleccionada->estado_inscripcion_defecto,
-                'nombre_inscrito' => $this->usuarioAValidar->nombre(4)
+                'nombre_inscrito' => $this->usuarioAValidar->nombre(4),
             ]);
 
             $categoria->aforo_ocupado = ($categoria->aforo_ocupado ?? 0) + 1;
@@ -216,7 +255,7 @@ class OperacionTaquilla extends Component
             $this->ejecutarValidacionInterna();
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Error al procesar inscripción gratuita: ' . $e->getMessage());
+            Log::error('Error al procesar inscripción gratuita: '.$e->getMessage());
             $this->dispatch('notificacion', tipo: 'error', mensaje: 'Error al procesar la inscripción.');
         }
     }
@@ -245,10 +284,10 @@ class OperacionTaquilla extends Component
             $resultado = $this->actividadSeleccionada->verificarDisponibilidadCategorias($this->usuarioAValidar->id);
             if ($resultado['success']) {
                 $this->validacionExitosa = true;
-                $this->categoriasDisponibles = collect($resultado['categorias'])->map(fn($cat) => (object)[
+                $this->categoriasDisponibles = collect($resultado['categorias'])->map(fn ($cat) => (object) [
                     'categoria' => $cat,
                     'estado' => 'DISPONIBLE',
-                    'motivos' => []
+                    'motivos' => [],
                 ]);
             } else {
                 $this->validacionExitosa = false;
@@ -260,19 +299,19 @@ class OperacionTaquilla extends Component
             $resultado = $this->actividadSeleccionada->validarUsuarioEnCategoria($this->usuarioAValidar, null);
             if ($resultado->estado === 'DISPONIBLE') {
                 $this->validacionExitosa = true;
-                $this->categoriasDisponibles = $this->actividadSeleccionada->categorias->map(fn($cat) => (object)[
+                $this->categoriasDisponibles = $this->actividadSeleccionada->categorias->map(fn ($cat) => (object) [
                     'categoria' => $cat,
                     'estado' => 'DISPONIBLE',
-                    'motivos' => []
+                    'motivos' => [],
                 ]);
             } else {
                 $this->validacionExitosa = false;
-                $this->mensajeError = implode(". ", $resultado->motivos);
+                $this->mensajeError = implode('. ', $resultado->motivos);
                 // Si la actividad misma está bloqueada, bloqueamos todas sus categorías visualmente
-                $this->categoriasDisponibles = $this->actividadSeleccionada->categorias->map(fn($cat) => (object)[
+                $this->categoriasDisponibles = $this->actividadSeleccionada->categorias->map(fn ($cat) => (object) [
                     'categoria' => $cat,
                     'estado' => 'BLOQUEADA',
-                    'motivos' => $resultado->motivos
+                    'motivos' => $resultado->motivos,
                 ]);
             }
         }
@@ -284,7 +323,7 @@ class OperacionTaquilla extends Component
         if ($this->validacionExitosa) {
 
             // --- RAMA NUEVA: LÓGICA DE ABONOS ---
-            if ($this->actividadSeleccionada->tipo->permite_abonos && !$this->actividadSeleccionada->tipo->tipo_escuelas) {
+            if ($this->actividadSeleccionada->tipo->permite_abonos && ! $this->actividadSeleccionada->tipo->tipo_escuelas) {
 
                 // 1. Buscamos si el COMPRADOR ya tiene una Compra para esta actividad
                 $compraExistente = Compra::where('user_id', $this->comprador->id)
@@ -322,6 +361,7 @@ class OperacionTaquilla extends Component
                                 $item->estado = 'BLOQUEADA';
                                 $item->motivos = ['Ya tienes un abono iniciado en otra categoría.'];
                             }
+
                             return $item;
                         });
                     }
@@ -342,6 +382,7 @@ class OperacionTaquilla extends Component
                     if ($inscripcionesExistentesIds->contains($item->categoria->id)) {
                         $item->estado = 'INSCRITO';
                     }
+
                     return $item;
                 });
             }
@@ -365,11 +406,11 @@ class OperacionTaquilla extends Component
             if (filter_var($emailDestinatario, FILTER_VALIDATE_EMAIL)) {
                 Mail::to($emailDestinatario)->send(new InscripcionConfirmacionMail($inscripcion, $actividad));
             } else {
-                Log::warning("No se pudo enviar correo para inscripción #{$inscripcion->id} por email inválido: " . $emailDestinatario);
+                Log::warning("No se pudo enviar correo para inscripción #{$inscripcion->id} por email inválido: ".$emailDestinatario);
             }
         } catch (Exception $e) {
-            Log::error("Fallo al enviar correo de confirmación para inscripción #{$inscripcion->id}: " . $e->getMessage());
-            $this->dispatch('notificacion', titulo: 'Fallo envio de correo',   tipo: 'warning', mensaje: 'Inscripción registrada, pero falló el envío de correo.');
+            Log::error("Fallo al enviar correo de confirmación para inscripción #{$inscripcion->id}: ".$e->getMessage());
+            $this->dispatch('notificacion', titulo: 'Fallo envio de correo', tipo: 'warning', mensaje: 'Inscripción registrada, pero falló el envío de correo.');
         }
     }
 

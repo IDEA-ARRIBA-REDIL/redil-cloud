@@ -89,6 +89,38 @@ $configData = Helper::appClasses();
 
   // Cargar el valor inicial también al principio
   document.getElementById('mensajeBienvenida').value = editor.root.innerHTML;
+
+  // Editor Quill para Mensaje de Donación de Ofrenda
+  const editorDonacionElem = document.getElementById('editorDonacionOfrenda');
+  if (editorDonacionElem) {
+    const editorDonacion = new Quill('#editorDonacionOfrenda', {
+      bounds: '#editorDonacionOfrenda',
+      placeholder: 'Escribe aquí el mensaje de agradecimiento para el correo de confirmación de la donación...',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'header': 1 }, { 'header': 2 }],
+          [{ 'color': [] }, { 'background': [] }],
+          [{ 'align': [] }],
+          [{ 'size': ['small', false, 'large', 'huge'] }],
+          [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+          [{ 'font': [] }],
+          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+          ['link'],
+          ['clean']
+        ]
+      },
+      theme: 'snow'
+    });
+
+    editorDonacion.root.innerHTML = {{ Illuminate\Support\Js::from(old('mensajeDonacionOfrenda', $configuracion->mensaje_donacion_ofrenda)) }};
+
+    editorDonacion.on('text-change', () => {
+      document.getElementById('mensajeDonacionOfrenda').value = editorDonacion.root.innerHTML;
+    });
+
+    document.getElementById('mensajeDonacionOfrenda').value = editorDonacion.root.innerHTML;
+  }
 </script>
 
 <script>
@@ -263,7 +295,7 @@ $configData = Helper::appClasses();
   </div>
 
 
-<form id="formulario" role="form" class="forms-sample mt-10" method="POST" action="{{ route('configuracion-general.actualizar') }}">
+<form id="formulario" role="form" class="forms-sample mt-10" method="POST" action="{{ route('configuracion-general.actualizar') }}" enctype="multipart/form-data">
   @csrf
   @method('PATCH')
     <div class="col-md-12">
@@ -1217,6 +1249,54 @@ $configData = Helper::appClasses();
         </div>
       </div>
     </div>
+
+    <div class="col-md-12">
+      <div class="card mb-4">
+        <h5 class="card-header text-black fw-semibold">Donaciones / Ofrendas Online</h5>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-12 mb-4">
+              <label for="bannerDonacionOfrenda" class="form-label fw-semibold">
+                Banner encabezado para página de ofrendas (Dimensiones recomendadas: 1600 x 600 px)
+              </label>
+              <input class="form-control" type="file" id="bannerDonacionOfrenda" name="bannerDonacionOfrenda" accept="image/jpeg,image/png,image/jpg,image/webp" />
+              <small class="text-muted d-block mt-1">
+                Este banner se mostrará en la parte superior del formulario público de donaciones y en el correo de confirmación. Formato JPG, PNG o WEBP (máx. 4 MB).
+              </small>
+              @error('bannerDonacionOfrenda')
+                <span class="text-danger">{{ $message }}</span>
+              @enderror
+
+              @if($configuracion->banner_donacion_ofrenda_url)
+                <div class="mt-3">
+                  <span class="small text-muted d-block mb-1">Banner actual:</span>
+                  <img src="{{ $configuracion->banner_donacion_ofrenda_url }}" alt="Banner Donaciones" class="img-fluid rounded border shadow-sm" style="max-height: 220px; width: auto; object-fit: cover;" />
+                </div>
+              @endif
+            </div>
+
+            <div class="col-12 mb-2 px-2">
+              <label for="mensajeDonacionOfrenda" class="form-label fw-semibold">
+                Mensaje para donación de ofrenda (Correo de agradecimiento)
+              </label>
+              <small class="text-muted d-block mb-2">
+                Este texto será el contenido principal del correo electrónico que se envía automáticamente al donante cuando su ofrenda sea confirmada.
+              </small>
+
+              {{-- Editor Quill para Donaciones --}}
+              <div id="editorDonacionOfrenda" style="min-height: 180px;"></div>
+
+              {{-- Input oculto para enviar el contenido HTML --}}
+              <input type="hidden" id="mensajeDonacionOfrenda" name="mensajeDonacionOfrenda">
+              @error('mensajeDonacionOfrenda')
+                <span class="text-danger">{{ $message }}</span>
+              @enderror
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="col-md-12">
       <div class="d-flex mb-1 mt-5">
         <div class="me-auto">

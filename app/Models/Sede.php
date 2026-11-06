@@ -57,6 +57,11 @@ class Sede extends Model
         return $this->belongsTo(Barrio::class, 'barrio_id');
     }
 
+    public function localidades(): BelongsToMany
+    {
+        return $this->belongsToMany(Localidad::class, 'localidad_sede');
+    }
+
     // obtiene los usuarios de una sede
     public function usuarios(): HasMany
     {
@@ -205,6 +210,9 @@ class Sede extends Model
             $grupo->sede_id = $sedeDestino->id;
             $grupo->save();
         }
+
+        // Limpio las relaciones de localidades con la sede
+        $this->localidades()->detach();
 
         return true;
     }

@@ -195,7 +195,8 @@ $configData = Helper::appClasses();
         email_externo: $('#email_externo').val() || '',
         telefono_externo: $('#telefono_externo').val() || '',
         genero_externo: $('#genero_externo').val() || '',
-        pais_id: $('#pais_id').val() || ''
+        pais_id: $('#pais_id').val() || '',
+        ciudad: $('#ciudad').val() || ''
       };
       sessionStorage.setItem('progreso_peticion_publica', JSON.stringify(data));
     }
@@ -225,6 +226,9 @@ $configData = Helper::appClasses();
           }
           if (data.pais_id) {
             $('#pais_id').val(data.pais_id);
+          }
+          if (data.ciudad) {
+            $('#ciudad').val(data.ciudad);
           }
         } catch (e) {
           console.error("Error al restaurar progreso:", e);
@@ -313,6 +317,13 @@ $configData = Helper::appClasses();
         let paisId = $('#pais_id').val();
         if (!paisId) {
           $('#f-pais').addClass('invalid');
+          isValid = false;
+        }
+
+        // Validar Ciudad
+        let ciudad = $('#ciudad').val().trim();
+        if (ciudad.length <= 1) {
+          $('#f-ciudad').addClass('invalid');
           isValid = false;
         }
       }
@@ -546,6 +557,12 @@ $configData = Helper::appClasses();
           @endforeach
         </select>
         <small class="err">@error('pais_id') {{ $message }} @else El país es obligatorio. @enderror</small>
+      </div>
+
+      <div class="field @error('ciudad') invalid @enderror" id="f-ciudad">
+        <label for="ciudad">Ciudad</label>
+        <input type="text" id="ciudad" name="ciudad" placeholder="Ej. Medellín, Bogotá, Miami..." autocomplete="address-level2" value="{{ old('ciudad') }}" required>
+        <small class="err">@error('ciudad') {{ $message }} @else La ciudad es obligatoria. @enderror</small>
       </div>
 
       <!-- reCAPTCHA -->

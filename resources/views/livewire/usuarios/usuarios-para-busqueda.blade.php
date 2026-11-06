@@ -41,17 +41,31 @@
       @foreach ($usuarios as $usuario)
       <div class="row mb-3 p-3 border-bottom border-2 align-items-center cursor-pointer">
         <div class="col-lg-2 col-sm-12 align-items-start justify-content-start mx-auto me-3">
-          <img src="{{ $usuario->foto_url }}"
-            alt="foto {{ $usuario->primer_nombre }}" class="rounded-circle w-px-75" />
+          <div class="avatar avatar-lg">
+            @if(! $usuario->tieneFoto())
+              <span class="avatar-initial rounded-circle border border-2 border-white bg-info">{{ $usuario->inicialesNombre() }}</span>
+            @else
+              <img src="{{ $usuario->foto_url }}" alt="foto {{ $usuario->primer_nombre }}" class="avatar-initial rounded-circle border border-2 border-white bg-info" />
+            @endif
+          </div>
         </div>
         <div class="col-sm-12 col-lg-6  me-2">
-          <p class="fs-6 text-wrap m-0 mt-1 fw-bold"> {{ $usuario->nombre(3) }}
+          <p class="fs-6 text-wrap m-0 mt-1 fw-semibold text-black"> {{ $usuario->nombre(3) }}
             {{ $usuario->deleted_at }}
           </p>
-          <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1"
+          <p class="fs-6 text-wrap m-0 mt-1 text-black">
+            @if($usuario->tipoUsuario)
+            <span class="badge px-1"
               style="background-color: {{ $usuario->tipoUsuario->color }}"><i
                 class="fs-6 {{ $usuario->tipoUsuario->icono }}"></i></span>
             {{ $usuario->tipoUsuario->nombre }}
+            @endif
+            @if(is_null($usuario->email_verified_at))
+            <br>
+            <span class="badge rounded-pill bg-label-warning px-1 ms-1 mt-1" title="Correo no verificado">
+              <i class="ti ti-mail-off fs-6 me-1"></i>No verificado
+            </span>
+            @endif
           </p>
         </div>
         <!-- aqui se se agrego esta seccion para el boton de accion de gestion de cargos actividad-->
@@ -123,16 +137,30 @@
         @if ($tipoBuscador=='multiple' ) wire:click="seleccionarUsuarios({{ $usuario->id }})" @elseif($tipoBuscador=='unico' ) wire:click="seleccionarUsuario({{ $usuario->id }})" @endif
         class="dropdown-item d-flex align-items-center p-2 m-1 border">
         <div class="d-flex align-items-center justify-content-center mx-auto me-3">
-          <img src="{{ $usuario->foto_url }}"
-            alt="foto {{ $usuario->primer_nombre }}" class="rounded-circle w-px-75" />
+          <div class="avatar avatar-md">
+            @if(! $usuario->tieneFoto())
+              <span class="avatar-initial rounded-circle border border-2 border-white bg-info">{{ $usuario->inicialesNombre() }}</span>
+            @else
+              <img src="{{ $usuario->foto_url }}" alt="foto {{ $usuario->primer_nombre }}" class="avatar-initial rounded-circle border border-2 border-white bg-info" />
+            @endif
+          </div>
         </div>
         <div class="flex-grow-1 me-2">
           <p class="fs-6 text-wrap m-0 mt-1 fw-semibold text-black"> {{ $usuario->nombre(3) }} 
           </p>
-          <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1"
+          <p class="fs-6 text-wrap m-0 mt-1 text-black">
+            @if($usuario->tipoUsuario)
+            <span class="badge px-1"
               style="background-color: {{ $usuario->tipoUsuario->color }}"><i
                 class="fs-6 text-black {{ $usuario->tipoUsuario->icono }}"></i></span>
             {{ $usuario->tipoUsuario->nombre }}
+            @endif
+            @if(is_null($usuario->email_verified_at))
+            <br>
+            <span class="badge rounded-pill bg-label-warning px-1 ms-1 mt-1" title="Correo no verificado">
+              <i class="ti ti-mail-off fs-6 me-1"></i>No verificado
+            </span>
+            @endif
           </p>
         </div>
       </a>
@@ -169,17 +197,31 @@
         class="dropdown-item w-100 mx-0 d-flex p-2 border flex-grow-1  ">
         <div class="flex-fill d-flex align-items-center">
           <div class="d-flex align-items-center justify-content-center mx-auto me-3">
-            <img src="{{ $usuarioSel->foto_url }}"
-              alt="foto {{ $usuarioSel->primer_nombre }}" class="rounded-circle w-px-75" />
+            <div class="avatar avatar-lg">
+              @if(! $usuarioSel->tieneFoto())
+                <span class="avatar-initial rounded-circle border border-2 border-white bg-info">{{ $usuarioSel->inicialesNombre() }}</span>
+              @else
+                <img src="{{ $usuarioSel->foto_url }}" alt="foto {{ $usuarioSel->primer_nombre }}" class="avatar-initial rounded-circle border border-2 border-white bg-info" />
+              @endif
+            </div>
           </div>
           <div class="flex-grow-1 me-2">
-            <p class="fs-6 text-wrap m-0 mt-1 fw-bold"> {{ $usuarioSel->nombre(3) }}
+            <p class="fs-6 text-wrap m-0 mt-1 fw-semibold text-black"> {{ $usuarioSel->nombre(3) }}
               {{ $usuarioSel->deleted_at }}
             </p>
-            <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1"
+            <p class="fs-6 text-wrap m-0 mt-1 text-black">
+              @if($usuarioSel->tipoUsuario)
+              <span class="badge px-1"
                 style="background-color: {{ $usuarioSel->tipoUsuario->color }}"><i
                   class="fs-6 {{ $usuarioSel->tipoUsuario->icono }}"></i></span>
               {{ $usuarioSel->tipoUsuario->nombre }}
+              @endif
+              @if(is_null($usuarioSel->email_verified_at))
+              <br>
+              <span class="badge rounded-pill bg-label-warning px-1 ms-1 mt-1" title="Correo no verificado">
+                <i class="ti ti-mail-off fs-6 me-1"></i>No verificado
+              </span>
+              @endif
             </p>
             @if ($modulo == 'servidores-grupo')
             <div class="m-0 mt-1">
@@ -221,49 +263,60 @@
 
   <div class="col-12">
     @if ($estiloSeleccion)
-    @if ($estiloSeleccion == 'pequeno')
-    <div wire:key="usuario-{{ $usuarioSeleccionado->id }}"
-      class="dropdown-item w-100 m-0 d-flex p-1 border flex-grow-1">
-      <div class="flex-fill d-flex align-items-center">
-        <div class="avatar avatar-xs me-2">
-          <img src="{{ $usuarioSeleccionado->foto_url }}"
-            alt="foto {{ $usuarioSeleccionado->primer_nombre }}"
-            class="rounded-circle" />
+      @if ($estiloSeleccion == 'pequeno')
+      <div wire:key="usuario-{{ $usuarioSeleccionado->id }}"
+        class="dropdown-item w-100 m-0 d-flex p-1 border flex-grow-1">
+        <div class="flex-fill d-flex align-items-center">
+          <div class="avatar avatar-xs me-2">
+            @if(! $usuarioSeleccionado->tieneFoto())
+              <span class="avatar-initial rounded-circle bg-info">{{ $usuarioSeleccionado->inicialesNombre() }}</span>
+            @else
+              <img src="{{ $usuarioSeleccionado->foto_url }}"
+                alt="foto {{ $usuarioSeleccionado->primer_nombre }}"
+                class="rounded-circle" />
+            @endif
+          </div>
+          <div class="flex-grow-1 me-2">
+            <p class="fs-6 text-wrap m-0 mt-1 fw-semibold text-black"> {{ $usuarioSeleccionado->nombre(3) }}
+              {{ $usuarioSeleccionado->deleted_at }}
+            </p>
+          </div>
         </div>
-        <div class="flex-grow-1 me-2">
-          <p class="fs-6 text-wrap m-0 mt-1 fw-bold"> {{ $usuarioSeleccionado->nombre(3) }}
-            {{ $usuarioSeleccionado->deleted_at }}
-          </p>
-        </div>
-      </div>
 
-      <div class="d-flex align-items-start">
-        @if ($rolActivo->hasPermissionTo('grupos.opcion_desvincular_asistentes_grupos'))
-        <button type="button"
-          wire:click="quitarSeleccion({{ $usuarioSeleccionado->id }})"
-          class="align-self-start btn btn-danger btn-xs p-1"><i
-            class="ti ti-x fs-6"></i></button>
-        @endif
+        <div class="d-flex align-items-start">
+          @if ($rolActivo->hasPermissionTo('grupos.opcion_desvincular_asistentes_grupos'))
+          <button type="button"
+            wire:click="quitarSeleccion({{ $usuarioSeleccionado->id }})"
+            class="align-self-start btn btn-danger btn-xs p-1"><i
+              class="ti ti-x fs-6"></i></button>
+          @endif
+        </div>
       </div>
-    </div>
-    @endif
+      @endif
     @else
     <div wire:key="usuario-{{ $usuarioSeleccionado->id }}"
       class="dropdown-item w-100 mx-0 d-flex p-2 border flex-grow-1 mt-2 ">
       <div class="flex-fill d-flex align-items-center">
         <div class="d-flex align-items-center justify-content-center mx-auto me-3">
-          <img src="{{ $usuarioSeleccionado->foto_url }}"
-            alt="foto {{ $usuarioSeleccionado->primer_nombre }}"
-            class="rounded-circle w-px-75" />
+          <div class="avatar avatar-lg">
+            @if(! $usuarioSeleccionado->tieneFoto())
+              <span class="avatar-initial rounded-circle border border-2 border-white bg-info">{{ $usuarioSeleccionado->inicialesNombre() }}</span>
+            @else
+              <img src="{{ $usuarioSeleccionado->foto_url }}" alt="foto {{ $usuarioSeleccionado->primer_nombre }}" class="avatar-initial rounded-circle border border-2 border-white bg-info" />
+            @endif
+          </div>
         </div>
         <div class="flex-grow-1 me-2">
-          <p class="fs-6 text-wrap m-0 mt-1 fw-bold"> {{ $usuarioSeleccionado->nombre(3) }}
+          <p class="fs-6 text-wrap m-0 mt-1 fw-semibold text-black"> {{ $usuarioSeleccionado->nombre(3) }}
             {{ $usuarioSeleccionado->deleted_at }}
           </p>
-          <p class="fs-6 text-wrap m-0 mt-1"> <span class="badge px-1"
+          <p class="fs-6 text-wrap m-0 mt-1 text-black">
+            @if($usuarioSeleccionado->tipoUsuario)
+            <span class="badge px-1"
               style="background-color: {{ $usuarioSeleccionado->tipoUsuario->color }}"><i
                 class="fs-6 {{ $usuarioSeleccionado->tipoUsuario->icono }}"></i></span>
             {{ $usuarioSeleccionado->tipoUsuario->nombre }}
+            @endif
           </p>
         </div>
       </div>

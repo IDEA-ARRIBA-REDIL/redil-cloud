@@ -57,10 +57,10 @@
 
     <!-- Tabla de Tipos de Identificación -->
     <div class="table-responsive text-nowrap">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover align-middle mb-0 table-tipo-identificaciones">
         <thead class="table-light">
           <tr>
-            <th class="ps-4" style="width: 70px;">#</th>
+            <th class="ps-4" style="width: 60px;">#</th>
             
             <th class="cursor-pointer user-select-none" wire:click="sortBy('nombre')" title="Ordenar por tipo de identificación">
               <div class="d-inline-flex align-items-center gap-1">
@@ -73,7 +73,7 @@
               </div>
             </th>
 
-            <th class="text-center cursor-pointer user-select-none" style="width: 140px;" wire:click="sortBy('abreviatura')" title="Ordenar por Abreviatura">
+            <th class="text-center cursor-pointer user-select-none" style="width: 110px;" wire:click="sortBy('abreviatura')" title="Ordenar por Abreviatura">
               <div class="d-inline-flex align-items-center justify-content-center gap-1">
                 <span>Abreviatura</span>
                 @if($sortField === 'abreviatura')
@@ -84,7 +84,7 @@
               </div>
             </th>
 
-            <th class="cursor-pointer user-select-none" style="width: 230px;" wire:click="sortBy('tipo_caracteres')" title="Ordenar por Formato">
+            <th class="cursor-pointer user-select-none" style="width: 210px;" wire:click="sortBy('tipo_caracteres')" title="Ordenar por Formato">
               <div class="d-inline-flex align-items-center gap-1">
                 <span>Formato / Restricción</span>
                 @if($sortField === 'tipo_caracteres')
@@ -95,7 +95,7 @@
               </div>
             </th>
 
-            <th class="text-center cursor-pointer user-select-none" style="width: 170px;" wire:click="sortBy('formulario_donacion')" title="Ordenar por Donaciones">
+            <th class="text-center cursor-pointer user-select-none" style="width: 130px;" wire:click="sortBy('formulario_donacion')" title="Ordenar por Donaciones">
               <div class="d-inline-flex align-items-center justify-content-center gap-1">
                 <span>Donaciones</span>
                 @if($sortField === 'formulario_donacion')
@@ -106,7 +106,7 @@
               </div>
             </th>
 
-            <th class="text-center cursor-pointer user-select-none" style="width: 180px;" wire:click="sortBy('usuarios_count')" title="Ordenar por Usuarios vinculados">
+            <th class="text-center cursor-pointer user-select-none" style="width: 140px;" wire:click="sortBy('usuarios_count')" title="Ordenar por Usuarios vinculados">
               <div class="d-inline-flex align-items-center justify-content-center gap-1">
                 <span>Usuarios Vinculados</span>
                 @if($sortField === 'usuarios_count')
@@ -117,7 +117,7 @@
               </div>
             </th>
 
-            <th class="cursor-pointer user-select-none" style="width: 180px;" wire:click="sortBy('created_at')" title="Ordenar por Fecha de creación">
+            <th class="cursor-pointer user-select-none" style="width: 130px;" wire:click="sortBy('created_at')" title="Ordenar por Fecha de creación">
               <div class="d-inline-flex align-items-center gap-1">
                 <span>Fecha de creación</span>
                 @if($sortField === 'created_at')
@@ -128,7 +128,7 @@
               </div>
             </th>
 
-            <th class="text-center pe-4" style="width: 130px;">Acciones</th>
+            <th class="text-center pe-3 acciones-sticky" style="width: 90px;">Acciones</th>
           </tr>
         </thead>
         <tbody class="table-border-bottom-0">
@@ -194,9 +194,9 @@
                 @endif
               </td>
               <td class="text-black small">
-                {{ $tipo->created_at ? $tipo->created_at->format('Y-m-d h:i A') : 'N/A' }}
+                {{ $tipo->created_at ? $tipo->created_at->format('d/m/Y') : 'N/A' }}
               </td>
-              <td class="text-center pe-4">
+              <td class="text-center pe-3 acciones-sticky">
                 <div class="d-inline-flex gap-1">
                   <button 
                     type="button" 
@@ -262,6 +262,22 @@
   </div>
 
   <style>
+    /* Columna de Acciones Sticky a la derecha */
+    .table-tipo-identificaciones .acciones-sticky {
+      position: sticky;
+      right: 0;
+      background-color: #ffffff;
+      box-shadow: -3px 0 6px rgba(0, 0, 0, 0.05);
+      z-index: 2;
+    }
+    .table-tipo-identificaciones thead .acciones-sticky {
+      background-color: #f8f9fa;
+      z-index: 3;
+    }
+    .table-tipo-identificaciones tbody tr:hover .acciones-sticky {
+      background-color: #f5f5f9;
+    }
+
     /* Oculta los botones de texto « Anterior / Siguiente » del bloque mobile */
     .pagination-clean nav > div:first-child {
       display: none !important;
@@ -286,11 +302,13 @@
     class="offcanvas offcanvas-end" 
     tabindex="-1" 
     id="offcanvasTipoIdentificacion" 
+    data-bs-backdrop="true"
+    data-bs-scroll="false"
     wire:ignore.self 
     aria-labelledby="offcanvasTipoIdentificacionLabel"
   >
-    <form wire:submit.prevent="guardar">
-      <div class="offcanvas-header border-bottom">
+    <form wire:submit.prevent="guardar" class="d-flex flex-column h-100 m-0 overflow-hidden">
+      <div class="offcanvas-header border-bottom flex-shrink-0">
         <h5 id="offcanvasTipoIdentificacionLabel" class="offcanvas-title fw-semibold text-primary">
           <i class="ti {{ $isEditing ? 'ti-pencil' : 'ti-plus' }} me-2"></i>
           {{ $isEditing ? 'Editar tipo de identificación' : 'Nuevo tipo de identificación' }}
@@ -298,7 +316,7 @@
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
 
-      <div class="offcanvas-body my-auto mx-0 flex-grow-0 p-4">
+      <div class="offcanvas-body flex-grow-1 overflow-y-auto p-4">
           <!-- Nombre -->
           <div class="mb-3">
             <label class="form-label fw-semibold" for="tipoNombre">
@@ -356,9 +374,9 @@
             </label>
             <div class="input-group">
               <span class="input-group-text"><i class="ti ti-dialpad"></i></span>
-              <select
-                id="tipoCaracteres"
-                class="form-select @error('tipo_caracteres') is-invalid @enderror"
+              <select 
+                id="tipoCaracteres" 
+                class="form-select @error('tipo_caracteres') is-invalid @enderror" 
                 wire:model="tipo_caracteres"
               >
                 <option value="solo_numeros">Solo números (0-9) - Ej. Cédula, Tarjeta de identidad</option>
@@ -387,10 +405,10 @@
                     Convierte las letras ingresadas a mayúsculas de forma instantánea al escribir o pegar.
                   </small>
                 </div>
-                <input
-                  class="form-check-input ms-0 cursor-pointer"
-                  type="checkbox"
-                  id="switchMayusculas"
+                <input 
+                  class="form-check-input ms-0 cursor-pointer" 
+                  type="checkbox" 
+                  id="switchMayusculas" 
                   wire:model="forzar_mayusculas"
                 >
               </div>
@@ -428,9 +446,9 @@
           
         
       </div>
-      <div class="offcanvas-footer p-4 border-top">
+      <div class="offcanvas-footer p-4 border-top flex-shrink-0 bg-white">
         <!-- Botones de Acción -->
-        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+        <div class="d-flex justify-content-end gap-2">
           <button type="button" class="btn btn-label-secondary rounded-pill px-3" data-bs-dismiss="offcanvas">
             Cancelar
           </button>
@@ -451,17 +469,21 @@
 
 @script
 <script>
-  let offcanvasTipoElement = document.getElementById('offcanvasTipoIdentificacion');
-  let offcanvasTipoInstance = null;
-
-  if (offcanvasTipoElement) {
-    offcanvasTipoInstance = new bootstrap.Offcanvas(offcanvasTipoElement);
-  }
+  const getOffcanvasInstance = () => {
+    const el = document.getElementById('offcanvasTipoIdentificacion');
+    if (!el) return null;
+    return (window.bootstrap || bootstrap).Offcanvas.getOrCreateInstance(el, {
+      backdrop: true,
+      keyboard: true,
+      scroll: false
+    });
+  };
 
   // Eventos de control del Offcanvas
   Livewire.on('abrir-offcanvas-tipo-identificacion', () => {
-    if (offcanvasTipoInstance) {
-      offcanvasTipoInstance.show();
+    const inst = getOffcanvasInstance();
+    if (inst) {
+      inst.show();
       setTimeout(() => {
         const input = document.getElementById('tipoNombre');
         if (input) input.focus();
@@ -470,8 +492,12 @@
   });
 
   Livewire.on('cerrar-offcanvas-tipo-identificacion', () => {
-    if (offcanvasTipoInstance) {
-      offcanvasTipoInstance.hide();
+    const el = document.getElementById('offcanvasTipoIdentificacion');
+    if (el) {
+      const inst = (window.bootstrap || bootstrap).Offcanvas.getInstance(el);
+      if (inst) {
+        inst.hide();
+      }
     }
   });
 

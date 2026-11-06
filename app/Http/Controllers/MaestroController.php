@@ -400,8 +400,42 @@ class MaestroController extends Controller
 
     // En el archivo: app/Http/Controllers/MaestroController.php
 
-    public function dashboardClase(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado)
+    /**
+     * Resuelve de forma segura la instancia de Maestro para accesos administrativos o de docentes,
+     * evitando errores 404 cuando el horario aún no tiene un maestro asignado o se pasa el ID del usuario administrador.
+     */
+    private function resolverMaestroClase($maestroParam, ?HorarioMateriaPeriodo $horarioAsignado = null): Maestro
     {
+        if ($maestroParam instanceof Maestro) {
+            return $maestroParam;
+        }
+
+        $maestro = Maestro::withTrashed()->find($maestroParam)
+            ?? Maestro::withTrashed()->where('user_id', $maestroParam)->first()
+            ?? $horarioAsignado?->maestros()->first();
+
+        if ($maestro) {
+            return $maestro;
+        }
+
+        $usuarioFallback = User::find($maestroParam) ?? Auth::user();
+        $maestroVirtual = new Maestro([
+            'user_id' => $usuarioFallback?->id,
+            'activo' => true,
+        ]);
+        $maestroVirtual->id = (int) ($maestroParam ?: ($usuarioFallback?->id ?? 1));
+        $maestroVirtual->exists = true;
+        if ($usuarioFallback) {
+            $maestroVirtual->setRelation('user', $usuarioFallback);
+        }
+
+        return $maestroVirtual;
+    }
+
+    public function dashboardClase($maestro, HorarioMateriaPeriodo $horarioAsignado)
+    {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
+
         // --- 1. CONFIGURACIÓN INICIAL Y CARGA DE DATOS PRINCIPALES ---
         $usuarioActivo = Auth::user();
         $configuracion = Configuracion::find(1);
@@ -437,6 +471,7 @@ class MaestroController extends Controller
 
         // --- 3. OBTENER Y PROCESAR LOS DATOS DE LOS ALUMNOS MATRICULADOS ---
         $estadosAcademicos = EstadoAcademico::where('horario_materia_periodo_id', $horarioAsignado->id)
+            ->whereHas('matricula')
             ->with([
                 'user:id,email,genero,telefono_movil,sede_id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,identificacion,fecha_nacimiento',
                 'matricula.trasladosLog', // Carga la matrícula y sus traslados
@@ -569,7 +604,7 @@ class MaestroController extends Controller
             }
         } // Fin del bucle foreach $estadosAcademicos
 
-        $totalAlumnos = $estadosAcademicos->count(); // Usamos el conteo original de estados
+        $totalAlumnos = $alumnosData->count();
 
         // --- 4. PREPARACIÓN DE DATOS PARA LOS GRÁFICOS EXISTENTES ---
         $datosGenero = [
@@ -732,13 +767,13 @@ class MaestroController extends Controller
     /**
      * Marca como bloqueada la matrícula de un alumno que desertó de la clase.
      */
-    public function bloquearMatricula(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado, Matricula $matricula): RedirectResponse
+    public function bloquearMatricula($maestro, HorarioMateriaPeriodo $horarioAsignado, Matricula $matricula): RedirectResponse
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $periodo = $horarioAsignado->materiaPeriodo()->with('periodo:id,estado')->firstOrFail()->periodo;
 
         abort_unless(
-            $horarioAsignado->maestros()->whereKey($maestro->id)->exists()
-            && (int) $matricula->horario_materia_periodo_id === (int) $horarioAsignado->id
+            (int) $matricula->horario_materia_periodo_id === (int) $horarioAsignado->id
             && (int) $matricula->periodo_id === (int) $periodo->id,
             404
         );
@@ -760,8 +795,9 @@ class MaestroController extends Controller
             ->with('mensaje_exito', 'La matrícula fue bloqueada. El alumno quedará reprobado al finalizar el período.');
     }
 
-    public function exportarNotasCorte(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado, CortePeriodo $cortePeriodo): BinaryFileResponse
+    public function exportarNotasCorte($maestro, HorarioMateriaPeriodo $horarioAsignado, CortePeriodo $cortePeriodo): BinaryFileResponse
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $horarioAsignado->loadMissing('materiaPeriodo.materia', 'materiaPeriodo.periodo');
 
         abort_unless((int) $cortePeriodo->periodo_id === (int) $horarioAsignado->materiaPeriodo?->periodo_id, 404);
@@ -778,8 +814,9 @@ class MaestroController extends Controller
         );
     }
 
-    public function gestionarClase(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado)
+    public function gestionarClase($maestro, HorarioMateriaPeriodo $horarioAsignado)
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $configuracion = Configuracion::find(1);
 
         $horarioAsignado->load([
@@ -789,6 +826,7 @@ class MaestroController extends Controller
 
         // Obtener alumnos matriculados
         $estadosAcademicos = EstadoAcademico::where('horario_materia_periodo_id', $horarioAsignado->id)
+            ->whereHas('matricula')
             ->with(['user'])
             ->get();
 
@@ -805,8 +843,9 @@ class MaestroController extends Controller
         ]);
     }
 
-    public function gestionarAlumno(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado, User $alumno)
+    public function gestionarAlumno($maestro, HorarioMateriaPeriodo $horarioAsignado, User $alumno)
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $configuracion = Configuracion::find(1);
         $horarioAsignado->load([
             'materiaPeriodo.materia',
@@ -884,8 +923,9 @@ class MaestroController extends Controller
     /**
      * Gestión de ítems de evaluación para un horario específico.
      */
-    public function gestionarItems(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado): \Illuminate\Contracts\View\View
+    public function gestionarItems($maestro, HorarioMateriaPeriodo $horarioAsignado): \Illuminate\Contracts\View\View
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $usuario = Auth::user();
 
         // Validar que el maestro tenga asignado este horario (seguridad básica)
@@ -920,8 +960,9 @@ class MaestroController extends Controller
 
     // En MaestroController.php
 
-    public function calificacionMultiple(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado)
+    public function calificacionMultiple($maestro, HorarioMateriaPeriodo $horarioAsignado)
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $configuracion = Configuracion::find(1);
 
         // Cargar datos necesarios para el encabezado de la vista principal (Blade)
@@ -950,8 +991,9 @@ class MaestroController extends Controller
         ]);
     }
 
-    public function calificacionGrilla(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado)
+    public function calificacionGrilla($maestro, HorarioMateriaPeriodo $horarioAsignado)
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $configuracion = Configuracion::find(1);
 
         $horarioAsignado->load([
@@ -975,8 +1017,9 @@ class MaestroController extends Controller
     }
 
     // ASEGÚRATE DE QUE LA FUNCIÓN RECIBA EL REPORTE Y LO PASE A LA VISTA
-    public function editarReporte(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado, ReporteAsistenciaClase $reporte) // <--- RECIBE $reporte
+    public function editarReporte($maestro, HorarioMateriaPeriodo $horarioAsignado, ReporteAsistenciaClase $reporte) // <--- RECIBE $reporte
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $configuracion = Configuracion::find(1);
 
         $horarioAsignado->load([
@@ -999,8 +1042,9 @@ class MaestroController extends Controller
         ]);
     }
 
-    public function reporteAsistencia(Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado)
+    public function reporteAsistencia($maestro, HorarioMateriaPeriodo $horarioAsignado)
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         $configuracionGeneral = Configuracion::find(1);
 
         $horarioAsignado->load([
@@ -1237,8 +1281,9 @@ class MaestroController extends Controller
         }
     }
 
-    public function guardarNuevoReporteAsistenciaClase(Request $request, Maestro $maestro, HorarioMateriaPeriodo $horarioAsignado)
+    public function guardarNuevoReporteAsistenciaClase(Request $request, $maestro, HorarioMateriaPeriodo $horarioAsignado)
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
         // 1. Validación de Laravel (la que ya tenías)
         $datosValidados = $request->validate([
             'fecha_clase_reportada' => [
@@ -1415,8 +1460,9 @@ class MaestroController extends Controller
         return redirect()->back()->withErrors(['success' => '¡Asistencia registrada exitosamente!'])->withInput();
     }
 
-    public function recursosAlumnos(HorarioMateriaPeriodo $horarioAsignado, Maestro $maestro)
+    public function recursosAlumnos(HorarioMateriaPeriodo $horarioAsignado, $maestro)
     {
+        $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
 
         return view('contenido.paginas.escuelas.maestros.recursos-alumno', [
 

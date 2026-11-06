@@ -18,7 +18,22 @@
 
 @endsection
 
-@if ($esEscuela)
+@if (! $cajaActiva->puedeOperar())
+    <div class="alert alert-danger d-flex align-items-center p-3 mb-4" role="alert">
+        <i class="ti ti-clock-off fs-2 me-3 text-danger flex-shrink-0"></i>
+        <div>
+            <h6 class="alert-heading fw-bold mb-1 text-danger">Operación no permitida en esta caja</h6>
+            <p class="mb-0 text-black">
+                {{ $cajaActiva->obtenerMensajeFueraDeHorario() }}
+            </p>
+        </div>
+    </div>
+    <div class="text-start">
+        <a href="{{ route('taquilla.operar', $cajaActiva) }}" class="btn btn-primary rounded-pill">
+            <i class="ti ti-arrow-left me-1"></i> Volver a la taquilla
+        </a>
+    </div>
+@elseif ($esEscuela)
     {{-- 
     =========================================================
     CASO 1: ES UNA ESCUELA

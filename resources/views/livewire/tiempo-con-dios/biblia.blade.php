@@ -71,7 +71,7 @@
                 </button>
               </div>
               <div class="col-6 text-center">
-                <h5 id="tituloPrincipal" class="text-black my-auto fw-normal">{{ $libroSeleccionado && $libroSeleccionado->libro ? $libroSeleccionado->libro : '¿Qué versículo que deseas leer hoy?' }} {{ $capituloSeleccionado && $capituloSeleccionado['chapter'] ? $capituloSeleccionado['chapter'] : '' }}</h5>
+                <h5 id="tituloPrincipal" class="text-black my-auto fw-normal">{{ $libroSeleccionado && isset($libroSeleccionado->libro) ? $libroSeleccionado->libro : '¿Qué versículo que deseas leer hoy?' }} {{ data_get($capituloSeleccionado, 'chapter', '') }}</h5>
               </div>
               <div class="col-3 text-end">
                 <button type="button" class="btn text-black" data-bs-dismiss="modal" aria-label="Close">
@@ -108,7 +108,7 @@
                       <select id="selectCapitulo" class="form-select form-select-md" wire:model.live="selectCapitulo" {{ $libroSeleccionado ? '' : 'disabled' }}>
                         @if($libroSeleccionado)
                           @foreach ($capitulos as $capitulo)
-                            <option value="{{ $capitulo }}"  {{ $capituloSeleccionado && $capituloSeleccionado['chapter'] == $capitulo ? 'selected' : '' }} >{{ $capitulo }}</option>
+                            <option value="{{ $capitulo }}"  {{ data_get($capituloSeleccionado, 'chapter') == $capitulo ? 'selected' : '' }} >{{ $capitulo }}</option>
                           @endforeach
                         @else
                           <option value="" selected>Seleccione la capítulo</option>
@@ -121,7 +121,7 @@
                       <select id="selectVersion" class="form-select form-select-md" wire:model.live="selectVersion" {{ $libroSeleccionado ? '' : 'disabled' }}>
                         @if($libroSeleccionado)
                           @foreach ($versiones as $version)
-                              <option value="{{ $version['name'] }}" {{ $versionSeleccionada &&  $versionSeleccionada['name'] == $version['name'] ? 'selected' : '' }} >{{ strtoupper($version['version']) }}</option>
+                              <option value="{{ $version['name'] }}" {{ $versionSeleccionada &&  $versionSeleccionada['name'] == $version['name'] ? 'selected' : '' }} >{{ strtoupper($version['shortName'] ?? $version['version']) }}</option>
                           @endforeach
                         @else
                         <option value="" selected>Seleccione la versión</option>
@@ -165,7 +165,7 @@
                 </div>
 
                 <div class="pt-5">
-                  @if($capituloSeleccionado && $capituloSeleccionado->isNotEmpty())
+                  @if($capituloSeleccionado && !empty(data_get($capituloSeleccionado, 'vers')))
 
                     @foreach ( $capituloSeleccionado['vers'] as $versiculo )
                       @if (isset($versiculo['study']) && !empty($versiculo['study']))

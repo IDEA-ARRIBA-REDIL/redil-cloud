@@ -152,6 +152,76 @@
                 });
             });
 
+            // Lógica para alternar entre Imagen y Video
+            function actualizarTipoContenido() {
+                const tipo = $('input[name="tipo_contenido"]:checked').val();
+                if (tipo === 'video') {
+                    $('#seccion-imagen').addClass('d-none');
+                    $('#seccion-video').removeClass('d-none');
+                    actualizarPreviewVideo($('#video_url').val());
+                } else {
+                    $('#seccion-video').addClass('d-none');
+                    $('#seccion-imagen').removeClass('d-none');
+                }
+            }
+
+            $('input[name="tipo_contenido"]').on('change', actualizarTipoContenido);
+
+            // Previsualización de video en vivo
+            function parseVideoEmbedUrl(url) {
+                if (!url) return null;
+                url = url.trim();
+
+                // YouTube Shorts
+                if (url.includes('youtube.com/shorts/')) {
+                    const id = url.split('shorts/')[1].split('?')[0].split('/')[0];
+                    return `https://www.youtube.com/embed/${id}`;
+                }
+                // YouTube Watch
+                if (url.includes('youtube.com/watch?v=')) {
+                    const id = url.split('watch?v=')[1].split('&')[0];
+                    return `https://www.youtube.com/embed/${id}`;
+                }
+                // YouTube Short URL
+                if (url.includes('youtu.be/')) {
+                    const id = url.split('youtu.be/')[1].split('?')[0];
+                    return `https://www.youtube.com/embed/${id}`;
+                }
+                // Vimeo
+                if (url.includes('vimeo.com/')) {
+                    const id = url.split('/').pop().split('?')[0];
+                    return `https://player.vimeo.com/video/${id}`;
+                }
+
+                return null;
+            }
+
+            let timeoutVideo = null;
+            function actualizarPreviewVideo(url) {
+                const embedUrl = parseVideoEmbedUrl(url);
+                const placeholder = $('#video-preview-placeholder');
+                const iframe = $('#iframe-preview-video');
+
+                if (embedUrl) {
+                    placeholder.addClass('d-none');
+                    iframe.removeClass('d-none').attr('src', embedUrl);
+                } else {
+                    iframe.addClass('d-none').attr('src', '');
+                    placeholder.removeClass('d-none');
+                }
+            }
+
+            $('#video_url').on('input', function() {
+                clearTimeout(timeoutVideo);
+                const val = $(this).val();
+                timeoutVideo = setTimeout(function() {
+                    actualizarPreviewVideo(val);
+                }, 400);
+            });
+
+            // Estado inicial al cargar
+            actualizarTipoContenido();
+
             // Alternar visualización de fecha fin
             $('#visualizar_siempre').on('change', function() {
                 if ($(this).is(':checked')) {
@@ -228,12 +298,24 @@
         <div class="row mt-10">
             <div class="col col-md-4 col-12 mb-4">
                 <div class="card mb-4 shadow-sm h-100">
-                    <h5 class="card-header text-black fw-semibold">
-                        Imagen
-                    </h5>
+                    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2 pb-2">
+                        <h5 class="text-black fw-semibold mb-0">Contenido</h5>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Tipo de contenido">
+                            <input type="radio" class="btn-check" name="tipo_contenido" id="tipo_imagen" value="imagen" {{ old('tipo_contenido', 'imagen') === 'imagen' ? 'checked' : '' }} autocomplete="off">
+                            <label class="btn btn-outline-primary" for="tipo_imagen">
+                                <i class="ti ti-photo me-1"></i> Imagen
+                            </label>
+
+                            <input type="radio" class="btn-check" name="tipo_contenido" id="tipo_video" value="video" {{ old('tipo_contenido') === 'video' ? 'checked' : '' }} autocomplete="off">
+                            <label class="btn btn-outline-primary" for="tipo_video">
+                                <i class="ti ti-video me-1"></i> Video
+                            </label>
+                        </div>
+                    </div>
 
                     <div class="card-body">
-                        <div class="row">
+                        <!-- SECCIÓN IMAGEN -->
+                        <div id="seccion-imagen" class="row">
                             <div class="mb-3 col-md-12 d-flex justify-content-center align-items-center flex-column">
                                 <div class="position-relative d-inline-block">
                                     <img id="preview-foto"
@@ -247,7 +329,36 @@
                                     </button>
                                 </div>
                                 <input type="hidden" id="imagen-recortada" name="imagen_base64">
-                                <small class="d-block mt-3 text-center">Relación de aspecto recomendada 9:16</small>
+                                <small class="d-block mt-3 text-center text-muted">Relación de aspecto recomendada 9:16</small>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN VIDEO -->
+                        <div id="seccion-video" class="d-none">
+                            <div class="mb-3">
+                                <label for="video_url" class="form-label text-black fw-medium">URL Video (YouTube / Vimeo)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="ti ti-brand-youtube"></i></span>
+                                    <input type="url" class="form-control" id="video_url" name="video_url" 
+                                           placeholder="https://www.youtube.com/watch?v=..." 
+                                           value="{{ old('video_url') }}">
+                                </div>
+                                <small class="text-muted d-block mt-1">Soporta videos normales de YouTube, Shorts y Vimeo.</small>
+                            </div>
+
+                            <div class="d-flex justify-content-center align-items-center flex-column mt-3">
+                                <div class="position-relative w-100 rounded border shadow-sm overflow-hidden bg-black d-flex align-items-center justify-content-center"
+                                     style="width: 200px; max-width: 200px; aspect-ratio: 9/16;" id="contenedor-preview-video">
+                                    
+                                    <div id="video-preview-placeholder" class="text-center p-3 text-white">
+                                        <i class="ti ti-video mb-2 d-block opacity-75" style="font-size: 2.5rem;"></i>
+                                        <p class="mb-0 text-white-50" style="font-size: 0.8rem;">Pega la URL arriba para ver la previsualización</p>
+                                    </div>
+
+                                    <iframe id="iframe-preview-video" class="w-100 h-100 d-none" 
+                                            src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+                                </div>
+                                <small class="d-block mt-2 text-center text-muted">Previsualización (9:16)</small>
                             </div>
                         </div>
                     </div>

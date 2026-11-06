@@ -817,10 +817,7 @@ use Carbon\Carbon;
         <div class="user-profile-header d-flex flex-column flex-md-row text-md-start text-center mb-8 mx-5">
 
           <div class="flex-shrink-0 mt-n2 mx-0 mx-auto">
-            <div class="card rounded-pill icon-card text-center mb-0 mx-3 p-2" style="background-color: {{ $grupo->tipoGrupo->color }}">
-              <div class="card-body text-white"> <i class="ti ti-users-group ti-xl"></i>
-              </div>
-            </div>
+            @include('contenido.paginas.grupos.partials.header-icono-grupo')
           </div>
 
           <div class="flex-grow-1 mt-3 mt-md-5">

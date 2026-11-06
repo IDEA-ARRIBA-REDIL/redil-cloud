@@ -373,8 +373,9 @@ $configData = Helper::appClasses();
         <div class="card-body">
 
           <div class="d-flex my-2 mb-5">
-            @if( isset($grupo->ultimoReporteDelGrupo()->id) )
-              <span class="badge rounded-pill bg-label-primary me-1"> <b>Último reporte:</b> {{ $grupo->ultimoReporteDelGrupo()->fecha }}</span>
+            @php($ultimoReporteDelGrupo = $grupo->ultimoReporteDelGrupo())
+            @if( isset($ultimoReporteDelGrupo->id) )
+              <span class="badge rounded-pill bg-label-primary me-1"> <b>Último reporte:</b> {{ $ultimoReporteDelGrupo->fecha }}</span>
               @if($grupo->alDia())
               <span class="badge rounded-pill bg-label-success">Al día </span>
               @endif
@@ -396,7 +397,7 @@ $configData = Helper::appClasses();
               <i class="ti ti-users-group text-black"></i>
               <div class="d-flex flex-column">
                 <small class="text-black ms-1">Integrantes</small>
-                <small class="fw-semibold ms-1 text-black ">{{ $grupo->asistentes()->select('users.id')->count() }}</small>
+                <small class="fw-semibold ms-1 text-black ">{{ $grupo->asistentes_count }}</small>
               </div>
             </div>
           </div>
@@ -413,8 +414,9 @@ $configData = Helper::appClasses();
 
           <div class="d-flex flex-column mb-3">
             <span class="fw-bold text-black">Encargados</span>
-            @if($grupo->encargadosDirectos()->count() > 0)
-              @foreach($grupo->encargadosDirectos() as $encargado)
+            @php($encargadosDirectos = $grupo->encargadosDirectos())
+            @if($encargadosDirectos->isNotEmpty())
+              @foreach($encargadosDirectos as $encargado)
               <div class="d-flex flex-row">
                   <i class="{{ $encargado->icono }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $encargado->tipo_usuario }}"></i>
                 <div class="d-flex flex-column">
@@ -432,21 +434,22 @@ $configData = Helper::appClasses();
           </div>
 
         </div>
+        @php($procesoReporte = $grupo->varificarProcesoReporte())
         <div class="card-footer" style="background-color:#ededed!important">
           <div class="d-flex mt-3 ">
 
             <a href="{{ $grupo->dado_baja == 0 && $rolActivo->hasPermissionTo('grupos.opcion_ver_perfil_grupo') ? route('grupo.perfil.estadisticasGrupo', $grupo) : 'javascript:;' }}" class="btn btn-sm rounded-pill w-100 btn-primary waves-effect waves-light mx-1 py-1 fw-light" {{ $grupo->dado_baja == 0 && $rolActivo->hasPermissionTo('grupos.opcion_ver_perfil_grupo') ? '' : 'disabled' }} >Ver más </a>
            
-            @if($grupo->varificarProcesoReporte() == 'botonCrearDeshabilitado' || $grupo->varificarProcesoReporte() == 'botonEditarDeshabilitado')
-              @if($grupo->varificarProcesoReporte() == 'botonCrearDeshabilitado')
+            @if($procesoReporte == 'botonCrearDeshabilitado' || $procesoReporte == 'botonEditarDeshabilitado')
+              @if($procesoReporte == 'botonCrearDeshabilitado')
               <button disabled class=" btn btn-sm rounded-pill w-100 btn-primary waves-effect waves-light mx-1 py-1 fw-light" >Crear reporte </button>
-              @elseif ($grupo->varificarProcesoReporte() == 'botonEditarDeshabilitado')
+              @elseif ($procesoReporte == 'botonEditarDeshabilitado')
               <button disabled class=" btn btn-sm rounded-pill w-100 btn-primary waves-effect waves-light mx-1 py-1 fw-light">Editar reporte </button>
               @endif
             @else
-              @if($grupo->varificarProcesoReporte() == 'botonCrearReporte' &&  $rolActivo->hasPermissionTo('reportes_grupos.subitem_nuevo_reporte_grupo'))
+              @if($procesoReporte == 'botonCrearReporte' &&  $rolActivo->hasPermissionTo('reportes_grupos.subitem_nuevo_reporte_grupo'))
               <button data-id="{{ $grupo->id }}" data-fecha-automatica="{{ $grupo->verificaFechaAutomaticaReporte() }}" class="btnModalNuevoReporte btn btn-sm rounded-pill w-100 btn-primary waves-effect waves-light mx-1 py-1 fw-light" >Crear reporte </button>
-              @elseif ($grupo->varificarProcesoReporte() == 'botonEditarReporte' && $rolActivo->hasPermissionTo('reportes_grupos.opcion_actualizar_reporte_grupo'))
+              @elseif ($procesoReporte == 'botonEditarReporte' && $rolActivo->hasPermissionTo('reportes_grupos.opcion_actualizar_reporte_grupo'))
               <a href="{{ route('reporteGrupo.asistencia', $grupo->ultimoReporteDelGrupo()->id ) }}" class="btn btn-sm rounded-pill w-100 btn-primary waves-effect waves-light mx-1 py-1 fw-light">Editar reporte </a>
               @endif
             @endif

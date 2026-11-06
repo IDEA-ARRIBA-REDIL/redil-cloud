@@ -12,6 +12,7 @@ $rolActivo = auth()->user()->roles()->where('activo', true)->first();
         <a href="{{ url('/') }}" class="app-brand-link">
             <span class="app-brand-logo demo p-0">
                 @include('_partials.macros', [
+                        'contexto_logo' => 'menu_escuelas',
                 'height' => '40px',
                 'width' => '40px',
                 'fill' => '#3772e4',

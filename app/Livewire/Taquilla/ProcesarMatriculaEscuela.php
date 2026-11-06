@@ -7,6 +7,7 @@ use App\Models\Actividad;
 use App\Models\ActividadCategoria;
 use App\Models\Caja;
 use App\Models\Compra;
+use App\Models\EstadoPago;
 use App\Models\HorarioMateriaPeriodo; // Importación agregada
 use App\Models\Inscripcion;
 use App\Models\Matricula;
@@ -16,6 +17,7 @@ use App\Models\Pago;
 use App\Models\Sede;
 use App\Models\TipoPago;
 use App\Models\User;
+use App\Services\EstadoFinancieroService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -109,10 +111,16 @@ class ProcesarMatriculaEscuela extends Component
      */
     public function mount(User $comprador, User $usuario, Actividad $actividad, Caja $cajaActiva, ActividadCategoria $categoria, Moneda $moneda)
     {
+        $this->cajaActiva = $cajaActiva;
+
+        // 0. Validar operatividad y horario de la caja
+        if (! $this->cajaActiva->puedeOperar()) {
+            return redirect()->route('taquilla.operar', $this->cajaActiva);
+        }
+
         $this->comprador = $comprador;
         $this->inscrito = $usuario; // Asigna el 'usuario' entrante a la propiedad 'inscrito'
         $this->actividad = $actividad;
-        $this->cajaActiva = $cajaActiva;
         $this->categoria = $categoria;
         $this->moneda = $moneda;
 
@@ -213,6 +221,14 @@ class ProcesarMatriculaEscuela extends Component
      */
     public function anadirPago()
     {
+        // 0. Validar operatividad y horario de la caja
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+
+            return;
+        }
+
         $valor = floatval($this->nuevoPagoValor);
 
         // Validaciones de valor (sin cambios)
@@ -282,6 +298,14 @@ class ProcesarMatriculaEscuela extends Component
      */
     public function confirmarMatricula()
     {
+        // 0. Validar operatividad y horario de la caja
+        if (! $this->cajaActiva->puedeOperar()) {
+            $mensaje = $this->cajaActiva->obtenerMensajeFueraDeHorario() ?? 'La caja no se encuentra habilitada para operar en este momento.';
+            $this->dispatch('notificacion', tipo: 'error', titulo: 'Operación no permitida', mensaje: $mensaje);
+
+            return;
+        }
+
         // 1. Validaciones
         $this->validate();
         $this->validarCamposAdicionales();
@@ -361,18 +385,35 @@ class ProcesarMatriculaEscuela extends Component
                 'json_campos_adicionales' => json_encode($this->camposAdicionales),
             ]);
 
-            // 7. Crear la Matrícula (¡A nombre del INSCRITO!)
+            // 7. Determinar estado de pago aprobado según el método seleccionado
+            $finanzas = app(EstadoFinancieroService::class);
+            $primerTipoPagoId = ! empty($this->pagos) ? (int) $this->pagos[0]['tipo_pago_id'] : null;
+            $estadoPagoMatriculaId = null;
+            if ($primerTipoPagoId) {
+                try {
+                    $estadoPagoMatriculaId = $finanzas->estadoAprobado($primerTipoPagoId)->id;
+                } catch (\Throwable) {
+                    $estadoPago = EstadoPago::where('tipo_pago_id', $primerTipoPagoId)
+                        ->where('estado_final_inscripcion', true)
+                        ->first();
+                    $estadoPagoMatriculaId = $estadoPago?->id ?? null;
+                }
+            }
+
+            // Crear la Matrícula (¡A nombre del INSCRITO!)
             $matricula = Matricula::create([
                 'user_id' => $this->inscrito->id, // <-- CORREGIDO
                 'periodo_id' => $periodo->id,
                 'horario_materia_periodo_id' => $horario->id,
                 'referencia_pago' => $compra->id,
+                'compra_id' => $compra->id,
                 'estado_pago_matricula' => 'pagado',
+                'estado_pago_id' => $estadoPagoMatriculaId,
                 'fecha_matricula' => now()->toDateString(),
                 'valor_a_pagar' => $this->precioTotal,
                 'valor_pagado' => $this->precioTotal,
                 'fecha_pago' => now(),
-                'tipo_pago_id' => $this->pagos[0]['tipo_pago_id'] ?? null,
+                'tipo_pago_id' => $primerTipoPagoId,
                 'sede_id' => $this->sedeSeleccionada,
                 'material_sede_id' => $this->materialSedeId, //
                 'escuela_id' => $periodo->escuela_id,
@@ -387,12 +428,26 @@ class ProcesarMatriculaEscuela extends Component
                 'estado_aprobacion' => 'cursando',
             ]);
 
+            // 8.1 Aplicar Efectos Académicos de Matrícula (Pasos al iniciar, Tipo usuario inicial)
+            $matricula->aplicarEfectosMatricula();
+
             // 9. Crear los registros de Pagos (divididos)
+            $primerPagoId = null;
             foreach ($this->pagos as $pagoInfo) {
-                Pago::create([
+                $tipoPagoId = (int) $pagoInfo['tipo_pago_id'];
+                try {
+                    $estadoPagoId = $finanzas->estadoAprobado($tipoPagoId)->id;
+                } catch (\Throwable) {
+                    $estadoPago = EstadoPago::where('tipo_pago_id', $tipoPagoId)
+                        ->where('estado_final_inscripcion', true)
+                        ->first();
+                    $estadoPagoId = $estadoPago?->id ?? 3;
+                }
+
+                $pagoCreado = Pago::create([
                     'compra_id' => $compra->id,
-                    'tipo_pago_id' => $pagoInfo['tipo_pago_id'],
-                    'estado_pago_id' => 3,
+                    'tipo_pago_id' => $tipoPagoId,
+                    'estado_pago_id' => $estadoPagoId,
                     'moneda_id' => $this->moneda->id,
                     'valor' => $pagoInfo['valor'],
                     'fecha' => now(),
@@ -401,6 +456,10 @@ class ProcesarMatriculaEscuela extends Component
                     'codigo_vaucher' => $pagoInfo['codigo_vaucher'] ?? null,
                 ]);
 
+                if (! $primerPagoId) {
+                    $primerPagoId = $pagoCreado->id;
+                }
+
                 // Actualizar acumulado en caja si aplica
                 $tipoPago = TipoPago::find($pagoInfo['tipo_pago_id']);
                 if ($tipoPago && $tipoPago->tiene_limite_dinero_acumulado) {
@@ -408,6 +467,10 @@ class ProcesarMatriculaEscuela extends Component
                     $this->cajaActiva->dinero_acumulado = ($this->cajaActiva->dinero_acumulado ?? 0) + $pagoInfo['valor'];
                     $this->cajaActiva->save();
                 }
+            }
+
+            if ($primerPagoId) {
+                $matricula->update(['pago_id' => $primerPagoId]);
             }
 
             // 10. Actualizar Cupos

@@ -8,6 +8,7 @@ use App\Helpers\Helpers;
 use App\Models\Barrio;
 use App\Models\BitacoraEstadoCivil;
 use App\Models\Configuracion;
+use App\Models\Localidad;
 use App\Models\Matricula;
 use App\Models\Sede;
 use App\Models\SedeDestinatario;
@@ -106,6 +107,7 @@ class SedeController extends Controller
         $rolActivo->verificacionDelPermiso('sedes.subitem_nueva_sede');
         $configuracion = Configuracion::find(1);
         $tiposSedes = TipoSede::orderBy('id', 'asc')->get();
+        $localidades = Localidad::with('municipio')->orderBy('nombre', 'asc')->get();
 
         return view(
             'contenido.paginas.sedes.nueva',
@@ -113,6 +115,7 @@ class SedeController extends Controller
                 'rolActivo' => $rolActivo,
                 'tiposSedes' => $tiposSedes,
                 'configuracion' => $configuracion,
+                'localidades' => $localidades,
             ]
         );
     }
@@ -185,6 +188,10 @@ class SedeController extends Controller
         $sede->barrio_auxiliar = $request->barrio_auxiliar;
 
         if ($sede->save()) {
+            if ($request->has('localidades')) {
+                $sede->localidades()->sync($request->localidades ?? []);
+            }
+
             if ($request->foto) {
                 $imagenPartes = explode(';base64,', $request->foto);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
@@ -206,6 +213,8 @@ class SedeController extends Controller
         $this->authorize('modificar', $sede);
         $configuracion = Configuracion::find(1);
         $tiposSedes = TipoSede::orderBy('id', 'asc')->get();
+        $localidades = Localidad::with('municipio')->orderBy('nombre', 'asc')->get();
+        $localidadesSeleccionadas = $sede->localidades->pluck('id')->toArray();
 
         return view(
             'contenido.paginas.sedes.modificar',
@@ -213,6 +222,8 @@ class SedeController extends Controller
                 'sede' => $sede,
                 'tiposSedes' => $tiposSedes,
                 'configuracion' => $configuracion,
+                'localidades' => $localidades,
+                'localidadesSeleccionadas' => $localidadesSeleccionadas,
             ]
         );
     }
@@ -296,6 +307,7 @@ class SedeController extends Controller
         }
 
         $sede->save();
+        $sede->localidades()->sync($request->localidades ?? []);
 
         return back()->with('success', 'La sede <b>'.$sede->nombre.'</b> fue actualizada con éxito.');
     }
@@ -439,6 +451,7 @@ class SedeController extends Controller
         }
 
         $sede->resetearSede($sedeDestino->id);
+        $sede->localidades()->detach();
         $sede->delete();
 
         return redirect()->route('sede.lista')->with('success', 'La sede <b>'.$sede->nombre.'</b> fue eliminada con éxito y sus datos fueron trasladados a <b>'.$sedeDestino->nombre.'</b>.');

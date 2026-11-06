@@ -125,10 +125,14 @@
                         <div class="d-flex align-items-start justify-content-between">
                             <div class="d-flex flex-column">
                                 <h5 class="mb-0 fw-semibold text-black lh-sm"
-                                    title="{{ $modificacion->usuarioAfectado->nombre(3) ?? 'Usuario Desconocido' }}">
-                                    {{ $modificacion->usuarioAfectado->nombre(3) ?? 'Usuario Desconocido' }}
+                                    title="{{ $modificacion->usuarioAfectado?->nombre(3) ?? 'Usuario Desconocido' }}">
+                                    {{ $modificacion->usuarioAfectado?->nombre(3) ?? 'Usuario Desconocido' }}
                                 </h5>
-                                 <small class="text-dark mt-1">{{ $modificacion->usuarioAfectado->tipoIdentificacion->nombre ?? 'N/A' }} - {{ $modificacion->usuarioAfectado->identificacion ?? 'N/A' }}</small>
+                                @if($modificacion->usuarioAfectado)
+                                    <small class="text-dark mt-1">{{ $modificacion->usuarioAfectado->tipoIdentificacion?->nombre ?? 'N/A' }} - {{ $modificacion->usuarioAfectado->identificacion ?? 'N/A' }}</small>
+                                @else
+                                    <small class="text-muted mt-1">Identificación no disponible</small>
+                                @endif
                             </div>
                             <div class="d-flex flex-column">
                                 <h5 class="mb-0 fw-semibold text-black lh-sm">Compra</h5>
@@ -146,13 +150,13 @@
                             <div class="d-flex flex-row mt-3">
                             <div class="d-flex flex-column col-12 col-md-6">
                                 <small class="text-dark"><i class="ti ti-calendar me-2"></i>Fecha Modificación:</small>
-                                <small class="fw-semibold text-black">{{ $modificacion->created_at->format('d-m-Y h:i A') }}</small>
+                                <small class="fw-semibold text-black">{{ $modificacion->created_at?->format('d-m-Y h:i A') ?? 'N/A' }}</small>
 
                             </div>
                             <div class="d-flex flex-column col-12 col-md-6">
                                 <small class="text-dark"><i class="ti ti-calendar-event me-2"></i>Fecha Compra:</small>
                                 <small class="fw-semibold text-black">
-                                    {{ $modificacion->created_at->format('d-m-Y') }}
+                                    {{ $modificacion->compra?->created_at?->format('d-m-Y') ?? ($modificacion->created_at?->format('d-m-Y') ?? 'N/A') }}
                                 </small>
                             </div>
                         </div>
@@ -161,13 +165,13 @@
                             <div class="d-flex flex-column col-12 col-md-6">
                                 <small class="text-dark"><i class="ti ti-box me-2"></i>Caja:</small>
                                 <small class="fw-semibold text-black">
-                                    {{ $modificacion->caja->nombre ?? 'N/A' }}
+                                    {{ $modificacion->caja?->nombre ?? 'N/A' }}
                                 </small>
                             </div>
                             <div class="d-flex flex-column col-12 col-md-6">
                                 <small class="text-dark"><i class="ti ti-user me-2"></i>Asesor:</small>
                                 <small class="fw-semibold text-black">
-                                    {{ $modificacion->caja->usuario->nombre(3) ?? 'N/A' }}
+                                    {{ $modificacion->asesor?->nombre(3) ?? ($modificacion->caja?->usuario?->nombre(3) ?? 'N/A') }}
                                 </small>
                             </div>
                         </div>
@@ -175,14 +179,14 @@
                                 <div class="d-flex flex-column col-12 col-md-6">
                                     <small class="text-dark"><i class="ti ti-activity me-2"></i>Actividad:</small>
                                     <small class="fw-semibold text-black"
-                                        title="{{ $modificacion->actividad->nombre ?? 'N/A' }}">
-                                        {{ $modificacion->actividad->nombre ?? 'N/A' }}
+                                        title="{{ $modificacion->actividad?->nombre ?? 'N/A' }}">
+                                        {{ $modificacion->actividad?->nombre ?? 'N/A' }}
                                     </small>
                                 </div>
                                 <div class="d-flex flex-column col-12 col-md-6">
                                     <small class="text-dark"><i class="ti ti-currency-dollar me-2"></i>Valor:</small>
                                     <small class="fw-semibold text-black">
-                                        ${{ number_format($modificacion->valor, 0, ',', '.') }}
+                                        ${{ number_format($modificacion->valor ?? 0, 0, ',', '.') }}
                                     </small>
                                 </div>
                             </div>

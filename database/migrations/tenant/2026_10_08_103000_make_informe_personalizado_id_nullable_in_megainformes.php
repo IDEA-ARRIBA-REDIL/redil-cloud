@@ -2,58 +2,56 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        // 1. secciones_informes: eliminar informe_personalizado_id
-        if (Schema::hasTable('secciones_informes') && Schema::hasColumn('secciones_informes', 'informe_personalizado_id')) {
-            Schema::table('secciones_informes', function (Blueprint $table) {
-                $table->dropColumn('informe_personalizado_id');
-            });
+        if (! Schema::hasTable('informes') || ! Schema::hasTable('informes_personalizados')) {
+            return;
         }
 
-        // 2. bloques_informes: eliminar informe_personalizado_id
-        if (Schema::hasTable('bloques_informes') && Schema::hasColumn('bloques_informes', 'informe_personalizado_id')) {
-            Schema::table('bloques_informes', function (Blueprint $table) {
-                $table->dropColumn('informe_personalizado_id');
-            });
-        }
+        DB::transaction(function (): void {
+            if (! Schema::hasColumn('informes', 'informe_personalizado_origen_id')) {
+                Schema::table('informes', function (Blueprint $table): void {
+                    $table->unsignedBigInteger('informe_personalizado_origen_id')->nullable()->unique();
+                });
+            }
+            $tablas = array_filter(['secciones_informes', 'bloques_informes', 'informes_en_cola'],
+                fn (string $tabla): bool => Schema::hasTable($tabla) && Schema::hasColumn($tabla, 'informe_personalizado_id'));
+            $columnas = array_flip(Schema::getColumnListing('informes'));
 
-        // 3. informes_en_cola: eliminar informe_personalizado_id
-        if (Schema::hasTable('informes_en_cola') && Schema::hasColumn('informes_en_cola', 'informe_personalizado_id')) {
-            Schema::table('informes_en_cola', function (Blueprint $table) {
-                $table->dropColumn('informe_personalizado_id');
-            });
-        }
+            foreach (DB::table('informes_personalizados')->orderBy('id')->get() as $origen) {
+                $destino = DB::table('informes')->where('informe_personalizado_origen_id', $origen->id)->value('id');
+                if (! $destino) {
+                    $datos = array_intersect_key((array) $origen, $columnas);
+                    unset($datos['id']);
+                    $datos['informe_personalizado_origen_id'] = $origen->id;
+                    $datos['usa_plantilla'] = true;
+                    $datos['link'] = 'informes-personalizados.mega-informe.show';
+                    $datos['add_id_a_la_url'] = true;
+                    $destino = DB::table('informes')->insertGetId($datos);
+                }
+                foreach ($tablas as $tabla) {
+                    $relaciones = DB::table($tabla)->where('informe_personalizado_id', $origen->id);
+                    if ((clone $relaciones)->whereNotNull('informe_id')->where('informe_id', '!=', $destino)->exists()) {
+                        throw new RuntimeException("La relación de {$tabla} requiere revisión antes de unificar informes.");
+                    }
+                    $relaciones->whereNull('informe_id')->update(['informe_id' => $destino]);
+                }
+            }
+            foreach ($tablas as $tabla) {
+                Schema::table($tabla, function (Blueprint $table): void {
+                    $table->unsignedBigInteger('informe_personalizado_id')->nullable()->change();
+                });
+            }
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        if (Schema::hasTable('secciones_informes') && ! Schema::hasColumn('secciones_informes', 'informe_personalizado_id')) {
-            Schema::table('secciones_informes', function (Blueprint $table) {
-                $table->unsignedBigInteger('informe_personalizado_id')->nullable();
-            });
-        }
-
-        if (Schema::hasTable('bloques_informes') && ! Schema::hasColumn('bloques_informes', 'informe_personalizado_id')) {
-            Schema::table('bloques_informes', function (Blueprint $table) {
-                $table->unsignedBigInteger('informe_personalizado_id')->nullable();
-            });
-        }
-
-        if (Schema::hasTable('informes_en_cola') && ! Schema::hasColumn('informes_en_cola', 'informe_personalizado_id')) {
-            Schema::table('informes_en_cola', function (Blueprint $table) {
-                $table->unsignedBigInteger('informe_personalizado_id')->nullable();
-            });
-        }
+        // La reversión conserva las referencias antiguas y nuevas para no perder informes.
     }
 };

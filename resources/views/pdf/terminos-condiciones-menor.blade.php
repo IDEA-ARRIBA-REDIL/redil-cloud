@@ -314,7 +314,7 @@
             </td>
             <td class="signature-cell">
                 <div class="signature-line">
-                    {{ $iglesia->nombre ?? 'Administración' }}
+                    {{ $iglesia->nombre ?? 'Iglesia' }}
                 </div>
                 <div class="signature-role">
                     Fecha y Hora: {{ $fechaAceptacion }}
@@ -324,7 +324,7 @@
     </table>
 
     <div class="footer-note">
-        Este documento es un comprobante de aceptación electrónica emitido por {{ config('app.name', 'REDIL Cloud') }} en la fecha {{ $fechaAceptacion }}.
+        Este documento es un comprobante de aceptación electrónica emitido por {{ $iglesia->nombre ?? 'Iglesia' }} en la fecha {{ $fechaAceptacion }}.
     </div>
 
 </body>

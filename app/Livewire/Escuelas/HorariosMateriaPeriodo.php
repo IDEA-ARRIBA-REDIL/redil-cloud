@@ -1,46 +1,63 @@
 <?php
 
-namespace App\Livewire\Escuelas; // O el namespace correcto que estés usando, ej: App\Http\Livewire\Escuelas
+namespace App\Livewire\Escuelas;
 
-use Livewire\Component;
-use Livewire\WithPagination;
-use App\Models\MateriaPeriodo as ModeloMateriaPeriodo;
+use App\Models\Aula;
+use App\Models\CortePeriodo;
 use App\Models\HorarioBase;
 use App\Models\HorarioMateriaPeriodo as ModeloHorarioMateriaPeriodo;
-use App\Models\Aula;
+use App\Models\ItemCorteMateriaPeriodo;
+use App\Models\ItemPlantilla;
+use App\Models\MateriaPeriodo as ModeloMateriaPeriodo;
+use App\Models\Matricula;
+use App\Models\MatriculaHorarioMateriaPeriodo;
 use App\Models\Sede;
 use App\Models\TipoAula;
-use App\Models\CortePeriodo;
-use App\Models\Periodo;
-use App\Models\ItemPlantilla;
-use App\Models\ItemCorteMateriaPeriodo;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection; // Para tipar explícitamente
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class HorariosMateriaPeriodo extends Component
 {
     use WithPagination;
 
+    protected $paginationTheme = 'bootstrap';
+
     public ModeloMateriaPeriodo $materiaPeriodo; // Instancia del modelo MateriaPeriodo actual
+
     public $sedes; // Colección de todas las Sede
+
     public $tiposAula; // Colección de todos los TipoAula
 
     // Para el formulario de NUEVO HorarioMateriaPeriodo
     public $sede_id_formulario = '';         // Sede seleccionada
+
     public $aula_id_formulario = '';         // Aula seleccionada
+
     public EloquentCollection $aulas_formulario; // Aulas disponibles para la sede seleccionada
+
     public EloquentCollection $horarios_base_formulario; // HorariosBase disponibles para el aula y materia
-    public $horario_base_id_seleccionado = ''; // HorarioBase ID seleccionado
+
+    public $horario_base_id_seleccionado = ''; // Compatibilidad legado
+
+    public array $horarios_base_seleccionados = []; // Selección múltiple de HorarioBase IDs
 
     // Campos específicos del HorarioMateriaPeriodo que se está creando o editando (capacidad)
     public $hmp_habilitado = true;
+
     public $hmp_fecha_inicio_habilitado = '';
+
     public $hmp_fecha_fin_habilitado = '';
+
     public $hmp_capacidad = 0;
+
     public $hmp_capacidad_limite = 0;
+
     public $hmp_ampliar_cupos_limite = false;
+
     public $hmp_cupos_disponibles_calculado = 0; // Para mostrar, no para guardar directamente
 
     // Para el formulario de EDICIÓN (solo capacidad)
@@ -48,14 +65,20 @@ class HorariosMateriaPeriodo extends Component
 
     // Propiedades para mostrar información del HorarioBase en el formulario de edición (no son editables)
     public $display_hb_dia = '';
+
     public $display_hb_hora_inicio = '';
+
     public $display_hb_hora_fin = '';
+
     public $display_hb_aula_nombre = '';
+
     public $display_hb_sede_nombre = '';
+
     public $display_hb_capacidad_base = 0;
 
     // Filtros para la lista principal
     public $tipoAulaFiltro = '';
+
     public $sedeFiltro = '';
 
     public function getHayFiltrosProperty()
@@ -65,7 +88,6 @@ class HorariosMateriaPeriodo extends Component
 
     protected $listeners = [
         'resetearFormularioHorarioMP' => 'resetearFormulario',
-        // 'filtrosActualizadosHorarioMP' => '$refresh' // $refresh es un método mágico de Livewire
     ];
 
     protected function rules()
@@ -77,16 +99,16 @@ class HorariosMateriaPeriodo extends Component
                 'hmp_ampliar_cupos_limite' => 'required|boolean',
             ];
         }
-        // Reglas para Crear un nuevo HorarioMateriaPeriodo
+
+        // Reglas para Crear uno o varios HorarioMateriaPeriodo
         return [
             'sede_id_formulario' => 'required|exists:sedes,id',
             'aula_id_formulario' => 'required|exists:aulas,id',
-            'horario_base_id_seleccionado' => 'required|exists:horarios_base,id',
+            'horarios_base_seleccionados' => 'required|array|min:1',
+            'horarios_base_seleccionados.*' => 'exists:horarios_base,id',
             'hmp_habilitado' => 'required|boolean',
             'hmp_fecha_inicio_habilitado' => 'nullable|date_format:Y-m-d',
             'hmp_fecha_fin_habilitado' => 'nullable|date_format:Y-m-d|after_or_equal:hmp_fecha_inicio_habilitado',
-            'hmp_capacidad' => 'required|integer|min:0',
-            'hmp_capacidad_limite' => 'required|integer|min:0|gte:hmp_capacidad',
             'hmp_ampliar_cupos_limite' => 'required|boolean',
         ];
     }
@@ -94,8 +116,9 @@ class HorariosMateriaPeriodo extends Component
     protected $messages = [
         'sede_id_formulario.required' => 'Debes seleccionar una sede.',
         'aula_id_formulario.required' => 'Debes seleccionar un aula.',
-        'horario_base_id_seleccionado.required' => 'Debes seleccionar un horario base.',
-        'horario_base_id_seleccionado.exists' => 'El horario base seleccionado no es válido o ya está asignado.',
+        'horarios_base_seleccionados.required' => 'Debes seleccionar al menos un horario base.',
+        'horarios_base_seleccionados.min' => 'Debes seleccionar al menos un horario base.',
+        'horarios_base_seleccionados.*.exists' => 'Uno de los horarios base seleccionados no es válido.',
         'hmp_capacidad.required' => 'La capacidad es obligatoria.',
         'hmp_capacidad.integer' => 'La capacidad debe ser un número.',
         'hmp_capacidad.min' => 'La capacidad no puede ser negativa.',
@@ -106,16 +129,16 @@ class HorariosMateriaPeriodo extends Component
 
     public function mount(ModeloMateriaPeriodo $materiaPeriodo)
     {
-      // Cargar las sedes asociadas al PERIODO de esta MateriaPeriodo
+        // Cargar las sedes asociadas al PERIODO de esta MateriaPeriodo
         if ($this->materiaPeriodo->periodo) {
             $this->sedes = $this->materiaPeriodo->periodo->sedes()->orderBy('nombre')->get();
         } else {
-            $this->sedes = new EloquentCollection(); // Vacío si no hay periodo
+            $this->sedes = new EloquentCollection; // Vacío si no hay periodo
             Log::warning("MateriaPeriodo ID {$this->materiaPeriodo->id} no tiene un periodo asociado para cargar sedes.");
         }
         $this->tiposAula = TipoAula::orderBy('nombre')->get();
-        $this->aulas_formulario = new EloquentCollection();
-        $this->horarios_base_formulario = new EloquentCollection();
+        $this->aulas_formulario = new EloquentCollection;
+        $this->horarios_base_formulario = new EloquentCollection;
         $this->inicializarFechasHabilitacion();
     }
 
@@ -131,22 +154,22 @@ class HorariosMateriaPeriodo extends Component
         }
     }
 
-
     public function updatedSedeIdFormulario($sedeId)
     {
-        if (!empty($sedeId)) {
+        if (! empty($sedeId)) {
             $this->aulas_formulario = Aula::where('sede_id', $sedeId)->orderBy('nombre')->get();
         } else {
-            $this->aulas_formulario = new EloquentCollection();
+            $this->aulas_formulario = new EloquentCollection;
         }
         $this->aula_id_formulario = ''; // Resetear aula
-        $this->horarios_base_formulario = new EloquentCollection();
-        $this->horario_base_id_seleccionado = ''; // Resetear horario base
+        $this->horarios_base_formulario = new EloquentCollection;
+        $this->horario_base_id_seleccionado = '';
+        $this->horarios_base_seleccionados = [];
     }
 
     public function updatedAulaIdFormulario($aulaId)
     {
-        if (!empty($aulaId) && $this->materiaPeriodo->materia_id) {
+        if (! empty($aulaId) && $this->materiaPeriodo->materia_id) {
             $horariosBaseYaAsignadosIds = ModeloHorarioMateriaPeriodo::where('materia_periodo_id', $this->materiaPeriodo->id)
                 ->pluck('horario_base_id')->toArray();
 
@@ -155,37 +178,42 @@ class HorariosMateriaPeriodo extends Component
                 ->where('activo', true)
                 ->whereNotIn('id', $horariosBaseYaAsignadosIds)
                 ->with(['aula.sede']) // Eager load para display_info
+                ->orderBy('dia')
+                ->orderBy('hora_inicio')
                 ->get()
                 ->map(function ($hb) {
                     $diaSemana = $hb->dia_semana ?? "Día {$hb->dia}";
                     $horaInicio = $hb->hora_inicio_formato ?? $hb->hora_inicio;
                     $horaFin = $hb->hora_fin_formato ?? $hb->hora_fin;
                     $hb->display_info = "{$diaSemana} {$horaInicio}-{$horaFin} | Cap.Base: {$hb->capacidad}";
+
                     return $hb;
                 });
         } else {
-            $this->horarios_base_formulario = new EloquentCollection();
+            $this->horarios_base_formulario = new EloquentCollection;
         }
-        $this->horario_base_id_seleccionado = ''; // Resetear horario base
+        $this->horario_base_id_seleccionado = '';
+        $this->horarios_base_seleccionados = [];
     }
 
     /**
-     * Cuando se selecciona un HorarioBase, actualiza los campos de capacidad en el formulario.
+     * Alterna la selección de todos los horarios base disponibles para el aula actual.
      */
-    public function updatedHorarioBaseIdSeleccionado($horarioBaseId)
+    public function toggleSeleccionarTodosHorariosBase(): void
     {
-        if (!empty($horarioBaseId)) {
-            $horarioBase = HorarioBase::find($horarioBaseId);
-            if ($horarioBase) {
-                $this->hmp_capacidad = $horarioBase->capacidad;
-                $this->hmp_capacidad_limite = $horarioBase->capacidad_limite > $horarioBase->capacidad ? $horarioBase->capacidad_limite : $horarioBase->capacidad + 10; // Default si es menor
-            }
+        $todosIds = $this->horarios_base_formulario
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->toArray();
+
+        $seleccionadosActuales = array_map('strval', $this->horarios_base_seleccionados);
+
+        if (count($todosIds) > 0 && count($seleccionadosActuales) === count($todosIds)) {
+            $this->horarios_base_seleccionados = [];
         } else {
-             $this->hmp_capacidad = 0;
-             $this->hmp_capacidad_limite = 0;
+            $this->horarios_base_seleccionados = $todosIds;
         }
     }
-
 
     public function abrirFiltros()
     {
@@ -206,9 +234,9 @@ class HorariosMateriaPeriodo extends Component
             $sede = $this->sedes->firstWhere('id', $this->sedeFiltro);
             if ($sede) {
                 $tags[] = [
-                    'label' => 'Sede: ' . $sede->nombre,
+                    'label' => 'Sede: '.$sede->nombre,
                     'field' => 'sedeFiltro',
-                    'value' => $this->sedeFiltro
+                    'value' => $this->sedeFiltro,
                 ];
             }
         }
@@ -217,9 +245,9 @@ class HorariosMateriaPeriodo extends Component
             $tipo = $this->tiposAula->firstWhere('id', $this->tipoAulaFiltro);
             if ($tipo) {
                 $tags[] = [
-                    'label' => 'Tipo Aula: ' . $tipo->nombre,
+                    'label' => 'Tipo Aula: '.$tipo->nombre,
                     'field' => 'tipoAulaFiltro',
-                    'value' => $this->tipoAulaFiltro
+                    'value' => $this->tipoAulaFiltro,
                 ];
             }
         }
@@ -244,45 +272,88 @@ class HorariosMateriaPeriodo extends Component
 
     public function guardarHorario()
     {
-        $this->validate($this->rules()); // Validar según las reglas (creación o edición)
+        $this->validate($this->rules());
+
+        $idsSeleccionados = array_values(array_unique(array_filter($this->horarios_base_seleccionados)));
+        if (empty($idsSeleccionados)) {
+            $this->addError('horarios_base_seleccionados', 'Debes seleccionar al menos un horario base.');
+
+            return;
+        }
 
         DB::beginTransaction();
         try {
-            $existente = ModeloHorarioMateriaPeriodo::where('materia_periodo_id', $this->materiaPeriodo->id)
-                ->where('horario_base_id', $this->horario_base_id_seleccionado)
-                ->first();
+            $creadosCount = 0;
 
-            if ($existente) {
+            foreach ($idsSeleccionados as $horarioBaseId) {
+                // 1. Verificar que no esté ya vinculado a esta materia en este período
+                $existente = ModeloHorarioMateriaPeriodo::where('materia_periodo_id', $this->materiaPeriodo->id)
+                    ->where('horario_base_id', $horarioBaseId)
+                    ->exists();
+
+                if ($existente) {
+                    continue;
+                }
+
+                // 2. Obtener el HorarioBase para tomar sus capacidades configuradas
+                $horarioBase = HorarioBase::find($horarioBaseId);
+                if (! $horarioBase) {
+                    continue;
+                }
+
+                $capacidad = (int) ($horarioBase->capacidad ?? 0);
+                $capacidadLimite = (int) (($horarioBase->capacidad_limite ?? 0) > $capacidad
+                    ? $horarioBase->capacidad_limite
+                    : $capacidad);
+
+                // 3. Crear el HorarioMateriaPeriodo
+                $horarioMP = new ModeloHorarioMateriaPeriodo;
+                $horarioMP->materia_periodo_id = $this->materiaPeriodo->id;
+                $horarioMP->horario_base_id = $horarioBase->id;
+                $horarioMP->habilitado = $this->hmp_habilitado;
+                $horarioMP->fecha_inicio_habilitado = $this->hmp_fecha_inicio_habilitado ?: null;
+                $horarioMP->fecha_fin_habilitado = $this->hmp_fecha_fin_habilitado ?: null;
+                $horarioMP->capacidad = $capacidad;
+                $horarioMP->capacidad_limite = $capacidadLimite;
+                $horarioMP->ampliar_cupos_limite = $this->hmp_ampliar_cupos_limite;
+                $horarioMP->cupos_disponibles = $this->hmp_ampliar_cupos_limite ? $capacidadLimite : $capacidad;
+                $horarioMP->save();
+
+                // 4. Duplicar los ítems de corte para este nuevo horario
+                $this->duplicarItemsParaHorario($horarioMP);
+                $creadosCount++;
+            }
+
+            if ($creadosCount === 0) {
                 DB::rollBack();
-                session()->flash('mensaje_error_hmp', 'Este horario base ya está asignado a esta materia en este período.');
-                // $this->addError('horario_base_id_seleccionado', 'Este horario base ya está asignado.'); // Para mostrar error en campo
+                $this->dispatch(
+                    'notificacionHMP',
+                    tipo: 'warning',
+                    titulo: 'Sin cambios',
+                    mensaje: 'Los horarios base seleccionados ya estaban asignados a esta materia en este período.'
+                );
+
                 return;
             }
 
-            $horarioMP = new ModeloHorarioMateriaPeriodo();
-            $horarioMP->materia_periodo_id = $this->materiaPeriodo->id;
-            $horarioMP->horario_base_id = $this->horario_base_id_seleccionado;
-            $horarioMP->habilitado = $this->hmp_habilitado;
-            $horarioMP->fecha_inicio_habilitado = $this->hmp_fecha_inicio_habilitado ?: null;
-            $horarioMP->fecha_fin_habilitado = $this->hmp_fecha_fin_habilitado ?: null;
-            $horarioMP->capacidad = $this->hmp_capacidad;
-            $horarioMP->capacidad_limite = $this->hmp_capacidad_limite;
-            $horarioMP->ampliar_cupos_limite = $this->hmp_ampliar_cupos_limite;
-            $horarioMP->cupos_disponibles = $this->hmp_ampliar_cupos_limite ? $this->hmp_capacidad_limite : $this->hmp_capacidad;
-            $horarioMP->save();
-
-            // --- LÓGICA PARA DUPLICAR ITEMS ---
-            $this->duplicarItemsParaHorario($horarioMP);
-            // --- FIN LÓGICA PARA DUPLICAR ITEMS ---
-
             DB::commit();
-            $this->dispatch('cerrarOffcanvas', nombreModal: 'offcanvasNuevoHorarioMP');
-            session()->flash('mensaje_exito_hmp', 'Horario vinculado e ítems de calificación generados correctamente.');
             $this->resetearFormulario();
+            $this->dispatch('cerrarOffcanvas', nombreModal: 'offcanvasNuevoHorarioMP');
+
+            $mensajeExito = $creadosCount === 1
+                ? 'Se vinculó 1 horario y se generaron sus ítems de calificación correctamente.'
+                : "Se vincularon {$creadosCount} horarios y se generaron sus ítems de calificación correctamente.";
+
+            $this->dispatch(
+                'notificacionHMP',
+                tipo: 'success',
+                titulo: '¡Horarios vinculados!',
+                mensaje: $mensajeExito
+            );
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al guardar HorarioMateriaPeriodo y/o duplicar ítems: " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine());
-            session()->flash('mensaje_error_hmp', 'No se pudo vincular el horario. Verifique los datos o contacte soporte. Error: ' . substr($e->getMessage(), 0, 100) . '...');
+            Log::error('Error al guardar HorarioMateriaPeriodo y/o duplicar ítems: '.$e->getMessage().' en '.$e->getFile().':'.$e->getLine());
+            session()->flash('mensaje_error_hmp', 'No se pudo vincular el horario. Verifique los datos o contacte soporte. Error: '.substr($e->getMessage(), 0, 100).'...');
         }
     }
 
@@ -293,24 +364,24 @@ class HorariosMateriaPeriodo extends Component
     {
         $materiaOriginalId = $this->materiaPeriodo->materia_id;
         $periodoActualId = $this->materiaPeriodo->periodo_id;
-        // $escuelaId = $this->materiaPeriodo->materia->escuela_id; // Ya cargado en mount
 
-        if (!$this->materiaPeriodo->materia || !$this->materiaPeriodo->materia->escuela_id) {
+        if (! $this->materiaPeriodo->materia || ! $this->materiaPeriodo->materia->escuela_id) {
             Log::error("No se pudo determinar la escuela para duplicar ítems. HMP ID: {$horarioMP->id}");
-            throw new \Exception("Falta información de la escuela para duplicar ítems.");
+            throw new \Exception('Falta información de la escuela para duplicar ítems.');
         }
         $escuelaId = $this->materiaPeriodo->materia->escuela_id;
 
         $cortesDelPeriodo = CortePeriodo::where('periodo_id', $periodoActualId)
-            ->whereHas('corteEscuela', function ($query) use ($escuelaId) { // Asegurar que el corte plantilla sea de la misma escuela
+            ->whereHas('corteEscuela', function ($query) use ($escuelaId) {
                 $query->where('escuela_id', $escuelaId);
             })
-            ->with('corteEscuela:id,orden') // Necesitamos el corte_escuela_id
+            ->with('corteEscuela:id,orden')
             ->get();
 
         if ($cortesDelPeriodo->isEmpty()) {
             Log::warning("No se encontraron CortePeriodo para el Periodo ID {$periodoActualId} (Escuela ID: {$escuelaId}) para duplicar ítems para HMP ID {$horarioMP->id}.");
-            return; // No es un error fatal, simplemente no hay cortes para procesar.
+
+            return;
         }
 
         $itemsDuplicadosCount = 0;
@@ -325,7 +396,7 @@ class HorariosMateriaPeriodo extends Component
                     'corte_periodo_id' => $cortePeriodo->id,
                     'item_plantilla_id' => $plantilla->id,
                     'tipo_item_id' => $plantilla->tipo_item_id,
-                    'horario_materia_periodo_id' => $horarioMP->id, // ¡Vincular al nuevo HMP!
+                    'horario_materia_periodo_id' => $horarioMP->id,
                     'nombre' => $plantilla->nombre,
                     'contenido' => $plantilla->contenido,
                     'visible' => $plantilla->visible_predeterminado,
@@ -341,15 +412,15 @@ class HorariosMateriaPeriodo extends Component
         Log::info("Total de {$itemsDuplicadosCount} ítems duplicados para HMP ID {$horarioMP->id}.");
     }
 
-
     public function abrirFormularioEditar($horarioMPId)
     {
         $this->resetErrorBag();
         $this->horarioMPEditando = ModeloHorarioMateriaPeriodo::find($horarioMPId);
 
-        if (!$this->horarioMPEditando) {
+        if (! $this->horarioMPEditando) {
             session()->flash('mensaje_error_hmp', 'Error: No se encontró el horario del período para editar.');
             $this->dispatch('cerrarOffcanvas', nombreModal: 'offcanvasEditarHorarioMP');
+
             return;
         }
 
@@ -359,26 +430,26 @@ class HorariosMateriaPeriodo extends Component
             $this->display_hb_dia = $horarioBase->dia_semana ?? "Día {$horarioBase->dia}";
             $this->display_hb_hora_inicio = $horarioBase->hora_inicio_formato ?? $horarioBase->hora_inicio;
             $this->display_hb_hora_fin = $horarioBase->hora_fin_formato ?? $horarioBase->hora_fin;
-            $this->display_hb_aula_nombre = $horarioBase->aula?->nombre ?? 'N/A'; // Null safe operator
-            $this->display_hb_sede_nombre = $horarioBase->aula?->sede?->nombre ?? 'N/A'; // Null safe operator
+            $this->display_hb_aula_nombre = $horarioBase->aula?->nombre ?? 'N/A';
+            $this->display_hb_sede_nombre = $horarioBase->aula?->sede?->nombre ?? 'N/A';
             $this->display_hb_capacidad_base = $horarioBase->capacidad;
         } else {
-            // Manejar el caso en que el horario base no exista (debería ser raro)
             session()->flash('mensaje_error_hmp', 'Advertencia: El horario base asociado a esta configuración no fue encontrado.');
-            $this->display_hb_dia = 'N/A'; /* ... y así para los demás ... */
+            $this->display_hb_dia = 'N/A';
         }
 
         $this->hmp_capacidad = $this->horarioMPEditando->capacidad;
         $this->hmp_capacidad_limite = $this->horarioMPEditando->capacidad_limite;
-        $this->hmp_ampliar_cupos_limite = (bool) $this->horarioMPEditando->ampliar_cupos_limite; // Castear a booleano
+        $this->hmp_ampliar_cupos_limite = (bool) $this->horarioMPEditando->ampliar_cupos_limite;
 
         $this->dispatch('abrirOffcanvas', nombreModal: 'offcanvasEditarHorarioMP');
     }
 
     public function actualizarHorario()
     {
-        if (!$this->horarioMPEditando) {
+        if (! $this->horarioMPEditando) {
             session()->flash('mensaje_error_hmp', 'No hay un horario seleccionado para actualizar.');
+
             return;
         }
         // Validar solo los campos de capacidad para la edición
@@ -394,58 +465,134 @@ class HorariosMateriaPeriodo extends Component
             $this->horarioMPEditando->capacidad_limite = $this->hmp_capacidad_limite;
             $this->horarioMPEditando->ampliar_cupos_limite = $this->hmp_ampliar_cupos_limite;
             $this->horarioMPEditando->cupos_disponibles = $this->hmp_ampliar_cupos_limite ? $this->hmp_capacidad_limite : $this->hmp_capacidad;
-            // Aquí podrías añadir lógica para ajustar cupos_disponibles si ya hay matriculados.
             $this->horarioMPEditando->save();
             DB::commit();
 
             $this->resetearFormulario();
             $this->dispatch('cerrarOffcanvas', nombreModal: 'offcanvasEditarHorarioMP');
-            session()->flash('mensaje_exito_hmp', 'Capacidades del horario actualizadas correctamente.');
+            $this->dispatch(
+                'notificacionHMP',
+                tipo: 'success',
+                titulo: '¡Actualizado!',
+                mensaje: 'Capacidades del horario actualizadas correctamente.'
+            );
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al actualizar HorarioMateriaPeriodo ID {$this->horarioMPEditando->id}: " . $e->getMessage());
-            session()->flash('mensaje_error_hmp', 'No se pudo actualizar el horario. Error: ' . $e->getMessage());
+            Log::error("Error al actualizar HorarioMateriaPeriodo ID {$this->horarioMPEditando->id}: ".$e->getMessage());
+            session()->flash('mensaje_error_hmp', 'No se pudo actualizar el horario. Error: '.$e->getMessage());
         }
     }
 
     public function abrirFormularioNuevo()
     {
         $this->resetearFormulario();
-        $this->inicializarFechasHabilitacion(); // Asegurar que las fechas se inicialicen para el nuevo formulario
+        $this->inicializarFechasHabilitacion();
         $this->horarioMPEditando = null;
         $this->dispatch('abrirOffcanvas', nombreModal: 'offcanvasNuevoHorarioMP');
     }
 
+    /**
+     * Verifica si el horario del período tiene matrículas registradas.
+     * - Si tiene matrículas: no permite eliminar, lo deshabilita y notifica con SweetAlert2.
+     * - Si no tiene matrículas: solicita confirmación mediante SweetAlert2.
+     */
     public function confirmarEliminarHorarioMP($horarioMPId)
     {
-        $horarioMP = ModeloHorarioMateriaPeriodo::find($horarioMPId);
-        if ($horarioMP) {
-            // Aquí podrías disparar un SweetAlert de confirmación en el frontend
-            // y luego llamar a un método como `procesarEliminacion($horarioMPId)`
-            // Por ahora, llama directamente a eliminar.
-            $this->eliminarHorarioMP($horarioMP);
-        } else {
-            session()->flash('mensaje_error_hmp', 'No se encontró el horario para eliminar.');
+        $horarioMP = ModeloHorarioMateriaPeriodo::with('horarioBase.aula.sede')->find($horarioMPId);
+        if (! $horarioMP) {
+            $this->dispatch(
+                'notificacionHMP',
+                tipo: 'error',
+                titulo: 'Error',
+                mensaje: 'No se encontró el horario del período para eliminar.'
+            );
+
+            return;
         }
+
+        // 1. Verificar si existen matrículas asociadas a este horario del período
+        $tieneMatriculas = Matricula::where('horario_materia_periodo_id', $horarioMP->id)->exists()
+            || MatriculaHorarioMateriaPeriodo::where('horario_materia_periodo_id', $horarioMP->id)->exists();
+
+        // 2. Si tiene matrículas, deshabilitar e informar que no se puede eliminar
+        if ($tieneMatriculas) {
+            $horarioMP->habilitado = false;
+            $horarioMP->save();
+
+            $this->dispatch(
+                'notificacionHMP',
+                tipo: 'warning',
+                titulo: 'No se puede eliminar',
+                mensaje: 'Este horario ya tiene matrículas registradas en el período, por lo que no se puede eliminar y ha sido deshabilitado.'
+            );
+
+            return;
+        }
+
+        // 3. Si no tiene matrículas, pedir confirmación con SweetAlert2
+        $hb = $horarioMP->horarioBase;
+        $dia = $hb?->dia_semana ?? 'Horario';
+        $hora = $hb ? (($hb->hora_inicio_formato ?? $hb->hora_inicio).' - '.($hb->hora_fin_formato ?? $hb->hora_fin)) : '';
+        $aula = $hb?->aula?->nombre ?? '';
+
+        $this->dispatch(
+            'confirmarEliminarHorarioMPEvento',
+            id: $horarioMP->id,
+            dia: $dia,
+            hora: $hora,
+            aula: $aula
+        );
     }
 
-    public function eliminarHorarioMP(ModeloHorarioMateriaPeriodo $horarioMP)
+    public function eliminarHorarioMP($horarioMPId)
     {
+        $horarioMP = $horarioMPId instanceof ModeloHorarioMateriaPeriodo
+            ? $horarioMPId
+            : ModeloHorarioMateriaPeriodo::find($horarioMPId);
+
+        if (! $horarioMP) {
+            return;
+        }
+
+        // Validación de seguridad adicional antes de eliminar
+        $tieneMatriculas = Matricula::where('horario_materia_periodo_id', $horarioMP->id)->exists()
+            || MatriculaHorarioMateriaPeriodo::where('horario_materia_periodo_id', $horarioMP->id)->exists();
+
+        if ($tieneMatriculas) {
+            $horarioMP->habilitado = false;
+            $horarioMP->save();
+
+            $this->dispatch(
+                'notificacionHMP',
+                tipo: 'warning',
+                titulo: 'No se puede eliminar',
+                mensaje: 'Este horario ya tiene matrículas registradas en el período, por lo que no se puede eliminar y ha sido deshabilitado.'
+            );
+
+            return;
+        }
+
         DB::beginTransaction();
         try {
-            // Opcional: Antes de eliminar el HorarioMateriaPeriodo,
-            // podrías necesitar eliminar las instancias de ItemCorteMateriaPeriodo asociadas,
-            // especialmente si no tienes `onDelete('cascade')` en la FK de esa tabla.
-            // ItemCorteMateriaPeriodo::where('horario_materia_periodo_id', $horarioMP->id)->delete();
-            // Lo mismo para AlumnoRespuestaItem y otras tablas dependientes.
-
+            ItemCorteMateriaPeriodo::where('horario_materia_periodo_id', $horarioMP->id)->delete();
             $horarioMP->delete();
             DB::commit();
-            session()->flash('mensaje_exito_hmp', 'Horario del período desvinculado (y sus ítems de calificación si estaban configurados para borrado en cascada).');
+
+            $this->dispatch(
+                'notificacionHMP',
+                tipo: 'success',
+                titulo: '¡Eliminado!',
+                mensaje: 'El horario fue desvinculado del período correctamente.'
+            );
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al eliminar HorarioMateriaPeriodo ID {$horarioMP->id}: " . $e->getMessage());
-            session()->flash('mensaje_error_hmp', 'No se pudo desvincular el horario del período.');
+            Log::error("Error al eliminar HorarioMateriaPeriodo ID {$horarioMP->id}: ".$e->getMessage());
+            $this->dispatch(
+                'notificacionHMP',
+                tipo: 'error',
+                titulo: 'Error',
+                mensaje: 'No se pudo desvincular el horario del período.'
+            );
         }
     }
 
@@ -454,12 +601,17 @@ class HorariosMateriaPeriodo extends Component
         $horarioMP = ModeloHorarioMateriaPeriodo::find($horarioMPId);
         if ($horarioMP) {
             try {
-                $horarioMP->habilitado = !$horarioMP->habilitado;
+                $horarioMP->habilitado = ! $horarioMP->habilitado;
                 $horarioMP->save();
                 $estado = $horarioMP->habilitado ? 'habilitado' : 'deshabilitado';
-                session()->flash('mensaje_exito_hmp', "Horario del período {$estado} correctamente.");
+                $this->dispatch(
+                    'notificacionHMP',
+                    tipo: 'success',
+                    titulo: 'Estado actualizado',
+                    mensaje: "Horario del período {$estado} correctamente."
+                );
             } catch (\Exception $e) {
-                Log::error("Error al cambiar estado de HMP ID {$horarioMP->id}: " . $e->getMessage());
+                Log::error("Error al cambiar estado de HMP ID {$horarioMP->id}: ".$e->getMessage());
                 session()->flash('mensaje_error_hmp', 'No se pudo cambiar el estado del horario.');
             }
         } else {
@@ -469,29 +621,42 @@ class HorariosMateriaPeriodo extends Component
 
     public function resetearFormulario()
     {
-        $this->resetValidation(); // También resetea los errores de validación
+        $this->resetValidation();
+        $this->resetErrorBag();
         $this->reset([
-            'sede_id_formulario', 'aula_id_formulario', 'horario_base_id_seleccionado',
-            'hmp_habilitado', 'hmp_fecha_inicio_habilitado', 'hmp_fecha_fin_habilitado',
-            'hmp_capacidad', 'hmp_capacidad_limite', 'hmp_ampliar_cupos_limite',
-            'display_hb_dia', 'display_hb_hora_inicio', 'display_hb_hora_fin',
-            'display_hb_aula_nombre', 'display_hb_sede_nombre', 'display_hb_capacidad_base'
+            'sede_id_formulario',
+            'aula_id_formulario',
+            'horario_base_id_seleccionado',
+            'horarios_base_seleccionados',
+            'hmp_habilitado',
+            'hmp_fecha_inicio_habilitado',
+            'hmp_fecha_fin_habilitado',
+            'hmp_capacidad',
+            'hmp_capacidad_limite',
+            'hmp_ampliar_cupos_limite',
+            'display_hb_dia',
+            'display_hb_hora_inicio',
+            'display_hb_hora_fin',
+            'display_hb_aula_nombre',
+            'display_hb_sede_nombre',
+            'display_hb_capacidad_base',
         ]);
+        $this->horarios_base_seleccionados = [];
         $this->hmp_habilitado = true;
         $this->hmp_ampliar_cupos_limite = false;
-        $this->inicializarFechasHabilitacion(); // Reinicializar fechas
-        $this->hmp_capacidad = 0; // O un valor por defecto más apropiado
+        $this->inicializarFechasHabilitacion();
+        $this->hmp_capacidad = 0;
         $this->hmp_capacidad_limite = 0;
 
         $this->horarioMPEditando = null;
-        $this->aulas_formulario = new EloquentCollection();
-        $this->horarios_base_formulario = new EloquentCollection();
+        $this->aulas_formulario = new EloquentCollection;
+        $this->horarios_base_formulario = new EloquentCollection;
     }
 
     public function cancelar()
     {
         $nombreOffcanvas = $this->horarioMPEditando ? 'offcanvasEditarHorarioMP' : 'offcanvasNuevoHorarioMP';
-        $this->resetearFormulario(); // Llama a resetear antes de cerrar para limpiar el estado.
+        $this->resetearFormulario();
         $this->dispatch('cerrarOffcanvas', nombreModal: $nombreOffcanvas);
     }
 
@@ -499,25 +664,22 @@ class HorariosMateriaPeriodo extends Component
     {
         $query = ModeloHorarioMateriaPeriodo::where('materia_periodo_id', $this->materiaPeriodo->id)
             ->with([
-                'horarioBase.aula.tipo', // 'tipo' es la relación en Aula hacia TipoAula
+                'horarioBase.aula.tipo',
                 'horarioBase.aula.sede',
-                // 'horarioBase.materia' // Ya tienes la materia a través de $this->materiaPeriodo->materia
             ]);
 
         if ($this->sedeFiltro) {
-            $query->whereHas('horarioBase.aula', function($q) {
+            $query->whereHas('horarioBase.aula', function ($q) {
                 $q->where('sede_id', $this->sedeFiltro);
             });
         }
         if ($this->tipoAulaFiltro) {
-            $query->whereHas('horarioBase.aula', function($q) {
-                $q->where('tipo_aula_id', $this->tipoAulaFiltro); // Asumiendo que Aula tiene tipo_aula_id
+            $query->whereHas('horarioBase.aula', function ($q) {
+                $q->where('tipo_aula_id', $this->tipoAulaFiltro);
             });
         }
 
         $horariosMP = $query->select('horarios_materia_periodo.*')
-            // Es mejor ordenar por campos de la tabla principal o de joins explícitos
-            // Si HorarioBase ya tiene día y hora, no necesitas un join adicional si ya está en la relación
             ->join('horarios_base', 'horarios_materia_periodo.horario_base_id', '=', 'horarios_base.id')
             ->orderBy('horarios_base.dia', 'asc')
             ->orderBy('horarios_base.hora_inicio', 'asc')
@@ -526,7 +688,7 @@ class HorariosMateriaPeriodo extends Component
         return view('livewire.escuelas.horarios-materia-periodo', [
             'horariosMP' => $horariosMP,
             'sedesFiltroLista' => $this->sedes,
-            'tiposAulaFiltroLista' => $this->tiposAula
+            'tiposAulaFiltroLista' => $this->tiposAula,
         ]);
     }
 }

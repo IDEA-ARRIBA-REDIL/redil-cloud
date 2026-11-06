@@ -5,9 +5,10 @@
     use App\Models\Configuracion;
     $configData = Helper::appClasses();
 
-    $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-    $formularios = $rolActivo->formularios()->where('tipo_formulario_id', '=', 1)->get();
-    $formularioMenores = $rolActivo->formularios()->where('tipo_formulario_id', '=', 4)->get();
+    $usuarioAutenticado = auth()->user();
+    $rolActivo = $usuarioAutenticado->roles()->wherePivot('activo', true)->first();
+    $formularios = $rolActivo ? $rolActivo->formularios()->where('tipo_formulario_id', '=', 1)->get()->filter(fn($f) => $f->puedeSerOperadoPor($usuarioAutenticado)) : collect();
+    $formularioMenores = $rolActivo ? $rolActivo->formularios()->where('tipo_formulario_id', '=', 4)->get()->filter(fn($f) => $f->puedeSerOperadoPor($usuarioAutenticado)) : collect();
     $grupo = auth()->user()->gruposEncargados()->first();
     $configuracion = Configuracion::find(1);
 @endphp
@@ -19,6 +20,7 @@
             <a href="{{ url('/') }}" class="app-brand-link">
                 <span class="app-brand-logo demo p-0">
                     @include('_partials.macros', [
+                        'contexto_logo' => 'menu_general',
                         'width' => '120px'
                     ])
                 </span>
@@ -542,8 +544,8 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasAnyPermission(['actividades.item_actividades', 'actividades.subitem_listado_actividad', 'actividades.subitem_nueva_actividad', 'actividades.ver_novedades', 'actividades.gestionar_novedades']))
-            <li class="menu-item {{ request()->routeIs('actividades.*') ? 'active open' : '' }}">
+        @if ($rolActivo->hasAnyPermission(['actividades.item_actividades', 'actividades.subitem_listado_actividad', 'actividades.subitem_nueva_actividad']))
+            <li class="menu-item {{ request()->routeIs('actividades.*') && !request()->routeIs('actividades.novedades.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-calendar-star"></i>
                     <div>Actividades </div>
@@ -563,10 +565,21 @@
                             </a>
                         </li>
                     @endif
-                    @if ($rolActivo->hasAnyPermission(['actividades.ver_novedades', 'actividades.gestionar_novedades']))
-                        <li class="menu-item {{ request()->routeIs('actividades.novedades.*') ? 'active' : '' }}">
-                            <a href="{{ route('actividades.novedades.gestion') }}" class="menu-link">
-                                <div>Novedades</div>
+                </ul>
+            </li>
+        @endif
+
+        @if ($rolActivo->hasAnyPermission(['novedades.item_novedades', 'novedades.subitem_gestionar_novedades', 'novedades.ver_novedades', 'novedades.gestionar_novedades', 'actividades.ver_novedades', 'actividades.gestionar_novedades']))
+            <li class="menu-item {{ request()->routeIs('novedades.*') || request()->routeIs('actividades.novedades.*') ? 'active open' : '' }}">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons ti ti-messages"></i>
+                    <div>Novedades</div>
+                </a>
+                <ul class="menu-sub">
+                    @if ($rolActivo->hasAnyPermission(['novedades.subitem_gestionar_novedades', 'novedades.ver_novedades', 'novedades.gestionar_novedades', 'actividades.ver_novedades', 'actividades.gestionar_novedades']))
+                        <li class="menu-item {{ request()->routeIs('novedades.gestion') || request()->routeIs('actividades.novedades.gestion') ? 'active' : '' }}">
+                            <a href="{{ route('novedades.gestion') }}" class="menu-link">
+                                <div>Gestionar Novedades</div>
                             </a>
                         </li>
                     @endif
@@ -632,7 +645,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('finanzas.item_finanzas'))
+        @if ($rolActivo->hasAnyPermission(['finanzas.item_finanzas', 'finanzas.consultar_transacciones']))
             <li
                 class="menu-item {{ request()->routeIs('finanzas.*') || request()->routeIs('finanzas.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
@@ -641,6 +654,14 @@
                 </a>
 
                 <ul class="menu-sub">
+                    @if ($rolActivo->hasPermissionTo('finanzas.consultar_transacciones'))
+                        <li class="menu-item {{ request()->routeIs('finanzas.consultaTransacciones') ? 'active' : '' }}">
+                            <a href="{{ route('finanzas.consultaTransacciones') }}" class="menu-link">
+                                <div>Consultar transacciones</div>
+                            </a>
+                        </li>
+                    @endif
+                    @if ($rolActivo->hasPermissionTo('finanzas.item_finanzas'))
                     <li class="menu-item {{ request()->routeIs('finanzas.ingreso') ? 'active' : '' }}">
                         <a href="{{ route('finanzas.ingreso') }}" class="menu-link">
                             <div>Crear ingreso</div>
@@ -670,6 +691,7 @@
                             <div>Estadisticas</div>
                         </a>
                     </li>
+                    @endif
                 </ul>
 
             </li>

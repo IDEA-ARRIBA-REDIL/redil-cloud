@@ -114,6 +114,10 @@ $configData = Helper::appClasses();
       placeholder: 'Filtrar por tipo de petición',
       dropdownParent: $('#modalBusquedaAvanzada')
     });
+    $('#filtroFormularios').select2({
+      placeholder: 'Filtrar por formulario',
+      dropdownParent: $('#modalBusquedaAvanzada')
+    });
     $('#filtroSedes').select2({
       placeholder: 'Filtrar por sedes',
       dropdownParent: $('#modalBusquedaAvanzada')
@@ -161,6 +165,46 @@ $configData = Helper::appClasses();
 </script>
 
 <script type="text/javascript">
+  function confirmarEliminacionSeleccionadas(tipo)
+  {
+    const seleccionados = Array.from(document.querySelectorAll('.check-peticion:checked')).map(cb => cb.value);
+    const cantidad = seleccionados.length;
+
+    if (cantidad === 0) {
+      Swal.fire({
+        title: 'Selecciona peticiones',
+        text: 'Debes seleccionar al menos una petición para eliminar.',
+        icon: 'info',
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    let titulo = cantidad === 1
+      ? '¿Estás seguro que deseas eliminar esta petición?'
+      : '¿Estás seguro que deseas eliminar las <b>' + cantidad + '</b> peticiones seleccionadas?';
+
+    Swal.fire({
+      title: titulo,
+      html: 'Se eliminarán las peticiones seleccionadas junto con sus seguimientos.<br><b class="text-danger">Esta acción no es reversible.</b>',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      customClass: {
+        confirmButton: 'btn btn-danger me-2 waves-effect waves-light',
+        cancelButton: 'btn btn-outline-secondary waves-effect'
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        document.getElementById('inputPeticionesIdsEliminar').value = JSON.stringify(seleccionados);
+        $('#eliminacionMasiva').attr('action', "/peticion/" + tipo + "/eliminaciones");
+        $('#eliminacionMasiva').submit();
+      }
+    });
+  }
+
   function confirmarEliminacionMasiva(cantidad, tipo)
   {
     if(cantidad>0)
@@ -219,10 +263,22 @@ $configData = Helper::appClasses();
       const fieldAux = this.dataset.field2;
       const value = this.dataset.value;
 
-      const form = document.getElementById('busquedaAvanzada');
-      const input = form.querySelector('[id="' + field + '"]');
+      // Si es el tag de búsqueda por palabra clave
+      if (field === 'buscar') {
+        const inputBuscar = document.getElementById('buscar');
+        if (inputBuscar) inputBuscar.value = '';
 
-      if (input && $(input).hasClass('select2BusquedaAvanzada')) {
+        const hiddenBuscar = document.querySelector('#busquedaAvanzada [name="buscar"]');
+        if (hiddenBuscar) hiddenBuscar.value = '';
+
+        document.getElementById('busquedaAvanzada').submit();
+        return;
+      }
+
+      const form = document.getElementById('busquedaAvanzada');
+      const input = form.querySelector('[id="' + field + '"]') || form.querySelector('[name="' + field + '"]');
+
+      if (input && ($(input).hasClass('select2BusquedaAvanzada') || $(input).hasClass('select2'))) {
         // Si es un Select2, usa el método 'val' de Select2 para eliminar la opción
         let currentValues = $(input).val();
         if (Array.isArray(currentValues)) {
@@ -249,14 +305,138 @@ $configData = Helper::appClasses();
         input.value = '';
         if(fieldAux)
         {
-          const inputAux = form.querySelector('[id="' + fieldAux + '"]');
-          inputAux.value = '';
+          const inputAux = form.querySelector('[id="' + fieldAux + '"]') || form.querySelector('[name="' + fieldAux + '"]');
+          if (inputAux) inputAux.value = '';
         }
       }
 
       form.submit();
     });
   });
+
+  $(document).ready(function() {
+    $('#filtroOrigen').on('change', function() {
+      if ($(this).val() === 'externos') {
+        $('#contenedorFiltrosRegistrados').slideUp();
+        $('#filtroSedes').val(null).trigger('change');
+        $('#persona_id').val('');
+      } else {
+        $('#contenedorFiltrosRegistrados').slideDown();
+      }
+    });
+
+    // Búsqueda con debounce automático (estándar REDIL)
+    let timeoutBuscar;
+    const delayBuscar = 700;
+
+    $('#buscar').on('input', function() {
+      clearTimeout(timeoutBuscar);
+      const val = $(this).val().trim();
+      if (val.length >= 3) {
+        timeoutBuscar = setTimeout(function() {
+          $('#filtro').submit();
+        }, delayBuscar);
+      } else if (val.length === 0) {
+        // Al vaciar la caja de búsqueda se ejecuta automáticamente
+        $('#filtro').submit();
+      }
+    });
+
+    // Envío inmediato al presionar Enter
+    $('#buscar').on('keydown', function(e) {
+      if (e.key === 'Enter') {
+        clearTimeout(timeoutBuscar);
+        e.preventDefault();
+        $('#filtro').submit();
+      }
+    });
+
+    // Envío al hacer clic en el icono de la lupa
+    $('#btnEjecutarBuscar').on('click', function() {
+      clearTimeout(timeoutBuscar);
+      $('#filtro').submit();
+    });
+
+    // Limpiar búsqueda con el botón 'x'
+    $('#btnLimpiarBuscar').on('click', function() {
+      clearTimeout(timeoutBuscar);
+      $('#buscar').val('');
+      $('#filtro').submit();
+    });
+
+    // Checkbox seleccionar todas
+    $('#checkSeleccionarTodas').on('change', function() {
+      const checked = this.checked;
+      document.querySelectorAll('.check-peticion').forEach(cb => {
+        cb.checked = checked;
+      });
+      actualizarSeleccion();
+    });
+  });
+
+  function actualizarSeleccion() {
+    const checkboxes = document.querySelectorAll('.check-peticion');
+    const checked = document.querySelectorAll('.check-peticion:checked');
+    const total = checkboxes.length;
+    const cantSeleccionadas = checked.length;
+
+    const contador = document.getElementById('contadorSeleccionadas');
+    if (contador) contador.innerText = cantSeleccionadas;
+
+    const checkTodas = document.getElementById('checkSeleccionarTodas');
+    if (checkTodas) {
+      checkTodas.checked = (cantSeleccionadas === total && total > 0);
+      checkTodas.indeterminate = (cantSeleccionadas > 0 && cantSeleccionadas < total);
+    }
+
+    const barra = document.getElementById('barraAccionesMasivas');
+    if (barra) {
+      if (cantSeleccionadas > 0) {
+        $(barra).slideDown();
+      } else {
+        $(barra).slideUp();
+      }
+    }
+
+    // Marcar borde de tarjetas seleccionadas
+    checkboxes.forEach(cb => {
+      const card = document.getElementById('peticion-card-' + cb.value)?.querySelector('.card');
+      if (card) {
+        if (cb.checked) {
+          card.classList.add('border-primary');
+        } else {
+          card.classList.remove('border-primary');
+        }
+      }
+    });
+  }
+
+  function deseleccionarTodas() {
+    document.querySelectorAll('.check-peticion').forEach(cb => {
+      cb.checked = false;
+    });
+    const checkTodas = document.getElementById('checkSeleccionarTodas');
+    if (checkTodas) {
+      checkTodas.checked = false;
+      checkTodas.indeterminate = false;
+    }
+    actualizarSeleccion();
+  }
+
+  function abrirModalAsignacionMasiva() {
+    const seleccionados = Array.from(document.querySelectorAll('.check-peticion:checked')).map(cb => cb.value);
+    if (seleccionados.length === 0) {
+      Swal.fire({
+        title: 'Selecciona peticiones',
+        text: 'Debes seleccionar al menos una petición para asignar a un intercesor.',
+        icon: 'info',
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    Livewire.dispatch('modalAsignarIntercesorMasivo', { peticionesIds: seleccionados });
+  }
 </script>
 
 <script>
@@ -343,26 +523,69 @@ $configData = Helper::appClasses();
 
   <hr>
 
-  <form  id="filtro" class="forms-sample" method="GET" action="{{ route('peticion.gestionar', $tipo) }}">
-    <div class="row mt-5">
+  <form id="filtro" class="forms-sample" method="GET" action="{{ route('peticion.gestionar', $tipo) }}">
+    <!-- Parametros de filtros activos -->
+    @if(!empty($filtroOrigen))
+      <input type="hidden" name="filtroOrigen" value="{{ $filtroOrigen }}">
+    @endif
+    @if(!empty($filtroAsignacion))
+      <input type="hidden" name="filtroAsignacion" value="{{ $filtroAsignacion }}">
+    @endif
+    @if(!empty($persona))
+      <input type="hidden" name="persona_id" value="{{ $persona->id }}">
+    @endif
+    @if(isset($filtroTipoPeticiones) && is_array($filtroTipoPeticiones))
+      @foreach($filtroTipoPeticiones as $tp)
+        <input type="hidden" name="filtroTipoPeticiones[]" value="{{ $tp }}">
+      @endforeach
+    @endif
+    @if(isset($filtroFormularios) && is_array($filtroFormularios))
+      @foreach($filtroFormularios as $ff)
+        <input type="hidden" name="filtroFormularios[]" value="{{ $ff }}">
+      @endforeach
+    @endif
+    @if(isset($filtroSedes) && is_array($filtroSedes))
+      @foreach($filtroSedes as $fs)
+        <input type="hidden" name="filtroSedes[]" value="{{ $fs }}">
+      @endforeach
+    @endif
+    @if(isset($filtroPaises) && is_array($filtroPaises))
+      @foreach($filtroPaises as $fp)
+        <input type="hidden" name="filtroPaises[]" value="{{ $fp }}">
+      @endforeach
+    @endif
+
+    <div class="row mt-5 g-2">
+      <!-- Buscador por palabra clave -->
+      <div class="col-12 col-md-4">
+        <div class="input-group input-group-merge bg-white">
+          <span class="input-group-text cursor-pointer" id="btnEjecutarBuscar" style="cursor: pointer;" title="Buscar"><i class="ti ti-search"></i></span>
+          <input id="buscar" name="buscar" type="text" value="{{ $buscar }}" class="form-control" placeholder="Buscar por nombre, correo, ciudad..." aria-label="Buscar...">
+          @if($buscar)
+            <span id="btnLimpiarBuscar" class="input-group-text" style="cursor: pointer;" title="Limpiar búsqueda"><i class="ti ti-x"></i></span>
+          @endif
+        </div>
+      </div>
 
       <!-- Por rango de fechas  -->
-      <div class="col-9 col-md-4">
-        <div class="input-group input-group-merge">
+      <div class="col-8 col-md-4">
+        <div class="input-group input-group-merge bg-white">
           <input id="filtroFechas" name="filtroFechas" type="text" class="form-control" placeholder="YYYY-MM-DD a YYYY-MM-DD" />
           <span class="input-group-text"><i class="ti ti-calendar"></i></span>
         </div>
         <input type="text" id="filtroFechaIni" name="filtroFechaIni" value="{{ $filtroFechaIni }}" class="form-control d-none" placeholder="">
         <input type="text" id="filtroFechaFin" name="filtroFechaFin" value="{{ $filtroFechaFin }}" class="form-control d-none" placeholder="">
       </div>
-      <div class="col-3 col-md-8 d-flex justify-content-end">
-        <button type="button" class="btn btn-outline-secondary waves-effect px-2 px-md-5  me-1" data-bs-toggle="offcanvas" data-bs-target="#modalBusquedaAvanzada"><span class="d-none d-md-block fw-semibold">Filtros</span><i class="ti ti-filter ms-1"></i> </button>
-        @if($rolActivo->hasPermissionTo('peticiones.boton_descargar_excel'))
-        <button type="button" class="btn btn-outline-secondary waves-effect px-2 px-md-3 me-1" data-bs-toggle="offcanvas" data-bs-target="#modalGeneradorExcel"><i class="ti ti-file-download"></i> <span class="d-none d-md-block">Descargar excel</span></button>
-        @endif
 
-        @if($rolActivo->hasPermissionTo('peticiones.opcion_eliminacion_masiva'))
-        <button type="button" class="btn btn-outline-primary waves-effect px-2 px-md-3" onclick="confirmarEliminacionMasiva('{{ $peticiones->total() }}','{{$tipo}}')"><i class="ti ti-trash"></i> <span class="d-none d-md-block">Eliminación masiva</span></button>
+      <div class="col-4 col-md-4 d-flex justify-content-end">
+        <button type="button" class="btn btn-outline-secondary waves-effect px-2 px-md-4 me-1" data-bs-toggle="offcanvas" data-bs-target="#modalBusquedaAvanzada">
+          <span class="d-none d-md-inline fw-semibold">Filtros</span>
+          <i class="ti ti-filter ms-md-1"></i>
+        </button>
+        @if($rolActivo->hasPermissionTo('peticiones.boton_descargar_excel'))
+          <button type="button" class="btn btn-outline-secondary waves-effect px-2 px-md-3 me-1" data-bs-toggle="offcanvas" data-bs-target="#modalGeneradorExcel" title="Descargar excel">
+            <i class="ti ti-file-download"></i> <span class="d-none d-md-inline">Excel</span>
+          </button>
         @endif
       </div>
 
@@ -384,6 +607,39 @@ $configData = Helper::appClasses();
     </div>
   </form>
 
+  @if(($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores') || $rolActivo->hasPermissionTo('peticiones.opcion_eliminacion_masiva')) && count($peticiones) > 0)
+    <div id="barraAccionesMasivas" class="card border border-primary rounded-pill shadow-sm px-4 py-2 my-3 bg-white" style="display: none;">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="form-check m-0">
+            <input class="form-check-input" type="checkbox" id="checkSeleccionarTodas">
+            <label class="form-check-label fw-semibold text-black ms-1" for="checkSeleccionarTodas">
+              Seleccionar todas (<span id="totalPaginaActual">{{ count($peticiones) }}</span>)
+            </label>
+          </div>
+          <span class="badge bg-label-primary rounded-pill px-3 py-2 ms-2">
+            <span id="contadorSeleccionadas">0</span> seleccionadas
+          </span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          @if($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores'))
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="abrirModalAsignacionMasiva()">
+              <i class="ti ti-user-check me-1"></i> Asignar a intercesor
+            </button>
+          @endif
+          @if($rolActivo->hasPermissionTo('peticiones.opcion_eliminacion_masiva'))
+            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="confirmarEliminacionSeleccionadas('{{ $tipo }}')">
+              <i class="ti ti-trash me-1"></i> Eliminar
+            </button>
+          @endif
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="deseleccionarTodas()">
+            Deseleccionar
+          </button>
+        </div>
+      </div>
+    </div>
+  @endif
+
   <!-- lista de peticiones -->
   <div class="row equal-height-row g-4 mt-1">
     @if(count($peticiones)>0)
@@ -391,7 +647,12 @@ $configData = Helper::appClasses();
       <div class="col equal-height-col col-12 col-xl-4 col-lg-6 col-md-6" id="peticion-card-{{ $peticion->id }}">
         <div class="card rounded-3 shadow">
           
-          <div class="card-header border-bottom d-flex px-4 pt-3 pb-1" style="background-color:#F9F9F9!important">
+          <div class="card-header border-bottom d-flex align-items-center px-4 pt-3 pb-2" style="background-color:#F9F9F9!important">
+            @if($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores') || $rolActivo->hasPermissionTo('peticiones.opcion_eliminacion_masiva'))
+              <div class="form-check me-2 mb-0">
+                <input class="form-check-input check-peticion" type="checkbox" value="{{ $peticion->id }}" id="checkPeticion{{ $peticion->id }}" onchange="actualizarSeleccion()">
+              </div>
+            @endif
             <div class="flex-fill row">
               <div class="d-flex justify-content-between align-items-center">
 
@@ -405,6 +666,11 @@ $configData = Helper::appClasses();
                 <span class="badge rounded-pill fw-light mt-1 me-1 bg-label-primary">
                   {{ $peticion->tipoPeticion ? $peticion->tipoPeticion->nombre : 'No definido'}}
                 </span>
+                @if($peticion->formularioUsuario)
+                  <span class="badge rounded-pill fw-light mt-1 me-1 bg-label-info" title="Registro desde formulario de usuario">
+                    <i class="ti ti-forms me-1"></i>{{ $peticion->formularioUsuario->titulo ?? $peticion->formularioUsuario->nombre }}
+                  </span>
+                @endif
               </div>
             </div>
 
@@ -475,6 +741,31 @@ $configData = Helper::appClasses();
                 <small class="text-black">Teléfono</small>
                 <small class="fw-semibold text-black ">{{ $peticion->telefonosUsuario ?? 'No especificado' }}</small>
               </div>
+
+              @php
+                $tieneUbicacion = !empty($peticion->ciudad) || !empty($peticion->pais);
+                $tieneSede = !empty($peticion->user_id) && !empty($peticion->nombreSede);
+              @endphp
+
+              @if($tieneUbicacion)
+                <div class="{{ $tieneSede ? 'col-6' : 'col-12' }} d-flex flex-column mt-2">
+                  <small class="text-black">Ubicación</small>
+                  <small class="fw-semibold text-black text-truncate" title="@if($peticion->ciudad){{ $peticion->ciudad }}@endif{{ $peticion->ciudad && $peticion->pais ? ', ' : '' }}{{ $peticion->pais ? $peticion->pais->nombre : '' }}">
+                    <i class="ti ti-map-pin me-1 text-muted"></i>
+                    @if($peticion->ciudad){{ $peticion->ciudad }}@endif{{ $peticion->ciudad && $peticion->pais ? ', ' : '' }}{{ $peticion->pais ? $peticion->pais->nombre : '' }}
+                  </small>
+                </div>
+              @endif
+
+              @if($tieneSede)
+                <div class="{{ $tieneUbicacion ? 'col-6' : 'col-12' }} d-flex flex-column mt-2">
+                  <small class="text-black">Sede</small>
+                  <small class="fw-semibold text-black text-truncate" title="{{ $peticion->nombreSede }}">
+                    <i class="ti ti-building me-1 text-muted"></i>{{ $peticion->nombreSede }}
+                  </small>
+                </div>
+              @endif
+
 
             </div>
 
@@ -550,6 +841,7 @@ $configData = Helper::appClasses();
 
   <form id="eliminacionMasiva" method="POST" action="">
     @csrf
+    <input type="hidden" name="peticiones_ids" id="inputPeticionesIdsEliminar">
     <textarea id="parametros-busqueda" name="parametrosBusqueda" class="d-none">{{json_encode(request()->input())}}</textarea>
   </form>
 
@@ -559,6 +851,9 @@ $configData = Helper::appClasses();
 
    <!-- offcanvas busqueda avanzada -->
   <form id="busquedaAvanzada" class="forms-sample" method="GET" action="{{ route('peticion.gestionar', $tipo) }}">
+    <input type="hidden" name="buscar" value="{{ $buscar }}">
+    <input type="hidden" name="filtroFechaIni" value="{{ $filtroFechaIni }}">
+    <input type="hidden" name="filtroFechaFin" value="{{ $filtroFechaFin }}">
     <div class="offcanvas offcanvas-end event-sidebar modalSelect2"  tabindex="-1" id="modalBusquedaAvanzada" aria-labelledby="modalBusquedaAvanzadaLabel">
         <div class="offcanvas-header my-1 px-8">
             <h4 class="offcanvas-title fw-bold text-primary" id="modalBusquedaAvanzadaLabel">
@@ -569,10 +864,18 @@ $configData = Helper::appClasses();
         <div class="offcanvas-body pt-6 px-8">
             <div class="row">
 
+              <!-- Tipo de solicitante -->
+              <div class="col-12 mb-3">
+                <label class="form-label" for="filtroOrigen">Tipo de solicitante</label>
+                <select id="filtroOrigen" name="filtroOrigen" class="form-select">
+                  <option value="" {{ empty($filtroOrigen) ? 'selected' : '' }}>Todas (Registradas y Externas)</option>
+                  <option value="registrados" {{ $filtroOrigen === 'registrados' ? 'selected' : '' }}>Solo usuarios registrados</option>
+                  <option value="externos" {{ $filtroOrigen === 'externos' ? 'selected' : '' }}>Solo peticiones externas</option>
+                </select>
+              </div>
 
               <!-- Por tipo peticion -->
               <div class="col-12 mb-3">
-
                 <label class="form-label">Por tipo de peticiones</label>
                 <select id="filtroTipoPeticiones" name="filtroTipoPeticiones[]" class="select2 form-select" multiple>
                   @foreach($tiposPeticiones as $tipoPeticion)
@@ -581,26 +884,29 @@ $configData = Helper::appClasses();
                 </select>
               </div>
 
-              <!-- Por sede -->
+              <!-- Por formulario -->
               <div class="col-12 mb-3">
-                <label class="form-label">Por sedes</label>
-                <select id="filtroSedes" name="filtroSedes[]" class="select2 form-select" multiple>
-                  @foreach($sedes as $sede)
-                  <option value="{{ $sede->id }}" {{ isset($filtroSedes) && in_array($sede->id, $filtroSedes) ? 'selected' : '' }}>{{ $sede->nombre }}</option>
+                <label class="form-label">Por formulario</label>
+                <select id="filtroFormularios" name="filtroFormularios[]" class="select2 form-select" multiple>
+                  @foreach($formulariosUsuario as $formulario)
+                  <option value="{{ $formulario->id }}" {{ isset($filtroFormularios) && in_array($formulario->id, $filtroFormularios) ? 'selected' : '' }}>
+                    {{ $formulario->titulo ?? $formulario->nombre }}
+                  </option>
                   @endforeach
                 </select>
               </div>
 
-              <!-- Por estado de asignación -->
-              <div class="col-12 mb-3">
-                <label class="form-label">Estado de asignación</label>
-                <select id="filtroAsignacion" name="filtroAsignacion" class="form-select">
-                  <option value="">Todas</option>
-                  <option value="asignadas" {{ isset($filtroAsignacion) && $filtroAsignacion === 'asignadas' ? 'selected' : '' }}>Asignadas</option>
-                  <option value="sin_asignar" {{ isset($filtroAsignacion) && $filtroAsignacion === 'sin_asignar' ? 'selected' : '' }}>Sin asignar</option>
-                  <option value="asignadas_a_mi" {{ isset($filtroAsignacion) && $filtroAsignacion === 'asignadas_a_mi' ? 'selected' : '' }}>Asignadas a mí</option>
-                </select>
-              </div>
+              <!-- Filtros exclusivos de usuarios registrados (Sedes y Persona) -->
+              <div id="contenedorFiltrosRegistrados" class="col-12" style="display: {{ $filtroOrigen === 'externos' ? 'none' : 'block' }};">
+                <!-- Por sede -->
+                <div class="col-12 mb-3">
+                  <label class="form-label">Por sedes</label>
+                  <select id="filtroSedes" name="filtroSedes[]" class="select2 form-select" multiple>
+                    @foreach($sedes as $sede)
+                    <option value="{{ $sede->id }}" {{ isset($filtroSedes) && in_array($sede->id, $filtroSedes) ? 'selected' : '' }}>{{ $sede->nombre }}</option>
+                    @endforeach
+                  </select>
+                </div>
 
                 <!-- Por persona -->
                 @livewire('Usuarios.usuarios-para-busqueda', [
@@ -613,10 +919,21 @@ $configData = Helper::appClasses();
                   'queUsuariosCargar' => $queUsuariosCargar,
                   'conDadosDeBaja' => 'no',
                   'modulo' => 'peticiones',
-                  'obligatorio' => true,
+                  'obligatorio' => false,
                   'usuarioSeleccionadoId' => $persona ? $persona->id : ''
                 ])
-            </div>
+              </div>
+
+              <!-- Por estado de asignación -->
+              <div class="col-12 mb-3">
+                <label class="form-label">Estado de asignación</label>
+                <select id="filtroAsignacion" name="filtroAsignacion" class="form-select">
+                  <option value="">Todas</option>
+                  <option value="asignadas" {{ isset($filtroAsignacion) && $filtroAsignacion === 'asignadas' ? 'selected' : '' }}>Asignadas</option>
+                  <option value="sin_asignar" {{ isset($filtroAsignacion) && $filtroAsignacion === 'sin_asignar' ? 'selected' : '' }}>Sin asignar</option>
+                  <option value="asignadas_a_mi" {{ isset($filtroAsignacion) && $filtroAsignacion === 'asignadas_a_mi' ? 'selected' : '' }}>Asignadas a mí</option>
+                </select>
+              </div>
         </div>
         <div class="offcanvas-footer p-5 border-top border-2 px-8">
             <button type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Filtrar</button>

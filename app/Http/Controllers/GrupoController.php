@@ -80,6 +80,8 @@ class GrupoController extends Controller
             }
         }
 
+        $gruposParaIndicadores->loadMissing('tipoGrupo');
+
         // Contadores
         $item = new stdClass;
         $item->nombre = 'Todos';
@@ -173,7 +175,10 @@ class GrupoController extends Controller
         $grupos = $this->filtrosBusqueda($grupos, $parametrosBusqueda);
 
         if ($grupos->count() > 0) {
-            $grupos = $grupos->toQuery()->orderBy('id', 'desc')->paginate(12);
+            $grupos = $grupos->toQuery()
+                ->with(['tipoGrupo', 'encargados.tipoUsuario'])
+                ->withCount('asistentes')
+                ->orderBy('id', 'desc')->paginate(12);
         } else {
             $grupos = Grupo::whereRaw('1=2')->paginate(1);
         }
@@ -3476,15 +3481,22 @@ class GrupoController extends Controller
     public function graficoDelMinisterio($id_nodo = 'U-logueado', $maximos_niveles = null)
     {
 
-        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $usuarioLogueado = auth()->user();
+        $rolActivo = $usuarioLogueado->roles()->with('permissions')->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('grupos.subitem_grafico_ministerio');
+        $usuarioLogueado->setRelation('rolActivo', $rolActivo);
+        $permisosEvaluados = [];
+        $tienePermiso = static function (string $permiso) use ($rolActivo, &$permisosEvaluados): bool {
+            return $permisosEvaluados[$permiso] ??= $rolActivo->hasPermissionTo($permiso);
+        };
+        $gruposExcluidos = GrupoExcluido::where('user_id', $usuarioLogueado->id)->pluck('grupo_id')->all();
+        $formulariosPorEdad = [];
+        $idsGruposSedes = array_fill_keys(Sede::whereNotNull('grupo_id')->pluck('grupo_id')->all(), true);
 
         $configuracion = Configuracion::find(1);
         if ($maximos_niveles === null) {
             $maximos_niveles = $configuracion->maximos_niveles_grafico_ministerio;
         }
-
-        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
 
         $identificadores = explode('-', $id_nodo);
         if (count($identificadores) === 1) {
@@ -3514,14 +3526,14 @@ class GrupoController extends Controller
 
         // / esto es para identificar de donde viene la primera consulta del grafico
         if ($tipo_nodo == 'U') { // este la primera vez que entra siempre sera por aca
-            if ($rolActivo->hasPermissionTo('grupos.grafico_ministerio_todos') || isset(auth()->user()->iglesiaEncargada()->first()->id)) {
+            if ($tienePermiso('grupos.grafico_ministerio_todos') || isset(auth()->user()->iglesiaEncargada()->first()->id)) {
                 $iglesia = Iglesia::find(1);
                 $array_ids_usuarios = $iglesia->pastoresEncargados()->select('users.id')->pluck('users.id')->toArray();
                 $mensaje = 'Ministerio General';
                 $tipoDeNodo = $tipoDeNodo.'-principal';
             }
 
-            if ($rolActivo->hasPermissionTo('grupos.grafico_ministerio_solo_ministerio')) {
+            if ($tienePermiso('grupos.grafico_ministerio_solo_ministerio')) {
                 $tipoDeNodo = $tipoDeNodo.'-encargado';
                 $usuario = auth()->user();
                 $usuario_seleccionado = $usuario;
@@ -3575,37 +3587,29 @@ class GrupoController extends Controller
             $kpi_array_ids_usuarios = [];
             $kpi_ids_grupos_temporal = [];
 
-            foreach ($kpi_usuarios_ids as $usrId) {
-                if (! in_array($usrId, $kpi_array_ids_usuarios_dibujados)) {
-                    $kpi_array_ids_usuarios_dibujados[] = $usrId;
+            $kpi_usuarios_ids = array_values(array_diff($kpi_usuarios_ids, $kpi_array_ids_usuarios_dibujados));
+            $kpi_array_ids_usuarios_dibujados = array_merge($kpi_array_ids_usuarios_dibujados, $kpi_usuarios_ids);
 
-                    $gruposUsuario = DB::table('encargados_grupo')
-                        ->join('grupos', 'encargados_grupo.grupo_id', '=', 'grupos.id')
-                        ->where('encargados_grupo.user_id', $usrId)
-                        ->where('grupos.dado_baja', 0)
-                        ->pluck('grupos.id')
-                        ->toArray();
-
-                    $kpi_ids_grupos_temporal = array_merge($kpi_ids_grupos_temporal, $gruposUsuario);
-                }
+            if ($kpi_usuarios_ids !== []) {
+                $kpi_ids_grupos_temporal = DB::table('encargados_grupo')
+                    ->join('grupos', 'encargados_grupo.grupo_id', '=', 'grupos.id')
+                    ->whereIn('encargados_grupo.user_id', $kpi_usuarios_ids)
+                    ->where('grupos.dado_baja', 0)
+                    ->distinct()
+                    ->pluck('grupos.id')
+                    ->all();
             }
 
-            $kpi_ids_grupos_temporal = array_unique($kpi_ids_grupos_temporal);
+            $kpi_ids_grupos_temporal = array_values(array_diff($kpi_ids_grupos_temporal, $kpi_array_ids_grupos_dibujados));
+            $kpi_array_ids_grupos_dibujados = array_merge($kpi_array_ids_grupos_dibujados, $kpi_ids_grupos_temporal);
 
-            foreach ($kpi_ids_grupos_temporal as $grpId) {
-                if (! in_array($grpId, $kpi_array_ids_grupos_dibujados)) {
-                    $kpi_array_ids_grupos_dibujados[] = $grpId;
-
-                    $personasGrupo = DB::table('integrantes_grupo')
-                        ->where('integrantes_grupo.grupo_id', $grpId)
-                        ->pluck('integrantes_grupo.user_id')
-                        ->toArray();
-
-                    $kpi_array_ids_usuarios = array_merge($kpi_array_ids_usuarios, $personasGrupo);
-                }
+            if ($kpi_ids_grupos_temporal !== []) {
+                $kpi_array_ids_usuarios = DB::table('integrantes_grupo')
+                    ->whereIn('grupo_id', $kpi_ids_grupos_temporal)
+                    ->distinct()
+                    ->pluck('user_id')
+                    ->all();
             }
-
-            $kpi_array_ids_usuarios = array_unique($kpi_array_ids_usuarios);
         }
 
         $totalPersonas = count($kpi_array_ids_usuarios_dibujados);
@@ -3616,160 +3620,165 @@ class GrupoController extends Controller
         while (count($array_ids_usuarios) > 0 && $contador_maximos_niveles < $maximos_niveles) {
             $contador_maximos_niveles = $contador_maximos_niveles + 1;
             // / aqui lo que hacemos es que tenemos los usuario de cada recorrido por nivel
-            $usuarios = User::orderBy('users.indice_grafico_ministerial', 'asc')->whereIn('users.id', $array_ids_usuarios)->get();
+            $usuarios = User::with([
+                'tipoUsuario',
+                'gruposEncargados' => fn ($query) => $query->where('grupos.dado_baja', 0)
+                    ->whereNotIn('grupos.id', $gruposExcluidos)
+                    ->orderBy('grupos.indice_grafico_ministerial'),
+            ])->orderBy('users.indice_grafico_ministerial', 'asc')->whereIn('users.id', $array_ids_usuarios)->get();
             // / aqui se resetea la variable para que siempre se llene solo con los usuarios de cada nivel mas abajo se rellena con esos usuarios
             $array_ids_usuarios = [];
 
             $idsGruposTemporal = [];
             foreach ($usuarios as $usuario) {
                 if (! in_array($usuario->id, $array_ids_usuarios_dibujados)) {
-                    
+
                     // Comprobar si tiene foto configurada
                     $tieneFoto = $usuario->foto && $usuario->foto !== '' && $usuario->foto !== 'default-m.png' && $usuario->foto !== 'default-f.png';
 
                     $opciones_menu = [];
-                    
+
                     // 1. Ver Perfil
                     if (auth()->user()->can('verPerfilUsuarioPolitica', [$usuario, 'principal'])) {
                         $opciones_menu[] = [
                             'label' => 'Ver perfil',
                             'url' => route('usuario.perfil', $usuario->id),
                             'class' => '',
-                            'onclick' => ''
+                            'onclick' => '',
                         ];
                     }
-                    
+
                     // 2. Agendar Cita
-                    if ($rolActivo->hasPermissionTo('consejeria.opcion_agendar_cita')) {
+                    if ($tienePermiso('consejeria.opcion_agendar_cita')) {
                         $opciones_menu[] = [
                             'label' => 'Agendar cita',
                             'url' => route('consejeria.nuevaCita', $usuario->id),
                             'class' => '',
-                            'onclick' => ''
+                            'onclick' => '',
                         ];
                     }
-                    
+
                     // 3. Dar de Alta
-                    if ($rolActivo->hasPermissionTo('personas.opcion_dar_de_alta_asistente') && $usuario->trashed()) {
+                    if ($tienePermiso('personas.opcion_dar_de_alta_asistente') && $usuario->trashed()) {
                         $opciones_menu[] = [
                             'label' => 'Dar de alta',
                             'url' => 'javascript:void(0);',
                             'class' => '',
-                            'onclick' => "darBajaAlta('{$usuario->id}', 'alta')"
+                            'onclick' => "darBajaAlta('{$usuario->id}', 'alta')",
                         ];
                     }
-                    
+
                     // 4. Modificar (Formularios)
                     if ($usuario->esta_aprobado) {
-                        $formularios = auth()->user()->formularios(2, $usuario->edad());
+                        $formularios = $formulariosPorEdad[$usuario->edad()] ??= $usuarioLogueado->formularios(2, $usuario->edad());
                         foreach ($formularios as $form) {
                             if (auth()->user()->can('modificarUsuarioPolitica', $form)) {
                                 $opciones_menu[] = [
                                     'label' => $form->label,
                                     'url' => route('usuario.modificar', [$form->id, $usuario->id]),
                                     'class' => '',
-                                    'onclick' => ''
+                                    'onclick' => '',
                                 ];
                             }
                         }
                     } else {
-                        if ($rolActivo->hasPermissionTo('personas.privilegio_modificar_asistentes_desaprobados')) {
-                            $formularios = auth()->user()->formularios(2, $usuario->edad());
+                        if ($tienePermiso('personas.privilegio_modificar_asistentes_desaprobados')) {
+                            $formularios = $formulariosPorEdad[$usuario->edad()] ??= $usuarioLogueado->formularios(2, $usuario->edad());
                             foreach ($formularios as $form) {
                                 $opciones_menu[] = [
                                     'label' => $form->label,
                                     'url' => route('usuario.modificar', [$form->id, $usuario->id]),
                                     'class' => '',
-                                    'onclick' => ''
+                                    'onclick' => '',
                                 ];
                             }
                         }
                     }
-                    
+
                     // 5. Info Congregacional
                     if (auth()->user()->can('informacionCongregacionalUsuarioPolitica', $usuario)) {
                         $opciones_menu[] = [
                             'label' => 'Info. congregacional',
                             'url' => route('usuario.informacionCongregacional', ['formulario' => 0, 'usuario' => $usuario->id]),
                             'class' => '',
-                            'onclick' => ''
+                            'onclick' => '',
                         ];
                     }
-                    
+
                     // 6. Relaciones Familiares
                     if (auth()->user()->can('relacionesFamiliaresUsuarioPolitica', $usuario)) {
                         $opciones_menu[] = [
                             'label' => 'Relaciones familiares',
                             'url' => route('usuario.relacionesFamiliares', ['formulario' => 0, 'usuario' => $usuario->id]),
                             'class' => '',
-                            'onclick' => ''
+                            'onclick' => '',
                         ];
                     }
-                    
+
                     // 7. Geo Asignación
                     if (auth()->user()->can('geoasignacionUsuarioPolitica', $usuario)) {
                         $opciones_menu[] = [
                             'label' => 'Geo asignación',
                             'url' => route('usuario.geoAsignacion', ['formulario' => 0, 'usuario' => $usuario->id]),
                             'class' => '',
-                            'onclick' => ''
+                            'onclick' => '',
                         ];
                     }
-                    
+
                     // 8. Cambiar Contraseña
-                    if ($rolActivo->hasPermissionTo('personas.opcion_cambiar_contrasena_asistente')) {
+                    if ($tienePermiso('personas.opcion_cambiar_contrasena_asistente')) {
                         $opciones_menu[] = [
                             'label' => 'Cambiar contraseña',
                             'url' => '#',
                             'class' => '',
-                            'onclick' => "event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', 'usuarios/{$usuario->id}/cambiar-contrasena'); var modal = new bootstrap.Modal(document.getElementById('modalCambioContrasena')); modal.show();"
+                            'onclick' => "event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', 'usuarios/{$usuario->id}/cambiar-contrasena'); var modal = new bootstrap.Modal(document.getElementById('modalCambioContrasena')); modal.show();",
                         ];
-                        
+
                         $opciones_menu[] = [
                             'label' => 'Cambiar contraseña default',
                             'url' => '#',
                             'class' => '',
-                            'onclick' => "event.preventDefault(); var f = document.createElement('form'); f.method='POST'; f.action='".route('usuario.cambiarContrasenaDefault', ['usuario' => $usuario->id])."'; var csrf = document.createElement('input'); csrf.type='hidden'; csrf.name='_token'; csrf.value='".csrf_token()."'; f.appendChild(csrf); document.body.appendChild(f); f.submit();"
+                            'onclick' => "event.preventDefault(); var f = document.createElement('form'); f.method='POST'; f.action='".route('usuario.cambiarContrasenaDefault', ['usuario' => $usuario->id])."'; var csrf = document.createElement('input'); csrf.type='hidden'; csrf.name='_token'; csrf.value='".csrf_token()."'; f.appendChild(csrf); document.body.appendChild(f); f.submit();",
                         ];
                     }
-                    
+
                     // 9. Código QR
-                    if ($rolActivo->hasPermissionTo('personas.opcion_descargar_qr')) {
+                    if ($tienePermiso('personas.opcion_descargar_qr')) {
                         $opciones_menu[] = [
                             'label' => 'Código QR',
                             'url' => route('usuario.descargarCodigoQr', $usuario->id),
                             'class' => '',
-                            'onclick' => ''
+                            'onclick' => '',
                         ];
                     }
-                    
+
                     // 10. Dar de Baja
-                    if ($rolActivo->hasPermissionTo('personas.opcion_dar_de_baja_asistente') && !$usuario->trashed()) {
+                    if ($tienePermiso('personas.opcion_dar_de_baja_asistente') && ! $usuario->trashed()) {
                         $opciones_menu[] = [
                             'label' => 'Dar de baja',
                             'url' => 'javascript:void(0);',
                             'class' => 'text-danger',
-                            'onclick' => "darBajaAlta('{$usuario->id}', 'baja')"
+                            'onclick' => "darBajaAlta('{$usuario->id}', 'baja')",
                         ];
                     }
-                    
+
                     // 11. Eliminar
-                    if ($rolActivo->hasPermissionTo('personas.opcion_eliminar_asistente') && !$usuario->trashed()) {
+                    if ($tienePermiso('personas.opcion_eliminar_asistente') && ! $usuario->trashed()) {
                         $opciones_menu[] = [
                             'label' => 'Eliminar',
                             'url' => 'javascript:void(0);',
                             'class' => 'text-danger',
-                            'onclick' => "comprobarSiTieneRegistros('{$usuario->id}')"
+                            'onclick' => "comprobarSiTieneRegistros('{$usuario->id}')",
                         ];
                     }
-                    
+
                     // 12. Eliminación Forzada
-                    if ($rolActivo->hasPermissionTo('personas.eliminar_asistentes_forzadamente') && $usuario->trashed()) {
+                    if ($tienePermiso('personas.eliminar_asistentes_forzadamente') && $usuario->trashed()) {
                         $opciones_menu[] = [
                             'label' => 'Eliminación forzada',
                             'url' => 'javascript:void(0);',
                             'class' => 'text-danger',
-                            'onclick' => "eliminacionForzada('{$usuario->id}')"
+                            'onclick' => "eliminacionForzada('{$usuario->id}')",
                         ];
                     }
 
@@ -3791,13 +3800,7 @@ class GrupoController extends Controller
 
                     array_push($array_ids_usuarios_dibujados, $usuario->id);
 
-                    $grupos_excluidos = [];
-                    if (isset(auth()->user()->id)) {
-                        $usuario_logueado = auth()->user();
-                        $grupos_excluidos = GrupoExcluido::where('user_id', $usuario_logueado->id)->select('grupo_id')->pluck('grupo_id')->toArray();
-                    }
-
-                    $gruposUsuario = $usuario->gruposEncargados()->where('grupos.dado_baja', '=', 0)->whereNotIn('grupos.id', $grupos_excluidos)->orderBy('grupos.indice_grafico_ministerial', 'asc')->get();
+                    $gruposUsuario = $usuario->gruposEncargados;
                     $idsGruposTemporal = array_merge($idsGruposTemporal, $gruposUsuario->pluck('id')->toArray());
 
                     // aqui recorremos los grupos que dirije el usuario o persona que estoy recorriendo y le creo la arista que conecta la persona con los grupos que dirije
@@ -3819,19 +3822,29 @@ class GrupoController extends Controller
                 }
             }
             // // aqui obtengo los grupos que dirije pero los voy a recorrer para graficar los nodos de los grupos
-            $grupos = Grupo::whereIn('grupos.id', $idsGruposTemporal)->get();
+            $grupos = Grupo::with([
+                'tipoGrupo',
+                'asistentes' => fn ($query) => $query->select('users.id', 'users.indice_grafico_ministerial')
+                    ->orderBy('users.indice_grafico_ministerial'),
+            ])
+                ->withCount('asistentes')
+                ->whereIn('grupos.id', $idsGruposTemporal)->get();
+            $ultimosReportes = ReporteGrupo::whereIn('grupo_id', $idsGruposTemporal)
+                ->select('id', 'grupo_id', 'fecha', 'finalizado')
+                ->distinct('grupo_id')->orderBy('grupo_id')
+                ->orderByDesc('fecha')->get()->keyBy('grupo_id');
 
             $contador = count($idsGruposTemporal) > 0 ? $contador + 1 : '';
 
             foreach ($grupos as $grupo) {
                 if (! in_array($grupo->id, $array_ids_grupos_dibujados)) {
-                    
+
                     // Comprobar si tiene icono configurado
                     $tieneIcono = $grupo->tipoGrupo->imagen && $grupo->tipoGrupo->imagen !== '' && $grupo->tipoGrupo->imagen !== 'indicador_general.png';
-                    
+
                     // Calcular iniciales del tipo de grupo si no tiene icono
                     $inicialesTipoGrupo = null;
-                    if (!$tieneIcono) {
+                    if (! $tieneIcono) {
                         $palabras = explode(' ', $grupo->tipoGrupo->nombre);
                         $iniciales = '';
                         foreach ($palabras as $palabra) {
@@ -3847,114 +3860,114 @@ class GrupoController extends Controller
                         $leyenda['grupo_'.$grupo->tipoGrupo->id] = [
                             'nombre' => $grupo->tipoGrupo->nombre,
                             'color' => $grupo->tipoGrupo->color ? $grupo->tipoGrupo->color : '#cccccc',
-                            'tipo' => 'grupo'
+                            'tipo' => 'grupo',
                         ];
                     }
 
                     // Determinar si es una sede
-                    $esSede = Sede::where('grupo_id', '=', $grupo->id)->exists();
+                    $esSede = isset($idsGruposSedes[$grupo->id]);
 
                     // Obtener opciones del menú dropdown para el grupo
                     $opciones_menu = [];
-                    
+
                     if ($grupo->dado_baja == 0) {
                         // 1. Perfil
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_ver_perfil_grupo')) {
+                        if ($tienePermiso('grupos.opcion_ver_perfil_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Perfil',
                                 'url' => route('grupo.perfil.estadisticasGrupo', $grupo->id),
                                 'class' => '',
-                                'onclick' => ''
+                                'onclick' => '',
                             ];
                         }
-                        
+
                         // 2. Modificar
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_modificar_grupo')) {
+                        if ($tienePermiso('grupos.opcion_modificar_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Modificar',
                                 'url' => route('grupo.modificar', $grupo->id),
                                 'class' => '',
-                                'onclick' => ''
+                                'onclick' => '',
                             ];
                         }
-                        
+
                         // 3. Gestionar encargados
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_anadir_lideres_grupo')) {
+                        if ($tienePermiso('grupos.opcion_anadir_lideres_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Gestionar encargados',
                                 'url' => route('grupo.gestionarEncargados', $grupo->id),
                                 'class' => '',
-                                'onclick' => ''
+                                'onclick' => '',
                             ];
                         }
-                        
+
                         // 4. Gestionar integrantes
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_anadir_integrantes_grupo')) {
+                        if ($tienePermiso('grupos.opcion_anadir_integrantes_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Gestionar integrantes',
                                 'url' => route('grupo.gestionarIntegrantes', $grupo->id),
                                 'class' => '',
-                                'onclick' => ''
+                                'onclick' => '',
                             ];
                         }
-                        
+
                         // 5. Gestionar Georeferencia
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_georreferencia_grupo')) {
+                        if ($tienePermiso('grupos.opcion_georreferencia_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Gestionar Georeferencia',
                                 'url' => route('grupo.georreferencia', $grupo->id),
                                 'class' => '',
-                                'onclick' => ''
+                                'onclick' => '',
                             ];
                         }
-                        
+
                         // 6. Excluir grupo
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_excluir_grupo')) {
+                        if ($tienePermiso('grupos.opcion_excluir_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Excluir grupo',
                                 'url' => '#',
                                 'class' => '',
-                                'onclick' => "event.preventDefault(); var f = document.createElement('form'); f.method='POST'; f.action='".route('grupo.excluir', ['grupo' => $grupo->id])."'; var csrf = document.createElement('input'); csrf.type='hidden'; csrf.name='_token'; csrf.value='".csrf_token()."'; f.appendChild(csrf); document.body.appendChild(f); f.submit();"
+                                'onclick' => "event.preventDefault(); var f = document.createElement('form'); f.method='POST'; f.action='".route('grupo.excluir', ['grupo' => $grupo->id])."'; var csrf = document.createElement('input'); csrf.type='hidden'; csrf.name='_token'; csrf.value='".csrf_token()."'; f.appendChild(csrf); document.body.appendChild(f); f.submit();",
                             ];
                         }
-                        
+
                         // 7. Ver informes de evidencia
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_ver_informes_evidencia')) {
+                        if ($tienePermiso('grupos.opcion_ver_informes_evidencia')) {
                             $opciones_menu[] = [
                                 'label' => 'Ver informes de evidencia',
                                 'url' => route('grupo.informeEvidencia.listar', $grupo->id),
                                 'class' => '',
-                                'onclick' => ''
+                                'onclick' => '',
                             ];
                         }
-                        
+
                         // 8. Dar de baja
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_dar_de_baja_alta_grupo')) {
+                        if ($tienePermiso('grupos.opcion_dar_de_baja_alta_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Dar de baja',
                                 'url' => 'javascript:void(0);',
                                 'class' => 'text-danger',
-                                'onclick' => "darBajaAlta('{$grupo->id}', 'baja')"
+                                'onclick' => "darBajaAlta('{$grupo->id}', 'baja')",
                             ];
                         }
-                        
+
                         // 9. Eliminar
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_eliminar_grupo')) {
+                        if ($tienePermiso('grupos.opcion_eliminar_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Eliminar',
                                 'url' => 'javascript:void(0);',
                                 'class' => 'text-danger',
-                                'onclick' => "eliminacion('{$grupo->id}')"
+                                'onclick' => "eliminacion('{$grupo->id}')",
                             ];
                         }
                     } else {
                         // Dar de alta
-                        if ($rolActivo->hasPermissionTo('grupos.opcion_dar_de_baja_alta_grupo')) {
+                        if ($tienePermiso('grupos.opcion_dar_de_baja_alta_grupo')) {
                             $opciones_menu[] = [
                                 'label' => 'Dar de alta',
                                 'url' => 'javascript:void(0);',
                                 'class' => '',
-                                'onclick' => "darBajaAlta('{$grupo->id}', 'alta')"
+                                'onclick' => "darBajaAlta('{$grupo->id}', 'alta')",
                             ];
                         }
                     }
@@ -3965,10 +3978,11 @@ class GrupoController extends Controller
                     $dia_reunion_formateado = $horaReunion ? "{$diaReunion}, {$horaReunion}" : $diaReunion;
 
                     // Reportes del grupo
-                    $ultimoReporte = $grupo->ultimoReporteDelGrupo();
-                    $tiene_ultimo_reporte = isset($ultimoReporte->id);
+                    $ultimoReporte = $ultimosReportes->get($grupo->id);
+                    $tiene_ultimo_reporte = $ultimoReporte !== null;
                     $fecha_ultimo_reporte = $tiene_ultimo_reporte ? $ultimoReporte->fecha : '';
-                    $al_dia = $tiene_ultimo_reporte ? $grupo->alDia() : false;
+                    $al_dia = $tiene_ultimo_reporte && $ultimoReporte->finalizado
+                        && Carbon::parse($ultimoReporte->fecha)->addDays(8)->format('Y-m-d') > Carbon::now()->format('Y-m-d');
 
                     // aqui adentro creo el nodo del grupo
                     $item = new stdClass;
@@ -3977,7 +3991,7 @@ class GrupoController extends Controller
                     $item->image = $tieneIcono ? $grupo->tipoGrupo->imagen_url : null;
                     $item->iniciales = $inicialesTipoGrupo;
                     $item->nombre = $grupo->nombre;
-                    $item->personas_count = $grupo->asistentes()->count();
+                    $item->personas_count = $grupo->asistentes_count;
                     $item->level = $contador;
                     $item->tipo = 'G';
                     $item->tipo_nombre = $grupo->tipoGrupo->nombre;
@@ -3992,7 +4006,7 @@ class GrupoController extends Controller
                     $nodos[] = $item;
 
                     array_push($array_ids_grupos_dibujados, $grupo->id);
-                    $personasGrupo = $grupo->asistentes()->orderBy('users.indice_grafico_ministerial', 'asc')->select('users.id')->pluck('users.id')->toArray();
+                    $personasGrupo = $grupo->asistentes->pluck('id')->all();
                     foreach ($personasGrupo as $personaGrupoId) {
                         $aristaId = "Ar-ga-{$grupo->id}_{$personaGrupoId}";
                         if (! in_array($aristaId, $array_aristas_usuario_grupo_dibujadas)) {

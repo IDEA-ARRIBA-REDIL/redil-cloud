@@ -357,6 +357,7 @@ class CalificacionMultipleAlumnos extends Component
     {
         $query = EstadoAcademico::query()
             ->where('horario_materia_periodo_id', $this->horarioAsignado->id)
+            ->whereHas('matricula')
             ->with(['user:id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,identificacion,email,telefono_movil,sede_id,foto'])
             ->join('users', 'matricula_horario_materia_periodo.user_id', '=', 'users.id')
             ->select('matricula_horario_materia_periodo.*');

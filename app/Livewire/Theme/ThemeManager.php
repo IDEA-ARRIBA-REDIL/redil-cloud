@@ -44,7 +44,7 @@ class ThemeManager extends Component
     {
         $allSettings = ThemeSetting::orderBy('category', 'ASC')
             ->orderBy('id', 'ASC')
-            ->where('is_active', 'true')
+            ->where('is_active', true)
             ->get();
         $this->categories = $allSettings->pluck('category')->unique()->values()->toArray();
 
@@ -75,9 +75,11 @@ class ThemeManager extends Component
     public function updateColor(): void
     {
         $this->authorizeThemeAccess();
-        $this->validate();
-
         $setting = ThemeSetting::query()->findOrFail($this->editingId);
+        $this->validate([
+            ...$this->rules,
+            'editingValue2' => (filter_var($setting->gradient, FILTER_VALIDATE_BOOLEAN) ? 'required' : 'nullable').'|regex:/^#[A-Fa-f0-9]{6}(?:[A-Fa-f0-9]{2})?$/',
+        ]);
         $this->activeCategory = $setting->category; // Guardar la categoría actual
 
         $setting->value = $this->editingValue;

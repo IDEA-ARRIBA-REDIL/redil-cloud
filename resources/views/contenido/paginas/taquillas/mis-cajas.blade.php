@@ -24,10 +24,17 @@
                                     {{ $caja->nombre }}
                                 </h5>
                                 {{-- Usamos el estilo que definiste --}}
-                                <span
-                                    class="{{ $caja->estado ? 'badge bg-label-primary' : 'badge bg-label-secondary' }} rounded-pill">
-                                    {{ $caja->estado ? 'Activa' : 'Inactiva' }}
-                                </span>
+                                <div class="d-flex align-items-center gap-1">
+                                    <span
+                                        class="{{ $caja->estado ? 'badge bg-label-primary' : 'badge bg-label-secondary' }} rounded-pill">
+                                        {{ $caja->estado ? 'Activa' : 'Inactiva' }}
+                                    </span>
+                                    @if ($caja->estado && $caja->horario_atencion && ! $caja->estaEnHorario())
+                                        <span class="badge bg-label-danger rounded-pill">
+                                            <i class="ti ti-clock me-1"></i>Fuera de horario
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>

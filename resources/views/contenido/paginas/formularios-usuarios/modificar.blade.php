@@ -34,21 +34,32 @@ $configData = Helper::appClasses();
 @section('page-script')
 
 <script type="module">
-  $('#habilitarTerminosCondiciones').change(function() {
+  function actualizarVisibilidadTerminos() {
+    var mostrarTerminos = $('#habilitarTerminosCondiciones').is(':checked');
+    if (mostrarTerminos) {
+      $('#divLabelTerminosCondiciones').removeClass('d-none');
+      $('#divTerminosYCondiciones').removeClass('d-none');
+      $('#divModalidadTerminos').removeClass('d-none');
 
-    if (this.checked) {
-      $("#divUrlTerminosCondiciones").removeClass("d-none");
-      $("#divTerminosYCondiciones").removeClass("d-none");
-      $("#divTerminosYCondicionesDatallado").removeClass("d-none");
+      var modalidad = $('input[name="modalidadTerminos"]:checked').val() || 'url';
+      if (modalidad === 'url') {
+        $('#divUrlTerminosCondiciones').removeClass('d-none');
+        $('#divTerminosYCondicionesDatallado').addClass('d-none');
+      } else {
+        $('#divUrlTerminosCondiciones').addClass('d-none');
+        $('#divTerminosYCondicionesDatallado').removeClass('d-none');
+      }
     } else {
-      $("#divUrlTerminosCondiciones").addClass("d-none");
-      $("#divTerminosYCondiciones").addClass("d-none");
-      $("#divTerminosYCondicionesDatallado").addClass("d-none");
-
-      $("#urlTerminosCondiciones").val("");
-      $("#terminosYCondiciones").val("");
+      $('#divLabelTerminosCondiciones').addClass('d-none');
+      $('#divTerminosYCondiciones').addClass('d-none');
+      $('#divModalidadTerminos').addClass('d-none');
+      $('#divUrlTerminosCondiciones').addClass('d-none');
+      $('#divTerminosYCondicionesDatallado').addClass('d-none');
     }
-  });
+  }
+
+  $('#habilitarTerminosCondiciones').change(actualizarVisibilidadTerminos);
+  $('input[name="modalidadTerminos"]').change(actualizarVisibilidadTerminos);
 
   $('#validarEdad').change(function() {
 
@@ -64,6 +75,19 @@ $configData = Helper::appClasses();
       $("#edadMinima").val("");
       $("#edadMaxima").val("");
       $("#mensaje").val("");
+    }
+  });
+
+  $('#validarEdadOperador').change(function() {
+    if (this.checked) {
+      $("#divEdadMinimaOperador").removeClass("d-none");
+      $("#divEdadMaximaOperador").removeClass("d-none");
+    } else {
+      $("#divEdadMinimaOperador").addClass("d-none");
+      $("#divEdadMaximaOperador").addClass("d-none");
+
+      $("#edadMinimaOperador").val("");
+      $("#edadMaximaOperador").val("");
     }
   });
 </script>
@@ -133,21 +157,22 @@ $configData = Helper::appClasses();
     var esFormularioExterior = selectedOption.data('es-formulario-exterior');
     var esFormularioNuevo = selectedOption.data('es-formulario-nuevo');
 
-
     if (esFormularioExterior) {
-      // Deshabilitar y limpiar la selección de roles
+      $('#divConfiguracionUsoFormulario').addClass('d-none');
       $('#roles').val(null).trigger('change');
       $('#roles').prop('disabled', true);
+      $('#validarEdadOperador').prop('checked', false).trigger('change');
+      $('#edadMinimaOperador').val('');
+      $('#edadMaximaOperador').val('');
     } else {
-      // Habilitar la selección de roles
+      $('#divConfiguracionUsoFormulario').removeClass('d-none');
       $('#roles').prop('disabled', false);
     }
 
     if (esFormularioNuevo) {
        // Habilitar la selección de tipoUsuarioPorDefecto
       $('#tipoUsuarioPorDefecto').prop('disabled', false);
-    }else {
-      alert();
+    } else {
       // Deshabilitar y limpiar la selección de tipoUsuarioPorDefecto
       $('#tipoUsuarioPorDefecto').val(null).trigger('change');
       $('#tipoUsuarioPorDefecto').prop('disabled', true);
@@ -338,22 +363,7 @@ $configData = Helper::appClasses();
           <!--  Tipo de id  -->
 
 
-          <!-- roles -->
-          <div class="mb-3 col-12 col-md-8">
-            <label for="roles" class="form-label">¿Qué roles van a usar este formulario?</label>
-            <select id="roles" name="roles[]" multiple class="select2Iconos form-select" {{ $formulario->tipo->es_formulario_exterior ? 'disabled' : '' }} >
-              @foreach ($roles as $rol )
-              <option value="{{ $rol->id }}" data-icon="{{ $rol->icono }}" {{ in_array($rol->id, old( 'roles',$rolesSeleccionados )) ? "selected" : "" }}  ">
-                {{ $rol->name }} </option>
-              @endforeach
-            </select>
-            @if($errors->has('roles'))
-              <div class="text-danger ti-12px mt-2">
-                <i class="ti ti-circle-x"></i> {{ $errors->first('roles') }}
-              </div>
-            @endif
-          </div>
-          <!-- /roles -->
+          
 
           <!--  tipoUsuarioPorDefecto -->
           <div class="mb-3 col-12 col-md-4">
@@ -459,11 +469,105 @@ $configData = Helper::appClasses();
             @endif
           </div>
           <!-- /mensaje -->
+
+          <!-- Sugerir en recomendaciones -->
+          <div class="mb-3 col-12">
+            <div class="small mb-1">¿Sugerir este formulario en recomendaciones de cambio de formulario por edad?</div>
+            <label class="switch switch-lg">
+              <input id="sugerirEnRecomendaciones" name="sugerirEnRecomendaciones" type="checkbox" @checked(old('sugerirEnRecomendaciones', $formulario->sugerir_en_recomendaciones ?? true)) class="switch-input switchTerminosCondiciones" />
+              <span class="switch-toggle-slider">
+                <span class="switch-on">SI</span>
+                <span class="switch-off">NO</span>
+              </span>
+              <span class="switch-label"></span>
+            </label>
+            <div class="text-muted small mt-1">Si está activo, este formulario podrá sugerirse a usuarios que ingresen una fecha de nacimiento fuera del rango de otro formulario.</div>
+          </div>
+          <!-- / Sugerir en recomendaciones -->
         </div>
       </div>
     </div>
   </div>
 
+  @php
+    $tipoActualId = old('tipoDeFormulario', $formulario->tipo_formulario_id);
+    $tipoActual = $tipos->firstWhere('id', $tipoActualId);
+    $esExteriorModificar = $tipoActual && $tipoActual->es_formulario_exterior;
+  @endphp
+  <div class="col-md-12 {{ $esExteriorModificar ? 'd-none' : '' }}" id="divConfiguracionUsoFormulario">
+    <div class="card mb-4">
+      <h5 class="card-header text-black fw-semibold">Configuración del uso del formulario</h5>
+      <div class="card-body">
+        <div class="row">
+
+          <!-- roles -->
+          <div class="mb-3 col-12 col-md-12">
+            <label for="roles" class="form-label">¿Qué roles van a usar este formulario?</label>
+            <select id="roles" name="roles[]" multiple class="select2Iconos form-select" {{ $formulario->tipo->es_formulario_exterior ? 'disabled' : '' }} >
+              @foreach ($roles as $rol )
+              <option value="{{ $rol->id }}" data-icon="{{ $rol->icono }}" {{ in_array($rol->id, old( 'roles',$rolesSeleccionados )) ? "selected" : "" }}  ">
+                {{ $rol->name }} </option>
+              @endforeach
+            </select>
+            @if($errors->has('roles'))
+              <div class="text-danger ti-12px mt-2">
+                <i class="ti ti-circle-x"></i> {{ $errors->first('roles') }}
+              </div>
+            @endif
+          </div>
+          <!-- /roles -->
+
+          <!-- Validar edad operador -->
+          <div class="mb-3 col-12 col-md-4">
+            <div class="small mb-1">¿Restringir por edad para el uso del formulario?</div>
+            <label class="switch switch-lg">
+              <input id="validarEdadOperador" name="validarEdadOperador" placeholder="Restringir por edad del operador" type="checkbox" @checked(old('validarEdadOperador', $formulario->validar_edad_operador)) class="switch-input switchTerminosCondiciones" />
+              <span class="switch-toggle-slider">
+                <span class="switch-on">SI</span>
+                <span class="switch-off">NO</span>
+              </span>
+              <span class="switch-label"></span>
+            </label>
+          </div>
+          <!-- / Validar edad operador -->
+
+          <!-- edadMinimaOperador -->
+          <div id="divEdadMinimaOperador" class="mb-3 col-12 col-md-4 {{ old('validarEdadOperador', $formulario->validar_edad_operador) ? '' : 'd-none' }}">
+            <label class="form-label" for="edadMinimaOperador">
+              Edad mínima del operador
+            </label>
+            <input id="edadMinimaOperador" name="edadMinimaOperador" placeholder="Ej: 18" value="{{ old('edadMinimaOperador', $formulario->edad_minima_operador) }}" type="number" class="form-control" />
+            @if($errors->has('edadMinimaOperador'))
+            <div class="text-danger ti-12px mt-2">
+              <i class="ti ti-circle-x"></i> {{ $errors->first('edadMinimaOperador') }}
+            </div>
+            @endif
+          </div>
+          <!-- /edadMinimaOperador -->
+
+          <!-- edadMaximaOperador -->
+          <div id="divEdadMaximaOperador" class="mb-3 col-12 col-md-4 {{ old('validarEdadOperador', $formulario->validar_edad_operador) ? '' : 'd-none' }}">
+            <label class="form-label" for="edadMaximaOperador">
+              Edad máxima del operador (opcional)
+            </label>
+            <input id="edadMaximaOperador" name="edadMaximaOperador" placeholder="Opcional" value="{{ old('edadMaximaOperador', $formulario->edad_maxima_operador) }}" type="number" class="form-control" />
+            @if($errors->has('edadMaximaOperador'))
+            <div class="text-danger ti-12px mt-2">
+              <i class="ti ti-circle-x"></i> {{ $errors->first('edadMaximaOperador') }}
+            </div>
+            @endif
+          </div>
+          <!-- /edadMaximaOperador -->
+
+        </div>
+      </div> 
+    </div>
+  </div>
+
+  @php
+    $modalidadTerminos = old('modalidadTerminos', !empty($formulario->url_terminos_condiciones) ? 'url' : 'editor');
+    $tieneTerminos = old('términosCondiciones', $formulario->visible_terminos_condiciones);
+  @endphp
   <div class="col-md-12">
     <div class="card mb-4">
       <h5 class="card-header text-black fw-semibold">Configuración de términos y condiciones</h5>
@@ -471,9 +575,9 @@ $configData = Helper::appClasses();
         <div class="row">
           <!-- Tiene terminos y condiciones -->
           <div class="mb-3 col-12 col-md-4">
-            <div class=" small  mb-1">¿Mostrar términos y condiciones?</div>
+            <div class="small mb-1">¿Mostrar términos y condiciones?</div>
             <label class="switch switch-lg">
-              <input id="habilitarTerminosCondiciones" name="términosCondiciones" placeholder="Habilitar términos y condiciones" type="checkbox" @checked(old('términosCondiciones', $formulario->visible_terminos_condiciones)) class="switch-input switchTerminosCondiciones" />
+              <input id="habilitarTerminosCondiciones" name="términosCondiciones" placeholder="Habilitar términos y condiciones" type="checkbox" @checked($tieneTerminos) class="switch-input switchTerminosCondiciones" />
               <span class="switch-toggle-slider">
                 <span class="switch-on">SI</span>
                 <span class="switch-off">NO</span>
@@ -483,10 +587,24 @@ $configData = Helper::appClasses();
           </div>
           <!-- / Tiene terminos y condiciones -->
 
+          <!-- labelTerminosCondiciones -->
+          <div id="divLabelTerminosCondiciones" class="mb-3 col-12 col-md-8 {{ $tieneTerminos ? '' : 'd-none' }}">
+            <label class="form-label" for="labelTerminosCondiciones">
+              Título o etiqueta de los términos y condiciones
+            </label>
+            <input id="labelTerminosCondiciones" name="labelTerminosCondiciones" placeholder="Ej: Términos y condiciones para menor de edad" value="{{ old('labelTerminosCondiciones', $formulario->label_terminos_condiciones) }}" type="text" class="form-control" />
+            @if($errors->has('labelTerminosCondiciones'))
+            <div class="text-danger ti-12px mt-2">
+              <i class="ti ti-circle-x"></i> {{ $errors->first('labelTerminosCondiciones') }}
+            </div>
+            @endif
+          </div>
+          <!-- /labelTerminosCondiciones -->
+
           <!-- terminosCondiciones -->
-          <div id="divTerminosYCondiciones"  class="mb-3 col-12 {{ old('términosCondiciones', $formulario->visible_terminos_condiciones) ? '' : 'd-none' }}">
+          <div id="divTerminosYCondiciones" class="mb-3 col-12 {{ $tieneTerminos ? '' : 'd-none' }}">
             <label class="form-label" for="terminosYCondiciones">
-              Escribe la descripción breve de los terminos y condiciones
+              Escribe la descripción breve de los términos y condiciones
             </label>
             <textarea onkeypress="return sinComillas(event)" id="terminosYCondiciones" name="términosYCondiciones" placeholder="Escribe los términos y condiciones" class="form-control" rows="2" maxlength="500" spellcheck="false" data-ms-editor="true" >{{ old('términosYCondiciones', $formulario->mensaje_terminos_condiciones_resumen) }}</textarea>
             @if($errors->has('términosYCondiciones'))
@@ -497,12 +615,31 @@ $configData = Helper::appClasses();
           </div>
           <!-- /terminosCondiciones -->
 
+          <!-- Modalidad de términos detallados -->
+          <div id="divModalidadTerminos" class="mb-3 col-12 {{ $tieneTerminos ? '' : 'd-none' }}">
+            <label class="form-label d-block fw-semibold mb-2">¿Cómo deseas presentar los términos detallados?</label>
+            <div class="form-check form-check-inline me-4">
+              <input class="form-check-input modalidad-terminos-radio" type="radio" name="modalidadTerminos" id="modalidadUrl" value="url" {{ $modalidadTerminos == 'url' ? 'checked' : '' }}>
+              <label class="form-check-label" for="modalidadUrl">
+                <i class="ti ti-link me-1"></i> Documento / Enlace externo (URL de PDF, Drive o web)
+              </label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input modalidad-terminos-radio" type="radio" name="modalidadTerminos" id="modalidadEditor" value="editor" {{ $modalidadTerminos == 'editor' ? 'checked' : '' }}>
+              <label class="form-check-label" for="modalidadEditor">
+                <i class="ti ti-edit me-1"></i> Redactar texto aquí (Editor)
+              </label>
+            </div>
+          </div>
+          <!-- /Modalidad de términos detallados -->
+
           <!-- urlTerminosCondiciones -->
-          <div id="divUrlTerminosCondiciones" class="mb-3 col-12 {{ old('términosCondiciones', $formulario->visible_terminos_condiciones)  ? '' : 'd-none' }}">
+          <div id="divUrlTerminosCondiciones" class="mb-3 col-12 {{ ($tieneTerminos && $modalidadTerminos == 'url') ? '' : 'd-none' }}">
             <label class="form-label" for="urlTerminosCondiciones">
-              Url de términos y condiciones
+              URL del documento de términos y condiciones
             </label>
-            <input id="urlTerminosCondiciones" name="url" placeholder="Escribe la URL" value="{{ old('url', $formulario->url_terminos_condiciones) }}" type="text" class="form-control" />
+            <input id="urlTerminosCondiciones" name="url" placeholder="https://..." value="{{ old('url', $formulario->url_terminos_condiciones) }}" type="text" class="form-control" />
+            <div class="text-muted small mt-1">Ingresa el enlace público de Google Drive, PDF o página web con los términos completos.</div>
             @if($errors->has('url'))
             <div class="text-danger ti-12px mt-2">
               <i class="ti ti-circle-x"></i> {{ $errors->first('url') }}
@@ -512,16 +649,16 @@ $configData = Helper::appClasses();
           <!-- /urlTerminosCondiciones  -->
 
           <!-- mensaje_terminos_condiciones_detallado -->
-          <div id="divTerminosYCondicionesDatallado"  class="mb-3 col-12 {{ old('términosCondiciones', $formulario->visible_terminos_condiciones)  ? '' : 'd-none' }}">
+          <div id="divTerminosYCondicionesDatallado" class="mb-3 col-12 {{ ($tieneTerminos && $modalidadTerminos == 'editor') ? '' : 'd-none' }}">
             <label class="form-label" for="terminosYCondicionesDetallado">
-              Escribe la descripción detallado de los terminos y condiciones
+              Escribe la descripción detallada de los términos y condiciones
             </label>
 
             <div id="editorTerminosCondicionesDetallado"></div>
             <textarea onkeypress="return sinComillas(event)" id="terminosYCondicionesDetallado" name="términosYCondicionesDetallado" placeholder="Escribe los términos y condiciones" class="form-control d-none" spellcheck="false" data-ms-editor="true" >{{ old('términosCondicionesDetallado', $formulario->mensaje_terminos_condiciones_detallado) }}</textarea>
-            @if($errors->has('terminosYCondicionesDetallado'))
+            @if($errors->has('términosYCondicionesDetallado'))
               <div class="text-danger ti-12px mt-2">
-                <i class="ti ti-circle-x"></i> {{ $errors->first('términosYCondiciones') }}
+                <i class="ti ti-circle-x"></i> {{ $errors->first('términosYCondicionesDetallado') }}
               </div>
             @endif
           </div>

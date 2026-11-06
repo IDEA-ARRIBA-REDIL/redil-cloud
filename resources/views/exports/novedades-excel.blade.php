@@ -4,8 +4,9 @@
             <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">ID</th>
             <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Fecha Registro</th>
             <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Estado</th>
-            <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Actividad</th>
+            <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Origen / Actividad</th>
             <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Tipo Actividad</th>
+            <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Sede</th>
             <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Materia / Escuela Deseada</th>
             <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Tipo de Novedad</th>
             <th style="background-color: #0099d9; color: #ffffff; font-weight: bold;">Nombre Completo</th>
@@ -25,8 +26,9 @@
                 <td>{{ $nov->id }}</td>
                 <td>{{ $nov->created_at ? $nov->created_at->format('Y-m-d H:i') : '' }}</td>
                 <td>{{ $nov->estado_nombre }}</td>
-                <td>{{ $nov->actividad->nombre ?? 'N/A' }}</td>
-                <td>{{ $nov->actividad->tipo->nombre ?? 'N/A' }}</td>
+                <td>{{ $nov->actividad->nombre ?? 'Novedad General' }}</td>
+                <td>{{ $nov->actividad->tipo->nombre ?? 'General' }}</td>
+                <td>{{ $nov->sede->nombre ?? 'No indicada' }}</td>
                 <td>{{ $nov->materia->nombre ?? ($nov->materia_nombre ?? 'N/A') }}</td>
                 <td>{{ $nov->tipoNovedad->nombre ?? 'N/A' }}</td>
                 <td>{{ $nov->nombre }}</td>

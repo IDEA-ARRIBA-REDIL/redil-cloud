@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Rule;
 use Livewire\Component;
-
-// 1. Importa el trait de paginación
+use Livewire\WithPagination;
 
 class GestionarZonas extends Component
 {
+    use WithPagination;
+
+    protected $paginationTheme = 'bootstrap';
+
     // PROPIEDADES CON REGLAS DE VALIDACIÓN
     #[Rule('required|string|max:100')]
     public $nombre = '';
@@ -42,7 +45,16 @@ class GestionarZonas extends Component
     public $collapsedStates = [];
 
     public $conEliminados = false;
-    // Este será reemplazado
+
+    public function updatingBusqueda(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingConEliminados(): void
+    {
+        $this->resetPage();
+    }
 
     public function mount()
     {
@@ -80,6 +92,9 @@ class GestionarZonas extends Component
     // === MÉTODO NUEVO PARA GUARDAR NUEVOS O EDITAR  ===
     public function guardarZona()
     {
+        $this->sedesSeleccionadas = is_array($this->sedesSeleccionadas) ? $this->sedesSeleccionadas : [];
+        $this->localidadesSeleccionadas = is_array($this->localidadesSeleccionadas) ? $this->localidadesSeleccionadas : [];
+
         $this->validate();
         $mensaje = '';
         DB::transaction(function () use (&$mensaje) {
@@ -103,7 +118,7 @@ class GestionarZonas extends Component
                 ]);
                 $zona->sedes()->attach($this->sedesSeleccionadas);
                 $zona->localidades()->attach($this->localidadesSeleccionadas);
-                $mensaje = 'La zona fue creadá con éxito.';
+                $mensaje = 'La zona fue creada con éxito.';
             }
         });
 

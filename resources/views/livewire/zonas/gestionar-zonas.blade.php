@@ -114,132 +114,176 @@
       @endforeach
 
       {{-- PAGINACIÓN --}}
-    <div class="mt-4">
-        {{ $zonas->links() }}
-    </div>
+      @if($zonas->hasPages())
+        <div class="col-12 mt-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+          <span class="text-black small">
+            Mostrando {{ $zonas->firstItem() }} a {{ $zonas->lastItem() }} de {{ $zonas->total() }} zonas
+          </span>
+          <div class="pagination-clean">
+            {{ $zonas->links() }}
+          </div>
+        </div>
+      @endif
     @else
-    <div class="py-4">
-      <center>
+    <div class="py-4 col-12">
+      <div class="text-center">
         <i class="ti ti-browser fs-1 pb-1"></i>
         <h6 class="text-center">@if(!$conEliminados)¡Ups! no hay zonas creadas. @else ¡Ups! no hay zonas eliminadas. @endif </h6>
-      </center>
+      </div>
     </div>
     @endif
   </div>
 
-  <!-- crear y editar campo  -->
-  <form id="crearEditarZona" role="form" class="forms-sample" wire:submit.prevent="guardarZona" enctype="multipart/form-data">
-    <div wire:ignore.self class="offcanvas offcanvas-end event-sidebar"  tabindex="-1" id="modalcrearEditarZona" aria-labelledby="modalcrearEditarZonaLabel">
-        <div class="offcanvas-header my-1 px-8">
-            <h4 class="offcanvas-title fw-bold text-primary" id="modalcrearEditarZonaLabel">
-              @if ($modoEdicion) Editar zona @else Nueva zona @endif
-            </h4>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  <!-- Offcanvas para Crear / Editar Zona -->
+  <div 
+    class="offcanvas offcanvas-end" 
+    tabindex="-1" 
+    id="modalcrearEditarZona" 
+    data-bs-backdrop="true"
+    data-bs-scroll="false"
+    wire:ignore.self 
+    aria-labelledby="modalcrearEditarZonaLabel"
+  >
+    <form id="crearEditarZona" role="form" wire:submit.prevent="guardarZona" class="d-flex flex-column h-100 m-0 overflow-hidden">
+      <div class="offcanvas-header border-bottom flex-shrink-0">
+        <h5 class="offcanvas-title fw-semibold text-primary" id="modalcrearEditarZonaLabel">
+          <i class="ti {{ $modoEdicion ? 'ti-pencil' : 'ti-plus' }} me-2"></i>
+          {{ $modoEdicion ? 'Editar zona' : 'Nueva zona' }}
+        </h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+
+      <div class="offcanvas-body flex-grow-1 overflow-y-auto p-4">
+        <p class="text-black small mb-3">Por favor ingresa la información correspondiente a la zona.</p>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="nombre">Nombre <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="ti ti-map-pin"></i></span>
+            <input id="nombre" name="nombre" wire:model="nombre" type="text" class="form-control @error('nombre') is-invalid @enderror" placeholder="Ej. Zona Norte, Sector Centro..." autocomplete="off" />
+          </div>
+          @error('nombre')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
         </div>
-        <div class="offcanvas-body pt-6 px-8">
-            <div class="mb-4">
-                <span class="text-black ti-14px mb-4">Por favor ingresa toda la información.</span>
-            </div>
-            @csrf
-            <div class="pt-3">
-              <div class="mb-3 col-12">
-                <label class="form-label" for="nombre">Nombre</label>
-                <input id="nombre" name="nombre" wire:model.defer="nombre" type="text" class="form-control" />
-                @error('nombre')
-                <div class="text-danger ti-12px mt-2">
-                    <i class="ti ti-circle-x"></i> {{ $message }}
-                </div>
-                @enderror
-              </div>
 
-              <div class="mb-3 col-12">
-                <label class="form-label" for="placeholder">Descripción</label>
-                <textarea id="descripcion" name="descripcion" wire:model.defer="descripcion" type="text" class="form-control">
-                </textarea>
-                @error('descripcion')
-                <div class="text-danger ti-12px mt-2">
-                    <i class="ti ti-circle-x"></i> {{ $message }}
-                </div>
-                @enderror
-              </div>
-
-
-
-
-              <div class="mb-3 col-12">
-                <label for="sedes" class="form-label">¿Qué sedes componen la zona?</label>
-                <div wire:ignore>
-                  <select id="sedes" name="sedes[]" multiple class="form-select" >
-                    @foreach ($sedes as $sede )
-                    <option value="{{ $sede->id }}" >{{ $sede->nombre }} </option>
-                    @endforeach
-                  </select>
-                </div>
-                @error('sedesSeleccionadas')
-                  <div class="text-danger ti-12px mt-2">
-                    <i class="ti ti-circle-x"></i> {{ $message }}
-                  </div>
-                @enderror
-              </div>
-
-              <div class="mb-3 col-12">
-                <label for="localidades" class="form-label">¿Qué localidades componen la zona?</label>
-                <div wire:ignore>
-                  <select id="localidades" name="localidades[]" multiple class="form-select" >
-                    @foreach ($localidades as $localidad )
-                    <option value="{{ $localidad->id }}" >{{ $localidad->nombre }} ({{ $localidad->municipio->nombre }}) </option>
-                    @endforeach
-                  </select>
-                </div>
-                @error('localidadesSeleccionadas')
-                  <div class="text-danger ti-12px mt-2">
-                    <i class="ti ti-circle-x"></i> {{ $message }}
-                  </div>
-                @enderror
-              </div>
-
-
-
-            </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="descripcion">Descripción</label>
+          <textarea id="descripcion" name="descripcion" wire:model="descripcion" rows="3" class="form-control @error('descripcion') is-invalid @enderror" placeholder="Descripción breve de la zona..."></textarea>
+          @error('descripcion')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
         </div>
-        <div class="offcanvas-footer p-5 border-top border-2 px-8">
-            <button type="submit" class="btnGuardar btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light">Guardar</button>
-            <button type="button" data-bs-dismiss="offcanvas" class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cancelar</button>
+
+        <div class="mb-3">
+          <label for="sedes" class="form-label fw-semibold">¿Qué sedes componen la zona? <span class="text-danger">*</span></label>
+          <div wire:ignore>
+            <select id="sedes" name="sedes[]" multiple class="form-select">
+              @foreach ($sedes as $sede)
+                <option value="{{ $sede->id }}">{{ $sede->nombre }}</option>
+              @endforeach
+            </select>
+          </div>
+          @error('sedesSeleccionadas')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
         </div>
-    </div>
-  </form>
 
+        <div class="mb-3">
+          <label for="localidades" class="form-label fw-semibold">¿Qué localidades componen la zona?</label>
+          <div wire:ignore>
+            <select id="localidades" name="localidades[]" multiple class="form-select">
+              @foreach ($localidades as $localidad)
+                <option value="{{ $localidad->id }}">{{ $localidad->nombre }} ({{ $localidad->municipio->nombre ?? 'N/A' }})</option>
+              @endforeach
+            </select>
+          </div>
+          @error('localidadesSeleccionadas')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
+        </div>
+      </div>
 
+      <div class="offcanvas-footer p-4 border-top flex-shrink-0 bg-white">
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" data-bs-dismiss="offcanvas" class="btn btn-label-secondary rounded-pill px-3">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary rounded-pill px-4" wire:loading.attr="disabled">
+            <span wire:loading.remove wire:target="guardarZona">
+              <i class="ti ti-device-floppy me-1"></i> Guardar
+            </span>
+            <span wire:loading wire:target="guardarZona">
+              <span class="spinner-border spinner-border-sm me-1" role="status"></span> Guardando...
+            </span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <style>
+    /* Oculta los botones de texto « Anterior / Siguiente » del bloque mobile */
+    .pagination-clean nav > div:first-child {
+      display: none !important;
+    }
+    /* Muestra el contenedor de paginación numérico alineado a la derecha */
+    .pagination-clean nav > div:last-child {
+      display: flex !important;
+      justify-content: flex-end !important;
+      margin-bottom: 0 !important;
+    }
+    /* Oculta el texto interno "Mostrando 1 al 12 de ... resultados" */
+    .pagination-clean nav > div:last-child > div:first-child {
+      display: none !important;
+    }
+    .pagination-clean .pagination {
+      margin-bottom: 0 !important;
+    }
+  </style>
 </div>
 
 
 
 @script
 <script>
-  // Definimos las funciones en window para asegurar su visibilidad global
   window.initSelect2Zonas = function() {
     if (typeof $.fn.select2 !== 'undefined') {
-      $('#sedes').select2({
+      const $sedes = $('#sedes');
+      const $localidades = $('#localidades');
+
+      // Desactivar listeners previos antes de re-inicializar
+      $sedes.off('change');
+      $localidades.off('change');
+
+      if ($sedes.data('select2')) $sedes.select2('destroy');
+      if ($localidades.data('select2')) $localidades.select2('destroy');
+
+      $sedes.select2({
         placeholder: 'Seleccione una o más sedes',
         dropdownParent: $('#modalcrearEditarZona'),
         allowClear: true
       });
-      $('#localidades').select2({
+      $localidades.select2({
         placeholder: 'Seleccione una o más localidades',
         dropdownParent: $('#modalcrearEditarZona'),
         allowClear: true
       });
 
-      // Sincronizar valores iniciales de Livewire a Select2
-      $('#sedes').val($wire.get('sedesSeleccionadas')).trigger('change');
-      $('#localidades').val($wire.get('localidadesSeleccionadas')).trigger('change');
+      // Sincronizar valores iniciales sin disparar eventos de change
+      const sedesVals = $wire.get('sedesSeleccionadas') || [];
+      const locVals = $wire.get('localidadesSeleccionadas') || [];
+      $sedes.val(sedesVals).trigger('change.select2');
+      $localidades.val(locVals).trigger('change.select2');
 
-      // Listeners para sincronizar cambios de Select2 a Livewire
-      $('#sedes').on('change', function () {
-        $wire.set('sedesSeleccionadas', $(this).val());
+      // Listeners para sincronizar cambios a Livewire SIN peticiones innecesarias al servidor (live: false)
+      $sedes.on('change', function () {
+        const val = $(this).val() || [];
+        $wire.set('sedesSeleccionadas', val, false);
       });
-      $('#localidades').on('change', function () {
-        $wire.set('localidadesSeleccionadas', $(this).val());
+      $localidades.on('change', function () {
+        const val = $(this).val() || [];
+        $wire.set('localidadesSeleccionadas', val, false);
       });
     }
   };
@@ -253,12 +297,50 @@
     $('#localidades').off('change');
   };
 
+  const getOffcanvasZona = () => {
+    const el = document.getElementById('modalcrearEditarZona');
+    if (!el) return null;
+    return (window.bootstrap || bootstrap).Offcanvas.getOrCreateInstance(el, {
+      backdrop: true,
+      keyboard: true,
+      scroll: false
+    });
+  };
+
+  $wire.on('abrirModal', data => {
+    const inst = getOffcanvasZona();
+    if (inst) {
+      inst.show();
+      setTimeout(() => {
+        window.initSelect2Zonas();
+        const input = document.getElementById('nombre');
+        if (input) input.focus();
+      }, 150);
+    }
+  });
+
+  $wire.on('cerrarModal', data => {
+    const el = document.getElementById('modalcrearEditarZona');
+    if (el) {
+      const inst = (window.bootstrap || bootstrap).Offcanvas.getInstance(el);
+      if (inst) inst.hide();
+    }
+    window.destroySelect2Zonas();
+  });
+
+  const modalEl = document.getElementById('modalcrearEditarZona');
+  if (modalEl) {
+    modalEl.addEventListener('hidden.bs.offcanvas', () => {
+      window.destroySelect2Zonas();
+    });
+  }
+
   $wire.on('msn', data => {
     Swal.fire({
       title: data.msnTitulo,
       html: data.msnTexto,
       icon: data.msnIcono,
-      customClass: { confirmButton: 'btn btn-primary' },
+      customClass: { confirmButton: 'btn btn-primary rounded-pill px-4' },
       buttonsStyling: false
     });
   });
@@ -272,8 +354,8 @@
       confirmButtonText: 'Sí, dar de baja',
       cancelButtonText: 'Cancelar',
       customClass: {
-        confirmButton: 'btn btn-primary me-3',
-        cancelButton: 'btn btn-label-secondary'
+        confirmButton: 'btn btn-primary rounded-pill px-4 me-3',
+        cancelButton: 'btn btn-label-secondary rounded-pill px-4'
       },
       buttonsStyling: false
     }).then((result) => {
@@ -292,8 +374,8 @@
       confirmButtonText: 'Sí, restaurar',
       cancelButtonText: 'Cancelar',
       customClass: {
-        confirmButton: 'btn btn-primary me-3',
-        cancelButton: 'btn btn-label-secondary'
+        confirmButton: 'btn btn-primary rounded-pill px-4 me-3',
+        cancelButton: 'btn btn-label-secondary rounded-pill px-4'
       },
       buttonsStyling: false
     }).then((result) => {
@@ -312,8 +394,8 @@
       confirmButtonText: 'Sí, ELIMINAR',
       cancelButtonText: 'Cancelar',
       customClass: {
-        confirmButton: 'btn btn-danger me-3',
-        cancelButton: 'btn btn-label-secondary'
+        confirmButton: 'btn btn-danger rounded-pill px-4 me-3',
+        cancelButton: 'btn btn-label-secondary rounded-pill px-4'
       },
       buttonsStyling: false
     }).then((result) => {
@@ -321,31 +403,6 @@
         $wire.dispatch('eliminarPermanenteZona', { id: data.id });
       }
     });
-  });
-
-  $wire.on('cerrarModal', data => {
-    var offcanvasElement = document.getElementById(data.nombreModal);
-    if (offcanvasElement) {
-      var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
-      if (offcanvas) offcanvas.hide();
-    }
-    window.destroySelect2Zonas();
-  });
-
-  $wire.on('abrirModal', data => {
-    var offcanvasElement = document.getElementById(data.nombreModal);
-    if (!offcanvasElement) return;
-
-    var offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement) || new bootstrap.Offcanvas(offcanvasElement);
-    offcanvas.show();
-
-    offcanvasElement.addEventListener('shown.bs.offcanvas', () => {
-      window.initSelect2Zonas();
-    }, { once: true });
-
-    offcanvasElement.addEventListener('hidden.bs.offcanvas', () => {
-      window.destroySelect2Zonas();
-    }, { once: true });
   });
 </script>
 @endscript

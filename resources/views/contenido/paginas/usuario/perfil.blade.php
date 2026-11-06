@@ -382,9 +382,11 @@
                 <h5 class="mb-2 mt-md-6 fw-semibold">{{ $usuario->nombre(3) }}</h5>
                 <ul class="list-inline mb-0 d-flex align-items-center flex-wrap justify-content-sm-start justify-content-center gap-2">
                   <li class="list-inline-item d-flex gap-1">
+                    @if($usuario->tipoUsuario)
                     <span class="badge  rounded-pill px-6 fw-light " style="background-color: {{ $usuario->tipoUsuario->color }}">
                       <i class="{{ $usuario->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $usuario->tipoUsuario->nombre }}</span>
                     </span>
+                    @endif
                   </li>
                 </ul>
               </div>
@@ -432,11 +434,11 @@
                   @endif
 
                   @if($rolActivo->hasPermissionTo('personas.opcion_cambiar_contrasena_asistente'))
-                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalCambioContrasena" onclick="event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', 'usuarios/{{$usuario->id}}/cambiar-contrasena');">Cambiar contraseña</a></li>
+                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalCambioContrasena" onclick="event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', '{{ route('usuario.cambiarContrasena', $usuario) }}');">Cambiar contraseña</a></li>
 
                   <form method="POST" id="cambiarContraseñaDefault_{{$usuario->id}}" action="{{ route('usuario.cambiarContrasenaDefault',  ['usuario' => $usuario ]) }}">
                     @csrf
-                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('cambiarContraseñaDefault_{{$usuario->id}}').submit();">Cambiar contraseña default</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); confirmarCambioContrasenaDefault('cambiarContraseñaDefault_{{$usuario->id}}', '{{ addslashes($usuario->nombre(3)) }}');">Cambiar contraseña default</a></li>
                   </form>
                   @endif
 
@@ -885,7 +887,11 @@
                       </div>
                       <div class="me-2 ms-1 ">
                         <h6 class="mb-0">{{ $usuario->usuarioCreacion->nombre(3) }}</h6>
+                        @if($usuario->usuarioCreacion->tipoUsuario)
                         <small class="text-muted">{{ $usuario->usuarioCreacion->tipoUsuario->nombre }} </small>
+                        @else
+                        <small class="text-muted">Sin tipo de usuario</small>
+                        @endif
                       </div>
                     </div>
                   </div>
@@ -924,46 +930,7 @@
   </div>
   <!--/ Principal-->
 
-  <!-- Modal cambio de contraseña -->
-  <div class="modal fade" id="modalCambioContrasena" aria-hidden="true">
-    <div class="modal-dialog modal-md" role="document">
-      <form id="formCambioContrasena" class="forms-sample" method="POST" action="">
-        @csrf
-        <div class="modal-content">
-          <div class="modal-header d-flex flex-column">
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-
-            <div class="text-center mb-4">
-              <h3 class="role-title mb-2"><i class="ti ti-password ti-lg"></i> Cambio de contraseña</h3>
-              <p class="text-muted">La contraseña debe contener como mínimo 5 caracteres, una letra minúscula y un número.</p>
-            </div>
-
-            <div class="row">
-
-              <!-- Nueva Contrasena -->
-              <div class="col-12 mb-3">
-                <label class="form-label" for="nueva_contrasena">Nueva contraseña</label>
-                <input id="nueva_contrasena" name="password" value="" type="password" class="form-control" required pattern="(?=.*\d)(?=.*[A-Za-z]).{5,}" title="La contraseña debe contener como minimo 5 caracteres alfanumericos, es decir, debe contener como minimo letras y numeros.  "/>
-              </div>
-
-              <!-- Confirmar Contrasena -->
-              <div class="col-12 mb-3">
-                <label class="form-label" for="confirmar_contrasena">Confirmar contraseña</label>
-                <input id="confirmar_contrasena" name="password_confirmation" value="" type="password" class="form-control" required pattern="(?=.*\d)(?=.*[A-Za-z]).{5,}" title="La contraseña debe contener como minimo 5 caracteres alfanumericos, es decir, debe contener como minimo letras y numeros.  "/>
-              </div>
-
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn rounded-pill btn-label-secondary" data-bs-dismiss="modal">Cerrar</button>
-            <button type="submit" class="btn rounded-pill btn-primary"><i class="ti ti-donwload ml-3"></i> Guardar </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
+  @include('contenido.paginas.usuario.modal-cambio-contrasena')
 
 
   @if( $usuario->id == auth()->user()->id )
@@ -1476,7 +1443,7 @@
                       <select id="sede" data-placeholder="{{ $campo->placeholder }}" name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
                         <option value="">Ninguno</option>
                         @foreach ($sedes as $sede)
-                        <option value="{{$sede->id}}" {{ old($campo->name_id, $usuario->sede_id)==$sede->id ? 'selected' : '' }}>{{ucwords ($sede->nombre)}}</option>
+                        <option value="{{$sede->id}}" data-localidades="{{ $sede->localidades->pluck('id')->toJson() }}" {{ old($campo->name_id, $usuario->sede_id)==$sede->id ? 'selected' : '' }}>{{ucwords ($sede->nombre)}}</option>
                         @endforeach
                       </select>
                     <div id="error{{$campo->name_id}}"></div>
@@ -1817,4 +1784,5 @@
 
   @include('contenido.paginas.usuario.scripts.dependencias-campos')
   @include('contenido.paginas.usuario.scripts.validacion-identificacion')
+  @include('contenido.paginas.usuario.scripts.filtro-sedes-localidad')
 @endsection

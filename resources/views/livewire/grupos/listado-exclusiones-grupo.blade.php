@@ -45,11 +45,13 @@
                   <div class="d-flex align-items-start">
                     <div class="me-2 mt-1">
                       <h5 class="mb-1 fw-semibold text-black lh-sm"> {{ $exclusion->nombre(3) }} </h5>
+                      @if($exclusion->tipoUsuario)
                       <div class="d-flex my-2">
                         <span class="badge rounded-pill px-6 fw-light " style="background-color: {{ $exclusion->tipoUsuario->color }}">
                           <i class="{{ $exclusion->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $exclusion->tipoUsuario->nombre }}</span>
                         </span>
                       </div>
+                      @endif
                     </div>
                   </div>
                   <div class="ms-auto">

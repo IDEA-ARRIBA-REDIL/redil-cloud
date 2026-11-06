@@ -43,7 +43,9 @@ use App\Http\Controllers\MateriaController;
 use App\Http\Controllers\MatriculaController;
 use App\Http\Controllers\NivelesEscuelasController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\NovedadActividadController;
 use App\Http\Controllers\OcupacionController;
+use App\Http\Controllers\OfrendaDonacionController;
 use App\Http\Controllers\ParienteUsuarioController;
 use App\Http\Controllers\PasosDeCrecimientoController;
 use App\Http\Controllers\PeriodoController;
@@ -538,22 +540,23 @@ Route::get('/test-traslado-rechazado', function () {
 
 Route::get('/dashboard', function () {
     $usuario = auth()->user();
-    $rolActivo = $usuario->roles()->wherePivot('activo', true)->first();
+    $rolActivo = $usuario->asegurarRolActivo();
 
     if (! $rolActivo) {
-        // Fallback: Si no hay rol activo, redirigir a una página de selección de rol o mostrar error amigable
+        // Fallback: Si no hay rol activo ni roles asignados para activar, redirigir al login
         Auth::logout();
 
-        return redirect()->route('login')->with('error', 'Su usuario aún no tiene un rol activo asignado. Por favor contacte al administrador.');
+        return redirect()->route('login')->with('error', 'Su usuario aún no tiene un rol asignado. Por favor contacte al administrador.');
     }
 
     $formularioMenores = $rolActivo->formularios()->where('tipo_formulario_id', '=', 4)->get();
 
     $hoy = now()->toDateString();
 
-    // Filtrar actividades por vigencia
+    // Filtrar actividades por vigencia y visibilidad en próximas actividades
     $actividadesVigentes = Actividad::with(['tags', 'tipo'])
         ->where('activa', true)
+        ->where('mostrar_en_proximas_actividades', true)
         ->where(function ($query) use ($hoy) {
             $query->whereNull('fecha_visualizacion')
                 ->orWhere('fecha_visualizacion', '<=', $hoy);
@@ -570,6 +573,7 @@ Route::get('/dashboard', function () {
                     });
             });
         })
+        ->orderBy('fecha_inicio', 'asc')
         ->get();
 
     // Filtrar actividades por elegibilidad del usuario usando la nueva lógica del modelo
@@ -622,12 +626,23 @@ Route::get('/pagos/zonapagos/callback', [ZonaPagosController::class, 'handleCall
 Route::get('/pagos/zonapagos/retorno', [ZonaPagosController::class, 'retornoUsuario'])->name('zonapagos.retornoUsuario');
 // Ruta para verificar el estado de un pago de ZonaPagos
 
+// Donaciones / Ofrendas Online (Rutas Públicas Independientes)
+Route::get('/donaciones', [OfrendaDonacionController::class, 'formularioDonaciones'])->name('ofrendas.donaciones.formulario');
+Route::get('/ofrendas/formulario-donaciones', [OfrendaDonacionController::class, 'formularioDonaciones'])->name('ofrendas.donaciones.formulario.alias');
+Route::get('/ofrendas/{ofrenda}/donacion-finalizada', [OfrendaDonacionController::class, 'donacionFinalizada'])->name('ofrendas.donacion.finalizada');
+
 // / actividades rutas publicas
 Route::get('/actividades/proximas-actividades', [ActividadController::class, 'proximas'])->name('actividades.proximas');
 Route::get('/actividades/{actividad}/perfil', [ActividadController::class, 'perfil'])->name('actividades.perfil');
+Route::get('/actividades/{actividad}/novedad', [NovedadActividadController::class, 'crear'])->name('actividades.novedades.crear');
+Route::post('/actividades/{actividad}/novedad', [NovedadActividadController::class, 'store'])->middleware('throttle:15,1')->name('actividades.novedades.store');
 Route::get('/actividades/{inscripcion}/gestionar-inscripciones', [ActividadController::class, 'gestionarInscripciones'])->name('actividades.gestionarInscripciones');
 Route::get('/actividades/{actividad}/asistencias', [ActividadController::class, 'asistenciasActividad'])->name('actividades.asistenciasActividad');
 Route::get('/inscripcion/{inscripcion}/ticket', [CarritoController::class, 'descargarTicketPdf'])->name('inscripcion.ticket');
+
+// Novedades públicas generales
+Route::get('/novedades/registrar', [NovedadActividadController::class, 'crearGeneral'])->name('novedades.publica.crear');
+Route::post('/novedades/registrar', [NovedadActividadController::class, 'storeGeneral'])->middleware('throttle:15,1')->name('novedades.publica.store');
 
 Route::get('/preview-email', function () {
     $user = App\Models\User::first() ?? new App\Models\User(['email' => 'ejemplo@correo.com', 'name' => 'Usuario de Prueba']);
@@ -778,6 +793,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Finanzas
+    Route::get('/finanzas/consulta-transacciones', fn () => view('contenido.paginas.finanzas.consulta-transacciones'))
+        ->middleware('can:finanzas.consultar_transacciones')
+        ->name('finanzas.consultaTransacciones');
     Route::get('/finanzas/ingreso', [FinanzaController::class, 'ingreso'])->name('finanzas.ingreso');
 
     Route::get('/finanzas/gestionar-ingresos', [FinanzaController::class, 'gestionarIngresos'])->name('finanzas.gestionarIngresos');
@@ -1194,6 +1212,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // periodos
     Route::get('/periodos/gestionar', [PeriodoController::class, 'gestionar'])->name('periodo.gestionar');
     Route::get('/periodos/{periodo}/dashboard', \App\Http\Controllers\DashboardPeriodoController::class)->name('periodo.dashboard');
+    Route::get('/periodos/{periodo}/dashboard-horarios', \App\Http\Controllers\DashboardHorariosPeriodoController::class)->name('periodo.dashboard-horarios');
     Route::post('/periodos/{periodo}/dashboard/materias/{materiaPeriodo}/cerrar', [\App\Http\Controllers\DashboardPeriodoController::class, 'cerrar'])->name('periodo.dashboard.cerrar-materia');
     Route::post('/periodos/{periodo}/dashboard/materias/{materiaPeriodo}/reabrir', [\App\Http\Controllers\DashboardPeriodoController::class, 'reabrir'])->name('periodo.dashboard.reabrir-materia');
     Route::get('/periodos/{periodo}/dashboard/materias/{materiaPeriodo}/informe', [\App\Http\Controllers\DashboardPeriodoController::class, 'informe'])->name('periodo.dashboard.informe-materia');
@@ -1407,6 +1426,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Dashboard de Configuración
     Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
+
+    Route::prefix('configuracion/instagram')->name('instagram.')->group(function (): void {
+        Route::get('/', [\App\Http\Controllers\InstagramController::class, 'index'])->name('index');
+        Route::post('/conectar', [\App\Http\Controllers\InstagramController::class, 'connect'])->name('connect');
+        Route::get('/callback', [\App\Http\Controllers\InstagramController::class, 'callback'])->name('callback');
+        Route::post('/renovar', [\App\Http\Controllers\InstagramController::class, 'refresh'])->name('refresh');
+        Route::delete('/', [\App\Http\Controllers\InstagramController::class, 'disconnect'])->name('disconnect');
+    });
     Route::get('/configuracion/profesiones', [ProfesionController::class, 'index'])->name('profesiones.index');
     Route::get('/configuracion/ocupaciones', [OcupacionController::class, 'index'])->name('ocupaciones.index');
     Route::get('/configuracion/sectores-economicos', [SectorEconomicoController::class, 'index'])->name('sectores-economicos.index');
@@ -1423,6 +1450,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Nueva ruta para editar permisos de un rol (Standalone)
     Route::get('/configuracion/gestionar-roles/{role}/permisos', [RolController::class, 'editarPermisos'])->name('configuracion.editar-permisos-rol');
+
+    // Módulo de control de permisos (gestión masiva hacia roles)
+    Route::get('/configuracion/gestionar-permisos', [RolController::class, 'gestionarPermisos'])->name('configuracion.gestionar-permisos');
 
     // zonas
     Route::get('/configuracion/gestionar-zonas', [ZonaController::class, 'gestionar'])->name('configuracion.gestionar-zonas');
@@ -1595,6 +1625,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Notificaciones
     Route::get('/notificaciones', [NotificacionController::class, 'lista'])->name('notificaciones.lista');
     Route::get('/notificaciones/configuracion', [NotificacionController::class, 'configuracion'])->name('notificaciones.configuracion');
+
+    // Novedades (gestión administrativa)
+    Route::get('/novedades/gestionar', [NovedadActividadController::class, 'gestion'])->name('novedades.gestion');
+    Route::get('/actividades/novedades/gestion', [NovedadActividadController::class, 'gestion'])->name('actividades.novedades.gestion');
 
     // --- Rutas del Módulo Hitos ---
     Route::prefix('hitos')->name('hitos.')->group(function () {

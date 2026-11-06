@@ -35,8 +35,9 @@ class DashboardFormularios extends Component
 
     public function render()
     {
-
-        $compradores = Compra::where('actividad_id', $this->actividad->id)->get();
+        $compradores = Compra::where('actividad_id', $this->actividad->id)
+            ->with(['carritos.categoria', 'user'])
+            ->get();
 
         $elementosFormulario = $this->actividad->elementos()
             ->where('tipo_elemento_id', '!=', 1)
@@ -84,6 +85,7 @@ class DashboardFormularios extends Component
         return view(
             'livewire.actividades.dashboard-formularios',
             [
+                'actividad' => $this->actividad,
                 'compradores' => $compradores,
                 'elementosFormulario' => $elementosFormulario,
                 'mapaRespuestas' => $mapaRespuestas,
@@ -191,7 +193,8 @@ class DashboardFormularios extends Component
             // Esto es lo más preciso ya que el carrito guarda la cantidad total (principal + invitados)
             foreach ($compra->carritos as $item) {
                 if ($item->categoria) {
-                    $item->categoria->decrement('aforo_ocupado', $item->cantidad);
+                    $nuevoOcupado = max(0, ((int) $item->categoria->aforo_ocupado) - (int) $item->cantidad);
+                    $item->categoria->update(['aforo_ocupado' => $nuevoOcupado]);
                 }
             }
 
@@ -390,8 +393,11 @@ class DashboardFormularios extends Component
             // Calculamos cuántos cupos vamos a devolver al aforo.
             $cuposADevolver = 1 + $inscripcion->limite_invitados;
 
-            // Devolvemos los cupos.
-            $inscripcion->categoriaActividad->decrement('aforo_ocupado', $cuposADevolver);
+            // Devolvemos los cupos sin permitir aforo ocupado negativo.
+            if ($inscripcion->categoriaActividad) {
+                $nuevoOcupado = max(0, ((int) $inscripcion->categoriaActividad->aforo_ocupado) - $cuposADevolver);
+                $inscripcion->categoriaActividad->update(['aforo_ocupado' => $nuevoOcupado]);
+            }
 
             // Revertimos la inscripción a estado 'Iniciada' y reseteamos los invitados.
             $inscripcion->update([

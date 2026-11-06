@@ -252,11 +252,11 @@ $configData = Helper::appClasses();
             <li class="mb-1 mt-1 p-2 border rounded">
               <div class="d-flex align-items-start d-flex">
                 <div class="d-flex align-items-center">
-                  <div class="badge" style="background-color: {{$usuario->tipoUsuario->color}};">
-                    <i class="ti {{$usuario->tipoUsuario->icono}} fs-1"></i>
+                  <div class="badge" style="background-color: {{ $usuario->tipoUsuario?->color ?? '#6c757d' }};">
+                    <i class="ti {{ $usuario->tipoUsuario?->icono ?? 'ti-user' }} fs-1"></i>
                   </div>
                   <div class="me-3 ms-1 d-flex ">
-                    <h5 class="mb-0 d-flex align-items-center">{{$usuario->tipoUsuario->nombre}}</h5>
+                    <h5 class="mb-0 d-flex align-items-center">{{ $usuario->tipoUsuario?->nombre ?? 'Sin tipo de usuario' }}</h5>
                   </div>
                 </div>
 
@@ -296,8 +296,8 @@ $configData = Helper::appClasses();
                     <input id="estado_paso_{{$paso->id}}" name="estado_paso_{{$paso->id}}" value="{{ $paso->estado_paso}}" class="d-none" />
                     <div class="accordion mt-1" id="accordion{{$paso->id}}">
                       <div class="card accordion-item">
-                        <h2 class="accordion-header" id="headingOne">
-                          <button type="button" class="accordion-button" data-bs-toggle="collapse" data-bs-target="#accordionPaso{{$paso->id}}" aria-expanded="true" aria-controls="accordionPaso{{$paso->id}}">
+                        <h2 class="accordion-header" id="headingOne{{$paso->id}}">
+                          <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#accordionPaso{{$paso->id}}" aria-expanded="false" aria-controls="accordionPaso{{$paso->id}}">
                             Detalle
                           </button>
                         </h2>
@@ -308,42 +308,47 @@ $configData = Helper::appClasses();
                         </div>
                       </div>
                     </div>
+                  </div>
                 </li>
                 @endforeach
               @endforeach
             @else
-            @foreach ($pasosDeCrecimiento as $paso)
-            <li class="timeline-item timeline-item-transparent ps-4">
-              <span class="timeline-point timeline-point-{{ $paso->clase_color }}"></span>
-              <div class="timeline-event">
-                <div class="timeline-header">
-                  <h6 class="mb-0 ml-1 fw-bold">{{ $paso->nombre }}</h6>
-                  <span class="badge rounded-pill bg-label-{{ $paso->clase_color }}">
-                    {{ $paso->estado_nombre }}
+              @foreach($seccionesPasoDeCrecimiento as $seccion)
+                <p class="card-text text-uppercase fw-bold"><i class="ti ti-list-details ms-n1 me-2"></i>{{ $seccion->nombre }}</p>
+                @foreach ($seccion->pasos as $paso)
+                <li class="timeline-item timeline-item-transparent ps-4">
+                  <span class="timeline-indicator-advanced timeline-indicator-{{ $paso->clase_color }}">
+                    <i class="ti ti-square rounded-circle scaleX-n1-rtl"></i>
                   </span>
-                </div>
-                <small class="text-muted"><i class="ti ti-calendar"></i> {{ $paso->estado_fecha ?  Carbon\Carbon::parse($paso->estado_fecha)->locale('es')->isoFormat(('DD MMMM Y')) : 'Sin dato' }}</small>
-                <p class="mb-2 d-none"><b>Detalle: </b>{{ $paso->detalle_paso }}</p>
+                  <div class="timeline-event">
+                    <div class="timeline-header">
+                      <h6 class="mb-0 ml-1 fw-bold">{{ $paso->nombre }}</h6>
+                      <span class="badge rounded-pill bg-label-{{ $paso->clase_color }}">
+                        {{ $paso->estado_nombre }}
+                      </span>
+                    </div>
+                    <small class="text-muted"><i class="ti ti-calendar"></i> {{ $paso->estado_fecha ?  Carbon\Carbon::parse($paso->estado_fecha)->locale('es')->isoFormat('DD MMMM Y') : 'Sin dato' }}</small>
 
-                @if($paso->detalle_paso)
-                <div class="accordion mt-3" id="accordionExample">
-                  <div class="card accordion-item">
-                    <h2 class="accordion-header" id="headingOne">
-                      <button type="button" class="accordion-button" data-bs-toggle="collapse" data-bs-target="#accordionOne" aria-expanded="true" aria-controls="accordionOne">
-                        Detalle
-                      </button>
-                    </h2>
-
-                    <div id="accordionOne" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-                      <div class="accordion-body">
-                        {{ $paso->detalle_paso }}
+                    @if($paso->detalle_paso)
+                    <div class="accordion mt-2" id="accordionLectura{{$paso->id}}">
+                      <div class="card accordion-item">
+                        <h2 class="accordion-header" id="headingLectura{{$paso->id}}">
+                          <button type="button" class="accordion-button collapsed py-2" data-bs-toggle="collapse" data-bs-target="#accordionPasoLectura{{$paso->id}}" aria-expanded="false" aria-controls="accordionPasoLectura{{$paso->id}}">
+                            Detalle
+                          </button>
+                        </h2>
+                        <div id="accordionPasoLectura{{$paso->id}}" class="accordion-collapse collapse" data-bs-parent="#accordionLectura{{$paso->id}}">
+                          <div class="accordion-body py-2">
+                            {{ $paso->detalle_paso }}
+                          </div>
+                        </div>
                       </div>
                     </div>
+                    @endif
                   </div>
-                </div>
-                @endif
-            </li>
-            @endforeach
+                </li>
+                @endforeach
+              @endforeach
             @endif
           </ul>
         </div>

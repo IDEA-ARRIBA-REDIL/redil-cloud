@@ -806,7 +806,7 @@ $configData = Helper::appClasses();
                 <select id="sede" data-placeholder="{{ $campo->placeholder }}" name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
                   <option value="">Ninguno</option>
                   @foreach ($sedes as $sede)
-                  <option value="{{$sede->id}}" {{ old($campo->name_id)==$sede->id ? 'selected' : '' }}>{{ucwords ($sede->nombre)}}</option>
+                  <option value="{{$sede->id}}" data-localidades="{{ $sede->localidades->pluck('id')->toJson() }}" {{ old($campo->name_id)==$sede->id ? 'selected' : '' }}>{{ucwords ($sede->nombre)}}</option>
                   @endforeach
                 </select>
                  <div id="error{{$campo->name_id}}"></div>
@@ -1109,15 +1109,14 @@ $configData = Helper::appClasses();
     <div class="form-check mt-3">
       <input class="form-check-input" type="checkbox" name="habeas" @checked(old("habeas")) required id="habeas">
       <label class="form-check-label" for="habeas">
-        <b>Términos y condiciones</b>
+        <b>{{ $formulario->label_terminos_condiciones ?: 'Términos y Condiciones' }}</b>
       </label>
       <br>
-      {{$formulario->mensaje_terminos_condiciones_resumen}}
-      @if($formulario->mensaje_terminos_condiciones_detallado!="")
-      <a href="javascript:;" target="_blank" data-bs-toggle="modal" data-bs-target="#modalTerminosCondiciones">(Ver más) </a>
-      @endif
-      @if($formulario->url_terminos_condiciones!="")
+      {!! nl2br($formulario->mensaje_terminos_condiciones_resumen) !!}
+      @if($formulario->url_terminos_condiciones != "")
       <a href="{{$formulario->url_terminos_condiciones}}" target="_blank">Más información...</a>
+      @elseif($formulario->mensaje_terminos_condiciones_detallado != "")
+      <a href="javascript:;" target="_blank" data-bs-toggle="modal" data-bs-target="#modalTerminosCondiciones">(Ver más) </a>
       @endif
 
       @if($formulario->mensaje_terminos_condiciones_detallado !="")
@@ -1128,7 +1127,7 @@ $configData = Helper::appClasses();
             <div class="modal-body p-1">
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               <div class="mb-6">
-                <h4 class="mb-2 text-center fw-semibold">{{ $formulario->label_terminos_condiciones }}</h4>
+                <h4 class="mb-2 text-center fw-semibold">{{ $formulario->label_terminos_condiciones ?: 'Términos y Condiciones' }}</h4>
                 <p></p>
               </div>
               @if(auth()->user())
@@ -1225,5 +1224,6 @@ $configData = Helper::appClasses();
 
 @include('contenido.paginas.usuario.scripts.dependencias-campos')
 @include('contenido.paginas.usuario.scripts.validacion-identificacion')
+@include('contenido.paginas.usuario.scripts.filtro-sedes-localidad')
 
 @endsection

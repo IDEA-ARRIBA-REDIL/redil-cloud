@@ -721,8 +721,11 @@ class Actividad extends Model
         // Si no hay categoría, usamos las restricciones de la actividad misma
         $objetoRestriccion = ($this->restriccion_por_categoria && $categoria) ? $categoria : $this;
 
+        $tieneRestricciones = false;
+
         // 1. Validar Género
-        if ($objetoRestriccion->genero !== 3) {
+        if ($objetoRestriccion->genero !== null && $objetoRestriccion->genero !== 3) {
+            $tieneRestricciones = true;
             if (($objetoRestriccion->genero === 1 && $usuario->genero !== 0) || ($objetoRestriccion->genero === 2 && $usuario->genero !== 1)) {
                 $motivosFallo[] = 'No cumple con el requisito de género.';
             }
@@ -730,6 +733,7 @@ class Actividad extends Model
 
         // 2. Validar Tipo de Usuario
         if ($objetoRestriccion->tipoUsuarios->isNotEmpty()) {
+            $tieneRestricciones = true;
             if (! $objetoRestriccion->tipoUsuarios->contains('id', $usuario->tipo_usuario_id)) {
                 $motivosFallo[] = 'Tipo de usuario no permitido.';
             }
@@ -737,6 +741,7 @@ class Actividad extends Model
 
         // 3. Validar Rango de Edad
         if ($objetoRestriccion->rangosEdad->isNotEmpty()) {
+            $tieneRestricciones = true;
             if (! $usuario->fecha_nacimiento) {
                 $motivosFallo[] = 'Fecha de nacimiento no registrada.';
             } else {
@@ -752,6 +757,7 @@ class Actividad extends Model
 
         // 4. Validar Sedes
         if ($objetoRestriccion->sedes->isNotEmpty()) {
+            $tieneRestricciones = true;
             if (! $objetoRestriccion->sedes->contains('id', $usuario->sede_id)) {
                 $motivosFallo[] = 'No pertenece a una sede válida.';
             }
@@ -759,6 +765,7 @@ class Actividad extends Model
 
         // 5. Validar Pasos de Crecimiento
         if ($objetoRestriccion->procesosRequisito->isNotEmpty()) {
+            $tieneRestricciones = true;
             foreach ($objetoRestriccion->procesosRequisito as $requisito) {
                 $pasoUsuario = $pasosCrecimientoUsuario->get($requisito->id);
                 $estadoRequerido = $requisito->pivot->estado_paso_crecimiento_usuario_id ?? $requisito->pivot->estado;
@@ -770,10 +777,14 @@ class Actividad extends Model
 
         // 6. Validar Tareas de Consolidación
         $tareasRequisito = ($this->restriccion_por_categoria && $categoria) ? $categoria->tareasRequisito : $this->tareasRequisito;
-        $this->_validarTareasRequisito($usuario, $tareasRequisito, $motivosFallo);
+        if ($tareasRequisito->isNotEmpty()) {
+            $tieneRestricciones = true;
+            $this->_validarTareasRequisito($usuario, $tareasRequisito, $motivosFallo);
+        }
 
         // 7. Validar Estados Civiles
         if ($objetoRestriccion->estadosCiviles->isNotEmpty()) {
+            $tieneRestricciones = true;
             if (! $objetoRestriccion->estadosCiviles->contains('id', $usuario->estado_civil_id)) {
                 $motivosFallo[] = 'Estado civil no admitido.';
             }
@@ -781,10 +792,19 @@ class Actividad extends Model
 
         // 8. Validar Servicios
         if ($objetoRestriccion->tipoServicios->isNotEmpty()) {
+            $tieneRestricciones = true;
             $serviciosUsuario = $usuario->serviciosPrestadosEnGrupos()->pluck('id')->toArray();
             $serviciosCategoria = $objetoRestriccion->tipoServicios->pluck('id')->toArray();
             if (empty(array_intersect($serviciosUsuario, $serviciosCategoria))) {
                 $motivosFallo[] = 'Servicios requeridos insuficientes.';
+            }
+        }
+
+        // 9. Si la actividad no es totalmente pública, no tiene restricción por categoría y no tiene restricciones definidas,
+        // no debe estar disponible para todos (a menos que el usuario tenga permiso de ver todas las actividades)
+        if (! $this->totalmente_publica && ! $this->restriccion_por_categoria && ! $tieneRestricciones) {
+            if (! $usuario->can('actividades.ver_todas_las_actividades')) {
+                $motivosFallo[] = 'Actividad no disponible para el público general.';
             }
         }
 
@@ -1143,5 +1163,67 @@ class Actividad extends Model
         }
 
         return $cumpleTodo;
+    }
+
+    /**
+     * Determina si las inscripciones / compras de la actividad están abiertas según fechas y estado.
+     */
+    public function inscripcionesAbiertas(): bool
+    {
+        if ($this->activa === false) {
+            return false;
+        }
+
+        $ahora = Carbon::now();
+
+        if ($this->fecha_visualizacion) {
+            $inicio = Carbon::parse($this->fecha_visualizacion)->startOfDay();
+            if ($ahora->lt($inicio)) {
+                return false;
+            }
+        }
+
+        $fechaLimite = $this->fecha_cierre
+            ?: ($this->fecha_finalizacion ?: $this->fecha_inicio);
+
+        if ($fechaLimite) {
+            $fin = Carbon::parse($fechaLimite)->endOfDay();
+            if ($ahora->gt($fin)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Retorna el motivo si las inscripciones no están abiertas ('inactiva', 'proximamente', 'cerrada') o null si están abiertas.
+     */
+    public function motivoCierreInscripciones(): ?string
+    {
+        if ($this->activa === false) {
+            return 'inactiva';
+        }
+
+        $ahora = Carbon::now();
+
+        if ($this->fecha_visualizacion) {
+            $inicio = Carbon::parse($this->fecha_visualizacion)->startOfDay();
+            if ($ahora->lt($inicio)) {
+                return 'proximamente';
+            }
+        }
+
+        $fechaLimite = $this->fecha_cierre
+            ?: ($this->fecha_finalizacion ?: $this->fecha_inicio);
+
+        if ($fechaLimite) {
+            $fin = Carbon::parse($fechaLimite)->endOfDay();
+            if ($ahora->gt($fin)) {
+                return 'cerrada';
+            }
+        }
+
+        return null;
     }
 }

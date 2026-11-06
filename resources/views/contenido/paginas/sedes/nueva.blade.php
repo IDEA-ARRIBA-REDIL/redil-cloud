@@ -35,9 +35,14 @@ $configData = Helper::appClasses();
 
   $(document).ready(function() {
     $('.select2').select2({
-      width: '100px',
+      width: '100%',
       allowClear: true,
       placeholder: 'Ninguno'
+    });
+
+    $('#localidades').select2({
+      width: '100%',
+      placeholder: 'Seleccione las localidades que cubre esta sede'
     });
   });
 
@@ -287,6 +292,26 @@ $configData = Helper::appClasses();
             'conDadosDeBaja' => 'no',
             'estiloSeleccion' => 'pequeno'
           ])
+
+          <!-- Localidades con cobertura -->
+          <div class="mb-3 col-12">
+            <label class="form-label" for="localidades">
+              <i class="ti ti-map-pin me-1 text-primary"></i>Localidades con cobertura
+            </label>
+            <select id="localidades" name="localidades[]" class="select2 form-select" multiple data-placeholder="Seleccione las localidades que cubre esta sede">
+              @foreach ($localidades as $localidad)
+                @php
+                  $nombreMunicipio = $localidad->municipio ? $localidad->municipio->nombre : '';
+                  $textoLocalidad = ucwords($localidad->nombre) . ($nombreMunicipio ? ' (' . ucwords($nombreMunicipio) . ')' : '');
+                @endphp
+                <option value="{{ $localidad->id }}" {{ (is_array(old('localidades')) && in_array($localidad->id, old('localidades'))) ? 'selected' : '' }}>
+                  {{ $textoLocalidad }}
+                </option>
+              @endforeach
+            </select>
+            <div class="form-text">Si se asignan localidades, esta sede solo se sugerirá a los usuarios que pertenezcan a dichas localidades. Si no se asigna ninguna, estará disponible como opción general.</div>
+          </div>
+          <!-- /Localidades con cobertura -->
 
           <!-- default -->
           <div class="col-12 col-md-6 mb-2">

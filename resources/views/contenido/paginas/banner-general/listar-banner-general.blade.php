@@ -324,21 +324,34 @@ $configData = Helper::appClasses();
 @endsection
 
 @section('content')
-<h4 class="mb-1 fw-semibold text-primary">Banner general</h4>
-<p class="text-black">Gestiona las imágenes visibles en la aplicación.</p>
+  <!-- Header de Navegación y Acciones -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+          <i class="ti ti-arrow-left"></i>
+        </a>
+        <h4 class="mb-0 fw-semibold text-primary">Banners generales</h4>
+      </div>
+      <p class="text-black mb-0 small">
+        Gestiona las imágenes visibles y anuncios en la aplicación.
+      </p>
+    </div>
+
+    <div>
+      <button type="button" class="btn btn-primary waves-effect waves-light rounded-pill px-4 shadow-sm" onclick="crearBanner()">
+        <i class="ti ti-plus me-1"></i> Nuevo banner
+      </button>
+    </div>
+  </div>
 
 <form id="formBuscar" class="forms-sample" method="GET" action="{{ route('banner-general.listarBanners') }}">
-    <div class="row mt-4 mb-4">
+    <div class="row mb-4">
         <div class="col-12 col-md-6">
             <div class="input-group input-group-merge bg-white">
                 <input id="buscar" name="buscar" type="text" value="{{ request('buscar') }}" class="form-control" placeholder="Buscar por nombre..." aria-describedby="btnBusqueda">
                 <span class="input-group-text"><i class="ti ti-search"></i></span>
             </div>
-        </div>
-        <div class="col-12 col-md-6 d-flex justify-content-end mt-3 mt-md-0">
-            <button type="button" class="btn btn-primary waves-effect waves-light rounded-pill" onclick="crearBanner()">
-                <i class="ti ti-plus me-1"></i> Nuevo banner
-            </button>
         </div>
     </div>
 </form>

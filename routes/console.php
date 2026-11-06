@@ -19,5 +19,8 @@ Schedule::command('reportes:notificar-pendientes')->everyThirtyMinutes();
 
 Schedule::command('licenses:check-expiry')->dailyAt('01:00')->withoutOverlapping()->onOneServer();
 
+// Sincronización del árbol jerárquico de grupos (cada noche a las 02:00 AM)
+Schedule::command('grupos:sincronizar-jerarquia')->dailyAt('02:00')->withoutOverlapping();
+
 // Procesamiento de cola de trabajos en segundo plano (Megainformes, correos, etc.)
 Schedule::command('queue:work --stop-when-empty --tries=2')->everyMinute()->withoutOverlapping();

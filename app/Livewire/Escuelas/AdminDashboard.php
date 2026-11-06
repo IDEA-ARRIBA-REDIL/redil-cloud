@@ -63,6 +63,11 @@ class AdminDashboard extends Component
             'materiaPeriodo.materia:id,nombre',
             'horarioBase.aula.sede:id,nombre',
             'maestros.user:id,primer_nombre,primer_apellido', // Importante para el botón "Acceder"
+        ])->withCount([
+            'matriculasDeAlumnos as matriculas_count',
+            'instanciasMatriculaAlumnos as estados_academicos_count' => function ($q) {
+                $q->whereHas('matricula');
+            },
         ])->get();
     }
 

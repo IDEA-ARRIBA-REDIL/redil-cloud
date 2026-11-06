@@ -2,21 +2,34 @@
 
 @section('title', 'Tipos de ofrenda')
 
-{{-- Estilos de SweetAlert2 --}}
+{{-- Estilos de SweetAlert2 y Select2 --}}
 @section('vendor-style')
-@vite(['resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'])
+@vite([
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+  'resources/assets/vendor/libs/select2/select2.scss'
+])
 @endsection
 
 @section('content')
 
 <div class="container mt-4">
-  <h4 class="mb-1 fw-semibold text-primary">Tipos de ofrenda</h4>
-  <p class="mb-8 text-black">Aquí podrás gestionar los tipos de ofrenda</p>
+  <!-- Header de Navegación y Acciones -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
+          <i class="ti ti-arrow-left"></i>
+        </a>
+        <h4 class="mb-0 fw-semibold text-primary">Tipos de ofrenda</h4>
+      </div>
+      <p class="text-black mb-0 small">
+        Aquí podrás gestionar los tipos de ofrenda.
+      </p>
+    </div>
 
-  <div class="row g-4 mb-4">
-    <div class="col-12 text-end">
+    <div>
       <!-- Botón Crear -->
-      <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#crearModal">
+      <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#crearModal">
         <i class="ti ti-plus me-1"></i> Nuevo tipo de ofrenda
       </button>
     </div>
@@ -44,6 +57,7 @@
                 data-formulario_donaciones="{{ $tipo->formulario_donaciones }}"
                 data-tipo_reunion="{{ $tipo->tipo_reunion }}"
                 data-ofrenda_obligatoria="{{ $tipo->ofrenda_obligatoria }}"
+                data-destinatarios="{{ $tipo->destinatarios->pluck('id')->toJson() }}"
                 data-bs-toggle="tooltip"
                 title="Editar">
                 <i class="ti ti-edit ti-md text-black"></i>
@@ -86,6 +100,19 @@
                   <span class="badge bg-label-secondary">Sin atributos</span>
                 @endif
             </div>
+
+            @if($tipo->formulario_donaciones)
+            <div class="col-12 mt-2">
+              <span class="fw-semibold small text-black d-block mb-1">Destinatarios donaciones:</span>
+              <div class="d-flex flex-wrap gap-1">
+                @forelse($tipo->destinatarios as $dest)
+                  <span class="badge bg-label-dark">{{ $dest->nombre }}</span>
+                @empty
+                  <span class="text-muted small fst-italic">Ninguno asignado</span>
+                @endforelse
+              </div>
+            </div>
+            @endif
           </div>
 
         </div>
@@ -143,6 +170,16 @@
           <label class="form-check-label" for="editFormularioDonaciones">¿Se usa en formulario de donaciones?</label>
         </div>
 
+        <div class="mb-3 ps-4 d-none" id="contenedorDestinatariosEditar">
+          <label class="form-label">Destinatarios habilitados para donación</label>
+          <select name="destinatarios[]" id="editDestinatarios" class="form-select select2-destinatarios-editar" multiple="multiple" data-placeholder="Selecciona uno o más destinatarios">
+            @foreach($destinatarios ?? [] as $destinatario)
+              <option value="{{ $destinatario->id }}">{{ $destinatario->nombre }}</option>
+            @endforeach
+          </select>
+          <small class="text-muted">El donante podrá elegir entre estos destinatarios al seleccionar este tipo de ofrenda.</small>
+        </div>
+
         <div class="form-check mb-2">
           <input class="form-check-input" type="checkbox" name="tipo_reunion" id="editTipoReunion" value="1">
           <label class="form-check-label" for="editTipoReunion">¿Está asociada a un tipo de reunión?</label>
@@ -156,7 +193,7 @@
 
       <div class="modal-footer">
          <button class="btn btn-primary rounded-pill waves-effect waves-light">Actualizar</button>
-        <button class="btn btn-outline-secondary rounded-pill waves-effect waves-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="btn" type="button" class="btn btn-outline-secondary rounded-pill waves-effect waves-light" data-bs-dismiss="modal">Cancelar</button>
 
       </div>
     </form>
@@ -199,6 +236,16 @@
           <label class="form-check-label" for="crearFormularioDonaciones">¿Se usa en formulario de donaciones?</label>
         </div>
 
+        <div class="mb-3 ps-4 d-none" id="contenedorDestinatariosCrear">
+          <label class="form-label">Destinatarios habilitados para donación</label>
+          <select name="destinatarios[]" id="crearDestinatarios" class="form-select select2-destinatarios-crear" multiple="multiple" data-placeholder="Selecciona uno o más destinatarios">
+            @foreach($destinatarios ?? [] as $destinatario)
+              <option value="{{ $destinatario->id }}">{{ $destinatario->nombre }}</option>
+            @endforeach
+          </select>
+          <small class="text-muted">El donante podrá elegir entre estos destinatarios al seleccionar este tipo de ofrenda.</small>
+        </div>
+
         <div class="form-check mb-2">
           <input class="form-check-input" type="checkbox" name="tipo_reunion" id="crearTipoReunion" value="1">
           <label class="form-check-label" for="crearTipoReunion">¿Está asociada a un tipo de reunión?</label>
@@ -212,7 +259,7 @@
 
       <div class="modal-footer">
         <button class="btn btn-primary rounded-pill waves-effect waves-light">Guardar</button>
-        <button class="btn btn-outline-secondary rounded-pill waves-effect waves-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-outline-secondary rounded-pill waves-effect waves-light" data-bs-dismiss="modal">Cancelar</button>
 
       </div>
     </form>
@@ -220,20 +267,51 @@
 </div>
 @endsection
 
-{{-- Scripts de SweetAlert2 --}}
+{{-- Scripts de SweetAlert2 y Select2 --}}
 @section('vendor-script')
-@vite(['resources/assets/vendor/libs/sweetalert2/sweetalert2.js'])
+@vite([
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+  'resources/assets/vendor/libs/select2/select2.js'
+])
 @endsection
 
 @push('scripts')
 <script>
   document.addEventListener("DOMContentLoaded", () => {
+    const crearCheckDonaciones = document.getElementById("crearFormularioDonaciones");
+    const contenedorCrear = document.getElementById("contenedorDestinatariosCrear");
+    const editCheckDonaciones = document.getElementById("editFormularioDonaciones");
+    const contenedorEditar = document.getElementById("contenedorDestinatariosEditar");
+
+    if (window.jQuery && $.fn.select2) {
+      $('#crearDestinatarios').select2({
+        dropdownParent: $('#crearModal'),
+        width: '100%'
+      });
+      $('#editDestinatarios').select2({
+        dropdownParent: $('#editarModal'),
+        width: '100%'
+      });
+    }
+
+    if (crearCheckDonaciones) {
+      crearCheckDonaciones.addEventListener("change", function() {
+        contenedorCrear.classList.toggle("d-none", !this.checked);
+      });
+    }
+
+    if (editCheckDonaciones) {
+      editCheckDonaciones.addEventListener("change", function() {
+        contenedorEditar.classList.toggle("d-none", !this.checked);
+      });
+    }
+
     document.querySelectorAll(".btn-edit").forEach(button => {
       button.addEventListener("click", function() {
         // Llenar el formulario
         const form = document.getElementById("formEditar");
         const id = this.dataset.id;
-        form.action = `/tipo-ofrenda/${id}`; // ajusta si tu ruta es distinta
+        form.action = `/tipo-ofrenda/${id}`;
 
         document.getElementById("editNombre").value = this.dataset.nombre;
         document.getElementById("editDescripcion").value = this.dataset.descripcion;
@@ -241,9 +319,28 @@
 
         // Checkbox
         document.getElementById("editGenerica").checked = this.dataset.generica == 1;
-        document.getElementById("editFormularioDonaciones").checked = this.dataset.formulario_donaciones == 1;
+        const usaDonaciones = this.dataset.formulario_donaciones == 1;
+        document.getElementById("editFormularioDonaciones").checked = usaDonaciones;
         document.getElementById("editTipoReunion").checked = this.dataset.tipo_reunion == 1;
         document.getElementById("editOfrendaObligatoria").checked = this.dataset.ofrenda_obligatoria == 1;
+
+        contenedorEditar.classList.toggle("d-none", !usaDonaciones);
+
+        let destinatariosIds = [];
+        try {
+          destinatariosIds = JSON.parse(this.dataset.destinatarios || "[]").map(String);
+        } catch (e) {
+          destinatariosIds = [];
+        }
+
+        if (window.jQuery && $.fn.select2) {
+          $('#editDestinatarios').val(destinatariosIds).trigger('change');
+        } else {
+          const selectEl = document.getElementById("editDestinatarios");
+          Array.from(selectEl.options).forEach(opt => {
+            opt.selected = destinatariosIds.includes(String(opt.value));
+          });
+        }
 
         // Mostrar el modal manualmente
         const modal = new bootstrap.Modal(document.getElementById("editarModal"));

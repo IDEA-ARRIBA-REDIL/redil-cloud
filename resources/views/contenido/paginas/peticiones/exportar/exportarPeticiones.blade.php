@@ -36,6 +36,10 @@ border: 1px solid blue;
         <td>{{ $peticion->paisNombre }}</td>
         @endif
 
+        @if($camposPeticiones->where('value', 'ciudad')->count() > 0)
+        <td>{{ $peticion->ciudad ?? 'Sin dato' }}</td>
+        @endif
+
         @if($camposPeticiones->where('value', 'autor_creacion_id')->count() > 0)
         <td>{{ $peticion->usuarioCreacion }}</td>
         @endif
@@ -58,6 +62,10 @@ border: 1px solid blue;
 
         @if($camposPeticiones->where('value', 'fecha')->count() > 0)
         <td>{{ $peticion->fecha }}</td>
+        @endif
+
+        @if($camposPeticiones->where('value', 'formulario_usuario_id')->count() > 0)
+        <td>{{ $peticion->formularioUsuario ? ($peticion->formularioUsuario->titulo ?? $peticion->formularioUsuario->nombre) : 'N/A' }}</td>
         @endif
       </tr>
     @endforeach

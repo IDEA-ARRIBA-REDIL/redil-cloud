@@ -78,10 +78,7 @@ $configData = Helper::appClasses();
         </div>
         <div class="user-profile-header d-flex flex-column flex-md-row text-sm-start text-center mb-5">
           <div class="flex-shrink-0 mt-n2 mx-0 mx-auto">
-            <div class="card rounded-pill icon-card text-center mb-0 mx-3 p-2" style="background-color: {{ $grupo->tipoGrupo->color }}">
-              <div class="card-body text-white"> <i class="ti ti-users-group ti-xl"></i>
-              </div>
-            </div>
+            @include('contenido.paginas.grupos.partials.header-icono-grupo')
           </div>
           <div class="flex-grow-1 mt-3 mt-md-5">
             <div class="d-flex align-items-md-end align-items-md-start align-items-center justify-content-md-between justify-content-start mx-2 flex-md-row flex-column gap-4">
@@ -267,7 +264,7 @@ $configData = Helper::appClasses();
                       @endif
                     </div>
                     <div class="me-2 ms-1">
-                      <h6 class="mb-0">{{ $encargado->nombre(3) }}</h6>
+                      <h6 class="mb-0">{{ $encargado->nombre(3) }} </h6>
                       <small class="text-muted"><i class="ti {{ $encargado->tipoUsuario->icono }} text-heading fs-6"></i> {{ $encargado->tipoUsuario->nombre}}</small>
                     </div>
                   </div>

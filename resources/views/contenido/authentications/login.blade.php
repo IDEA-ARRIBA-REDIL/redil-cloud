@@ -80,6 +80,7 @@ $configData = Helper::appClasses();
         <div class="text-center mb-2">
           <a href="{{url('/')}}" class="d-inline-block">
             @include('_partials.macros', [
+                        'contexto_logo' => 'login',
               'width' => '200px'
             ])
           </a>

@@ -300,11 +300,11 @@
                   @endif
 
                   @if($rolActivo->hasPermissionTo('personas.opcion_cambiar_contrasena_asistente'))
-                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalCambioContrasena" onclick="event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', 'usuarios/{{$usuario->id}}/cambiar-contrasena');">Cambiar contraseña</a></li>
+                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalCambioContrasena" onclick="event.preventDefault(); document.getElementById('formCambioContrasena').setAttribute('action', '{{ route('usuario.cambiarContrasena', $usuario) }}');">Cambiar contraseña</a></li>
 
                   <form method="POST" id="cambiarContraseñaDefault_{{$usuario->id}}" action="{{ route('usuario.cambiarContrasenaDefault',  ['usuario' => $usuario ]) }}">
                     @csrf
-                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('cambiarContraseñaDefault_{{$usuario->id}}').submit();">Cambiar contraseña default</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); confirmarCambioContrasenaDefault('cambiarContraseñaDefault_{{$usuario->id}}', '{{ addslashes($usuario->nombre(3)) }}');">Cambiar contraseña default</a></li>
                   </form>
                   @endif
 
@@ -695,5 +695,7 @@
     </form>
   @endif
 
+
+  @include('contenido.paginas.usuario.modal-cambio-contrasena')
 
 @endsection

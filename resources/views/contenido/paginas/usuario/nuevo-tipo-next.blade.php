@@ -373,34 +373,49 @@ $configData = Helper::appClasses();
     const modal = document.getElementById('modalTerminosCondiciones');
     const modalBody = modal.querySelector('.modal-body');
     const btnAceptar = modal.querySelector('#btnAceptoTerminos');
+    const checkAceptoUrl = modal.querySelector('#checkAceptoTerminosUrl');
 
     function verificarScroll() {
-      if (modalBody.scrollHeight > modalBody.clientHeight) {
-        // Hay scroll, así que el botón debe estar deshabilitado al inicio
-        btnAceptar.disabled = true;
-
-        // Listener para el scroll
-        modalBody.addEventListener('scroll', () => {
-          if (modalBody.scrollTop + modalBody.clientHeight >= modalBody.scrollHeight - 3) {
-            btnAceptar.disabled = false;
-          }
-        });
+      if (checkAceptoUrl) {
+        btnAceptar.disabled = !checkAceptoUrl.checked;
       } else {
-        // No hay scroll, el botón debe estar habilitado
-        btnAceptar.disabled = false;
+        if (modalBody.scrollHeight > modalBody.clientHeight) {
+          // Hay scroll, así que el botón debe estar deshabilitado al inicio
+          btnAceptar.disabled = true;
+
+          // Listener para el scroll
+          modalBody.addEventListener('scroll', () => {
+            if (modalBody.scrollTop + modalBody.clientHeight >= modalBody.scrollHeight - 5) {
+              btnAceptar.disabled = false;
+            }
+          });
+        } else {
+          // No hay scroll, el botón debe estar habilitado
+          btnAceptar.disabled = false;
+        }
       }
     }
 
-    // Verificar el scroll al abrir el modal
+    if (checkAceptoUrl) {
+      checkAceptoUrl.addEventListener('change', () => {
+        btnAceptar.disabled = !checkAceptoUrl.checked;
+      });
+    }
+
+    // Verificar el scroll o checkbox al abrir el modal
     modal.addEventListener('shown.bs.modal', () => {
       modalBody.scrollTop = 0; // Reinicia el scroll
-      verificarScroll(); // Verifica si hay scroll y ajusta el botón
+      verificarScroll();
     });
 
-    // Listener para el clic en "Aceptar" (igual que antes)
+    // Listener para el clic en "Aceptar"
     btnAceptar.addEventListener('click', () => {
       if (btnAceptar.disabled) {
-        alert("Debes llegar al final de los términos y condiciones para continuar.");
+        if (checkAceptoUrl) {
+          alert("Debes marcar la casilla de confirmación para continuar.");
+        } else {
+          alert("Debes llegar al final de los términos y condiciones para continuar.");
+        }
         return;
       }
       $('#formulario').submit();
@@ -1036,7 +1051,7 @@ $configData = Helper::appClasses();
                   <select id="sede" data-placeholder="{{ $campo->placeholder }}" name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
                     <option value="">Ninguno</option>
                     @foreach ($sedes as $sede)
-                    <option value="{{$sede->id}}" {{ old($campo->name_id)==$sede->id ? 'selected' : '' }}>{{ucwords ($sede->nombre)}}</option>
+                    <option value="{{$sede->id}}" data-localidades="{{ $sede->localidades->pluck('id')->toJson() }}" {{ old($campo->name_id)==$sede->id ? 'selected' : '' }}>{{ucwords ($sede->nombre)}}</option>
                     @endforeach
                   </select>
                   @if($campo->pivot->informacion_de_apoyo)
@@ -1418,19 +1433,50 @@ $configData = Helper::appClasses();
             <div class="modal fade" id="modalTerminosCondiciones" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
               <div class="modal-dialog modal-lg modal-simple modal-dialog-scrollable" role="document">
                 <div class="modal-content">
-                  <div class="modal-body p-1">
+                  <div class="modal-body p-4">
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    <div class="mb-6">
-                      <h4 class="mb-2 text-center fw-semibold">{{ $formulario->label_terminos_condiciones }}</h4>
-                      <p></p>
+                    <div class="mb-4 text-center">
+                      <h4 class="mb-2 fw-semibold">{{ $formulario->label_terminos_condiciones ?: 'Términos y Condiciones' }}</h4>
                     </div>
+
                     @if(auth()->user())
-                    <p>Yo <b>{{auth()->user()->nombre(3)}}</b>.</p>
+                    <p class="mb-3">Yo, <b>{{auth()->user()->nombre(3)}}</b>.</p>
                     @endif
-                    <p >{!! $formulario->mensaje_terminos_condiciones_detallado !!}</p>
+
+                    @if($formulario->mensaje_terminos_condiciones_resumen)
+                    <div class="mb-3 text-black">
+                      {!! nl2br($formulario->mensaje_terminos_condiciones_resumen) !!}
+                    </div>
+                    @endif
+
+                    @if($formulario->url_terminos_condiciones)
+                      <!-- Modalidad Enlace / Documento externo -->
+                      <div class="card bg-light border p-4 my-3 text-center">
+                        <i class="ti ti-file-text ti-xl text-primary mb-2"></i>
+                        <h6 class="mb-1 fw-bold">Documento oficial de términos y condiciones</h6>
+                        <p class="text-black small mb-3">Haz clic en el botón para abrir y revisar la política completa en una nueva pestaña antes de aceptar.</p>
+                        <div>
+                          <a href="{{ $formulario->url_terminos_condiciones }}" target="_blank" id="btnAbrirDocTerminos" class="btn btn-primary rounded-pill px-4">
+                            <i class="ti ti-external-link me-1"></i> Abrir documento oficial
+                          </a>
+                        </div>
+                      </div>
+
+                      <div class="form-check mt-3 mb-2 text-start">
+                        <input class="form-check-input" type="checkbox" id="checkAceptoTerminosUrl">
+                        <label class="form-check-label text-dark" for="checkAceptoTerminosUrl">
+                          He abierto, leído y acepto los términos y condiciones de la política.
+                        </label>
+                      </div>
+                    @else
+                      <!-- Modalidad Editor Quill -->
+                      <div class="contenido-terminos-quill">
+                        {!! $formulario->mensaje_terminos_condiciones_detallado !!}
+                      </div>
+                    @endif
                   </div>
-                  <div class="">
-                    <div class="pt-5 col-12 col-sm-8 offset-sm-2 col-lg-6 offset-lg-3 d-grid gap-2 d-sm-flex  justify-content-sm-between ">
+                  <div class="p-3 border-top">
+                    <div class="col-12 col-sm-8 offset-sm-2 col-lg-6 offset-lg-3 d-grid gap-2 d-sm-flex justify-content-sm-between">
                       <button id="btnAceptoTerminos" type="button" class="btn btnGuardar btn-primary rounded-pill me-sm-3 me-1" data-bs-dismiss="modal">Aceptar y guardar</button>
                       <button type="button" class="btn btn-label-secondary rounded-pill" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
                     </div>
@@ -1513,5 +1559,6 @@ $configData = Helper::appClasses();
 
 @include('contenido.paginas.usuario.scripts.dependencias-campos')
 @include('contenido.paginas.usuario.scripts.validacion-identificacion')
+@include('contenido.paginas.usuario.scripts.filtro-sedes-localidad')
 
 @endsection
