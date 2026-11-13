@@ -104,7 +104,7 @@
                             {{-- Tareas culminadas --}}
                             @if ($tieneTareas)
                                 <div class="mb-3">
-                                    <span class="fw-semibold text-black d-block mb-1">Tareas de consolidación:</span>
+                                    <span class="fw-semibold text-black d-block mb-1">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}:</span>
                                     <ul class="d-flex flex-wrap gap-2">
                                         @foreach ($itemModel->tareasCulminadas as $tc)
                                             @php
@@ -173,7 +173,7 @@
                                 {{-- Ajustes de Tareas --}}
                                 @if ($tieneTareas)
                                     <div class="mb-3">
-                                        <label class="form-label text-black fw-bold small mb-2">Tareas de consolidación:</label>
+                                        <label class="form-label text-black fw-bold small mb-2">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}:</label>
                                         <div class="row g-2">
                                             @foreach ($itemModel->tareasCulminadas as $tc)
                                                 @php

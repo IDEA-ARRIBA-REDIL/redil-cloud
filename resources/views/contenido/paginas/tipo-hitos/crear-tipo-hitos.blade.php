@@ -117,7 +117,7 @@
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="requiere_trigger" name="requiere_trigger" value="1" {{ old('requiere_trigger') ? 'checked' : '' }}>
                                 <label class="form-check-label fw-semibold text-dark" for="requiere_trigger">Requiere Triggers / Disparadores</label>
-                                <small class="d-block text-muted">Habilita vinculación con pasos de crecimiento, escuelas, grupos o consolidación.</small>
+                                <small class="d-block text-muted">Habilita vinculación con pasos de crecimiento, escuelas, grupos o {{ Helper::termino('consolidacion', minuscula: true) }}.</small>
                             </div>
 
                             <hr class="my-1">

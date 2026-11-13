@@ -11,7 +11,7 @@
 
           <div class="text-center mb-4">
             <h3 class="role-title mb-2"><i class="ti ti-password ti-lg"></i> Cambio de contraseña</h3>
-            <p class="text-muted">La contraseña debe contener como mínimo 5 caracteres, una letra minúscula y un número.</p>
+            <p class="text-muted">La contraseña debe contener como mínimo 8 caracteres, una letra mayúscula, una letra minúscula y un número.</p>
           </div>
 
           <div class="row">
@@ -19,13 +19,13 @@
             <!-- Nueva Contrasena -->
             <div class="col-12 mb-3">
               <label class="form-label" for="nueva_contrasena">Nueva contraseña</label>
-              <input id="nueva_contrasena" name="password" value="" type="password" class="form-control" required pattern="(?=.*\d)(?=.*[A-Za-z]).{5,}" title="La contraseña debe contener como mínimo 5 caracteres alfanuméricos, es decir, debe contener como mínimo letras y números." autocomplete="new-password"/>
+              <input id="nueva_contrasena" name="password" value="" type="password" class="form-control" required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="La contraseña debe contener como mínimo 8 caracteres, al menos una letra mayúscula, una letra minúscula y un número." autocomplete="new-password"/>
             </div>
 
             <!-- Confirmar Contrasena -->
             <div class="col-12 mb-3">
               <label class="form-label" for="confirmar_contrasena">Confirmar contraseña</label>
-              <input id="confirmar_contrasena" name="password_confirmation" value="" type="password" class="form-control" required pattern="(?=.*\d)(?=.*[A-Za-z]).{5,}" title="La contraseña debe contener como mínimo 5 caracteres alfanuméricos, es decir, debe contener como mínimo letras y números." autocomplete="new-password"/>
+              <input id="confirmar_contrasena" name="password_confirmation" value="" type="password" class="form-control" required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="La contraseña debe contener como mínimo 8 caracteres, al menos una letra mayúscula, una letra minúscula y un número." autocomplete="new-password"/>
             </div>
 
           </div>

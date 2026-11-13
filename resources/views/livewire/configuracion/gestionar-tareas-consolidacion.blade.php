@@ -6,10 +6,10 @@
         <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
           <i class="ti ti-arrow-left"></i>
         </a> 
-        <h4 class="mb-0 fw-semibold text-primary">Tareas de consolidación</h4>
+        <h4 class="mb-0 fw-semibold text-primary">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}</h4>
       </div>
       <p class="text-black mb-0 small">
-        Administra las tareas del flujo de seguimiento, consolidación y atención para nuevos creyentes y miembros.
+        Administra las tareas del flujo de seguimiento, {{ Helper::termino('consolidacion', minuscula: true) }} y atención para nuevos creyentes y miembros.
       </p>
     </div>
 
@@ -184,7 +184,7 @@
                     type="button" 
                     class="btn btn-icon btn-sm btn-primary rounded-pill" 
                     wire:click="editar({{ $tarea->id }})"
-                    title="Editar tarea de consolidación"
+                    title="Editar tarea de {{ Helper::termino('consolidacion', minuscula: true) }}"
                   >
                     <i class="ti ti-pencil ti-xs"></i>
                   </button>
@@ -193,7 +193,7 @@
                     type="button" 
                     class="btn btn-icon btn-sm btn-danger rounded-pill" 
                     onclick="confirmarEliminacion({{ $tarea->id }}, '{{ addslashes($tarea->nombre) }}', {{ $tarea->usuarios_count }})"
-                    title="Eliminar tarea de consolidación"
+                    title="Eliminar tarea de {{ Helper::termino('consolidacion', minuscula: true) }}"
                   >
                     <i class="ti ti-trash ti-xs"></i>
                   </button>
@@ -206,12 +206,12 @@
                 <div class="avatar avatar-xl bg-label-secondary mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center">
                   <i class="ti ti-list-check ti-lg text-white"></i>
                 </div>
-                <h6 class="fw-semibold mb-1 text-dark">No se encontraron tareas de consolidación</h6>
+                <h6 class="fw-semibold mb-1 text-dark">No se encontraron tareas de {{ Helper::termino('consolidacion', minuscula: true) }}</h6>
                 <p class="text-black small mb-3">
                   @if(!empty($search))
                     No hay resultados para la búsqueda "<strong class="text-primary">{{ $search }}</strong>".
                   @else
-                    Aún no has registrado ninguna tarea de consolidación en el sistema.
+                    Aún no has registrado ninguna tarea de {{ Helper::termino('consolidacion', minuscula: true) }} en el sistema.
                   @endif
                 </p>
                 @if(!empty($search))
@@ -297,7 +297,7 @@
       <div class="offcanvas-header border-bottom flex-shrink-0">
         <h5 id="offcanvasTareaConsolidacionLabel" class="offcanvas-title fw-semibold text-primary">
           <i class="ti {{ $isEditing ? 'ti-pencil' : 'ti-plus' }} me-2"></i>
-          {{ $isEditing ? 'Editar tarea de consolidación' : 'Nueva tarea de consolidación' }}
+          {{ $isEditing ? 'Editar tarea de ' . Helper::termino('consolidacion', minuscula: true) : 'Nueva tarea de ' . Helper::termino('consolidacion', minuscula: true) }}
         </h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
@@ -382,7 +382,7 @@
                   ¿Es tarea por defecto?
                 </label>
                 <small class="text-muted d-block">
-                  Las tareas por defecto se asignan automáticamente a los nuevos procesos de consolidación.
+                  Las tareas por defecto se asignan automáticamente a los nuevos procesos de {{ Helper::termino('consolidacion', minuscula: true) }}.
                 </small>
               </div>
               <input 
@@ -577,7 +577,7 @@
 
     Swal.fire({
       title: '¿Estás seguro?',
-      text: `Se eliminará la tarea de consolidación "${nombre}". Esta acción no se podrá deshacer si no cuenta con papelera.`,
+      text: `Se eliminará la tarea de {{ Helper::termino('consolidacion', minuscula: true) }} "${nombre}". Esta acción no se podrá deshacer si no cuenta con papelera.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',

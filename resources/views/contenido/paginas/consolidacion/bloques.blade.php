@@ -1,6 +1,6 @@
 @extends('layouts.layoutMaster')
 
-@section('title', 'Gestión de Bloques - Consolidación')
+@section('title', 'Gestión de bloques - ' . Helper::termino('consolidacion'))
 
 @section('vendor-style')
     @vite([

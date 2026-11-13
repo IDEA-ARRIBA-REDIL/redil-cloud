@@ -98,7 +98,7 @@
             <li class="menu-item {{ request()->routeIs('consolidacion.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle ">
                     <i class="menu-icon tf-icons ti ti-heart-handshake"></i>
-                    <div>Consolidación </div>
+                    <div>{{ Helper::termino('consolidacion') }} </div>
                 </a>
 
                 <ul class="menu-sub">

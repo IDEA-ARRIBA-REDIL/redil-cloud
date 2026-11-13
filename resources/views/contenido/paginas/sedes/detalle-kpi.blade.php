@@ -4,7 +4,7 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Detalle KPI Consolidación - Sede')
+@section('title', 'Detalle KPI ' . Helper::termino('consolidacion') . ' - Sede')
 
 @section('content')
 
@@ -12,7 +12,7 @@
     <a href="{{ route('sede.dashboardConsolidacion', [$sede, 'rango_fechas' => $rangoFechas]) }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver al Dashboard">
         <i class="ti ti-arrow-left text-primary fs-4"></i>
     </a>
-    <h4 class="mb-0 fw-semibold text-primary">Detalle de Consolidación ({{ $sede->nombre }}): 
+    <h4 class="mb-0 fw-semibold text-primary">Detalle de {{ Helper::termino('consolidacion', minuscula: true) }} ({{ $sede->nombre }}): 
       @switch($kpi)
           @case('cosecha_total') Total cosecha @break
           @case('cosecha_efectiva') Cosecha efectiva @break

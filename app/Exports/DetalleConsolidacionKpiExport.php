@@ -2,16 +2,18 @@
 
 namespace App\Exports;
 
+use App\Helpers\Helpers;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class DetalleConsolidacionKpiExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class DetalleConsolidacionKpiExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     protected $usuarios;
+
     protected $datos;
 
     public function __construct($usuarios, $datos = [])
@@ -30,22 +32,27 @@ class DetalleConsolidacionKpiExport implements FromCollection, WithHeadings, Wit
         $kpiName = 'KPI';
         if (isset($this->datos['kpi'])) {
             switch ($this->datos['kpi']) {
-                case 'cosecha_total': $kpiName = 'Total cosecha'; break;
-                case 'cosecha_efectiva': $kpiName = 'Cosecha efectiva'; break;
-                case 'sin_gestion': $kpiName = 'Sin gestión de tareas'; break;
-                case 'matriculas': $kpiName = 'Matrículas'; break;
-                default: $kpiName = isset($this->datos['paso']) ? $this->datos['paso']->nombre : 'KPI'; break;
+                case 'cosecha_total': $kpiName = 'Total cosecha';
+                    break;
+                case 'cosecha_efectiva': $kpiName = 'Cosecha efectiva';
+                    break;
+                case 'sin_gestion': $kpiName = 'Sin gestión de tareas';
+                    break;
+                case 'matriculas': $kpiName = 'Matrículas';
+                    break;
+                default: $kpiName = isset($this->datos['paso']) ? $this->datos['paso']->nombre : 'KPI';
+                    break;
             }
         }
 
-        $titulo = 'Detalle de Consolidación: ' . $kpiName;
-        
-        $zonaInfo = isset($this->datos['zona']) ? 'Zona: ' . $this->datos['zona']->nombre : '';
+        $titulo = 'Detalle de '.Helpers::termino('consolidacion').': '.$kpiName;
+
+        $zonaInfo = isset($this->datos['zona']) ? 'Zona: '.$this->datos['zona']->nombre : '';
         if (isset($this->datos['sede']) && $this->datos['sede']) {
-            $zonaInfo .= ' | Sede: ' . $this->datos['sede']->nombre;
+            $zonaInfo .= ' | Sede: '.$this->datos['sede']->nombre;
         }
-        $rangoInfo = isset($this->datos['rangoFechas']) ? ' | Rango: ' . $this->datos['rangoFechas'] : '';
-        $subtitulo = trim($zonaInfo . $rangoInfo, ' |');
+        $rangoInfo = isset($this->datos['rangoFechas']) ? ' | Rango: '.$this->datos['rangoFechas'] : '';
+        $subtitulo = trim($zonaInfo.$rangoInfo, ' |');
 
         return [
             [$titulo],
@@ -57,8 +64,8 @@ class DetalleConsolidacionKpiExport implements FromCollection, WithHeadings, Wit
                 'Email',
                 'Sede',
                 'Fecha Creación',
-                '¿Dado de baja?'
-            ]
+                '¿Dado de baja?',
+            ],
         ];
     }
 
@@ -72,7 +79,7 @@ class DetalleConsolidacionKpiExport implements FromCollection, WithHeadings, Wit
             $usuario->email ?? 'N/A',
             $usuario->sede->nombre ?? 'N/A',
             $usuario->created_at->format('Y-m-d'),
-            $usuario->trashed() ? 'Sí' : 'No'
+            $usuario->trashed() ? 'Sí' : 'No',
         ];
     }
 

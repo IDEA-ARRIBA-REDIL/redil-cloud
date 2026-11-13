@@ -14,7 +14,9 @@ use Livewire\Component;
 class InlineLogin extends Component
 {
     public string $email = '';
+
     public string $password = '';
+
     public bool $remember = false;
 
     /**
@@ -30,28 +32,38 @@ class InlineLogin extends Component
      */
     public function login()
     {
+        $this->email = Str::lower(trim($this->email));
+
         $this->validate();
 
         $this->ensureIsNotRateLimited();
 
         // 1. Verificar si el usuario está dado de baja (SoftDeleted)
-        // Replicamos la lógica de LoginRequest para mantener la seguridad y el flujo de reactivación.
-        $usuario = User::withTrashed()->where('email', $this->email)->first();
+        // Buscamos con LOWER(email) para compatibilidad total con bases de datos como PostgreSQL
+        $usuario = User::withTrashed()
+            ->whereRaw('LOWER(email) = ?', [$this->email])
+            ->first();
 
         if ($usuario && $usuario->trashed() && Hash::check($this->password, $usuario->password)) {
             RateLimiter::clear($this->throttleKey());
 
             // Enviamos el mensaje de peligro con el enlace de reactivación
-            session()->flash('danger', 'Esta cuenta ha sido dada de baja. Para reactivarla haz clic <a href="' . route('auth.reactivar', ['email' => $usuario->email]) . '"><b>aquí</b></a>.');
-            
+            session()->flash('danger', 'Esta cuenta ha sido dada de baja. Para reactivarla haz clic <a href="'.route('auth.reactivar', ['email' => $usuario->email]).'"><b>aquí</b></a>.');
+
             return;
         }
 
         // 2. Intento de inicio de sesión habitual
-        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        $credentials = [
+            'email' => $usuario ? $usuario->email : $this->email,
+            'password' => $this->password,
+        ];
+
+        if (! Auth::attempt($credentials, $this->remember)) {
             RateLimiter::hit($this->throttleKey());
 
             $this->addError('email', trans('auth.failed'));
+
             return;
         }
 

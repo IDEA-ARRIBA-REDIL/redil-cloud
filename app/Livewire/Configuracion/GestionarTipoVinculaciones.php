@@ -15,7 +15,7 @@ class GestionarTipoVinculaciones extends Component
 
     public string $search = '';
 
-    public string $sortField = 'nombre';
+    public string $sortField = 'orden';
 
     public string $sortDirection = 'asc';
 
@@ -25,6 +25,10 @@ class GestionarTipoVinculaciones extends Component
 
     public bool $por_grupo = false;
 
+    public ?int $orden = 1;
+
+    public bool $activo = true;
+
     public bool $isEditing = false;
 
     protected function rules(): array
@@ -32,6 +36,8 @@ class GestionarTipoVinculaciones extends Component
         return [
             'nombre' => 'required|string|min:2|max:30',
             'por_grupo' => 'boolean',
+            'orden' => 'required|integer|min:0|max:32767',
+            'activo' => 'boolean',
         ];
     }
 
@@ -39,6 +45,9 @@ class GestionarTipoVinculaciones extends Component
         'nombre.required' => 'El nombre del tipo de vinculación es obligatorio.',
         'nombre.min' => 'El nombre debe tener al menos 2 caracteres.',
         'nombre.max' => 'El nombre no puede superar los 30 caracteres.',
+        'orden.required' => 'El orden es obligatorio.',
+        'orden.integer' => 'El orden debe ser un número entero.',
+        'orden.min' => 'El orden no puede ser negativo.',
     ];
 
     public function updatingSearch(): void
@@ -54,7 +63,7 @@ class GestionarTipoVinculaciones extends Component
 
     public function sortBy(string $field): void
     {
-        $allowedFields = ['nombre', 'por_grupo', 'usuarios_count', 'created_at'];
+        $allowedFields = ['orden', 'nombre', 'por_grupo', 'activo', 'usuarios_count', 'created_at'];
         if (! in_array($field, $allowedFields)) {
             return;
         }
@@ -83,10 +92,29 @@ class GestionarTipoVinculaciones extends Component
         ]);
     }
 
+    public function toggleActivo(int $id): void
+    {
+        $tipo = TipoVinculacion::findOrFail($id);
+        $tipo->activo = ! $tipo->activo;
+        $tipo->save();
+
+        $estadoTexto = $tipo->activo ? 'activado' : 'inactivado';
+        $this->dispatch('msn', [
+            'icono' => 'success',
+            'titulo' => '¡Estado actualizado!',
+            'texto' => "El tipo de vinculación \"{$tipo->nombre}\" ha sido {$estadoTexto}.",
+        ]);
+    }
+
     public function crear(): void
     {
         $this->resetValidation();
-        $this->reset(['tipoVinculacionId', 'nombre', 'por_grupo', 'isEditing']);
+        $this->reset(['tipoVinculacionId', 'nombre', 'por_grupo', 'orden', 'activo', 'isEditing']);
+        $this->activo = true;
+
+        $ultimoOrden = TipoVinculacion::max('orden');
+        $this->orden = $ultimoOrden !== null ? ((int) $ultimoOrden + 1) : 1;
+
         $this->dispatch('abrir-offcanvas-tipo-vinculacion');
     }
 
@@ -97,6 +125,8 @@ class GestionarTipoVinculaciones extends Component
         $this->tipoVinculacionId = $tipo->id;
         $this->nombre = $tipo->nombre;
         $this->por_grupo = (bool) $tipo->por_grupo;
+        $this->orden = (int) ($tipo->orden ?? 0);
+        $this->activo = (bool) ($tipo->activo ?? true);
         $this->isEditing = true;
         $this->dispatch('abrir-offcanvas-tipo-vinculacion');
     }
@@ -105,22 +135,24 @@ class GestionarTipoVinculaciones extends Component
     {
         $this->validate();
 
+        $datos = [
+            'nombre' => trim($this->nombre),
+            'por_grupo' => (bool) $this->por_grupo,
+            'orden' => (int) ($this->orden ?? 0),
+            'activo' => (bool) $this->activo,
+        ];
+
         if ($this->isEditing && $this->tipoVinculacionId) {
             $tipo = TipoVinculacion::findOrFail($this->tipoVinculacionId);
-            $tipo->update([
-                'nombre' => trim($this->nombre),
-                'por_grupo' => $this->por_grupo,
-            ]);
+            $tipo->update($datos);
             $mensaje = 'El tipo de vinculación ha sido actualizado correctamente.';
         } else {
-            TipoVinculacion::create([
-                'nombre' => trim($this->nombre),
-                'por_grupo' => $this->por_grupo,
-            ]);
+            TipoVinculacion::create($datos);
             $mensaje = 'El tipo de vinculación ha sido creado con éxito.';
         }
 
-        $this->reset(['tipoVinculacionId', 'nombre', 'por_grupo', 'isEditing']);
+        $this->reset(['tipoVinculacionId', 'nombre', 'por_grupo', 'orden', 'activo', 'isEditing']);
+        $this->activo = true;
         $this->dispatch('cerrar-offcanvas-tipo-vinculacion');
         $this->dispatch('msn', [
             'icono' => 'success',
@@ -169,10 +201,14 @@ class GestionarTipoVinculaciones extends Component
             $query->orderBy('usuarios_count', $this->sortDirection);
         } elseif ($this->sortField === 'por_grupo') {
             $query->orderBy('por_grupo', $this->sortDirection);
+        } elseif ($this->sortField === 'activo') {
+            $query->orderBy('activo', $this->sortDirection);
         } elseif ($this->sortField === 'created_at') {
             $query->orderBy('created_at', $this->sortDirection);
-        } else {
+        } elseif ($this->sortField === 'nombre') {
             $query->orderBy('nombre', $this->sortDirection);
+        } else {
+            $query->orderBy('orden', $this->sortDirection)->orderBy('id', 'asc');
         }
 
         $tipoVinculaciones = $query->paginate(12);

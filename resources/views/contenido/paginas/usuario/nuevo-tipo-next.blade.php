@@ -18,6 +18,27 @@ $configData = Helper::appClasses();
   body {
     overflow-x: hidden;
   }
+
+  /* Asegurar que Select2 en pantallas medianas/grandes flote por encima de barras fijas */
+  .select2-container--open .select2-dropdown {
+    z-index: 1060 !important;
+  }
+
+  @media (max-width: 767.98px) {
+    .formulario-tipo-next-container {
+      padding-bottom: 160px !important;
+    }
+
+    /* Estilos refinados para selects nativos en dispositivos móviles */
+    select.select2.form-select {
+      height: auto;
+      min-height: 44px;
+      font-size: 0.9375rem;
+      border-radius: 0.375rem;
+      padding-top: 0.6rem;
+      padding-bottom: 0.6rem;
+    }
+  }
 </style>
 
 @vite([
@@ -114,27 +135,62 @@ $configData = Helper::appClasses();
     dateFormat: "Y-m-d"
   });
 
-  $('.select2').each(function() {
-    var placeholder = $(this).data('placeholder');
-    var minSearch = $(this).find('option').length > 10 ? 0 : Infinity;
-    if ($(this).data('minimum-results-for-search') !== undefined) {
-      minSearch = $(this).data('minimum-results-for-search');
-    }
+  function gestionarSelects() {
+    var isMobile = window.innerWidth < 768;
 
-    $(this).select2({
-        placeholder: placeholder,
-        allowClear: true,
-        minimumResultsForSearch: minSearch
+    $('.select2').each(function() {
+      var $select = $(this);
+      var placeholder = $select.data('placeholder') || '';
+
+      if (isMobile) {
+        // En móviles (< 768px): utilizar select nativo para evitar solapamientos con la barra fixed-bottom
+        if ($select.hasClass('select2-hidden-accessible')) {
+          $select.select2('destroy');
+        }
+
+        if (!$select.hasClass('form-select')) {
+          $select.addClass('form-select');
+        }
+
+        // Si la opción vacía dice "Ninguno" o está vacía y existe un placeholder, mostrar el placeholder en el select nativo
+        var $emptyOption = $select.find('option[value=""]').first();
+        if ($emptyOption.length && placeholder) {
+          if (!$emptyOption.data('original-text')) {
+            $emptyOption.data('original-text', $emptyOption.text());
+          }
+          if ($emptyOption.text().trim() === 'Ninguno' || $emptyOption.text().trim() === '') {
+            $emptyOption.text(placeholder);
+          }
+        }
+      } else {
+        // En desktop/tablets (>= 768px): inicializar Select2
+        var $emptyOption = $select.find('option[value=""]').first();
+        if ($emptyOption.length && $emptyOption.data('original-text')) {
+          $emptyOption.text($emptyOption.data('original-text'));
+        }
+
+        if (!$select.hasClass('select2-hidden-accessible')) {
+          var minSearch = $select.find('option').length > 10 ? 0 : Infinity;
+          if ($select.data('minimum-results-for-search') !== undefined) {
+            minSearch = $select.data('minimum-results-for-search');
+          }
+
+          $select.select2({
+            placeholder: placeholder,
+            allowClear: true,
+            minimumResultsForSearch: minSearch
+          });
+        }
+      }
     });
-  });
+  }
 
-  // En dispositivos móviles, centrar suavemente el select al abrir
-  $(document).on('select2:open', function(e) {
-    if (window.innerWidth < 768) {
-      setTimeout(function() {
-        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-    }
+  gestionarSelects();
+
+  var resizeTimeout;
+  $(window).on('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(gestionarSelects, 200);
   });
 </script>
 
@@ -448,7 +504,7 @@ $configData = Helper::appClasses();
     </div>
   </nav>
 
-  <div class="pt-5 px-7 px-sm-0" style="padding-bottom: 100px;">
+  <div class="pt-5 px-7 px-sm-0 formulario-tipo-next-container" style="padding-bottom: 100px;">
     <div class="col-12 col-sm-8 offset-sm-2 col-lg-8 offset-lg-2">
       <form id="formulario" role="form" class="forms-sample" method="POST" action="{{ route($formulario->tipo->action, [ 'formulario' => $formulario]) }}" enctype="multipart/form-data">
         @csrf
@@ -498,7 +554,7 @@ $configData = Helper::appClasses();
 
                 <!-- campo tipo 3 -->
                 @if($campo->tipo_de_campo == 3)
-                <select id="{{$campo->name_id}}" data-placeholder="{{ $campo->placeholder }}" name="{{$campo->name_id}}" class="select2 form-control" data-allow-clear="true">
+                <select id="{{$campo->name_id}}" data-placeholder="{{ $campo->placeholder }}" name="{{$campo->name_id}}" class="select2 form-select" data-allow-clear="true">
                   <option value="">Ninguno</option>
                   @foreach (json_decode($campo->opciones_select) as $opcion)
                   <option value="{{$opcion->value}}" {{ old($campo->name_id) == $opcion->value ? 'selected' : '' }}> {{ ucwords($opcion->nombre) }} </option>
@@ -509,7 +565,7 @@ $configData = Helper::appClasses();
 
                 <!-- campo tipo 4 -->
                 @if($campo->tipo_de_campo == 4)
-                <select id="{{$campo->name_id}}" data-placeholder="{{ $campo->placeholder }}" name="{{$campo->name_id}}[]" multiple class="select2 form-control" data-allow-clear="true">
+                <select id="{{$campo->name_id}}" data-placeholder="{{ $campo->placeholder }}" name="{{$campo->name_id}}[]" multiple class="select2 form-select" data-allow-clear="true">
                   @foreach (json_decode($campo->opciones_select) as $opcion)
                   <option value="{{$opcion->value}}" {{ in_array($opcion->value, old( $campo->name_id , [] )) ? "selected" : "" }}> {{ ucwords($opcion->nombre) }} </option>
                   @endforeach

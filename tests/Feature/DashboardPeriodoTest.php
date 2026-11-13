@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\DashboardPeriodoController;
+use App\Livewire\Escuelas\AdminDashboard;
 use App\Models\AlumnoRespuestaItem;
 use App\Models\Calificaciones;
 use App\Models\CortePeriodo;
@@ -201,6 +202,24 @@ class DashboardPeriodoTest extends TestCase
         Periodo::query()->insert(['id' => 1, 'nombre' => 'Periodo de prueba', 'estado' => true, 'escuela_id' => 1, 'sistema_calificaciones_id' => 1]);
         Calificaciones::query()->insert(['sistema_calificacion_id' => 1, 'nota_minima' => 3.5, 'aprobado' => true]);
         $this->periodo = Periodo::query()->findOrFail(1);
+    }
+
+    public function test_panel_exige_ambos_permisos_para_ver_periodos_inactivos(): void
+    {
+        $cerrado = Periodo::create(['escuela_id' => $this->periodo->escuela_id, 'nombre' => 'Cerrado', 'estado' => false]);
+        foreach ([[true, true], [false, true], [false, false], [true, false]] as [$administrativo, $puedeModificar]) {
+            $usuario = \Mockery::mock(User::class)->makePartial();
+            $usuario->shouldReceive('hasPermissionTo')->with('escuelas.es_administrativo', null)->andReturn($administrativo);
+            $usuario->shouldReceive('hasPermissionTo')->with('escuelas.opcion_modificar_periodo', null)->andReturn($puedeModificar);
+            $this->actingAs($usuario);
+            $panel = new AdminDashboard;
+            $panel->mount();
+            $this->assertTrue($panel->periodos->contains($this->periodo));
+            $this->assertSame($administrativo && $puedeModificar, $panel->periodos->contains($cerrado));
+        }
+
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $panel->updatedSelectedPeriodoId($cerrado->id);
     }
 
     public function test_cuenta_personas_unicas_generos_niveles_y_materias_sin_duplicar_matriculas(): void

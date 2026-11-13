@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Helpers;
 use App\Services\BrandingEntitlementService;
 use Illuminate\View\View;
 
@@ -125,7 +126,7 @@ class ConfiguracionController extends Controller
                 'keywords' => 'tipos usuarios miembros lideres categorias clasificacion perfiles personas',
             ],
             [
-                'title' => 'Filtro consolidación',
+                'title' => 'Filtro '.Helpers::termino('consolidacion', minuscula: true),
                 'route' => 'filtros-consolidacion.listarFiltrosConsolidacion',
                 'icon' => 'ti-filter',
                 'color' => 'bg-label-secondary',
@@ -133,7 +134,7 @@ class ConfiguracionController extends Controller
                 'keywords' => 'filtro consolidacion nuevos creyentes seguimiento visitantes etapas conversion',
             ],
             [
-                'title' => 'Tarea consolidación',
+                'title' => 'Tarea '.Helpers::termino('consolidacion', minuscula: true),
                 'route' => 'tareas-consolidacion.listarTareasConsolidacion',
                 'icon' => 'ti-list-check',
                 'color' => 'bg-label-secondary',

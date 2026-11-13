@@ -1,5 +1,5 @@
 <div class="mb-5" x-data="{ formVisible: {{ $tareasCulminar->count() == 0 ? 'true' : 'false' }} }">
-    <h5 class="fw-bold text-primary mb-1">Culminación: Tareas de Consolidación</h5>
+    <h5 class="fw-bold text-primary mb-1">Culminación: Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}</h5>
     <p class="text-dark small mb-3">Al finalizar el curso, se asignarán estas tareas a los usuarios con el estado seleccionado.</p>
 
     {{-- Formulario --}}
@@ -82,7 +82,7 @@
          <div style="border: 2px solid #95CDDF;" class="rounded-3 p-3 ">
              <div class="d-flex align-items-center text-black mb-2">
                 <i class="ti ti-info-circle fs-4 me-2 text-black"></i>
-                <span class="small">No se asignarán tareas de consolidación al finalizar el curso.</span>
+                <span class="small">No se asignarán tareas de {{ Helper::termino('consolidacion', minuscula: true) }} al finalizar el curso.</span>
             </div>
         </div>
     @endif

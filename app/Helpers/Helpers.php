@@ -2,696 +2,756 @@
 
 namespace App\Helpers;
 
+use App\Models\Configuracion;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class Helpers
 {
-  public static function appClasses()
-  {
-
-    $data = config('custom.custom');
-
-
-    // default data array
-    $DefaultData = [
-      'myLayout' => 'vertical',
-      'myTheme' => 'theme-default',
-      'myStyle' => 'light',
-      'myRTLSupport' => true,
-      'myRTLMode' => true,
-      'hasCustomizer' => true,
-      'showDropdownOnHover' => true,
-      'displayCustomizer' => true,
-      'contentLayout' => 'compact',
-      'headerType' => 'fixed',
-      'navbarType' => 'fixed',
-      'menuFixed' => true,
-      'menuCollapsed' => false,
-      'footerFixed' => false,
-      'customizerControls' => [
-        'rtl',
-        'style',
-        'headerType',
-        'contentLayout',
-        'layoutCollapsed',
-        'showDropdownOnHover',
-        'layoutNavbarOptions',
-        'themes',
-      ],
-      //   'defaultLanguage'=>'en',
+    public const TERMINOS_DEFAULT = [
+        'consolidacion' => 'Consolidación',
     ];
 
-    // if any key missing of array from custom.php file it will be merge and set a default value from dataDefault array and store in data variable
-    $data = array_merge($DefaultData, $data);
-
-    // All options available in the template
-    $allOptions = [
-      'myLayout' => ['vertical', 'horizontal', 'blank', 'front'],
-      'menuCollapsed' => [true, false],
-      'hasCustomizer' => [true, false],
-      'showDropdownOnHover' => [true, false],
-      'displayCustomizer' => [true, false],
-      'contentLayout' => ['compact', 'wide'],
-      'headerType' => ['fixed', 'static'],
-      'navbarType' => ['fixed', 'static', 'hidden'],
-      'myStyle' => ['light', 'dark', 'system'],
-      'myTheme' => ['theme-default', 'theme-bordered', 'theme-semi-dark'],
-      'myRTLSupport' => [true, false],
-      'myRTLMode' => [true, false],
-      'menuFixed' => [true, false],
-      'footerFixed' => [true, false],
-      'customizerControls' => [],
-      // 'defaultLanguage'=>array('en'=>'en','fr'=>'fr','de'=>'de','ar'=>'ar'),
-    ];
-
-    //if myLayout value empty or not match with default options in custom.php config file then set a default value
-    foreach ($allOptions as $key => $value) {
-      if (array_key_exists($key, $DefaultData)) {
-        if (gettype($DefaultData[$key]) === gettype($data[$key])) {
-          // data key should be string
-          if (is_string($data[$key])) {
-            // data key should not be empty
-            if (isset($data[$key]) && $data[$key] !== null) {
-              // data key should not be exist inside allOptions array's sub array
-              if (!array_key_exists($data[$key], $value)) {
-                // ensure that passed value should be match with any of allOptions array value
-                $result = array_search($data[$key], $value, 'strict');
-                if (empty($result) && $result !== 0) {
-                  $data[$key] = $DefaultData[$key];
-                }
-              }
-            } else {
-              // if data key not set or
-              $data[$key] = $DefaultData[$key];
-            }
-          }
-        } else {
-          $data[$key] = $DefaultData[$key];
-        }
-      }
-    }
-    $styleVal = $data['myStyle'] == "dark" ? "dark" : "light";
-    $styleUpdatedVal = $data['myStyle'] == "dark" ? "dark" : $data['myStyle'];
-    // Determine if the layout is admin or front based on cookies
-    $layoutName = $data['myLayout'];
-    $isAdmin = Str::contains($layoutName, 'front') ? false : true;
-
-    $modeCookieName = $isAdmin ? 'admin-mode' : 'front-mode';
-    $colorPrefCookieName = $isAdmin ? 'admin-colorPref' : 'front-colorPref';
-
-    // Determine style based on cookies, only if not 'blank-layout'
-    if ($layoutName !== 'blank') {
-      if (isset($_COOKIE[$modeCookieName])) {
-        $styleVal = $_COOKIE[$modeCookieName];
-        if ($styleVal === 'system') {
-          $styleVal = isset($_COOKIE[$colorPrefCookieName]) ? $_COOKIE[$colorPrefCookieName] : 'light';
-          }
-        $styleUpdatedVal = $_COOKIE[$modeCookieName];
-      }
-    }
-
-    isset($_COOKIE['theme']) ? $themeVal = $_COOKIE['theme'] : $themeVal = $data['myTheme'];
-
-    $directionVal = isset($_COOKIE['direction']) ? ($_COOKIE['direction'] === "true" ? 'rtl' : 'ltr') : $data['myRTLMode'];
-
-    //layout classes
-    $layoutClasses = [
-      'layout' => $data['myLayout'],
-      'theme' => $themeVal,
-      'themeOpt' => $data['myTheme'],
-      'style' => $styleVal,
-      'styleOpt' => $data['myStyle'],
-      'styleOptVal' => $styleUpdatedVal,
-      'rtlSupport' => $data['myRTLSupport'],
-      'rtlMode' => $data['myRTLMode'],
-      'textDirection' => $directionVal,//$data['myRTLMode'],
-      'menuCollapsed' => $data['menuCollapsed'],
-      'hasCustomizer' => $data['hasCustomizer'],
-      'showDropdownOnHover' => $data['showDropdownOnHover'],
-      'displayCustomizer' => $data['displayCustomizer'],
-      'contentLayout' => $data['contentLayout'],
-      'headerType' => $data['headerType'],
-      'navbarType' => $data['navbarType'],
-      'menuFixed' => $data['menuFixed'],
-      'footerFixed' => $data['footerFixed'],
-      'customizerControls' => $data['customizerControls'],
-    ];
-
-    // sidebar Collapsed
-    if ($layoutClasses['menuCollapsed'] == true) {
-      $layoutClasses['menuCollapsed'] = 'layout-menu-collapsed';
-    }
-
-    // Header Type
-    if ($layoutClasses['headerType'] == 'fixed') {
-      $layoutClasses['headerType'] = 'layout-menu-fixed';
-    }
-    // Navbar Type
-    if ($layoutClasses['navbarType'] == 'fixed') {
-      $layoutClasses['navbarType'] = 'layout-navbar-fixed';
-    } elseif ($layoutClasses['navbarType'] == 'static') {
-      $layoutClasses['navbarType'] = '';
-    } else {
-      $layoutClasses['navbarType'] = 'layout-navbar-hidden';
-    }
-
-    // Menu Fixed
-    if ($layoutClasses['menuFixed'] == true) {
-      $layoutClasses['menuFixed'] = 'layout-menu-fixed';
-    }
-
-
-    // Footer Fixed
-    if ($layoutClasses['footerFixed'] == true) {
-      $layoutClasses['footerFixed'] = 'layout-footer-fixed';
-    }
-
-    // RTL Supported template
-    if ($layoutClasses['rtlSupport'] == true) {
-      $layoutClasses['rtlSupport'] = '/rtl';
-    }
-
-    // RTL Layout/Mode
-    if ($layoutClasses['rtlMode'] == true) {
-      $layoutClasses['rtlMode'] = 'rtl';
-      $layoutClasses['textDirection'] = isset($_COOKIE['direction']) ? ($_COOKIE['direction'] === "true" ? 'rtl' : 'ltr') : 'rtl';
-
-    } else {
-      $layoutClasses['rtlMode'] = 'ltr';
-      $layoutClasses['textDirection'] = isset($_COOKIE['direction']) && $_COOKIE['direction'] === "true" ? 'rtl' : 'ltr';
-
-    }
-
-    // Show DropdownOnHover for Horizontal Menu
-    if ($layoutClasses['showDropdownOnHover'] == true) {
-      $layoutClasses['showDropdownOnHover'] = true;
-    } else {
-      $layoutClasses['showDropdownOnHover'] = false;
-    }
-
-    // To hide/show display customizer UI, not js
-    if ($layoutClasses['displayCustomizer'] == true) {
-      $layoutClasses['displayCustomizer'] = true;
-    } else {
-      $layoutClasses['displayCustomizer'] = false;
-    }
-
-    return $layoutClasses;
-  }
-
-  public static function updatePageConfig($pageConfigs)
-  {
-    $demo = 'custom';
-    if (isset($pageConfigs)) {
-      if (count($pageConfigs) > 0) {
-        foreach ($pageConfigs as $config => $val) {
-          Config::set('custom.' . $demo . '.' . $config, $val);
-        }
-      }
-    }
-  }
-
-  function bloquesDePermisos()
-  {
-    $bloques = [];
-
-    $item = new \stdClass();
-    $item->nombre = 'Personas';
-    $item->etiqueta = 'personas.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Grupos';
-    $item->etiqueta = 'grupos.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Reportes grupos';
-    $item->etiqueta = 'reportes_grupos.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Reuniones';
-    $item->etiqueta = 'reuniones.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Reporte reuniones';
-    $item->etiqueta = 'reporte_reuniones.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Sedes';
-    $item->etiqueta = 'sedes.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Ingresos';
-    $item->etiqueta = 'ingresos.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Informes';
-    $item->etiqueta = 'informes.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Temas';
-    $item->etiqueta = 'temas.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Iglesia';
-    $item->etiqueta = 'iglesia.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Actividades';
-    $item->etiqueta = 'actividades.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Puntos de pago';
-    $item->etiqueta = 'puntos_de_pago.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Peticiones';
-    $item->etiqueta = 'peticiones.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Padres';
-    $item->etiqueta = 'padres.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Escuelas';
-    $item->etiqueta = 'escuelas.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Familiar';
-    $item->etiqueta = 'familiar.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Dashboard';
-    $item->etiqueta = 'dashboard.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Administracion';
-    $item->etiqueta = 'administracion.';
-    $bloques[] = $item;
-
-
-    $item = new \stdClass();
-    $item->nombre = 'Consolidación';
-    $item->etiqueta = 'consolidacion.';
-    $bloques[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Consejería';
-    $item->etiqueta = 'consejeria.';
-    $bloques[] = $item;
-
-
-    /*
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    .
-    puntos_de_pago.
-    peticiones.
-    padres.
-    escuelas.
-    familiar.
-    dashboard.
-    administracion.
-    */
-
-    return $bloques;
-  }
-
-  public static function camposPeticiones()
-  {
-    $camposPeticiones = [];
-
-    $item = new \stdClass();
-    $item->id = 1;
-    $item->value = 'nombre_solicitante';
-    $item->nombre = 'Nombre';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 2;
-    $item->value = 'email_solicitante';
-    $item->nombre = 'Email';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 3;
-    $item->value = 'telefono_solicitante';
-    $item->nombre = 'Teléfonos';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 4;
-    $item->value = 'genero_solicitante';
-    $item->nombre = 'Género';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 5;
-    $item->value = 'pais_id';
-    $item->nombre = 'Pais';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 6;
-    $item->value = 'autor_creacion_id';
-    $item->nombre = 'Autor creación';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 7;
-    $item->value = 'asignado_a';
-    $item->nombre = 'Asignado a';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 8;
-    $item->value = 'tipo_peticion_id';
-    $item->nombre = 'Tipo de peticion';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 9;
-    $item->value = 'estado';
-    $item->nombre = 'Estado de la petición';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 10;
-    $item->value = 'descripcion';
-    $item->nombre = 'Descripción';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 11;
-    $item->value = 'fecha';
-    $item->nombre = 'Fecha';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 12;
-    $item->value = 'ciudad';
-    $item->nombre = 'Ciudad';
-    $camposPeticiones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 13;
-    $item->value = 'formulario_usuario_id';
-    $item->nombre = 'Formulario de origen';
-    $camposPeticiones[] = $item;
-
-    return $camposPeticiones;
-  }
-
-  public static function camposRelacionesUsuarios()
-  {
-    $camposRelaciones = [];
-
-    $item = new \stdClass();
-    $item->id = 1;
-    $item->value = 'pariente_user_id';
-    $item->nombre = 'Pariente Secundario';
-    $camposRelaciones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 2;
-    $item->value = 'es_el_responsable';
-    $item->nombre = 'Soy Responsable?';
-    $camposRelaciones[] = $item;
-
-    $item = new \stdClass();
-    $item->id = 3;
-    $item->value = 'tipo_pariente_id';
-    $item->nombre = 'Parentesco';
-    $camposRelaciones[] = $item;
-
-    return $camposRelaciones;
-  }
-
-  public static function estadoPeticion($estado)
-  {
-    if($estado == 1){
-      $respuesta = 'Pendiente';
-    }elseif($estado == 2){
-      $respuesta = 'Cerrada';
-    }elseif($estado == 3){
-      $respuesta = 'En proceso';
-    }
-
-    return $respuesta;
-  }
-
-  public static function eliminarTildes($cadena)
-  {
-    $originales = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðòóôõöøùúûýýþÿ';
-    $modificadas = 'aaaaaaaceeeeiiiidoooooouuuuybsaaaaaaaceeeeiiiidoooooouuuyyby';
-    $cadena = utf8_decode($cadena);
-    $cadena = strtr($cadena, utf8_decode($originales), $modificadas);
-    return utf8_encode($cadena);
-  }
-
-  /** * Reemplaza todos los acentos por sus equivalentes sin ellos * * @param $string * string la cadena a sanear * * @return $string * string saneada */
-  public static function sanearString($string)
-  {
-    $string = trim($string);
-    $string = str_replace(
-      ['á', 'à', 'ä', 'â', 'ª', 'Á', 'À', 'Â', 'Ä'],
-      ['a', 'a', 'a', 'a', 'a', 'A', 'A', 'A', 'A'],
-      $string
-    );
-    $string = str_replace(['é', 'è', 'ë', 'ê', 'É', 'È', 'Ê', 'Ë'], ['e', 'e', 'e', 'e', 'E', 'E', 'E', 'E'], $string);
-    $string = str_replace(['í', 'ì', 'ï', 'î', 'Í', 'Ì', 'Ï', 'Î'], ['i', 'i', 'i', 'i', 'I', 'I', 'I', 'I'], $string);
-    $string = str_replace(['ó', 'ò', 'ö', 'ô', 'Ó', 'Ò', 'Ö', 'Ô'], ['o', 'o', 'o', 'o', 'O', 'O', 'O', 'O'], $string);
-    $string = str_replace(['ú', 'ù', 'ü', 'û', 'Ú', 'Ù', 'Û', 'Ü'], ['u', 'u', 'u', 'u', 'U', 'U', 'U', 'U'], $string);
-    $string = str_replace(['ñ', 'Ñ', 'ç', 'Ç'], ['n', 'N', 'c', 'C'], $string);
-    //Esta parte se encarga de eliminar cualquier caracter extraño
-    $string = str_replace(
-      [
-        '\\',
-        '¨',
-        'º',
-        '-',
-        '~',
-        '#',
-        '@',
-        '|',
-        '!',
-        "\"",
-        '·',
-        "$",
-        '%',
-        '&',
-        '/',
-        '(',
-        ')',
-        '?',
-        "'",
-        '¡',
-        '¿',
-        '[',
-        '^',
-        '`',
-        ']',
-        '+',
-        '}',
-        '{',
-        '¨',
-        '´',
-        '>“, “< ',
-        ';',
-        ',',
-        ':',
-        '.',
-        ' ',
-      ],
-      '',
-      $string
-    );
-    return $string;
-  }
-
-  public static function sanearStringConEspacios($string)
-  {
-    $string = trim($string);
-    $string = str_replace(
-      ['á', 'à', 'ä', 'â', 'ª', 'Á', 'À', 'Â', 'Ä'],
-      ['a', 'a', 'a', 'a', 'a', 'A', 'A', 'A', 'A'],
-      $string
-    );
-    $string = str_replace(['é', 'è', 'ë', 'ê', 'É', 'È', 'Ê', 'Ë'], ['e', 'e', 'e', 'e', 'E', 'E', 'E', 'E'], $string);
-    $string = str_replace(['í', 'ì', 'ï', 'î', 'Í', 'Ì', 'Ï', 'Î'], ['i', 'i', 'i', 'i', 'I', 'I', 'I', 'I'], $string);
-    $string = str_replace(['ó', 'ò', 'ö', 'ô', 'Ó', 'Ò', 'Ö', 'Ô'], ['o', 'o', 'o', 'o', 'O', 'O', 'O', 'O'], $string);
-    $string = str_replace(['ú', 'ù', 'ü', 'û', 'Ú', 'Ù', 'Û', 'Ü'], ['u', 'u', 'u', 'u', 'U', 'U', 'U', 'U'], $string);
-    $string = str_replace(['ñ', 'Ñ', 'ç', 'Ç'], ['n', 'N', 'c', 'C'], $string);
-    //Esta parte se encarga de eliminar cualquier caracter extraño
-    $string = str_replace(
-      [
-        '\\',
-        '¨',
-        'º',
-        '-',
-        '~',
-        '#',
-        '@',
-        '|',
-        '!',
-        "\"",
-        '·',
-        "$",
-        '%',
-        '&',
-        '/',
-        '(',
-        ')',
-        '?',
-        "'",
-        '¡',
-        '¿',
-        '[',
-        '^',
-        '`',
-        ']',
-        '+',
-        '}',
-        '{',
-        '¨',
-        '´',
-        '>“, “< ',
-        ';',
-        ',',
-        ':',
-        '.',
-      ],
-      '',
-      $string
-    );
-    return $string;
-  }
-
-  public static function diasDeLaSemana()
-  {
-    $dias = [];
-
-    $item = new \stdClass();
-    $item->nombre = 'Lunes';
-    $item->id = '2';
-    $dias[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Martes';
-    $item->id = '3';
-    $dias[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Miércoles';
-    $item->id = '4';
-    $dias[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Jueves';
-    $item->id = '5';
-    $dias[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Viernes';
-    $item->id = '6';
-    $dias[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Sábado';
-    $item->id = '7';
-    $dias[] = $item;
-
-    $item = new \stdClass();
-    $item->nombre = 'Domingo';
-    $item->id = '1';
-    $dias[] = $item;
-
-    return $dias;
-  }
-
-  public static function obtenerDiaDeLaSemana($dia, $tipo="largo")
-  {
-    $respuesta = '';
-    if($tipo=='corto')
+    /**
+     * Obtiene la clave de caché de terminología para el contexto actual (tenant o central).
+     */
+    public static function cacheKeyTerminologia(): string
     {
-      switch ($dia) {
-      case 1:
-        $respuesta = 'Dom';
-        break;
-      case 2:
-        $respuesta = 'Lun';
-        break;
-      case 3:
-        $respuesta = 'Mar';
-        break;
-      case 4:
-        $respuesta = 'Mié';
-        break;
-      case 5:
-        $respuesta = 'Jue';
-        break;
-      case 6:
-        $respuesta = 'Vie';
-        break;
-      case 7:
-        $respuesta = 'Sáb';
-        break;
-    }
-    }else{
-      switch ($dia) {
-        case 1:
-          $respuesta = 'Domingo';
-          break;
-        case 2:
-          $respuesta = 'Lunes';
-          break;
-        case 3:
-          $respuesta = 'Martes';
-          break;
-        case 4:
-          $respuesta = 'Miércoles';
-          break;
-        case 5:
-          $respuesta = 'Jueves';
-          break;
-        case 6:
-          $respuesta = 'Viernes';
-          break;
-        case 7:
-          $respuesta = 'Sábado';
-          break;
-      }
+        $tenantId = function_exists('tenant') && tenant('id') ? tenant('id') : 'central';
+
+        return "terminologia_personalizada_{$tenantId}";
     }
 
-    return $respuesta;
-  }
+    /**
+     * Limpia la caché de terminología personalizada del tenant actual.
+     */
+    public static function limpiarCacheTerminologia(): void
+    {
+        Cache::forget(self::cacheKeyTerminologia());
+    }
 
-  public static function libros()
-  {
-      $libros = '[
+    /**
+     * Retorna el mapa completo de terminología personalizada del tenant actual.
+     *
+     * @return array<string, string>
+     */
+    public static function terminosPersonalizados(): array
+    {
+        return Cache::rememberForever(self::cacheKeyTerminologia(), function (): array {
+            try {
+                if (! Schema::hasTable('configuraciones')) {
+                    return [];
+                }
+
+                $configuracion = Configuracion::query()->select('terminologia_personalizada')->find(1);
+                $terminos = $configuracion?->terminologia_personalizada;
+
+                return is_array($terminos) ? $terminos : [];
+            } catch (\Throwable) {
+                return [];
+            }
+        });
+    }
+
+    /**
+     * Obtiene un término personalizado del tenant con respaldo al valor por defecto.
+     */
+    public static function termino(string $clave, ?string $default = null, bool $minuscula = false): string
+    {
+        $terminos = self::terminosPersonalizados();
+        $valorDefault = $default ?? (self::TERMINOS_DEFAULT[$clave] ?? Str::ucfirst($clave));
+        $valor = isset($terminos[$clave]) && is_string($terminos[$clave]) && trim($terminos[$clave]) !== ''
+            ? trim($terminos[$clave])
+            : $valorDefault;
+
+        return $minuscula ? Str::lower($valor) : $valor;
+    }
+
+    public static function appClasses()
+    {
+
+        $data = config('custom.custom');
+
+        // default data array
+        $DefaultData = [
+            'myLayout' => 'vertical',
+            'myTheme' => 'theme-default',
+            'myStyle' => 'light',
+            'myRTLSupport' => true,
+            'myRTLMode' => true,
+            'hasCustomizer' => true,
+            'showDropdownOnHover' => true,
+            'displayCustomizer' => true,
+            'contentLayout' => 'compact',
+            'headerType' => 'fixed',
+            'navbarType' => 'fixed',
+            'menuFixed' => true,
+            'menuCollapsed' => false,
+            'footerFixed' => false,
+            'customizerControls' => [
+                'rtl',
+                'style',
+                'headerType',
+                'contentLayout',
+                'layoutCollapsed',
+                'showDropdownOnHover',
+                'layoutNavbarOptions',
+                'themes',
+            ],
+            //   'defaultLanguage'=>'en',
+        ];
+
+        // if any key missing of array from custom.php file it will be merge and set a default value from dataDefault array and store in data variable
+        $data = array_merge($DefaultData, $data);
+
+        // All options available in the template
+        $allOptions = [
+            'myLayout' => ['vertical', 'horizontal', 'blank', 'front'],
+            'menuCollapsed' => [true, false],
+            'hasCustomizer' => [true, false],
+            'showDropdownOnHover' => [true, false],
+            'displayCustomizer' => [true, false],
+            'contentLayout' => ['compact', 'wide'],
+            'headerType' => ['fixed', 'static'],
+            'navbarType' => ['fixed', 'static', 'hidden'],
+            'myStyle' => ['light', 'dark', 'system'],
+            'myTheme' => ['theme-default', 'theme-bordered', 'theme-semi-dark'],
+            'myRTLSupport' => [true, false],
+            'myRTLMode' => [true, false],
+            'menuFixed' => [true, false],
+            'footerFixed' => [true, false],
+            'customizerControls' => [],
+            // 'defaultLanguage'=>array('en'=>'en','fr'=>'fr','de'=>'de','ar'=>'ar'),
+        ];
+
+        // if myLayout value empty or not match with default options in custom.php config file then set a default value
+        foreach ($allOptions as $key => $value) {
+            if (array_key_exists($key, $DefaultData)) {
+                if (gettype($DefaultData[$key]) === gettype($data[$key])) {
+                    // data key should be string
+                    if (is_string($data[$key])) {
+                        // data key should not be empty
+                        if (isset($data[$key]) && $data[$key] !== null) {
+                            // data key should not be exist inside allOptions array's sub array
+                            if (! array_key_exists($data[$key], $value)) {
+                                // ensure that passed value should be match with any of allOptions array value
+                                $result = array_search($data[$key], $value, 'strict');
+                                if (empty($result) && $result !== 0) {
+                                    $data[$key] = $DefaultData[$key];
+                                }
+                            }
+                        } else {
+                            // if data key not set or
+                            $data[$key] = $DefaultData[$key];
+                        }
+                    }
+                } else {
+                    $data[$key] = $DefaultData[$key];
+                }
+            }
+        }
+        $styleVal = $data['myStyle'] == 'dark' ? 'dark' : 'light';
+        $styleUpdatedVal = $data['myStyle'] == 'dark' ? 'dark' : $data['myStyle'];
+        // Determine if the layout is admin or front based on cookies
+        $layoutName = $data['myLayout'];
+        $isAdmin = Str::contains($layoutName, 'front') ? false : true;
+
+        $modeCookieName = $isAdmin ? 'admin-mode' : 'front-mode';
+        $colorPrefCookieName = $isAdmin ? 'admin-colorPref' : 'front-colorPref';
+
+        // Determine style based on cookies, only if not 'blank-layout'
+        if ($layoutName !== 'blank') {
+            if (isset($_COOKIE[$modeCookieName])) {
+                $styleVal = $_COOKIE[$modeCookieName];
+                if ($styleVal === 'system') {
+                    $styleVal = isset($_COOKIE[$colorPrefCookieName]) ? $_COOKIE[$colorPrefCookieName] : 'light';
+                }
+                $styleUpdatedVal = $_COOKIE[$modeCookieName];
+            }
+        }
+
+        isset($_COOKIE['theme']) ? $themeVal = $_COOKIE['theme'] : $themeVal = $data['myTheme'];
+
+        $directionVal = isset($_COOKIE['direction']) ? ($_COOKIE['direction'] === 'true' ? 'rtl' : 'ltr') : $data['myRTLMode'];
+
+        // layout classes
+        $layoutClasses = [
+            'layout' => $data['myLayout'],
+            'theme' => $themeVal,
+            'themeOpt' => $data['myTheme'],
+            'style' => $styleVal,
+            'styleOpt' => $data['myStyle'],
+            'styleOptVal' => $styleUpdatedVal,
+            'rtlSupport' => $data['myRTLSupport'],
+            'rtlMode' => $data['myRTLMode'],
+            'textDirection' => $directionVal, // $data['myRTLMode'],
+            'menuCollapsed' => $data['menuCollapsed'],
+            'hasCustomizer' => $data['hasCustomizer'],
+            'showDropdownOnHover' => $data['showDropdownOnHover'],
+            'displayCustomizer' => $data['displayCustomizer'],
+            'contentLayout' => $data['contentLayout'],
+            'headerType' => $data['headerType'],
+            'navbarType' => $data['navbarType'],
+            'menuFixed' => $data['menuFixed'],
+            'footerFixed' => $data['footerFixed'],
+            'customizerControls' => $data['customizerControls'],
+        ];
+
+        // sidebar Collapsed
+        if ($layoutClasses['menuCollapsed'] == true) {
+            $layoutClasses['menuCollapsed'] = 'layout-menu-collapsed';
+        }
+
+        // Header Type
+        if ($layoutClasses['headerType'] == 'fixed') {
+            $layoutClasses['headerType'] = 'layout-menu-fixed';
+        }
+        // Navbar Type
+        if ($layoutClasses['navbarType'] == 'fixed') {
+            $layoutClasses['navbarType'] = 'layout-navbar-fixed';
+        } elseif ($layoutClasses['navbarType'] == 'static') {
+            $layoutClasses['navbarType'] = '';
+        } else {
+            $layoutClasses['navbarType'] = 'layout-navbar-hidden';
+        }
+
+        // Menu Fixed
+        if ($layoutClasses['menuFixed'] == true) {
+            $layoutClasses['menuFixed'] = 'layout-menu-fixed';
+        }
+
+        // Footer Fixed
+        if ($layoutClasses['footerFixed'] == true) {
+            $layoutClasses['footerFixed'] = 'layout-footer-fixed';
+        }
+
+        // RTL Supported template
+        if ($layoutClasses['rtlSupport'] == true) {
+            $layoutClasses['rtlSupport'] = '/rtl';
+        }
+
+        // RTL Layout/Mode
+        if ($layoutClasses['rtlMode'] == true) {
+            $layoutClasses['rtlMode'] = 'rtl';
+            $layoutClasses['textDirection'] = isset($_COOKIE['direction']) ? ($_COOKIE['direction'] === 'true' ? 'rtl' : 'ltr') : 'rtl';
+
+        } else {
+            $layoutClasses['rtlMode'] = 'ltr';
+            $layoutClasses['textDirection'] = isset($_COOKIE['direction']) && $_COOKIE['direction'] === 'true' ? 'rtl' : 'ltr';
+
+        }
+
+        // Show DropdownOnHover for Horizontal Menu
+        if ($layoutClasses['showDropdownOnHover'] == true) {
+            $layoutClasses['showDropdownOnHover'] = true;
+        } else {
+            $layoutClasses['showDropdownOnHover'] = false;
+        }
+
+        // To hide/show display customizer UI, not js
+        if ($layoutClasses['displayCustomizer'] == true) {
+            $layoutClasses['displayCustomizer'] = true;
+        } else {
+            $layoutClasses['displayCustomizer'] = false;
+        }
+
+        return $layoutClasses;
+    }
+
+    public static function updatePageConfig($pageConfigs)
+    {
+        $demo = 'custom';
+        if (isset($pageConfigs)) {
+            if (count($pageConfigs) > 0) {
+                foreach ($pageConfigs as $config => $val) {
+                    Config::set('custom.'.$demo.'.'.$config, $val);
+                }
+            }
+        }
+    }
+
+    public function bloquesDePermisos()
+    {
+        $bloques = [];
+
+        $item = new \stdClass;
+        $item->nombre = 'Personas';
+        $item->etiqueta = 'personas.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Grupos';
+        $item->etiqueta = 'grupos.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Reportes grupos';
+        $item->etiqueta = 'reportes_grupos.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Reuniones';
+        $item->etiqueta = 'reuniones.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Reporte reuniones';
+        $item->etiqueta = 'reporte_reuniones.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Sedes';
+        $item->etiqueta = 'sedes.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Ingresos';
+        $item->etiqueta = 'ingresos.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Informes';
+        $item->etiqueta = 'informes.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Temas';
+        $item->etiqueta = 'temas.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Iglesia';
+        $item->etiqueta = 'iglesia.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Actividades';
+        $item->etiqueta = 'actividades.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Puntos de pago';
+        $item->etiqueta = 'puntos_de_pago.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Peticiones';
+        $item->etiqueta = 'peticiones.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Padres';
+        $item->etiqueta = 'padres.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Escuelas';
+        $item->etiqueta = 'escuelas.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Familiar';
+        $item->etiqueta = 'familiar.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Dashboard';
+        $item->etiqueta = 'dashboard.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Administracion';
+        $item->etiqueta = 'administracion.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = self::termino('consolidacion');
+        $item->etiqueta = 'consolidacion.';
+        $bloques[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Consejería';
+        $item->etiqueta = 'consejeria.';
+        $bloques[] = $item;
+
+        /*
+        .
+        .
+        .
+        .
+        .
+        .
+        .
+        .
+        .
+        puntos_de_pago.
+        peticiones.
+        padres.
+        escuelas.
+        familiar.
+        dashboard.
+        administracion.
+        */
+
+        return $bloques;
+    }
+
+    public static function camposPeticiones()
+    {
+        $camposPeticiones = [];
+
+        $item = new \stdClass;
+        $item->id = 1;
+        $item->value = 'nombre_solicitante';
+        $item->nombre = 'Nombre';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 2;
+        $item->value = 'email_solicitante';
+        $item->nombre = 'Email';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 3;
+        $item->value = 'telefono_solicitante';
+        $item->nombre = 'Teléfonos';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 4;
+        $item->value = 'genero_solicitante';
+        $item->nombre = 'Género';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 5;
+        $item->value = 'pais_id';
+        $item->nombre = 'Pais';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 6;
+        $item->value = 'autor_creacion_id';
+        $item->nombre = 'Autor creación';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 7;
+        $item->value = 'asignado_a';
+        $item->nombre = 'Asignado a';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 8;
+        $item->value = 'tipo_peticion_id';
+        $item->nombre = 'Tipo de peticion';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 9;
+        $item->value = 'estado';
+        $item->nombre = 'Estado de la petición';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 10;
+        $item->value = 'descripcion';
+        $item->nombre = 'Descripción';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 11;
+        $item->value = 'fecha';
+        $item->nombre = 'Fecha';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 12;
+        $item->value = 'ciudad';
+        $item->nombre = 'Ciudad';
+        $camposPeticiones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 13;
+        $item->value = 'formulario_usuario_id';
+        $item->nombre = 'Formulario de origen';
+        $camposPeticiones[] = $item;
+
+        return $camposPeticiones;
+    }
+
+    public static function camposRelacionesUsuarios()
+    {
+        $camposRelaciones = [];
+
+        $item = new \stdClass;
+        $item->id = 1;
+        $item->value = 'pariente_user_id';
+        $item->nombre = 'Pariente Secundario';
+        $camposRelaciones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 2;
+        $item->value = 'es_el_responsable';
+        $item->nombre = 'Soy Responsable?';
+        $camposRelaciones[] = $item;
+
+        $item = new \stdClass;
+        $item->id = 3;
+        $item->value = 'tipo_pariente_id';
+        $item->nombre = 'Parentesco';
+        $camposRelaciones[] = $item;
+
+        return $camposRelaciones;
+    }
+
+    public static function estadoPeticion($estado)
+    {
+        if ($estado == 1) {
+            $respuesta = 'Pendiente';
+        } elseif ($estado == 2) {
+            $respuesta = 'Cerrada';
+        } elseif ($estado == 3) {
+            $respuesta = 'En proceso';
+        }
+
+        return $respuesta;
+    }
+
+    public static function eliminarTildes($cadena)
+    {
+        $originales = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðòóôõöøùúûýýþÿ';
+        $modificadas = 'aaaaaaaceeeeiiiidoooooouuuuybsaaaaaaaceeeeiiiidoooooouuuyyby';
+        $cadena = utf8_decode($cadena);
+        $cadena = strtr($cadena, utf8_decode($originales), $modificadas);
+
+        return utf8_encode($cadena);
+    }
+
+    /** * Reemplaza todos los acentos por sus equivalentes sin ellos * * @param $string * string la cadena a sanear * * @return $string * string saneada */
+    public static function sanearString($string)
+    {
+        $string = trim($string);
+        $string = str_replace(
+            ['á', 'à', 'ä', 'â', 'ª', 'Á', 'À', 'Â', 'Ä'],
+            ['a', 'a', 'a', 'a', 'a', 'A', 'A', 'A', 'A'],
+            $string
+        );
+        $string = str_replace(['é', 'è', 'ë', 'ê', 'É', 'È', 'Ê', 'Ë'], ['e', 'e', 'e', 'e', 'E', 'E', 'E', 'E'], $string);
+        $string = str_replace(['í', 'ì', 'ï', 'î', 'Í', 'Ì', 'Ï', 'Î'], ['i', 'i', 'i', 'i', 'I', 'I', 'I', 'I'], $string);
+        $string = str_replace(['ó', 'ò', 'ö', 'ô', 'Ó', 'Ò', 'Ö', 'Ô'], ['o', 'o', 'o', 'o', 'O', 'O', 'O', 'O'], $string);
+        $string = str_replace(['ú', 'ù', 'ü', 'û', 'Ú', 'Ù', 'Û', 'Ü'], ['u', 'u', 'u', 'u', 'U', 'U', 'U', 'U'], $string);
+        $string = str_replace(['ñ', 'Ñ', 'ç', 'Ç'], ['n', 'N', 'c', 'C'], $string);
+        // Esta parte se encarga de eliminar cualquier caracter extraño
+        $string = str_replace(
+            [
+                '\\',
+                '¨',
+                'º',
+                '-',
+                '~',
+                '#',
+                '@',
+                '|',
+                '!',
+                '"',
+                '·',
+                '$',
+                '%',
+                '&',
+                '/',
+                '(',
+                ')',
+                '?',
+                "'",
+                '¡',
+                '¿',
+                '[',
+                '^',
+                '`',
+                ']',
+                '+',
+                '}',
+                '{',
+                '¨',
+                '´',
+                '>“, “< ',
+                ';',
+                ',',
+                ':',
+                '.',
+                ' ',
+            ],
+            '',
+            $string
+        );
+
+        return $string;
+    }
+
+    public static function sanearStringConEspacios($string)
+    {
+        $string = trim($string);
+        $string = str_replace(
+            ['á', 'à', 'ä', 'â', 'ª', 'Á', 'À', 'Â', 'Ä'],
+            ['a', 'a', 'a', 'a', 'a', 'A', 'A', 'A', 'A'],
+            $string
+        );
+        $string = str_replace(['é', 'è', 'ë', 'ê', 'É', 'È', 'Ê', 'Ë'], ['e', 'e', 'e', 'e', 'E', 'E', 'E', 'E'], $string);
+        $string = str_replace(['í', 'ì', 'ï', 'î', 'Í', 'Ì', 'Ï', 'Î'], ['i', 'i', 'i', 'i', 'I', 'I', 'I', 'I'], $string);
+        $string = str_replace(['ó', 'ò', 'ö', 'ô', 'Ó', 'Ò', 'Ö', 'Ô'], ['o', 'o', 'o', 'o', 'O', 'O', 'O', 'O'], $string);
+        $string = str_replace(['ú', 'ù', 'ü', 'û', 'Ú', 'Ù', 'Û', 'Ü'], ['u', 'u', 'u', 'u', 'U', 'U', 'U', 'U'], $string);
+        $string = str_replace(['ñ', 'Ñ', 'ç', 'Ç'], ['n', 'N', 'c', 'C'], $string);
+        // Esta parte se encarga de eliminar cualquier caracter extraño
+        $string = str_replace(
+            [
+                '\\',
+                '¨',
+                'º',
+                '-',
+                '~',
+                '#',
+                '@',
+                '|',
+                '!',
+                '"',
+                '·',
+                '$',
+                '%',
+                '&',
+                '/',
+                '(',
+                ')',
+                '?',
+                "'",
+                '¡',
+                '¿',
+                '[',
+                '^',
+                '`',
+                ']',
+                '+',
+                '}',
+                '{',
+                '¨',
+                '´',
+                '>“, “< ',
+                ';',
+                ',',
+                ':',
+                '.',
+            ],
+            '',
+            $string
+        );
+
+        return $string;
+    }
+
+    public static function diasDeLaSemana()
+    {
+        $dias = [];
+
+        $item = new \stdClass;
+        $item->nombre = 'Lunes';
+        $item->id = '2';
+        $dias[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Martes';
+        $item->id = '3';
+        $dias[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Miércoles';
+        $item->id = '4';
+        $dias[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Jueves';
+        $item->id = '5';
+        $dias[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Viernes';
+        $item->id = '6';
+        $dias[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Sábado';
+        $item->id = '7';
+        $dias[] = $item;
+
+        $item = new \stdClass;
+        $item->nombre = 'Domingo';
+        $item->id = '1';
+        $dias[] = $item;
+
+        return $dias;
+    }
+
+    public static function obtenerDiaDeLaSemana($dia, $tipo = 'largo')
+    {
+        $respuesta = '';
+        if ($tipo == 'corto') {
+            switch ($dia) {
+                case 1:
+                    $respuesta = 'Dom';
+                    break;
+                case 2:
+                    $respuesta = 'Lun';
+                    break;
+                case 3:
+                    $respuesta = 'Mar';
+                    break;
+                case 4:
+                    $respuesta = 'Mié';
+                    break;
+                case 5:
+                    $respuesta = 'Jue';
+                    break;
+                case 6:
+                    $respuesta = 'Vie';
+                    break;
+                case 7:
+                    $respuesta = 'Sáb';
+                    break;
+            }
+        } else {
+            switch ($dia) {
+                case 1:
+                    $respuesta = 'Domingo';
+                    break;
+                case 2:
+                    $respuesta = 'Lunes';
+                    break;
+                case 3:
+                    $respuesta = 'Martes';
+                    break;
+                case 4:
+                    $respuesta = 'Miércoles';
+                    break;
+                case 5:
+                    $respuesta = 'Jueves';
+                    break;
+                case 6:
+                    $respuesta = 'Viernes';
+                    break;
+                case 7:
+                    $respuesta = 'Sábado';
+                    break;
+            }
+        }
+
+        return $respuesta;
+    }
+
+    public static function libros()
+    {
+        $libros = '[
           {"id":"1","nombre":"GÉNESIS", "capitulos":"50", "seudonimo": "GÉNESIS"},
           {"id":"2","nombre":"ÉXODO", "capitulos":"40", "seudonimo": "ÉXODO"},
           {"id":"3","nombre":"LEVÍTICO", "capitulos":"27", "seudonimo": "LEVÍTICO"},
@@ -760,15 +820,14 @@ class Helpers
           {"id":"66","nombre":"APOCALIPSIS", "capitulos":"22", "seudonimo": "APOCALIPSIS"}
       ]';
 
+        $array = json_decode($libros);
 
-      $array = json_decode($libros);
+        return $array;
+    }
 
-      return $array;
-  }
-
-  public static function libros2()
-  {
-      $libros = '[
+    public static function libros2()
+    {
+        $libros = '[
         {
           "names": [
             "Genesis"
@@ -1423,52 +1482,55 @@ class Helpers
         }
       ]';
 
-      $array = json_decode($libros);
+        $array = json_decode($libros);
 
-      return $array;
-  }
-
-  public static function meses($formato){
-
-    if($formato == 'corto')
-    return ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    else
-    return ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-
-  }
-
-  // Esta funcion recibe la cantidad de dias y devuelve en valor en dias, semanas, meses o en años
-  public static function determinarTiempo($dias) {
-
-    $respuesta = '';
-
-    if ($dias == 0)
-    {
-      $respuesta = 'hoy';
-    } elseif ($dias == 1){
-      $respuesta = '1 día';
-    } elseif ($dias < 7) {
-      $respuesta = "$dias día(s)";
-    } elseif ($dias < 30) {
-      $semanas = intdiv($dias, 7); // Dividir días por 7 para obtener el número de semanas
-      $residuoDias = $dias % 7; // Obtener el residuo de días
-
-      $respuesta = $semanas > 1 ? "$semanas semanas" : "$semanas semanas";
-      $respuesta .= $residuoDias!=0 && $residuoDias == 1 ? " y $residuoDias día" : " y $residuoDias días";
-
-    } elseif ($dias < 365) {
-      $meses = intdiv($dias, 30); // Dividir días por 30 para obtener el número de meses
-      $residuoDias = $dias % 30; // Obtener el residuo de días
-
-      $respuesta = $meses > 1 ? "$meses meses" : "$meses mes" ;
-      $respuesta .= $residuoDias!=0 && $residuoDias == 1 ? " y $residuoDias día" : " y $residuoDias días";
-    } else {
-      $años = intdiv($dias, 365); // Dividir días por 365 para obtener el número de años
-      $residuoDias = $dias % 365; // Obtener el residuo de días
-
-      $respuesta = $años > 1 ? "$años años" : "$años año" ;
-      $respuesta .= $residuoDias!=0 && $residuoDias == 1 ? " y $residuoDias día" : " y $residuoDias días";
+        return $array;
     }
-    return $respuesta;
-  }
+
+    public static function meses($formato)
+    {
+
+        if ($formato == 'corto') {
+            return ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        } else {
+            return ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        }
+
+    }
+
+    // Esta funcion recibe la cantidad de dias y devuelve en valor en dias, semanas, meses o en años
+    public static function determinarTiempo($dias)
+    {
+
+        $respuesta = '';
+
+        if ($dias == 0) {
+            $respuesta = 'hoy';
+        } elseif ($dias == 1) {
+            $respuesta = '1 día';
+        } elseif ($dias < 7) {
+            $respuesta = "$dias día(s)";
+        } elseif ($dias < 30) {
+            $semanas = intdiv($dias, 7); // Dividir días por 7 para obtener el número de semanas
+            $residuoDias = $dias % 7; // Obtener el residuo de días
+
+            $respuesta = $semanas > 1 ? "$semanas semanas" : "$semanas semanas";
+            $respuesta .= $residuoDias != 0 && $residuoDias == 1 ? " y $residuoDias día" : " y $residuoDias días";
+
+        } elseif ($dias < 365) {
+            $meses = intdiv($dias, 30); // Dividir días por 30 para obtener el número de meses
+            $residuoDias = $dias % 30; // Obtener el residuo de días
+
+            $respuesta = $meses > 1 ? "$meses meses" : "$meses mes";
+            $respuesta .= $residuoDias != 0 && $residuoDias == 1 ? " y $residuoDias día" : " y $residuoDias días";
+        } else {
+            $años = intdiv($dias, 365); // Dividir días por 365 para obtener el número de años
+            $residuoDias = $dias % 365; // Obtener el residuo de días
+
+            $respuesta = $años > 1 ? "$años años" : "$años año";
+            $respuesta .= $residuoDias != 0 && $residuoDias == 1 ? " y $residuoDias día" : " y $residuoDias días";
+        }
+
+        return $respuesta;
+    }
 }

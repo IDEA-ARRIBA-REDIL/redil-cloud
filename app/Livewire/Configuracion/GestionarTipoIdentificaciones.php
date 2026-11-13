@@ -15,7 +15,7 @@ class GestionarTipoIdentificaciones extends Component
 
     public string $search = '';
 
-    public string $sortField = 'nombre';
+    public string $sortField = 'orden';
 
     public string $sortDirection = 'asc';
 
@@ -31,6 +31,10 @@ class GestionarTipoIdentificaciones extends Component
 
     public bool $forzar_mayusculas = true;
 
+    public ?int $orden = 1;
+
+    public bool $activo = true;
+
     public bool $isEditing = false;
 
     protected function rules(): array
@@ -41,6 +45,8 @@ class GestionarTipoIdentificaciones extends Component
             'formulario_donacion' => 'boolean',
             'tipo_caracteres' => 'required|in:solo_numeros,alfanumerico,alfanumerico_simbolos',
             'forzar_mayusculas' => 'boolean',
+            'orden' => 'required|integer|min:0|max:32767',
+            'activo' => 'boolean',
         ];
     }
 
@@ -51,6 +57,9 @@ class GestionarTipoIdentificaciones extends Component
         'abreviatura.required' => 'La abreviatura es obligatoria.',
         'abreviatura.min' => 'La abreviatura debe tener al menos 1 caracter.',
         'abreviatura.max' => 'La abreviatura no puede superar los 10 caracteres.',
+        'orden.required' => 'El orden es obligatorio.',
+        'orden.integer' => 'El orden debe ser un número entero.',
+        'orden.min' => 'El orden no puede ser negativo.',
     ];
 
     public function updatingSearch(): void
@@ -66,7 +75,7 @@ class GestionarTipoIdentificaciones extends Component
 
     public function sortBy(string $field): void
     {
-        $allowedFields = ['nombre', 'abreviatura', 'formulario_donacion', 'tipo_caracteres', 'usuarios_count', 'created_at'];
+        $allowedFields = ['orden', 'nombre', 'abreviatura', 'formulario_donacion', 'tipo_caracteres', 'activo', 'usuarios_count', 'created_at'];
         if (! in_array($field, $allowedFields)) {
             return;
         }
@@ -84,9 +93,14 @@ class GestionarTipoIdentificaciones extends Component
     public function crear(): void
     {
         $this->resetValidation();
-        $this->reset(['tipoIdentificacionId', 'nombre', 'abreviatura', 'formulario_donacion', 'isEditing']);
+        $this->reset(['tipoIdentificacionId', 'nombre', 'abreviatura', 'formulario_donacion', 'orden', 'activo', 'isEditing']);
         $this->tipo_caracteres = 'solo_numeros';
         $this->forzar_mayusculas = true;
+        $this->activo = true;
+
+        $ultimoOrden = TipoIdentificacion::max('orden');
+        $this->orden = $ultimoOrden !== null ? ((int) $ultimoOrden + 1) : 1;
+
         $this->dispatch('abrir-offcanvas-tipo-identificacion');
     }
 
@@ -100,6 +114,8 @@ class GestionarTipoIdentificaciones extends Component
         $this->formulario_donacion = (bool) $tipo->formulario_donacion;
         $this->tipo_caracteres = $tipo->tipo_caracteres ?? 'solo_numeros';
         $this->forzar_mayusculas = (bool) ($tipo->forzar_mayusculas ?? true);
+        $this->orden = (int) ($tipo->orden ?? 0);
+        $this->activo = (bool) ($tipo->activo ?? true);
         $this->isEditing = true;
         $this->dispatch('abrir-offcanvas-tipo-identificacion');
     }
@@ -114,6 +130,8 @@ class GestionarTipoIdentificaciones extends Component
             'formulario_donacion' => (bool) $this->formulario_donacion,
             'tipo_caracteres' => $this->tipo_caracteres,
             'forzar_mayusculas' => (bool) $this->forzar_mayusculas,
+            'orden' => (int) ($this->orden ?? 0),
+            'activo' => (bool) $this->activo,
         ];
 
         if ($this->isEditing && $this->tipoIdentificacionId) {
@@ -125,9 +143,10 @@ class GestionarTipoIdentificaciones extends Component
             $mensaje = 'Tipo de identificación creado con éxito.';
         }
 
-        $this->reset(['tipoIdentificacionId', 'nombre', 'abreviatura', 'formulario_donacion', 'isEditing']);
+        $this->reset(['tipoIdentificacionId', 'nombre', 'abreviatura', 'formulario_donacion', 'orden', 'activo', 'isEditing']);
         $this->tipo_caracteres = 'solo_numeros';
         $this->forzar_mayusculas = true;
+        $this->activo = true;
         $this->dispatch('cerrar-offcanvas-tipo-identificacion');
         $this->dispatch('msn', [
             'icono' => 'success',
@@ -147,6 +166,20 @@ class GestionarTipoIdentificaciones extends Component
             'icono' => 'success',
             'titulo' => 'Estado Actualizado',
             'texto' => "El tipo {$tipo->nombre} ahora está {$estado} para donaciones.",
+        ]);
+    }
+
+    public function toggleActivo(int $id): void
+    {
+        $tipo = TipoIdentificacion::findOrFail($id);
+        $tipo->activo = ! $tipo->activo;
+        $tipo->save();
+
+        $estado = $tipo->activo ? 'activado' : 'inactivado';
+        $this->dispatch('msn', [
+            'icono' => 'success',
+            'titulo' => '¡Estado actualizado!',
+            'texto' => "El tipo de identificación \"{$tipo->nombre}\" ha sido {$estado}.",
         ]);
     }
 
@@ -201,8 +234,12 @@ class GestionarTipoIdentificaciones extends Component
             $query->orderBy('formulario_donacion', $this->sortDirection);
         } elseif ($this->sortField === 'tipo_caracteres') {
             $query->orderBy('tipo_caracteres', $this->sortDirection);
-        } else {
+        } elseif ($this->sortField === 'activo') {
+            $query->orderBy('activo', $this->sortDirection);
+        } elseif ($this->sortField === 'nombre') {
             $query->orderBy('nombre', $this->sortDirection);
+        } else {
+            $query->orderBy('orden', $this->sortDirection)->orderBy('id', 'asc');
         }
 
         $tipoIdentificaciones = $query->paginate(12);

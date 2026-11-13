@@ -4,11 +4,11 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Detalle KPI Consolidación')
+@section('title', 'Detalle KPI ' . Helper::termino('consolidacion', minuscula: true))
 
 @section('content')
 
-  <h4 class="mb-1 fw-semibold text-primary">Detalle de consolidación: 
+  <h4 class="mb-1 fw-semibold text-primary">Detalle de {{ Helper::termino('consolidacion', minuscula: true) }}: 
     @switch($kpi)
         @case('cosecha_total')
             Total cosecha
@@ -91,57 +91,123 @@
     });
  </script>
 
-<div class="card">
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th class="fw-bold text-black">Nombre</th>
-                    <th class="fw-bold text-black">Teléfono</th>
-                    <th class="fw-bold text-black">Email</th>
-                    <th class="fw-bold text-black">Sede</th>
-                    <th class="fw-bold text-black">Fecha Creación</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($usuarios as $usuario)
-                <tr>
-                    <td class="text-black">
-                        <span class="fw-semibold">{{ $usuario->nombre(3) }}</span>
-                        @if($usuario->trashed())
-                            <br><small class="text-danger fw-bold"><i class="ti ti-user-x fs-6"></i> Dado de baja</small>
-                        @endif
-                    </td>
-                    <td class="text-black">
-                        @php
-                            $telefonos = collect([$usuario->telefono_fijo, $usuario->telefono_movil, $usuario->telefono_otro])->filter();
-                        @endphp
-                        {{ $telefonos->isNotEmpty() ? $telefonos->implode(', ') : 'N/A' }}
-                    </td>
-                    <td class="text-black">
-                        {{ $usuario->email ?? 'N/A' }}
-                    </td>
-                    <td class="text-black">
-                        {{ $usuario->sede->nombre ?? 'N/A' }}
-                    </td>
-                    <td class="text-black">
-                        {{ $usuario->created_at->format('Y-m-d') }}
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="5" class="text-center py-5 text-black">
-                        <h4>No se encontraron registros</h4>
-                        <p class="text-muted">Intenta cambiar los filtros o el término de búsqueda.</p>
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    
-    <div class="card-footer">
-        {{ $usuarios->appends(request()->query())->links() }}
-    </div>
-</div>
+  <div class="d-flex justify-content-between align-items-center mb-2 mt-2">
+    <span class="text-black fw-medium">
+      {{ $usuarios->total() > 1 ? $usuarios->total().' personas encontradas' : ($usuarios->total() == 1 ? '1 persona encontrada' : '0 personas') }}
+    </span>
+  </div>
+
+  <!-- Listado de personas en cards -->
+  <div class="row g-4 mt-1">
+    @forelse($usuarios as $usuario)
+      <div class="col-12 col-md-6">
+        <div class="card h-100 rounded-3 shadow-sm border">
+          <!-- Card Header -->
+          <div class="card-header border-bottom d-flex justify-content-between align-items-center px-4 py-3" style="background-color: #f9f9f9 !important;">
+            <div class="d-flex align-items-center overflow-hidden me-2">
+           
+              <div class="d-flex flex-column text-truncate">
+                <h6 class="fw-semibold text-black mb-0 text-truncate">
+                  {{ $usuario->nombre(3) }}
+                </h6>
+                @if($usuario->trashed())
+                  <small class="text-danger fw-bold mt-1"><i class="ti ti-user-x fs-6 me-1"></i>Dado de baja</small>
+                @endif
+              </div>
+            </div>
+
+            @if($usuario->tipoUsuario)
+              <span class="badge rounded-pill px-6 fw-light " style="background-color: {{ $usuario->tipoUsuario->color }}">
+                <i class="{{ $usuario->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $usuario->tipoUsuario->nombre }}</span>
+              </span>
+            @endif
+          </div>
+
+          <!-- Card Body -->
+          <div class="card-body px-4 py-3">
+            @php
+              $telefonos = collect([
+                $usuario->telefono_movil,
+                $usuario->telefono_fijo,
+                $usuario->telefono_otro,
+              ])->filter();
+            @endphp
+            <div class="row g-3">
+              <!-- Teléfono -->
+              <div class="col-6 d-flex flex-column">
+                <small class="text-black"><i class="ti ti-phone me-1"></i>Teléfono</small>
+                @if($telefonos->isNotEmpty())
+                  <a href="tel:{{ $telefonos->first() }}" class="fw-semibold text-black text-truncate" title="{{ $telefonos->implode(', ') }}">
+                    {{ $telefonos->implode(', ') }}
+                  </a>
+                @else
+                  <span class="fw-semibold text-black">No indicado</span>
+                @endif
+              </div>
+
+              <!-- Correo -->
+              <div class="col-6 d-flex flex-column">
+                <small class="text-black"><i class="ti ti-mail me-1"></i>Correo</small>
+                @if($usuario->email)
+                  <a href="mailto:{{ $usuario->email }}" class="fw-semibold text-black text-truncate" title="{{ $usuario->email }}">
+                    {{ $usuario->email }}
+                  </a>
+                @else
+                  <span class="fw-semibold text-black">No indicado</span>
+                @endif
+              </div>
+
+              <div class="col-12 my-1">
+                <hr class="my-1 border-1 opacity-25">
+              </div>
+
+              <!-- Sede -->
+              <div class="col-6 d-flex flex-column">
+                <small class="text-black"><i class="ti ti-building me-1"></i>Sede</small>
+                <span class="fw-semibold text-black text-truncate" title="{{ $usuario->sede->nombre ?? 'No especificada' }}">
+                  {{ $usuario->sede->nombre ?? 'No especificada' }}
+                </span>
+              </div>
+
+              <!-- Edad -->
+              <div class="col-6 d-flex flex-column">
+                <small class="text-black"><i class="ti ti-cake me-1"></i>Edad</small>
+                <span class="fw-semibold text-black">
+                  {{ $usuario->fecha_nacimiento ? ($usuario->edad() > 1 ? $usuario->edad().' años' : $usuario->edad().' año') : 'No indicada' }}
+                </span>
+              </div>
+
+              <!-- ¿Por dónde ingresó? (Vinculación) -->
+              <div class="col-6 d-flex flex-column">
+                <small class="text-black"><i class="ti ti-link me-1"></i>¿Por dónde ingresó?</small>
+                <span class="fw-semibold text-black text-truncate" title="{{ $usuario->tipoVinculacion->nombre ?? 'No especificado' }}">
+                  {{ $usuario->tipoVinculacion->nombre ?? 'No especificado' }}
+                </span>
+              </div>
+
+              <!-- Fecha Registro -->
+              <div class="col-6 d-flex flex-column">
+                <small class="text-black"><i class="ti ti-calendar me-1"></i>Fecha creación</small>
+                <span class="fw-semibold text-black">
+                  {{ $usuario->created_at ? $usuario->created_at->format('d-m-Y') : 'No indicada' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    @empty
+      <div class="col-12 text-center py-5">
+        <div class="card shadow-sm border p-5">
+          <i class="ti ti-search fs-1 text-black opacity-25 mb-2"></i>
+          <h5 class="mt-2 text-black">No se encontraron registros</h5>
+          <p class="text-black mb-0">Intenta cambiar los filtros o el término de búsqueda.</p>
+        </div>
+      </div>
+    @endforelse
+  </div>
+
+  <div class="mt-4">
+    {{ $usuarios->appends(request()->query())->links() }}
+  </div>
 @endsection

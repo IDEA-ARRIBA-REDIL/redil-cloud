@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Bloques de Clasificación de Asistentes')
+@section('title', 'Bloques de clasificación de asistentes')
 
 @section('page-style')
 @vite([
@@ -18,12 +18,12 @@
 
 @section('content')
 <h4 class="fw-bold py-3 mb-4">
-    <span class="text-muted fw-light">Consolidación /</span> Bloques de Clasificación
+    <span class="text-muted fw-light">{{ Helper::termino('consolidacion') }} /</span> bloques de clasificación
 </h4>
 
 <div class="card">
     <div class="card-header border-bottom">
-        <h5 class="card-title mb-0">Gestionar Bloques</h5>
+        <h5 class="card-title mb-0">Gestionar bloques</h5>
     </div>
     <div class="card-body p-0">
         @livewire('consolidacion.gestionar-bloques-clasificacion')

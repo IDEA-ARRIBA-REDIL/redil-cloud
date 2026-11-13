@@ -104,7 +104,7 @@
                <small class="text-black">Seguimiento reunión:</small> <span class="text-black fw-semibold">{{ $tipoUsuario->seguimiento_actividad_reunion ? 'Sí' : 'No' }}</span>
             </div>
             <div class="col-12">
-               <small class="text-black">Consolidación:</small> <span class="text-black fw-semibold">{{ $tipoUsuario->habilitado_para_consolidacion ? 'Sí' : 'No' }}</span>
+               <small class="text-black">{{ Helper::termino('consolidacion') }}:</small> <span class="text-black fw-semibold">{{ $tipoUsuario->habilitado_para_consolidacion ? 'Sí' : 'No' }}</span>
             </div>
           
             @if($tipoUsuario->descripcion)

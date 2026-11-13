@@ -176,7 +176,17 @@
         </div>
 
         <div class="mb-3">
-          <label for="sedes" class="form-label fw-semibold">¿Qué sedes componen la zona? <span class="text-danger">*</span></label>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="sedes" class="form-label fw-semibold mb-0">¿Qué sedes componen la zona? <span class="text-danger">*</span></label>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btnSeleccionarTodasSedesZona">
+                <i class="ti ti-checks me-1"></i>Todas
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" id="btnBorrarTodasSedesZona">
+                <i class="ti ti-x me-1"></i>Borrar
+              </button>
+            </div>
+          </div>
           <div wire:ignore>
             <select id="sedes" name="sedes[]" multiple class="form-select">
               @foreach ($sedes as $sede)
@@ -190,7 +200,17 @@
         </div>
 
         <div class="mb-3">
-          <label for="localidades" class="form-label fw-semibold">¿Qué localidades componen la zona?</label>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="localidades" class="form-label fw-semibold mb-0">¿Qué localidades componen la zona?</label>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btnSeleccionarTodasLocalidadesZona">
+                <i class="ti ti-checks me-1"></i>Todas
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" id="btnBorrarTodasLocalidadesZona">
+                <i class="ti ti-x me-1"></i>Borrar
+              </button>
+            </div>
+          </div>
           <div wire:ignore>
             <select id="localidades" name="localidades[]" multiple class="form-select">
               @foreach ($localidades as $localidad)
@@ -285,6 +305,26 @@
         const val = $(this).val() || [];
         $wire.set('localidadesSeleccionadas', val, false);
       });
+
+      $('#btnSeleccionarTodasSedesZona').off('click').on('click', function(e) {
+        e.preventDefault();
+        $sedes.find('option').prop('selected', true);
+        $sedes.trigger('change');
+      });
+      $('#btnBorrarTodasSedesZona').off('click').on('click', function(e) {
+        e.preventDefault();
+        $sedes.val(null).trigger('change');
+      });
+
+      $('#btnSeleccionarTodasLocalidadesZona').off('click').on('click', function(e) {
+        e.preventDefault();
+        $localidades.find('option').prop('selected', true);
+        $localidades.trigger('change');
+      });
+      $('#btnBorrarTodasLocalidadesZona').off('click').on('click', function(e) {
+        e.preventDefault();
+        $localidades.val(null).trigger('change');
+      });
     }
   };
 
@@ -295,6 +335,10 @@
     }
     $('#sedes').off('change');
     $('#localidades').off('change');
+    $('#btnSeleccionarTodasSedesZona').off('click');
+    $('#btnBorrarTodasSedesZona').off('click');
+    $('#btnSeleccionarTodasLocalidadesZona').off('click');
+    $('#btnBorrarTodasLocalidadesZona').off('click');
   };
 
   const getOffcanvasZona = () => {

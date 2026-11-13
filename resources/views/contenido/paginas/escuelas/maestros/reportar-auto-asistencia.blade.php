@@ -44,6 +44,14 @@
                                 </div>
                             @else
                                 <h2 class="text-black fw-bold mb-0 lh-sm">Reportar Mi Asistencia</h2>
+                                @if (!empty($esAdminBypass) && $esAdminBypass && empty($linkPublicoActivo))
+                                    <div class="mt-2 mb-1">
+                                        <span class="badge bg-label-info">
+                                            <i class="ti ti-shield-check me-1"></i>
+                                            Modo administrativo activo (habilitado en cualquier fecha/hora)
+                                        </span>
+                                    </div>
+                                @endif
                                 <p class="text-black mt-1 mb-2">
                                     Clase: {{ $horarioAsignado->materiaPeriodo->materia->nombre ?? 'N/A' }} <br>
                                     Fecha:

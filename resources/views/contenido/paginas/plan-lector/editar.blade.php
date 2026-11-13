@@ -399,7 +399,7 @@
 
                                         <!-- Tareas de Consolidación -->
                                         <div class="col-12 mt-4">
-                                            <label class="form-label fw-bold">Tareas de consolidación requeridas</label>
+                                            <label class="form-label fw-bold">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }} requeridas</label>
                                             <div id="contenedorTareas">
                                                 @foreach ($tareasPlan as $tPlan)
                                                     <div class="row g-2 mt-1 align-items-center fila-dinamica">

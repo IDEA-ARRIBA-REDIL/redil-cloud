@@ -37,6 +37,14 @@ class FechaNacimiento extends Component
             $this->fecha = old($this->nameId);
         }
 
+        if ($this->fecha) {
+            try {
+                $this->fecha = Carbon::parse($this->fecha)->format('Y-m-d');
+            } catch (\Exception $e) {
+                // Mantener valor original si no se puede parsear
+            }
+        }
+
         $edad = Carbon::parse($this->fecha)->age;
         /* if($this->fecha)
          {

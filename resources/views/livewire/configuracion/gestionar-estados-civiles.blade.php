@@ -20,11 +20,11 @@
     </div>
   </div>
 
-  <!-- Card Principal con Buscador y Tabla -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-body pb-2">
-      <!-- Buscador en tiempo real -->
+  <!-- Barra de Búsqueda y Ordenamiento -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
       <div class="row align-items-center justify-content-between g-3">
+        <!-- Buscador en tiempo real -->
         <div class="col-12 col-md-5 col-lg-4">
           <div class="input-group input-group-merge border border-primary rounded-3">
             <span class="input-group-text bg-white text-muted">
@@ -49,100 +49,82 @@
           </div>
         </div>
 
-        <div class="col-12 col-md-auto text-md-end text-black small">
-          Total de registros: <strong class="text-dark">{{ $estadosCiviles->total() }}</strong>
+        <!-- Botones de ordenamiento y contador -->
+        <div class="col-12 col-md-auto d-flex flex-wrap align-items-center justify-content-md-end gap-2">
+          <div class="d-flex align-items-center gap-1 flex-wrap">
+            <span class="text-muted small me-1"><i class="ti ti-arrows-sort ti-xs"></i> Ordenar:</span>
+
+            <button 
+              type="button" 
+              class="btn btn-xs rounded-pill {{ $sortField === 'orden' ? 'btn-primary' : 'btn-label-secondary' }}"
+              wire:click="sortBy('orden')"
+            >
+              Orden
+              @if($sortField === 'orden')
+                <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} ti-xs ms-1"></i>
+              @endif
+            </button>
+
+            <button 
+              type="button" 
+              class="btn btn-xs rounded-pill {{ $sortField === 'nombre' ? 'btn-primary' : 'btn-label-secondary' }}"
+              wire:click="sortBy('nombre')"
+            >
+              Nombre
+              @if($sortField === 'nombre')
+                <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} ti-xs ms-1"></i>
+              @endif
+            </button>
+
+            <button 
+              type="button" 
+              class="btn btn-xs rounded-pill {{ $sortField === 'usuarios_count' ? 'btn-primary' : 'btn-label-secondary' }}"
+              wire:click="sortBy('usuarios_count')"
+            >
+              Usuarios
+              @if($sortField === 'usuarios_count')
+                <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} ti-xs ms-1"></i>
+              @endif
+            </button>
+
+            <button 
+              type="button" 
+              class="btn btn-xs rounded-pill {{ $sortField === 'activo' ? 'btn-primary' : 'btn-label-secondary' }}"
+              wire:click="sortBy('activo')"
+            >
+              Estado
+              @if($sortField === 'activo')
+                <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} ti-xs ms-1"></i>
+              @endif
+            </button>
+          </div>
+
+          <span class="text-black small ms-md-2">
+            Total de registros: <strong class="text-dark">{{ $estadosCiviles->total() }}</strong>
+          </span>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Tabla de Estados Civiles -->
-    <div class="table-responsive text-nowrap">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th class="ps-4" style="width: 70px;">#</th>
-            
-            <th class="cursor-pointer user-select-none" wire:click="sortBy('nombre')" title="Ordenar por Estado civil">
-              <div class="d-inline-flex align-items-center gap-1">
-                <span>Estado civil</span>
-                @if($sortField === 'nombre')
-                  <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} text-primary ti-xs"></i>
-                @else
-                  <i class="ti ti-arrows-sort text-muted ti-xs opacity-50"></i>
-                @endif
-              </div>
-            </th>
-
-            <th class="text-center cursor-pointer user-select-none" style="width: 170px;" wire:click="sortBy('es_union_libre')" title="Ordenar por Unión libre">
-              <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                <span>¿Es unión libre?</span>
-                @if($sortField === 'es_union_libre')
-                  <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} text-primary ti-xs"></i>
-                @else
-                  <i class="ti ti-arrows-sort text-muted ti-xs opacity-50"></i>
-                @endif
-              </div>
-            </th>
-
-            <th class="text-center cursor-pointer user-select-none" style="width: 190px;" wire:click="sortBy('usuarios_count')" title="Ordenar por Usuarios vinculados">
-              <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                <span>Usuarios Vinculados</span>
-                @if($sortField === 'usuarios_count')
-                  <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} text-primary ti-xs"></i>
-                @else
-                  <i class="ti ti-arrows-sort text-muted ti-xs opacity-50"></i>
-                @endif
-              </div>
-            </th>
-
-            <th class="cursor-pointer user-select-none" style="width: 200px;" wire:click="sortBy('created_at')" title="Ordenar por Fecha de creación">
-              <div class="d-inline-flex align-items-center gap-1">
-                <span>Fecha de creación</span>
-                @if($sortField === 'created_at')
-                  <i class="ti {{ $sortDirection === 'asc' ? 'ti-arrow-up' : 'ti-arrow-down' }} text-primary ti-xs"></i>
-                @else
-                  <i class="ti ti-arrows-sort text-muted ti-xs opacity-50"></i>
-                @endif
-              </div>
-            </th>
-
-            <th class="text-center pe-4" style="width: 130px;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="table-border-bottom-0">
-          @forelse($estadosCiviles as $estado)
-            <tr>
-              <td class="ps-4 text-muted small">
-                {{ $loop->iteration + ($estadosCiviles->currentPage() - 1) * $estadosCiviles->perPage() }}
-              </td>
-              <td>
+  <!-- Listado de Cards de Estados Civiles -->
+  <div class="row g-4 mb-4">
+    @forelse($estadosCiviles as $estado)
+      <div class="col-12 col-md-6 col-lg-4" wire:key="estado-civil-card-{{ $estado->id }}">
+        <div class="card h-100 border-0 shadow-sm {{ !($estado->activo ?? true) ? 'opacity-75' : '' }}">
+          <div class="card-body d-flex flex-column justify-content-between p-4">
+            <div>
+              <!-- Encabezado de la Card -->
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
                 <div class="d-flex align-items-center gap-2">
-                  <span class="fw-semibold text-dark">{{ $estado->nombre }}</span>
+                  <span class="badge bg-label-primary rounded-pill px-2 py-1 fw-semibold" title="Orden de visualización">
+                    #{{ $estado->orden ?? 0 }}
+                  </span>
+                  <h5 class="card-title text-dark mb-0 fw-bold">{{ $estado->nombre }}</h5>
                 </div>
-              </td>
-              <td class="text-center">
-                <button 
-                  type="button" 
-                  class="btn btn-sm py-1 px-3 rounded-pill {{ $estado->es_union_libre ? 'btn-label-primary' : 'btn-label-secondary' }}"
-                  wire:click="toggleUnionLibre({{ $estado->id }})"
-                  title="Clic para cambiar estado"
-                >
-                  <i class="ti {{ $estado->es_union_libre ? 'ti-check' : 'ti-x' }} ti-xs me-1"></i>
-                  {{ $estado->es_union_libre ? 'Sí' : 'No' }}
-                </button>
-              </td>
-              <td class="text-center text-black">
-                @if($estado->usuarios_count > 0)
-                  {{ $estado->usuarios_count }}
-                @else
-                  0 
-                @endif
-              </td>
-              <td class="text-black small">
-                {{ $estado->created_at ? $estado->created_at->format('Y-m-d h:i A') : 'N/A' }}
-              </td>
-              <td class="text-center pe-4">
-                <div class="d-inline-flex gap-1">
+
+                <!-- Acciones -->
+                <div class="d-inline-flex gap-1 flex-shrink-0">
                   <button 
                     type="button" 
                     class="btn btn-icon btn-sm btn-primary rounded-pill" 
@@ -161,41 +143,86 @@
                     <i class="ti ti-trash ti-xs"></i>
                   </button>
                 </div>
-              </td>
-            </tr>
-          @empty
-            <tr>
-              <td colspan="6" class="text-center py-5">
-                <div class="avatar avatar-xl bg-label-secondary mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center">
-                  <i class="ti ti-heart-off ti-lg text-white"></i>
-                </div>
-                <h6 class="fw-semibold mb-1 text-dark">No se encontraron estados civiles</h6>
-                <p class="text-black small mb-3">
-                  @if(!empty($search))
-                    No hay resultados para la búsqueda "<strong class="text-primary">{{ $search }}</strong>".
-                  @else
-                    Aún no has registrado ningún estado civil en el sistema.
-                  @endif
-                </p>
-                @if(!empty($search))
-                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" wire:click="limpiarBusqueda">
-                    <i class="ti ti-arrow-back-up me-1"></i> Restablecer búsqueda
-                  </button>
-                @else
-                  <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" wire:click="crear">
-                    <i class="ti ti-plus me-1"></i> Registrar el primero
-                  </button>
-                @endif
-              </td>
-            </tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
+              </div>
 
-    <!-- Paginación -->
-    @if($estadosCiviles->hasPages())
-      <div class="card-footer border-top d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 py-3">
+              <!-- Métricas -->
+              <div class="p-3 bg-light rounded-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="text-black small">
+                    <i class="ti ti-users ti-xs text-primary me-1"></i> Usuarios vinculados:
+                  </span>
+                  <span class="fw-bold text-dark">{{ $estado->usuarios_count > 0 ? $estado->usuarios_count : 0 }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-black small">
+                    <i class="ti ti-calendar ti-xs text-muted me-1"></i> Creado:
+                  </span>
+                  <span class="text-muted small">{{ $estado->created_at ? $estado->created_at->format('Y-m-d') : 'N/A' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Badges de estado e interruptores rápidos -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pt-2 border-top">
+              <!-- Estado Activo / Inactivo -->
+              <button 
+                type="button" 
+                class="btn btn-xs py-1 px-3 rounded-pill {{ ($estado->activo ?? true) ? 'btn-label-success' : 'btn-label-secondary' }}"
+                wire:click="toggleActivo({{ $estado->id }})"
+                title="Clic para cambiar estado activo/inactivo"
+              >
+                <i class="ti {{ ($estado->activo ?? true) ? 'ti-circle-check' : 'ti-circle-x' }} ti-xs me-1"></i>
+                {{ ($estado->activo ?? true) ? 'Activo' : 'Inactivo' }}
+              </button>
+
+              <!-- ¿Es unión libre? -->
+              <button 
+                type="button" 
+                class="btn btn-xs py-1 px-3 rounded-pill {{ $estado->es_union_libre ? 'btn-label-primary' : 'btn-label-secondary' }}"
+                wire:click="toggleUnionLibre({{ $estado->id }})"
+                title="Clic para cambiar si es unión libre"
+              >
+                <i class="ti {{ $estado->es_union_libre ? 'ti-check' : 'ti-x' }} ti-xs me-1"></i>
+                Unión libre: {{ $estado->es_union_libre ? 'Sí' : 'No' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    @empty
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-5">
+            <div class="avatar avatar-xl bg-label-secondary mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center">
+              <i class="ti ti-heart-off ti-lg text-white"></i>
+            </div>
+            <h6 class="fw-semibold mb-1 text-dark">No se encontraron estados civiles</h6>
+            <p class="text-black small mb-3">
+              @if(!empty($search))
+                No hay resultados para la búsqueda "<strong class="text-primary">{{ $search }}</strong>".
+              @else
+                Aún no has registrado ningún estado civil en el sistema.
+              @endif
+            </p>
+            @if(!empty($search))
+              <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" wire:click="limpiarBusqueda">
+                <i class="ti ti-arrow-back-up me-1"></i> Restablecer búsqueda
+              </button>
+            @else
+              <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" wire:click="crear">
+                <i class="ti ti-plus me-1"></i> Registrar el primero
+              </button>
+            @endif
+          </div>
+        </div>
+      </div>
+    @endforelse
+  </div>
+
+  <!-- Paginación -->
+  @if($estadosCiviles->hasPages())
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 py-3">
         <span class="text-black small">
           Mostrando {{ $estadosCiviles->firstItem() }} a {{ $estadosCiviles->lastItem() }} de {{ $estadosCiviles->total() }} registros
         </span>
@@ -203,8 +230,8 @@
           {{ $estadosCiviles->links() }}
         </div>
       </div>
-    @endif
-  </div>
+    </div>
+  @endif
 
   <style>
     /* Oculta los botones de texto « Anterior / Siguiente » del bloque mobile */
@@ -234,8 +261,8 @@
     wire:ignore.self 
     aria-labelledby="offcanvasEstadoCivilLabel"
   >
-    <form wire:submit.prevent="guardar">
-      <div class="offcanvas-header border-bottom">
+    <form wire:submit.prevent="guardar" class="d-flex flex-column h-100 m-0 overflow-hidden">
+      <div class="offcanvas-header border-bottom flex-shrink-0">
         <h5 id="offcanvasEstadoCivilLabel" class="offcanvas-title fw-semibold text-primary">
           <i class="ti {{ $isEditing ? 'ti-pencil' : 'ti-plus' }} me-2"></i>
           {{ $isEditing ? 'Editar estado civil' : 'Nuevo estado civil' }}
@@ -243,11 +270,11 @@
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
 
-      <div class="offcanvas-body my-auto mx-0 flex-grow-0 p-4">
+      <div class="offcanvas-body flex-grow-1 overflow-y-auto p-4">
         <!-- Nombre -->
         <div class="mb-4">
           <label class="form-label fw-semibold" for="estadoCivilNombre">
-            Nombre del estado civil 
+            Nombre del estado civil <span class="text-danger">*</span>
           </label>
           <div class="input-group">
             <span class="input-group-text"><i class="ti ti-heart-handshake"></i></span>
@@ -268,12 +295,36 @@
           </small>
         </div>
 
+        <!-- Orden -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold" for="estadoCivilOrden">
+            Orden de visualización <span class="text-danger">*</span>
+          </label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="ti ti-sort-ascending-numbers"></i></span>
+            <input 
+              type="number" 
+              id="estadoCivilOrden" 
+              class="form-control @error('orden') is-invalid @enderror" 
+              placeholder="1, 2, 3..." 
+              wire:model="orden"
+              min="0"
+            >
+          </div>
+          @error('orden')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+          @enderror
+          <small class="text-muted d-block mt-1">
+            Define la posición en la que se mostrará esta opción en listados y formularios.
+          </small>
+        </div>
+
         <!-- Switch Es Unión Libre -->
         <div class="mb-4">
           <div class="form-check form-switch ps-0">
             <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border bg-light">
               <div>
-                <label class="form-check-label fw-semibold text-dark d-block mb-1" for="switchUnionLibre">
+                <label class="form-check-label fw-semibold text-dark d-block mb-1 cursor-pointer" for="switchUnionLibre">
                   ¿Es unión libre?
                 </label>
                 <small class="text-muted d-block">
@@ -281,7 +332,7 @@
                 </small>
               </div>
               <input 
-                class="form-check-input ms-3 fs-4" 
+                class="form-check-input ms-3 fs-4 cursor-pointer" 
                 type="checkbox" 
                 id="switchUnionLibre" 
                 wire:model="es_union_libre"
@@ -289,9 +340,31 @@
             </div>
           </div>
         </div>
+
+        <!-- Switch Activo -->
+        <div class="mb-4">
+          <div class="form-check form-switch ps-0">
+            <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border bg-light">
+              <div>
+                <label class="form-check-label fw-semibold text-dark d-block mb-1 cursor-pointer" for="switchActivoEstadoCivil">
+                  ¿Está activo?
+                </label>
+                <small class="text-muted d-block">
+                  Determina si el estado civil está habilitado y visible para su selección.
+                </small>
+              </div>
+              <input 
+                class="form-check-input ms-3 fs-4 cursor-pointer" 
+                type="checkbox" 
+                id="switchActivoEstadoCivil" 
+                wire:model="activo"
+              >
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="offcanvas-footer d-flex align-items-center justify-content-end gap-3 p-4 border-top">
+      <div class="offcanvas-footer flex-shrink-0 d-flex align-items-center justify-content-end gap-3 p-4 border-top bg-white">
         <button type="button" class="btn btn-label-secondary rounded-pill px-3" data-bs-dismiss="offcanvas">
           Cancelar
         </button>

@@ -44,6 +44,17 @@ $configData = Helper::appClasses();
       width: '100%',
       placeholder: 'Seleccione las localidades que cubre esta sede'
     });
+
+    $('#btnSeleccionarTodasLocalidades').on('click', function(e) {
+      e.preventDefault();
+      $('#localidades option').prop('selected', true);
+      $('#localidades').trigger('change');
+    });
+
+    $('#btnBorrarTodasLocalidades').on('click', function(e) {
+      e.preventDefault();
+      $('#localidades').val(null).trigger('change');
+    });
   });
 
   function sinComillas(e) {
@@ -295,9 +306,19 @@ $configData = Helper::appClasses();
 
           <!-- Localidades con cobertura -->
           <div class="mb-3 col-12">
-            <label class="form-label" for="localidades">
-              <i class="ti ti-map-pin me-1 text-primary"></i>Localidades con cobertura
-            </label>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label mb-0" for="localidades">
+                <i class="ti ti-map-pin me-1 text-primary"></i>Localidades con cobertura
+              </label>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btnSeleccionarTodasLocalidades">
+                  <i class="ti ti-checks me-1"></i>Seleccionar todas
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" id="btnBorrarTodasLocalidades">
+                  <i class="ti ti-x me-1"></i>Borrar todas
+                </button>
+              </div>
+            </div>
             <select id="localidades" name="localidades[]" class="select2 form-select" multiple data-placeholder="Seleccione las localidades que cubre esta sede">
               @foreach ($localidades as $localidad)
                 @php

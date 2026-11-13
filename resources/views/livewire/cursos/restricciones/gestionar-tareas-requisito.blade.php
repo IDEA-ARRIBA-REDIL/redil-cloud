@@ -1,5 +1,5 @@
 <div class="mb-5" x-data="{ formVisible: {{ $tareasRequisito->count() == 0 ? 'true' : 'false' }} }">
-    <h5 class="fw-bold text-primary mb-1">Requisitos de Tareas de Consolidación</h5>
+    <h5 class="fw-bold text-primary mb-1">Requisitos de Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}</h5>
     <p class="text-dark small mb-3">El usuario debe tener estas tareas en el estado indicado para inscribirse.</p>
 
     {{-- Formulario --}}
@@ -82,7 +82,7 @@
          <div style="border: 2px solid #95CDDF;" class="rounded-3 p-3 ">
              <div class="d-flex align-items-center text-black mb-2">
                 <i class="ti ti-info-circle fs-4 me-2"></i>
-                <span class="small">No hay requisitos de tareas de consolidación configurados.</span>
+                <span class="small">No hay requisitos de tareas de {{ Helper::termino('consolidacion', minuscula: true) }} configurados.</span>
             </div>
         </div>
     @endif

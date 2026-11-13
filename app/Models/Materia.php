@@ -32,6 +32,11 @@ class Materia extends Model
         'tipo_usuario_objetivo_id', // NUEVO
         'tipo_usuario_inicial_id', // NUEVO INICIAL
         'orden',
+        'limite_reporte_asistencias',
+        'dia_limite_reporte',
+        'dias_plazo_reporte',
+        'tiene_dia_limite',
+        'cantidad_limite_reportes_semana',
     ];
 
     protected $casts = [
@@ -40,6 +45,13 @@ class Materia extends Model
         'habilitar_calificaciones' => 'boolean',
         'habilitar_asistencias' => 'boolean',
         'caracter_obligatorio' => 'boolean',
+        'tiene_dia_limite' => 'boolean',
+        'limite_reporte_asistencias' => 'integer',
+        'dia_limite_reporte' => 'integer',
+        'dias_plazo_reporte' => 'integer',
+        'cantidad_limite_reportes_semana' => 'integer',
+        'asistencias_minimas' => 'integer',
+        'asistencias_minima_alerta' => 'integer',
     ];
 
     // --- Relaciones existentes ---
@@ -164,6 +176,47 @@ class Materia extends Model
     public function getAsistenciasMinimasAttribute($value)
     {
         return $this->getConfigProp('asistencias_minimas', $value);
+    }
+
+    public function getAsistenciasMinimaAlertaAttribute($value)
+    {
+        return $this->getConfigProp('asistencias_minima_alerta', $value);
+    }
+
+    public function getLimiteReporteAsistenciasAttribute($value)
+    {
+        return $this->getConfigProp('limite_reporte_asistencias', $value);
+    }
+
+    public function getDiaLimiteReporteAttribute($value)
+    {
+        return $this->getConfigProp('dia_limite_reporte', $value);
+    }
+
+    public function getDiasPlazoReporteAttribute($value)
+    {
+        return $this->getConfigProp('dias_plazo_reporte', $value);
+    }
+
+    public function getTieneDiaLimiteAttribute($value)
+    {
+        return (bool) $this->getConfigProp('tiene_dia_limite', $value);
+    }
+
+    public function getCantidadLimiteReportesSemanaAttribute($value)
+    {
+        return $this->getConfigProp('cantidad_limite_reportes_semana', $value);
+    }
+
+    /**
+     * Obtiene la cantidad máxima de reportes permitidos por semana.
+     * Si tiene día límite activo o la cantidad configurada es <= 0, el límite efectivo es 1 por semana.
+     */
+    public function obtenerLimiteReportesSemana(): int
+    {
+        $cantidadConfigurada = (int) $this->cantidad_limite_reportes_semana;
+
+        return $cantidadConfigurada > 0 ? $cantidadConfigurada : 1;
     }
 
     /**

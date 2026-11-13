@@ -607,7 +607,7 @@
 
                                         <!-- Tareas Requisito -->
                                         <div class="col-12 mt-4">
-                                            <label class="form-label fw-bold">Tareas de consolidación</label>
+                                            <label class="form-label fw-bold">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}</label>
                                             <div id="contenedorTareas">
                                                 @foreach ($tareasPost as $index => $tp)
                                                     <div class="row g-2 mt-1 align-items-center fila-tarea">

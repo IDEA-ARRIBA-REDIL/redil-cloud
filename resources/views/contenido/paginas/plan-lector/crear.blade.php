@@ -364,7 +364,7 @@
 
                                         <!-- Tareas de Consolidación -->
                                         <div class="col-12 mt-4">
-                                            <label class="form-label fw-bold">Tareas de consolidación requeridas</label>
+                                            <label class="form-label fw-bold">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }} requeridas</label>
                                             <div id="contenedorTareas"></div>
                                             <button type="button" class="btn btn-sm btn-outline-secondary mt-2 rounded-pill" id="btn-agregar-tarea">
                                                 <i class="ti ti-plus me-1"></i> Agregar tarea

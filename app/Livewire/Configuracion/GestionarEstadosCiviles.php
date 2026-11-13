@@ -15,7 +15,7 @@ class GestionarEstadosCiviles extends Component
 
     public string $search = '';
 
-    public string $sortField = 'nombre';
+    public string $sortField = 'orden';
 
     public string $sortDirection = 'asc';
 
@@ -25,6 +25,10 @@ class GestionarEstadosCiviles extends Component
 
     public bool $es_union_libre = false;
 
+    public ?int $orden = 1;
+
+    public bool $activo = true;
+
     public bool $isEditing = false;
 
     protected function rules(): array
@@ -32,6 +36,8 @@ class GestionarEstadosCiviles extends Component
         return [
             'nombre' => 'required|string|min:2|max:100',
             'es_union_libre' => 'boolean',
+            'orden' => 'required|integer|min:0|max:32767',
+            'activo' => 'boolean',
         ];
     }
 
@@ -39,6 +45,9 @@ class GestionarEstadosCiviles extends Component
         'nombre.required' => 'El nombre del estado civil es obligatorio.',
         'nombre.min' => 'El nombre debe tener al menos 2 caracteres.',
         'nombre.max' => 'El nombre no puede superar los 100 caracteres.',
+        'orden.required' => 'El orden es obligatorio.',
+        'orden.integer' => 'El orden debe ser un número entero.',
+        'orden.min' => 'El orden no puede ser negativo.',
     ];
 
     public function updatingSearch(): void
@@ -54,7 +63,7 @@ class GestionarEstadosCiviles extends Component
 
     public function sortBy(string $field): void
     {
-        $allowedFields = ['nombre', 'es_union_libre', 'usuarios_count', 'created_at'];
+        $allowedFields = ['orden', 'nombre', 'es_union_libre', 'activo', 'usuarios_count', 'created_at'];
         if (! in_array($field, $allowedFields)) {
             return;
         }
@@ -83,10 +92,29 @@ class GestionarEstadosCiviles extends Component
         ]);
     }
 
+    public function toggleActivo(int $id): void
+    {
+        $estado = EstadoCivil::findOrFail($id);
+        $estado->activo = ! $estado->activo;
+        $estado->save();
+
+        $estadoTexto = $estado->activo ? 'activado' : 'inactivado';
+        $this->dispatch('msn', [
+            'icono' => 'success',
+            'titulo' => '¡Estado actualizado!',
+            'texto' => "El estado civil \"{$estado->nombre}\" ha sido {$estadoTexto}.",
+        ]);
+    }
+
     public function crear(): void
     {
         $this->resetValidation();
-        $this->reset(['estadoCivilId', 'nombre', 'es_union_libre', 'isEditing']);
+        $this->reset(['estadoCivilId', 'nombre', 'es_union_libre', 'orden', 'activo', 'isEditing']);
+        $this->activo = true;
+
+        $ultimoOrden = EstadoCivil::max('orden');
+        $this->orden = $ultimoOrden !== null ? ((int) $ultimoOrden + 1) : 1;
+
         $this->dispatch('abrir-offcanvas-estado-civil');
     }
 
@@ -97,6 +125,8 @@ class GestionarEstadosCiviles extends Component
         $this->estadoCivilId = $estado->id;
         $this->nombre = $estado->nombre;
         $this->es_union_libre = (bool) $estado->es_union_libre;
+        $this->orden = (int) ($estado->orden ?? 0);
+        $this->activo = (bool) ($estado->activo ?? true);
         $this->isEditing = true;
         $this->dispatch('abrir-offcanvas-estado-civil');
     }
@@ -105,22 +135,24 @@ class GestionarEstadosCiviles extends Component
     {
         $this->validate();
 
+        $datos = [
+            'nombre' => trim($this->nombre),
+            'es_union_libre' => (bool) $this->es_union_libre,
+            'orden' => (int) ($this->orden ?? 0),
+            'activo' => (bool) $this->activo,
+        ];
+
         if ($this->isEditing && $this->estadoCivilId) {
             $estado = EstadoCivil::findOrFail($this->estadoCivilId);
-            $estado->update([
-                'nombre' => trim($this->nombre),
-                'es_union_libre' => $this->es_union_libre,
-            ]);
+            $estado->update($datos);
             $mensaje = 'El estado civil ha sido actualizado correctamente.';
         } else {
-            EstadoCivil::create([
-                'nombre' => trim($this->nombre),
-                'es_union_libre' => $this->es_union_libre,
-            ]);
+            EstadoCivil::create($datos);
             $mensaje = 'El estado civil ha sido creado con éxito.';
         }
 
-        $this->reset(['estadoCivilId', 'nombre', 'es_union_libre', 'isEditing']);
+        $this->reset(['estadoCivilId', 'nombre', 'es_union_libre', 'orden', 'activo', 'isEditing']);
+        $this->activo = true;
         $this->dispatch('cerrar-offcanvas-estado-civil');
         $this->dispatch('msn', [
             'icono' => 'success',
@@ -169,10 +201,14 @@ class GestionarEstadosCiviles extends Component
             $query->orderBy('usuarios_count', $this->sortDirection);
         } elseif ($this->sortField === 'es_union_libre') {
             $query->orderBy('es_union_libre', $this->sortDirection);
+        } elseif ($this->sortField === 'activo') {
+            $query->orderBy('activo', $this->sortDirection);
         } elseif ($this->sortField === 'created_at') {
             $query->orderBy('created_at', $this->sortDirection);
-        } else {
+        } elseif ($this->sortField === 'nombre') {
             $query->orderBy('nombre', $this->sortDirection);
+        } else {
+            $query->orderBy('orden', $this->sortDirection)->orderBy('id', 'asc');
         }
 
         $estadosCiviles = $query->paginate(12);

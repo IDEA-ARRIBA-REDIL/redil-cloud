@@ -39,7 +39,7 @@ $configData = Helper::appClasses();
                       @csrf
 
                         <div class="ti-12px mb-3 text-muted">
-                          <i class="text-info ti ti-info-circle me-1"></i>Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (*, -, ., ?, &, $, #).
+                          <i class="text-info ti ti-info-circle me-1"></i>Mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.
                         </div>
 
                         <input type="hidden" name="token" value="{{ $request->route('token') }}">

@@ -181,9 +181,9 @@
                             <div class="col-12 mb-3">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="habilitada_consolidacion" name="habilitada_consolidacion" value="1" {{ old('habilitada_consolidacion', $escuela->habilitada_consolidacion) ? 'checked' : '' }}>
-                                    <label class="form-check-label fw-semibold text-black" for="habilitada_consolidacion">Habilitar Consolidación</label>
+                                    <label class="form-check-label fw-semibold text-black" for="habilitada_consolidacion">Habilitar {{ Helper::termino('consolidacion', minuscula: true) }}</label>
                                 </div>
-                                <small class="form-text text-muted">Indica si esta escuela tendrá habilitada la opción de consolidación para informes.</small>
+                                <small class="form-text text-muted">Indica si esta escuela tendrá habilitada la opción de {{ Helper::termino('consolidacion', minuscula: true) }} para informes.</small>
                             </div>
 
                             <div class="col-12 mb-3">

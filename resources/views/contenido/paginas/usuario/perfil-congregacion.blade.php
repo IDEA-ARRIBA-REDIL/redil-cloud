@@ -926,45 +926,94 @@
 
       @if($rolActivo->hasPermissionTo('personas.ver_panel_pasos_crecimiento_perfil'))
       <!-- Procesos de crecimiento -->
+      <style>
+        .seccion-crecimiento-card {
+          border-radius: 0.5rem !important;
+          overflow: hidden;
+        }
+        .seccion-crecimiento-card .accordion-button {
+          border-radius: 0.5rem 0.5rem 0 0 !important;
+        }
+        .seccion-crecimiento-card .accordion-button.collapsed {
+          border-radius: 0.5rem !important;
+        }
+      </style>
       <div class="card">
-        <div class="card-header d-flex justify-content-between">
-          <p class="card-text text-uppercase fw-bold"><i class="ti ti-list-details ms-n1 me-2"></i>Procesos de crecimiento</p>
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <p class="card-text text-uppercase fw-bold mb-0"><i class="ti ti-list-details ms-n1 me-2"></i>Procesos de crecimiento</p>
         </div>
-        <div class="card-body pb-20">
-          <ul class="timeline ms-1 mb-0">
-            @foreach ($pasosDeCrecimiento as $paso)
-            <li class="timeline-item timeline-item-transparent ps-4">
-              <span class="timeline-point timeline-point-{{ $paso->clase_color }}"></span>
-              <div class="timeline-event">
-                <div class="timeline-header">
-                  <h6 class="mb-0 ml-1 fw-bold">{{ $paso->nombre }}</h6>
-                  <span class="badge rounded-pill bg-label-{{ $paso->clase_color }}">
-                    {{ $paso->estado_nombre }}
-                  </span>
-                </div>
-                <small class="text-muted"><i class="ti ti-calendar"></i> {{ $paso->estado_fecha ?  Carbon\Carbon::parse($paso->estado_fecha)->locale('es')->isoFormat(('DD MMMM Y')) : 'Sin dato' }}</small>
-                <p class="mb-2 d-none"><b>Detalle: </b>{{ $paso->detalle_paso ? $paso->detalle_paso : 'No detallado' }}</p>
-
-                @if($paso->detalle_paso)
-                <div class="accordion mt-3" id="accordion{{$paso->id}}">
-                  <div class="card accordion-item">
-                    <h2 class="accordion-header" id="headingOne">
-                      <button type="button" class="accordion-button" data-bs-toggle="collapse" data-bs-target="#accordionPaso{{$paso->id}}" aria-expanded="true" aria-controls="#accordionPaso{{$paso->id}}">
-                        Detalle
-                      </button>
-                    </h2>
-
-                    <div id="accordionPaso{{$paso->id}}" class="accordion-collapse collapse" data-bs-parent="accordion{{$paso->id}}">
-                      <div class="accordion-body">
-                        {{ $paso->detalle_paso }}
-                      </div>
+        <div class="card-body pb-3">
+          <div class="accordion" id="accordionSeccionesCrecimiento">
+            @forelse ($seccionesPasoDeCrecimiento as $seccion)
+              <div class="accordion-item border mb-3 seccion-crecimiento-card">
+                <h2 class="accordion-header" id="headingSeccion{{ $seccion->id }}">
+                  <button type="button"
+                    class="accordion-button {{ $loop->first ? '' : 'collapsed' }} fw-bold"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapseSeccion{{ $seccion->id }}"
+                    aria-expanded="{{ $loop->first ? 'true' : 'false' }}"
+                    aria-controls="collapseSeccion{{ $seccion->id }}">
+                    <div class="d-flex align-items-center justify-content-between w-100 me-2">
+                      <span class="d-flex align-items-center text-truncate">
+                        {{ $seccion->nombre }}
+                      </span>
+                      <span class="badge rounded-pill bg-label-secondary ms-2 flex-shrink-0">
+                        {{ $seccion->pasos->count() }} {{ $seccion->pasos->count() == 1 ? 'paso' : 'pasos' }}
+                      </span>
                     </div>
+                  </button>
+                </h2>
+
+                <div id="collapseSeccion{{ $seccion->id }}"
+                  class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}"
+                  aria-labelledby="headingSeccion{{ $seccion->id }}">
+                  <div class="accordion-body pt-10 pb-3">
+                    @if($seccion->pasos->count() > 0)
+                      <ul class="timeline ms-1 mb-0">
+                        @foreach ($seccion->pasos as $paso)
+                          <li class="timeline-item timeline-item-transparent ps-4">
+                            <span class="timeline-point timeline-point-{{ $paso->clase_color }}"></span>
+                            <div class="timeline-event">
+                              <div class="timeline-header">
+                                <h6 class="mb-0 ml-1 fw-semibold">{{ $paso->nombre }}</h6>
+                                <span class="badge rounded-pill bg-label-{{ $paso->clase_color }}">
+                                  {{ $paso->estado_nombre }}
+                                </span>
+                              </div>
+                              <small class="text-black"><i class="ti ti-calendar"></i> {{ $paso->estado_fecha ? Carbon\Carbon::parse($paso->estado_fecha)->locale('es')->isoFormat(('DD MMMM Y')) : 'Sin dato' }}</small>
+                              <p class="mb-2 d-none"><b>Detalle: </b>{{ $paso->detalle_paso ? $paso->detalle_paso : 'No detallado' }}</p>
+
+                              @if($paso->detalle_paso)
+                              <div class="accordion mt-2" id="accordionDetalle{{$paso->id}}">
+                                <div class="card accordion-item border rounded-3 overflow-hidden">
+                                  <h2 class="accordion-header" id="headingDetalle{{$paso->id}}">
+                                    <button type="button" class="accordion-button collapsed py-2" data-bs-toggle="collapse" data-bs-target="#collapseDetalle{{$paso->id}}" aria-expanded="false" aria-controls="collapseDetalle{{$paso->id}}">
+                                      Detalle
+                                    </button>
+                                  </h2>
+
+                                  <div id="collapseDetalle{{$paso->id}}" class="accordion-collapse collapse">
+                                    <div class="accordion-body py-2">
+                                      {{ $paso->detalle_paso }}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              @endif
+                            </div>
+                          </li>
+                        @endforeach
+                      </ul>
+                    @else
+                      <span class="text-muted small fst-italic">No hay pasos en esta sección.</span>
+                    @endif
                   </div>
                 </div>
-                @endif
-            </li>
-            @endforeach
-          </ul>
+              </div>
+            @empty
+              <p class="text-muted text-center my-3">No hay procesos de crecimiento registrados.</p>
+            @endforelse
+          </div>
         </div>
       </div>
       <!--/ Procesos de crecimiento -->

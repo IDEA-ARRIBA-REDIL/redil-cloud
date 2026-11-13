@@ -66,6 +66,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use stdClass;
 
@@ -169,7 +170,7 @@ class UserController extends Controller
         );
 
         // 4. Enviar la notificación con el código al NUEVO correo electrónico.
-        Notification::route('mail', $request->correo_nuevo)->notify(new EnviarCodigoCambioCorreo($codigo));
+        Notification::route('mail', $request->correo_nuevo)->notify(new EnviarCodigoCambioCorreo($codigo, $usuario->nombre(3)));
 
         return back()->with('success', 'Hemos enviado un código de verificación a '.$request->correo_nuevo);
     }
@@ -230,8 +231,8 @@ class UserController extends Controller
 
         // Carga de catálogos para filtros
         $rangosEdad = RangoEdad::all();
-        $estadosCiviles = EstadoCivil::all();
-        $tiposVinculaciones = TipoVinculacion::withTrashed()->get();
+        $estadosCiviles = EstadoCivil::ordenados()->get();
+        $tiposVinculaciones = TipoVinculacion::withTrashed()->ordenados()->get();
         $pasosCrecimiento = PasoCrecimiento::orderBy('updated_at', 'asc')->get();
         $estadosPasosDeCrecimiento = EstadoPasoCrecimientoUsuario::orderBy('puntaje', 'asc')->get();
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
@@ -1567,7 +1568,7 @@ class UserController extends Controller
 
         $continentes = Continente::orderBy('nombre', 'asc')->get();
         $paises = Pais::orderBy('nombre', 'asc')->get();
-        $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
+        $tiposDeVinculacion = TipoVinculacion::paraSelect($usuario->tipo_vinculacion_id)->get();
         $tiposDeVivienda = TipoVivienda::orderBy('nombre', 'asc')->get();
         $nivelesAcademicos = NivelAcademico::orderBy('nombre', 'asc')->get();
         $estadosNivelesAcademicos = EstadoNivelAcademico::orderBy('nombre', 'asc')->get();
@@ -1576,8 +1577,11 @@ class UserController extends Controller
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
         $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
-        $tiposIdentificaciones = TipoIdentificacion::orderBy('nombre', 'asc')->get();
-        $tiposDeEstadosCiviles = EstadoCivil::orderBy('nombre', 'asc')->get();
+        $tiposIdentificaciones = TipoIdentificacion::paraSelect([
+            $usuario->tipo_identificacion_id,
+            $usuario->tipo_identificacion_acudiente_id,
+        ])->get();
+        $tiposDeEstadosCiviles = EstadoCivil::paraSelect($usuario->estado_civil_id)->get();
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
         $dataQr = [
             'id' => $usuario->id,
@@ -1702,8 +1706,8 @@ class UserController extends Controller
         $gruposDondeAsiste = $usuario->gruposDondeAsiste;
         $encargadosDirectos = $usuario->encargadosDirectos();
 
-        $pasosDeCrecimiento = PasoCrecimiento::orderBy('updated_at', 'asc')
-            ->select('id', 'nombre')
+        $pasosDeCrecimiento = PasoCrecimiento::orderBy('orden', 'asc')
+            ->select('id', 'nombre', 'seccion_paso_crecimiento_id')
             ->get();
 
         $pasosDeCrecimiento->map(function ($paso) use ($usuario) {
@@ -1718,14 +1722,32 @@ class UserController extends Controller
             $paso->bandera = 'default';
 
             if ($pasoUsuario) {
-                $paso->clase_color = $pasoUsuario->estado->color;
+                $paso->clase_color = $pasoUsuario->estado ? $pasoUsuario->estado->color : 'danger';
                 $paso->estado_fecha = $pasoUsuario->fecha;
                 $paso->estado_paso = $pasoUsuario->estado_id;
-                $paso->estado_nombre = $pasoUsuario->estado->nombre;
+                $paso->estado_nombre = $pasoUsuario->estado ? $pasoUsuario->estado->nombre : 'No realizado';
                 $paso->detalle_paso = $pasoUsuario->detalle;
                 $paso->bandera = 'si existe';
             }
         });
+
+        $seccionesIds = $pasosDeCrecimiento->pluck('seccion_paso_crecimiento_id')->filter()->unique()->toArray();
+        $seccionesPasoDeCrecimiento = SeccionPasoCrecimiento::whereIn('id', $seccionesIds)
+            ->orderBy('orden', 'asc')
+            ->get();
+
+        $seccionesPasoDeCrecimiento->map(function ($seccion) use ($pasosDeCrecimiento) {
+            $seccion->pasos = $pasosDeCrecimiento->where('seccion_paso_crecimiento_id', $seccion->id)->values();
+        });
+
+        $pasosSinSeccion = $pasosDeCrecimiento->whereNotIn('seccion_paso_crecimiento_id', $seccionesIds)->values();
+        if ($pasosSinSeccion->isNotEmpty()) {
+            $seccionGeneral = new SeccionPasoCrecimiento;
+            $seccionGeneral->id = 0;
+            $seccionGeneral->nombre = 'General';
+            $seccionGeneral->pasos = $pasosSinSeccion;
+            $seccionesPasoDeCrecimiento->push($seccionGeneral);
+        }
 
         $año = Carbon::now()->year;
         $cantidadMeses = 11;
@@ -1784,6 +1806,7 @@ class UserController extends Controller
             'gruposDondeAsiste' => $gruposDondeAsiste,
             'encargadosDirectos' => $encargadosDirectos,
             'pasosDeCrecimiento' => $pasosDeCrecimiento,
+            'seccionesPasoDeCrecimiento' => $seccionesPasoDeCrecimiento,
             'dataReportesReunion' => $dataReportesReunion,
             'serieReporesReunion' => $serieReporesReunion,
             'dataReportesGrupo' => $dataReportesGrupo,
@@ -2076,7 +2099,7 @@ class UserController extends Controller
 
         $continentes = Continente::orderBy('nombre', 'asc')->get();
         $paises = Pais::orderBy('nombre', 'asc')->get();
-        $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
+        $tiposDeVinculacion = TipoVinculacion::paraSelect()->get();
         $tiposDeVivienda = TipoVivienda::orderBy('nombre', 'asc')->get();
         $nivelesAcademicos = NivelAcademico::orderBy('nombre', 'asc')->get();
         $estadosNivelesAcademicos = EstadoNivelAcademico::orderBy('nombre', 'asc')->get();
@@ -2087,9 +2110,8 @@ class UserController extends Controller
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
         $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
         $tipoPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
-        $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
-        $tiposIdentificaciones = TipoIdentificacion::orderBy('nombre', 'asc')->get();
-        $tiposDeEstadosCiviles = EstadoCivil::orderBy('nombre', 'asc')->get();
+        $tiposIdentificaciones = TipoIdentificacion::paraSelect()->get();
+        $tiposDeEstadosCiviles = EstadoCivil::paraSelect()->get();
         $tiposParentescos = TipoParentesco::where('para_menores', true)->orderBy('nombre', 'asc')->get();
 
         $tipoParentescoDefault = TipoParentesco::where('default', true)->orderBy('nombre', 'asc')->first();
@@ -2543,8 +2565,13 @@ class UserController extends Controller
         // password
         if ($campos->where('nombre_bd', 'password')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'password')->first();
-            $validarPassword = $campoTemporal->requerido ? ['required', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[*.?\-&$#]).+$/', 'confirmed'] : ['nullable', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[*.?\-&$#]).+$/', 'confirmed'];
+            $validarPassword = $campoTemporal->requerido
+                ? ['required', 'confirmed', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/']
+                : ['nullable', 'confirmed', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarPassword]);
+            $mensajes["{$campoTemporal->name_id}.min"] = 'La contraseña debe tener al menos 8 caracteres.';
+            $mensajes["{$campoTemporal->name_id}.regex"] = 'La contraseña debe contener al menos 1 letra mayúscula, 1 minúscula y 1 número.';
+            $mensajes["{$campoTemporal->name_id}.confirmed"] = 'La confirmación de la contraseña no coincide.';
             $usuario->password = $request[$campoTemporal->name_id];
         }
 
@@ -2794,7 +2821,8 @@ class UserController extends Controller
             $grupo = Grupo::find($request->grupoId);
             if ($grupo) {
                 $usuario->cambiarGrupo($grupo->id);
-                $tipoViculacionAutomatica = TipoVinculacion::where('por_grupo', true)->first();
+                $tipoViculacionAutomatica = TipoVinculacion::where('por_grupo', true)->where('activo', true)->first()
+                    ?? TipoVinculacion::where('por_grupo', true)->first();
 
                 if ($tipoViculacionAutomatica) {
                     $usuario->tipo_vinculacion_id = $tipoViculacionAutomatica->id;
@@ -2870,23 +2898,11 @@ class UserController extends Controller
                 }
             }
 
-            // ubicacion localida o barrio
+            // ubicacion: únicamente localidad (ya no se maneja barrio_id)
             $campoUbicacion = $campos->where('nombre_bd', 'ubicacion')->first();
             if ($campoUbicacion && $request[$campoUbicacion->name_id]) {
-
-                if ($request->tipoUbicacion == 'Localidad') {
-                    $usuario->localidad_id = $request[$campoUbicacion->name_id];
-                } elseif ($request->tipoUbicacion == 'Barrio') {
-                    $barrio = Barrio::find($request[$campoUbicacion->name_id]);
-
-                    if ($barrio) {
-                        $usuario->barrio_id = $barrio->id;
-
-                        if ($barrio->localidad) {
-                            $usuario->localidad_id = $barrio->localidad->id;
-                        }
-                    }
-                }
+                $usuario->localidad_id = $request[$campoUbicacion->name_id];
+                $usuario->barrio_id = null;
             }
 
             // Asignacion de parentesco
@@ -3043,7 +3059,7 @@ class UserController extends Controller
 
         $continentes = Continente::orderBy('nombre', 'asc')->get();
         $paises = Pais::orderBy('nombre', 'asc')->get();
-        $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
+        $tiposDeVinculacion = TipoVinculacion::paraSelect($usuario->tipo_vinculacion_id)->get();
         $tiposDeVivienda = TipoVivienda::orderBy('nombre', 'asc')->get();
         $nivelesAcademicos = NivelAcademico::orderBy('nombre', 'asc')->get();
         $estadosNivelesAcademicos = EstadoNivelAcademico::orderBy('nombre', 'asc')->get();
@@ -3054,9 +3070,11 @@ class UserController extends Controller
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
         $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
         $tipoPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
-        $tiposDeVinculacion = TipoVinculacion::orderBy('nombre', 'asc')->get();
-        $tiposIdentificaciones = TipoIdentificacion::orderBy('nombre', 'asc')->get();
-        $tiposDeEstadosCiviles = EstadoCivil::orderBy('nombre', 'asc')->get();
+        $tiposIdentificaciones = TipoIdentificacion::paraSelect([
+            $usuario->tipo_identificacion_id,
+            $usuario->tipo_identificacion_acudiente_id,
+        ])->get();
+        $tiposDeEstadosCiviles = EstadoCivil::paraSelect($usuario->estado_civil_id)->get();
         $camposExtrasFormulario = $formulario
             ->camposExtras()
             ->orderBy('id')
@@ -3614,27 +3632,12 @@ class UserController extends Controller
 
             // fin documentos adjuntos
 
-            // ubicacion localida o barrio
+            // ubicacion: únicamente localidad (ya no se maneja barrio_id)
             $campoUbicacion = $campos->where('nombre_bd', 'ubicacion')->first();
-            if ($campoUbicacion && $request[$campoUbicacion->name_id]) {
-
-                $usuario->localidad_id = null;
-                $usuario->barrio_id = null;
-
-                if ($request[$campoUbicacion->name_id]) {
-                    if ($request->tipoUbicacion == 'Localidad') {
-                        $usuario->localidad_id = $request[$campoUbicacion->name_id];
-                    } elseif ($request->tipoUbicacion == 'Barrio') {
-                        $barrio = Barrio::find($request[$campoUbicacion->name_id]);
-
-                        if ($barrio) {
-                            $usuario->barrio_id = $barrio->id;
-
-                            if ($barrio->localidad) {
-                                $usuario->localidad_id = $barrio->localidad->id;
-                            }
-                        }
-                    }
+            if ($campoUbicacion) {
+                if ($request->has($campoUbicacion->name_id) || $request->has('tipoUbicacion')) {
+                    $usuario->localidad_id = $request[$campoUbicacion->name_id] ?: null;
+                    $usuario->barrio_id = null;
                 }
             }
 
@@ -4190,27 +4193,12 @@ class UserController extends Controller
 
             // fin documentos adjuntos
 
-            // ubicacion localida o barrio
+            // ubicacion: únicamente localidad (ya no se maneja barrio_id)
             $campoUbicacion = $campos->where('nombre_bd', 'ubicacion')->first();
-            if ($campoUbicacion && $request[$campoUbicacion->name_id]) {
-
-                $usuario->localidad_id = null;
-                $usuario->barrio_id = null;
-
-                if ($request[$campoUbicacion->name_id]) {
-                    if ($request->tipoUbicacion == 'Localidad') {
-                        $usuario->localidad_id = $request[$campoUbicacion->name_id];
-                    } elseif ($request->tipoUbicacion == 'Barrio') {
-                        $barrio = Barrio::find($request[$campoUbicacion->name_id]);
-
-                        if ($barrio) {
-                            $usuario->barrio_id = $barrio->id;
-
-                            if ($barrio->localidad) {
-                                $usuario->localidad_id = $barrio->localidad->id;
-                            }
-                        }
-                    }
+            if ($campoUbicacion) {
+                if ($request->has($campoUbicacion->name_id) || $request->has('tipoUbicacion')) {
+                    $usuario->localidad_id = $request[$campoUbicacion->name_id] ?: null;
+                    $usuario->barrio_id = null;
                 }
             }
 
@@ -4824,7 +4812,11 @@ class UserController extends Controller
     {
         // Este cambio de contraseña es que usa el admin para cambiar a los demas usuarios
         $request->validate([
-            'password' => 'required|confirmed|min:5',
+            'password' => ['required', 'confirmed', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
+        ], [
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.regex' => 'La contraseña debe contener al menos 1 letra mayúscula, 1 minúscula y 1 número.',
+            'password.confirmed' => 'La confirmación de la contraseña no coincide.',
         ]);
 
         $usuario->password = Hash::make($request->password);

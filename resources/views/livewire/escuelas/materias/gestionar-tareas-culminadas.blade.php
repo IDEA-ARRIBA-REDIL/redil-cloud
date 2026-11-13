@@ -1,11 +1,11 @@
 <div class="mb-5" x-data="{ formVisible: {{ $tareasCulminadas->count() == 0 ? 'true' : 'false' }} }">
-    <h5 class="fw-bold text-primary mb-1">Tareas de Consolidación - Al Culminar</h5>
+    <h5 class="fw-bold text-primary mb-1">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }} - Al Culminar</h5>
     <p class="text-dark small mb-3">Configura las tareas que se marcarán como completadas cuando el usuario apruebe esta materia</p>
 
     {{-- Formulario para agregar --}}
     <div x-show="formVisible" x-transition class="row g-3 mb-4 align-items-end">
         <div class="col-md-5 col-sm-12" wire:ignore>
-            <label class="form-label text-dark small">Tarea de Consolidación</label>
+            <label class="form-label text-dark small">Tarea de {{ Helper::termino('consolidacion', minuscula: true) }}</label>
             <select id="select-materia-tarea-culminada" class="form-select select2 border-1">
                 <option value="">Selecciona una opción</option>
                 @foreach($tareas as $tarea)

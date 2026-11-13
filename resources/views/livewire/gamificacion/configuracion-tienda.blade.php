@@ -1167,7 +1167,7 @@
 
                   <!-- Tareas de Consolidación -->
                   <div class="col-12 mt-3">
-                    <label class="form-label text-dark small fw-bold mb-2">Tareas de consolidación</label>
+                    <label class="form-label text-dark small fw-bold mb-2">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}</label>
                     @if(count($tareasRequisito) > 0)
                       <div class="d-flex flex-column gap-2 mb-2">
                         @foreach ($tareasRequisito as $idx => $tarea)

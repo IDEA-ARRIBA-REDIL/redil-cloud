@@ -581,7 +581,7 @@
                             <select id="trigger_modulo" name="trigger_modulo" class="form-select">
                                 <option value="">Seleccionar módulo...</option>
                                 <option value="pasos_crecimiento">Pasos de Crecimiento</option>
-                                <option value="tareas_consolidacion">Tareas de Consolidación</option>
+                                <option value="tareas_consolidacion">Tareas de {{ Helper::termino('consolidacion') }}</option>
                                 <option value="escuelas">Escuelas</option>
                                 <option value="grupos">Grupos</option>
                             </select>
@@ -596,7 +596,7 @@
                                         <option value="">Seleccionar...</option>
                                         <option value="1">Bienvenida</option>
                                         <option value="2">Discipulado</option>
-                                        <option value="3">Consolidación</option>
+                                        <option value="3">{{ Helper::termino('consolidacion') }}</option>
                                         <option value="4">Liderazgo</option>
                                     </select>
                                 </div>

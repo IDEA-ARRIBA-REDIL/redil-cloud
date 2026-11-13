@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Helpers\Helpers;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class Configuracion extends Model
 {
@@ -88,11 +90,25 @@ class Configuracion extends Model
             'envio_material' => 'boolean',
             'edad_minima_consolidacion' => 'integer',
             'marca_blanca' => 'boolean',
+            'terminologia_personalizada' => 'array',
             'instagram_access_token' => 'encrypted',
             'instagram_expires_at' => 'datetime',
             'instagram_connected_at' => 'datetime',
             'instagram_refreshed_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (): void {
+            Cache::forget('configuracion_global');
+            Helpers::limpiarCacheTerminologia();
+        });
+
+        static::deleted(function (): void {
+            Cache::forget('configuracion_global');
+            Helpers::limpiarCacheTerminologia();
+        });
     }
 
     // Relación de uno a uno que permite vincular los rangos de edad a la configuración de la iglesia.

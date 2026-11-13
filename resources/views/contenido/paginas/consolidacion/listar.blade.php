@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Consolidación')
+@section('title', Helper::termino('consolidacion'))
 
 <!-- Page Styles -->
 @section('page-style')
@@ -134,7 +134,7 @@ $configData = Helper::appClasses();
         clearTimeout(timeoutRangoFecha);
         timeoutRangoFecha = setTimeout(() => {
           if (typeof window.mostrarCargandoConsolidacion === 'function') {
-            window.mostrarCargandoConsolidacion('Filtrando por fechas...', 'Actualizando consolidación...');
+            window.mostrarCargandoConsolidacion('Filtrando por fechas...', @json('Actualizando ' . Helper::termino('consolidacion', minuscula: true) . '...'));
           }
           document.getElementById('formRangoFechas').submit();
         }, delayRangoFecha);
@@ -184,7 +184,7 @@ $configData = Helper::appClasses();
       clearTimeout(timeoutRangoFecha);
       timeoutRangoFecha = setTimeout(() => {
         if (typeof window.mostrarCargandoConsolidacion === 'function') {
-          window.mostrarCargandoConsolidacion('Filtrando por fechas...', 'Actualizando consolidación...');
+          window.mostrarCargandoConsolidacion('Filtrando por fechas...', @json('Actualizando ' . Helper::termino('consolidacion', minuscula: true) . '...'));
         }
         document.getElementById('formRangoFechas').submit();
       }, 300);
@@ -262,14 +262,14 @@ $configData = Helper::appClasses();
     const formAvanzado = document.getElementById('busquedaAvanzada');
     if (formAvanzado) {
       formAvanzado.addEventListener('submit', function() {
-        window.mostrarCargandoConsolidacion('Aplicando filtros...', 'Actualizando consolidación...');
+        window.mostrarCargandoConsolidacion('Aplicando filtros...', @json('Actualizando ' . Helper::termino('consolidacion', minuscula: true) . '...'));
       });
     }
 
     // Listener para los enlaces de las cards del carrusel Swiper (Todas, Sin tareas, etc.)
     document.querySelectorAll('#swiper-with-pagination-cards a').forEach(enlace => {
       enlace.addEventListener('click', function() {
-        window.mostrarCargandoConsolidacion('Cargando categoría...', 'Actualizando consolidación...');
+        window.mostrarCargandoConsolidacion('Cargando categoría...', @json('Actualizando ' . Helper::termino('consolidacion', minuscula: true) . '...'));
       });
     });
 
@@ -311,14 +311,14 @@ $configData = Helper::appClasses();
               filtroBuscarInput.value = this.value;
             }
             timeoutId = setTimeout(() => {
-                window.mostrarCargandoConsolidacion('Buscando personas...', 'Filtrando consolidación...');
+                window.mostrarCargandoConsolidacion('Buscando personas...', @json('Filtrando ' . Helper::termino('consolidacion', minuscula: true) . '...'));
                 formularioBuscar.submit();
             }, delay);
           } else if(this.value.length == 0) {
             if (filtroBuscarInput) {
               filtroBuscarInput.value = "";
             }
-            window.mostrarCargandoConsolidacion('Restableciendo búsqueda...', 'Actualizando consolidación...');
+            window.mostrarCargandoConsolidacion('Restableciendo búsqueda...', @json('Actualizando ' . Helper::termino('consolidacion', minuscula: true) . '...'));
             formularioBuscar.submit();
           }
       });
@@ -332,7 +332,7 @@ $configData = Helper::appClasses();
         if (filtroBuscarInput) {
           filtroBuscarInput.value = "";
         }
-        window.mostrarCargandoConsolidacion('Restableciendo búsqueda...', 'Actualizando consolidación...');
+        window.mostrarCargandoConsolidacion('Restableciendo búsqueda...', @json('Actualizando ' . Helper::termino('consolidacion', minuscula: true) . '...'));
         formularioBuscar.submit();
       });
     }
@@ -440,7 +440,7 @@ $configData = Helper::appClasses();
     </div>
   </div>
 
-<h4 class="mb-1 fw-semibold text-primary">Consolidación</h4>
+<h4 class="mb-1 fw-semibold text-primary">{{ Helper::termino('consolidacion') }}</h4>
 
 <!-- Filtro de Rango de Fechas de Creación -->
 <form id="formRangoFechas" action="{{ route('consolidacion.lista', $tipo) }}" method="GET" class="mt-3">
@@ -573,14 +573,21 @@ $configData = Helper::appClasses();
                   <h5 class="fw-semibold ms-1 text-black m-0">
                     {{ $persona->nombre(3) }}
                   </h5>             
-                  <small class="text-black"><i>Ultima actualización:</i> {{ $persona->ultimaActividadTarea()->pivot->updated_at ?? 'Sin actividad' }} </small>
+                  
+                  <div class="d-flex my-2  align-items-center flex-wrap gap-1">
+                    @if($persona->tipoUsuario)
+                    <span class="badge rounded-pill px-6 fw-light " style="background-color: {{ $persona->tipoUsuario->color }}">
+                      <i class="{{ $persona->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $persona->tipoUsuario->nombre }}</span>
+                    </span>
+                    @endif
+                    @if(is_null($persona->email_verified_at))
+                    <span class="badge rounded-pill bg-label-warning px-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Correo no verificado">
+                      <i class="ti ti-mail-off fs-6 me-1"></i>No verificado
+                    </span>
+                    @endif
+                  </div>
                 </div>
 
-                @if($persona->tipoUsuario)
-                <span class="badge rounded-pill fw-light me-1" style="background-color: {{ $persona->tipoUsuario->color }}">
-                  <i class="{{ $persona->tipoUsuario->icono }} fs-6"></i> <span class="text-white"> {{ $persona->tipoUsuario->nombre }}</span>
-                </span>
-                @endif
               </div>
             </div>
 
@@ -745,18 +752,15 @@ $configData = Helper::appClasses();
               </div> 
 
               <div class="col-6 d-flex flex-column mt-1">
-                <small class="text-black">¿Cuenta verificada?</small>
-                @if($persona->email_verified_at)
-                   <small class="fw-semibold text-danger">Sí</small>
-                @else
-                   <small class="fw-semibold text-success">No</small>
-                @endif
+                <small class="text-black">Ultima actualización</small>
+                <small class="fw-semibold text-black">{{ $persona->ultimaActividadTarea()->pivot->updated_at ?? 'Sin actividad' }}</small>
               </div>
 
               <div class="col-6 d-flex flex-column mt-1">
                 <small class="text-black">Fecha de creación</small>
                 <small class="fw-semibold text-black">{{ $persona->created_at ? $persona->created_at->format('d-m-Y') : 'No especificada' }}</small>
               </div>
+
 
             </div>
 

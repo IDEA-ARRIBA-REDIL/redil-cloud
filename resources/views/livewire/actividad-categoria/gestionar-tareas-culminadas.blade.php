@@ -1,14 +1,14 @@
 <div>
     <div class="card">
         <div class="card-header">
-            <h5 class="card-title mb-0">Tareas de Consolidación - A Culminar (Nivel Categoría)</h5>
+            <h5 class="card-title mb-0">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }} - A Culminar (Nivel Categoría)</h5>
             <p class="text-muted small mb-0">Configura las tareas que se asignarán/actualizarán al confirmar asistencia en esta categoría</p>
         </div>
         <div class="card-body">
             {{-- Formulario para agregar --}}
             <div class="row g-3 mb-4">
                 <div class="col-md-5">
-                    <label class="form-label">Tarea de Consolidación <span class="text-danger">*</span></label>
+                    <label class="form-label">Tarea de {{ Helper::termino('consolidacion', minuscula: true) }} <span class="text-danger">*</span></label>
                     <select wire:model="tareaSeleccionada" class="form-select">
                         <option value="">Seleccionar tarea...</option>
                         @foreach($tareas as $tarea)
@@ -85,7 +85,7 @@
             @else
                 <div class="alert alert-info mb-0">
                     <i class="ti ti-info-circle me-2"></i>
-                    No hay tareas de consolidación configuradas para culminar en esta categoría.
+                    No hay tareas de {{ Helper::termino('consolidacion', minuscula: true) }} configuradas para culminar en esta categoría.
                 </div>
             @endif
         </div>

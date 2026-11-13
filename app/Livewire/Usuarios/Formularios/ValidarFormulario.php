@@ -499,11 +499,13 @@ class ValidarFormulario extends Component
 
         if ($campos->where('nombre_bd', 'password')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'password')->first();
-            $validarPassword = $campoTemporal->requerido ? ['required', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[*.?\-&$#@!%_]).+$/', 'confirmed'] : ['nullable', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[*.?\-&$#@!%_]).+$/', 'confirmed'];
+            $validarPassword = $campoTemporal->requerido
+                ? ['required', 'confirmed', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/']
+                : ['nullable', 'confirmed', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarPassword]);
 
-            $mensajes["{$campoTemporal->name_id}.regex"] = 'La contraseña debe contener al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (@, *, -, ., ?, &, $, #).';
             $mensajes["{$campoTemporal->name_id}.min"] = 'La contraseña debe tener al menos 8 caracteres.';
+            $mensajes["{$campoTemporal->name_id}.regex"] = 'La contraseña debe contener al menos 1 letra mayúscula, 1 minúscula y 1 número.';
             $mensajes["{$campoTemporal->name_id}.confirmed"] = 'La confirmación de la contraseña no coincide.';
             $mensajes["{$campoTemporal->name_id}.required"] = 'La contraseña es obligatoria.';
         }
@@ -707,21 +709,10 @@ class ValidarFormulario extends Component
             </div>';
                 } elseif ($campo->nombre_bd == 'ubicacion') {
                     $ubicacionId = $dataSeccion[$campo->name_id] ?? null;
-                    $tipoUbicacion = $dataSeccion['tipoUbicacion'] ?? null;
                     $nombreUbicacion = '';
                     if ($ubicacionId) {
-                        if ($tipoUbicacion == 'Localidad') {
-                            $loc = \App\Models\Localidad::find($ubicacionId);
-                            $nombreUbicacion = $loc ? $loc->nombre : $ubicacionId;
-                        } else {
-                            $barrio = \App\Models\Barrio::find($ubicacionId);
-                            if ($barrio) {
-                                $nombreUbicacion = $barrio->nombre.($barrio->localidad ? ', '.$barrio->localidad->nombre : '');
-                            } else {
-                                $loc = \App\Models\Localidad::find($ubicacionId);
-                                $nombreUbicacion = $loc ? $loc->nombre : $ubicacionId;
-                            }
-                        }
+                        $loc = \App\Models\Localidad::find($ubicacionId);
+                        $nombreUbicacion = $loc ? $loc->nombre : $ubicacionId;
                     }
                     $htmlCamposSeccion .= '
             <div class="col-12 col-md-6">

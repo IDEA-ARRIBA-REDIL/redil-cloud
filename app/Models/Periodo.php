@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +35,16 @@ class Periodo extends Model
         'fecha_maxima_entrega_notas' => 'date',
         'estado' => 'boolean', // Aprovechamos para castear el estado a booleano
     ];
+
+    public function scopeVisiblesEnPanel(Builder $query, ?User $usuario): Builder
+    {
+        if ($usuario?->checkPermissionTo('escuelas.es_administrativo')
+            && $usuario->checkPermissionTo('escuelas.opcion_modificar_periodo')) {
+            return $query;
+        }
+
+        return $query->where('estado', true);
+    }
 
     /**
      * Un periodo pertenece a una escuela.

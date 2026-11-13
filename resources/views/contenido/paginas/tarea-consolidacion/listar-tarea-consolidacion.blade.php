@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Gestionar Tareas de Consolidación')
+@section('title', 'Gestionar tareas de ' . Helper::termino('consolidacion', minuscula: true))
 
 @section('vendor-style')
   @vite([

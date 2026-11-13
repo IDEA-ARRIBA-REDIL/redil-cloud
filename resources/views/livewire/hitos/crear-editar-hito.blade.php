@@ -317,7 +317,7 @@
                                         }" x-ref="select" id="trigger_modulo" class="select2 form-select">
                                             <option value="">-- Seleccionar Módulo --</option>
                                             <option value="pasos_crecimiento" {{ $trigger_modulo === 'pasos_crecimiento' ? 'selected' : '' }}>Pasos de Crecimiento</option>
-                                            <option value="tareas_consolidacion" {{ $trigger_modulo === 'tareas_consolidacion' ? 'selected' : '' }}>Tareas de Consolidación</option>
+                                            <option value="tareas_consolidacion" {{ $trigger_modulo === 'tareas_consolidacion' ? 'selected' : '' }}>Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}</option>
                                             <option value="escuelas" {{ $trigger_modulo === 'escuelas' ? 'selected' : '' }}>Escuelas / Académico</option>
                                             <option value="grupos" {{ $trigger_modulo === 'grupos' ? 'selected' : '' }}>Grupos Celulares</option>
                                         </select>
@@ -379,7 +379,7 @@
                                 {{-- Sub-opciones de Tareas de Consolidación --}}
                                 @if($trigger_modulo === 'tareas_consolidacion')
                                     <div class="col-md-6" wire:key="wrap-tarea-cons-{{ $trigger_modulo }}">
-                                        <label class="form-label fw-semibold text-dark">Tarea de Consolidación Requerida</label>
+                                        <label class="form-label fw-semibold text-dark">Tarea de {{ Helper::termino('consolidacion', minuscula: true) }} requerida</label>
                                         <div wire:ignore id="container-select-tarea-cons" wire:key="cont-tarea-{{ $trigger_modulo }}">
                                             <select x-data="{
                                                 init() {

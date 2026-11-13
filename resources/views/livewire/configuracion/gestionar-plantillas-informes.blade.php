@@ -199,7 +199,7 @@
                 </div>
                 <h5 class="fw-semibold text-dark">Aún no hay secciones en esta plantilla</h5>
                 <p class="text-muted small max-w-500 mx-auto">
-                  Comienza agregando la primera sección (ejemplo: "Crecimiento Espiritual", "Consolidación", "Matrículas").
+                  Comienza agregando la primera sección (ejemplo: "Crecimiento Espiritual", Consolidación, "Matrículas").
                 </p>
                 <button type="button" wire:click="crearSeccion" class="btn btn-primary rounded-pill btn-sm px-4">
                   <i class="ti ti-plus me-1"></i> Crear Primera Sección

@@ -60,13 +60,13 @@ class InformesPersonalizadosController extends Controller
             abort(404, 'El informe solicitado aún no se encuentra completado o no tiene archivo disponible.');
         }
 
-        $relPath = 'informes/' . $informeEnCola->nombre_archivo . '.xlsx';
+        $relPath = 'informes/'.$informeEnCola->nombre_archivo.'.xlsx';
 
         if (! Storage::disk('local')->exists($relPath)) {
             abort(404, 'El archivo generado no se encuentra en el almacenamiento.');
         }
 
-        return Storage::disk('local')->download($relPath, $informeEnCola->nombre_archivo . '.xlsx');
+        return Storage::disk('local')->download($relPath, $informeEnCola->nombre_archivo.'.xlsx');
     }
 
     // =========================================================================
@@ -238,7 +238,8 @@ class InformesPersonalizadosController extends Controller
             return [$fechaInicio, $fechaFin];
         }
 
-        $mesesConBandera = ['2m', '4t', '2t', '2s', '12m', 'anio'];
+        // $mesesConBandera = ['2m', '4t', '2t', '2s', '12m', 'anio'];
+        $mesesConBandera = ['4t', '2s', '12m', 'anio'];
 
         $map = [
             '1m' => ["{$anio}-01-01", Carbon::create($anio, 1)->endOfMonth()->format('Y-m-d')],
@@ -572,8 +573,9 @@ class InformesPersonalizadosController extends Controller
         $meses = [
             '01' => 'Ene', '02' => 'Feb', '03' => 'Mar', '04' => 'Abr',
             '05' => 'May', '06' => 'Jun', '07' => 'Jul', '08' => 'Ago',
-            '09' => 'Sep', '10' => 'Oct', '11' => 'Nov', '12' => 'Dic'
+            '09' => 'Sep', '10' => 'Oct', '11' => 'Nov', '12' => 'Dic',
         ];
+
         return $meses[$mes] ?? '';
     }
 
@@ -636,7 +638,7 @@ class InformesPersonalizadosController extends Controller
             $ultimo->modify("{$anio}W".sprintf('%02d', $i).' +6 days');
 
             $nombreMesPri = $this->obtenerNombreMesCorto($primer->format('m'));
-            $rangoSemanaTexto = $nombreMesPri . " " . $primer->format('d') . "-" . $ultimo->format('d') . " Semana " . sprintf('%02d', $i);
+            $rangoSemanaTexto = $nombreMesPri.' '.$primer->format('d').'-'.$ultimo->format('d').' Semana '.sprintf('%02d', $i);
 
             $tablaBody .= "<td style='background-color: #d9ead3; border: 1px solid #000; text-align: center; font-weight: bold;'>{$rangoSemanaTexto}</td>";
 
@@ -677,8 +679,9 @@ class InformesPersonalizadosController extends Controller
                         ->where('grupo_id', $grupo->id)
                         ->first();
 
-                    if (!$reporteGrupo) {
-                        $celdasAsistenciaHtml .= "<td>Sin Reporte</td>";
+                    if (! $reporteGrupo) {
+                        $celdasAsistenciaHtml .= '<td>Sin Reporte</td>';
+
                         continue;
                     }
 
@@ -688,11 +691,11 @@ class InformesPersonalizadosController extends Controller
                     if ($esEncargado) {
                         $infoEncargados = is_string($reporteGrupo->informacion_encargado_grupo)
                             ? json_decode($reporteGrupo->informacion_encargado_grupo, true)
-                            : (array)$reporteGrupo->informacion_encargado_grupo;
+                            : (array) $reporteGrupo->informacion_encargado_grupo;
 
                         if (is_array($infoEncargados)) {
                             foreach ($infoEncargados as $infoEncargado) {
-                                $infoArray = (array)$infoEncargado;
+                                $infoArray = (array) $infoEncargado;
                                 if (isset($infoArray['id']) && $infoArray['id'] == $usuario->id) {
                                     if (isset($infoArray['asistio']) && ($infoArray['asistio'] === true || $infoArray['asistio'] === 1 || $infoArray['asistio'] === '1')) {
                                         $asistio = true;
@@ -704,7 +707,7 @@ class InformesPersonalizadosController extends Controller
                     }
 
                     // Si no asistió como encargado, revisar como asistente
-                    if (!$asistio) {
+                    if (! $asistio) {
                         $esAsistente = $reporteGrupo->usuarios()->where('users.id', $usuario->id)->wherePivot('asistio', true)->exists();
                         if ($esAsistente) {
                             $asistio = true;
@@ -713,15 +716,15 @@ class InformesPersonalizadosController extends Controller
 
                     if ($asistio) {
                         $asistenciasAsistente++;
-                        $celdasAsistenciaHtml .= "<td>SI</td>";
+                        $celdasAsistenciaHtml .= '<td>SI</td>';
                     } else {
-                        $celdasAsistenciaHtml .= "<td>NO</td>";
+                        $celdasAsistenciaHtml .= '<td>NO</td>';
                     }
                 }
 
                 $tablaBody .= '<tr>';
 
-                $nombreCompleto = trim($usuario->primer_nombre . ' ' . $usuario->segundo_nombre . ' ' . $usuario->primer_apellido . ' ' . $usuario->segundo_apellido);
+                $nombreCompleto = trim($usuario->primer_nombre.' '.$usuario->segundo_nombre.' '.$usuario->primer_apellido.' '.$usuario->segundo_apellido);
                 $tablaBody .= "<td>{$nombreCompleto}</td>";
 
                 foreach ($camposInfoPrincipalSeleccionados as $campo) {

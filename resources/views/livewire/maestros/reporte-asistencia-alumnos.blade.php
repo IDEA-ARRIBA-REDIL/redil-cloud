@@ -220,9 +220,10 @@
                             <div class="attendance-report-cell attendance-actions">
                                 <span class="attendance-cell-label">Acciones</span>
                                 <div class="attendance-report-actions">
+                                    @php($puedeEditar = $this->verificarSiSePuedeEditarReporte($reporte))
                                     <a href="{{ route('maestros.editarReporte', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'reporte' => $reporte]) }}"
-                                        class="btn btn-sm btn-primary waves-effect waves-light rounded-pill @if (!$this->verificarSiSePuedeEditarReporte($reporte)) disabled @endif"
-                                        aria-disabled="{{ !$this->verificarSiSePuedeEditarReporte($reporte) }}">
+                                        class="btn btn-sm btn-primary waves-effect waves-light rounded-pill @if (!$puedeEditar) disabled @endif"
+                                        aria-disabled="{{ $puedeEditar ? 'false' : 'true' }}">
                                         <i class="mdi mdi-pencil-outline me-1"></i>
                                         @if ($reporte->estado_reporte === 'pendiente_detalle' && $reporte->detalles_asistencia_count === 0)
                                             Registrar

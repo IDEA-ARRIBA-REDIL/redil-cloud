@@ -206,7 +206,7 @@ $configData = Helper::appClasses();
 
       <!-- Card: Seguimiento y consolidación -->
       <div class="card mb-4">
-        <h5 class="card-header text-black fw-semibold">Seguimiento y consolidación</h5>
+        <h5 class="card-header text-black fw-semibold">Seguimiento y {{ Helper::termino('consolidacion', minuscula: true) }}</h5>
         <div class="card-body">
           <div class="row g-3">
             <div class="col-12 col-md-4 mt-3">
@@ -224,7 +224,7 @@ $configData = Helper::appClasses();
             <div class="col-12 col-md-4 mt-3">
               <div class="form-check form-switch">
                 <input type="checkbox" class="form-check-input" id="habilitado_para_consolidacion" name="habilitado_para_consolidacion" value="1" {{ old('habilitado_para_consolidacion', $tipoUsuario->habilitado_para_consolidacion) ? 'checked' : '' }}>
-                <label for="habilitado_para_consolidacion" class="form-check-label fw-medium text-black">Listar en consolidación</label>
+                <label for="habilitado_para_consolidacion" class="form-check-label fw-medium text-black">Listar en {{ Helper::termino('consolidacion', minuscula: true) }}</label>
               </div>
             </div>
           </div>

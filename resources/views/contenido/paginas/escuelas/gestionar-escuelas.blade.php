@@ -240,9 +240,9 @@
                         <input class="form-check-input" type="checkbox" id="habilitada_consolidacion"
                             name="habilitada_consolidacion" value="1">
                         <label class="form-check-label fw-semibold text-black" for="habilitada_consolidacion">Habilitar
-                            consolidación</label>
+                            {{ Helper::termino('consolidacion', minuscula: true) }}</label>
                     </div>
-                    <small class="form-text text-muted">Indica si esta escuela tendrá habilitada la opción de consolidación
+                    <small class="form-text text-muted">Indica si esta escuela tendrá habilitada la opción de {{ Helper::termino('consolidacion', minuscula: true) }}
                         para informes.</small>
                 </div>
             </div>

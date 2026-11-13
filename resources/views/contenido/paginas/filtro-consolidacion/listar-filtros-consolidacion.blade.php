@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Gestión de filtros y tareas de consolidación')
+@section('title', 'Gestión de filtros y tareas de ' . Helper::termino('consolidacion', minuscula: true))
 
 
 @section('vendor-style')
@@ -54,9 +54,11 @@
         const nombreInput = formEditFiltro.querySelector("#offcanvasEditNombre");
         const descInput = formEditFiltro.querySelector("#offcanvasEditDescripcion");
         const ordenInput = formEditFiltro.querySelector("#offcanvasEditOrden");
+        const colorInput = formEditFiltro.querySelector("#offcanvasEditColor");
         if (nombreInput) nombreInput.value = this.dataset.nombre;
         if (descInput) descInput.value = this.dataset.descripcion || '';
         if (ordenInput) ordenInput.value = this.dataset.orden;
+        if (colorInput) colorInput.value = this.dataset.color || '#666CE8';
 
         // Agregamos al JSON
         const estadosCivilesJson = this.dataset.estadosCiviles || '[]';
@@ -340,10 +342,10 @@
       <a href="{{ route('configuracion.index') }}" class="btn btn-sm btn-icon btn-outline-primary rounded-pill me-2 waves-effect waves-light shadow-sm" title="Volver a Configuración">
         <i class="ti ti-arrow-left"></i>
       </a>
-      <h4 class="mb-0 fw-semibold text-primary">Filtros de consolidación</h4>
+      <h4 class="mb-0 fw-semibold text-primary">Filtros de {{ Helper::termino('consolidacion', minuscula: true) }}</h4>
     </div>
     <p class="text-black mb-0 small">
-      Administra los filtros de consolidación.
+      Administra los filtros de {{ Helper::termino('consolidacion', minuscula: true) }}.
     </p>
   </div>  
 
@@ -362,9 +364,14 @@
         <div class="card-header border-bottom d-flex px-4 pt-3 pb-1" style="background-color:#F9F9F9!important">
           <div class="flex-fill row">
             <div class=" d-flex justify-content-between align-items-center">
-              <h5 class="fw-semibold ms-1 text-black m-0">
-                {{ $filtro->nombre }}
-              </h5>
+              <div class="d-flex align-items-center">
+                @if($filtro->color)
+                  <span class="rounded-circle me-2 border d-inline-block flex-shrink-0" style="width: 14px; height: 14px; background-color: {{ $filtro->color }};" title="Color: {{ $filtro->color }}"></span>
+                @endif
+                <h5 class="fw-semibold ms-1 text-black m-0">
+                  {{ $filtro->nombre }}
+                </h5>
+              </div>
               {{-- <span class="badge...">Si tuvieras un badge, iría aquí</span> --}}
             </div>
           </div>
@@ -384,6 +391,7 @@
                       data-nombre="{{ $filtro->nombre }}"
                       data-descripcion="{{ $filtro->descripcion }}"
                       data-orden="{{ $filtro->orden }}"
+                      data-color="{{ $filtro->color ?? '#666CE8' }}"
                       data-estados-civiles="{{ $filtro->estadosCiviles->pluck('id')->toJson() }}"
                       >
                       <i class="ti ti-pencil me-2"></i>Editar filtro
@@ -413,6 +421,16 @@
               <div class="col-12 mt-1">
                 <small class="text-black">Orden:</small>
                 <small class="text-black fw-semibold">{{ $filtro->orden }}</small>
+              </div>
+
+              <div class="col-12 mt-1 d-flex align-items-center">
+                <small class="text-black me-2">Color:</small>
+                @if($filtro->color)
+                  <span class="rounded-circle me-1 border d-inline-block" style="width: 14px; height: 14px; background-color: {{ $filtro->color }};"></span>
+                  <small class="text-black fw-semibold">{{ $filtro->color }}</small>
+                @else
+                  <small class="text-muted">Sin definir</small>
+                @endif
               </div>
 
               <div class="col-12">
@@ -513,7 +531,7 @@
     @empty
     <div class="col-12">
       <div class="alert alert-warning text-center" role="alert">
-        <i class="ti ti-info-circle ti-md me-2"></i> No hay filtros de consolidación registrados.
+        <i class="ti ti-info-circle ti-md me-2"></i> No hay filtros de {{ Helper::termino('consolidacion', minuscula: true) }} registrados.
       </div>
     </div>
     @endforelse
@@ -589,6 +607,11 @@
           </div>
 
           <div class="mb-3">
+            <label for="offcanvasCreateColor" class="form-label">Color representativo</label>
+            <input type="color" name="color" id="offcanvasCreateColor" class="form-control form-control-color w-100" value="{{ old('color', '#666CE8') }}">
+          </div>
+
+          <div class="mb-3">
             <label for="offcanvasCreateEstadosCiviles" class="form-label">¿Estados civiles? </label>
             <select name="estados_civiles[]" id="offcanvasCreateEstadosCiviles" class="form-control select2-multiple" multiple="multiple" style="width: 100%;">
                 @foreach($estadosCiviles as $estado)
@@ -626,6 +649,11 @@
           <div class="mb-3">
             <label for="offcanvasEditOrden" class="form-label">Orden</label>
             <input type="number" name="orden" class="form-control" id="offcanvasEditOrden" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="offcanvasEditColor" class="form-label">Color representativo</label>
+            <input type="color" name="color" class="form-control form-control-color w-100" id="offcanvasEditColor" value="#666CE8">
           </div>
 
           <div class="mb-3">

@@ -45,26 +45,19 @@ class EscuelaController extends Controller
             abort(403, 'No tienes un rol activo asignado.');
         }
 
-        // --- LÓGICA DE REDIRECCIÓN DIRECTA ---
-
-        // 1. Si el usuario es un Estudiante
-        if ($rolActivo->hasPermissionTo('escuelas.es_estudiante')) {
-            // Lo redirigimos a la ruta del dashboard del alumno.
-            // Asegúrate de que esta ruta exista en tu archivo web.php
-            return redirect()->route('alumnos.dashboard', ['user' => $user]);
-        }
-        // 2. Si el usuario es un Maestro
-        elseif ($rolActivo->hasPermissionTo('escuelas.es_maestro')) {
-            // Para redirigir a 'maestros.horariosAsignados', necesitamos el ID del maestro.
-            // Buscamos el perfil de "Maestro" que corresponde al usuario actual.
-
-            // Redirigimos a la ruta que necesitas, pasando el ID del maestro encontrado.
-            return redirect()->route('maestros.misHorarios', ['user' => $user]);
-        } // 3. Si el usuario es un Administrativo
-        elseif ($rolActivo->hasPermissionTo('escuelas.es_administrativo')) {
-            // El administrativo no se redirige, se le muestra el dashboard principal.
+        if ($rolActivo->checkPermissionTo('escuelas.es_administrativo')) {
             return redirect()->route('escuelas.adminDashboard');
         }
+
+        if ($rolActivo->hasPermissionTo('escuelas.es_estudiante')) {
+            return redirect()->route('alumnos.dashboard', ['user' => $user]);
+        }
+
+        if ($rolActivo->hasPermissionTo('escuelas.es_maestro')) {
+            return redirect()->route('maestros.misHorarios', ['user' => $user]);
+        }
+
+        abort(403);
     }
 
     /**

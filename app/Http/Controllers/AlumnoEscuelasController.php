@@ -228,9 +228,7 @@ class AlumnoEscuelasController extends Controller
             // 1. Obtenemos todos los banners que tengan el estado "activo"
             $banners = BannerEscuela::where('activo', true)->latest()->get();
             $matriculasActivas = $user->matriculas()
-                ->whereHas('periodo', function ($query) {
-                    $query->where('estado', true);
-                })
+                ->whereHas('periodo', fn ($query) => $query->visiblesEnPanel(Auth::user()))
                 ->with([
                     'periodo',
 

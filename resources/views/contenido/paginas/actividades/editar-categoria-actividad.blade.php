@@ -315,7 +315,7 @@
                                     <hr class="my-4">
                                     <h6 class="text-primary mb-3">
                                         <i class="ti ti-clipboard-check me-2"></i>
-                                        Tareas de Consolidación
+                                        Tareas de {{ Helper::termino('consolidacion') }}
                                     </h6>
 
                                     {{-- Tareas Requisito --}}

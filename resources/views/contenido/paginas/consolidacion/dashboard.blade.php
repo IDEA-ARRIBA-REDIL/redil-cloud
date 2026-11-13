@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Dashboard consolidación')
+@section('title', 'Dashboard ' . Helper::termino('consolidacion', minuscula: true))
 
 @section('page-style')
 @vite([
@@ -160,47 +160,51 @@ $configData = Helper::appClasses();
         }
       };
 
-      new ApexCharts(vincEl, vincConfig).render();
+      if (seriesData.length > 0) {
+        new ApexCharts(vincEl, vincConfig).render();
+      }
     }
 
     // Inicializar gráficos de los bloques
     document.querySelectorAll('.chart-bloque').forEach(function(el) {
-        const seriesData = JSON.parse(el.getAttribute('data-series'));
-        const labelsData = JSON.parse(el.getAttribute('data-labels'));
-        const totalCosecha = el.getAttribute('data-total');
+        const seriesData = JSON.parse(el.getAttribute('data-series') || '[]');
+        const labelsData = JSON.parse(el.getAttribute('data-labels') || '[]');
+        const totalCosecha = el.getAttribute('data-total') || '0';
 
-        const blockChartConfig = {
-            chart: {
-                height: 300,
-                type: 'donut',
-                toolbar: { show: false }
-            },
-            labels: labelsData,
-            series: seriesData,
-            colors: ['#7367f0', '#28c76f', '#ea5455', '#ff9f43', '#00cfe8', '#a8aaae'],
-            stroke: { show: false },
-            dataLabels: { enabled: false }, // Simplificado para las cards pequeñas
-            legend: { show: false }, // Ocultamos leyenda para ahorrar espacio, ya hay lista al lado
-            plotOptions: {
-                pie: {
-                    donut: {
-                        size: '70%',
-                        labels: {
-                            show: true,
-                            name: { fontSize: '1rem', fontFamily: 'Public Sans' },
-                            value: { fontSize: '1rem', fontFamily: 'Public Sans', formatter: val => parseInt(val) },
-                            total: {
-                                show: true,
-                                fontSize: '1rem',
-                                label: 'Total',
-                                formatter: () => totalCosecha
-                            }
-                        }
-                    }
-                }
-            }
-        };
-        new ApexCharts(el, blockChartConfig).render();
+        if (seriesData.length > 0) {
+          const blockChartConfig = {
+              chart: {
+                  height: 300,
+                  type: 'donut',
+                  toolbar: { show: false }
+              },
+              labels: labelsData,
+              series: seriesData,
+              colors: ['#7367f0', '#28c76f', '#ea5455', '#ff9f43', '#00cfe8', '#a8aaae'],
+              stroke: { show: false },
+              dataLabels: { enabled: false }, // Simplificado para las cards pequeñas
+              legend: { show: false }, // Ocultamos leyenda para ahorrar espacio, ya hay lista al lado
+              plotOptions: {
+                  pie: {
+                      donut: {
+                          size: '70%',
+                          labels: {
+                              show: true,
+                              name: { fontSize: '1rem', fontFamily: 'Public Sans' },
+                              value: { fontSize: '1rem', fontFamily: 'Public Sans', formatter: val => parseInt(val) },
+                              total: {
+                                  show: true,
+                                  fontSize: '1rem',
+                                  label: 'Total',
+                                  formatter: () => totalCosecha
+                              }
+                          }
+                      }
+                  }
+              }
+          };
+          new ApexCharts(el, blockChartConfig).render();
+        }
     });
 
     // Gráfico de Distribución (Sector vs Templo)
@@ -467,7 +471,7 @@ $configData = Helper::appClasses();
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h4 class="mb-1 fw-semibold text-primary">Dashboard consolidación </h4>
+  <h4 class="mb-1 fw-semibold text-primary">Dashboard {{ Helper::termino('consolidacion', minuscula: true) }} </h4>
 </div>
 
   <div class="d-flex justify-content-end mb-5">
@@ -700,11 +704,18 @@ $configData = Helper::appClasses();
             </div>
           </div>
           <div class="card-body">                  
-            <div id="vinculacionChart" 
-                 data-series='@json($vinculacionesCosecha->pluck("usuarios_count"))' 
-                 data-labels='@json($vinculacionesCosecha->pluck("nombre"))'
-                 data-total='{{ $totalCosecha }}'
-                 style="min-height: 400px;"></div>
+            @if($vinculacionesCosecha->isNotEmpty() && $totalCosecha > 0)
+              <div id="vinculacionChart" 
+                   data-series='@json($vinculacionesCosecha->pluck("usuarios_count"))' 
+                   data-labels='@json($vinculacionesCosecha->pluck("nombre"))'
+                   data-total='{{ $totalCosecha }}'
+                   style="min-height: 400px;"></div>
+            @else
+              <div class="d-flex flex-column align-items-center justify-content-center h-100 py-5">
+                <i class="ti ti-chart-pie-2 fs-1 text-muted opacity-25 mb-2"></i>
+                <p class="text-muted mb-0">No hay cosechas registradas en este período</p>
+              </div>
+            @endif
           </div>
         </div>
       </div>
@@ -723,7 +734,7 @@ $configData = Helper::appClasses();
           <div class="card-body">
             
               <div class="row">
-                @foreach ($vinculacionesCosecha as $vinculacion)
+                @forelse ($vinculacionesCosecha as $vinculacion)
                 <div class=" col-12 d-flex flex-column">
                   <small class="text-black">{{ $vinculacion->nombre }} </small>
                   <small class="fw-semibold text-black ">
@@ -731,7 +742,11 @@ $configData = Helper::appClasses();
                   </small>
                   <hr class="my-3 border-2">
                 </div>
-                @endforeach
+                @empty
+                <div class="col-12 text-center py-4">
+                  <small class="text-muted">No hay registros de vinculación en este período.</small>
+                </div>
+                @endforelse
               </div>
 
           </div>
@@ -840,7 +855,7 @@ $configData = Helper::appClasses();
         document.addEventListener('DOMContentLoaded', function() {
             const dataVinc = @json($datosVinculacionSemanal ?? ['labels' => [], 'series' => []]);
             
-            if(dataVinc.labels && dataVinc.labels.length > 0) {
+            if(dataVinc.labels && dataVinc.labels.length > 0 && dataVinc.series && dataVinc.series.length > 0) {
                  const options = {
                     series: dataVinc.series,
                     chart: {
@@ -963,24 +978,35 @@ $configData = Helper::appClasses();
                             <!-- Gráfico -->
                             <div class="col-12 col-md-4">
                                 <h6 class="text-center fw-semibold mb-3">Cosecha por vinculación</h6>
+                                @if($dato->vinculacionesCosecha->isNotEmpty() && $dato->totalCosecha > 0)
                                 <div id="chart-desglose-{{ $dato->id }}" class="chart-bloque" 
                                     data-series='@json($dato->vinculacionesCosecha->pluck("usuarios_count"))' 
                                     data-labels='@json($dato->vinculacionesCosecha->pluck("nombre"))'
                                     data-total='{{ $dato->totalCosecha }}'>
                                 </div>
+                                @else
+                                <div class="d-flex flex-column align-items-center justify-content-center py-4">
+                                  <i class="ti ti-chart-pie-2 fs-1 text-muted opacity-25 mb-2"></i>
+                                  <small class="text-muted">No hay datos de vinculación en este período</small>
+                                </div>
+                                @endif
                             </div>
 
                             <!-- Lista -->
                             <div class="col-12 col-md-4">
                                 <h6 class="fw-semibold mb-3">Lista de cosecha por vinculación</h6>
                                 <ul class="list-group list-group-flush">
-                                    @foreach($dato->vinculacionesCosecha as $vinc)
+                                    @forelse($dato->vinculacionesCosecha as $vinc)
                                         <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
                                             {{ $vinc->nombre }}
                                                 <a class="fw-semibold" href="{{ route('consolidacion.dashboard.detalle-kpi', array_merge(request()->except(['sede_id', 'bloque_id']), ['kpi' => 'cosecha_vinculacion_' . $vinc->id, ($tipoDesglose == 'sede') ? 'sede_id' : 'bloque_id' => $dato->id])) }}">{{ $vinc->usuarios_count }}</a>
                                            
                                         </li>
-                                    @endforeach
+                                    @empty
+                                        <li class="list-group-item px-0 py-2 text-muted small">
+                                            No hay registros de vinculación en este período.
+                                        </li>
+                                    @endforelse
                                 </ul>
                             </div>
                         </div>
@@ -1057,7 +1083,7 @@ $configData = Helper::appClasses();
 
                                 // 2. Gráfica Vinculación Item
                                 const dataVinc{{ $dato->id }} = @json($dato->graficaVinculacion ?? ['labels' => [], 'series' => []]);
-                                if(dataVinc{{ $dato->id }}.labels && dataVinc{{ $dato->id }}.labels.length > 0) {
+                                if(dataVinc{{ $dato->id }}.labels && dataVinc{{ $dato->id }}.labels.length > 0 && dataVinc{{ $dato->id }}.series && dataVinc{{ $dato->id }}.series.length > 0) {
                                      const optionsVinc{{ $dato->id }} = {
                                         series: dataVinc{{ $dato->id }}.series,
                                         chart: {

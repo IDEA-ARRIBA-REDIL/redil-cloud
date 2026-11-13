@@ -31,7 +31,7 @@ class AdminDashboard extends Component
 
     public function mount()
     {
-        $this->periodos = Periodo::orderBy('nombre', 'desc')->get();
+        $this->periodos = Periodo::visiblesEnPanel(Auth::user())->orderBy('nombre', 'desc')->get();
         $this->user = Auth::user();
     }
 
@@ -40,7 +40,7 @@ class AdminDashboard extends Component
     {
         $this->reset(['selectedSedeId', 'selectedMateriaPeriodoId', 'sedes', 'materiasPeriodo', 'horarios']);
         if ($periodoId) {
-            $periodo = Periodo::find($periodoId);
+            $periodo = Periodo::visiblesEnPanel(Auth::user())->findOrFail($periodoId);
             $this->sedes = $periodo->sedes()->orderBy('nombre')->get();
             $this->materiasPeriodo = MateriaPeriodo::where('periodo_id', $periodoId)->with('materia')->get();
         }
@@ -50,6 +50,8 @@ class AdminDashboard extends Component
     public function buscarHorarios()
     {
         $this->validate();
+
+        Periodo::visiblesEnPanel(Auth::user())->findOrFail($this->selectedPeriodoId);
 
         $query = HorarioMateriaPeriodo::query()
             ->whereHas('materiaPeriodo', fn ($q) => $q->where('periodo_id', $this->selectedPeriodoId))

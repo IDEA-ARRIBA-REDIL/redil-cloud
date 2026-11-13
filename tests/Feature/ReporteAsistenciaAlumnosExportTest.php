@@ -3,10 +3,14 @@
 namespace Tests\Feature;
 
 use App\Exports\AsistenciasClaseExport;
+use App\Livewire\Maestros\EditarReporteAsistencia;
 use App\Livewire\Maestros\ReporteAsistenciaAlumnos;
 use App\Models\HorarioMateriaPeriodo;
 use App\Models\Maestro;
+use App\Models\Materia;
+use App\Models\MateriaPeriodo;
 use App\Models\ReporteAsistenciaClase;
+use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -74,6 +78,35 @@ class ReporteAsistenciaAlumnosExportTest extends TestCase
         $this->expectException(HttpException::class);
 
         $componente->exportarTodosLosReportes();
+    }
+
+    public function test_edicion_de_un_reporte_segun_el_permiso_activo_y_el_plazo(): void
+    {
+        $materia = (new Materia)->forceFill(['tiene_dia_limite' => false, 'dias_plazo_reporte' => 2]);
+        $periodo = (new MateriaPeriodo)->setRelation('materia', $materia);
+        $horario = (new HorarioMateriaPeriodo)->setRelation('materiaPeriodo', $periodo);
+        $reporte = (new ReporteAsistenciaClase)->setRelation('horarioMateriaPeriodo', $horario);
+        $lista = new ReporteAsistenciaAlumnos;
+        foreach (['escuelas.calificar_cualquier_fecha', 'escuelas.reportar_cualquier_fecha', 'escuelas.reportar_asistencia_cualquier_dia', null] as $permiso) {
+            $usuario = Mockery::mock(User::class)->makePartial();
+            $usuario->shouldReceive('hasPermissionTo')->andReturnUsing(fn ($nombre) => $nombre === $permiso);
+            Auth::shouldReceive('user')->andReturn($usuario)->byDefault();
+            $reporte->fecha_clase_reportada = now()->subWeek();
+            $this->assertSame($permiso !== null, $lista->verificarSiSePuedeEditarReporte($reporte));
+            $reporte->fecha_clase_reportada = today();
+            $this->assertTrue($lista->verificarSiSePuedeEditarReporte($reporte));
+        }
+    }
+
+    public function test_guardar_fuera_del_plazo_requiere_permiso(): void
+    {
+        $editor = new EditarReporteAsistencia;
+        $editor->horarioAsignado = (new HorarioMateriaPeriodo)->forceFill(['id' => 12]);
+        $editor->reporte = (new ReporteAsistenciaClase)->forceFill(['horario_materia_periodo_id' => 12]);
+        $editor->reporte->setRelation('horarioMateriaPeriodo', null);
+        Auth::shouldReceive('user')->andReturn(null);
+        $this->expectException(HttpException::class);
+        $editor->guardarYFinalizar();
     }
 
     private function componente(bool $asignado = true): ReporteAsistenciaAlumnos

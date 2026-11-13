@@ -1,12 +1,12 @@
 <section class="card mt-4" aria-labelledby="tareas-consolidacion-perfil-titulo">
   <div class="card-header">
     <h6 id="tareas-consolidacion-perfil-titulo" class="card-title text-uppercase mb-0 fw-bold">
-      <i class="ti ti-list-check ms-n1 me-2" aria-hidden="true"></i>Tareas de consolidación
+      <i class="ti ti-list-check ms-n1 me-2" aria-hidden="true"></i>Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}
     </h6>
   </div>
   <div class="card-body">
     @if($asignaciones->isEmpty())
-      <p class="text-muted mb-0">Esta persona no tiene tareas de consolidación asignadas.</p>
+      <p class="text-muted mb-0">Esta persona no tiene tareas de {{ Helper::termino('consolidacion', minuscula: true) }} asignadas.</p>
     @else
       <ul class="timeline ms-1 mb-0">
         @foreach($asignaciones as $asignacion)

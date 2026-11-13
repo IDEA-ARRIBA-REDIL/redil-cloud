@@ -46,9 +46,16 @@ class EditarReporteAsistencia extends Component
         $this->horarioAsignado = $horarioAsignado;
         $this->maestro = $maestro;
         $this->reporte = $reporte;
+        $this->autorizarEdicion();
         $this->cargarMotivosInasistencia();
         // Cargamos todos los alumnos y sus asistencias UNA SOLA VEZ para mantener el estado completo.
         $this->cargarDatosDelReporte();
+    }
+
+    private function autorizarEdicion(): void
+    {
+        abort_unless((int) $this->reporte->horario_materia_periodo_id === (int) $this->horarioAsignado->id, 404);
+        abort_unless($this->reporte->permiteEdicionPorFecha(Auth::user()), 403);
     }
 
     public function cargarMotivosInasistencia()
@@ -127,6 +134,7 @@ class EditarReporteAsistencia extends Component
 
     public function guardarAsistenciaDeUnAlumno($alumnoId)
     {
+        $this->autorizarEdicion();
         $this->validate([
             "asistencias.{$alumnoId}.asistio" => 'required|boolean',
             "asistencias.{$alumnoId}.motivo_inasistencia_id" => ['nullable'],
@@ -151,6 +159,7 @@ class EditarReporteAsistencia extends Component
 
     public function guardarObservacion()
     {
+        $this->autorizarEdicion();
         $this->validate(['observacionActual' => 'nullable|string|max:2000']);
         $alumnoId = $this->alumnoIdParaObservacion;
         if ($alumnoId) {
@@ -171,6 +180,7 @@ class EditarReporteAsistencia extends Component
 
     public function guardarYFinalizar()
     {
+        $this->autorizarEdicion();
         $this->validate($this->rules());
         foreach ($this->alumnosDelHorario as $alumno) {
             if ($alumno) {

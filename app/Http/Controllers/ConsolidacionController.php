@@ -1064,7 +1064,7 @@ class ConsolidacionController extends Controller
 
         $vinculacionesCosecha = TipoVinculacion::withCount(['usuarios' => function ($query) use ($userIdsCosecha) {
             $query->withTrashed()->whereIn('users.id', $userIdsCosecha);
-        }])->get();
+        }])->get()->filter(fn ($v) => $v->usuarios_count > 0)->values();
 
         // --- Helpers para Desglose y Métricas ---
 
@@ -1254,7 +1254,7 @@ class ConsolidacionController extends Controller
 
             $vinculacionesItem = TipoVinculacion::withCount(['usuarios' => function ($query) use ($idsItem) {
                 $query->withTrashed()->whereIn('users.id', $idsItem);
-            }])->get();
+            }])->get()->filter(fn ($v) => $v->usuarios_count > 0)->values();
 
             // --- DATOS ESCUELAS (Desglose) ---
             $subQueryLatestDateItem = Matricula::whereIn('user_id', $idsItem)
@@ -1404,7 +1404,9 @@ class ConsolidacionController extends Controller
                     $itemGraficaVinculacion['series'][$tv->id]['data'][] = $c;
                 }
             }
-            $itemGraficaVinculacion['series'] = array_values($itemGraficaVinculacion['series']);
+            $itemGraficaVinculacion['series'] = array_values(array_filter($itemGraficaVinculacion['series'], function ($serie) {
+                return array_sum($serie['data']) > 0;
+            }));
 
             // 4. Matriculas Semanal Item
             $fechasMatriculasItem = $matriculasCollectionItem->pluck('fecha_matricula');
@@ -1848,8 +1850,10 @@ class ConsolidacionController extends Controller
             }
         }
 
-        // Convertimos las series a array indexado para JS
-        $datosVinculacionSemanal['series'] = array_values($datosVinculacionSemanal['series']);
+        // Convertimos las series a array indexado para JS, filtrando las que tengan total 0 en todas las semanas
+        $datosVinculacionSemanal['series'] = array_values(array_filter($datosVinculacionSemanal['series'], function ($serie) {
+            return array_sum($serie['data']) > 0;
+        }));
 
         // --- Lógica para Gráfica Semanal (Escuelas / Matrículas) ---
         $datosMatriculasSemanal = [];
@@ -2363,6 +2367,9 @@ class ConsolidacionController extends Controller
                 }
             }
 
+            // Filtrar únicamente los colaboradores con al menos 1 gestión en el periodo
+            $ranking = array_filter($ranking, fn ($colab) => $colab['total'] > 0);
+
             // Ordenar ranking por total descendente
             uasort($ranking, fn ($a, $b) => $b['total'] <=> $a['total']);
             $zona->rankingColaboradores = $ranking;
@@ -2446,7 +2453,9 @@ class ConsolidacionController extends Controller
             }
         };
 
-        $query = User::withTrashed()->tap($filtroEdadConsolidacionCallback);
+        $query = User::withTrashed()
+            ->with(['sede', 'tipoUsuario', 'tipoVinculacion'])
+            ->tap($filtroEdadConsolidacionCallback);
         $paso = null;
 
         switch ($kpi) {
@@ -2711,6 +2720,7 @@ class ConsolidacionController extends Controller
         };
 
         $query = User::withTrashed()
+            ->with(['sede', 'tipoUsuario', 'tipoVinculacion'])
             ->tap($filtroEdadConsolidacionCallback)
             ->tap($filtroSedesCallback);
 

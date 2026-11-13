@@ -1233,7 +1233,7 @@ $configData = Helper::appClasses();
 
     <div class="col-md-12">
       <div class="card mb-4">
-        <h5 class="card-header text-black fw-semibold">Consolidación</h5>
+        <h5 class="card-header text-black fw-semibold">{{ Helper::termino('consolidacion') }}</h5>
         <div class="card-body">
           <div class="row">
 
@@ -1242,6 +1242,23 @@ $configData = Helper::appClasses();
               <input class="form-control" name="edadMinimaConsolidacion" type="number" value="{{$configuracion->edad_minima_consolidacion}}" id="edad_minima_consolidacion" />
               @error('edadMinimaConsolidacion')
               <span class="text-danger">{{ $message }}</span>
+              @enderror
+            </div>
+
+            <div class="col-md-4 col-sm-6 col-12 mb-3">
+              <label for="terminologia_consolidacion" class="form-label">Nombre personalizado del módulo</label>
+              <input
+                class="form-control"
+                name="terminologia[consolidacion]"
+                type="text"
+                maxlength="50"
+                placeholder="Consolidación"
+                value="{{ old('terminologia.consolidacion', $configuracion->terminologia_personalizada['consolidacion'] ?? '') }}"
+                id="terminologia_consolidacion"
+              />
+              <small class="text-muted">Déjalo vacío para usar el nombre por defecto (Consolidación).</small>
+              @error('terminologia.consolidacion')
+              <span class="text-danger d-block">{{ $message }}</span>
               @enderror
             </div>
 

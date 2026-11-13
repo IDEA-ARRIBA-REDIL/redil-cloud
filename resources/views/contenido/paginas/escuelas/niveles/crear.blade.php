@@ -2,7 +2,7 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Crear Nuevo Grado')
+@section('title', 'Crear nuevo grado')
 
 @section('vendor-style')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
@@ -104,7 +104,7 @@
         <div class="col-md-12 mb-4">
 
 
-                    <h5 class="mb-1 fw-semibold text-primary">Crear Nuevo Grado</h5>
+                    <h5 class="mb-1 fw-semibold text-primary">Crear nuevo grado</h5>
                     <p class="text-black mb-0">Define la configuración completa para el nuevo grado académico.</p>
 
 
@@ -117,17 +117,17 @@
             <!-- Columna Izquierda: Configuración Principal -->
             <div class="col-12 col-md-12 mb-3">
                 <div class="card h-100 p-4">
-                    <h5 class="mb-4 text-primary fw-semibold">Configuración General</h5>
+                    <h5 class="mb-4 text-primary fw-semibold">Configuración general</h5>
 
                     <div class="row">
                         <div class="mb-3 col-md-4">
-                            <label for="nombre" class="form-label">Nombre del Grado <span class="text-danger">*</span></label>
+                            <label for="nombre" class="form-label">Nombre del grado <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre" value="{{ old('nombre') }}" required autofocus>
                             @error('nombre') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3 col-md-4">
-                            <label for="orden" class="form-label">Orden Jerárquico <span class="text-danger">*</span></label>
+                            <label for="orden" class="form-label">Orden jerárquico <span class="text-danger">*</span></label>
                             <input type="number" class="form-control @error('orden') is-invalid @enderror" id="orden" name="orden" value="{{ old('orden', 1) }}" required>
                             @error('orden') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
@@ -174,7 +174,7 @@
 
                         <!-- Obligatorio -->
                         <div class="col-md-3 mb-3">
-                            <label class="form-label fw-bold">Carácter Obligatorio</label>
+                            <label class="form-label fw-bold">Carácter obligatorio</label>
                             <div class="form-check form-switch form-switch-lg">
                                 <input class="form-check-input" type="checkbox" name="caracter_obligatorio" value="1" @checked(old('caracter_obligatorio', true))>
                                 <label class="form-check-label">Sí</label>
@@ -191,25 +191,25 @@
 
                     <hr class="my-4">
 
-                    <h5 class="mb-3 text-primary">Reglas de Asistencia y Calificaciones</h5>
+                    <h5 class="mb-3 text-primary">Reglas de asistencia y calificaciones</h5>
 
 
 
                     <div class="row mt-3 row-asistencias">
 
                         <div class="col-md-4 col-12 mb-3">
-                            <label class="form-label">Máx. Reportes Permitidos</label>
+                            <label class="form-label">Máx. reportes permitidos</label>
                             <input type="number" class="form-control" name="limite_reportes" value="{{ old('limite_reportes') }}">
                         </div>
 
                         <!-- Campos condicionales de asistencia -->
                         <div id="containerAsistenciasMinimas" class="col-md-4 col-12 mb-3" style="display:none;">
-                            <label class="form-label">Asistencias Mínimas para Aprobar</label>
+                            <label class="form-label">Asistencias mínimas para aprobar</label>
                             <input type="number" class="form-control" name="asistencias_minimas" value="{{ old('asistencias_minimas') }}">
                         </div>
 
                         <div id="containerAsistenciasAlerta" class="col-md-4 col-12 mb-3" style="display:none;">
-                            <label class="form-label">Alerta tras X Inasistencias</label>
+                            <label class="form-label">Alerta tras X inasistencias</label>
                             <input type="number" class="form-control" name="cantidad_inasistencias_alerta" value="{{ old('cantidad_inasistencias_alerta') }}">
                         </div>
                     </div>
@@ -220,7 +220,7 @@
 
 
                     <div class="row align-items-center plazos-reporte">
-                        <h5 class="mb-3 text-primary">Plazos de Reporte</h5>
+                        <h5 class="mb-3 text-primary">Plazos de reporte</h5>
                          <div class="col-md-6 col-12 mb-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="diaLimiteHabilitado" name="dia_limite_habilitado" value="1" @checked(old('dia_limite_habilitado'))>
@@ -229,7 +229,7 @@
                         </div>
 
                         <div class="col-md-6 col-12 mb-3">
-                             <label class="form-label">Día Límite (Semanal)</label>
+                             <label class="form-label">Día límite (Semanal)</label>
                              <select class="form-select" id="dia_limite_reporte" name="dia_limite_reporte" disabled>
                                 <option value="">Seleccione...</option>
                                 <option value="1">Lunes</option>
@@ -261,27 +261,27 @@
                     <h5 class="mb-4 text-primary fw-semibold">Configuración de requisitos </h5>
 
                     <div class="p-3 border rounded ">
-                        <h6 class="text-black  small fw-semibold mb-3">1. Al Iniciar el Grado</h6>
+                        <h6 class="text-black  small fw-semibold mb-3">1. Al iniciar el grado</h6>
                         @livewire('escuelas.niveles.gestionar-pasos-iniciar-nivel', ['nivel' => new \App\Models\NivelAgrupacion])
                     </div>
 
                     <div class="p-3 border rounded  mt-3">
-                        <h6 class="text-black  small fw-semibold mb-3">2. Prerrequisitos de Pasos</h6>
+                        <h6 class="text-black  small fw-semibold mb-3">2. Prerrequisitos de pasos</h6>
                         @livewire('escuelas.niveles.gestionar-pasos-requisito-nivel', ['nivel' => new \App\Models\NivelAgrupacion])
                     </div>
 
                     <div class="p-3 border rounded  mt-3">
-                        <h6 class="text-black  small fw-semibold mb-3">3. Al Culminar el Grado</h6>
+                        <h6 class="text-black  small fw-semibold mb-3">3. Al culminar el grado</h6>
                         @livewire('escuelas.niveles.gestionar-pasos-culminados-nivel', ['nivel' => new \App\Models\NivelAgrupacion])
                     </div>
 
                     <div class="p-3 border rounded  mt-3">
-                        <h6 class="text-black  small fw-semibold mb-3">4. Tareas de Consolidación Requeridas</h6>
+                        <h6 class="text-black  small fw-semibold mb-3">4. Tareas de {{ Helper::termino('consolidacion', minuscula: true) }} requeridas</h6>
                         @livewire('escuelas.niveles.gestionar-tareas-requisito-nivel', ['nivel' => new \App\Models\NivelAgrupacion])
                     </div>
 
                      <div class="p-3 border rounded  mt-3">
-                        <h6 class="text-black  small fw-semibold mb-3">5. Tareas a Culminar al Cerrar</h6>
+                        <h6 class="text-black  small fw-semibold mb-3">5. Tareas a culminar al cerrar</h6>
                         @livewire('escuelas.niveles.gestionar-tareas-culminadas-nivel', ['nivel' => new \App\Models\NivelAgrupacion])
                     </div>
 

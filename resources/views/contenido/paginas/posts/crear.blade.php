@@ -544,7 +544,7 @@
 
                                         <!-- Tareas Requisito -->
                                         <div class="col-12 mt-4">
-                                            <label class="form-label fw-bold">Tareas de consolidación</label>
+                                            <label class="form-label fw-bold">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }}</label>
                                             <div id="contenedorTareas">
                                                 <!-- Filas dinámicas -->
                                             </div>

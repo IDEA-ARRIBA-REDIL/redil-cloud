@@ -1,5 +1,5 @@
 <div>
-    <h6 class="mb-3">Tareas de Consolidación a Culminar al Cerrar Grado</h6>
+    <h6 class="mb-3">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }} a culminar al cerrar grado</h6>
     <div class="row g-3 align-items-end mb-3">
         <div class="col-md-5">
             <label class="form-label">Tarea</label>

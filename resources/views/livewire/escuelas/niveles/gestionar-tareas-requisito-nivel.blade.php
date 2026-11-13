@@ -1,5 +1,5 @@
 <div>
-    <h6 class="mb-3">Tareas de Consolidación Requeridas</h6>
+    <h6 class="mb-3">Tareas de {{ Helper::termino('consolidacion', minuscula: true) }} requeridas</h6>
     <div class="row g-3 align-items-end mb-3">
         <div class="col-md-5">
             <label class="form-label">Tarea</label>

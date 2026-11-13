@@ -152,7 +152,7 @@
             @foreach ($tagsBusqueda as $tag)
             <button type="button"
                 class="btn btn-xs rounded-pill btn-outline-secondary remove-tag-maestro ps-2 pe-1 mt-1"
-                data-field="{{ $tag->field }}" data-value="{{ $tag->value }}">
+                data-field="{{ $tag->field }}" data-value="{{ $tag->value ?? '' }}">
                 <span class="align-middle">{{ $tag->label }} <i class="ti ti-x ti-xs"
                         style="margin-bottom: 2px;"></i></span>
             </button>

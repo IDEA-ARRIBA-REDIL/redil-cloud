@@ -6,7 +6,6 @@ use App\Exports\AsistenciasClaseExport;
 use App\Models\HorarioMateriaPeriodo;
 use App\Models\Maestro;
 use App\Models\ReporteAsistenciaClase;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -74,40 +73,7 @@ class ReporteAsistenciaAlumnos extends Component
      */
     public function verificarSiSePuedeEditarReporte(ReporteAsistenciaClase $reporte): bool
     {
-        $usuarioActivo = Auth::user();
-
-        // Regla 1: Si tiene permiso, siempre puede editar.
-        if ($usuarioActivo && $usuarioActivo->hasPermissionTo('escuelas.reportar_asistencia_cualquier_dia')) {
-            return true;
-        }
-
-        // --- Lógica para usuarios SIN permiso ---
-        $reporte->loadMissing('horarioMateriaPeriodo.materiaPeriodo.materia');
-        $datosMateria = $reporte->horarioMateriaPeriodo?->materiaPeriodo?->materia;
-        if (! $datosMateria) {
-            return false;
-        }
-
-        $fechaActualSoloFecha = Carbon::now()->startOfDay();
-        $fechaClaseReportadaCarbon = Carbon::parse($reporte->fecha_clase_reportada)->startOfDay();
-
-        if ($datosMateria->tiene_dia_limite && isset($datosMateria->dia_limite_reporte)) {
-            // Escenario A: Con día límite semanal
-            $diaClaseReportadaNum = $fechaClaseReportadaCarbon->dayOfWeek;
-            $diaLimiteConfiguradoMateria = (int) $datosMateria->dia_limite_reporte;
-            $diasParaAlcanzarDiaLimite = ($diaLimiteConfiguradoMateria - $diaClaseReportadaNum + 7) % 7;
-            $fechaTopeParaEdicion = $fechaClaseReportadaCarbon->copy()->addDays($diasParaAlcanzarDiaLimite);
-
-            return $fechaActualSoloFecha->lte($fechaTopeParaEdicion); // Puede editar si hoy <= fecha tope
-        } elseif (! $datosMateria->tiene_dia_limite && isset($datosMateria->dias_plazo_reporte)) {
-            // Escenario B: Con días de plazo
-            $diasPlazo = (int) $datosMateria->dias_plazo_reporte;
-            $fechaTopeParaEdicion = $fechaClaseReportadaCarbon->copy()->addDays($diasPlazo);
-
-            return $fechaActualSoloFecha->lte($fechaTopeParaEdicion); // Puede editar si hoy <= fecha tope
-        }
-
-        return false; // Por defecto, no se puede editar.
+        return $reporte->permiteEdicionPorFecha(Auth::user());
     }
 
     /**

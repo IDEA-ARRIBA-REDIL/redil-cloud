@@ -77,6 +77,8 @@ class UpdateConfiguracionGeneralRequest extends FormRequest
             'mensajeExisteAutoMatricula' => ['nullable', 'string'],
 
             'edadMinimaConsolidacion' => ['required', 'integer', 'min:0'],
+            'terminologia' => ['nullable', 'array'],
+            'terminologia.consolidacion' => ['nullable', 'string', 'max:50'],
 
             'mensajeDonacionOfrenda' => ['nullable', 'string', 'max:50000'],
             'bannerDonacionOfrenda' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],

@@ -108,6 +108,8 @@ $configData = Helper::appClasses();
                 value="{{ old('email', $emailDefault) }}"
                 placeholder="tucorreo@mail.com"
                 autofocus
+                autocapitalize="none"
+                spellcheck="false"
               >
             </div>
           </div>

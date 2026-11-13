@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Consolidación: ' . $sede->nombre)
+@section('title', Helper::termino('consolidacion') . ': ' . $sede->nombre)
 
 @section('page-style')
 <style>
@@ -344,7 +344,7 @@ $configData = Helper::appClasses();
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h4 class="mb-1 fw-semibold text-primary">Consolidación: {{ $sede->nombre }}</h4>
+    <h4 class="mb-1 fw-semibold text-primary">{{ Helper::termino('consolidacion') }}: {{ $sede->nombre }}</h4>
    
   </div>
   <div class="d-flex">

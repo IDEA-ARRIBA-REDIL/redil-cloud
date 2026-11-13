@@ -111,7 +111,7 @@
         </div>
         {{-- FIN CUADRO INFORMATIVO --}}
 
-        <div class="row mb-3  ps-4 ">
+        <div class="row mb-3 ps-4 align-items-center">
             {{-- BOTÓN Y MODAL PARA CREAR NUEVO REPORTE DE ASISTENCIA --}}
 
             <button type="button" class="col-md-3 btn btn-primary waves-effect waves-light rounded-pill"
@@ -119,6 +119,15 @@
                 @if ($botonNuevoReporteHabilitado == false) disabled @endif>
                 <i class="ti ti-plus"></i> Nuevo reporte
             </button>
+
+            @if (!empty($limiteTotalAlcanzado) && $limiteTotalAlcanzado)
+                <div class="col-md-9 mt-2 mt-md-0">
+                    <span class="badge bg-label-warning text-wrap text-start">
+                        <i class="ti ti-info-circle me-1"></i>
+                        Se ha alcanzado el límite total de reportes configurados para esta materia ({{ $materiaAEvaluar->limite_reporte_asistencias }}).
+                    </span>
+                </div>
+            @endif
 
         </div>
         {{-- Aquí se incluye el componente Livewire --}}
@@ -190,21 +199,54 @@
             document.addEventListener('DOMContentLoaded', function() {
                 const esSuperAdmin = @json($esSuperAdmin);
                 const fechasPermitidas = @json($estadoFechas['fechasPermitidasFlatpickr'] ?? []);
+                const fechasRealizadas = @json($estadoFechas['realizados'] ?? []);
+                const limiteSemana = @json($materiaAEvaluar ? $materiaAEvaluar->obtenerLimiteReportesSemana() : 1);
+                const minDatePeriodo = @json($limiteMinimoFechaPicker);
+                const maxDatePeriodo = @json($limiteMaximoFechaPicker);
 
                 let flatpickrConfig = {
                     dateFormat: "Y-m-d",
                     defaultDate: "{{ $fechaPorDefectoParaInput }}",
                 };
 
+                if (minDatePeriodo) {
+                    flatpickrConfig.minDate = minDatePeriodo;
+                }
+                if (maxDatePeriodo) {
+                    flatpickrConfig.maxDate = maxDatePeriodo;
+                }
+
                 if (!esSuperAdmin) {
                     if (fechasPermitidas.length > 0) {
                         flatpickrConfig.enable = fechasPermitidas;
                     } else {
                         // Si no hay fechas permitidas, bloquear todo.
-                        // Configuramos minDate mayor a maxDate para bloquear la selección
                         flatpickrConfig.minDate = "today";
                         flatpickrConfig.maxDate = "2000-01-01";
                     }
+                } else {
+                    // Para usuarios con permiso especial: deshabilitar fechas ya reportadas y semanas que ya alcanzaron el límite semanal
+                    flatpickrConfig.disable = [
+                        function(date) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const dateStr = `${year}-${month}-${day}`;
+
+                            if (fechasRealizadas.includes(dateStr)) {
+                                return true;
+                            }
+
+                            const startOfWeek = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
+                            const endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
+
+                            const startStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
+                            const endStr = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`;
+
+                            const reportesEnSemana = fechasRealizadas.filter(f => f >= startStr && f <= endStr).length;
+                            return reportesEnSemana >= limiteSemana;
+                        }
+                    ];
                 }
 
                 flatpickr("#fecha_clase_reportada", flatpickrConfig);

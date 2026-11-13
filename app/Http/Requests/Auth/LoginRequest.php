@@ -2,14 +2,14 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
 class LoginRequest extends FormRequest
 {
@@ -19,6 +19,19 @@ class LoginRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Prepare the data for validation.
+     * Sanitiza y normaliza el email a minúsculas y sin espacios iniciales/finales.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('email')) {
+            $this->merge([
+                'email' => Str::lower(trim((string) $this->input('email'))),
+            ]);
+        }
     }
 
     /**
@@ -45,9 +58,13 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        $email = Str::lower(trim((string) $this->input('email')));
+
         // 1. Verificar si el usuario está dado de baja (eliminado lógicamente usando trashed())
-        // Usamos withTrashed() para incluir en la búsqueda a los usuarios que tienen deleted_at
-        $usuario = User::withTrashed()->where('email', $this->input('email'))->first();
+        // Buscamos con LOWER(email) para compatibilidad total con bases de datos sensibles a mayúsculas (como PostgreSQL)
+        $usuario = User::withTrashed()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->first();
 
         // Si el usuario existe, está dado de baja (trashed) y la contraseña ingresada es la correcta
         if ($usuario && $usuario->trashed() && Hash::check($this->input('password'), $usuario->password)) {
@@ -55,7 +72,7 @@ class LoginRequest extends FormRequest
             RateLimiter::clear($this->throttleKey());
 
             // Enviamos un mensaje a la sesión tipo 'danger' que sí permite renderizar enlaces HTML gracias a {!! !!} en status-msn.blade.php
-            session()->flash('danger', 'Esta cuenta ha sido dada de baja. Para reactivarla haz clic <a href="' . route('auth.reactivar', ['email' => $usuario->email]) . '"><b>aquí</b></a>.');
+            session()->flash('danger', 'Esta cuenta ha sido dada de baja. Para reactivarla haz clic <a href="'.route('auth.reactivar', ['email' => $usuario->email]).'"><b>aquí</b></a>.');
 
             // Lanzamos un error genérico en el input para detener el flujo de validación.
             throw ValidationException::withMessages([
@@ -64,8 +81,14 @@ class LoginRequest extends FormRequest
         }
 
         // 2. Intento de inicio de sesión habitual
+        // Usamos el email tal como está registrado en la base de datos si el usuario fue localizado, o el email saneado
+        $credentials = [
+            'email' => $usuario ? $usuario->email : $email,
+            'password' => $this->input('password'),
+        ];
+
         // Auth::attempt() ignora por defecto a los usuarios que están dados de baja, por lo que nunca iniciará sesión acá.
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -104,6 +127,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->input('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower(trim((string) $this->input('email'))).'|'.$this->ip());
     }
 }

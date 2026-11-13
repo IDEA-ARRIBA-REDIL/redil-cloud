@@ -140,6 +140,7 @@ class ConfiguracionGeneralController extends Controller
             'mensaje_existe_auto_matricula' => $validated['mensajeExisteAutoMatricula'] ?? null,
 
             'edad_minima_consolidacion' => $validated['edadMinimaConsolidacion'],
+            'terminologia_personalizada' => $this->procesarTerminologia($configuracion, $validated['terminologia'] ?? []),
 
             // --- Informes Evidencias Grupo ---
             'habilitar_campo_1_informe_evidencias_grupo' => $on('habilitarCampo1InformeEvidenciasGrupo'),
@@ -180,5 +181,27 @@ class ConfiguracionGeneralController extends Controller
         Cache::forget('configuracion_global');
 
         return redirect()->back()->with('success', 'Configuración actualizada correctamente.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $terminologiaInput
+     * @return array<string, string>|null
+     */
+    private function procesarTerminologia(Configuracion $configuracion, array $terminologiaInput): ?array
+    {
+        $terminosActuales = is_array($configuracion->terminologia_personalizada)
+            ? $configuracion->terminologia_personalizada
+            : [];
+
+        foreach ($terminologiaInput as $clave => $valor) {
+            $limpio = is_string($valor) ? trim($valor) : '';
+            if ($limpio === '') {
+                unset($terminosActuales[$clave]);
+            } else {
+                $terminosActuales[$clave] = $limpio;
+            }
+        }
+
+        return empty($terminosActuales) ? null : $terminosActuales;
     }
 }
