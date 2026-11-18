@@ -5,7 +5,7 @@
             <h4 class="mb-1 text-primary">
                 Gestión de Recursos: <span class="text-black fw-normal">{{ $nombreMateria }}</span>
             </h4>
-            <p class="mb-0"><small>Aquí puedes gestionar los recursos de para tus alumnos.</small></p>
+            <p class="mb-0"><small>Aquí puedes gestionar los recursos de para tus estudiantes.</small></p>
         </div>
         <div class="d-flex justify-content-end mb-3">
         <button class="btn btn-primary rounded-pill" wire:click="abrirModalCrear">

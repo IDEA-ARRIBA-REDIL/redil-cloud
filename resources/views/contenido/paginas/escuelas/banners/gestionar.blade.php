@@ -26,7 +26,7 @@
 
 @section('content')
     <h4 class="mb-1 fw-semibold text-primary">Gestión de banners</h4>
-    <p class="text-black">Crea, actualiza y administra los banners informativos que se mostrarán a los alumnos.</p>
+    <p class="text-black">Crea, actualiza y administra los banners informativos que se mostrarán a los estudiantes.</p>
 
     {{-- Aquí se renderizará nuestro nuevo componente de Livewire --}}
    

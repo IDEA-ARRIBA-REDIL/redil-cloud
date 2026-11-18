@@ -77,7 +77,6 @@ class GestionarHomologaciones extends Component
 
     public $tiposUsuariosDisponibles = [];
 
-
     // Reglas de validación para los formularios.
     protected $rules = [
         'sedeHomologacionId' => 'required|exists:sedes,id',
@@ -93,7 +92,7 @@ class GestionarHomologaciones extends Component
         'sedeHomologacionId.required' => 'Debes seleccionar una sede.',
         'observacionHomologacion.required' => 'La observación es obligatoria.',
         'observacionHomologacion.min' => 'La observación debe tener al menos 10 caracteres.',
-        'alumnoSeleccionadoId.required' => 'Debes seleccionar un alumno.',
+        'alumnoSeleccionadoId.required' => 'Debes seleccionar un estudiante.',
         'escuelaSeleccionadaId.required' => 'Debes seleccionar una escuela.',
         'estadoHomologacion.required' => 'Debes seleccionar el estado de la homologación.',
         'notaHomologacion.required_if' => 'La nota es obligatoria cuando el estado es Aprobado.',
@@ -134,7 +133,7 @@ class GestionarHomologaciones extends Component
             'alumnoSeleccionadoId' => 'required',
             'escuelaSeleccionadaId' => 'required',
         ], [
-            'alumnoSeleccionadoId.required' => 'Debes seleccionar un alumno para poder buscar.',
+            'alumnoSeleccionadoId.required' => 'Debes seleccionar un estudiante para poder buscar.',
             'escuelaSeleccionadaId.required' => 'Debes seleccionar una escuela para poder buscar.',
         ]);
 
@@ -339,7 +338,7 @@ class GestionarHomologaciones extends Component
         }
 
         $this->dispatch('confirmar-homologacion', [
-            'alumno' => $alumno ? trim($alumno->nombre(4)) : 'Alumno seleccionado',
+            'alumno' => $alumno ? trim($alumno->nombre(4)) : 'Estudiante seleccionado',
             'item' => $nombreItem,
             'tipo' => $this->modo === 'materias' ? 'Materia' : 'Nivel',
             'estado' => $estadoNombre,

@@ -66,7 +66,7 @@
             event.preventDefault();
             Swal.fire({
                 title: '¿Estás seguro?',
-                text: "Esta acción iniciará el cálculo final de notas y asistencias para todos los alumnos de este periodo. No se puede revertir.",
+                text: "Esta acción iniciará el cálculo final de notas y asistencias para todos los estudiantes de este periodo. No se puede revertir.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Sí, finalizar periodo',
@@ -148,29 +148,29 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
-                                <a href="{{ route('periodo.dashboard', $periodo->id) }}" class="dropdown-item">
+                                <a href="{{ route('periodo.dashboard', $periodo->id) }}" class="dropdown-item d-flex align-items-center text-nowrap">
                                     <i class="ti ti-chart-bar me-2"></i> Dashboard del periodo
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('periodo.dashboard-horarios', $periodo->id) }}" class="dropdown-item">
+                                <a href="{{ route('periodo.dashboard-horarios', $periodo->id) }}" class="dropdown-item d-flex align-items-center text-nowrap">
                                     <i class="ti ti-calendar-time me-2"></i> Dashboard de horarios
                                 </a>
                             </li>
                              @if( $rolActivo->hasPermissionTo('escuelas.opcion_modificar_periodo'))
                             <li>
-                                <a href="{{ route('periodo.actualizar', $periodo->id) }}" class="dropdown-item">
-                                    Gestionar
+                                <a href="{{ route('periodo.actualizar', $periodo->id) }}" class="dropdown-item d-flex align-items-center text-nowrap">
+                                    <i class="ti ti-settings me-2"></i> Gestionar
                                 </a>
                             </li>
                             @endif
                              <li>
-                                <a href="{{ route('periodo.alumnos', $periodo->id) }}" class="dropdown-item">
-                                    Listado alumnos
+                                <a href="{{ route('periodo.alumnos', $periodo->id) }}" class="dropdown-item d-flex align-items-center text-nowrap">
+                                    <i class="ti ti-users me-2"></i> Listado estudiantes
                                 </a>
                             </li>
                              <li>
-                                <a href="{{ route('periodo.exportarHorarios', $periodo->id) }}" class="dropdown-item">
+                                <a href="{{ route('periodo.exportarHorarios', $periodo->id) }}" class="dropdown-item d-flex align-items-center text-nowrap">
                                     <i class="ti ti-file-spreadsheet me-2"></i> Exportar horarios (Excel)
                                 </a>
                             </li>
@@ -178,8 +178,8 @@
 
                             @if( $rolActivo->hasPermissionTo('escuelas.opcion_eliminar_periodo'))
                             <li>
-                                <a href="" class="dropdown-item">
-                                    Eliminar
+                                <a href="" class="dropdown-item d-flex align-items-center text-nowrap text-danger">
+                                    <i class="ti ti-trash me-2"></i> Eliminar
                                 </a>
                             </li>
                             @endif
@@ -187,15 +187,15 @@
                             <li>
                                 <form action="{{ route('periodo.activar', $periodo->id) }}" method="POST" class="form-activar-periodo">
                                     @csrf
-                                    <button type="submit" class="dropdown-item ">
-                                        Activar periodo
+                                    <button type="submit" class="dropdown-item d-flex align-items-center text-nowrap">
+                                        <i class="ti ti-circle-check me-2"></i> Activar periodo
                                     </button>
                                 </form>
                             </li>
 
                             <li>
-                                <a href="{{ route('periodo.informe-final', $periodo->id) }}" class="dropdown-item">
-                                    Informe final
+                                <a href="{{ route('periodo.informe-final', $periodo->id) }}" class="dropdown-item d-flex align-items-center text-nowrap">
+                                    <i class="ti ti-file-analytics me-2"></i> Informe final
                                 </a>
                             </li>
 
@@ -207,25 +207,23 @@
                                 <li>
                                     <form action="{{ route('periodo.finalizar', $periodo->id) }}" method="POST" class="form-finalizar-periodo">
                                         @csrf
-                                        <button type="submit" class="dropdown-item ">
-                                            Finalizar periodo
+                                        <button type="submit" class="dropdown-item d-flex align-items-center text-nowrap">
+                                            <i class="ti ti-circle-x me-2"></i> Finalizar periodo
                                         </button>
                                     </form>
                                 </li>
                                 @endif
                             @endif
                             {{-- === FIN DE LA NUEVA SECCIÓN === --}}
-                            <li>
-                                {{-- Asegúrate que la ruta de eliminación exista y maneje el método DELETE --}}
-                                {{-- <form action="{{ route('periodo.eliminar', $periodo->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este periodo?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="dropdown-item text-danger confirmacionEliminar"
-                                    data-nombre="{{ $periodo->nombre }}">
-                                    Eliminar
-                                </button>
-                                </form> --}}
-                            </li>
+                            {{-- Asegúrate que la ruta de eliminación exista y maneje el método DELETE --}}
+                            {{-- <form action="{{ route('periodo.eliminar', $periodo->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este periodo?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="dropdown-item text-danger confirmacionEliminar"
+                                data-nombre="{{ $periodo->nombre }}">
+                                Eliminar
+                            </button>
+                            </form> --}}
                         </ul>
                     </div>
 

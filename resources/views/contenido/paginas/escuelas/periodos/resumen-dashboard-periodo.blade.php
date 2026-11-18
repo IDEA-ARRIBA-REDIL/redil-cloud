@@ -148,7 +148,7 @@
     <div class="card mb-4 border shadow-none rounded-3">
         <div class="card-body p-3">
             <h5 class="mb-1 text-dark fw-bold">Detalle por nivel</h5>
-            <p class="text-muted small mb-3">Personas únicas dentro de cada nivel. Un alumno puede aparecer en varios niveles; sus cantidades no se suman al total general.</p>
+            <p class="text-muted small mb-3">Personas únicas dentro de cada nivel. Un estudiante puede aparecer en varios niveles; sus cantidades no se suman al total general.</p>
             <div class="table-responsive border rounded-3 dashed-border">
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
@@ -431,7 +431,7 @@
                                                             <div class="col-12 col-sm-6 col-xl-3">
                                                                 <h6 class="small fw-bold mb-1">Asistencias registradas</h6>
                                                                 <div id="grafico-asistencias-{{ $sedeId }}-{{ $materia['id'] }}" class="apex-chart-container" data-presentes="{{ $materia['presentes'] }}" data-ausentes="{{ $materia['ausentes'] }}"></div>
-                                                                <p class="text-muted small mt-1" style="font-size: 0.75rem;">{{ $materia['promedioAsistencias'] === null ? 'No hay registros de asistencia.' : $materia['promedioAsistencias'].' asistencias por alumno en promedio.' }}</p>
+                                                                <p class="text-muted small mt-1" style="font-size: 0.75rem;">{{ $materia['promedioAsistencias'] === null ? 'No hay registros de asistencia.' : $materia['promedioAsistencias'].' asistencias por estudiante en promedio.' }}</p>
                                                             </div>
                                                         </div>
                                                     @else
@@ -479,7 +479,7 @@
                     </div>
                 @endforeach
             </div>
-            <p class="text-muted small mt-3 mb-1" style="font-size: 0.75rem;">Se cuentan casos alumno–materia; un caso puede tener varios motivos. Los criterios de nota requieren una nota mínima y ponderaciones que sumen 100%.</p>
+            <p class="text-muted small mt-3 mb-1" style="font-size: 0.75rem;">Se cuentan casos estudiante–materia; un caso puede tener varios motivos. Los criterios de nota requieren una nota mínima y ponderaciones que sumen 100%.</p>
             <p class="text-muted small mb-0" style="font-size: 0.75rem;">Se excluyeron {{ $dashboard['excluidas'] }} matrículas eliminadas, anuladas, rechazadas o sin estado de pago. Las pendientes de pago vigentes sí se incluyen, como en el cierre académico. La consulta no modifica calificaciones ni finaliza el periodo.</p>
         </div>
     </div>
@@ -506,7 +506,7 @@
                                             <option value="{{ $sedeOpt['id'] }}">{{ $sedeOpt['nombre'] }}</option>
                                         @endforeach
                                     </select>
-                                    <p class="text-muted small mt-3 mb-0">El archivo tendrá una hoja por horario de esta sede, con la nota acumulada final, las asistencias finales y el resultado de cada estudiante. La sede corresponde al aula del horario, no a la sede personal del alumno.</p>
+                                    <p class="text-muted small mt-3 mb-0">El archivo tendrá una hoja por horario de esta sede, con la nota acumulada final, las asistencias finales y el resultado de cada estudiante. La sede corresponde al aula del horario, no a la sede personal del estudiante.</p>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button>

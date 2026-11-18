@@ -647,75 +647,72 @@ $configData = Helper::appClasses();
       <div class="col equal-height-col col-12 col-xl-4 col-lg-6 col-md-6" id="peticion-card-{{ $peticion->id }}">
         <div class="card rounded-3 shadow">
           
-          <div class="card-header border-bottom d-flex align-items-center px-4 pt-3 pb-2" style="background-color:#F9F9F9!important">
-            @if($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores') || $rolActivo->hasPermissionTo('peticiones.opcion_eliminacion_masiva'))
-              <div class="form-check me-2 mb-0">
-                <input class="form-check-input check-peticion" type="checkbox" value="{{ $peticion->id }}" id="checkPeticion{{ $peticion->id }}" onchange="actualizarSeleccion()">
-              </div>
-            @endif
-            <div class="flex-fill row">
-              <div class="d-flex justify-content-between align-items-center">
-
-                <div class="d-flex flex-column">
-                  <h5 class="fw-semibold ms-1 text-black m-0 line-clamp-1" title="{{ $peticion->nombreUsuario }}">
-                    {{ $peticion->nombreUsuario }}
-                  </h5>             
-                  <small class="text-black ms-1"><i>Fecha:</i> {{ $peticion->fecha ?? 'Sin fecha' }} </small>
-                </div>
-
-                <span class="badge rounded-pill fw-light mt-1 me-1 bg-label-primary">
-                  {{ $peticion->tipoPeticion ? $peticion->tipoPeticion->nombre : 'No definido'}}
-                </span>
-                @if($peticion->formularioUsuario)
-                  <span class="badge rounded-pill fw-light mt-1 me-1 bg-label-info" title="Registro desde formulario de usuario">
-                    <i class="ti ti-forms me-1"></i>{{ $peticion->formularioUsuario->titulo ?? $peticion->formularioUsuario->nombre }}
-                  </span>
+          <div class="card-header border-bottom px-3 px-sm-4 pt-3 pb-2" style="background-color:#F9F9F9!important">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+              <div class="d-flex align-items-start gap-2 flex-grow-1" style="min-width: 0;">
+                @if($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores') || $rolActivo->hasPermissionTo('peticiones.opcion_eliminacion_masiva'))
+                  <div class="form-check mt-1 mb-0 flex-shrink-0">
+                    <input class="form-check-input check-peticion" type="checkbox" value="{{ $peticion->id }}" id="checkPeticion{{ $peticion->id }}" onchange="actualizarSeleccion()">
+                  </div>
                 @endif
+                <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
+                  <h5 class="fw-semibold text-black m-0 text-truncate" title="{{ $peticion->nombreUsuario }}">
+                    {{ $peticion->nombreUsuario }}
+                  </h5>
+                  <small class="text-black text-nowrap"><i>Fecha:</i> {{ $peticion->fecha ?? 'Sin fecha' }}</small>
+                </div>
+              </div>
+
+              <div class="dropdown zindex-2 flex-shrink-0">
+                <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i></button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  @if($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores'))
+                    <li><a class="dropdown-item" href="javascript:void(0);" onclick="Livewire.dispatch('modalAsignarIntercesor', { peticionId: '{{$peticion->id}}'})">Asignar a intercesor</a></li>
+                  @endif
+                  @if($rolActivo->hasPermissionTo('peticiones.opcion_eliminar'))
+                    <li><a class="dropdown-item text-danger" href="javascript:void(0);" onclick="confirmarEliminacion('{{$peticion->id}}')">Eliminar</a></li>
+                  @endif
+                  @if(!$rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores') && !$rolActivo->hasPermissionTo('peticiones.opcion_eliminar'))
+                    <li><a class="dropdown-item disabled" href="javascript:void(0);">Sin acciones</a></li>
+                  @endif
+                </ul>
               </div>
             </div>
 
-            <div class="">
-              <div class="ms-auto">
-                <div class="dropdown zindex-2 p-1 float-end">
-                  <button type="button" class="btn btn-sm rounded-pill btn-icon btn-outline-secondary waves-effect" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-dots-vertical"></i> </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    @if($rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores'))
-                      <li><a class="dropdown-item" href="javascript:void(0);" onclick="Livewire.dispatch('modalAsignarIntercesor', { peticionId: '{{$peticion->id}}'})">Asignar a intercesor</a></li>
-                    @endif
-                    @if($rolActivo->hasPermissionTo('peticiones.opcion_eliminar'))
-                      <li><a class="dropdown-item text-danger" href="javascript:void(0);" onclick="confirmarEliminacion('{{$peticion->id}}')">Eliminar</a></li>
-                    @else
-                    @endif
-                    @if(!$rolActivo->hasPermissionTo('peticiones.subitem_gestionar_intercesores') && !$rolActivo->hasPermissionTo('peticiones.opcion_eliminar'))
-                      <li><a class="dropdown-item disabled" href="javascript:void(0);">Sin acciones</a></li>
-                    @endif
-                  </ul>
-                </div>
-              </div>
+            <div class="d-flex flex-wrap align-items-center gap-1 mt-2">
+              <span class="badge rounded-pill fw-light bg-label-primary text-truncate" style="max-width: 100%;" title="{{ $peticion->tipoPeticion ? $peticion->tipoPeticion->nombre : 'No definido'}}">
+                {{ $peticion->tipoPeticion ? $peticion->tipoPeticion->nombre : 'No definido'}}
+              </span>
+              @if($peticion->formularioUsuario)
+                <span class="badge rounded-pill fw-light bg-label-info d-inline-flex align-items-center text-truncate" style="max-width: 100%;" title="Registro desde formulario de usuario: {{ $peticion->formularioUsuario->titulo ?? $peticion->formularioUsuario->nombre }}">
+                  <i class="ti ti-forms me-1 flex-shrink-0"></i>
+                  <span class="text-truncate">{{ $peticion->formularioUsuario->titulo ?? $peticion->formularioUsuario->nombre }}</span>
+                </span>
+              @endif
             </div>
           </div>
 
           <div class="card-body">
             <div class="row mt-4">
               
-              <div class="col-6 d-flex flex-column mb-3">
+              <div class="col-6 d-flex flex-column mb-3" style="min-width: 0;">
                 <small class="text-black">Creada por</small>
-                <div class="d-flex align-items-center mt-1">
-                  <div class="avatar avatar-sm me-2">
+                <div class="d-flex align-items-center mt-1" style="min-width: 0;">
+                  <div class="avatar avatar-sm me-2 flex-shrink-0">
                     @if($peticion->autorCreacion && !empty($peticion->autorCreacion->foto) && !in_array($peticion->autorCreacion->foto, ['default-m.png', 'default-f.png']))
                       <img class="rounded-circle" src="{{ tenant_asset('img/usuarios/foto-usuario/'.$peticion->autorCreacion->foto) }}" alt="foto">
                     @else
                       <span class="avatar-initial rounded-circle bg-label-primary">{{ $peticion->autorCreacion ? $peticion->autorCreacion->inicialesNombre() : 'AG' }}</span>
                     @endif
                   </div>
-                  <small class="fw-semibold text-black ">{{ $peticion->usuarioCreacion ?? 'No especificado'}}</small>
+                  <small class="fw-semibold text-black text-truncate" title="{{ $peticion->usuarioCreacion ?? 'No especificado'}}">{{ $peticion->usuarioCreacion ?? 'No especificado'}}</small>
                 </div>
               </div>
 
-              <div class="col-6 d-flex flex-column mb-3">
+              <div class="col-6 d-flex flex-column mb-3" style="min-width: 0;">
                 <small class="text-black">Asignada a</small>
-                <div class="d-flex align-items-center mt-1">
-                  <div class="avatar avatar-sm me-2">
+                <div class="d-flex align-items-center mt-1" style="min-width: 0;">
+                  <div class="avatar avatar-sm me-2 flex-shrink-0">
                     @if($peticion->asignado && !empty($peticion->asignado->foto) && !in_array($peticion->asignado->foto, ['default-m.png', 'default-f.png']))
                       <img class="rounded-circle" src="{{ tenant_asset('img/usuarios/foto-usuario/'.$peticion->asignado->foto) }}" alt="foto">
                     @elseif($peticion->asignado)

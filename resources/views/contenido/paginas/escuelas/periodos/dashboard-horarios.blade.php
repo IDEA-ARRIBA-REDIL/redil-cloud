@@ -172,7 +172,7 @@
                             formatter: function (val, opt) {
                                 const pct = porcentajesSedes[opt.dataPointIndex] !== undefined ? porcentajesSedes[opt.dataPointIndex] : 0;
                                 const insc = inscritosSedes[opt.dataPointIndex] !== undefined ? inscritosSedes[opt.dataPointIndex] : 0;
-                                return val + (val === 1 ? ' horario' : ' horarios') + ' (' + pct + '% del periodo) · ' + insc + ' alumnos inscritos';
+                                return val + (val === 1 ? ' horario' : ' horarios') + ' (' + pct + '% del periodo) · ' + insc + ' estudiantes inscritos';
                             }
                         }
                     }

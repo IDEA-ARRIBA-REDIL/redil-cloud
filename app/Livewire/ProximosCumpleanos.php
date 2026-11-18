@@ -4,48 +4,68 @@ namespace App\Livewire;
 
 use App\Models\Configuracion;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class ProximosCumpleanos extends Component
 {
     public function render()
     {
-        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-        $personas = collect();
+        $usuario = auth()->user();
+        $rolActivo = $usuario?->roles()->wherePivot('activo', true)->first();
+        $proximosCumpleanos = collect();
 
-        if ($rolActivo) {
-            if (
-                $rolActivo->hasPermissionTo('personas.lista_asistentes_todos') ||
-                $rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')
-            ) {
-                // 1. Discípulos si tiene permiso ministerial
-                if ($rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')) {
-                    $personas = auth()->user()->discipulos('sin-eliminados', false);
+        if ($usuario && $rolActivo) {
+            $tienePermisoCumpleanos = false;
+            try {
+                $tienePermisoCumpleanos = $rolActivo->hasPermissionTo('dashboard.ver_cumpleanos');
+            } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
+                $tienePermisoCumpleanos = false;
+            }
+
+            $tienePermisoTodos = $rolActivo->hasPermissionTo('personas.lista_asistentes_todos');
+            $tienePermisoMinisterio = $rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio');
+
+            if ($tienePermisoCumpleanos || $tienePermisoTodos || $tienePermisoMinisterio) {
+                $hoy = now();
+                $mesDiaHoy = ($hoy->month * 100) + $hoy->day;
+                $driver = DB::connection()->getDriverName();
+
+                $query = User::query()
+                    ->select([
+                        'users.id',
+                        'users.primer_nombre',
+                        'users.segundo_nombre',
+                        'users.primer_apellido',
+                        'users.fecha_nacimiento',
+                        'users.foto',
+                        'users.genero',
+                    ])
+                    ->whereNotNull('users.fecha_nacimiento');
+
+                // Si no tiene permiso global ni es pastor principal, limitar a sus discípulos
+                if (! $tienePermisoTodos && ! $usuario->iglesiaEncargada()->exists()) {
+                    $discipulosQuery = $usuario->discipulos('sin-eliminados', false, true);
+                    $discipulosQuery->getQuery()->columns = ['users.id'];
+                    $query->whereIn('users.id', $discipulosQuery->getQuery());
                 }
 
-                // 2. Todos los usuarios activos si tiene permiso general
-                if ($rolActivo->hasPermissionTo('personas.lista_asistentes_todos')) {
-                    $personas = User::query()
-                        ->whereNotNull('fecha_nacimiento')
-                        ->get();
+                if ($driver === 'pgsql') {
+                    $exprMesDia = '(EXTRACT(MONTH FROM users.fecha_nacimiento) * 100 + EXTRACT(DAY FROM users.fecha_nacimiento))';
+                } elseif ($driver === 'sqlite') {
+                    $exprMesDia = "(CAST(strftime('%m', users.fecha_nacimiento) AS INTEGER) * 100 + CAST(strftime('%d', users.fecha_nacimiento) AS INTEGER))";
+                } else {
+                    $exprMesDia = '(MONTH(users.fecha_nacimiento) * 100 + DAY(users.fecha_nacimiento))';
                 }
+
+                $proximosCumpleanos = $query
+                    ->orderByRaw("CASE WHEN {$exprMesDia} >= ? THEN 0 ELSE 1 END ASC", [$mesDiaHoy])
+                    ->orderByRaw("{$exprMesDia} ASC")
+                    ->orderBy('users.primer_nombre', 'asc')
+                    ->limit(20)
+                    ->get();
             }
         }
-
-        $hoy = now();
-
-        $proximosCumpleanos = $personas
-            ->whereNotNull('fecha_nacimiento')
-            ->sortBy(function ($usuario) use ($hoy) {
-                $cumpleEsteAnio = $usuario->fecha_nacimiento->copy()->setYear($hoy->year);
-
-                if ($cumpleEsteAnio->isBefore($hoy->startOfDay())) {
-                    return $cumpleEsteAnio->addYear();
-                }
-
-                return $cumpleEsteAnio;
-            })
-            ->take(20);
 
         return view('livewire.proximos-cumpleanos', [
             'proximosCumpleanos' => $proximosCumpleanos,

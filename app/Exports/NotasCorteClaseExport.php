@@ -91,7 +91,7 @@ class NotasCorteClaseExport implements FromCollection, ShouldAutoSize, WithHeadi
     {
         $encabezados = [
             'Identificación',
-            'Alumno',
+            'Estudiante',
         ];
 
         foreach ($this->items()->where('corte_periodo_id', $this->cortePeriodo->id) as $item) {

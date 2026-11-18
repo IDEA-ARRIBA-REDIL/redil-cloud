@@ -2,7 +2,7 @@
 @section('isEscuelasModule', true)
 @extends('layouts.layoutMaster')
 
-@section('title', 'Gestionar Alumno: ' . ($alumno->nombre(3) ?? 'Alumno'))
+@section('title', 'Gestionar Estudiante: ' . ($alumno->nombre(3) ?? 'Estudiante'))
 
 @section('vendor-style')
     @vite(['resources/assets/vendor/libs/sweetalert2/sweetalert2.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss'])
@@ -58,7 +58,7 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
             <h4 class="mb-1 fw-bold text-primary">
-                <i class="mdi mdi-account-school me-2"></i>Gestionar Alumno:
+                <i class="mdi mdi-account-school me-2"></i>Gestionar Estudiante:
                 <span class="text-black fw-normal">{{ $alumno->nombre(3) }}</span>
             </h4>
             <p class="mb-0 text-muted">
@@ -224,7 +224,7 @@
                                     <tr>
                                         <td colspan="3" class="text-center text-muted py-4">
                                             <i class="mdi mdi-calendar-blank mdi-24px d-block mb-1"></i>
-                                            No hay reportes de asistencia registrados para este alumno en este curso.
+                                            No hay reportes de asistencia registrados para este estudiante en este curso.
                                         </td>
                                     </tr>
                                 @endforelse
@@ -341,7 +341,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-transparent py-3 border-bottom">
                     <h5 class="mb-0 fw-bold text-dark fs-6">
-                        <i class="mdi mdi-school-outline text-primary me-2"></i>Historial Educativo General del Alumno
+                        <i class="mdi mdi-school-outline text-primary me-2"></i>Historial Educativo General del Estudiante
                     </h5>
                 </div>
                 <div class="card-body py-4">
@@ -430,7 +430,7 @@
                         </div>
                     @else
                         <div class="alert alert-info text-center mb-0" role="alert">
-                            <i class="mdi mdi-information-outline me-1"></i>No hay historial educativo disponible para este alumno.
+                            <i class="mdi mdi-information-outline me-1"></i>No hay historial educativo disponible para este estudiante.
                         </div>
                     @endif
                 </div>

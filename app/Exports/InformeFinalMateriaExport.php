@@ -2,21 +2,22 @@
 
 namespace App\Exports;
 
-use App\Models\MateriaPeriodo;
 use App\Models\MateriaAprobadaUsuario;
+use App\Models\MateriaPeriodo;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Illuminate\Support\Facades\DB;
 
-class InformeFinalMateriaExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
+class InformeFinalMateriaExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping
 {
     protected MateriaPeriodo $materiaPeriodo;
 
     /**
      * El constructor recibe la MateriaPeriodo para la cual se generará el reporte.
-     * @param MateriaPeriodo $materiaPeriodo La materia del periodo para el informe.
+     *
+     * @param  MateriaPeriodo  $materiaPeriodo  La materia del periodo para el informe.
      */
     public function __construct(MateriaPeriodo $materiaPeriodo)
     {
@@ -26,13 +27,12 @@ class InformeFinalMateriaExport implements FromQuery, WithHeadings, WithMapping,
     /**
      * Define los encabezados de las columnas en el archivo Excel.
      * Se añaden las columnas de identificación, estado de bloqueo, traslado y motivo de reprobación.
-     * @return array
      */
     public function headings(): array
     {
         return [
-            'Identificación del Alumno',
-            'Nombre del Alumno',
+            'Identificación del Estudiante',
+            'Nombre del Estudiante',
             'Materia',
             'Horario',
             'Aula',
@@ -50,6 +50,7 @@ class InformeFinalMateriaExport implements FromQuery, WithHeadings, WithMapping,
      * Prepara la consulta a la base de datos para obtener los datos.
      * Se modifica la consulta para incluir la identificación, el estado de bloqueo,
      * el motivo de reprobación y una subconsulta para verificar si el alumno fue trasladado a este horario.
+     *
      * @return \Illuminate\Database\Query\Builder
      */
     public function query()
@@ -91,14 +92,14 @@ class InformeFinalMateriaExport implements FromQuery, WithHeadings, WithMapping,
     /**
      * Mapea y formatea cada fila de la consulta a las columnas del Excel.
      * Se ajusta el mapeo para incluir los nuevos campos en el orden definido en los encabezados.
-     * @param mixed $resultado El resultado de la consulta para una fila.
-     * @return array
+     *
+     * @param  mixed  $resultado  El resultado de la consulta para una fila.
      */
     public function map($resultado): array
     {
         return [
             $resultado->identificacion,
-            trim($resultado->primer_nombre . ' ' . $resultado->segundo_nombre . ' ' . $resultado->primer_apellido . ' ' . $resultado->segundo_apellido),
+            trim($resultado->primer_nombre.' '.$resultado->segundo_nombre.' '.$resultado->primer_apellido.' '.$resultado->segundo_apellido),
             $this->materiaPeriodo->materia->nombre,
             $resultado->horario_texto,
             $resultado->nombre_aula,

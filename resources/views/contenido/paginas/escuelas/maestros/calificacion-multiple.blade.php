@@ -80,12 +80,12 @@
                     }
 
                     console.log(
-                        `Calificar Alumno ID: ${alumnoId}, Item ID: ${itemId}, Nota: ${notaValor}`
+                        `Calificar Estudiante ID: ${alumnoId}, Item ID: ${itemId}, Nota: ${notaValor}`
                     );
                     Swal.fire({
                         icon: 'success',
                         title: 'Nota',
-                        text: `Nota ${notaValor} para Item ID ${itemId} del Alumno ID ${alumnoId} sería guardada.`,
+                        text: `Nota ${notaValor} para Item ID ${itemId} del Estudiante ID ${alumnoId} sería guardada.`,
                         timer: 2000,
                         showConfirmButton: false
                     });

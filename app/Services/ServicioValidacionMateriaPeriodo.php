@@ -103,7 +103,7 @@ class ServicioValidacionMateriaPeriodo
 
         return $matriculas->groupBy('user_id')->map(function (Collection $inscripciones) use ($materiaPeriodo, $notas, $asistencias): object {
             if ($inscripciones->pluck('horario_materia_periodo_id')->unique()->count() > 1) {
-                throw new \RuntimeException('Hay alumnos inscritos en varios horarios de la misma materia. Revisa sus matrículas antes de cerrar.');
+                throw new \RuntimeException('Hay estudiantes inscritos en varios horarios de la misma materia. Revisa sus matrículas antes de cerrar.');
             }
             $matricula = $inscripciones->first();
             $clave = $matricula->user_id.'-'.$matricula->horario_materia_periodo_id;

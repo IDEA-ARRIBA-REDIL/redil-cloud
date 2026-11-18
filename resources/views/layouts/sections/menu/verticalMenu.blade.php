@@ -270,7 +270,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasAnyPermission(['grupos.item_grupos', 'grupos.subitem_lista_grupos', 'grupos.subitem_nuevo_grupo', 'reportes_grupos.subitem_lista_reportes_grupo', 'grupos.subitem_grafico_ministerio', 'grupos.subitem_mapa_grupos', 'grupos.subitem_excluir_asistentes_grupos', 'grupos.subitem_informe_administrativo_de_evidencia_de_grupos', 'grupos.subitem_dashboard', 'grupos.subitem_lista_informes_grupo']))
+        @if ($rolActivo->hasAnyPermission(['grupos.item_grupos', 'grupos.subitem_lista_grupos', 'grupos.subitem_nuevo_grupo', 'reportes_grupos.subitem_lista_reportes_grupo', 'grupos.subitem_grafico_ministerio', 'grupos.subitem_mapa_grupos', 'grupos.subitem_excluir_asistentes_grupos', 'grupos.subitem_informe_administrativo_de_evidencia_de_grupos', 'grupos.subitem_dashboard', 'grupos.subitem_lista_informes_grupo']) || auth()->id() == 1)
             <li class="menu-item {{ request()->routeIs('grupo.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-atom-2"></i>
@@ -346,6 +346,14 @@
                         <li class="menu-item">
                             <a href="{{ route('informe.lista', 1) }}" class="menu-link">
                                 <div>Informes</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if (auth()->id() == 1)
+                        <li class="menu-item {{ request()->routeIs('grupo.solicitudesIngreso') ? 'active' : '' }}">
+                            <a href="{{ route('grupo.solicitudesIngreso') }}" class="menu-link">
+                                <div>Solicitudes de ingreso</div>
                             </a>
                         </li>
                     @endif

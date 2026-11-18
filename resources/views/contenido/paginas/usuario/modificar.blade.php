@@ -445,6 +445,7 @@ $configData = Helper::appClasses();
           'label' => $campo->nombre,
           'nameId' => $campo->name_id,
           'formulario' => $formulario,
+          'requerido' => $campo->pivot->requerido,
           ])
           @endif
           <!-- fecha nacimiento -->

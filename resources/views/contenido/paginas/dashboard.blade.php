@@ -501,25 +501,6 @@
 
 @section('content')
 
-
-
-    <!-- Offcanvas de Cumpleaños -->
-    <div style="" class="offcanvas offcanvas-end theme-bg-secondary" tabindex="-1" id="offcanvasBirthday"
-        aria-labelledby="offcanvasBirthdayLabel">
-        <div class="offcanvas-header d-flex align-items-center justify-content-between px-2">
-
-            <button type="button" class="btn text-white" data-bs-dismiss="offcanvas">
-                <i class="ti ti-x"></i>
-            </button>
-            <h5 id="offcanvasBirthdayLabel" class="offcanvas-title text-white fw-semibold">
-                <i class="ti ti-cake me-2 ti-xl"></i>
-            </h5>
-        </div>
-        <div class="offcanvas-body">
-            @livewire('proximos-cumpleanos', [])
-        </div>
-    </div>
-
     <div class="">
 
         <div class="dashboard-header ajuste">
@@ -529,40 +510,7 @@
         <div class="row ajuste">
 
             <div class="col-12 col-md-6">
-                <div class="action-buttons-container pt-5">
-                    <!-- Botón 1 -->
-                    <div class="action-card">
-                        <div class="action-icon-container">
-                            <a href="{{ route('escuelas.dashboard') }}">
-                                <img src="{{ Storage::disk('global_media')->url('Funcionalidad-escuelas.png') }}"
-                                    style="width: 45px; height: 45px; object-fit: contain;">
-                            </a>
-                        </div>
-                        <p class="action-title">Academia</p>
-                    </div>
-
-                    <!-- Botón 2 -->
-                    <div class="action-card">
-                        <div class="action-icon-container">
-                            <a href="{{ request()->routeIs('grupo.lista') ? 'active' : '' }}">
-                                <img src="{{ Storage::disk('global_media')->url('Funcionalidad-grupos.png') }}"
-                                    style="width: 45px; height: 45px; object-fit: contain;">
-                            </a>
-                        </div>
-                        <p class="action-title">Grupos</p>
-                    </div>
-
-                    <!-- Botón 3: Cumpleaños -->
-                    <div>
-                        <div class="action-card" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBirthday">
-                            <div class="action-icon-container">
-                                <img src="{{ Storage::disk('global_media')->url('Funcionalidad-cumpleaños.png') }}"
-                                    style="width: 45px; height: 45px; object-fit: contain;">
-                            </div>
-                            <p class="action-title">Cumpleaños</p>
-                        </div>
-                    </div>
-                </div>
+                @livewire('dashboard.acciones-dashboard')
             </div>
 
             <div class="col-12 col-md-6">
@@ -681,6 +629,52 @@
                 </div>
             </div>
             {{-- Fin notificaciones instalación --}}
+
+            @if ($mostrarModalSolicitudGrupo ?? false)
+                <div id="banner-solicitud-grupo" class="col-12 my-2">
+                    <div
+                        style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 16px;
+                        padding: 14px 18px;
+                        display: flex;
+                        align-items: center;
+                        gap: 14px;
+                        box-shadow: 0 4px 18px rgba(102,126,234,0.3);
+                    ">
+                        <span style="font-size:28px;flex-shrink:0;">👥</span>
+                        <div style="flex:1;">
+                            <p style="margin:0;color:white;font-weight:700;font-size:14px;">¡Haz parte de un grupo!</p>
+                            <p style="margin:0;color:rgba(255,255,255,0.8);font-size:12px;">Camina en comunidad y crece junto
+                                a otros. Envía tu solicitud aquí.</p>
+                        </div>
+                        <a href="{{ route('grupo.solicitudIngreso') }}"
+                            style="
+                            background: white;
+                            color: #667eea;
+                            border: none;
+                            border-radius: 50px;
+                            padding: 8px 16px;
+                            font-size: 13px;
+                            font-weight: 700;
+                            cursor: pointer;
+                            white-space: nowrap;
+                            flex-shrink: 0;
+                            text-decoration: none;
+                        ">Unirme</a>
+                        <button type="button" onclick="document.getElementById('banner-solicitud-grupo').style.display='none'"
+                            style="
+                            background: transparent;
+                            border: none;
+                            color: rgba(255,255,255,0.7);
+                            font-size: 18px;
+                            cursor: pointer;
+                            padding: 0 0 0 4px;
+                            flex-shrink:0;
+                        ">&times;</button>
+                    </div>
+                </div>
+            @endif
 
             <!-- Banner de Gamificación / Perfil del Usuario -->
             @auth
@@ -1038,6 +1032,54 @@
 
             document.addEventListener('livewire:navigated', () => {
                 setTimeout(initTemasSwiper, 100);
+            });
+        </script>
+    @endif
+
+    @if (!session('show_children_modal') && ($mostrarModalSolicitudGrupo ?? false))
+        <div class="modal fade" id="modalMsnSolicitudGrupo" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-md modal-dialog-centered modal-simple">
+                <div class="modal-content p-0">
+                    <div class="modal-header border-bottom d-flex justify-content-between px-5 pb-3">
+                        <p class="text-black fw-semibold mb-0">¿Te gustaría formar parte de un grupo?</p>
+                        <button type="button" class="btn btn-sm" data-bs-dismiss="modal" aria-label="Close"><i
+                                class="ti ti-x ti-sm"></i></button>
+                    </div>
+
+                    <div class="modal-body px-5 py-5">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <small class="text-black">
+                                    Notamos que aún no perteneces a ninguno de nuestros grupos. Creemos que caminar en
+                                    comunidad es fundamental para tu crecimiento. ¿Te gustaría enviar una solicitud para
+                                    unirte a uno?
+                                </small>
+                            </div>
+
+                            <div class="d-flex">
+                                <a href="{{ route('grupo.solicitudIngreso') }}" type="button"
+                                    class="btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light me-1">
+                                    Enviar solicitud
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top p-5">
+                        <button type="button" data-bs-dismiss="modal"
+                            class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const modalSolicitudGrupo = document.getElementById('modalMsnSolicitudGrupo');
+                if (modalSolicitudGrupo) {
+                    const instanciaModalGrupo = new bootstrap.Modal(modalSolicitudGrupo);
+                    instanciaModalGrupo.show();
+                }
             });
         </script>
     @endif

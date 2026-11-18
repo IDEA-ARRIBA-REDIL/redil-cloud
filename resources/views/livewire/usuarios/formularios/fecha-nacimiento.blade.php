@@ -1,10 +1,10 @@
 <!-- fecha nacimiento -->
 <div 
   class="mb-3 {{ $class }}"
-  wire:ignore
   x-data="{
     abierto: false,
     modoManual: false,
+    requerido: {{ $requerido ? 'true' : 'false' }},
     fecha: '',
     textoMostrar: '',
     dia: 1,
@@ -37,17 +37,20 @@
       }
       this.anos = anosArr;
 
-      // Calcular año de referencia inicial
+      // Calcular año de referencia sugerido (para cuando abra el selector)
       const edadMin = {{ $formulario && $formulario->edad_minima ? $formulario->edad_minima : 'null' }};
       const anoDefault = edadMin ? (actualYear - edadMin) : (actualYear - 18);
       this.ano = anoDefault;
 
       this.ajustarDias();
 
-      // Cargar fecha inicial si existe
-      const fechaInicial = '{{ old($nameId, $fecha ? $fecha : $fechaDefault) }}';
+      // Cargar fecha inicial si existe en sesión (old) o en el modelo (edición)
+      const fechaInicial = '{{ old($nameId, $fecha) }}';
       if (fechaInicial) {
         this.setFechaDesdeString(fechaInicial);
+      } else {
+        this.fecha = '';
+        this.textoMostrar = '';
       }
 
       // Escuchar cuando Livewire limpia o actualiza la fecha
@@ -101,7 +104,16 @@
       this.abierto = true;
       document.body.style.overflow = 'hidden';
       
-      // Asegurar que el modal ya esté visible y renderizado al posicionar
+      // Si el campo aún no tenía fecha seleccionada, posicionar en valores sugeridos por defecto
+      if (!this.fecha) {
+        this.dia = 1;
+        this.mes = 1;
+        const actualYear = new Date().getFullYear();
+        const edadMin = {{ $formulario && $formulario->edad_minima ? $formulario->edad_minima : 'null' }};
+        this.ano = edadMin ? (actualYear - edadMin) : (actualYear - 18);
+        this.ajustarDias();
+      }
+
       setTimeout(() => {
         this.posicionarRuedas();
       }, 50);
@@ -113,6 +125,18 @@
     cerrar() {
       this.abierto = false;
       document.body.style.overflow = '';
+      if (this.fecha || !this.requerido) {
+        $wire.desbloquearBtnGuardar();
+      }
+    },
+
+    limpiarFecha() {
+      this.fecha = '';
+      this.textoMostrar = '';
+      this.abierto = false;
+      document.body.style.overflow = '';
+      $wire.set('fecha', '');
+      $wire.desbloquearBtnGuardar();
     },
 
     confirmar() {
@@ -126,6 +150,11 @@
       const mesNombre = mesObj ? mesObj.nombre : '';
       this.textoMostrar = `${diaStr} de ${mesNombre} de ${this.ano}`;
       this.abierto = false;
+
+      const errDiv = document.getElementById('error{{ $nameId }}');
+      if (errDiv) {
+        errDiv.innerHTML = '';
+      }
 
       $wire.set('fecha', fechaStr);
       $wire.validarFecha();
@@ -212,9 +241,22 @@
     }
   }"
 >
-  <label for="fecha_nacimiento" class="form-label">
-    {{ $label }}
-  </label>
+  <div class="d-flex align-items-center justify-content-between mb-1">
+    <label for="fecha_nacimiento" class="form-label mb-0">
+      {{ $label }}
+    </label>
+    <template x-if="!requerido && fecha">
+      <button 
+        type="button" 
+        @click="limpiarFecha()" 
+        class="btn btn-link btn-sm text-danger p-0 text-decoration-none" 
+        style="font-size: 0.8rem; font-weight: 500;"
+        title="Borrar fecha"
+      >
+        <i class="ti ti-trash ti-xs me-1"></i> Borrar fecha
+      </button>
+    </template>
+  </div>
 
   <!-- Input oculto para envío tradicional de formularios POST -->
   <input 
@@ -237,15 +279,17 @@
       style="cursor: pointer; background-color: #fff;" 
       readonly 
       :value="textoMostrar" 
-      placeholder="Selecciona tu fecha de nacimiento" 
+      placeholder="Fecha de nacimiento" 
     />
   </div>
 
-  @if($errors->has($nameId) || $mostrarError == true)
-  <div class="text-danger ti-12px mt-2">
-    <i class="ti ti-circle-x"></i> {{ $errors->first($nameId) ? $errors->first($nameId) : $msnError }}
+  <div id="error{{ $nameId }}">
+    @if($errors->has($nameId) || $mostrarError == true)
+    <div class="text-danger ti-12px mt-2">
+      <i class="ti ti-circle-x"></i> {{ $errors->first($nameId) ? $errors->first($nameId) : $msnError }}
+    </div>
+    @endif
   </div>
-  @endif
 
   <!-- Modal Selector de Ruedas (Drum Roll) - Teleportado a body para centrado absoluto -->
   <template x-teleport="body">
@@ -444,23 +488,36 @@
         </div>
 
         <!-- Botones de Acción -->
-        <div class="d-flex align-items-center justify-content-end gap-2 pt-1 border-top">
-          <button 
-            type="button" 
-            @click="cerrar()" 
-            class="btn rounded-pill px-4 py-2" 
-            style="background-color: #f1f5f9; color: #475569; border: none; font-weight: 600; font-size: 0.9rem;"
-          >
-            Cancelar
-          </button>
-          <button 
-            type="button" 
-            @click="confirmar()" 
-            class="btn rounded-pill px-4 py-2 text-white d-inline-flex align-items-center gap-2" 
-            style="background-color: #138848; border: none; font-weight: 600; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(19, 136, 72, 0.25);"
-          >
-            Confirmar <i class="ti ti-check ti-xs"></i>
-          </button>
+        <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+          <div>
+            <template x-if="!requerido && fecha">
+              <button 
+                type="button" 
+                @click="limpiarFecha()" 
+                class="btn btn-sm rounded-pill px-3 py-2 text-danger d-inline-flex align-items-center gap-1" 
+                style="background-color: #fee2e2; border: none; font-weight: 600; font-size: 0.85rem;"
+                title="Quitar la fecha seleccionada"
+              >
+                <i class="ti ti-trash ti-xs"></i> Dejar vacío
+              </button>
+            </template>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button 
+              type="button" 
+              @click="cerrar()" 
+              class="btn btn-outline-secondary rounded-pill px-4 py-2" 
+            >
+              Cancelar
+            </button>
+            <button 
+              type="button" 
+              @click="confirmar()" 
+              class="btn btn-primary rounded-pill px-4 py-2 text-white d-inline-flex align-items-center gap-2" 
+            >
+              Confirmar <i class="ti ti-check ti-xs"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>

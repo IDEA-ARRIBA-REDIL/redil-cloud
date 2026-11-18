@@ -1005,7 +1005,8 @@
                         'class' => 'col-12',
                         'label' => $campo->nombre,
                         'nameId' => $campo->name_id,
-                        'formulario' => $formularioAutoEditar
+                        'formulario' => $formularioAutoEditar,
+                        'requerido' => $campo->pivot->requerido
                       ])
                     @endif
                     <!-- fecha nacimiento -->

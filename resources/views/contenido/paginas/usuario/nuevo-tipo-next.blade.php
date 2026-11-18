@@ -295,9 +295,25 @@ $configData = Helper::appClasses();
   $(document).ready(function () {
     let actualStep = 1;
     let maximoStep = @json($cantidadTotalSecciones);
+    let validandoPaso = false;
+
+    if (typeof Livewire !== 'undefined' && Livewire.hook) {
+      Livewire.hook('request', ({ fail }) => {
+        fail(() => {
+          validandoPaso = false;
+          $(".next-step").prop('disabled', false);
+        });
+      });
+    }
 
     $(".next-step").click(function () {
+      if (validandoPaso) {
+        return;
+      }
+
       let seccionId = $(this).data('seccion');
+      validandoPaso = true;
+      $(".next-step").prop('disabled', true);
 
       // Obtener los datos de todo el formulario para resolver dependencias entre pasos
       var datosFormulario = $('#formulario').find('input, select, textarea').serializeArray();
@@ -333,10 +349,23 @@ $configData = Helper::appClasses();
     // Escuchar el evento de validación
 
     Livewire.on('validacionFormulario', (e) => {
+      validandoPaso = false;
+      $(".next-step").prop('disabled', false);
+
        // Limpiar errores anteriores
 
       $('.text-danger').remove();
       if (e.resultado) {
+        let $btnPasoActual = $("#step-" + actualStep).find(".next-step");
+        if (!$btnPasoActual.length) {
+          return;
+        }
+
+        let seccionActualId = $btnPasoActual.data('seccion');
+        if (e.seccionId !== undefined && String(e.seccionId) !== String(seccionActualId)) {
+          return;
+        }
+
         // La validación fue exitosa, pasar al siguiente paso
 
         $("#step-" + actualStep).addClass('d-none');
@@ -598,7 +627,8 @@ $configData = Helper::appClasses();
                     'class' => $campo->pivot->class,
                     'label' => $campo->nombre,
                     'nameId' => $campo->name_id,
-                    'formulario' => $formulario
+                    'formulario' => $formulario,
+                    'requerido' => $campo->pivot->requerido
                   ])
                 @endif
                 <!-- fecha nacimiento -->

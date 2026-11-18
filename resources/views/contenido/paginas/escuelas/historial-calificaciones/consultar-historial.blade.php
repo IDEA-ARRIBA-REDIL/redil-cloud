@@ -5,7 +5,7 @@
 
 @section('content')
     <h4 class="mb-1 fw-semibold text-primary">Historial de calificaciones</h4>
-    <p class="text-black">Consulta el registro académico completo de un alumno por escuela.</p>
+    <p class="text-black">Consulta el registro académico completo de un estudiante por escuela.</p>
 
     {{-- El formulario principal engloba toda la lógica --}}
     <form method="GET" action="{{ route('escuelas.historialCalificaciones') }}">
@@ -36,8 +36,8 @@
                     'name' => 'user_id',
                     'tipoBuscador' => 'unico',
                     'queUsuariosCargar' => 'todos',
-                    'label' => '2. Busque y seleccione un alumno',
-                    'placeholder' => 'Escriba el nombre o identificación del alumno...',
+                    'label' => '2. Busque y seleccione un estudiante',
+                    'placeholder' => 'Escriba el nombre o identificación del estudiante...',
                     'usuarioSeleccionadoId' => request('user_id'),
                 ])
 
@@ -179,7 +179,7 @@
             <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center" role="alert">
                 <i class="ti ti-info-circle me-2 ti-md"></i>
                 <div>
-                    El alumno seleccionado no cuenta con un historial académico registrado en esta escuela.
+                    El estudiante seleccionado no cuenta con un historial académico registrado en esta escuela.
                 </div>
             </div>
         @endif

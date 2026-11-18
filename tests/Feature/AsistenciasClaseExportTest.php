@@ -49,13 +49,13 @@ class AsistenciasClaseExportTest extends TestCase
         $this->assertSame([
             'Fecha de clase',
             'Estado del reporte',
-            'Alumno',
+            'Estudiante',
             'Identificación',
             'Correo electrónico',
             'Asistencia',
             'Motivo de inasistencia',
             'Autoasistencia',
-            'Observaciones del alumno',
+            'Observaciones del estudiante',
             'Observaciones generales',
             'Reportado por',
         ], $exportacion->headings());

@@ -12,6 +12,9 @@
           </div>
           <form wire:submit="updateParentesco" class="row g-3">
             @csrf
+            @if ($errors->any())
+              <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
+            @endif
 
             <!--/ Familiar principal -->
             <div class="col-lg-12 col-md-12  col-sm-12  mt-3">
@@ -51,8 +54,9 @@
 
 @script
 <script>
+ $wire.on('parentesco-actualizado', () => window.location.reload());
  $wire.on('abrirModal', () => {
-    $('#' + event.detail.nombreModal).modal('show');
+    $('#modalActualizarPariente').modal('show');
   });
 </script>
 @endscript

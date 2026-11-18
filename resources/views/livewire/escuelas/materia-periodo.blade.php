@@ -401,7 +401,7 @@
                     // Mostramos el SweetAlert
                     Swal.fire({
                         title: '¿Estás seguro?',
-                        html: `Se calcularán y guardarán las notas finales para todos los alumnos de la materia <strong>${materiaNombre}</strong>.`,
+                        html: `Se calcularán y guardarán las notas finales para todos los estudiantes de la materia <strong>${materiaNombre}</strong>.`,
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonText: 'Sí, ¡Finalizar!',

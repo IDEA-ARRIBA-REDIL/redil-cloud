@@ -31,7 +31,7 @@ class InformeHorarioMateriaExport extends DefaultValueBinder implements FromColl
 
     public function headings(): array
     {
-        return ['Identificación', 'Alumno', 'Periodo', 'Materia', 'Sede del horario', 'Horario', 'Aula', 'Estado final', 'Nota acumulada final', 'Asistencias finales', 'Matrícula bloqueada', 'Motivo de reprobación'];
+        return ['Identificación', 'Estudiante', 'Periodo', 'Materia', 'Sede del horario', 'Horario', 'Aula', 'Estado final', 'Nota acumulada final', 'Asistencias finales', 'Matrícula bloqueada', 'Motivo de reprobación'];
     }
 
     public function collection(): Collection
@@ -53,7 +53,7 @@ class InformeHorarioMateriaExport extends DefaultValueBinder implements FromColl
 
             return [
                 (string) ($usuario?->identificacion ?? ''),
-                $usuario ? trim(implode(' ', array_filter([$usuario->primer_nombre, $usuario->segundo_nombre, $usuario->primer_apellido, $usuario->segundo_apellido]))) : 'Alumno no disponible',
+                $usuario ? trim(implode(' ', array_filter([$usuario->primer_nombre, $usuario->segundo_nombre, $usuario->primer_apellido, $usuario->segundo_apellido]))) : 'Estudiante no disponible',
                 $this->materia->periodo->nombre,
                 $this->materia->materia?->nombre ?? 'Materia no disponible',
                 $base?->aula?->sede?->nombre ?? 'Sede no disponible',

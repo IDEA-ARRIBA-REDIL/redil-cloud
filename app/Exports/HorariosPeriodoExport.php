@@ -30,7 +30,7 @@ class HorariosPeriodoExport implements FromQuery, ShouldAutoSize, WithHeadings, 
             'Maestro(s)',
             'Teléfono(s) maestro(s)',
             'Email(s) maestro(s)',
-            'Alumnos Inscritos',
+            'Estudiantes Inscritos',
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Helpers\Helpers;
 use App\Models\EstadoTareaConsolidacion;
 use App\Models\TareaConsolidacion;
 use App\Models\TareaConsolidacionUsuario;
@@ -95,16 +96,23 @@ class PerfilCongregacionTareasConsolidacionTest extends TestCase
 
     public function test_read_only_render_has_no_controls_or_writes_and_no_per_row_queries(): void
     {
-        for ($index = 1; $index <= 8; $index++) {
+        $this->assignTask(10, 'Primera tarea', 1);
+        DB::connection()->enableQueryLog();
+        Helpers::limpiarCacheTerminologia();
+        DB::connection()->flushQueryLog();
+        $this->renderProfileTasks(10);
+        $singleTaskQueries = DB::connection()->getQueryLog();
+
+        for ($index = 2; $index <= 8; $index++) {
             $this->assignTask(10, 'Tarea '.$index, $index);
         }
-        DB::connection()->enableQueryLog();
+        Helpers::limpiarCacheTerminologia();
         DB::connection()->flushQueryLog();
 
         $html = $this->renderProfileTasks(10);
         $queries = DB::connection()->getQueryLog();
 
-        $this->assertCount(3, $queries);
+        $this->assertCount(count($singleTaskQueries), $queries);
         foreach ($queries as $query) {
             $this->assertStringStartsWith('select ', strtolower(ltrim($query['query'])));
         }

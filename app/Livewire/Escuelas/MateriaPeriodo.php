@@ -484,7 +484,7 @@ class MateriaPeriodo extends Component
         } else {
             // Si NO se puede eliminar, emitimos un evento de error.
             $this->dispatch('mostrar-error', [
-                'texto' => "La materia '{$materia->materia->nombre}' no se puede eliminar porque tiene alumnos matriculados en al menos uno de sus horarios.",
+                'texto' => "La materia '{$materia->materia->nombre}' no se puede eliminar porque tiene estudiantes matriculados en al menos uno de sus horarios.",
             ]);
         }
     }

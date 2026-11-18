@@ -74,7 +74,7 @@ class ListadoAlumnosPeriodo extends Component
     // MÉTODO: Para manejar la descarga del archivo Excel
     public function exportarExcel()
     {
-        $fileName = 'alumnos-'.\Str::slug($this->periodo->nombre).'-'.now()->format('Y-m-d').'.xlsx';
+        $fileName = 'estudiantes-'.\Str::slug($this->periodo->nombre).'-'.now()->format('Y-m-d').'.xlsx';
 
         return Excel::download(
             new AlumnosPeriodoExport(
@@ -181,7 +181,7 @@ class ListadoAlumnosPeriodo extends Component
                 $sede = $this->sedes->find($sedeId);
                 if ($sede) {
                     $tag = new \stdClass;
-                    $tag->label = 'Sede Alumno: '.$sede->nombre;
+                    $tag->label = 'Sede Estudiante: '.$sede->nombre;
                     $tag->field = 'filtroSedeAlumno';
                     $tag->value = $sedeId;
                     $tagsBusqueda[] = $tag;

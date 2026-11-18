@@ -32,7 +32,7 @@ class AlumnosPeriodoExport implements FromQuery, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'ID Alumno',
+            'ID Estudiante',
             'Nombre Completo',
             'Identificacion',
             'Email',
@@ -43,7 +43,7 @@ class AlumnosPeriodoExport implements FromQuery, WithHeadings, WithMapping
             'Horario',
             'Aula',
             'Sede Matricula',
-            'Sede Alumno',
+            'Sede Estudiante',
             'Sede Material',
             'Fecha Matrícula',
             'Método Pago',

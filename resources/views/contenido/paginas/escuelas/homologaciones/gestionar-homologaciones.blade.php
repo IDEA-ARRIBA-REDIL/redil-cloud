@@ -16,7 +16,7 @@
 
 @section('content')
     <h4 class="mb-1 fw-semibold text-primary">Gestión de homologaciones</h4>
-    <p class="text-black">Crea registros de materias aprobadas para alumnos que cursaron fuera del sistema.</p>
+    <p class="text-black">Crea registros de materias aprobadas para estudiantes que cursaron fuera del sistema.</p>
 
     {{-- Aquí se renderizará nuestro componente de Livewire --}}
     @livewire('homologaciones.gestionar-homologaciones')

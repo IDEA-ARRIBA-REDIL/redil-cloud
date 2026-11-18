@@ -5,7 +5,7 @@
                 {{-- INICIO: Campo de Búsqueda (Copiado y adaptado de la otra vista) --}}
                 <div class="row mb-4 align-items-center">
                     <div class="col-lg-2 col-md-3 col-sm-12">
-                        <label for="busquedaAlumnoInput" class="form-label mb-0">Buscar Alumno:</label>
+                        <label for="busquedaAlumnoInput" class="form-label mb-0">Buscar Estudiante:</label>
                     </div>
                     <div class="col-lg-10 col-md-9 col-sm-12">
                         <input type="text" class="form-control" id="busquedaAlumnoInput"
@@ -18,7 +18,7 @@
 
                 {{-- ENCABEZADO - Visible solo en pantallas grandes (lg y superiores) --}}
                 <div class="row d-none d-lg-flex fw-semibold text-black border-bottom pb-2 mb-3">
-                    <div class="col-lg-4">ALUMNO</div>
+                    <div class="col-lg-4">ESTUDIANTE</div>
                     <div class="col-lg-3">MOTIVO INASISTENCIA</div>
                     <div class="col-lg-2">OBSERVACIÓN</div>
                     <div class="col-lg-3 text-center">¿ASISTIÓ?</div>
@@ -112,9 +112,9 @@
                     {{-- Mensaje para cuando no hay resultados de búsqueda --}}
                     <div class="text-center p-4">
                         <i class="mdi mdi-account-search-outline mdi-48px text-muted mb-3"></i>
-                        <h5 class="text-muted">No se encontraron alumnos</h5>
+                        <h5 class="text-muted">No se encontraron estudiantes</h5>
                         <p class="text-muted mb-0">
-                            No hay alumnos que coincidan con tu búsqueda: "{{ $busqueda }}"
+                            No hay estudiantes que coincidan con tu búsqueda: "{{ $busqueda }}"
                         </p>
                     </div>
                 @endforelse

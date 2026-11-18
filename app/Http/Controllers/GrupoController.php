@@ -9,6 +9,7 @@ use App\Models\CampoExtraGrupo;
 use App\Models\CampoInformeExcel;
 use App\Models\ClasificacionAsistente;
 use App\Models\Configuracion;
+use App\Models\FormularioUsuario;
 use App\Models\Grupo;
 use App\Models\GrupoExcluido;
 use App\Models\Iglesia;
@@ -25,6 +26,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\View\View;
 use stdClass;
 
 class GrupoController extends Controller
@@ -1643,6 +1645,268 @@ class GrupoController extends Controller
             'configuracion' => $configuracion,
             'grupo' => $grupo,
             'meses' => $meses,
+        ]);
+    }
+
+    /**
+     * Muestra la vista externa de bienvenida del prototipo para solicitar ingreso a un grupo.
+     */
+    public function solicitudBienvenida(): View
+    {
+        $formularioExterno = FormularioUsuario::whereHas('tipo', function ($query) {
+            $query->where('es_formulario_exterior', true);
+        })->first();
+
+        return view('contenido.paginas.grupos.solicitud-bienvenida', [
+            'formularioExterno' => $formularioExterno,
+        ]);
+    }
+
+    /**
+     * Muestra la vista interna del prototipo para enviar solicitud de ingreso a un grupo.
+     */
+    public function solicitudIngreso(): View
+    {
+        $sedes = Sede::with('tipo')->orderBy('nombre', 'asc')->get();
+        $grupos = Grupo::with(['tipoGrupo', 'sede'])
+            ->where('dado_baja', false)
+            ->whereHas('tipoGrupo', function ($query) {
+                $query->where('tipo_evangelistico', true);
+            })
+            ->orderBy('nombre', 'asc')
+            ->get();
+        $iglesia = Iglesia::find(1);
+        $latitudInicial = ($iglesia && $iglesia->latitud) ? $iglesia->latitud : 4.60971;
+        $longitudInicial = ($iglesia && $iglesia->longitud) ? $iglesia->longitud : -74.08175;
+
+        return view('contenido.paginas.grupos.solicitud-ingreso', [
+            'sedes' => $sedes,
+            'grupos' => $grupos,
+            'latitudInicial' => $latitudInicial,
+            'longitudInicial' => $longitudInicial,
+        ]);
+    }
+
+    /**
+     * Muestra la vista de confirmación exitosa del prototipo al enviar la solicitud a un grupo.
+     */
+    public function solicitudExitosa(Request $request): View
+    {
+        $grupo = $request->filled('grupo_id')
+            ? Grupo::with(['tipoGrupo', 'sede'])->find($request->grupo_id)
+            : null;
+
+        $grupoEjemplo = ! $grupo && $request->filled('grupo_nombre') ? (object) [
+            'nombre' => $request->input('grupo_nombre'),
+            'tipo' => $request->input('grupo_tipo', 'Grupo Evangelístico'),
+            'sede' => $request->input('sede_nombre', 'Sede seleccionada'),
+            'diaHora' => $request->input('dia_hora', 'Por confirmar'),
+            'direccion' => $request->input('direccion', 'Dirección no registrada'),
+        ] : null;
+
+        $mensajeAdicional = $request->input('mensaje');
+
+        return view('contenido.paginas.grupos.solicitud-exitosa', [
+            'grupo' => $grupo,
+            'grupoEjemplo' => $grupoEjemplo,
+            'mensajeAdicional' => $mensajeAdicional,
+        ]);
+    }
+
+    /**
+     * Muestra la vista prototipo para que el encargado gestione las solicitudes de ingreso a grupos.
+     */
+    public function solicitudesIngreso(Request $request, string $tipo = 'pendientes'): View
+    {
+        abort_unless(auth()->id() == 1, 403);
+
+        $todasSolicitudes = collect([
+            (object) [
+                'id' => 101,
+                'estado' => 'pendientes',
+                'estadoLabel' => 'Pendiente',
+                'estadoBadge' => 'bg-label-warning',
+                'nombreSolicitante' => 'Camila Andrea Restrepo',
+                'iniciales' => 'CR',
+                'email' => 'camila.restrepo@correo.com',
+                'telefono' => '310 456 7890',
+                'sede' => 'Sede Principal',
+                'ubicacion' => 'Chapinero, Bogotá',
+                'grupoNombre' => 'Grupo Evangelístico Luz y Vida',
+                'grupoTipo' => 'Grupo Evangelístico',
+                'encargadoNombre' => 'Carlos Andrés Gómez',
+                'fechaSolicitud' => '2026-11-16 04:30 pm',
+                'mensaje' => '¡Hola! Llevo dos domingos asistiendo a la iglesia y me encantaría integrarme a un grupo cerca de mi casa para crecer en mi fe.',
+                'fechaRespuesta' => null,
+                'gestionadoPor' => null,
+                'motivoRechazo' => null,
+            ],
+            (object) [
+                'id' => 102,
+                'estado' => 'pendientes',
+                'estadoLabel' => 'Pendiente',
+                'estadoBadge' => 'bg-label-warning',
+                'nombreSolicitante' => 'Santiago Morales Peña',
+                'iniciales' => 'SM',
+                'email' => 'santiago.morales@correo.com',
+                'telefono' => '315 892 3341',
+                'sede' => 'Sede Norte',
+                'ubicacion' => 'Usaquén, Bogotá',
+                'grupoNombre' => 'Célula Esperanza Viva',
+                'grupoTipo' => 'Grupo Evangelístico',
+                'encargadoNombre' => 'Juan Pablo Rojas',
+                'fechaSolicitud' => '2026-11-16 07:15 pm',
+                'mensaje' => 'Buenas noches, trabajo hasta las 6:30 pm los viernes y el horario de las 7:30 pm me queda perfecto. Quedo atento, muchas gracias.',
+                'fechaRespuesta' => null,
+                'gestionadoPor' => null,
+                'motivoRechazo' => null,
+            ],
+            (object) [
+                'id' => 103,
+                'estado' => 'pendientes',
+                'estadoLabel' => 'Pendiente',
+                'estadoBadge' => 'bg-label-warning',
+                'nombreSolicitante' => 'Valentina Ospina Castro',
+                'iniciales' => 'VO',
+                'email' => 'valentina.ospina@correo.com',
+                'telefono' => '300 712 9908',
+                'sede' => 'Sede Occidente',
+                'ubicacion' => 'Fontibón, Bogotá',
+                'grupoNombre' => 'Casa de Paz Renuevo',
+                'grupoTipo' => 'Grupo Evangelístico',
+                'encargadoNombre' => 'María Fernanda Díaz',
+                'fechaSolicitud' => '2026-11-17 09:10 am',
+                'mensaje' => 'Me registré hoy desde el formulario de bienvenida y quisiera asistir este sábado con mi esposo.',
+                'fechaRespuesta' => null,
+                'gestionadoPor' => null,
+                'motivoRechazo' => null,
+            ],
+            (object) [
+                'id' => 104,
+                'estado' => 'aceptadas',
+                'estadoLabel' => 'Aceptada',
+                'estadoBadge' => 'bg-label-success',
+                'nombreSolicitante' => 'Daniel Alejandro Vargas',
+                'iniciales' => 'DV',
+                'email' => 'daniel.vargas@correo.com',
+                'telefono' => '311 234 5678',
+                'sede' => 'Sede Principal',
+                'ubicacion' => 'Teusaquillo, Bogotá',
+                'grupoNombre' => 'Grupo Evangelístico Luz y Vida',
+                'grupoTipo' => 'Grupo Evangelístico',
+                'encargadoNombre' => 'Carlos Andrés Gómez',
+                'fechaSolicitud' => '2026-11-12 10:20 am',
+                'mensaje' => 'Hola, vivo a tres cuadras de la dirección del grupo y me gustaría congregarme con ustedes cada miércoles.',
+                'fechaRespuesta' => '2026-11-13 02:45 pm',
+                'gestionadoPor' => 'Carlos Andrés Gómez',
+                'motivoRechazo' => null,
+            ],
+            (object) [
+                'id' => 105,
+                'estado' => 'aceptadas',
+                'estadoLabel' => 'Aceptada',
+                'estadoBadge' => 'bg-label-success',
+                'nombreSolicitante' => 'Natalia Jiménez Rincón',
+                'iniciales' => 'NJ',
+                'email' => 'natalia.jimenez@correo.com',
+                'telefono' => '320 654 1122',
+                'sede' => 'Sede Norte',
+                'ubicacion' => 'Suba, Bogotá',
+                'grupoNombre' => 'Célula Esperanza Viva',
+                'grupoTipo' => 'Grupo Evangelístico',
+                'encargadoNombre' => 'Juan Pablo Rojas',
+                'fechaSolicitud' => '2026-11-10 06:00 pm',
+                'mensaje' => 'Un amigo del grupo me invitó la semana pasada y quiero quedar inscrita formalmente.',
+                'fechaRespuesta' => '2026-11-11 09:30 am',
+                'gestionadoPor' => 'Juan Pablo Rojas',
+                'motivoRechazo' => null,
+            ],
+            (object) [
+                'id' => 106,
+                'estado' => 'rechazadas',
+                'estadoLabel' => 'Rechazada',
+                'estadoBadge' => 'bg-label-danger',
+                'nombreSolicitante' => 'Mateo Ramírez Herrera',
+                'iniciales' => 'MR',
+                'email' => 'mateo.ramirez@correo.com',
+                'telefono' => '318 901 4455',
+                'sede' => 'Sede Occidente',
+                'ubicacion' => 'Bosa, Bogotá',
+                'grupoNombre' => 'Casa de Paz Renuevo',
+                'grupoTipo' => 'Grupo Evangelístico',
+                'encargadoNombre' => 'María Fernanda Díaz',
+                'fechaSolicitud' => '2026-11-08 03:15 pm',
+                'mensaje' => 'Quisiera asistir a este grupo pero solo tengo disponibilidad los martes en la mañana.',
+                'fechaRespuesta' => '2026-11-09 11:00 am',
+                'gestionadoPor' => 'María Fernanda Díaz',
+                'motivoRechazo' => 'El solicitante solo cuenta con disponibilidad los martes en la mañana y nuestro grupo se reúne los sábados a las 5:00 pm. Se le sugirió buscar un grupo con horario entre semana.',
+            ],
+            (object) [
+                'id' => 107,
+                'estado' => 'rechazadas',
+                'estadoLabel' => 'Rechazada',
+                'estadoBadge' => 'bg-label-danger',
+                'nombreSolicitante' => 'Paula Catalina Mendoza',
+                'iniciales' => 'PM',
+                'email' => 'paula.mendoza@correo.com',
+                'telefono' => '314 556 7788',
+                'sede' => 'Sede Principal',
+                'ubicacion' => 'Soacha, Cundinamarca',
+                'grupoNombre' => 'Grupo Evangelístico Luz y Vida',
+                'grupoTipo' => 'Grupo Evangelístico',
+                'encargadoNombre' => 'Carlos Andrés Gómez',
+                'fechaSolicitud' => '2026-11-05 08:40 pm',
+                'mensaje' => 'Hola, me gustaría unirme aunque vivo un poco lejos de la localidad.',
+                'fechaRespuesta' => '2026-11-06 05:20 pm',
+                'gestionadoPor' => 'Carlos Andrés Gómez',
+                'motivoRechazo' => 'Por distancia geográfica se conversó con la solicitante para ubicarla en un grupo más cercano a su lugar de residencia.',
+            ],
+        ]);
+
+        $storageDisk = \Illuminate\Support\Facades\Storage::disk('global_media');
+
+        $indicadores = collect([
+            (object) [
+                'nombre' => 'Pendientes',
+                'url' => 'pendientes',
+                'cantidad' => $todasSolicitudes->where('estado', 'pendientes')->count(),
+                'color' => 'bg-label-warning',
+                'imagen' => $storageDisk->url('peticiones/indicadores/pendientes.png'),
+            ],
+            (object) [
+                'nombre' => 'Aceptadas',
+                'url' => 'aceptadas',
+                'cantidad' => $todasSolicitudes->where('estado', 'aceptadas')->count(),
+                'color' => 'bg-label-success',
+                'imagen' => $storageDisk->url('peticiones/indicadores/cerradas.png'),
+            ],
+            (object) [
+                'nombre' => 'Rechazadas',
+                'url' => 'rechazadas',
+                'cantidad' => $todasSolicitudes->where('estado', 'rechazadas')->count(),
+                'color' => 'bg-label-danger',
+                'imagen' => $storageDisk->url('peticiones/indicadores/en_proceso.png'),
+            ],
+        ]);
+
+        $solicitudes = $todasSolicitudes->where('estado', $tipo)->values();
+
+        $buscar = trim((string) $request->input('buscar', ''));
+        if ($buscar !== '') {
+            $termino = mb_strtolower($buscar);
+            $solicitudes = $solicitudes->filter(function ($item) use ($termino) {
+                return str_contains(mb_strtolower($item->nombreSolicitante), $termino)
+                    || str_contains(mb_strtolower($item->email), $termino)
+                    || str_contains(mb_strtolower($item->grupoNombre), $termino)
+                    || str_contains(mb_strtolower($item->sede), $termino);
+            })->values();
+        }
+
+        return view('contenido.paginas.grupos.gestionar-solicitudes', [
+            'solicitudes' => $solicitudes,
+            'indicadores' => $indicadores,
+            'tipo' => $tipo,
+            'buscar' => $buscar,
         ]);
     }
 
@@ -3531,9 +3795,7 @@ class GrupoController extends Controller
                 $array_ids_usuarios = $iglesia->pastoresEncargados()->select('users.id')->pluck('users.id')->toArray();
                 $mensaje = 'Ministerio General';
                 $tipoDeNodo = $tipoDeNodo.'-principal';
-            }
-
-            if ($tienePermiso('grupos.grafico_ministerio_solo_ministerio')) {
+            } elseif ($tienePermiso('grupos.grafico_ministerio_solo_ministerio')) {
                 $tipoDeNodo = $tipoDeNodo.'-encargado';
                 $usuario = auth()->user();
                 $usuario_seleccionado = $usuario;
@@ -4010,19 +4272,13 @@ class GrupoController extends Controller
                     foreach ($personasGrupo as $personaGrupoId) {
                         $aristaId = "Ar-ga-{$grupo->id}_{$personaGrupoId}";
                         if (! in_array($aristaId, $array_aristas_usuario_grupo_dibujadas)) {
-                            if (! in_array($personaGrupoId, $array_ids_usuarios)) {
-                                // /esta es la arista que conecta el grupo con las personas que asisten a ese grupo
-                                $item = new stdClass;
-                                $item->from = 'G-'.$grupo->id;
-                                $item->to = 'A-'.$personaGrupoId;
-                                $item->color = $grupo->tipoGrupo->color ? $grupo->tipoGrupo->color : '#cccccc';
-                                $item->width = 3;
-                                $aristas[] = $item;
-
-                                array_push($array_aristas_usuario_grupo_dibujadas, $aristaId);
-                            } else {
-                                array_push($array_ids_usuarios_no_dibujados, $personaGrupoId);
-                            }
+                            $item = new stdClass;
+                            $item->from = 'G-'.$grupo->id;
+                            $item->to = 'A-'.$personaGrupoId;
+                            $item->color = $grupo->tipoGrupo ? $grupo->tipoGrupo->color : '#cccccc';
+                            $item->width = 3;
+                            $aristas[] = $item;
+                            $array_aristas_usuario_grupo_dibujadas[] = $aristaId;
                         }
                     }
                     // //aqui es donde guardo los usuarios que necesito para el siguiente recorrido del proximo nivel y asi se repite el ciclo

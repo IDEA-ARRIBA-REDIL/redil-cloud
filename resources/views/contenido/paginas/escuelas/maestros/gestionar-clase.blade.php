@@ -26,7 +26,7 @@
             <h4 class="mb-1  fw-semibold text-primary">
                 Materia:
             </h4>
-            <p class="mb-0">Aquí puedes revisar todo el contenido de tu clase (alumnos, asistencias, calificaciones etc.)
+            <p class="mb-0">Aquí puedes revisar todo el contenido de tu clase (estudiantes, asistencias, calificaciones etc.)
             </p>
 
         </div>
@@ -41,7 +41,7 @@
                                 class="nav-link p-3 waves-effect
                                     waves-light active"
                                 data-tap="principal"><i class="ti-xs ti me-2 ti-info-hexagon "></i>
-                                Listado de alumnos</a>
+                                Listado de estudiantes</a>
                         </li>
 
                         @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_calificacion_detallada'))
@@ -63,7 +63,7 @@
                         @if(isset($rolActivo) && $rolActivo->hasPermissionTo('escuelas.tab_recursos_alumnos'))
                         <li class="nav-item flex-fill">
                          <a href="{{ route('maestros.recursosAlumnos', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}" class="nav-link module-nav-link p-3 waves-effect waves-light ">
-                            <i class="mdi mdi-folder-multiple-outline me-1"></i> Recursos alumnos
+                            <i class="mdi mdi-folder-multiple-outline me-1"></i> Recursos estudiantes
                         </a>
                         </li>
                         @endif
@@ -122,7 +122,7 @@
                                                     <a target="_blank"
                                                         href="{{ route('maestros.gestionarAlumno', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'alumno' => $user]) }}"
                                                         class="dropdown-item">
-                                                        Gestionar alumno
+                                                        Gestionar estudiante
                                                     </a>
                                                 </li>
 

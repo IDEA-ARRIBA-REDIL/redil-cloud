@@ -26,7 +26,7 @@
     <div class="info-alumno">
         <table>
             <tr>
-                <td style="width: 50%;"><strong>Alumno:</strong> {{ $registro->user->nombre(3) }}</td>
+                <td style="width: 50%;"><strong>Estudiante:</strong> {{ $registro->user->nombre(3) }}</td>
                 <td style="width: 50%;"><strong>Materia:</strong> {{ $registro->materia->nombre }}</td>
             </tr>
             <tr>

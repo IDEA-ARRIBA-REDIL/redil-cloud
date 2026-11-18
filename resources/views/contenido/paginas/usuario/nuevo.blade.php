@@ -368,7 +368,8 @@ $configData = Helper::appClasses();
                   'class' => $campo->pivot->class,
                   'label' => $campo->nombre,
                   'nameId' => $campo->name_id,
-                  'formulario' => $formulario
+                  'formulario' => $formulario,
+                  'requerido' => $campo->pivot->requerido
                 ])
               @endif
               <!-- fecha nacimiento -->

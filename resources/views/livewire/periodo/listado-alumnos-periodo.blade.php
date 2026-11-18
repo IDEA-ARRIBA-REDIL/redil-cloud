@@ -65,7 +65,7 @@
     {{-- Spinner de carga reactiva --}}
     <div wire:loading.flex wire:target="search, filtroMateriaPeriodo, filtroSedeMatricula, filtroSedeAlumno, limpiarFiltros, removeTag, gotoPage, previousPage, nextPage" class="justify-content-center align-items-center py-5">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Cargando alumnos...</span>
+            <span class="visually-hidden">Cargando estudiantes...</span>
         </div>
     </div>
 
@@ -151,7 +151,7 @@
                             <div class="p-2 mb-3 rounded-2 bg-light border">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <span class="text-muted small d-flex align-items-center">
-                                        <i class="ti ti-user-pin text-primary me-1" style="font-size: 0.95rem;"></i> Sede Alumno:
+                                        <i class="ti ti-user-pin text-primary me-1" style="font-size: 0.95rem;"></i> Sede Estudiante:
                                     </span>
                                     <span class="badge bg-label-primary fw-semibold text-truncate" style="max-width: 150px;" title="{{ $alumno->sede?->nombre ?? 'Sin sede asignada' }}">
                                         {{ $alumno->sede?->nombre ?? 'Sin sede' }}
@@ -256,12 +256,12 @@
                 <div class="card border shadow-none text-center py-5">
                     <div class="card-body">
                         <i class="ti ti-users-minus text-muted mb-3" style="font-size: 3rem;"></i>
-                        <h5 class="fw-semibold text-dark">No se encontraron alumnos</h5>
+                        <h5 class="fw-semibold text-dark">No se encontraron estudiantes</h5>
                         <p class="text-muted small mb-3">
                             @if($filtroMateriaPeriodo || !empty($search) || !empty($filtroSedeAlumno) || !empty($filtroSedeMatricula))
-                                No hay resultados con los filtros aplicados. Intenta restablecer los filtros para ver todos los alumnos.
+                                No hay resultados con los filtros aplicados. Intenta restablecer los filtros para ver todos los estudiantes.
                             @else
-                                No hay alumnos matriculados en este periodo académico.
+                                No hay estudiantes matriculados en este periodo académico.
                             @endif
                         </p>
                         @if($filtroMateriaPeriodo || !empty($search) || !empty($filtroSedeAlumno) || !empty($filtroSedeMatricula))
@@ -292,7 +292,7 @@
     {{-- Offcanvas para los filtros (con Alpine.js integrado) --}}
     <div class="offcanvas offcanvas-end" tabindex="-1" id="filtrosAlumnosOffcanvas">
         <div class="offcanvas-header border-bottom">
-            <h5 class="offcanvas-title text-primary fw-semibold">Filtros de Alumnos</h5>
+            <h5 class="offcanvas-title text-primary fw-semibold">Filtros de Estudiantes</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
@@ -310,7 +310,7 @@
                 </div>
 
                 <hr class="my-3">
-                <p class="small text-muted mb-3">Filtros de Sede (Opcionales): Se mostrarán alumnos que cumplan con cualquiera de las sedes seleccionadas.</p>
+                <p class="small text-muted mb-3">Filtros de Sede (Opcionales): Se mostrarán estudiantes que cumplan con cualquiera de las sedes seleccionadas.</p>
 
                 {{-- Multi-Select Alpine para Sede de Matrícula --}}
                 <div x-data="{
@@ -375,7 +375,7 @@
                     </div>
                 </div>
 
-                {{-- Multi-Select Alpine para Sede del Alumno --}}
+                {{-- Multi-Select Alpine para Sede del Estudiante --}}
                 <div x-data="{
                         open: false,
                         options: {{ $sedes }},
@@ -408,7 +408,7 @@
                     }"
                     class="mb-3"
                 >
-                    <label class="form-label fw-semibold">Sede del Alumno</label>
+                    <label class="form-label fw-semibold">Sede del Estudiante</label>
                     <div @click.outside="open = false" class="position-relative">
                         <div @click="open = !open" class="form-select" style="min-height: 38px; cursor: pointer;">
                             <template x-if="selected.length === 0">

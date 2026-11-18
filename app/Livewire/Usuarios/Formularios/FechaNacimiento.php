@@ -29,6 +29,8 @@ class FechaNacimiento extends Component
 
     public $nameId = '';
 
+    public $requerido = false;
+
     public function mount()
     {
         $this->fecha = $this->usuario ? $this->usuario->fecha_nacimiento : '';
@@ -184,6 +186,11 @@ class FechaNacimiento extends Component
     public function bloquearBtnGuardar()
     {
         $this->dispatch('bloqueoBtnGuardar');
+    }
+
+    public function desbloquearBtnGuardar()
+    {
+        $this->dispatch('desbloqueoBtnGuardar');
     }
 
     #[On('mostrarMensajeError')]

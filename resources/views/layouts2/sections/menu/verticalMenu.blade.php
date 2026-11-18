@@ -257,7 +257,7 @@
             </li>
         @endif
 
-        @if ($rolActivo->hasPermissionTo('grupos.item_grupos'))
+        @if ($rolActivo->hasPermissionTo('grupos.item_grupos') || auth()->id() == 1)
             <li class="menu-item {{ request()->routeIs('grupo.*') ? 'active open' : '' }}">
                 <a href="" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-atom-2"></i>
@@ -333,6 +333,14 @@
                         <li class="menu-item">
                             <a href="{{ route('informe.lista', 1) }}" class="menu-link">
                                 <div>Informes</div>
+                            </a>
+                        </li>
+                    @endif
+
+                    @if (auth()->id() == 1)
+                        <li class="menu-item {{ request()->routeIs('grupo.solicitudesIngreso') ? 'active' : '' }}">
+                            <a href="{{ route('grupo.solicitudesIngreso') }}" class="menu-link">
+                                <div>Solicitudes de ingreso</div>
                             </a>
                         </li>
                     @endif

@@ -391,7 +391,7 @@
                         <small class="text-muted">Nota más alta a la más baja</small>
                     </div>
                     @if (!empty($alumnosRanking))
-                        <span class="badge bg-label-primary rounded-pill">{{ count($alumnosRanking) }} alumnos</span>
+                        <span class="badge bg-label-primary rounded-pill">{{ count($alumnosRanking) }} estudiantes</span>
                     @endif
                 </div>
                 <div class="card-body p-0" style="max-height: 380px; min-height: 380px; overflow-y: auto;">
@@ -499,7 +499,7 @@
                         <div class="students-list" style="--cut-count: {{ max(1, $cortesDefinidos->count()) }};">
                         <div class="students-list-header" aria-hidden="true">
                             <div>#</div>
-                            <div>Nombre del alumno</div>
+                            <div>Nombre del estudiante</div>
                             @if ($cortesDefinidos->isNotEmpty())
                                 @foreach ($cortesDefinidos as $corte)
                                     <div>
@@ -625,7 +625,7 @@
                                                                         <form class="form-bloquear-matricula"
                                                                             action="{{ route('maestros.bloquearMatricula', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'matricula' => $alumno['matricula_model']]) }}"
                                                                             method="POST"
-                                                                            onsubmit="return confirm('¿Deseas bloquear la matrícula de este alumno? Al finalizar el período quedará reprobado aunque cumpla las notas o asistencias.');">
+                                                                            onsubmit="return confirm('¿Deseas bloquear la matrícula de este estudiante? Al finalizar el período quedará reprobado aunque cumpla las notas o asistencias.');">
                                                                             @csrf
                                                                             @method('PATCH')
                                                                             <button type="submit" class="dropdown-item text-danger">
@@ -649,12 +649,12 @@
                         <div class="text-center p-5">
                             @if (isset($configuracion) && $configuracion->logotipo_claro)
                                 <img src="{{ asset('storage/configuracion/' . $configuracion->logotipo_claro) }}"
-                                    alt="No hay alumnos" height="120" class="mb-3">
+                                    alt="No hay estudiantes" height="120" class="mb-3">
                             @else
                                 <i class="mdi mdi-account-multiple-outline mdi-48px text-muted mb-3"></i>
                             @endif
-                            <h5 class="text-muted mt-2">No hay alumnos matriculados</h5>
-                            <p class="text-muted mb-0">Aún no hay alumnos inscritos en esta clase o no se encontraron
+                            <h5 class="text-muted mt-2">No hay estudiantes matriculados</h5>
+                            <p class="text-muted mb-0">Aún no hay estudiantes inscritos en esta clase o no se encontraron
                                 datos.
                             </p>
                         </div>
@@ -742,7 +742,7 @@
                                 }
                             },
                             title: {
-                                text: 'Número de alumnos',
+                                text: 'Número de estudiantes',
                                 style: {
                                     color: headingColor,
                                     fontSize: '13px',
@@ -862,7 +862,7 @@
                                 }
                             },
                             title: {
-                                text: 'Número de alumnos',
+                                text: 'Número de estudiantes',
                                 style: {
                                     color: headingColor,
                                     fontSize: '13px',
@@ -899,7 +899,7 @@
                             intersect: false,
                             y: {
                                 formatter: function(val) {
-                                    return val !== null && val !== undefined ? `${val} alumnos` : 'Sin datos';
+                                    return val !== null && val !== undefined ? `${val} estudiantes` : 'Sin datos';
                                 }
                             }
                         },
@@ -937,7 +937,7 @@
                 form.addEventListener('submit', function(e) {
                     e.preventDefault();
                     Swal.fire({
-                        title: '¿Deseas bloquear la matrícula de este alumno?',
+                        title: '¿Deseas bloquear la matrícula de este estudiante?',
                         text: 'Al finalizar el período quedará reprobado aunque cumpla las notas o asistencias.',
                         icon: 'warning',
                         showCancelButton: true,

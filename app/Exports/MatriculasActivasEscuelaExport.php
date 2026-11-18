@@ -92,9 +92,9 @@ class MatriculasActivasEscuelaExport extends DefaultValueBinder implements FromC
     public function headings(): array
     {
         return [
-            'Alumno',
+            'Estudiante',
             'Identificación',
-            'Sede del Alumno',
+            'Sede del Estudiante',
             'Periodo',
             'Materia',
             'Horario',
@@ -115,7 +115,7 @@ class MatriculasActivasEscuelaExport extends DefaultValueBinder implements FromC
     public function map($matricula): array
     {
         $usuario = $matricula->user;
-        $alumnoNombre = $usuario ? $usuario->nombre(4) : 'Alumno no disponible';
+        $alumnoNombre = $usuario ? $usuario->nombre(4) : 'Estudiante no disponible';
         $alumnoId = (string) ($usuario?->identificacion ?? 'N/A');
         $sedeAlumno = $usuario?->sede?->nombre ?? 'Sin sede asignada';
         $periodoNombre = optional($matricula->periodo)->nombre ?? 'N/A';

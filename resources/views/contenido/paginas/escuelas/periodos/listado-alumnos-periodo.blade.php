@@ -2,7 +2,7 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Listado Alumnos')
+@section('title', 'Listado Estudiantes')
 
 @section('vendor-style')
 
@@ -35,7 +35,7 @@
     @include('layouts.status-msn')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-1 fw-semibold text-primary">Listado de Alumnos</h4>
+            <h4 class="mb-1 fw-semibold text-primary">Listado de Estudiantes</h4>
             <p class="text-black mb-0">Periodo: <span class="fw-bold">{{ $periodo->nombre }}</span></p>
         </div>
       

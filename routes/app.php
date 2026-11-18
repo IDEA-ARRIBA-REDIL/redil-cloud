@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccionDashboardController;
 use App\Http\Controllers\ActividadController;
 use App\Http\Controllers\AlumnoEscuelasController;
 use App\Http\Controllers\AsesorPdpController;
@@ -594,6 +595,10 @@ Route::get('/dashboard', function () {
     $configuracion = Configuracion::find(1);
     $temas = App\Models\Tema::filtrarTemasPermitidos($usuario, $rolActivo)->orderBy('temas.id', 'desc')->take(12)->get();
 
+    $mostrarModalSolicitudGrupo = $usuario->id == 1
+        && ! $usuario->gruposEncargados()->exists()
+        && ! $usuario->gruposDondeAsiste()->exists();
+
     return view('contenido.paginas.dashboard', [
         'configuracion' => $configuracion,
         'formularioMenores' => $formularioMenores,
@@ -601,6 +606,7 @@ Route::get('/dashboard', function () {
         'banners' => $banners,
         'rolActivo' => $rolActivo,
         'temas' => $temas,
+        'mostrarModalSolicitudGrupo' => $mostrarModalSolicitudGrupo,
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -728,6 +734,9 @@ Route::get('/peticion/publica', [PeticionController::class, 'publicaNueva'])->na
 Route::post('/peticion/publica/crear', [PeticionController::class, 'crear'])->middleware('throttle:10,1')->name('peticion.publica.crear');
 Route::post('/peticion/publica/verificar-correo', [PeticionController::class, 'verificarCorreo'])->middleware('throttle:5,1')->name('peticion.publica.verificar-correo');
 Route::get('/peticion/{peticion}/exito', [PeticionController::class, 'exito'])->name('peticion.exito');
+
+// Grupos rutas públicas (prototipo solicitud de ingreso)
+Route::get('/grupos/solicitud-bienvenida', [GrupoController::class, 'solicitudBienvenida'])->name('grupo.solicitudBienvenida');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -873,6 +882,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/usuario/{usuario}/cambiar-portada', [UserController::class, 'cambiarPortada'])->name('usuario.cambiarPortada');
 
     // Grupos
+    Route::get('/grupos/solicitud-ingreso', [GrupoController::class, 'solicitudIngreso'])->name('grupo.solicitudIngreso');
+    Route::get('/grupos/solicitud-exitosa', [GrupoController::class, 'solicitudExitosa'])->name('grupo.solicitudExitosa');
+    Route::get('/grupos/solicitudes-ingreso/{tipo?}', [GrupoController::class, 'solicitudesIngreso'])->name('grupo.solicitudesIngreso');
     Route::get('/grupos/{tipo?}', [GrupoController::class, 'listar'])->name('grupo.lista');
 
     Route::get('/grupo/nuevo', [GrupoController::class, 'nuevo'])->name('grupo.nuevo');
@@ -1674,6 +1686,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/eliminar/{id}', [\App\Http\Controllers\TipoHitosController::class, 'eliminarTipoHitos'])->name('eliminarTipoHitos');
         Route::post('/cambiar-estado/{id}', [\App\Http\Controllers\TipoHitosController::class, 'toggleEstado'])->name('toggleEstado');
     });
+
+    // --- Acciones del Dashboard (Configuración "¿Qué deseas hacer hoy?") ---
+    Route::get('/configuracion/acciones-dashboard', [AccionDashboardController::class, 'index'])->name('acciones-dashboard.index');
 });
 
 require __DIR__.'/auth.php';

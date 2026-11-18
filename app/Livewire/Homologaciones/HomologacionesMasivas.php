@@ -373,7 +373,7 @@ class HomologacionesMasivas extends Component
                     $tipoDiagnostico = 'advertencia';
                     $nombresEstados = ['0' => 'Reprobado', '1' => 'Aprobado', '2' => 'En proceso'];
                     $estActual = $nombresEstados[(string) $existente->aprobado] ?? 'Registrado';
-                    $mensajesAdv[] = "El alumno ya posee un registro previo en estado {$estActual}. Se sobreescribirá.";
+                    $mensajesAdv[] = "El estudiante ya posee un registro previo en estado {$estActual}. Se sobreescribirá.";
                 }
             }
 

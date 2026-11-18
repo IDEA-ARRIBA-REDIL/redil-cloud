@@ -149,7 +149,7 @@
                             <div class="col-md-2"><strong>Sede:</strong> {{ $horario->horarioBase->aula->sede->nombre ?? 'N/A' }}</div>
                             <div class="col-md-2"><strong>Aula:</strong> {{ $horario->horarioBase->aula->nombre ?? 'N/A' }}</div>
                             <div class="col-md-1">
-                                <strong>Alumnos:</strong>
+                                <strong>Estudiantes:</strong>
                                 <span class="badge rounded-pill {{ $totalMatriculados > 0 ? 'bg-label-primary' : 'bg-label-secondary' }}">
                                     {{ $totalMatriculados }}
                                 </span>
@@ -168,8 +168,8 @@
                                         </a>
                                     @endif
                                 @else
-                                    <button type="button" class="btn btn-outline-secondary rounded-pill opacity-50" disabled title="No hay alumnos matriculados en este horario">
-                                        Sin alumnos
+                                    <button type="button" class="btn btn-outline-secondary rounded-pill opacity-50" disabled title="No hay estudiantes matriculados en este horario">
+                                        Sin estudiantes
                                     </button>
                                 @endif
                             </div>

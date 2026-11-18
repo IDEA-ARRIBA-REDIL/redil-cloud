@@ -2,15 +2,15 @@
 
 namespace App\Exports;
 
-use App\Models\Periodo;
 use App\Models\Matricula;
+use App\Models\Periodo;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Illuminate\Support\Facades\DB;
 
-class InformeFinalPeriodoExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
+class InformeFinalPeriodoExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping
 {
     protected Periodo $periodo;
 
@@ -21,13 +21,12 @@ class InformeFinalPeriodoExport implements FromQuery, WithHeadings, WithMapping,
 
     /**
      * Define los encabezados de las columnas en el archivo Excel.
-     * @return array
      */
     public function headings(): array
     {
         return [
-            'Identificación del Alumno',
-            'Nombre del Alumno',
+            'Identificación del Estudiante',
+            'Nombre del Estudiante',
             'Materia',
             'Carácter Obligatorio',
             'Horario',
@@ -44,6 +43,7 @@ class InformeFinalPeriodoExport implements FromQuery, WithHeadings, WithMapping,
 
     /**
      * Prepara la consulta a la base de datos para obtener los datos de todo el periodo.
+     *
      * @return \Illuminate\Database\Query\Builder
      */
     public function query()
@@ -92,14 +92,14 @@ class InformeFinalPeriodoExport implements FromQuery, WithHeadings, WithMapping,
 
     /**
      * Mapea y formatea cada fila de la consulta a las columnas del Excel.
-     * @param mixed $resultado El resultado de la consulta para una fila.
-     * @return array
+     *
+     * @param  mixed  $resultado  El resultado de la consulta para una fila.
      */
     public function map($resultado): array
     {
         return [
             $resultado->identificacion,
-            trim($resultado->primer_nombre . ' ' . $resultado->segundo_nombre . ' ' . $resultado->primer_apellido . ' ' . $resultado->segundo_apellido),
+            trim($resultado->primer_nombre.' '.$resultado->segundo_nombre.' '.$resultado->primer_apellido.' '.$resultado->segundo_apellido),
             $resultado->nombre_materia,
             $resultado->caracter_obligatorio ? 'Si' : 'No', // Mapeo corregido
             $resultado->horario_texto,

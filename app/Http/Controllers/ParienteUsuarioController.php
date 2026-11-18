@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\ParentescoExport;
 use App\Helpers\Helpers;
+use App\Http\Requests\CrearParienteRequest;
 use App\Models\CampoExtra;
 use App\Models\CampoInformeExcel;
 use App\Models\Configuracion;
@@ -13,12 +14,11 @@ use App\Models\ParienteUsuario;
 use App\Models\PasoCrecimiento;
 use App\Models\TipoParentesco;
 use App\Models\User;
+use App\Services\RelacionesFamiliares;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ParienteUsuarioController extends Controller
@@ -75,76 +75,23 @@ class ParienteUsuarioController extends Controller
         ]);
     }
 
-    public function crear(Request $request)
+    public function crear(CrearParienteRequest $request, RelacionesFamiliares $relaciones): RedirectResponse
     {
-
-        if (! $request->parientePrincipal || ! $request->buscador_asistente_modal) {
-            return back()->with('danger', 'No fue posible crear la relación, todos los campos son necesarios, intenta de nuevo.');
-        }
-
-        $parientePrincipal = User::find($request->parientePrincipal);
-        $parientedelModal = User::find($request->buscador_asistente_modal);
-        $parentescoActual = ParienteUsuario::where('pariente_user_id', $parientedelModal->id)
-            ->where('user_id', $parientePrincipal->id)->first();
-
-        if ($parientePrincipal == $parientedelModal) {
-            return back()->with('danger', 'No fue posible crear la relación, elegiste en ambos casos el mismo asistente.');
-        } elseif (isset($parentescoActual->id)) {
-            return back()->with('danger', 'No fue posible crear la relación, ya existe una relación actualmente.');
-        } else {
-            $tiposParentescoSeleccionado = TipoParentesco::find($request->tipoParentesco);
-            $tipoParentescoPariente = $tiposParentescoSeleccionado;
-
-            if (isset($tiposParentescoSeleccionado->relacionado_con)) {
-                $tipoParentescoPariente = TipoParentesco::find($tiposParentescoSeleccionado->relacionado_con);
-            }
-
-            $responsabilidad = $request->responsabilidad;
-            $asistenteResponsable = false;
-            $parienteResponsable = false;
-
-            if ($responsabilidad == 2) {
-                $asistenteResponsable = true;
-            } elseif ($responsabilidad == 3) {
-                $parienteResponsable = true;
-            }
-
-            // Esta es la relacion del asistente con el pariente
-            $parientePrincipal->usuariosDelPariente()->attach($parientedelModal->id,
-                [
-                    'es_el_responsable' => $parienteResponsable,
-                    'tipo_pariente_id' => $tipoParentescoPariente->id,
-                ]);
-
-            // Esta es la relacion del pariente con el asistente
-            $parientePrincipal->parientesDelUsuario()->attach($parientedelModal->id,
-                [
-                    'es_el_responsable' => $asistenteResponsable,
-                    'tipo_pariente_id' => $tiposParentescoSeleccionado->id,
-                ]);
-
-        }
+        $principal = User::findOrFail($request->integer('parientePrincipal'));
+        $this->authorize('gestionarParentesco', [$principal, 'familiar.ver_boton_nueva_relacion_familiar']);
+        $pariente = $request->integer('buscador_asistente_modal');
+        $this->authorize('accederFicha', [User::class, $pariente]);
+        $relaciones->guardar($principal->id, $pariente, $request->integer('tipoParentesco'), $request->integer('responsabilidad'));
 
         return back()->with('success', 'La relación fue creada con éxito.');
-
     }
 
-    public function eliminar(ParienteUsuario $pariente)
+    public function eliminar(ParienteUsuario $pariente, RelacionesFamiliares $relaciones): RedirectResponse
     {
-        $usuarioSeleccioanado = $pariente->user_id;
-        $relacion1 = ParienteUsuario::where('user_id', $pariente->user_id)->where('pariente_user_id', $pariente->pariente_user_id)->first();
+        $this->authorize('gestionarParentesco', [$pariente->usuario()->withTrashed()->firstOrFail(), 'familiar.opcion_eliminar_relacion_familiar']);
+        $relaciones->eliminar($pariente);
 
-        $relacion2 = ParienteUsuario::where('pariente_user_id', $pariente->user_id)->where('user_id', $pariente->pariente_user_id)->first();
-
-        if (isset($relacion1)) {
-            $relacion1->delete();
-        }
-
-        if (isset($relacion2)) {
-            $relacion2->delete();
-        }
-
-        return redirect()->route('familias.gestionar', $usuarioSeleccioanado)->with('success', ' El tema fue eliminado  con éxito.');
+        return redirect()->route('familias.gestionar', $pariente->user_id)->with('success', 'La relación fue eliminada con éxito.');
     }
 
     public function informes(Request $request)
@@ -293,7 +240,7 @@ class ParienteUsuarioController extends Controller
         // / aqui lo que se hace es crear el archivo que se va a crear en el servidor
         $nombreArchivo = 'informe_parentescos_'.Carbon::now()->format('Y-m-d-H-i-s').'.xlsx';
         $directorio = 'archivos/familia/informe';
-        $rutaArchivo = $directorio . '/' . $nombreArchivo;
+        $rutaArchivo = $directorio.'/'.$nombreArchivo;
 
         // / aqui envio las variables necesarias para ejecutar el controlador del excel y poder general la vista
 

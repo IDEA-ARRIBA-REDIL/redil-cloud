@@ -22,12 +22,20 @@ class CumpleanosController extends Controller
         $personas = collect();
 
         if ($rolActivo) {
+            $tienePermisoCumpleanos = false;
+            try {
+                $tienePermisoCumpleanos = $rolActivo->hasPermissionTo('dashboard.ver_cumpleanos');
+            } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
+                $tienePermisoCumpleanos = false;
+            }
+
             if (
+                $tienePermisoCumpleanos ||
                 $rolActivo->hasPermissionTo('personas.lista_asistentes_todos') ||
                 $rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')
             ) {
-                // 1. Si solo tiene permiso de ministerio, obtenemos sus discípulos activos
-                if ($rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')) {
+                // 1. Si tiene permiso de cumpleaños o permiso de ministerio, obtenemos sus discípulos activos
+                if ($tienePermisoCumpleanos || $rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')) {
                     $personas = auth()->user()->discipulos('sin-eliminados', false);
                 }
 
@@ -150,7 +158,7 @@ class CumpleanosController extends Controller
         ]);
 
         try {
-            $mailData = new stdClass();
+            $mailData = new stdClass;
             $mailData->subject = $request->subject;
             $mailData->nombre = $request->recipient_name;
             $mailData->mensaje = $request->message;

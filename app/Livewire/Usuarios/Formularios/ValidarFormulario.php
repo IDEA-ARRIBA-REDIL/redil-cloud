@@ -206,7 +206,7 @@ class ValidarFormulario extends Component
         // fecha_nacimiento
         if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
-            $validarFechaNacimiento = $campoTemporal->requerido ? ['date', 'required'] : ['date', 'nullable'];
+            $validarFechaNacimiento = $campoTemporal->requerido ? ['required', 'date'] : ['nullable', 'date'];
 
             if ($this->formulario->validar_edad) {
                 $fechaMax = \Carbon\Carbon::now()->subYears($this->formulario->edad_minima)->format('Y-m-d');
@@ -538,10 +538,13 @@ class ValidarFormulario extends Component
             $validacion = array_merge($validacion, [$campoExtra->name_id => $validarCampoExtra]);
         }
 
-        if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0 && $this->formulario->validar_edad) {
+        if ($campos->where('nombre_bd', 'fecha_nacimiento')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'fecha_nacimiento')->first();
-            $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $this->formulario->edad_mensaje_error;
-            $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $this->formulario->edad_mensaje_error;
+            $mensajes["{$campoTemporal->name_id}.required"] = 'La fecha de nacimiento es obligatoria.';
+            if ($this->formulario->validar_edad) {
+                $mensajes["{$campoTemporal->name_id}.before_or_equal"] = $this->formulario->edad_mensaje_error;
+                $mensajes["{$campoTemporal->name_id}.after_or_equal"] = $this->formulario->edad_mensaje_error;
+            }
         }
 
         $validator = Validator::make($dataSeccion, $validacion, $mensajes);

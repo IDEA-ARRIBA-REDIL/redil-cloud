@@ -32,7 +32,7 @@ class NotasCorteClaseExportTest extends TestCase
 
         $this->assertSame([
             'Identificación',
-            'Alumno',
+            'Estudiante',
             'Examen final (70%)',
             'Taller (30%)',
             'Promedio Corte',

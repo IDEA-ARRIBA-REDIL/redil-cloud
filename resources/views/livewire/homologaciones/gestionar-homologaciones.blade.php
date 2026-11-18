@@ -10,8 +10,8 @@
                         'id' => 'alumno_id',
                         'tipoBuscador' => 'unico',
                         'queUsuariosCargar' => 'todos',
-                        'label' => '1. Busque y seleccione un alumno',
-                        'placeholder' => 'Escriba el nombre o identificación del alumno...',
+                        'label' => '1. Busque y seleccione un estudiante',
+                        'placeholder' => 'Escriba el nombre o identificación del estudiante...',
                     ])
                     @error('alumnoSeleccionadoId') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
 

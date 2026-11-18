@@ -65,7 +65,7 @@
                     <h6>Asistencias e inasistencias registradas</h6>
                     <div id="grafico-asistencias-{{ $materia['id'] }}" role="img" aria-label="Asistencias: {{ $resumen['presentes'] }}. Inasistencias: {{ $resumen['ausentes'] }}."></div>
                     <p class="mb-1"><strong>{{ $resumen['asistencia'] === null ? 'Sin datos' : $resumen['asistencia'].'% de asistencia' }}</strong></p>
-                    <p class="text-muted small">{{ $resumen['promedioAsistencias'] === null ? 'No hay registros de asistencia.' : $resumen['promedioAsistencias'].' asistencias por alumno en promedio.' }} Solo cuenta registros tomados.</p>
+                    <p class="text-muted small">{{ $resumen['promedioAsistencias'] === null ? 'No hay registros de asistencia.' : $resumen['promedioAsistencias'].' asistencias por estudiante en promedio.' }} Solo cuenta registros tomados.</p>
                 </div>
             </div>
             <div class="border-top pt-3 mt-3">
@@ -86,7 +86,7 @@
                         <option value="">Selecciona una sede</option>
                         @foreach ($materia['sedes'] as $sede)<option value="{{ $sede['id'] }}">{{ $sede['nombre'] }}</option>@endforeach
                     </select>
-                    <p class="text-muted small mt-3 mb-0">El archivo tendrá una hoja por horario de esta sede, con la nota acumulada final, las asistencias finales y el resultado de cada estudiante. La sede corresponde al aula del horario, no a la sede personal del alumno.</p>
+                    <p class="text-muted small mt-3 mb-0">El archivo tendrá una hoja por horario de esta sede, con la nota acumulada final, las asistencias finales y el resultado de cada estudiante. La sede corresponde al aula del horario, no a la sede personal del estudiante.</p>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-success rounded-pill">Descargar Excel</button></div>
             </form>

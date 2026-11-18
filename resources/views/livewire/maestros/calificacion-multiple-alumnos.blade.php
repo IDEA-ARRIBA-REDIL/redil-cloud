@@ -6,7 +6,7 @@
     {{-- Encabezado y Búsqueda --}}
     <div class="row mb-4 align-items-center">
         <div class="col-12 col-md-auto">
-            <label for="busquedaAlumnoInputLivewire" class="form-label mb-md-0 fw-medium">Buscar alumno:</label>
+            <label for="busquedaAlumnoInputLivewire" class="form-label mb-md-0 fw-medium">Buscar estudiante:</label>
         </div>
         <div class="col-12 col-md-6 col-lg-5">
             <input type="text" class="form-control" id="busquedaAlumnoInputLivewire"
@@ -77,8 +77,8 @@
                                                     <div class="text-start"> {{-- Para alinear texto a la izquierda --}}
                                                         <span class="fw-medium d-block text-truncate"
                                                             style="max-width: 200px;"
-                                                            title="{{ $estadoAcademico->user->primer_nombre ?? 'Alumno' }} {{ $estadoAcademico->user->primer_apellido ?? '' }}">
-                                                            {{ $estadoAcademico->user->primer_nombre ?? 'Alumno' }}
+                                                            title="{{ $estadoAcademico->user->primer_nombre ?? 'Estudiante' }} {{ $estadoAcademico->user->primer_apellido ?? '' }}">
+                                                            {{ $estadoAcademico->user->primer_nombre ?? 'Estudiante' }}
                                                             {{ $estadoAcademico->user->primer_apellido ?? '' }}
                                                         </span>
                                                         <small class="text-muted d-block">ID:
@@ -355,7 +355,7 @@
                                             @elseif($alumnoActivoIdParaCalificaciones === $estadoAcademico->user->id)
                                                 {{-- Se intentó cargar pero no hay datos (ej. no hay cortes en el periodo) --}}
                                                 <p class="text-muted text-center fst-italic py-3">No se encontraron
-                                                    cortes o ítems de calificación para este alumno.</p>
+                                                    cortes o ítems de calificación para este estudiante.</p>
                                             @endif
                                             {{-- Fin del contenido cargado --}}
                                         </div>
@@ -368,12 +368,12 @@
             @else
                 <div class="text-center p-4">
                     <i class="mdi mdi-account-search-outline mdi-48px text-muted mb-3"></i>
-                    <h5 class="text-muted">No se encontraron alumnos</h5>
+                    <h5 class="text-muted">No se encontraron estudiantes</h5>
                     <p class="text-muted mb-0">
                         @if (!empty($busquedaAlumno))
-                            No hay alumnos que coincidan con "{{ $busquedaAlumno }}" en esta clase.
+                            No hay estudiantes que coincidan con "{{ $busquedaAlumno }}" en esta clase.
                         @else
-                            No hay alumnos matriculados en esta clase.
+                            No hay estudiantes matriculados en esta clase.
                         @endif
                     </p>
                 </div>
@@ -402,21 +402,21 @@
 
                         {{-- Sección de la respuesta del alumno (sin cambios) --}}
                         <div class="mb-4">
-                            <label class="form-label fw-semibold">Respuesta Escrita del Alumno:</label>
+                            <label class="form-label fw-semibold">Respuesta Escrita del Estudiante:</label>
                             <div class="p-3 bg-light rounded border">
-                                <p class="mb-0">{{ $respuestaSeleccionada->respuesta_alumno ?? 'El alumno no dejó una respuesta escrita.' }}</p>
+                                <p class="mb-0">{{ $respuestaSeleccionada->respuesta_alumno ?? 'El estudiante no dejó una respuesta escrita.' }}</p>
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-semibold">Archivo Adjunto del Alumno:</label>
+                            <label class="form-label fw-semibold">Archivo Adjunto del Estudiante:</label>
 
                             @if ($respuestaSeleccionada->enlace_documento_alumno)
                                 <a href="{{ $respuestaSeleccionada->archivo_url }}" target="_blank" class="btn-sm btn-outline-secondary">
                                     <i class="mdi mdi-download-outline me-1"></i> Descargar Archivo
                                 </a>
                             @else
-                                <p class="text-muted">El alumno no adjuntó ningún archivo.</p>
+                                <p class="text-muted">El estudiante no adjuntó ningún archivo.</p>
                             @endif
                         </div>
                         <hr>
@@ -429,7 +429,7 @@
                                 wire:model="observacionMaestro"
                                 class="form-control"
                                 rows="4"
-                                placeholder="Escribe aquí tu retroalimentación para el alumno..."></textarea>
+                                placeholder="Escribe aquí tu retroalimentación para el estudiante..."></textarea>
                             @error('observacionMaestro') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                         {{-- --- FIN: SECCIÓN NUEVA PARA EL MAESTRO --- --}}

@@ -104,7 +104,7 @@
                 <li class="nav-item">
                     <a href="{{ route('maestros.recursosAlumnos', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado]) }}"
                         class="nav-link module-nav-link waves-effect waves-light {{ request()->routeIs('maestros.recursosAlumnos') ? 'active' : '' }}">
-                        <i class="mdi mdi-folder-multiple-outline me-1"></i> Recursos alumnos
+                        <i class="mdi mdi-folder-multiple-outline me-1"></i> Recursos estudiantes
                     </a>
                 </li>
                 @endif

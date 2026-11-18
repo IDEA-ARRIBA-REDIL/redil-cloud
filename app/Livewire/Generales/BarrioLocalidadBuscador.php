@@ -115,13 +115,15 @@ class BarrioLocalidadBuscador extends Component
     public function render()
     {
         $ubicaciones = null;
-        if ($this->busqueda && strlen($this->busqueda) >= 3) {
-            $buscar = htmlspecialchars($this->busqueda);
+        $busquedaLimpia = trim((string) $this->busqueda);
+        if ($busquedaLimpia !== '' && strlen($busquedaLimpia) >= 3) {
+            $buscar = htmlspecialchars($busquedaLimpia);
             $buscar = Helpers::sanearStringConEspacios($buscar);
             $buscar = str_replace(["'"], '', $buscar);
 
             // Búsqueda exclusiva de localidades
-            $localidades = Localidad::whereRaw("translate(nombre,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ','aeiouAEIOUaeiouAEIOU') ILIKE '%$buscar%'")
+            $localidades = Localidad::with('municipio:id,nombre')
+                ->whereRaw("translate(nombre,'áéíóúÁÉÍÓÚäëïöüÄËÏÖÜ','aeiouAEIOUaeiouAEIOU') ILIKE '%$buscar%'")
                 ->orderBy('nombre', 'asc')
                 ->take(15)
                 ->select('id', 'nombre', 'municipio_id')

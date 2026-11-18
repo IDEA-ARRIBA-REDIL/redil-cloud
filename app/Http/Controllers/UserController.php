@@ -4763,23 +4763,12 @@ class UserController extends Controller
         ]);
     }
 
-    public function eliminarRelacionFamiliar(ParienteUsuario $pariente)
+    public function eliminarRelacionFamiliar(ParienteUsuario $pariente, \App\Services\RelacionesFamiliares $relaciones): \Illuminate\Http\RedirectResponse
     {
+        $this->authorize('gestionarParentesco', [$pariente->usuario()->withTrashed()->firstOrFail(), 'familiar.opcion_eliminar_relacion_familiar']);
+        $relaciones->eliminar($pariente);
 
-        $usuarioSeleccioanado = $pariente->user_id;
-        $relacion1 = ParienteUsuario::where('user_id', $pariente->user_id)->where('pariente_user_id', $pariente->pariente_user_id)->first();
-
-        $relacion2 = ParienteUsuario::where('pariente_user_id', $pariente->user_id)->where('user_id', $pariente->pariente_user_id)->first();
-
-        if (isset($relacion1)) {
-            $relacion1->delete();
-        }
-
-        if (isset($relacion2)) {
-            $relacion2->delete();
-        }
-
-        return back()->with('success', ' La relación fue eliminada con éxito.');
+        return back()->with('success', 'La relación fue eliminada con éxito.');
     }
 
     public function cambiarContrasenaDefault(User $usuario)

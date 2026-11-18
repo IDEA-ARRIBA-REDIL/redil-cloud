@@ -270,7 +270,7 @@
                         @empty
                             <div class="col-12">
                                 <div class="alert alert-info text-center" role="alert">
-                                    <span>Este alumno no tiene matrículas activas en la escuela y periodo
+                                    <span>Este estudiante no tiene matrículas activas en la escuela y periodo
                                         seleccionados.</span>
                                 </div>
                             </div>

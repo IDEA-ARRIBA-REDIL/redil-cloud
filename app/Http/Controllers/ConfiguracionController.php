@@ -301,6 +301,14 @@ class ConfiguracionController extends Controller
                 'permission' => 'configuraciones.subitem_plantillas_informes',
                 'keywords' => 'plantillas informes personalizados megainformes reportes metricas formulas secciones subsecciones bloques sedes configuracion capas',
             ],
+            [
+                'title' => 'Acciones del dashboard',
+                'route' => 'acciones-dashboard.index',
+                'icon' => 'ti-apps',
+                'color' => 'bg-label-secondary',
+                'permission' => 'configuraciones.subitem_acciones_dashboard',
+                'keywords' => 'acciones dashboard que deseas hacer hoy enlaces accesos rapidos iconos academia grupos cumpleanos botones inicio',
+            ],
         ];
 
         // Filtrar items por permisos

@@ -56,7 +56,7 @@ class MateriaController extends Controller
             // Si existe al menos una matrícula, no se puede eliminar.
             // Redirigimos hacia atrás con un mensaje de error.
             return redirect()->back()
-                ->with('error', 'No se puede eliminar la materia  porque ya tiene alumnos matriculados en su historial.');
+                ->with('error', 'No se puede eliminar la materia porque ya tiene estudiantes matriculados en su historial.');
         }
 
         // Si la validación pasa, procedemos con la eliminación (soft delete).

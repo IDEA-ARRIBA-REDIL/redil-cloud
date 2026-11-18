@@ -640,7 +640,7 @@ class MaestroController extends Controller
         $datosAprobacion = [
             'categorias' => ['Aprobados', 'Reprobados', 'Cursando', 'Bloqueados'],
             'series' => [[
-                'name' => 'Alumnos',
+                'name' => 'Estudiantes',
                 'data' => [
                     $aprobadosCount,            // Suma de Aprobado + Aprobando
                     $reprobadosCount,
@@ -808,7 +808,7 @@ class MaestroController extends Controller
         }
 
         if ($matricula->bloqueado) {
-            return back()->with('mensaje_error', 'La matrícula de este alumno ya está bloqueada.');
+            return back()->with('mensaje_error', 'La matrícula de este estudiante ya está bloqueada.');
         }
 
         $matricula->update([
@@ -817,7 +817,7 @@ class MaestroController extends Controller
         ]);
 
         return redirect()->route('maestros.dashboardClase', compact('maestro', 'horarioAsignado'))
-            ->with('mensaje_exito', 'La matrícula fue bloqueada. El alumno quedará reprobado al finalizar el período.');
+            ->with('mensaje_exito', 'La matrícula fue bloqueada. El estudiante quedará reprobado al finalizar el período.');
     }
 
     public function exportarNotasCorte($maestro, HorarioMateriaPeriodo $horarioAsignado, CortePeriodo $cortePeriodo): BinaryFileResponse

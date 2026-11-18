@@ -116,17 +116,17 @@
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
                 <div>
                     <h5 class="mb-1">Registro rápido de calificaciones</h5>
-                    <p class="text-muted mb-0">Busca un alumno y edita sus notas directamente en la grilla.</p>
+                    <p class="text-muted mb-0">Busca un estudiante y edita sus notas directamente en la grilla.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <span class="badge rounded-pill bg-label-primary">{{ $alumnosFiltrados->count() }} de {{ $alumnosConEstado->count() }} alumnos</span>
+                    <span class="badge rounded-pill bg-label-primary">{{ $alumnosFiltrados->count() }} de {{ $alumnosConEstado->count() }} estudiantes</span>
                     <span class="badge rounded-pill bg-label-info">{{ $items->count() }} {{ $items->count() === 1 ? 'ítem' : 'ítems' }}</span>
                     <span class="badge rounded-pill bg-label-secondary">Escala: {{ $configuracion->nota_minima ?? 0 }} a {{ $configuracion->nota_maxima ?? 5 }}</span>
                 </div>
             </div>
 
             <div class="grilla-buscador">
-                <label for="busquedaAlumnoGrilla" class="form-label fw-medium">Buscar alumno</label>
+                <label for="busquedaAlumnoGrilla" class="form-label fw-medium">Buscar estudiante</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="ti ti-search"></i></span>
                     <input type="search" id="busquedaAlumnoGrilla" class="form-control"
@@ -154,7 +154,7 @@
     @elseif ($alumnosFiltrados->isEmpty())
         <div class="alert alert-info text-center" role="status">
             <i class="ti ti-search-off fs-2 d-block mb-2"></i>
-            <h5 class="alert-heading">No encontramos alumnos</h5>
+            <h5 class="alert-heading">No encontramos estudiantes</h5>
             <p class="mb-0">Prueba con otro nombre, apellido, identificación o correo.</p>
         </div>
     @elseif ($items->isEmpty())
@@ -169,7 +169,7 @@
                 <table class="table grilla-tabla align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="columna-alumno p-3 text-uppercase small">Alumno</th>
+                            <th class="columna-alumno p-3 text-uppercase small">Estudiante</th>
                             @foreach ($items as $item)
                                 <th class="encabezado-item p-2 text-center" wire:key="encabezado-item-{{ $item->id }}"
                                     title="{{ $item->nombre }} · {{ $item->cortePeriodo->corteEscuela->nombre ?? 'Corte' }}">
@@ -191,7 +191,7 @@
                                 $user = $estado->user;
                                 $bloqueado = $matricula->bloqueado ?? false;
                                 $trasladado = $matricula->trasladado ?? false;
-                                $nombreCompleto = $user ? trim(implode(' ', array_filter([$user->primer_apellido, $user->segundo_apellido, $user->primer_nombre, $user->segundo_nombre]))) : 'Alumno no disponible';
+                                $nombreCompleto = $user ? trim(implode(' ', array_filter([$user->primer_apellido, $user->segundo_apellido, $user->primer_nombre, $user->segundo_nombre]))) : 'Estudiante no disponible';
                             @endphp
 
                             @if ($user)

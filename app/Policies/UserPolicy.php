@@ -91,6 +91,39 @@ class UserPolicy
         return false;
     }
 
+    public function accederFicha(User $actor, int $idUsuario): bool
+    {
+        $rol = $actor->rolActivoParaPermisos();
+        if (! $rol) {
+            return false;
+        }
+        if ($actor->id === $idUsuario || $this->tienePermiso($rol, 'personas.lista_asistentes_todos')
+            || $this->tienePermiso($rol, 'consolidacion.lista_toda_consolidacion')) {
+            return true;
+        }
+        if ($this->tienePermiso($rol, 'personas.lista_asistentes_solo_ministerio')
+            && $actor->discipulos('todos')->contains('id', $idUsuario)) {
+            return true;
+        }
+        if ($this->tienePermiso($rol, 'consolidacion.lista_consolidacion_solo_ministerio')
+            && $actor->consolidacion()->where('id', $idUsuario)->count() > 0) {
+            return true;
+        }
+
+        return $actor->parientesDelUsuario()->where('users.id', $idUsuario)->exists()
+            || $actor->usuariosDelPariente()->where('users.id', $idUsuario)->exists();
+    }
+
+    public function gestionarParentesco(User $actor, User $persona, string $permiso): bool
+    {
+        $rol = $actor->rolActivoParaPermisos();
+
+        return $rol && $this->tienePermiso($rol, $permiso)
+            && $this->accederFicha($actor, $persona->id)
+            && ($this->relacionesFamiliaresUsuarioPolitica($actor, $persona)
+                || $this->tienePermiso($rol, 'familiar.subitem_gentionar_relaciones'));
+    }
+
     public function relacionesFamiliaresUsuarioPolitica(User $usuarioLogueado, User $usuarioUrl): bool
     {
         // Obtenemos el rol activo del usuario que está realizando la acción.
