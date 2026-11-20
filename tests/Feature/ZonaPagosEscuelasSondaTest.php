@@ -592,6 +592,54 @@ class ZonaPagosEscuelasSondaTest extends TestCase
         $this->assertSame(9, $escenario['horario']->fresh()->cupos_disponibles);
     }
 
+    public function test_checkout_no_colisiona_con_referencia_pago_unique_de_otra_matricula_previa(): void
+    {
+        $escenario = $this->crearEscenarioEscuelas(
+            cuposIniciales: 9,
+            minutosAtras: 2,
+            comoBorradorSinPasarela: true
+        );
+
+        // Simulamos el escenario real de producción:
+        // La matrícula actual se vincula por compra_id/pago_id (sin referencia_pago),
+        // mientras otra matrícula histórica (ej. Taquilla o eliminada) ya ocupa referencia_pago = pago->id.
+        $escenario['matricula']->update(['referencia_pago' => null]);
+
+        $matriculaHistorica = Matricula::query()->create([
+            'user_id' => 999,
+            'periodo_id' => 1,
+            'horario_materia_periodo_id' => $escenario['horario']->id,
+            'referencia_pago' => (string) $escenario['pago']->id,
+            'estado_pago_matricula' => 'pagada',
+            'valor_a_pagar' => 150000,
+        ]);
+        $matriculaHistorica->delete(); // Soft-delete: en PostgreSQL el índice UNIQUE sigue protegiendo el valor
+
+        Http::fake([
+            'https://zonapagos-prod.test/api/InicioPago' => Http::response([
+                'int_codigo' => 1,
+                'str_url' => 'https://www.zonapagos.com/Ciclo_Pago/Pago.aspx?rut=sincolision',
+            ], 200),
+        ]);
+
+        $this->actingAs($escenario['usuario']);
+
+        Livewire::test(Checkout::class, [
+            'actividad' => $escenario['actividad'],
+            'compra' => $escenario['compra'],
+        ])
+            ->set('tipoPagoSeleccionado', 1)
+            ->call('procesarPago')
+            ->assertSet('esperandoPagoZonaPagos', true)
+            ->assertDispatched('abrirPasarelaZonaPagos');
+
+        $matriculaActual = $escenario['matricula']->fresh();
+        $this->assertSame($escenario['compra']->id, (int) $matriculaActual->compra_id);
+        $this->assertSame($escenario['pago']->id, (int) $matriculaActual->pago_id);
+        $this->assertNull($matriculaActual->referencia_pago);
+        $this->assertSame(5, (int) $matriculaActual->estado_pago_id);
+    }
+
     /**
      * Construye una trama válida `str_res_pago` conforme a la Tabla 12 del manual ZonaPagos v5.0.
      */

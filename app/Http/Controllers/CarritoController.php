@@ -879,9 +879,13 @@ class CarritoController extends Controller
                 // 'matricula.escuela', // Se carga manualmente abajo
             ]);
 
-            // Carga manual de matrícula para evitar error: operator does not exist: character varying = integer
-            // Esto ocurre porque 'referencia_pago' es string y pago->id es int.
-            $matricula = \App\Models\Matricula::where('referencia_pago', (string) $pago->id)
+            // Carga de matrícula priorizando las relaciones explícitas pago_id / compra_id con fallback legacy
+            $matricula = \App\Models\Matricula::where(function ($query) use ($pago) {
+                $query->where('pago_id', $pago->id)
+                    ->orWhere('compra_id', $pago->compra_id)
+                    ->orWhere('referencia_pago', (string) $pago->id)
+                    ->orWhere('referencia_pago', (string) $pago->compra_id);
+            })
                 ->with([
                     'escuela',
                     'sede',

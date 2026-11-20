@@ -378,7 +378,6 @@ class EscuelasCarrito extends Component
             ], [
                 'compra_id' => $compra->id,
                 'pago_id' => $pago->id,
-                'referencia_pago' => (string) $pago->id,
                 'estado_pago_matricula' => 'pendiente',
                 'estado_pago_id' => $pago->estado_pago_id,
                 'fecha_matricula' => now()->toDateString(),

@@ -435,7 +435,6 @@ class Checkout extends Component
                 ->update([
                     'compra_id' => $this->compra->id,
                     'pago_id' => $pagoParaProcesar->id,
-                    'referencia_pago' => (string) $pagoParaProcesar->id,
                     'tipo_pago_id' => $this->tipoPagoSeleccionado,
                     'estado_pago_id' => $estadoInicial->id,
                 ]);
