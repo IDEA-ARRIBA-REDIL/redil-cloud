@@ -8,20 +8,24 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Servicio exclusivo para el módulo de Donaciones / Ofrendas Online con ZonaPagos.
+ * Servicio exclusivo para el módulo de Donaciones / Ofrendas Online con ZonaPagos (API REST v5.0).
  *
  * Opera de forma 100% independiente de Pago, Compra e Ingreso.
- * Carga las credenciales por tenant desde el modelo TipoPago (key_reservada = 'zona')
- * con fallback a config('services.zonapagos').
+ * Carga las credenciales por tenant desde el modelo TipoPago (`key_reservada = 'zona'`)
+ * con fallback automático a `config('services.zonapagos.*')`.
  */
 class ZonaPagosOfrendaService
 {
+    public const CODIGO_ESTADO_APROBADO = '1';
+
+    public const CODIGO_ESTADO_PENDIENTE_CR = '4001';
+
     /**
      * Obtiene las credenciales de ZonaPagos del tenant actual (desde TipoPago o config).
      *
      * @return array{apiUrl: string, idComercio: int, usuario: string, clave: string, codigoServicio: string}
      */
-    protected function obtenerCredenciales(?TipoPago $tipoPago = null): array
+    public function obtenerCredenciales(?TipoPago $tipoPago = null): array
     {
         if (! $tipoPago) {
             $tipoPago = TipoPago::where('key_reservada', 'zona')
@@ -31,7 +35,7 @@ class ZonaPagosOfrendaService
 
         $apiUrl = ! empty($tipoPago?->enlace)
             ? rtrim((string) $tipoPago->enlace, '/')
-            : rtrim((string) config('services.zonapagos.api_url'), '/');
+            : rtrim((string) config('services.zonapagos.api_url', ''), '/');
 
         // Si el enlace en BD tiene el sufijo /InicioPago, lo limpiamos para usar la base
         if (str_ends_with($apiUrl, '/InicioPago')) {
@@ -40,19 +44,19 @@ class ZonaPagosOfrendaService
 
         $idComercio = ! empty($tipoPago?->client_id)
             ? (int) $tipoPago->client_id
-            : (int) config('services.zonapagos.id_comercio');
+            : (int) config('services.zonapagos.id_comercio', 0);
 
         $usuario = ! empty($tipoPago?->bussines_id)
             ? (string) $tipoPago->bussines_id
-            : (string) config('services.zonapagos.usuario');
+            : (string) config('services.zonapagos.usuario', '');
 
         $clave = ! empty($tipoPago?->key_id)
             ? (string) $tipoPago->key_id
-            : (string) config('services.zonapagos.clave');
+            : (string) config('services.zonapagos.clave', '');
 
         $codigoServicio = ! empty($tipoPago?->account_id)
             ? (string) $tipoPago->account_id
-            : (string) config('services.zonapagos.codigo_servicio');
+            : (string) config('services.zonapagos.codigo_servicio', '');
 
         return [
             'apiUrl' => $apiUrl,
@@ -72,31 +76,40 @@ class ZonaPagosOfrendaService
     public function iniciarPago(Ofrenda $ofrenda, array $datosDonante): array
     {
         $credenciales = $this->obtenerCredenciales($ofrenda->tipoPago);
+        $errorCredenciales = $this->validarCredenciales($credenciales);
+        if ($errorCredenciales !== null) {
+            Log::error("ZonaPagosOfrendaService::iniciarPago — {$errorCredenciales}", ['ofrenda_id' => $ofrenda->id]);
 
-        // 1. Construir la descripción del pago (máximo 70 caracteres exigidos por ZonaPagos)
-        $nombreTipoOfrenda = $ofrenda->tipoOfrenda?->nombre ?? 'Ofrenda';
-        $descripcion = substr('Donacion '.$nombreTipoOfrenda.' #'.$ofrenda->id, 0, 70);
-
-        // 2. Separar nombre y apellido del donante para los campos de la pasarela
-        $nombreCompleto = trim($datosDonante['nombre'] ?? '');
-        $apellido = trim($datosDonante['apellido'] ?? '');
-
-        if (empty($apellido) && str_word_count($nombreCompleto) > 1) {
-            $partes = explode(' ', $nombreCompleto, 2);
-            $nombre = $partes[0];
-            $apellido = $partes[1];
-        } else {
-            $nombre = $nombreCompleto ?: 'Donante';
-            $apellido = $apellido ?: '.';
+            return [
+                'success' => false,
+                'message' => $errorCredenciales,
+            ];
         }
 
-        $nombre = substr($nombre, 0, 50);
-        $apellido = substr($apellido, 0, 50);
-        $email = substr($datosDonante['email'] ?? '', 0, 70);
-        $identificacion = substr($datosDonante['identificacion'] ?? '', 0, 30);
+        // 1. Construir la descripción del pago (máximo 70 caracteres UTF-8 exigidos por ZonaPagos)
+        $nombreTipoOfrenda = $ofrenda->tipoOfrenda?->nombre ?? 'Ofrenda';
+        $descripcion = mb_substr('Donacion '.$nombreTipoOfrenda.' #'.$ofrenda->id, 0, 70, 'UTF-8');
+
+        // 2. Separar nombre y apellido del donante para los campos de la pasarela
+        $nombreCompleto = trim((string) ($datosDonante['nombre'] ?? ''));
+        $apellido = trim((string) ($datosDonante['apellido'] ?? ''));
+
+        if ($apellido === '' && preg_match('/\s+/u', $nombreCompleto) === 1) {
+            $partes = preg_split('/\s+/u', $nombreCompleto, 2);
+            $nombre = $partes[0] ?? 'Donante';
+            $apellido = $partes[1] ?? '.';
+        } else {
+            $nombre = $nombreCompleto !== '' ? $nombreCompleto : 'Donante';
+            $apellido = $apellido !== '' ? $apellido : '.';
+        }
+
+        $nombre = mb_substr($nombre, 0, 50, 'UTF-8');
+        $apellido = mb_substr($apellido, 0, 50, 'UTF-8');
+        $email = mb_substr(trim((string) ($datosDonante['email'] ?? '')), 0, 70, 'UTF-8');
+        $identificacion = mb_substr(trim((string) ($datosDonante['identificacion'] ?? '')), 0, 30, 'UTF-8');
         $telefono = ! empty($datosDonante['telefono']) ? (string) $datosDonante['telefono'] : '0000000';
 
-        // 3. Armar el payload con el prefijo O- para identificar que es una Ofrenda
+        // 3. Armar el payload completo v5.0 (incluyendo AdicionalesPago) con prefijo O-
         $payload = [
             'InformacionPago' => [
                 'flt_total_con_iva' => (float) $ofrenda->valor,
@@ -121,6 +134,7 @@ class ZonaPagosOfrendaService
                 'str_clave' => $credenciales['clave'],
                 'int_modalidad' => -1,
             ],
+            'AdicionalesPago' => [],
             'AdicionalesConfiguracion' => [
                 [
                     'int_codigo' => 50,
@@ -140,7 +154,7 @@ class ZonaPagosOfrendaService
         try {
             $response = Http::timeout(30)->post($credenciales['apiUrl'].'/InicioPago', $payload);
 
-            if ($response->successful() && $response->json('int_codigo') === 1) {
+            if ($response->successful() && (int) $response->json('int_codigo') === 1) {
                 $paymentUrl = (string) $response->json('str_url');
 
                 if (! filter_var($paymentUrl, FILTER_VALIDATE_URL)) {
@@ -164,7 +178,7 @@ class ZonaPagosOfrendaService
                 'message' => $errorDesc,
                 'gateway_response' => $response->json(),
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('ZonaPagosOfrendaService::iniciarPago — Excepción: '.$e->getMessage());
 
             return [
@@ -175,13 +189,27 @@ class ZonaPagosOfrendaService
     }
 
     /**
-     * Consulta el estado actual de una Ofrenda en ZonaPagos.
+     * Consulta el estado actual de una Ofrenda en ZonaPagos (`POST /VerificacionPago`).
      *
-     * @return array{success: bool, data?: array<string, mixed>, message?: string}
+     * Distingue explícitamente entre transacción encontrada (`success`), inexistente en pasarela
+     * (`no_encontrado`) y error de red/servidor (`error_red`).
+     *
+     * @return array{success: bool, data?: array<string, mixed>, response?: array<string, mixed>|null, message?: string, no_encontrado: bool, error_red: bool}
      */
     public function verificarPago(Ofrenda $ofrenda): array
     {
         $credenciales = $this->obtenerCredenciales($ofrenda->tipoPago);
+        $errorCredenciales = $this->validarCredenciales($credenciales, validarCodigoServicio: false);
+        if ($errorCredenciales !== null) {
+            Log::error("ZonaPagosOfrendaService::verificarPago — {$errorCredenciales}", ['ofrenda_id' => $ofrenda->id]);
+
+            return [
+                'success' => false,
+                'message' => $errorCredenciales,
+                'no_encontrado' => false,
+                'error_red' => true,
+            ];
+        }
 
         $payload = [
             'int_id_comercio' => $credenciales['idComercio'],
@@ -196,49 +224,115 @@ class ZonaPagosOfrendaService
         try {
             $response = Http::timeout(30)->post($credenciales['apiUrl'].'/VerificacionPago', $payload);
 
-            if ($response->successful() && $response->json('int_error') === 0) {
+            if (! $response->successful()) {
+                Log::error("ZonaPagosOfrendaService::verificarPago — HTTP {$response->status()} para Ofrenda ID {$ofrenda->id}.");
+
                 return [
-                    'success' => true,
-                    'data' => $response->json(),
+                    'success' => false,
+                    'message' => "Error HTTP {$response->status()} al consultar ZonaPagos.",
+                    'response' => $response->json(),
+                    'no_encontrado' => false,
+                    'error_red' => true,
                 ];
             }
 
-            $detalle = (string) $response->json('str_detalle', 'Sin detalle.');
+            $json = $response->json() ?? [];
+            $intError = $json['int_error'] ?? null;
+            $cantidadPagos = $json['int_cantidad_pagos'] ?? null;
+            $strResPago = trim((string) ($json['str_res_pago'] ?? ''));
+
+            if ($intError === 0 && $strResPago !== '' && ($cantidadPagos === null || (int) $cantidadPagos > 0)) {
+                return [
+                    'success' => true,
+                    'data' => $json,
+                    'no_encontrado' => false,
+                    'error_red' => false,
+                ];
+            }
+
+            $detalle = (string) ($json['str_detalle'] ?? 'Sin registros de pago en pasarela.');
             Log::warning("ZonaPagosOfrendaService::verificarPago — No se encontró Ofrenda ID {$ofrenda->id}. Detalle: {$detalle}");
 
             return [
                 'success' => false,
-                'message' => 'La transacción no fue encontrada o hubo un error: '.$detalle,
+                'message' => 'La transacción no fue encontrada en ZonaPagos: '.$detalle,
+                'response' => $json,
+                'no_encontrado' => true,
+                'error_red' => false,
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('ZonaPagosOfrendaService::verificarPago — Excepción: '.$e->getMessage());
 
             return [
                 'success' => false,
                 'message' => 'Ocurrió un error inesperado al verificar la ofrenda.',
+                'no_encontrado' => false,
+                'error_red' => true,
             ];
         }
     }
 
     /**
-     * Parsea el campo str_res_pago de la respuesta de verificación de ZonaPagos.
+     * Parsea el campo `str_res_pago` de VerificacionPago (Tabla 12 del manual ZonaPagos v5.0).
+     * Descarta segmentos vacíos finales tras `|;|` y prioriza la sub-transacción aprobada (`1`).
      *
      * @return array<string, string>
      */
     public function parsearRespuestaVerificacion(string $strResPago): array
     {
-        if (empty(trim($strResPago))) {
+        if (trim($strResPago) === '') {
             return [];
         }
 
-        $transacciones = explode('|;|', $strResPago);
-        $ultimaTransaccionStr = trim((string) end($transacciones));
+        $segmentos = array_values(array_filter(
+            array_map('trim', explode('|;|', $strResPago)),
+            fn (string $segmento): bool => $segmento !== ''
+        ));
 
-        if (empty($ultimaTransaccionStr)) {
+        if ($segmentos === []) {
             return [];
         }
 
-        $v = explode('|', $ultimaTransaccionStr);
+        $transaccionesParseadas = array_map(
+            fn (string $segmento): array => $this->parsearSegmentoTransaccion($segmento),
+            $segmentos
+        );
+
+        foreach ($transaccionesParseadas as $transaccion) {
+            if (($transaccion['int_estado_pago'] ?? '') === self::CODIGO_ESTADO_APROBADO) {
+                return $transaccion;
+            }
+        }
+
+        return end($transaccionesParseadas) ?: [];
+    }
+
+    /**
+     * Valida que las credenciales mínimas de ZonaPagos estén configuradas.
+     *
+     * @param  array{apiUrl: string, idComercio: int, usuario: string, clave: string, codigoServicio: string}  $credenciales
+     */
+    protected function validarCredenciales(array $credenciales, bool $validarCodigoServicio = true): ?string
+    {
+        if ($credenciales['apiUrl'] === '' || $credenciales['idComercio'] <= 0 || $credenciales['usuario'] === '' || $credenciales['clave'] === '') {
+            return 'Credenciales de ZonaPagos incompletas. Verifica tipos_pago o las variables ZONAPAGOS_* en .env.';
+        }
+
+        if ($validarCodigoServicio && $credenciales['codigoServicio'] === '') {
+            return 'Código de servicio ZonaPagos (account_id / ZONAPAGOS_CODIGO_SERVICIO) no configurado.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Parsea una transacción individual separada por `|` según Tabla 12 del manual ZonaPagos v5.0.
+     *
+     * @return array<string, string>
+     */
+    protected function parsearSegmentoTransaccion(string $segmento): array
+    {
+        $v = explode('|', $segmento);
 
         $data = [
             'int_ped_numero' => trim($v[0] ?? ''),
@@ -271,7 +365,7 @@ class ZonaPagosOfrendaService
             $data['str_nombre_banco'] = trim($v[24] ?? '');
             $data['str_codigo_transaccion'] = trim($v[25] ?? '');
             $data['int_ciclo_transaccion'] = trim($v[26] ?? '');
-        } elseif (in_array($data['int_id_forma_pago'], ['32', '51'])) {
+        } elseif (in_array($data['int_id_forma_pago'], ['32', '51'], true)) {
             $data['str_ticketID'] = trim($v[21] ?? '');
             $data['int_numero_tarjeta'] = trim($v[22] ?? '');
             $data['str_franquicia'] = trim($v[23] ?? '');

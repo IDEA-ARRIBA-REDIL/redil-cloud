@@ -312,14 +312,22 @@ class DonacionesOnline extends Component
             'valorDonacion.max' => 'El valor máximo permitido por transacción es $'.number_format($valorMaximo, 0, ',', '.').'.',
         ]);
 
-        // 1. Obtener el estado inicial "Pendiente" para ZonaPagos
-        $estadoPendiente = EstadoPago::where('estado_pendiente', true)->first();
+        // 1. Obtener el estado inicial "Pendiente" propio de ZonaPagos (no de otro método de pago)
+        $estadoPendiente = $tipoPago?->estadosPago()
+            ->where('estado_inicial_defecto', true)
+            ->first()
+            ?: EstadoPago::query()
+                ->when($tipoPago, fn ($query) => $query->where('tipo_pago_id', $tipoPago->id))
+                ->where('estado_pendiente', true)
+                ->first()
+            ?: EstadoPago::where('estado_pendiente', true)->first();
 
         // 2. Crear el registro en la tabla ofrendas (ingresada_por = 3 identifica donación online)
+        // valor_real inicia en 0 hasta que ZonaPagos confirme int_estado_pago = 1
         $ofrenda = Ofrenda::create([
             'tipo_ofrenda_id' => $this->tipoOfrendaId,
             'valor' => (float) $this->valorDonacion,
-            'valor_real' => (float) $this->valorDonacion,
+            'valor_real' => 0,
             'fecha' => now()->toDateString(),
             'ingresada_por' => 3,
             'observacion' => $this->esRegistrado
@@ -362,8 +370,25 @@ class DonacionesOnline extends Component
             return;
         }
 
-        // 4. Si ZonaPagos retorna error al iniciar, registramos la respuesta y mostramos alerta amigable
+        // 4. Si ZonaPagos retorna error al iniciar, pasar la ofrenda a estado anulado/abandonado
+        // (sin eliminarla) para que no quede eternamente pendiente en informes
+        $estadoAnulado = EstadoPago::query()
+            ->when($tipoPago, fn ($query) => $query->where('tipo_pago_id', $tipoPago->id))
+            ->where('estado_anulado_inscripcion', true)
+            ->where('estado_pendiente', false)
+            ->where('estado_final_inscripcion', false)
+            ->whereNull('id_codigo_externo')
+            ->first()
+            ?: EstadoPago::query()
+                ->when($tipoPago, fn ($query) => $query->where('tipo_pago_id', $tipoPago->id))
+                ->where('estado_anulado_inscripcion', true)
+                ->where('estado_pendiente', false)
+                ->where('estado_final_inscripcion', false)
+                ->first();
+
         $ofrenda->update([
+            'estado_pago_id' => $estadoAnulado?->id ?? $ofrenda->estado_pago_id,
+            'valor_real' => 0,
             'gateway_response' => [
                 'error_inicio' => $resultado['gateway_response'] ?? ['message' => $resultado['message'] ?? ''],
             ],

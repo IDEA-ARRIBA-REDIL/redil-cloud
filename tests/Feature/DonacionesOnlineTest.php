@@ -8,7 +8,6 @@ use App\Livewire\Ofrendas\DonacionesOnline;
 use App\Mail\DefaultMail;
 use App\Models\Configuracion;
 use App\Models\Destinatario;
-use App\Models\EstadoPago;
 use App\Models\Iglesia;
 use App\Models\Moneda;
 use App\Models\Ofrenda;
@@ -406,6 +405,7 @@ class DonacionesOnlineTest extends TestCase
             $table->string('nombre');
             $table->string('id_codigo_externo')->nullable();
             $table->unsignedBigInteger('tipo_pago_id')->nullable();
+            $table->boolean('estado_inicial_defecto')->default(false);
             $table->boolean('estado_pendiente')->default(false);
             $table->boolean('estado_final_inscripcion')->default(false);
             $table->boolean('estado_anulado_inscripcion')->default(false);
@@ -504,22 +504,296 @@ class DonacionesOnlineTest extends TestCase
             'valor_minimo_donacion' => 5000,
         ]);
 
-        EstadoPago::query()->create([
-            'id' => 1,
-            'nombre' => 'Pendiente PSE',
-            'id_codigo_externo' => '999',
-            'tipo_pago_id' => $tipoPago->id,
-            'estado_pendiente' => true,
-            'estado_final_inscripcion' => false,
+        DB::table('estados_pago')->insert([
+            [
+                'id' => 1,
+                'nombre' => 'Pendiente PSE',
+                'id_codigo_externo' => '999',
+                'tipo_pago_id' => $tipoPago->id,
+                'estado_inicial_defecto' => true,
+                'estado_pendiente' => true,
+                'estado_final_inscripcion' => false,
+                'estado_anulado_inscripcion' => false,
+            ],
+            [
+                'id' => 3,
+                'nombre' => 'Aprobado / Finalizado',
+                'id_codigo_externo' => '1',
+                'tipo_pago_id' => $tipoPago->id,
+                'estado_inicial_defecto' => false,
+                'estado_pendiente' => false,
+                'estado_final_inscripcion' => true,
+                'estado_anulado_inscripcion' => false,
+            ],
+            [
+                'id' => 4,
+                'nombre' => 'Pago Rechazado',
+                'id_codigo_externo' => '1000',
+                'tipo_pago_id' => $tipoPago->id,
+                'estado_inicial_defecto' => false,
+                'estado_pendiente' => false,
+                'estado_final_inscripcion' => false,
+                'estado_anulado_inscripcion' => true,
+            ],
+            [
+                'id' => 21,
+                'nombre' => 'Error ACH-Banco (Rechazado)',
+                'id_codigo_externo' => '1001',
+                'tipo_pago_id' => $tipoPago->id,
+                'estado_inicial_defecto' => false,
+                'estado_pendiente' => false,
+                'estado_final_inscripcion' => false,
+                'estado_anulado_inscripcion' => true,
+            ],
+            [
+                'id' => 6,
+                'nombre' => 'Pendiente por CR (TC)',
+                'id_codigo_externo' => '4001',
+                'tipo_pago_id' => $tipoPago->id,
+                'estado_inicial_defecto' => false,
+                'estado_pendiente' => true,
+                'estado_final_inscripcion' => false,
+                'estado_anulado_inscripcion' => false,
+            ],
+            [
+                'id' => 39,
+                'nombre' => 'Pendiente por Iniciar',
+                'id_codigo_externo' => '888',
+                'tipo_pago_id' => $tipoPago->id,
+                'estado_inicial_defecto' => false,
+                'estado_pendiente' => true,
+                'estado_final_inscripcion' => false,
+                'estado_anulado_inscripcion' => false,
+            ],
+            [
+                'id' => 16,
+                'nombre' => 'Transacción Abandonada',
+                'id_codigo_externo' => null,
+                'tipo_pago_id' => $tipoPago->id,
+                'estado_inicial_defecto' => false,
+                'estado_pendiente' => false,
+                'estado_final_inscripcion' => false,
+                'estado_anulado_inscripcion' => true,
+            ],
+        ]);
+    }
+
+    public function test_error_en_inicio_pago_anula_ofrenda_con_valor_real_cero_sin_eliminarla(): void
+    {
+        Mail::fake();
+
+        Http::fake([
+            'https://zonapagos.test/api/InicioPago' => Http::response([
+                'int_codigo' => 2,
+                'str_descripcion_error' => 'Servicio no encontrado',
+                'str_url' => null,
+            ], 200),
         ]);
 
-        EstadoPago::query()->create([
-            'id' => 3,
-            'nombre' => 'Aprobado / Finalizado',
-            'id_codigo_externo' => '1',
-            'tipo_pago_id' => $tipoPago->id,
-            'estado_pendiente' => false,
-            'estado_final_inscripcion' => true,
+        $tipoDiezmo = TipoOfrenda::where('nombre', 'Diezmos')->firstOrFail();
+        $destinatario = Destinatario::where('nombre', 'Sede Norte')->firstOrFail();
+
+        Livewire::test(DonacionesOnline::class)
+            ->call('continuarComoIndependiente')
+            ->set('nombreCompleto', 'Laura Martínez')
+            ->set('tipoIdentificacionId', 1)
+            ->set('identificacion', '55443322')
+            ->set('telefono', '3112223344')
+            ->set('email', 'laura@ejemplo.com')
+            ->set('paisId', 1)
+            ->set('direccion', 'Calle 20 # 5-10')
+            ->set('aceptaTerminos', true)
+            ->call('continuarAPestana3')
+            ->set('tipoOfrendaId', $tipoDiezmo->id)
+            ->set('destinatarioId', $destinatario->id)
+            ->set('monedaId', 1)
+            ->set('valorDonacion', '30000')
+            ->call('procesarDonacion')
+            ->assertSet('mensajeErrorPasarela', 'Servicio no encontrado');
+
+        // La ofrenda NO se elimina: pasa a estado anulado (ID 16) con valor_real = 0
+        $this->assertSame(1, Ofrenda::count());
+        $ofrenda = Ofrenda::firstOrFail();
+        $this->assertSame(16, (int) $ofrenda->estado_pago_id);
+        $this->assertEquals(30000.0, (float) $ofrenda->valor);
+        $this->assertEquals(0.0, (float) $ofrenda->valor_real);
+        Mail::assertNothingSent();
+    }
+
+    public function test_sonda_protege_ofrenda_pendiente_pse_reciente_y_4001_pendiente_cr(): void
+    {
+        Mail::fake();
+
+        $ofrendaReciente = $this->crearOfrendaOnlinePendiente(minutosAtras: 10, valor: 40000);
+        $ofrendaCr4001 = $this->crearOfrendaOnlinePendiente(minutosAtras: 65, valor: 80000);
+
+        Http::fake(function (ClientRequest $request) use ($ofrendaReciente, $ofrendaCr4001) {
+            $idPago = $request['str_id_pago'] ?? '';
+            if ($idPago === 'O-'.$ofrendaReciente->id) {
+                return Http::response([
+                    'int_error' => 0,
+                    'int_cantidad_pagos' => 1,
+                    'str_res_pago' => '100|556|0|200|999|40000|40000|0|Donacion|111|Ana|P|300|ana@t.co|OFRENDA|1|1|||2026-11-20|29|CUS-PEND|1001|1007|BANCO|CUS-PEND|1',
+                ], 200);
+            }
+
+            if ($idPago === 'O-'.$ofrendaCr4001->id) {
+                return Http::response([
+                    'int_error' => 0,
+                    'int_cantidad_pagos' => 1,
+                    'str_res_pago' => '101|557|0|200|4001|80000|80000|0|Donacion|222|Luis|P|300|luis@t.co|OFRENDA|1|1|||2026-11-20|32|TKT-CR|4111|VISA|000|000',
+                ], 200);
+            }
+
+            return Http::response(['int_error' => -1, 'int_cantidad_pagos' => 0], 200);
+        });
+
+        $sonda = app(\App\Console\Commands\VerificarPagosPendientes::class);
+        $sonda->setOutput(new \Illuminate\Console\OutputStyle(
+            new \Symfony\Component\Console\Input\ArrayInput([]),
+            new \Symfony\Component\Console\Output\NullOutput
+        ));
+        $sonda->verificarOfrendasPendientesZonaPagos(45);
+
+        $this->assertSame(1, (int) $ofrendaReciente->fresh()->estado_pago_id);
+        $this->assertSame(6, (int) $ofrendaCr4001->fresh()->estado_pago_id);
+        $this->assertSame(2, Ofrenda::count());
+        Mail::assertNothingSent();
+    }
+
+    public function test_sonda_pasa_ofrendas_rechazadas_y_abandonadas_a_anulado_sin_eliminar_para_informes(): void
+    {
+        Mail::fake();
+
+        $ofrendaRechazada1000 = $this->crearOfrendaOnlinePendiente(minutosAtras: 5, valor: 20000);
+        $ofrendaErrorAch1001 = $this->crearOfrendaOnlinePendiente(minutosAtras: 5, valor: 35000);
+        $ofrendaAbandonadaNoEncontrada = $this->crearOfrendaOnlinePendiente(minutosAtras: 50, valor: 60000);
+        $ofrendaAbandonada888 = $this->crearOfrendaOnlinePendiente(minutosAtras: 55, valor: 75000);
+        $ofrendaErrorRed = $this->crearOfrendaOnlinePendiente(minutosAtras: 90, valor: 90000);
+
+        Http::fake(function (ClientRequest $request) use (
+            $ofrendaRechazada1000,
+            $ofrendaErrorAch1001,
+            $ofrendaAbandonadaNoEncontrada,
+            $ofrendaAbandonada888,
+            $ofrendaErrorRed
+        ) {
+            $idPago = $request['str_id_pago'] ?? '';
+            if ($idPago === 'O-'.$ofrendaRechazada1000->id) {
+                return Http::response([
+                    'int_error' => 0,
+                    'int_cantidad_pagos' => 1,
+                    'str_res_pago' => '200|601|0|1|1000|20000|20000|0|Donacion|111|A|B|300|a@t.co|OFRENDA|1|1|||2026-11-20|29|T1|1001|1007|BANCO|CUS-1000|1',
+                ], 200);
+            }
+            if ($idPago === 'O-'.$ofrendaErrorAch1001->id) {
+                return Http::response([
+                    'int_error' => 0,
+                    'int_cantidad_pagos' => 1,
+                    'str_res_pago' => '201|602|0|1|1001|35000|35000|0|Donacion|222|C|D|300|c@t.co|OFRENDA|1|1|||2026-11-20|29|T2|1001|1007|BANCO|CUS-1001|1',
+                ], 200);
+            }
+            if ($idPago === 'O-'.$ofrendaAbandonadaNoEncontrada->id) {
+                return Http::response([
+                    'int_error' => -1,
+                    'int_cantidad_pagos' => 0,
+                    'str_detalle' => 'No se encontraron pagos',
+                    'str_res_pago' => '',
+                ], 200);
+            }
+            if ($idPago === 'O-'.$ofrendaAbandonada888->id) {
+                return Http::response([
+                    'int_error' => 0,
+                    'int_cantidad_pagos' => 1,
+                    'str_res_pago' => '203|604|0|200|888|75000|75000|0|Donacion|444|E|F|300|e@t.co|OFRENDA|1|1|||2026-11-20|29|T4|1001|1007|BANCO||1',
+                ], 200);
+            }
+            if ($idPago === 'O-'.$ofrendaErrorRed->id) {
+                return Http::response('Gateway Timeout', 503);
+            }
+
+            return Http::response(['int_error' => -1, 'int_cantidad_pagos' => 0], 200);
+        });
+
+        $sonda = app(\App\Console\Commands\VerificarPagosPendientes::class);
+        $sonda->setOutput(new \Illuminate\Console\OutputStyle(
+            new \Symfony\Component\Console\Input\ArrayInput([]),
+            new \Symfony\Component\Console\Output\NullOutput
+        ));
+        $actualizadas = $sonda->verificarOfrendasPendientesZonaPagos(45);
+
+        $this->assertSame(4, $actualizadas);
+        // NINGUNA ofrenda fue eliminada: todas existen para auditoría e informes
+        $this->assertSame(5, Ofrenda::count());
+
+        $this->assertSame(4, (int) $ofrendaRechazada1000->fresh()->estado_pago_id);
+        $this->assertEquals(0.0, (float) $ofrendaRechazada1000->fresh()->valor_real);
+
+        $this->assertSame(21, (int) $ofrendaErrorAch1001->fresh()->estado_pago_id);
+        $this->assertEquals(0.0, (float) $ofrendaErrorAch1001->fresh()->valor_real);
+
+        $this->assertSame(16, (int) $ofrendaAbandonadaNoEncontrada->fresh()->estado_pago_id);
+        $this->assertEquals(0.0, (float) $ofrendaAbandonadaNoEncontrada->fresh()->valor_real);
+
+        $this->assertSame(16, (int) $ofrendaAbandonada888->fresh()->estado_pago_id);
+        $this->assertEquals(0.0, (float) $ofrendaAbandonada888->fresh()->valor_real);
+
+        // Error 503 de red NO debe anular la ofrenda
+        $this->assertSame(1, (int) $ofrendaErrorRed->fresh()->estado_pago_id);
+        Mail::assertNothingSent();
+    }
+
+    public function test_callback_tardio_de_rechazo_no_degrada_ofrenda_ya_aprobada(): void
+    {
+        Mail::fake();
+
+        $ofrenda = $this->crearOfrendaOnlinePendiente(minutosAtras: 5, valor: 100000);
+        $ofrenda->update([
+            'estado_pago_id' => 3, // Ya aprobada
+            'valor_real' => 100000,
+            'correo_confirmacion_enviado' => true,
         ]);
+
+        Http::fake([
+            'https://zonapagos.test/api/VerificacionPago' => Http::response([
+                'int_error' => 0,
+                'int_cantidad_pagos' => 1,
+                'str_res_pago' => '300|701|0|1|1000|100000|100000|0|Donacion|111|A|B|300|a@t.co|OFRENDA|1|1|||2026-11-20|29|T1|1001|1007|BANCO|CUS-X|1',
+            ], 200),
+        ]);
+
+        $this->get(route('zonapagos.handleCallback', ['id_pago' => 'O-'.$ofrenda->id]))
+            ->assertOk();
+
+        $ofrenda->refresh();
+        $this->assertSame(3, (int) $ofrenda->estado_pago_id);
+        $this->assertEquals(100000.0, (float) $ofrenda->valor_real);
+        Mail::assertNothingSent();
+    }
+
+    private function crearOfrendaOnlinePendiente(int $minutosAtras, float $valor): Ofrenda
+    {
+        $fechaCreacion = now()->subMinutes($minutosAtras);
+        $ofrenda = Ofrenda::query()->create([
+            'tipo_ofrenda_id' => 1,
+            'valor' => $valor,
+            'valor_real' => 0,
+            'fecha' => $fechaCreacion->toDateString(),
+            'ingresada_por' => 3,
+            'estado_pago_id' => 1,
+            'tipo_pago_id' => 1,
+            'moneda_id' => 1,
+            'destinatario_id' => 1,
+            'nombre_donante' => 'Donante Prueba',
+            'identificacion_donante' => '12345678',
+            'email_donante' => 'donante@ejemplo.com',
+            'correo_confirmacion_enviado' => false,
+        ]);
+        DB::table('ofrendas')->where('id', $ofrenda->id)->update([
+            'created_at' => $fechaCreacion,
+            'updated_at' => $fechaCreacion,
+        ]);
+
+        return $ofrenda->fresh();
     }
 }

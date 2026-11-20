@@ -93,56 +93,185 @@ class OfrendaDonacionController extends Controller
 
     /**
      * Consulta en vivo el estado de una Ofrenda en ZonaPagos, actualiza la base de datos
-     * y envía el correo de agradecimiento una única vez cuando el pago es confirmado.
+     * (sin eliminar nunca la ofrenda) y envía el correo de agradecimiento una única vez
+     * cuando la donación es confirmada.
+     *
+     * Cuando `$evaluarAbandono = true` (invocado por la Sonda), las ofrendas que superan la
+     * ventana de espera (45 min, excluyendo `4001` Pendiente CR) sin concretarse pasan a estado
+     * anulado/abandonado con `valor_real = 0` para diferenciarlas claramente en informes.
      */
-    public function verificarYActualizarOfrenda(Ofrenda $ofrenda): void
-    {
-        // 1. Consultar la API de verificación de ZonaPagos para la ofrenda (O-{id})
-        $verificacion = $this->zonaPagosOfrendaService->verificarPago($ofrenda);
+    public function verificarYActualizarOfrenda(
+        Ofrenda $ofrenda,
+        bool $evaluarAbandono = false,
+        ?int $minutosAbandonoPasarela = null
+    ): bool {
+        $ofrenda->loadMissing(['estadoPago', 'tipoPago']);
 
-        if (! $verificacion['success'] || empty($verificacion['data']['str_res_pago'])) {
-            return;
+        // 1. Protección: nunca degradar una ofrenda que ya quedó efectivamente aprobada
+        if ($ofrenda->estadoPago?->estado_final_inscripcion) {
+            return false;
         }
 
-        // 2. Parsear la trama de respuesta de ZonaPagos
+        // 2. Consultar la API de verificación de ZonaPagos para la ofrenda (O-{id})
+        $verificacion = $this->zonaPagosOfrendaService->verificarPago($ofrenda);
+
+        if ($verificacion['error_red'] ?? false) {
+            return false;
+        }
+
+        $minutosLimite = $minutosAbandonoPasarela ?? (int) config('services.zonapagos.minutos_abandono_pasarela', 45);
+        $estaVencida = $ofrenda->created_at !== null && $ofrenda->created_at->lte(now()->subMinutes($minutosLimite));
+
+        // 3. Caso A: ZonaPagos respondió OK pero la transacción no existe allí (donante cerró sin pagar)
+        if (($verificacion['no_encontrado'] ?? false) || empty($verificacion['data']['str_res_pago'])) {
+            if ($evaluarAbandono && $estaVencida) {
+                return $this->marcarOfrendaComoAnuladaPorAbandono($ofrenda, [
+                    'verificacion_no_encontrado' => $verificacion['response'] ?? ['detalle' => $verificacion['message'] ?? 'Sin registro'],
+                    'motivo_abandono' => "Sin registro en ZonaPagos tras {$minutosLimite} minutos.",
+                ]);
+            }
+
+            return false;
+        }
+
+        // 4. Parsear la trama de respuesta de ZonaPagos
         $datosVerificados = $this->zonaPagosOfrendaService->parsearRespuestaVerificacion((string) $verificacion['data']['str_res_pago']);
 
         if (empty($datosVerificados)) {
-            return;
+            return false;
         }
 
         $codigoEstadoZonaPagos = $datosVerificados['int_estado_pago'] ?? null;
 
-        // 3. Buscar el EstadoPago en la base de datos del tenant según id_codigo_externo
-        $nuevoEstado = EstadoPago::where('id_codigo_externo', $codigoEstadoZonaPagos)->first();
+        // 5. Buscar el EstadoPago priorizando el tipo_pago_id de la ofrenda
+        $nuevoEstado = EstadoPago::query()
+            ->when($ofrenda->tipo_pago_id, fn ($query) => $query->where('tipo_pago_id', $ofrenda->tipo_pago_id))
+            ->where('id_codigo_externo', $codigoEstadoZonaPagos)
+            ->first()
+            ?: EstadoPago::where('id_codigo_externo', $codigoEstadoZonaPagos)->first();
 
-        if (! $nuevoEstado && $codigoEstadoZonaPagos === '1') {
-            $nuevoEstado = EstadoPago::where('estado_final_inscripcion', true)->first();
+        if (! $nuevoEstado && $codigoEstadoZonaPagos === ZonaPagosOfrendaService::CODIGO_ESTADO_APROBADO) {
+            $nuevoEstado = EstadoPago::query()
+                ->when($ofrenda->tipo_pago_id, fn ($query) => $query->where('tipo_pago_id', $ofrenda->tipo_pago_id))
+                ->where('estado_final_inscripcion', true)
+                ->first()
+                ?: EstadoPago::where('estado_final_inscripcion', true)->first();
         }
 
         if (! $nuevoEstado) {
             Log::warning("OfrendaDonacionController — Código de estado '{$codigoEstadoZonaPagos}' no mapeado en estados_pago para Ofrenda ID {$ofrenda->id}.");
 
-            return;
+            return false;
         }
 
-        // 4. Actualizar los datos de la pasarela en la tabla ofrendas
+        // 6. Si continúa pendiente en pasarela (888, 999, 200, 4001)
+        if ($nuevoEstado->estado_pendiente) {
+            // 4001 (Pendiente por CR en tarjeta) tarda ~24h: NO vencer a los 45 min
+            if ($evaluarAbandono && $estaVencida && $codigoEstadoZonaPagos !== ZonaPagosOfrendaService::CODIGO_ESTADO_PENDIENTE_CR) {
+                return $this->marcarOfrendaComoAnuladaPorAbandono($ofrenda, [
+                    'verificacion' => $datosVerificados,
+                    'motivo_abandono' => "Ofrenda en estado {$codigoEstadoZonaPagos} tras {$minutosLimite} minutos sin concretar.",
+                ]);
+            }
+
+            $cambioPendiente = (int) $ofrenda->estado_pago_id !== (int) $nuevoEstado->id;
+            $ofrenda->estado_pago_id = $nuevoEstado->id;
+            $ofrenda->gateway_response = array_merge($ofrenda->gateway_response ?? [], [
+                'verificacion' => $datosVerificados,
+            ]);
+            $ofrenda->save();
+
+            return $cambioPendiente;
+        }
+
+        // 7. Estado definitivo (aprobado '1' o rechazado '1000', '1001', '4000', '4003'): NUNCA se elimina la ofrenda
+        $estadoAnteriorId = (int) $ofrenda->estado_pago_id;
         $ofrenda->estado_pago_id = $nuevoEstado->id;
         $ofrenda->int_id_forma_pago = ! empty($datosVerificados['int_id_forma_pago'])
             ? (int) $datosVerificados['int_id_forma_pago']
             : $ofrenda->int_id_forma_pago;
-        $ofrenda->referencia_donacion = ! empty($datosVerificados['str_ticketID'])
-            ? $datosVerificados['str_ticketID']
-            : ($datosVerificados['int_n_pago'] ?: $ofrenda->referencia_donacion);
+        $ofrenda->referencia_donacion = ! empty($datosVerificados['str_codigo_transaccion'])
+            ? $datosVerificados['str_codigo_transaccion']
+            : (! empty($datosVerificados['str_ticketID'])
+                ? $datosVerificados['str_ticketID']
+                : ($datosVerificados['int_n_pago'] ?: $ofrenda->referencia_donacion));
         $ofrenda->gateway_response = array_merge($ofrenda->gateway_response ?? [], [
             'verificacion' => $datosVerificados,
         ]);
+
+        if ($nuevoEstado->estado_final_inscripcion) {
+            $valorPagado = isset($datosVerificados['dbl_valor_pagado']) && is_numeric($datosVerificados['dbl_valor_pagado'])
+                ? (float) $datosVerificados['dbl_valor_pagado']
+                : 0.0;
+            $ofrenda->valor_real = $valorPagado > 0 ? $valorPagado : (float) $ofrenda->valor;
+        } else {
+            // Rechazada / anulada: se conserva el registro en ofrendas con valor_real = 0 para informes
+            $ofrenda->valor_real = 0;
+        }
+
         $ofrenda->save();
 
-        // 5. Si la ofrenda quedó confirmada/aprobada y aún no se ha enviado el correo, enviarlo
+        // 8. Si la ofrenda quedó confirmada/aprobada y aún no se ha enviado el correo, enviarlo una sola vez
         if ($nuevoEstado->estado_final_inscripcion && ! $ofrenda->correo_confirmacion_enviado) {
             $this->enviarCorreoConfirmacion($ofrenda);
         }
+
+        return $estadoAnteriorId !== (int) $nuevoEstado->id;
+    }
+
+    /**
+     * Marca una ofrenda no concretada como anulada/abandonada (`estado_anulado_inscripcion = true`,
+     * `valor_real = 0`) sin eliminar el registro para mantener trazabilidad completa en informes.
+     *
+     * @param  array<string, mixed>  $evidencia
+     */
+    protected function marcarOfrendaComoAnuladaPorAbandono(Ofrenda $ofrenda, array $evidencia): bool
+    {
+        $estadoAnulado = $this->resolverEstadoAnuladoOfrenda($ofrenda->tipo_pago_id);
+
+        if (! $estadoAnulado) {
+            Log::error("OfrendaDonacionController — No existe estado anulado/abandonado configurado para Ofrenda ID {$ofrenda->id}.");
+
+            return false;
+        }
+
+        $estadoAnteriorId = (int) $ofrenda->estado_pago_id;
+        $ofrenda->estado_pago_id = $estadoAnulado->id;
+        $ofrenda->valor_real = 0;
+        $ofrenda->gateway_response = array_merge($ofrenda->gateway_response ?? [], [
+            'abandono' => $evidencia,
+            'fecha_abandono' => now()->toIso8601String(),
+        ]);
+        $ofrenda->save();
+
+        Log::info("OfrendaDonacionController — Ofrenda ID {$ofrenda->id} marcada como '{$estadoAnulado->nombre}' (sin eliminar).");
+
+        return $estadoAnteriorId !== (int) $estadoAnulado->id;
+    }
+
+    /**
+     * Resuelve el estado anulado/abandonado (priorizando ID 16 "Transacción Abandonada" del método ZonaPagos).
+     */
+    protected function resolverEstadoAnuladoOfrenda(?int $tipoPagoId): ?EstadoPago
+    {
+        return EstadoPago::query()
+            ->when($tipoPagoId, fn ($query) => $query->where('tipo_pago_id', $tipoPagoId))
+            ->where('estado_anulado_inscripcion', true)
+            ->where('estado_pendiente', false)
+            ->where('estado_final_inscripcion', false)
+            ->whereNull('id_codigo_externo')
+            ->first()
+            ?: EstadoPago::query()
+                ->when($tipoPagoId, fn ($query) => $query->where('tipo_pago_id', $tipoPagoId))
+                ->where('estado_anulado_inscripcion', true)
+                ->where('estado_pendiente', false)
+                ->where('estado_final_inscripcion', false)
+                ->first()
+            ?: EstadoPago::query()
+                ->where('estado_anulado_inscripcion', true)
+                ->where('estado_pendiente', false)
+                ->where('estado_final_inscripcion', false)
+                ->first();
     }
 
     /**

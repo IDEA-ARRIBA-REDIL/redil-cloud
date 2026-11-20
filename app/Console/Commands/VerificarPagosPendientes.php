@@ -72,8 +72,8 @@ class VerificarPagosPendientes extends Command
             // 1. Proceso para pagos PENDIENTES en ZonaPagos (incluye vencimiento de abandonados tras 45 min)
             $contadorActualizados = $this->verificarPagosPendientesZonaPagos($minutosPasarela);
 
-            // 1.1 Proceso para ofrendas online PENDIENTES
-            $contadorOfrendasActualizadas = $this->verificarOfrendasPendientesZonaPagos();
+            // 1.1 Proceso para ofrendas online PENDIENTES (vence abandonadas a estado anulado sin eliminar)
+            $contadorOfrendasActualizadas = $this->verificarOfrendasPendientesZonaPagos($minutosPasarela);
 
             // 2. Limpieza SEGURA de borradores sin pago expirados (30 min) y reservas de pagos ya fallidos
             $contadorLimpiadas = $this->limpiarReservasBorradorYFallidas($minutosBorrador);
@@ -228,12 +228,17 @@ class VerificarPagosPendientes extends Command
 
     /**
      * Consulta a ZonaPagos el estado de las ofrendas online (ingresada_por = 3) pendientes.
+     * Nunca elimina registros de `ofrendas`: al rechazarse o vencer la ventana de abandono (45 min),
+     * pasa la ofrenda a estado anulado/abandonado (`valor_real = 0`) para diferenciarla en informes.
      */
-    public function verificarOfrendasPendientesZonaPagos(): int
+    public function verificarOfrendasPendientesZonaPagos(?int $minutosAbandonoPasarela = null): int
     {
         $ofrendasPendientes = Ofrenda::where('ingresada_por', 3)
             ->whereHas('estadoPago', function ($query) {
                 $query->where('estado_pendiente', true);
+            })
+            ->whereHas('tipoPago', function ($query) {
+                $query->where('key_reservada', 'zona');
             })
             ->with(['estadoPago', 'tipoOfrenda', 'destinatarioRelacion', 'moneda', 'usuario', 'tipoPago'])
             ->get();
@@ -249,12 +254,16 @@ class VerificarPagosPendientes extends Command
         $contadorActualizadas = 0;
 
         foreach ($ofrendasPendientes as $ofrenda) {
-            $estadoAnterior = $ofrenda->estado_pago_id;
-            $ofrendaController->verificarYActualizarOfrenda($ofrenda);
+            $actualizada = $ofrendaController->verificarYActualizarOfrenda(
+                $ofrenda,
+                evaluarAbandono: true,
+                minutosAbandonoPasarela: $minutosAbandonoPasarela
+            );
 
-            if ($ofrenda->estado_pago_id !== $estadoAnterior) {
+            if ($actualizada) {
                 $contadorActualizadas++;
-                $this->info("    - Ofrenda ID {$ofrenda->id} actualizada.");
+                $ofrenda->refresh()->load('estadoPago');
+                $this->info("    - Ofrenda ID {$ofrenda->id} actualizada a '{$ofrenda->estadoPago?->nombre}'.");
             }
         }
 
