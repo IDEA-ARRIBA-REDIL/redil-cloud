@@ -131,7 +131,9 @@ class MatriculasActivasEscuelaExport extends DefaultValueBinder implements FromC
                 ' ('.(optional($horarioBase->aula)->nombre ?? 'Aula N/A').')';
         }
 
-        $sedeMatricula = optional($matricula->sede)->nombre ?? 'N/A';
+        $sedeMatricula = $matricula->horarioMateriaPeriodo?->horarioBase?->aula?->sede?->nombre
+            ?? optional($matricula->sede)->nombre
+            ?? 'N/A';
 
         // Cálculo de Notas, Asistencias y Estado de Aprobación
         $hId = $matricula->horario_materia_periodo_id;

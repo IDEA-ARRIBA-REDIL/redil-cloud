@@ -266,7 +266,7 @@ class EscuelasCarrito extends Component
         try {
             // 3. RECOPILAR DATOS
             $usuario = Auth::user();
-            $horario = HorarioMateriaPeriodo::with(['materiaPeriodo.periodo', 'materiaPeriodo.materia'])->findOrFail($this->horarioSeleccionado);
+            $horario = HorarioMateriaPeriodo::with(['materiaPeriodo.periodo', 'materiaPeriodo.materia', 'horarioBase.aula'])->findOrFail($this->horarioSeleccionado);
             $periodo = $horario->materiaPeriodo->periodo;
             $categoria = ActividadCategoria::where('materia_periodo_id', $horario->materia_periodo_id)
                 ->where('actividad_id', $this->actividad->id)
@@ -371,6 +371,8 @@ class EscuelasCarrito extends Component
             // 7. MATRÍCULA Y ESTADO ACADÉMICO (con FKs explícitas compra_id y pago_id)
             // Nota: tipo_usuario_inicial_id NO se promueve aquí; se aplica en Matricula::aplicarEfectosMatricula()
             // únicamente cuando el pago queda efectivamente confirmado.
+            $sedeClaseId = $horario->horarioBase?->aula?->sede_id ?? $this->sedeSeleccionada;
+
             $matricula = Matricula::updateOrCreate([
                 'user_id' => $usuario->id,
                 'periodo_id' => $periodo->id,
@@ -382,6 +384,7 @@ class EscuelasCarrito extends Component
                 'estado_pago_id' => $pago->estado_pago_id,
                 'fecha_matricula' => now()->toDateString(),
                 'valor_a_pagar' => $valorMatricula,
+                'sede_id' => $sedeClaseId,
                 'material_sede_id' => $this->sedeSeleccionada,
                 'escuela_id' => $periodo->escuela_id,
             ]);

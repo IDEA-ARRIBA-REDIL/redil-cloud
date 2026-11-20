@@ -78,13 +78,14 @@ class TrasladoModal extends Component
         $this->validate(['horarioDestinoId' => 'required'], ['horarioDestinoId.required' => 'Debe seleccionar un nuevo horario.']);
 
         $horarioOrigen = $this->matriculaActual->horarioMateriaPeriodo;
-        $horarioDestino = HorarioMateriaPeriodo::find($this->horarioDestinoId);
+        $horarioDestino = HorarioMateriaPeriodo::with('horarioBase.aula')->find($this->horarioDestinoId);
 
         if ($horarioDestino->cupos_disponibles < 1) {
             $this->dispatch('swal:error', [[
-                'title' => 'Error de Cupos', 
-                'text' => 'No hay cupos disponibles en el horario de destino.'
+                'title' => 'Error de Cupos',
+                'text' => 'No hay cupos disponibles en el horario de destino.',
             ]]);
+
             return;
         }
 
@@ -94,7 +95,11 @@ class TrasladoModal extends Component
                 $horarioOrigen->increment('cupos_disponibles');
                 $horarioDestino->decrement('cupos_disponibles');
 
-                $this->matriculaActual->update(['horario_materia_periodo_id' => $this->horarioDestinoId]);
+                $datosTraslado = ['horario_materia_periodo_id' => $this->horarioDestinoId];
+                if ($horarioDestino->horarioBase?->aula?->sede_id) {
+                    $datosTraslado['sede_id'] = $horarioDestino->horarioBase->aula->sede_id;
+                }
+                $this->matriculaActual->update($datosTraslado);
                 $this->matriculaActual->estadoAcademicoClase()->update(['horario_materia_periodo_id' => $this->horarioDestinoId]);
 
                 TrasladoMatriculaLog::create([

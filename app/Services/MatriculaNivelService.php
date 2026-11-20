@@ -57,7 +57,7 @@ class MatriculaNivelService
             foreach ($seleccionHorarios as $materiaId => $horarioId) {
                 // --- CONCURRENCIA (Regla 3) ---
                 // Usamos lockForUpdate para evitar sobre-venta de cupos en procesos simultáneos.
-                $horario = \App\Models\HorarioMateriaPeriodo::lockForUpdate()->findOrFail($horarioId);
+                $horario = \App\Models\HorarioMateriaPeriodo::with('horarioBase.aula')->lockForUpdate()->findOrFail($horarioId);
 
                 // --- VALIDACIÓN DE INTEGRIDAD ---
                 // Corregimos la validación: El horario pertenece a una materia a través de materiaPeriodo.
@@ -70,7 +70,7 @@ class MatriculaNivelService
                 }
 
                 // 3. Crear el registro en la tabla 'matriculas'
-                $matriculaIndividual = \App\Models\Matricula::create([
+                $datosMatricula = [
                     'user_id' => $alumno->id,
                     'periodo_id' => $periodo->id,
                     'horario_materia_periodo_id' => $horario->id,
@@ -78,7 +78,11 @@ class MatriculaNivelService
                     'fecha_matricula' => now(),
                     'estado_pago_matricula' => 'pago_por_nivel',
                     'valor_a_pagar' => 0,
-                ]);
+                ];
+                if ($horario->horarioBase?->aula?->sede_id) {
+                    $datosMatricula['sede_id'] = $horario->horarioBase->aula->sede_id;
+                }
+                $matriculaIndividual = \App\Models\Matricula::create($datosMatricula);
 
                 // 4. Crear el registro de 'Estado Académico'
                 \App\Models\MatriculaHorarioMateriaPeriodo::create([

@@ -640,6 +640,53 @@ class ZonaPagosEscuelasSondaTest extends TestCase
         $this->assertSame(5, (int) $matriculaActual->estado_pago_id);
     }
 
+    public function test_sede_matricula_prioriza_la_sede_real_del_aula_frente_al_default_2(): void
+    {
+        Schema::create('sedes', function (Blueprint $table): void {
+            $table->id();
+            $table->string('nombre');
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        DB::table('sedes')->insert([
+            ['id' => 2, 'nombre' => 'z Auditorio principal'],
+            ['id' => 14, 'nombre' => 'Norte'],
+        ]);
+
+        DB::table('aulas')->insert([
+            'id' => 10,
+            'nombre' => 'Virtual Templo - Norte',
+            'sede_id' => 14,
+        ]);
+
+        DB::table('horarios_base')->insert([
+            'id' => 1,
+            'dia' => 1,
+            'hora_inicio' => '19:00:00',
+            'hora_fin' => '21:00:00',
+            'aula_id' => 10,
+            'capacidad' => 30,
+        ]);
+
+        $escenario = $this->crearEscenarioEscuelas(cuposIniciales: 9, minutosAtras: 5);
+
+        // Simulamos matrícula histórica que quedó con el default(2) en matriculas.sede_id
+        $escenario['matricula']->update(['sede_id' => 2]);
+
+        $matricula = $escenario['matricula']->fresh()->load([
+            'sede',
+            'horarioMateriaPeriodo.horarioBase.aula.sede',
+        ]);
+
+        $sedeResuelta = $matricula->horarioMateriaPeriodo?->horarioBase?->aula?->sede?->nombre
+            ?? $matricula->sede?->nombre
+            ?? 'Sin sede matrícula';
+
+        $this->assertSame('Norte', $sedeResuelta);
+        $this->assertSame(14, (int) $matricula->horarioMateriaPeriodo->horarioBase->aula->sede_id);
+    }
+
     /**
      * Construye una trama válida `str_res_pago` conforme a la Tabla 12 del manual ZonaPagos v5.0.
      */
@@ -1097,6 +1144,7 @@ class ZonaPagosEscuelasSondaTest extends TestCase
             $table->unsignedBigInteger('estado_pago_id')->nullable();
             $table->date('fecha_matricula')->nullable();
             $table->unsignedBigInteger('material_sede_id')->nullable();
+            $table->unsignedBigInteger('sede_id')->nullable();
             $table->unsignedBigInteger('escuela_id')->nullable();
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->timestamps();

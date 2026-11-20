@@ -135,10 +135,14 @@ class MatriculaModal extends Component
             return;
         }
 
+        $horarioSeleccionado = HorarioMateriaPeriodo::with('horarioBase.aula')->find($this->horarioId);
+        $sedeClaseId = $horarioSeleccionado?->horarioBase?->aula?->sede_id ?? $this->sedeId;
+
         $nuevaMatricula = Matricula::create([
             'user_id' => $this->usuario->id,
             'periodo_id' => $this->periodoId,
             'horario_materia_periodo_id' => $this->horarioId,
+            'sede_id' => $sedeClaseId,
             'fecha_matricula' => now(),
             'estado_pago_matricula' => $this->estadoPago,
             'observacion' => $this->observacion,

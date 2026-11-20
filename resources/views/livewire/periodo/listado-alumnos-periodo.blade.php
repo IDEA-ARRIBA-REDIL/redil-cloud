@@ -74,8 +74,8 @@
         @forelse ($alumnos as $alumno)
             @php
                 $primeraMatricula = $alumno->matriculas->first();
-                $sedeMatricula = $primeraMatricula?->sede?->nombre 
-                    ?? $primeraMatricula?->horarioMateriaPeriodo?->horarioBase?->aula?->sede?->nombre 
+                $sedeMatricula = $primeraMatricula?->horarioMateriaPeriodo?->horarioBase?->aula?->sede?->nombre
+                    ?? $primeraMatricula?->sede?->nombre
                     ?? 'Sin sede matrícula';
             @endphp
             {{-- Grilla: 1 columna en móvil, 2 en tablet, 3 en pantallas grandes --}}
