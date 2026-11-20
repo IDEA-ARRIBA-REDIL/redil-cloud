@@ -1821,15 +1821,17 @@ class ActividadController extends Controller
                     ->get();
             }
 
-            // c) Si la actividad es de tipo "escuela", buscamos la matrícula correspondiente.
-            if ($actividad->tipo->tipo_escuelas) {
-                $pagosIds = $compraExistente ? $compraExistente->pagos->pluck('id') : collect([]);
+            // c) Si la actividad es de tipo "escuela", buscamos la matrícula correspondiente a ESTA compra.
+            if ($actividad->tipo->tipo_escuelas && $compraExistente) {
+                $pagosIds = $compraExistente->pagos->pluck('id');
+                $pagosIdsStrings = $pagosIds->map(fn ($id): string => (string) $id)->all();
+
                 $matriculaExistente = \App\Models\Matricula::where('user_id', $usuario->id)
-                    ->where(function ($q) use ($pagosIds) {
+                    ->where(function ($q) use ($compraExistente, $pagosIds, $pagosIdsStrings) {
+                        $q->where('compra_id', $compraExistente->id);
                         if ($pagosIds->isNotEmpty()) {
-                            $q->whereIn('referencia_pago', $pagosIds);
-                        } else {
-                            $q->where('user_id', auth()->id());
+                            $q->orWhereIn('pago_id', $pagosIds)
+                                ->orWhereIn('referencia_pago', $pagosIdsStrings);
                         }
                     })
                     ->with([

@@ -9,6 +9,7 @@ use App\Models\ActividadCategoria; // Servicio canónico unificado
 use App\Models\Compra;     // Asegúrate que esté importado
 use App\Models\Configuracion;
 use App\Models\EstadoPago;
+use App\Models\Matricula;
 use App\Models\Moneda;
 use App\Models\Pago;
 use App\Models\User;
@@ -94,6 +95,7 @@ class Checkout extends Component
         $pagoPendienteZona = Pago::where('compra_id', $compra->id)
             ->whereHas('tipoPago', fn ($q) => $q->where('key_reservada', 'zona'))
             ->whereHas('estadoPago', fn ($q) => $q->where('estado_pendiente', true))
+            ->whereNotNull('payment_url')
             ->latest('id')
             ->first();
 
@@ -359,19 +361,23 @@ class Checkout extends Component
             'telefono' => $this->telefonoComprador,
         ];
 
-        // Se busca el último pago pendiente asociado a esta compra
-        $pagoParaProcesar = Pago::where('compra_id', $this->compra->id)->latest()->first();
+        // 1. Verificar que no exista ya un intento activo en proceso con ZonaPagos (evitar duplicados)
+        $pagoActivoZona = Pago::where('compra_id', $this->compra->id)
+            ->whereHas('tipoPago', fn ($q) => $q->where('key_reservada', 'zona'))
+            ->whereHas('estadoPago', fn ($q) => $q->where('estado_pendiente', true))
+            ->whereNotNull('payment_url')
+            ->latest('id')
+            ->first();
 
-        if (! $pagoParaProcesar) {
-            $this->dispatch('mostrarMensaje', ['tipo' => 'error', 'titulo' => 'Error', 'mensaje' => 'El registro de pago asociado es inválido.']);
+        if ($pagoActivoZona) {
+            $this->esperandoPagoZonaPagos = true;
+            $this->tienePagoEnProcesoZonaPagos = true;
+            $this->pagoIdEsperando = $pagoActivoZona->id;
 
             return;
         }
 
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Se actualiza el registro de Pago con la selección del usuario ANTES de enviarlo a la pasarela.
-
-        // 1. Buscamos el estado inicial por defecto para el método de pago seleccionado a través de su relación.
+        // 2. Buscamos el estado inicial por defecto para ZonaPagos ANTES de mutar el pago
         $estadoInicial = $tipoPago->estadosPago()->where('estado_inicial_defecto', true)->first();
 
         if (! $estadoInicial) {
@@ -384,20 +390,58 @@ class Checkout extends Component
             return;
         }
 
-        // 2. Actualizamos el pago con el tipo de pago y el estado inicial correspondiente.
+        // 3. Reutilizar únicamente un pago borrador sin enviar a pasarela.
+        // Si el último intento ya fue rechazado/anulado/enviado, creamos un Pago NUEVO
+        // para garantizar un str_id_pago único (P-{id}) según la especificación de ZonaPagos.
+        $pagoParaProcesar = Pago::where('compra_id', $this->compra->id)
+            ->whereNull('payment_url')
+            ->where(function ($query) {
+                $query->whereNull('tipo_pago_id')
+                    ->orWhereNull('estado_pago_id');
+            })
+            ->latest('id')
+            ->first();
+
+        if (! $pagoParaProcesar) {
+            $pagoParaProcesar = Pago::create([
+                'compra_id' => $this->compra->id,
+                'moneda_id' => $this->compra->moneda_id,
+                'valor' => $this->valorAPagarAhora ?: $this->compra->valor,
+                'fecha' => now(),
+                'tipo_pago_id' => null,
+                'estado_pago_id' => null,
+            ]);
+        }
+
+        // 4. Actualizamos el pago con ZonaPagos y su estado inicial pendiente (999)
         $pagoParaProcesar->update([
             'tipo_pago_id' => $this->tipoPagoSeleccionado,
             'estado_pago_id' => $estadoInicial->id,
         ]);
 
-        // Si es una actividad tipo escuela, asignamos el tipo de pago a la matrícula asociada
-        if ($this->actividad->tipo->tipo_escuelas) {
-            \App\Models\Matricula::where('referencia_pago', $pagoParaProcesar->id)
-                ->update(['tipo_pago_id' => $this->tipoPagoSeleccionado]);
-        }
-        // --- FIN DE LA CORRECCIÓN ---
+        $this->compra->update([
+            'estado' => Compra::EN_PASARELA,
+            'metodo_pago_id' => $this->tipoPagoSeleccionado,
+        ]);
 
-        // Se determina el tipo de compra para enviarlo en el campo opcional
+        // Si es una actividad tipo escuela, sincronizamos explícitamente compra_id, pago_id, tipo_pago_id y estado_pago_id
+        if ($this->actividad->tipo->tipo_escuelas) {
+            Matricula::where(function ($query) use ($pagoParaProcesar) {
+                $query->where('compra_id', $this->compra->id)
+                    ->orWhere('pago_id', $pagoParaProcesar->id)
+                    ->orWhere('referencia_pago', (string) $pagoParaProcesar->id);
+            })
+                ->where('estado_pago_matricula', 'pendiente')
+                ->update([
+                    'compra_id' => $this->compra->id,
+                    'pago_id' => $pagoParaProcesar->id,
+                    'referencia_pago' => (string) $pagoParaProcesar->id,
+                    'tipo_pago_id' => $this->tipoPagoSeleccionado,
+                    'estado_pago_id' => $estadoInicial->id,
+                ]);
+        }
+
+        // 5. Determinar tipo de compra para str_opcional1
         $tipoCompra = 'COMPRA GENERAL';
         if ($this->actividad->tipo->permite_abonos) {
             $tipoCompra = 'ABONO';
@@ -405,8 +449,9 @@ class Checkout extends Component
             $tipoCompra = 'ESCUELAS';
         }
 
-        // Se llama al servicio de pagos con el registro de Pago ya actualizado
-        $zonaPagosService = new ZonaPagosService;
+        // 6. Iniciar pago en el servicio canónico ZonaPagosService
+        $pagoParaProcesar->load('tipoPago', 'compra.actividad');
+        $zonaPagosService = app(ZonaPagosService::class);
         $resultado = $zonaPagosService->iniciarPago($pagoParaProcesar, $datosComprador, $tipoCompra);
 
         if ($resultado['success']) {
@@ -421,7 +466,14 @@ class Checkout extends Component
             // Despacha evento al navegador para abrir la pasarela en una nueva pestaña (_blank)
             $this->dispatch('abrirPasarelaZonaPagos', url: $resultado['payment_url']);
         } else {
-            // Si el servicio falla, se muestra el error detallado
+            // Si InicioPago falló, revertimos el pago a borrador sin bloquear al usuario en espera
+            $pagoParaProcesar->update([
+                'tipo_pago_id' => null,
+                'estado_pago_id' => null,
+                'gateway_response' => $resultado['response'] ?? ['error' => $resultado['message'] ?? 'Error al iniciar pago'],
+            ]);
+            $this->compra->update(['estado' => Compra::PENDIENTE]);
+
             $mensajeError = $resultado['message'] ?? 'No se pudo iniciar el proceso de pago.';
             $detalleError = isset($resultado['response']) ? json_encode($resultado['response'], JSON_PRETTY_PRINT) : 'Sin respuesta adicional.';
 
@@ -445,7 +497,7 @@ class Checkout extends Component
             return;
         }
 
-        $pago = Pago::with('estadoPago', 'compra.inscripciones', 'tipoPago')->find($this->pagoIdEsperando);
+        $pago = Pago::with(['estadoPago', 'compra.inscripciones', 'tipoPago'])->find($this->pagoIdEsperando);
 
         if (! $pago) {
             return;
@@ -456,57 +508,13 @@ class Checkout extends Component
             return $this->finalizarYRedirigirAPerfil($pago);
         }
 
-        // 2. Si continúa pendiente en BD, consultar proactivamente a la API de ZonaPagos
-        $zonaPagosService = new ZonaPagosService;
-        $resultado = $zonaPagosService->verificarPago($pago);
+        // 2. Si continúa pendiente en BD, sincronizar proactivamente usando el servicio canónico
+        $resultado = app(ZonaPagosService::class)->sincronizarPagoDesdePasarela($pago, evaluarAbandono: false);
 
         if ($resultado['success']) {
-            $strResPago = $resultado['data']['str_res_pago'] ?? '';
-            $datosTransaccion = $zonaPagosService->parsearRespuestaVerificacion($strResPago);
-            $codigoEstadoExterno = $datosTransaccion['int_estado_pago'] ?? null;
-
-            if ($codigoEstadoExterno) {
-                $nuevoEstado = EstadoPago::where('id_codigo_externo', $codigoEstadoExterno)
-                    ->where('tipo_pago_id', $pago->tipo_pago_id)
-                    ->first();
-
-                if ($nuevoEstado && ! $nuevoEstado->estado_pendiente) {
-                    $referenciaPago = $datosTransaccion['int_n_pago'] ?: $datosTransaccion['int_ped_numero'] ?: null;
-
-                    $pago->update([
-                        'estado_pago_id' => $nuevoEstado->id,
-                        'referencia_pago' => $referenciaPago,
-                        'gateway_response' => $resultado['data'],
-                    ]);
-
-                    if ($nuevoEstado->estado_final_inscripcion) {
-                        $compra = $pago->compra;
-                        if ($compra) {
-                            $compra->update(['estado' => 3]);
-                            $tipoCompra = strtoupper(trim($datosTransaccion['str_campo1'] ?? ''));
-                            if ($tipoCompra === 'ESCUELAS') {
-                                $matricula = $pago->matricula ?: Matricula::where(function ($query) use ($pago) {
-                                    $query->where('referencia_pago', (string) $pago->id)
-                                        ->orWhere('referencia_pago', (string) $pago->compra_id)
-                                        ->orWhere('pago_id', $pago->id)
-                                        ->orWhere('compra_id', $pago->compra_id);
-                                })->first();
-
-                                if ($matricula) {
-                                    $matricula->update(['estado_pago_matricula' => 'pagada']);
-                                    $matricula->aplicarEfectosMatricula();
-                                }
-                            } elseif ($compra->inscripciones->isNotEmpty()) {
-                                $compra->inscripciones()->update(['estado' => true]);
-                            }
-                        }
-                    } elseif ($nuevoEstado->estado_anulado_inscripcion || (! $nuevoEstado->estado_pendiente && ! $nuevoEstado->estado_final_inscripcion)) {
-                        // Si el pago fue RECHAZADO, ANULADO o CANCELADO → Liberar matrícula borrador, horario y cupos
-                        Matricula::limpiarMatriculasDePagoFallido($pago);
-                    }
-
-                    return $this->finalizarYRedirigirAPerfil($pago);
-                }
+            $pagoActualizado = $resultado['pago']->load('estadoPago');
+            if ($pagoActualizado->estadoPago && ! $pagoActualizado->estadoPago->estado_pendiente) {
+                return $this->finalizarYRedirigirAPerfil($pagoActualizado);
             }
         }
     }

@@ -12,6 +12,7 @@ use App\Models\HorarioMateriaPeriodo;
 use App\Models\Matricula;
 use App\Models\MatriculaHorarioMateriaPeriodo as EstadoAcademico;
 use App\Models\Pago;
+use App\Services\EstadoFinancieroService;
 use App\Services\ValidadorEscuelas;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -79,17 +80,34 @@ class EscuelasCarrito extends Component
         $this->primeraVez = $primeraVez;
         $this->categoriasHabilitadas = $categoriasHabilitadas ?? collect();
 
-        // Limpiar de forma preventiva matrículas borrador/no pagadas del usuario tabla por tabla
+        // Limpieza segura preventiva: SOLO liberar matrículas cuyo pago YA está definitivamente rechazado/anulado/abandonado.
+        // NUNCA tocar matrículas con un pago PSE/ZonaPagos activo en verificación.
         if (auth()->check()) {
+            $estadoFinanciero = app(EstadoFinancieroService::class);
             $mats = Matricula::where('user_id', auth()->id())
-                ->where(function ($q) {
-                    $q->whereNull('estado_pago_matricula')
-                        ->orWhere('estado_pago_matricula', '!=', 'pagada');
-                })
+                ->where('estado_pago_matricula', 'pendiente')
                 ->get();
 
             foreach ($mats as $mat) {
-                Matricula::eliminarMatriculaCompletaPorId($mat->id);
+                $pagoMat = $mat->pago_id
+                    ? Pago::with('estadoPago')->find($mat->pago_id)
+                    : ($mat->referencia_pago && ctype_digit((string) $mat->referencia_pago)
+                        ? Pago::with('estadoPago')->find((int) $mat->referencia_pago)
+                        : null);
+
+                if (! $pagoMat || ! $pagoMat->estadoPago) {
+                    continue;
+                }
+
+                if ($pagoMat->estadoPago->estado_pendiente || $pagoMat->estadoPago->estado_final_inscripcion) {
+                    continue;
+                }
+
+                if ($mat->compra_id && $mat->pago_id) {
+                    $estadoFinanciero->limpiarReservasFallidas($pagoMat);
+                } else {
+                    $estadoFinanciero->limpiarReservaLegacyFallida($mat, $pagoMat);
+                }
             }
         }
 
@@ -305,24 +323,64 @@ class EscuelasCarrito extends Component
                 'destinatario_id' => $this->sedeSeleccionada,
             ]);
 
-            // 6. CREACIÓN O ACTUALIZACIÓN DEL PAGO
-            $pago = Pago::updateOrCreate([
-                'compra_id' => $compra->id,
-                'estado_pago_id' => 1, // Iniciado
-            ], [
-                'moneda_id' => $this->monedaSeleccionada,
-                'valor' => $valorMatricula,
-                'fecha' => now(),
-            ]);
+            // 6. CREACIÓN O REUTILIZACIÓN EXCLUSIVA DE PAGO BORRADOR (SIN PASARELA ASIGNADA)
+            // Si el usuario reintenta tras un pago rechazado/abandonado, siempre se crea un Pago nuevo
+            // para garantizar un str_id_pago único en ZonaPagos (P-{id}).
+            $pago = Pago::query()
+                ->where('compra_id', $compra->id)
+                ->whereNull('tipo_pago_id')
+                ->whereNull('payment_url')
+                ->latest('id')
+                ->first();
 
-            // 7. MATRÍCULA Y ESTADO ACADÉMICO
+            if ($pago) {
+                $pago->update([
+                    'moneda_id' => $this->monedaSeleccionada,
+                    'valor' => $valorMatricula,
+                    'fecha' => now(),
+                ]);
+            } else {
+                $pago = Pago::create([
+                    'compra_id' => $compra->id,
+                    'moneda_id' => $this->monedaSeleccionada,
+                    'valor' => $valorMatricula,
+                    'fecha' => now(),
+                    'tipo_pago_id' => null,
+                    'estado_pago_id' => null,
+                ]);
+            }
+
+            // Si existía otra matrícula borrador en un horario distinto para la misma compra sin pago en pasarela,
+            // liberarla y devolver su cupo antes de reservar el nuevo horario.
+            $matriculasPreviasOtroHorario = Matricula::query()
+                ->where('compra_id', $compra->id)
+                ->where('estado_pago_matricula', 'pendiente')
+                ->where('horario_materia_periodo_id', '!=', $horario->id)
+                ->get();
+
+            foreach ($matriculasPreviasOtroHorario as $matPrevia) {
+                if ($matPrevia->horario_materia_periodo_id) {
+                    HorarioMateriaPeriodo::query()
+                        ->where('id', $matPrevia->horario_materia_periodo_id)
+                        ->increment('cupos_disponibles');
+                }
+                $matPrevia->estadoAcademicoClase()->delete();
+                $matPrevia->delete();
+            }
+
+            // 7. MATRÍCULA Y ESTADO ACADÉMICO (con FKs explícitas compra_id y pago_id)
+            // Nota: tipo_usuario_inicial_id NO se promueve aquí; se aplica en Matricula::aplicarEfectosMatricula()
+            // únicamente cuando el pago queda efectivamente confirmado.
             $matricula = Matricula::updateOrCreate([
                 'user_id' => $usuario->id,
                 'periodo_id' => $periodo->id,
                 'horario_materia_periodo_id' => $horario->id,
             ], [
-                'referencia_pago' => $pago->id,
+                'compra_id' => $compra->id,
+                'pago_id' => $pago->id,
+                'referencia_pago' => (string) $pago->id,
                 'estado_pago_matricula' => 'pendiente',
+                'estado_pago_id' => $pago->estado_pago_id,
                 'fecha_matricula' => now()->toDateString(),
                 'valor_a_pagar' => $valorMatricula,
                 'material_sede_id' => $this->sedeSeleccionada,
@@ -336,11 +394,6 @@ class EscuelasCarrito extends Component
             ], [
                 'periodo_id' => $periodo->id,
             ]);
-
-            // --- NUEVO: Actualizar Tipo de Usuario Inicial ---
-            if ($horario->materiaPeriodo->materia->tipo_usuario_inicial_id) {
-                $usuario->update(['tipo_usuario_id' => $horario->materiaPeriodo->materia->tipo_usuario_inicial_id]);
-            }
 
             // 8. ÍTEM EN EL CARRITO
             ActividadCarritoCompra::updateOrCreate([

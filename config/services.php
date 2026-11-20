@@ -38,6 +38,8 @@ return [
       'usuario' => env('ZONAPAGOS_USUARIO'),
       'clave' => env('ZONAPAGOS_CLAVE'),
       'codigo_servicio' => env('ZONAPAGOS_CODIGO_SERVICIO'),
+      'minutos_abandono_pasarela' => (int) env('ZONAPAGOS_MINUTOS_ABANDONO_PASARELA', 45),
+      'minutos_abandono_borrador' => (int) env('ZONAPAGOS_MINUTOS_ABANDONO_BORRADOR', 30),
   ],
 
   'recaptcha' => [

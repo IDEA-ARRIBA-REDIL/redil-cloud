@@ -3,28 +3,35 @@
 namespace App\Console\Commands;
 
 use App\Http\Controllers\OfrendaDonacionController;
-use App\Models\EstadoPago;
 use App\Models\Matricula;
 use App\Models\Ofrenda;
 use App\Models\Pago;
+use App\Services\EstadoFinancieroService;
 use App\Services\ZonaPagosService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Sonda de ZonaPagos (Cron Job).
+ * Sonda de ZonaPagos (Cron Job obligatorio para certificación PSE / ACH).
  *
- * Según el manual de ZonaPagos (sección 7.3.2), el comercio debe ejecutar este proceso
- * cada 10-15 minutos para verificar transacciones que están en estado pendiente.
+ * Programada cada 5 minutos en `routes/console.php`.
  *
- * Además, incluye una función dedicada para limpiar matrículas de pagos anulados/rechazados.
+ * Ejecuta 3 etapas seguras y transaccionales por cada tenant:
+ *  1. Consulta a ZonaPagos los `Pago` pendientes (`key_reservada = 'zona'`), actualiza
+ *     aprobaciones/rechazos y vence transacciones abandonadas tras la ventana configurada (45 min).
+ *  1.1 Verifica las `Ofrenda` online pendientes (`ingresada_por = 3`).
+ *  2. Limpia de forma SEGURA únicamente reservas expiradas que nunca dieron clic en pagar (30 min)
+ *     o matrículas pendientes cuyo pago YA está definitivamente rechazado/anulado/abandonado,
+ *     restaurando siempre `cupos_disponibles`. NUNCA borra matrículas con pago PSE activo.
  */
 class VerificarPagosPendientes extends Command
 {
-    protected $signature = 'pagos:verificar-zonapagos';
+    protected $signature = 'pagos:verificar-zonapagos
+                            {--minutos-pasarela= : Sobreescribe los minutos antes de marcar un pago en pasarela como abandonado (default config: 45)}
+                            {--minutos-borrador= : Sobreescribe los minutos antes de expirar borradores sin clic en pagar (default config: 30)}';
 
-    protected $description = 'Verifica el estado de los pagos pendientes en ZonaPagos y ejecuta la limpieza dedicada de matrículas en pagos anulados/rechazados.';
+    protected $description = 'Verifica el estado de los pagos pendientes en ZonaPagos, vence abandonados y limpia de forma segura reservas fallidas restaurando cupos.';
 
     public function handle(): int
     {
@@ -48,22 +55,32 @@ class VerificarPagosPendientes extends Command
     public function ejecutarVerificacionInquilino(): int
     {
         try {
-            Log::info('Sonda ZonaPagos: Iniciando ejecución en inquilino.');
+            $minutosPasarela = $this->option('minutos-pasarela') !== null
+                ? (int) $this->option('minutos-pasarela')
+                : (int) config('services.zonapagos.minutos_abandono_pasarela', 45);
+
+            $minutosBorrador = $this->option('minutos-borrador') !== null
+                ? (int) $this->option('minutos-borrador')
+                : (int) config('services.zonapagos.minutos_abandono_borrador', 30);
+
+            Log::info('Sonda ZonaPagos: Iniciando ejecución en inquilino.', [
+                'minutos_pasarela' => $minutosPasarela,
+                'minutos_borrador' => $minutosBorrador,
+            ]);
             $this->info('Sonda ZonaPagos: Iniciando ejecución en inquilino.');
 
-            // 1. Proceso para pagos PENDIENTES (Consultar pasarela ZonaPagos)
-            $contadorActualizados = $this->verificarPagosPendientesZonaPagos();
+            // 1. Proceso para pagos PENDIENTES en ZonaPagos (incluye vencimiento de abandonados tras 45 min)
+            $contadorActualizados = $this->verificarPagosPendientesZonaPagos($minutosPasarela);
 
             // 1.1 Proceso para ofrendas online PENDIENTES
             $contadorOfrendasActualizadas = $this->verificarOfrendasPendientesZonaPagos();
 
-            // 2. NUEVA FUNCIÓN DEDICADA SEPARADA: Proceso exclusivo para limpiar matrículas de pagos ANULADOS / RECHAZADOS
-            $contadorLimpiadas = $this->limpiarMatriculasDePagosAnulados();
+            // 2. Limpieza SEGURA de borradores sin pago expirados (30 min) y reservas de pagos ya fallidos
+            $contadorLimpiadas = $this->limpiarReservasBorradorYFallidas($minutosBorrador);
 
-            $mensaje = "Sonda ZonaPagos: Proceso finalizado. Se actualizaron {$contadorActualizados} pagos pendientes, {$contadorOfrendasActualizadas} ofrendas pendientes y se eliminaron {$contadorLimpiadas} matrículas de pagos anulados.";
+            $mensaje = "Sonda ZonaPagos: Proceso finalizado. Se actualizaron {$contadorActualizados} pagos pendientes, {$contadorOfrendasActualizadas} ofrendas pendientes y se liberaron {$contadorLimpiadas} matrículas expiradas/fallidas.";
             Log::info($mensaje);
             $this->info($mensaje);
-
         } catch (Throwable $e) {
             Log::error('Sonda ZonaPagos: Error fatal.', [
                 'message' => $e->getMessage(),
@@ -79,19 +96,18 @@ class VerificarPagosPendientes extends Command
     }
 
     /**
-     * FUNCIÓN 1: Consulta a ZonaPagos el estado de los pagos que continúan en estado pendiente.
+     * PASO 1: Consulta a ZonaPagos el estado de los pagos que continúan en estado pendiente.
      */
-    public function verificarPagosPendientesZonaPagos(): int
+    public function verificarPagosPendientesZonaPagos(?int $minutosAbandonoPasarela = null): int
     {
-        // Se consultan TODOS los pagos en estado pendiente sin filtro de tiempo en updated_at,
-        // para que la Sonda verifique cualquier pago pendiente sin importar el tiempo transcurrido.
-        $pagosPendientes = Pago::whereHas('estadoPago', function ($query) {
-            $query->where('estado_pendiente', true);
-        })
+        $pagosPendientes = Pago::query()
+            ->whereHas('estadoPago', function ($query) {
+                $query->where('estado_pendiente', true);
+            })
             ->whereHas('tipoPago', function ($query) {
                 $query->where('key_reservada', 'zona');
             })
-            ->with('compra.inscripciones', 'tipoPago')
+            ->with(['compra.inscripciones', 'tipoPago', 'estadoPago'])
             ->get();
 
         if ($pagosPendientes->isEmpty()) {
@@ -101,7 +117,7 @@ class VerificarPagosPendientes extends Command
         }
 
         $this->info("    - {$pagosPendientes->count()} pagos pendientes encontrados para verificar con ZonaPagos.");
-        $zonaPagosService = new ZonaPagosService;
+        $zonaPagosService = app(ZonaPagosService::class);
         $contadorActualizados = 0;
 
         foreach ($pagosPendientes as $pago) {
@@ -112,8 +128,11 @@ class VerificarPagosPendientes extends Command
             }
 
             $this->info("--> Verificando Pago ID: {$pago->id}");
-
-            $resultado = $zonaPagosService->verificarPago($pago);
+            $resultado = $zonaPagosService->sincronizarPagoDesdePasarela(
+                $pago,
+                evaluarAbandono: true,
+                minutosAbandonoPasarela: $minutosAbandonoPasarela
+            );
 
             if (! $resultado['success']) {
                 Log::error("Sonda ZonaPagos: Error al verificar Pago ID {$pago->id}: ".($resultado['message'] ?? 'desconocido'));
@@ -121,92 +140,11 @@ class VerificarPagosPendientes extends Command
                 continue;
             }
 
-            $strResPago = $resultado['data']['str_res_pago'] ?? '';
-            $datosTransaccion = $zonaPagosService->parsearRespuestaVerificacion($strResPago);
-            $codigoEstadoExterno = $datosTransaccion['int_estado_pago'] ?? null;
-
-            if (! $codigoEstadoExterno) {
-                $this->info("    - Pago ID {$pago->id}: no se pudo extraer el código de estado. Se omite.");
-
-                continue;
-            }
-
-            $nuevoEstado = EstadoPago::where('id_codigo_externo', $codigoEstadoExterno)
-                ->where('tipo_pago_id', $pago->tipo_pago_id)
-                ->first();
-
-            if (! $nuevoEstado) {
-                Log::error("Sonda ZonaPagos: No existe EstadoPago para código externo '{$codigoEstadoExterno}' y TipoPago ID {$pago->tipo_pago_id}.");
-
-                continue;
-            }
-
-            if ($nuevoEstado->id === $pago->estado_pago_id) {
-                $this->info("    - Pago ID {$pago->id}: sin cambio de estado.");
-
-                continue;
-            }
-
-            if ($nuevoEstado->estado_pendiente) {
-                $pago->touch();
-
-                continue;
-            }
-
-            $referenciaPago = $datosTransaccion['int_n_pago'] ?: $datosTransaccion['int_ped_numero'] ?: null;
-
-            $pago->update([
-                'estado_pago_id' => $nuevoEstado->id,
-                'referencia_pago' => $referenciaPago,
-                'gateway_response' => $resultado['data'],
-            ]);
-
-            $this->info("    - Pago ID {$pago->id} actualizado a '{$nuevoEstado->nombre}'.");
-            Log::info("Sonda ZonaPagos: Pago ID {$pago->id} actualizado a '{$nuevoEstado->nombre}'.");
-            $contadorActualizados++;
-
-            /**
-             * MAPEO DE ESTADOS DE LA COMPRA ($compra->estado / Foreign Key a estados_pago.id):
-             * -----------------------------------------------------------------------------
-             * 1 = Compra Pendiente / Borrador
-             * 2 = Compra Anulada / Cancelada
-             * 3 = Compra Pagada / Finalizada Exitosamente
-             * 4 = Compra Rechazada por Pasarela/Banco
-             * 5 = Compra Pendiente por Finalizar en Pasarela (PSE / ZonaPagos)
-             */
-            if ($nuevoEstado->estado_final_inscripcion) {
-                $compra = $pago->compra;
-                if ($compra) {
-                    $compra->update(['estado' => 3]); // 3 = PAGADA / APROBADA
-                }
-
-                $tipoCompra = strtoupper(trim($datosTransaccion['str_campo1'] ?? ''));
-
-                if ($tipoCompra === 'ESCUELAS') {
-                    $matricula = $pago->matricula ?: \App\Models\Matricula::where(function ($query) use ($pago) {
-                        $query->where('referencia_pago', (string) $pago->id)
-                            ->orWhere('referencia_pago', (string) $pago->compra_id)
-                            ->orWhere('pago_id', $pago->id)
-                            ->orWhere('compra_id', $pago->compra_id);
-                    })->first();
-
-                    if ($matricula) {
-                        $matricula->update(['estado_pago_matricula' => 'pagada']);
-                        $matricula->aplicarEfectosMatricula();
-                        $this->info("    - Matrícula ID {$matricula->id} actualizada a 'pagada' y efectos de inicio aplicados.");
-                    }
-                } elseif ($compra && $compra->inscripciones->isNotEmpty()) {
-                    $compra->inscripciones()->update(['estado' => true]);
-                }
-            } elseif ($nuevoEstado->estado_anulado_inscripcion || (! $nuevoEstado->estado_pendiente && ! $nuevoEstado->estado_final_inscripcion)) {
-                $compra = $pago->compra;
-                if ($compra) {
-                    $compraEstadoNuevo = ($nuevoEstado->id == 2) ? 2 : 4;
-                    $compra->update(['estado' => $compraEstadoNuevo]); // 4 = RECHAZADA, 2 = ANULADA
-                }
-
-                Matricula::limpiarMatriculasDePagoFallido($pago);
-                $this->info("    - Matrícula/Reserva liberada para Pago ID {$pago->id} por rechazo/anulación.");
+            if ($resultado['actualizado']) {
+                $contadorActualizados++;
+                $this->info("    - Pago ID {$pago->id} actualizado a '{$resultado['estado']}' (motivo: {$resultado['motivo']}).");
+            } else {
+                $this->info("    - Pago ID {$pago->id}: sin cambio definitivo ({$resultado['motivo']}).");
             }
         }
 
@@ -214,34 +152,78 @@ class VerificarPagosPendientes extends Command
     }
 
     /**
-     * FUNCIÓN 2 SEPARADA EXCLUSIVA:
-     * Consulta directamente la tabla de matrículas por su ID y elimina tabla por tabla
-     * absolutamente cualquier matrícula borrador o no pagada (estado_pago_matricula != 'pagada').
-     * Sin restricciones ni condicionales complejas.
+     * PASO 2 SEGURO: Libera únicamente:
+     *  A) Matrículas borrador que NUNCA hicieron clic en pagar (`tipo_pago_id IS NULL && payment_url IS NULL`)
+     *     y superaron la ventana de abandono (default 30 minutos).
+     *  B) Matrículas pendientes cuyo `Pago` asociado YA está en un estado rechazado/anulado/abandonado
+     *     (respaldo para pagos fallidos o registros históricos legacy).
+     *
+     * NUNCA elimina matrículas con un pago activo pendiente en ZonaPagos/PSE o aprobado.
      */
-    public function limpiarMatriculasDePagosAnulados(): int
+    public function limpiarReservasBorradorYFallidas(?int $minutosAbandonoBorrador = null): int
     {
-        $this->info('--> Ejecutando limpieza directa tabla por tabla de matrículas no pagadas/anuladas...');
-
-        // Consultamos todas las matrículas cuyo estado_pago_matricula NO sea 'pagada' (incluyendo nulos, pendientes, rechazadas, etc.)
-        $matriculasNoPagadas = Matricula::where(function ($q) {
-            $q->whereNull('estado_pago_matricula')
-                ->orWhere('estado_pago_matricula', '!=', 'pagada');
-        })->get();
-
+        $minutosLimite = $minutosAbandonoBorrador ?? (int) config('services.zonapagos.minutos_abandono_borrador', 30);
+        $estadoFinanciero = app(EstadoFinancieroService::class);
         $contadorLimpiadas = 0;
 
-        foreach ($matriculasNoPagadas as $mat) {
-            // Eliminar tabla por tabla por el ID de la matrícula
-            $eliminado = Matricula::eliminarMatriculaCompletaPorId($mat->id);
-            if ($eliminado) {
+        $this->info("--> Ejecutando limpieza segura de borradores expirados (>= {$minutosLimite} min) y reservas fallidas...");
+
+        // 2A. Matrículas borrador pendientes que nunca llegaron a una pasarela y superaron los 30 minutos
+        $borradoresExpirados = Matricula::query()
+            ->where('estado_pago_matricula', 'pendiente')
+            ->where('created_at', '<=', now()->subMinutes($minutosLimite))
+            ->get();
+
+        foreach ($borradoresExpirados as $matricula) {
+            if ($estadoFinanciero->limpiarReservaBorradorExpirada($matricula)) {
                 $contadorLimpiadas++;
-                $this->info("    - [LIMPIEZA DIRECTA TABLA POR TABLA]: Matrícula ID {$mat->id} eliminada de todas las tablas.");
-                Log::info("Limpieza Directa: Matrícula ID {$mat->id} eliminada de todas las tablas exitosamente.");
+                $this->info("    - [BORRADOR EXPIRADO]: Matrícula ID {$matricula->id} liberada y cupo restaurado.");
+                Log::info("Sonda ZonaPagos: Matrícula borrador ID {$matricula->id} liberada por inactividad (>= {$minutosLimite} min).");
+            }
+        }
+
+        // 2B. Matrículas pendientes vinculadas a un Pago que YA está definitivamente rechazado/anulado/abandonado
+        $matriculasConPagoFallido = Matricula::query()
+            ->where('estado_pago_matricula', 'pendiente')
+            ->get();
+
+        foreach ($matriculasConPagoFallido as $matricula) {
+            $pago = $matricula->pago_id
+                ? Pago::with('estadoPago')->find($matricula->pago_id)
+                : ($matricula->referencia_pago && ctype_digit((string) $matricula->referencia_pago)
+                    ? Pago::with('estadoPago')->find((int) $matricula->referencia_pago)
+                    : null);
+
+            if (! $pago || ! $pago->estadoPago) {
+                continue;
+            }
+
+            // Protección absoluta: jamás tocar matrículas de pagos pendientes o aprobados
+            if ($pago->estadoPago->estado_pendiente || $pago->estadoPago->estado_final_inscripcion) {
+                continue;
+            }
+
+            if ($matricula->compra_id && $matricula->pago_id) {
+                $limpiadas = $estadoFinanciero->limpiarReservasFallidas($pago);
+                if ($limpiadas > 0) {
+                    $contadorLimpiadas += $limpiadas;
+                    $this->info("    - [PAGO FALLIDO]: Matrícula ID {$matricula->id} liberada y cupo restaurado.");
+                }
+            } elseif ($estadoFinanciero->limpiarReservaLegacyFallida($matricula, $pago)) {
+                $contadorLimpiadas++;
+                $this->info("    - [PAGO FALLIDO LEGACY]: Matrícula ID {$matricula->id} liberada y cupo restaurado.");
             }
         }
 
         return $contadorLimpiadas;
+    }
+
+    /**
+     * Alias de compatibilidad hacia atrás; redirige a la limpieza segura.
+     */
+    public function limpiarMatriculasDePagosAnulados(): int
+    {
+        return $this->limpiarReservasBorradorYFallidas();
     }
 
     /**

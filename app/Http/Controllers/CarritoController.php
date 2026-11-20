@@ -587,12 +587,18 @@ class CarritoController extends Controller
         $inscripcion = $pago->compra->inscripciones->first();
 
         $emailDestinatario = $inscripcion?->user?->email ?? $pago->compra->email_comprador;
+        $correoYaEnviado = (bool) ($pago->gateway_response['correo_confirmacion_enviado'] ?? false);
 
-        if ($emailDestinatario) {
+        // Solo enviamos el correo de confirmación cuando el pago está efectivamente aprobado y una única vez
+        if ($emailDestinatario && $pago->estadoPago?->estado_final_inscripcion && ! $correoYaEnviado) {
             try {
                 $compra = $pago->compra;
                 $actividad = $pago->compra->actividad;
                 Mail::to($emailDestinatario)->send(new CompraConfirmacionMail($compra, $pago, $inscripcion, $actividad, $matricula));
+
+                $gatewayData = is_array($pago->gateway_response) ? $pago->gateway_response : [];
+                $gatewayData['correo_confirmacion_enviado'] = true;
+                $pago->update(['gateway_response' => $gatewayData]);
             } catch (\Exception $e) {
                 Log::error("Fallo al enviar correo de confirmación para compra #{$pago->compra_id}: ".$e->getMessage());
             }

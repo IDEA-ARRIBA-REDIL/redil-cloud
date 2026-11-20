@@ -2,19 +2,21 @@
 description: Carga el contexto, arquitectura y memoria del Agente de ZonaPagos y Pasarela PSE para REDIL Cloud.
 ---
 
-# Agente de ZonaPagos y Pasarela PSE (Integración Transaccional)
+# Agente de ZonaPagos y Pasarela PSE (Integración Transaccional — Producción v5.0)
 
-Este documento contiene la especificación técnica completa, arquitectura, mapa de código, flujo de datos y decisiones de diseño implementadas para la integración con la pasarela de pagos **ZonaPagos (v5.0 REST API)** en REDIL Cloud.
+Este documento contiene la especificación técnica completa, arquitectura, mapa de código, flujo de datos, política de la Sonda y pruebas verificadas para la integración con **ZonaPagos (v5.0 REST API)** en REDIL Cloud (Fase 1 Producción: **Escuelas**, código de servicio `1001`).
+
+Referencia oficial de la pasarela: `https://docs.zonavirtual.com/docs`
 
 ---
 
 ## 1. Contexto e Instrucciones del Agente
 
 Cuando este agente se activa:
-1. Lee `app/Services/ZonaPagosService.php` para la lógica de API REST.
-2. Lee `app/Http/Controllers/ZonaPagosController.php` para el flujo de callback.
-3. Lee `app/Console/Commands/VerificarPagosPendientes.php` para la Sonda (cron).
-4. Lee `app/Livewire/Carrito/Checkout.php` para la iniciación del pago desde la UI.
+1. Lee [`app/Services/ZonaPagosService.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Services/ZonaPagosService.php) y [`app/Services/EstadoFinancieroService.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Services/EstadoFinancieroService.php).
+2. Lee [`app/Http/Controllers/ZonaPagosController.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Http/Controllers/ZonaPagosController.php) para el flujo de callback y retorno de usuario.
+3. Lee [`app/Console/Commands/VerificarPagosPendientes.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Console/Commands/VerificarPagosPendientes.php) y [`routes/console.php`](file:///Users/m/Desktop/REDIL-CLOUD/routes/console.php) para la Sonda (Scheduler Laravel 11/12).
+4. Lee [`app/Livewire/Carrito/EscuelasCarrito.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Livewire/Carrito/EscuelasCarrito.php) y [`app/Livewire/Carrito/Checkout.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Livewire/Carrito/Checkout.php) para el flujo completo de Escuelas.
 5. Adopta la persona: *"Experto en Pasarelas de Pago, Integración ZonaPagos REST y Flujos Transaccionales Multi-Tenant"*.
 6. Confirma al usuario: *"💳 **Agente ZonaPagos & PSE Activado**. Conozco el flujo transaccional completo, la Sonda de verificación, el callback de retorno y la gestión de estados."*
 
@@ -24,242 +26,140 @@ Cuando este agente se activa:
 
 | Archivo | Responsabilidad / Función | Estado |
 |---------|---------------------------|--------|
-| [`app/Services/ZonaPagosService.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Services/ZonaPagosService.php) | **Servicio Canónico Unificado** usando Laravel `Http::post`. Gestiona `iniciarPago`, `verificarPago` y `parsearRespuestaVerificacion`. | ✅ Unificado |
-| [`app/Http/Controllers/ZonaPagosController.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Http/Controllers/ZonaPagosController.php) | Controlador HTTP que procesa la respuesta en vivo (GET Callback) al regresar el usuario del portal de pagos. | ✅ Refactorizado |
-| [`app/Console/Commands/VerificarPagosPendientes.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Console/Commands/VerificarPagosPendientes.php) | Sonda en segundo plano (Cron Job) que consulta pagos pendientes en ZonaPagos cada 10-15 min con filtro de 7 min. | ✅ Refactorizado |
-| [`app/Livewire/Carrito/Checkout.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/app/Livewire/Carrito/Checkout.php) | Componente Livewire del Checkout. Genera/actualiza el registro `Pago` e invoca `ZonaPagosService->iniciarPago()`. | ✅ Actualizado |
-| [`database/seeders/TipoPagoSeeder.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/database/seeders/TipoPagoSeeder.php) | Seeder con la configuración base de `tipos_pago` (ID 1 = ZonaPagos "key_reservada = zona"). | ✅ Actualizado |
-| [`database/seeders/EstadoPagoSeeder.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/database/seeders/EstadoPagoSeeder.php) | Mapeo de códigos de estado de ZonaPagos (`id_codigo_externo`) a estados locales en `estados_pago`. | ✅ Alineado v5.0 |
-| [`config/services.php`](file:///Users/macosxdarwin/Desktop/REDIL-CLOUD/config/services.php) | Configuración de credenciales apuntando a variables del `.env`. | ✅ Configurado |
+| [`app/Services/ZonaPagosService.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Services/ZonaPagosService.php) | **Servicio Canónico Unificado**: credenciales por tenant (`tipos_pago`) con fallback a `.env`, `iniciarPago`, `verificarPago`, `parsearRespuestaVerificacion` y `sincronizarPagoDesdePasarela`. | ✅ Producción v5.0 |
+| [`app/Services/EstadoFinancieroService.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Services/EstadoFinancieroService.php) | Motor financiero atómico con `lockForUpdate()`: aplica estados, reconcilia `Compra`/`Matricula`/`Inscripcion`, restaura `cupos_disponibles` y limpia reservas fallidas/expiradas. | ✅ Actualizado |
+| [`app/Http/Controllers/ZonaPagosController.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Http/Controllers/ZonaPagosController.php) | Procesa Callback GET (`/pagos/zonapagos/callback`) y Retorno de Usuario (`/pagos/zonapagos/retorno`) verificando SIEMPRE contra `VerificacionPago`. | ✅ Unificado |
+| [`app/Console/Commands/VerificarPagosPendientes.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Console/Commands/VerificarPagosPendientes.php) | Sonda multi-tenant (`pagos:verificar-zonapagos`). Verifica pendientes en pasarela, vence abandonados (45 min) y libera borradores expirados (30 min) restaurando cupos. | ✅ Endurecido |
+| [`routes/console.php`](file:///Users/m/Desktop/REDIL-CLOUD/routes/console.php) | Scheduler activo de Laravel 11/12: ejecuta `pagos:verificar-zonapagos` cada 5 minutos (`->everyFiveMinutes()->withoutOverlapping()`). | ✅ Activo |
+| [`app/Livewire/Carrito/EscuelasCarrito.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Livewire/Carrito/EscuelasCarrito.php) | Crea borrador con FKs explícitas (`compra_id`, `pago_id`), difiere `tipo_usuario_inicial_id` hasta confirmación del pago y protege pagos PSE activos. | ✅ Corregido |
+| [`app/Livewire/Carrito/Checkout.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Livewire/Carrito/Checkout.php) | Genera nuevo `Pago` en reintentos (`P-{nuevo_id}` único), evita duplicar pagos activos y delega el polling (`wire:poll.4s`) al servicio canónico. | ✅ Corregido |
+| [`app/Http/Controllers/CarritoController.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Http/Controllers/CarritoController.php) | `compraFinalizada`: envía correo de confirmación únicamente cuando el pago está aprobado (`estado_final_inscripcion = true`) y una sola vez. | ✅ Corregido |
+| [`app/Http/Controllers/ActividadController.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Http/Controllers/ActividadController.php) | `perfil`: busca matrícula asociada estrictamente a la compra actual (`compra_id` / `pago_id` / `referencia_pago`). | ✅ Corregido |
+| [`config/services.php`](file:///Users/m/Desktop/REDIL-CLOUD/config/services.php) | Configuración fallback `services.zonapagos` + ventanas `minutos_abandono_pasarela` (45) y `minutos_abandono_borrador` (30). | ✅ Configurado |
+| [`database/seeders/EstadoPagoSeeder.php`](file:///Users/m/Desktop/REDIL-CLOUD/database/seeders/EstadoPagoSeeder.php) | Mapeo de códigos `int_estado_pago` (v5.0) a `estados_pago`, incluyendo ID `16` (Transacción Abandonada) y `21` (Error ACH `1001`). | ✅ Alineado v5.0 |
+| [`tests/Feature/ZonaPagosEscuelasSondaTest.php`](file:///Users/m/Desktop/REDIL-CLOUD/tests/Feature/ZonaPagosEscuelasSondaTest.php) | Suite PHPUnit (17 pruebas) cubriendo producción `1001`, Sonda, protección de pagos PSE activos, abandonos, cupos, reintentos y scheduler. | ✅ Verificado |
+| [`app/Services/ZonaPagosOfrendaService.php`](file:///Users/m/Desktop/REDIL-CLOUD/app/Services/ZonaPagosOfrendaService.php) | Servicio independiente para Donaciones (`O-{id}`). Ver [`.agent/workflows/agenteDonaciones.md`](file:///Users/m/Desktop/REDIL-CLOUD/.agent/workflows/agenteDonaciones.md). | ✅ Activo |
 
 ---
 
-## 3. Resumen de Correcciones Técnicas Aplicadas
+## 3. Correcciones Críticas Aplicadas para Paso a Producción (2026-11-20)
 
-### 🔴 1. Corrección `int_modalidad = -1` (CRÍTICO)
-*   **Problema original:** Los servicios antiguos enviaban `int_modalidad => 1`.
-*   **Especificación del manual (§7.1.1.2):** *"Siempre se debe enviar: -1"*.
-*   **Solución:** Se corrigió en `ZonaPagosService.php` a `-1` fijo.
+### 🔴 1. Activación real de la Sonda en Laravel 11/12 (`routes/console.php`)
+- **Causa raíz del incidente en producción:** La aplicación arranca desde `bootstrap/app.php` cargando el scheduler de `routes/console.php` (no `app/Console/Kernel.php`), donde `pagos:verificar-zonapagos` estaba comentado.
+- **Solución:** Se activó `Schedule::command('pagos:verificar-zonapagos')->everyFiveMinutes()->withoutOverlapping();` en `routes/console.php` (frecuencia recomendada por ZonaPagos/ACH: 5–10 min).
+- **Limpieza pendiente manual:** Eliminar el archivo duplicado obsoleto `app/Console/VerificarPagosPendientes.php` en local y servidores.
 
-### 🔴 2. Consolidación de Servicios Duplicados
-*   **Problema original:** Existían dos servicios (`ZonaPagoService.php` usando Http Client y `ZonaPagosService.php` con cURL plano). `Checkout.php` usaba uno y la Sonda usaba el otro.
-*   **Solución:** Se eliminó el duplicado y se unificó toda la lógica en `app/Services/ZonaPagosService.php` usando `Illuminate\Support\Facades\Http`.
+### 🔴 2. Eliminación del borrado indiscriminado en la Sonda
+- **Riesgo corregido:** Antes, `limpiarMatriculasDePagosAnulados()` eliminaba **toda** matrícula con `estado_pago_matricula != 'pagada'`, lo que habría borrado matrículas de estudiantes que estaban pagando en PSE en ese instante.
+- **Solución:** Reemplazado por `limpiarReservasBorradorYFallidas()`, que:
+  1. **NUNCA** toca matrículas cuyo pago esté pendiente en ZonaPagos/PSE dentro de su ventana activa (ni pagos TC en estado `4001` Pendiente CR).
+  2. Libera borradores que nunca dieron clic en Pagar (`tipo_pago_id IS NULL && payment_url IS NULL`) tras **30 minutos**.
+  3. Libera matrículas cuyo pago fue rechazado (`1000`, `1001`, `4000`, `4003`) o vencido por abandono tras **45 minutos** en pasarela (`888`, `999`, `200` o `no_encontrado`), marcando el pago como **Transacción Abandonada (ID 16)** y **restaurando `cupos_disponibles` (+1)** de forma atómica con `lockForUpdate()`.
+  4. Incluye soporte seguro para limpiar matrículas históricas/legacy previas al fix (sin `compra_id`/`pago_id`) cuando su pago ya está definitivamente fallido o abandonado.
 
-### 🔴 3. Límite de Campo `str_descripcion_pago`
-*   **Problema original:** El código truncaba la descripción a 250 caracteres.
-*   **Especificación del manual:** Límite máximo de **70 caracteres**.
-*   **Solución:** `substr($descripcionRaw, 0, 70)` aplicado en `iniciarPago()`.
+### 🔴 3. Integridad relacional en Escuelas (`EscuelasCarrito.php` + `EstadoFinancieroService.php`)
+- `EscuelasCarrito::crearMatricula()` ahora persiste explícitamente `compra_id`, `pago_id`, `referencia_pago => (string) $pago->id` y `estado_pago_id` en `matriculas`.
+- `tipo_usuario_inicial_id` dejó de aplicarse en el borrador: ahora se promueve **únicamente cuando el pago es aprobado** vía `Matricula::aplicarEfectosMatricula()`.
+- Al liberar una matrícula fallida o expirada, `EstadoFinancieroService` restaura `cupos_disponibles` (+1) una sola vez dentro de la misma transacción.
+- `EscuelasCarrito::mount()` ya no borra matrículas con pago PSE activo pendiente.
 
-### 🔴 4. Tipo de Dato `int_id_comercio`
-*   **Problema original:** Se enviaba como string `"34741"` en lugar de entero `34741`.
-*   **Solución:** Se castea a `(int)` desde la configuración.
+### 🔴 4. Unicidad de `str_id_pago` en reintentos y corrección de `Checkout.php`
+- Según `docs.zonavirtual.com`, nunca se debe reutilizar el mismo `str_id_pago` tras un rechazo. `Checkout::procesarPagoZonaPagos()` crea un **nuevo `Pago`** (`P-{nuevo_id}`) en cada reintento, sincroniza la matrícula y evita abrir intentos duplicados mientras exista uno pendiente con `payment_url`.
+- Se agregó el `use App\Models\Matricula;` faltante en `Checkout.php` y se delegó `consultarEstadoPagoAuto()` a `ZonaPagosService::sincronizarPagoDesdePasarela()`.
 
-### 🟡 5. Separación de Nombres y Apellidos
-*   **Problema original:** `Checkout.php` enviaba el nombre completo en `nombre` y `''` (vacío) en `apellido`. La API rechazaba o colocaba un `.` en el apellido.
-*   **Solución:** Se implementó división automática por espacios en `Checkout.php` y fallback defensivo en `ZonaPagosService.php`.
-
-### 🟡 6. Parseo de Múltiples Transacciones en Verificación
-*   **Problema original:** El campo `str_res_pago` se separaba directamente con `explode('|', ...)`.
-*   **Especificación del manual (§7.2.2 Tabla 12):** Cuando hay pagos mixtos o reintentos, el string contiene múltiples transacciones separadas por `|;|`.
-*   **Solución:** `parsearRespuestaVerificacion()` hace un `explode('|;|', $strResPago)` primero y extrae la última transacción registrada (la definitiva).
-
-### 🟡 7. Callback con Búsqueda Dinámica de Estados
-*   **Problema original:** `ZonaPagosController.php` tenía hardcodeado `estado_pago_id = 9` y `referencia_pago = 'xxx1111'`.
-*   **Solución:** El controller ahora consulta la API de Verificación, extrae el `int_estado_pago` (código externo) y busca el estado en `estados_pago` vía `id_codigo_externo`.
-
-### 🟡 8. Sonda (Cron Job) de Verificación Universal de Pagos
-*   **Ajuste de Consulta:** Se eliminó la restricción de 7 minutos (`updated_at <= subMinutes(7)`), permitiendo que la Sonda verifique **todos** los pagos en estado pendiente independientemente del tiempo transcurrido o la frecuencia del Cron.
-*   **Actualización de Compra:** Sincroniza automáticamente el estado de la `Compra` (`compras.estado`: 3 = Pagada, 4 = Rechazada, 2 = Anulada) y limpia las reservas/matrículas borrador en caso de pago fallido.
-
-### 🟢 9. Alineación del `EstadoPagoSeeder` con ZonaPagos v5.0
-*   **Código 1001:** Se corrigió de "Pendiente" (naranja) a **"Error ACH-Banco (Rechazado)"** (rojo, `estado_anulado=true`, `estado_pendiente=false`).
-*   **Códigos obsoletos (777, 1002, 1003):** Fueron marcados como obsoletos y desactivados de la Sonda mediante lógica agnóstica en PHP puro.
-
-### 🟢 10. Corrección en ValidadorEscuelas (Validaciones del Piloto)
-*   **Corrección matemática en `_calcularNotaActualPonderada`:** Se normalizó el promedio parcial dividiendo `$sumaPonderadaFinal` sobre `$pesoTotalEvaluadoFinal` (el porcentaje acumulado de los cortes ya calificados). Evita que estudiantes con 5.0 en el primer corte salgan rechazados con 1.50.
-*   **Validación de Pasos de Crecimiento de la Materia (`procesosPrerrequisito`):** Se integró la verificación de pasos de crecimiento del nivel/materia objetivo (`_validarProcesosPrerrequisitoMateria`), cubriendo la brecha que existía en el modo post-período.
-
-### 🟢 11. Patrón UX `target="_blank"` + Redirección Automática al Perfil
-*   **Apertura en nueva ventana:** Al hacer clic en "Pagar" con ZonaPagos, la pasarela abre en una **nueva pestaña del navegador** (`window.open(url, '_blank')`).
-*   **Monitoreo en tiempo real (`wire:poll.4s="consultarEstadoPagoAuto"`):** La pestaña del Checkout permanece activa mostrando una UI elegante de espera mientras consulta a la API de ZonaPagos y a la BD cada 4 segundos.
-*   **Redirección Automática al Perfil:** Apenas el pago finaliza (aprobado, rechazado o cancelado), la ventana principal redirige automáticamente al **Perfil de la Actividad** (`actividades.perfil`), con el mensaje de confirmación/estado.
-
-### 🟢 12. Reglas del Perfil de Actividad según Estado del Pago (`perfil-actividad.blade.php`)
-*   **Pago Confirmado (`$pagoConfirmado`):** Muestra el mensaje verde *"¡Ya estás matriculado!"* / *"¡Compra realizada!"* y deshabilita la reinscripción.
-*   **Pago Pendiente (`$pagoPendiente`):** Muestra alerta amarilla *"Pago en proceso de verificación"* e impide crear un nuevo intento mientras esté activo. Ofrece botón *"Verificar Estado de Mi Pago"*.
-*   **Pago Anulado / Rechazado (`$pagoAnuladoOFallido`):** El sistema entiende que el intento previo no fue efectivo, muestra aviso informativo y **HABILITA NUEVAMENTE EL BOTÓN "Gestionar Matrícula"** para que el usuario pueda reintentar su proceso de inscripción.
-
-### 🟢 13. Rediseño UI de Mis Compras y Comprobante PDF de 1 Página (Recibo)
-*   **Rediseño UI "Mis compras" (`perfil-actividad.blade.php`):** Estructura en Tarjetas KPI (ID, Fecha, Total, N° Transacciones), bloque ordenado de Matrícula (Materia, Sede, Aula, Horario y Sede Material) y Tabla de Transacciones con badges de color y botón redondeado `Descargar Recibo PDF`.
-*   **Comprobante PDF (`pdf/comprobante-pago.blade.php`):** Plantilla dedicada de recibo que garantiza ajuste exacto en **1 sola página**. Solucionado el problema de codificación UTF-8 (`<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>`), eliminando caracteres desconfigurados como `matrÃcula` o `InformaciÃ³n`. Incluye logo, datos del comprador, horario, aula, sede de material, desglose de valores y código QR al pie de página.
-
-### 🟢 14. Limpieza Automática de Matrículas Borrador en Pagos Fallidos
-*   **Lógica de Desocupación (`Matricula::limpiarMatriculasDePagoFallido($pago)`):** Cuando una transacción es rechazada, anulada o cancelada por ZonaPagos (vía Callback, Sonda o Polling), el sistema elimina la `Matricula` borrador y su `EstadoAcademico` / `MatriculaHorarioMateriaPeriodo`.
-*   **Liberación de Cupos y Materias:** Al eliminar la matrícula no pagada, el `ValidadorEscuelas` libera la materia objetivo, permitiendo que el estudiante vuelva a seleccionar el horario y matricularse sin que el sistema bloquee la materia por considerar que ya estaba matriculado.
-
-### 🟢 15. Barredor Automático en la Sonda (`VerificarPagosPendientes.php`)
-*   **Limpieza de Transacciones Preexistentes:** La Sonda incluye ahora un **Paso 2 (Barredor)** que busca en la base de datos cualquier `Matricula` borrador vinculada a pagos que YA se encontraban en estado no pendiente (p.ej. `estado_pago_id = 4` Rechazado, `id_codigo_externo = 1000`).
-*   **Limpieza Preventiva en Pantallas:** Al ingresar a `EscuelasCarrito.php` o `perfil-actividad.blade.php`, se ejecuta un barrido preventivo para el usuario autenticado que elimina matrículas huérfanas de pagos fallidos anteriores, desbloqueando las materias al instante.
-
-### 🟢 16. Ejecución Híbrida Multi-Tenant (`pagos:verificar-zonapagos`)
-*   **Comando Inteligente Autónomo:** `VerificarPagosPendientes.php` incluye detección de contexto de inquilino. Si se ejecuta directamente desde la consola central o vía Cron (`php artisan pagos:verificar-zonapagos`), detecta que no hay inquilino inicializado y **recorre automáticamente todos los inquilinos de la plataforma** (`Tenant::all()`).
-*   **Compatibilidad Total:** Funciona de forma transparente tanto llamándolo directamente (`php artisan pagos:verificar-zonapagos`), como en `schedule:run`, o como subcomando de `tenants:run`.
-
-### 🟢 17. Criterios Exhaustivos de Barrido para `estado_pago_id = 4` (Rechazado/Anulado)
-El Barredor de Matrículas borrador evalúa **4 vías de detección** para garantizar que ninguna matrícula borrador quede atrapada tras un pago rechazado:
-1. **Detección por `estado_pago_id` directo en la Matrícula:** Evalúa si la matrícula tiene FK a `estado_pago_id = 4` (Rechazado) u otro estado con `estado_anulado_inscripcion = true`.
-2. **Detección por Texto de Estado:** Evalúa si `estado_pago_matricula` tiene valor `'rechazada'`, `'anulada'`, `'fallida'` o `'cancelada'`.
-3. **Detección por Referencia de Pago (`pago_id` o `compra_id`):** Resuelve si `referencia_pago` apunta a un registro de `Pago` o `Compra` cuya transacción fue rechazada/anulada.
-4. **Detección por Usuario:** Limpia matrículas pendientes del usuario que tengan compras/pagos rechazados no finalizados.
-
-### 🟢 18. Función Dedicada e Independiente (`limpiarMatriculasDePagosAnulados()`)
-En `VerificarPagosPendientes.php`, la ejecución se divide en **dos funciones completamente independientes**:
-*   `verificarPagosPendientesZonaPagos()`: Consulta a la API de ZonaPagos por las transacciones en estado pendiente.
-*   `limpiarMatriculasDePagosAnulados()`: **Función dedicada separada** que consulta en la base de datos local los registros con estado anulado/rechazado (`estado_pago_id = 4` o `estado_anulado_inscripcion = true`) y elimina automáticamente la matrícula, el estado académico y el pivote del horario.
-
-### 🟢 19. Eliminación Directa Tabla por Tabla (`Matricula::eliminarMatriculaCompletaPorId($id)`)
-Para evitar cualquier bloqueo por condicionales complejas, se implementó la eliminación directa **tabla por tabla por el ID de la Matrícula**:
-1. `DB::table('matricula_horario_materia_periodo')->where('matricula_id', $id)->delete()`
-2. `DB::table('traslados_matricula_log')->where('matricula_id', $id)->delete()`
-3. `DB::table('reporte_asistencia_alumnos')->where('horario_materia_periodo_id', ...)->where('user_id', ...)->delete()`
-4. `DB::table('matriculas')->where('id', $id)->delete()`
-5. `DB::table('actividades_carrito_compras')` e `inscripciones` borradores de esa compra.
+### 🟡 5. Cumplimiento API REST ZonaPagos v5.0 y credenciales por tenant (`1001`)
+- `ZonaPagosService::obtenerCredenciales()` lee primero desde la tabla `tipos_pago` del tenant (`key_reservada = 'zona'`):
+  - `enlace` → URL base API (`https://www.zonapagos.com/Apis_CicloPago/api`)
+  - `client_id` → `int_id_comercio` (cast a `int`)
+  - `bussines_id` → `str_usuario` / `str_usr_comercio`
+  - `key_id` → `str_clave` / `str_pwd_comercio`
+  - `account_id` → `codigo_servicio` (**`1001`** en producción)
+  - Con fallback automático a `config('services.zonapagos.*')` (`.env`).
+- Payload `InicioPago` ahora incluye `'AdicionalesPago' => []`, `'int_modalidad' => -1` y truncamiento seguro `mb_substr(..., 'UTF-8')`.
+- `parsearRespuestaVerificacion()` descarta segmentos vacíos tras `|;|` y prioriza la sub-transacción aprobada (`int_estado_pago === '1'`).
+- Se guardan datos de conciliación exigidos por ZonaPagos: `gateway_transaction_id` (CUS / `str_ticketID`), `int_id_forma_pago` (`29` PSE, `32` TC) y `datos_parseados` en `gateway_response`.
+- `ZonaPagosController::retornoUsuario()` verifica el pago contra ZonaPagos antes de redirigir a `carrito.compraFinalizada`, y `CarritoController::compraFinalizada()` envía el correo de confirmación **solo si el pago está aprobado** y una única vez.
 
 ---
 
-## 4. Configuración de Entorno (.env & Config) y Cron Job en cPanel
+## 4. Configuración de Producción (Multi-Tenant + Fallback `.env` + Cron)
 
-### ⚙️ Comando Cron Job en cPanel para ejecutar la Sonda de ZonaPagos
-Para ejecutar automáticamente la Sonda de ZonaPagos en producción cPanel cada 5 minutos en todos los inquilinos:
+### A. Tabla `tipos_pago` del tenant (Prioridad 1 — Recomendado)
+Para el registro con `key_reservada = 'zona'` (`activo = true`):
 
-```bash
-* * * * * cd /home/redil2024/public_html && /usr/local/bin/ea-php82 artisan schedule:run >> /dev/null 2>&1
-```
+| Columna en `tipos_pago` | Valor en Producción | Descripción |
+|---|---|---|
+| `enlace` | `https://www.zonapagos.com/Apis_CicloPago/api` | URL base del API REST Ciclo de Pago |
+| `client_id` | `<ID_COMERCIO_PRODUCCION>` | Entero asignado por ZonaPagos |
+| `bussines_id` | `<USUARIO_COMERCIO_PRODUCCION>` | Usuario API asignado por ZonaPagos |
+| `key_id` | `<CLAVE_COMERCIO_PRODUCCION>` | Clave API asignada por ZonaPagos |
+| `account_id` | `1001` | Código de servicio PSE/Producción |
 
-### 💻 Comando para Ejecución Manual por SSH en cPanel
-```bash
-/usr/local/bin/ea-php82 artisan pagos:verificar-zonapagos
-```
-
-Las credenciales **nunca se almacenan en la base de datos**. Residen en `.env` y se inyectan a través de `config/services.php`:
-
-### `.env`
+### B. Variables `.env` (Fallback global + Ventanas de Abandono)
 ```env
 ZONAPAGOS_API_URL="https://www.zonapagos.com/Apis_CicloPago/api"
-ZONAPAGOS_ID_COMERCIO=34741
-ZONAPAGOS_USUARIO="MANANTIAL"
-ZONAPAGOS_CLAVE="Vidaeterna34741"
-ZONAPAGOS_CODIGO_SERVICIO=2701
+ZONAPAGOS_ID_COMERCIO=<ID_COMERCIO_PRODUCCION>
+ZONAPAGOS_USUARIO="<USUARIO_COMERCIO_PRODUCCION>"
+ZONAPAGOS_CLAVE="<CLAVE_COMERCIO_PRODUCCION>"
+ZONAPAGOS_CODIGO_SERVICIO=1001
+ZONAPAGOS_MINUTOS_ABANDONO_PASARELA=45
+ZONAPAGOS_MINUTOS_ABANDONO_BORRADOR=30
 ```
 
-### `config/services.php`
-```php
-'zonapagos' => [
-    'api_url'         => env('ZONAPAGOS_API_URL'),
-    'id_comercio'     => env('ZONAPAGOS_ID_COMERCIO'),
-    'usuario'         => env('ZONAPAGOS_USUARIO'),
-    'clave'           => env('ZONAPAGOS_CLAVE'),
-    'codigo_servicio' => env('ZONAPAGOS_CODIGO_SERVICIO'),
-],
-```
+> [!IMPORTANT]
+> Nunca almacenar secretos reales en documentación ni repositorios. Configurar las credenciales reales únicamente en `tipos_pago` del tenant y/o en el `.env` del servidor.
+
+### C. Cron del servidor (Obligatorio para que ejecute la Sonda cada 5 min)
+- **EC2 / Linux:**
+  ```bash
+  * * * * * cd /ruta/al/proyecto && php artisan schedule:run >> /dev/null 2>&1
+  ```
+- **cPanel:**
+  ```bash
+  * * * * * cd /home/redil2024/public_html && /usr/local/bin/ea-php82 artisan schedule:run >> /dev/null 2>&1
+  ```
+- Verificar que Laravel reconozca la tarea programada:
+  ```bash
+  php artisan schedule:list
+  ```
 
 ---
 
 ## 5. Mapeo de Estados de ZonaPagos (`estados_pago`)
 
-La tabla `estados_pago` vincula el código retornado en `int_estado_pago` mediante `id_codigo_externo`:
-
-| Código Externo | Estado en BD | Nombre | `estado_final_inscripcion` | `estado_pendiente` | `estado_anulado_inscripcion` |
-|----------------|--------------|--------|---------------------------|--------------------|------------------------------|
-| `999` | ID 5 | Pago Pendiente por Finalizar | `false` | `true` | `false` |
-| `1` | ID 9 | Pago Finalizado OK | `true` | `false` | `false` |
-| `1000` | ID 4 | Pago Rechazado | `false` | `false` | `true` |
-| `1001` | ID 21 | Error ACH-Banco (Rechazado) | `false` | `false` | `true` |
-| `4001` | ID 6 | Pendiente por CR (TC) | `false` | `true` | `false` |
-| `4000` | ID 7 | Rechazado por CR (TC) | `false` | `false` | `true` |
-| `4003` | ID 8 | Error CR (TC) | `false` | `false` | `true` |
-| `888` | ID 39 | Pendiente por Iniciar | `false` | `true` | `false` |
-| `200` | ID 37 | Pago Iniciado (en pasarela) | `false` | `true` | `false` |
-
----
-
-## 6. Flujo Transaccional Paso a Paso
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Usuario
-    participant Checkout as Livewire (Checkout.php)
-    participant BD as Base de Datos (Tenant)
-    participant Service as ZonaPagosService
-    participant ZP as Pasarela ZonaPagos
-    participant Controller as ZonaPagosController
-    participant Sonda as Sonda (Cron Command)
-
-    Usuario->>Checkout: Click "Pagar con ZonaPagos"
-    Checkout->>BD: Crear/Obtener Pago (estado_pago_id = 5 [999 Pendiente])
-    Checkout->>Service: iniciarPago($pago, $datosComprador, $tipoCompra)
-    Service->>ZP: POST /InicioPago (int_modalidad = -1)
-    ZP-->>Service: int_codigo = 1 + str_url (URL de redirección)
-    Service-->>Checkout: payment_url
-    Checkout-->>Usuario: Redirección al portal de ZonaPagos / PSE
-
-    alt Caso A: El usuario completa o cancela el pago en el portal
-        ZP-->>Controller: GET /pagos/zonapagos/callback?id_pago={pago_id}
-        Controller->>Service: verificarPago($pago)
-        Service->>ZP: POST /VerificacionPago
-        ZP-->>Service: str_res_pago (contiene int_estado_pago)
-        Service-->>Controller: datosParseados
-        Controller->>BD: Actualizar Pago, Compra (estado 3 = PAGADA) e Inscripciones/Matrículas
-        Controller-->>Usuario: Muestra pantalla de confirmación / estado
-    else Caso B: El usuario cierra el navegador o se demora (Sonda en segundo plano)
-        Sonda->>BD: Consultar pagos con estado_pendiente=true AND updated_at <= now() - 7min
-        Sonda->>Service: verificarPago($pago)
-        Service->>ZP: POST /VerificacionPago
-        ZP-->>Service: str_res_pago
-        Sonda->>BD: Actualizar Pago, Compra e Inscripciones/Matrículas en cascada
-    end
-```
+| Código Externo (`int_estado_pago`) | ID BD | Nombre | Acción en Sonda / Callback |
+|---|---|---|---|
+| `1` | `9` | Pago Finalizado OK | `Compra = PAGADA (3)`, `Matricula = 'pagada'`, `valor_pagado`, `fecha_pago`, `aplicarEfectosMatricula()` |
+| `999` | `5` | Pago Pendiente por Finalizar (PSE) | Mantiene reserva hasta 45 min; si vence → ID `16` Abandonada + libera matrícula y cupo |
+| `888` | `39` | Pendiente por Iniciar | Mantiene reserva hasta 45 min; si vence → ID `16` Abandonada + libera matrícula y cupo |
+| `200` | `37` | Pago Iniciado | Mantiene reserva hasta 45 min; si vence → ID `16` Abandonada + libera matrícula y cupo |
+| `4001` | `6` | Pendiente por CR (TC) | Mantiene reserva (NO se vence a los 45 min; revisión antifraude ~24h) |
+| `1000` | `4` | Pago Rechazado | `Compra = ANULADA`, soft-delete `Matricula`, borra estado académico, restaura cupo (+1) |
+| `1001` | `21` | Error ACH-Banco (Rechazado) | `Compra = ANULADA`, soft-delete `Matricula`, borra estado académico, restaura cupo (+1) |
+| `4000` | `7` | Rechazado por CR (TC) | `Compra = ANULADA`, soft-delete `Matricula`, borra estado académico, restaura cupo (+1) |
+| `4003` | `8` | Error CR (TC) | `Compra = ANULADA`, soft-delete `Matricula`, borra estado académico, restaura cupo (+1) |
+| `null` (local) | `16` | Transacción Abandonada | Asignado por la Sonda al vencer 45 min sin concretar; libera matrícula y restaura cupo (+1) |
 
 ---
 
-## 7. Actualización en Cascada (Cascading Updates)
+## 6. Protocolo de Pruebas (Automatizadas + Manual en Local)
 
-Cuando un pago cambia a un estado donde `estado_final_inscripcion = true` (por ejemplo, `id_codigo_externo = 1` [Aprobado]), la aplicación realiza las siguientes acciones de forma automática tanto en el **Callback** como en la **Sonda**:
-
-1. **Tabla `pagos`**:
-   - `estado_pago_id` = Nuevo estado (`ID 9`)
-   - `referencia_pago` = `int_n_pago` (Número de transacción retornado por ZonaPagos)
-   - `gateway_response` = Respuesta JSON completa de la API
-2. **Tabla `compras`**:
-   - `estado` = `3` (PAGADA)
-3. **Según el tipo de compra (`str_opcional1` enviado a ZonaPagos):**
-   - **`COMPRA GENERAL` / `ABONO`**: Actualiza las inscripciones asociadas (`$compra->inscripciones()->update(['estado' => true])`).
-   - **`ESCUELAS`**: Actualiza la matrícula académica del alumno (`$pago->matricula->update(['estado_pago_matricula' => 'pagada'])`).
-
----
-
-## 8. Comandos Utilitarios y Verificación
-
-### Ejecutar la Sonda manualmente en consola:
+### A. Pruebas automatizadas PHPUnit
 ```bash
-php artisan pagos:verificar-zonapagos
+php artisan test --compact tests/Feature/ZonaPagosEscuelasSondaTest.php tests/Feature/DonacionesOnlineTest.php
 ```
 
-### Ejecutar el Seeder de Estados de Pago:
-```bash
-php artisan db:seed --class=EstadoPagoSeeder
-```
-
-### Probar sintaxis y formato Pint:
-```bash
-vendor/bin/pint --format agent app/Services/ZonaPagosService.php app/Http/Controllers/ZonaPagosController.php app/Console/Commands/VerificarPagosPendientes.php
-```
-
----
-
-## 9. Mantenimiento Futuro y Notas para Desarrolladores
-
-1. **Adición de nuevos Tenants:** Cada tenant heredará automáticamente esta integración sin modificar código, ya que las credenciales están centralizadas en la configuración del servidor y los modelos son multi-tenant.
-2. **Logs de Auditoría:** Todas las peticiones e intercambios con la API de ZonaPagos se registran en `storage/logs/laravel.log` bajo el canal por defecto con el prefijo `ZonaPagosService` o `Sonda ZonaPagos`.
-3. **Monitoreo de Errores:** En caso de fallas en producción, verificar `gateway_response` en la tabla `pagos` para consultar la respuesta JSON exacta que retornó la pasarela en el momento de la transacción.
+### B. Prueba manual rápida de abandono en Local (sin esperar 45 min)
+1. Verificar `cupos_disponibles` del horario elegido en Escuelas (ej. `10`).
+2. Como estudiante, iniciar matrícula en `EscuelasCarrito` → confirmar que `cupos_disponibles` baja a `9`, `matriculas` guarda `compra_id` y `pago_id`, y el `tipo_usuario_id` **NO** cambió aún.
+3. En `Checkout`, hacer clic en **Pagar** con ZonaPagos (código `1001`) y cerrar la pestaña de ZonaPagos sin finalizar el pago.
+4. Esperar 1–2 minutos y ejecutar la Sonda con ventana acelerada para prueba:
+   ```bash
+   php artisan pagos:verificar-zonapagos --minutos-pasarela=1 --minutos-borrador=1
+   ```
+5. Verificar resultado:
+   - `pagos.estado_pago_id` pasa a `16` (`Transacción Abandonada`).
+   - `compras.estado` pasa a `2` (`ANULADA`).
+   - `matriculas.deleted_at` queda poblado (soft-delete) y `matricula_horario_materia_periodo` queda eliminado.
+   - `horarios_materia_periodo.cupos_disponibles` vuelve exactamente a `10`.
+   - En el perfil de la actividad vuelve a habilitarse el botón para matricularse de nuevo y al reintentar se genera un **nuevo `Pago` (`P-{nuevo_id}`)**.

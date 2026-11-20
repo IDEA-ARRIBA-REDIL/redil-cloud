@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Compra;
 use App\Models\EstadoPago;
+use App\Models\HorarioMateriaPeriodo;
 use App\Models\Matricula;
 use App\Models\Pago;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,7 +39,13 @@ class EstadoFinancieroService
                 return $actual->fresh();
             }
 
-            $actual->fill(Arr::only($datos, ['referencia_pago', 'gateway_response', 'fecha']));
+            $actual->fill(Arr::only($datos, [
+                'referencia_pago',
+                'gateway_response',
+                'gateway_transaction_id',
+                'int_id_forma_pago',
+                'fecha',
+            ]));
             $actual->estado_pago_id = $estado->id;
             $actual->tipo_pago_id = $tipo;
             $actual->save();
@@ -74,9 +81,19 @@ class EstadoFinancieroService
         if (ImporteMonetario::comparar($total, $compra->valor) >= 0 && $this->pagosAprobados($compra)->exists()) {
             $compra->update(['estado' => Compra::PAGADA]);
             $compra->inscripciones()->update(['estado' => 3]);
+            $pagoAprobado = $this->pagosAprobados($compra)->latest('id')->first();
             $matriculasPendientes = $compra->matriculas()->where('estado_pago_matricula', 'pendiente')->get();
             foreach ($matriculasPendientes as $matricula) {
-                $matricula->update(['estado_pago_matricula' => 'pagada', 'valor_pagado' => $total]);
+                $datosMatricula = [
+                    'estado_pago_matricula' => 'pagada',
+                    'valor_pagado' => $total,
+                    'fecha_pago' => now(),
+                ];
+                if ($pagoAprobado) {
+                    $datosMatricula['tipo_pago_id'] = $pagoAprobado->tipo_pago_id;
+                    $datosMatricula['estado_pago_id'] = $pagoAprobado->estado_pago_id;
+                }
+                $matricula->update($datosMatricula);
                 $matricula->aplicarEfectosMatricula();
             }
         } elseif (ImporteMonetario::comparar($total, 0) > 0 || $pendiente) {
@@ -100,12 +117,128 @@ class EstadoFinancieroService
             $matriculas = $compra->matriculas()->where('pago_id', $actual->id)
                 ->where('estado_pago_matricula', 'pendiente')->lockForUpdate()->get();
             foreach ($matriculas as $matricula) {
+                $this->restaurarCupoHorario($matricula);
                 $matricula->estadoAcademicoClase()->delete();
                 $matricula->delete();
             }
 
             return $matriculas->count();
         }, 3);
+    }
+
+    /**
+     * Libera una matrícula borrador que nunca fue enviada a pasarela (sin tipo_pago_id ni payment_url)
+     * tras vencer la ventana de abandono, restaurando el cupo disponible del horario.
+     */
+    public function limpiarReservaBorradorExpirada(Matricula $matricula): bool
+    {
+        return $matricula->getConnection()->transaction(function () use ($matricula): bool {
+            $actual = Matricula::query()->lockForUpdate()->find($matricula->id);
+            if (! $actual || $actual->estado_pago_matricula !== 'pendiente') {
+                return false;
+            }
+
+            $compra = $actual->compra_id
+                ? Compra::query()->lockForUpdate()->find($actual->compra_id)
+                : null;
+
+            $pago = $actual->pago_id
+                ? Pago::query()->lockForUpdate()->find($actual->pago_id)
+                : ($actual->referencia_pago && ctype_digit((string) $actual->referencia_pago)
+                    ? Pago::query()->lockForUpdate()->find((int) $actual->referencia_pago)
+                    : null);
+
+            if (! $compra && $pago?->compra_id) {
+                $compra = Compra::query()->lockForUpdate()->find($pago->compra_id);
+            }
+
+            // 1. Nunca limpiar si el pago asociado ya fue enviado a una pasarela o tiene método asignado
+            if ($pago && ($pago->tipo_pago_id !== null || ! empty($pago->payment_url))) {
+                return false;
+            }
+
+            // 2. Nunca limpiar si la compra tiene pagos aprobados o pagos activos en pasarela
+            if ($compra) {
+                $tienePagoActivoOAprobado = $compra->pagos()
+                    ->where(function (Builder $query): void {
+                        $query->whereNotNull('tipo_pago_id')
+                            ->orWhereNotNull('payment_url');
+                    })
+                    ->whereHas('estadoPago', fn (Builder $estado): Builder => $estado
+                        ->where('estado_pendiente', true)
+                        ->orWhere('estado_final_inscripcion', true))
+                    ->exists();
+
+                if ($tienePagoActivoOAprobado) {
+                    return false;
+                }
+            }
+
+            // 3. Restaurar cupo, limpiar estado académico y aplicar soft-delete a la matrícula
+            $this->restaurarCupoHorario($actual);
+            $actual->estadoAcademicoClase()->delete();
+            $actual->delete();
+
+            // 4. Anular compra y soft-delete del pago borrador sin pasarela
+            if ($pago && $pago->tipo_pago_id === null && empty($pago->payment_url)) {
+                $pago->delete();
+            }
+
+            if ($compra && (int) $compra->estado !== Compra::PAGADA) {
+                $compra->update(['estado' => Compra::ANULADA]);
+            }
+
+            return true;
+        }, 3);
+    }
+
+    /**
+     * Libera de forma segura una matrícula histórica (legacy sin compra_id/pago_id explícitos)
+     * únicamente cuando el pago vinculado por referencia_pago ya está definitivamente rechazado/anulado/abandonado.
+     */
+    public function limpiarReservaLegacyFallida(Matricula $matricula, Pago $pago): bool
+    {
+        return $pago->getConnection()->transaction(function () use ($matricula, $pago): bool {
+            $actualMatricula = Matricula::query()->lockForUpdate()->find($matricula->id);
+            $actualPago = Pago::query()->lockForUpdate()->find($pago->id);
+            $compra = $actualPago?->compra_id
+                ? Compra::query()->lockForUpdate()->find($actualPago->compra_id)
+                : null;
+
+            if (! $actualMatricula || $actualMatricula->estado_pago_matricula !== 'pendiente') {
+                return false;
+            }
+
+            if (! $actualPago || ! $actualPago->estadoPago || $actualPago->estadoPago->estado_pendiente || $actualPago->estadoPago->estado_final_inscripcion) {
+                return false;
+            }
+
+            if ($compra && $compra->pagos()->where(fn (Builder $query): Builder => $query->whereNull('estado_pago_id')->orWhereHas('estadoPago', fn (Builder $estado): Builder => $estado->where('estado_pendiente', true)->orWhere('estado_final_inscripcion', true)))->exists()) {
+                return false;
+            }
+
+            $this->restaurarCupoHorario($actualMatricula);
+            $actualMatricula->estadoAcademicoClase()->delete();
+            $actualMatricula->delete();
+
+            return true;
+        }, 3);
+    }
+
+    /**
+     * Devuelve 1 cupo al horario asociado a la matrícula liberada.
+     */
+    protected function restaurarCupoHorario(Matricula $matricula): void
+    {
+        $horarioId = $matricula->getAttribute('horario_materia_periodo_id');
+        if (! $horarioId) {
+            return;
+        }
+
+        $horario = HorarioMateriaPeriodo::query()->lockForUpdate()->find($horarioId);
+        if ($horario) {
+            $horario->increment('cupos_disponibles');
+        }
     }
 
     public function estadoAprobado(int $tipoPagoId): EstadoPago

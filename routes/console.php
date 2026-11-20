@@ -8,12 +8,10 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// 2. Aquí se programa la ejecución de tu comando de la sonda.
-//    Laravel ejecutará este comando cada minuto.
-// Se añade el método sendOutputTo() para capturar cualquier error fatal.
-/*
+// Sonda de verificación de ZonaPagos (obligatoria para PSE / ACH: cada 5 minutos sin solapamiento)
 Schedule::command('pagos:verificar-zonapagos')
-    ->everyMinute();*/
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
 
 Schedule::command('reportes:notificar-pendientes')->everyThirtyMinutes();
 
