@@ -44,14 +44,14 @@
 
 @section('content')
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-menu-theme p-3 row justify-content-md-center">
+    <nav class="navbar navbar-expand-lg navbar-light bg-menu-theme p-3 row justify-content-md-center mx-0">
         <div class="col-3 text-start">
             <button type="button" class="btn rounded-pill waves-effect waves-light text-white prev-step d-none">
                 <span class="ti-xs ti ti-arrow-left me-2"></span>
                 <span class="d-none d-md-block fw-normal">Volver</span>
             </button>
         </div>
-        <div class="col-6 pl-5 text-center">
+        <div class="col-6 text-center">
             <h5 id="tituloPrincipal" class="text-white my-auto fw-normal">Carrito de compras escuelas</h5>
         </div>
         <div class="col-3 text-end">
@@ -62,7 +62,7 @@
         </div>
     </nav>
     <!-- Secciones -->
-    <div class="col-12 col-sm-8 offset-sm-2 col-lg-8  offset-lg-2">
+    <div class="col-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2 px-2 px-sm-3">
         <div class="step row " id="step-1">
             <div class="p-4 col-12">
                 <div class="d-flex align-items-start p-2 mt-1">

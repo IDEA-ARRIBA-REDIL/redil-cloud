@@ -184,6 +184,8 @@ class EscuelasCarrito extends Component
         $this->selectedMateriaPeriodo = $materiaPeriodoId;
         $this->reset(['sedeSeleccionada', 'tipoAulaSeleccionado', 'horarioSeleccionado', 'tiposAula', 'horarios']);
         $this->sedes = HorarioMateriaPeriodo::getSedesForMateriaPeriodo($materiaPeriodoId)
+            ->sortBy('nombre', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
             ->map(fn ($sede) => ['id' => $sede->id, 'nombre' => $sede->nombre])
             ->all();
     }

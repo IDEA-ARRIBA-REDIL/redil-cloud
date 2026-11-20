@@ -1,79 +1,79 @@
-<div style="margin: 2% 2%;" class="row align-items-center">
-    <div class="p-4 col-lg-12 col-md-10 col-sm-12">
+<div class="row align-items-center mx-1 mx-sm-3 my-2">
+    <div class="p-2 p-sm-4 col-12">
 
 
-        <div style="margin-bottom: 100px;" class="row">
+        <div class="row redil-carrito-content">
             @if($pasoActual == 1)
-                <h3 class="fw-semibold p-0">Configura tu carrito de matriculas</h3>
+                <h3 class="fw-semibold p-0 mb-3">Configura tu carrito de matrículas</h3>
 
             {{-- === Selector global de monedas === --}}
 
-            <h4 class="fw-semibold p-0">Elije una moneda</h4>
+            <h4 class="fw-semibold p-0 mb-3">Elige una moneda</h4>
 
-            <div class="mb-4 p-0 row container-monedas">
+            <div class="mb-4 p-0 row g-3 container-monedas">
                 @foreach ($monedasActividad as $mon)
-                    <div class="col-12 ms-sm-3  col-md-6 ps-0 pe-2 ">
-                        <div class="container-moneda-{{ $mon->id }}  p-6 border  border-2 rounded ">
-
-                            <i class="fis fi fi-{{ $mon->codigo_alpha }} rounded-circle fs-2"></i>
-
-                            <label class="ms-5 me-3">
-                                {{ $mon->nombre }}
-                            </label>
+                    <div class="col-12 col-md-6 ps-0 pe-md-3">
+                        <label class="container-moneda-{{ $mon->id }} d-flex align-items-center justify-content-between p-4 border border-2 rounded w-100 cursor-pointer {{ $monedaSeleccionada == $mon->id ? 'border-primary bg-light' : '' }}">
+                            <span class="d-flex align-items-center">
+                                <i class="fis fi fi-{{ $mon->codigo_alpha }} rounded-circle fs-2"></i>
+                                <span class="ms-3 fw-medium text-black">{{ $mon->nombre }}</span>
+                            </span>
                             <input type="radio" data-id="{{ $mon->id }}"
-                                class="radioMoneda mt-2 form-check-input" wire:click="setMoneda({{ $mon->id }})">
-                        </div>
-
+                                name="monedaActividadRadio"
+                                @checked($monedaSeleccionada == $mon->id)
+                                class="radioMoneda form-check-input m-0" wire:click="setMoneda({{ $mon->id }})">
+                        </label>
                     </div>
                 @endforeach
             </div>
 
             <!-- Listado de categorías habilitadas -->
-            <div id="card-materias" class="row card px-6 py-9  mb-5 shadow border-top-0 border-1 ">
-                <h4 class="fw-semibold p-0">Elije tu materia a matricular</h4>
+            <div id="card-materias" class="row card px-3 px-md-6 py-4 py-md-6 mb-4 shadow border-top-0 border-1">
+                <h4 class="fw-semibold p-0 mb-3">Elige tu materia a matricular</h4>
 
                 @foreach ($categoriasHabilitadas as $categoria)
+                    @php
+                        $esMateriaActiva = $selectedMateriaPeriodo == $categoria->materia_periodo_id;
+                    @endphp
                     <div id="categoria-container{{ $categoria->id }}"
-                        class="col-md-6 col-12 shadow mb-9 p-0 card categoria-container"
+                        class="col-md-6 col-12 mb-3 p-0 px-md-2 categoria-container"
                         wire:click="loadSedes({{ $categoria->materia_periodo_id }})">
 
-                        <div class="card-body text-center border rounded">
-                            <div class="container-name text-start">
+                        <div class="card-body text-center border rounded shadow-sm h-100 cursor-pointer {{ $esMateriaActiva ? 'border-primary border-2' : '' }}">
+                            <div class="container-name text-start d-flex justify-content-between align-items-start gap-2">
                                 <label style="font-size:18px;"
-                                    class="pb-1 text-black"><b>{{ $categoria->nombre }}</b></label>
-                                <input name="categoriaSeleccionada{{ $categoria->id }}" type="radio"
-                                    class="form-check-input">
+                                    class="pb-1 text-black cursor-pointer mb-0"><b>{{ $categoria->nombre }}</b></label>
+                                <input name="categoriaSeleccionadaRadio" type="radio"
+                                    @checked($esMateriaActiva)
+                                    class="form-check-input flex-shrink-0 mt-1">
                             </div>
 
-                            <div class="d-flex flex-row justify-content-between my-5">
-                                <div class="d-flex flex-row">
-                                    <i class="ti ti-calendar-week"></i>
-                                    <div class="d-flex flex-column text-star">
+                            <div class="d-flex flex-wrap gap-3 justify-content-between my-4">
+                                <div class="d-flex flex-row align-items-start">
+                                    <i class="ti ti-calendar-week mt-1"></i>
+                                    <div class="d-flex flex-column text-start">
                                         <small class="text-black ms-1">Fecha inicio periodo: </small>
-                                        <small class="fw-semibold ms-1 text-black ">
+                                        <small class="fw-semibold ms-1 text-black">
                                             {{ \Carbon\Carbon::parse($actividad->fecha_inicio)->locale('es')->translatedFormat('d \d\e F Y') }}
                                         </small>
                                     </div>
                                 </div>
 
-                                <div class="d-flex flex-row">
-                                    <i class="ti ti-calendar-week"></i>
-                                    <div class="d-flex flex-column text-star">
+                                <div class="d-flex flex-row align-items-start">
+                                    <i class="ti ti-calendar-week mt-1"></i>
+                                    <div class="d-flex flex-column text-start">
                                         <small class="text-black ms-1">Fecha fin periodo: </small>
-                                        <small class="fw-semibold ms-1 text-black ">
+                                        <small class="fw-semibold ms-1 text-black">
                                             {{ \Carbon\Carbon::parse($actividad->fecha_finalizacion)->locale('es')->translatedFormat('d \d\e F Y') }}
-
                                         </small>
                                     </div>
                                 </div>
-
                             </div>
 
-
-                            <div class="d-flex flex-row justify-content-between my-5">
-                                <div class="d-flex flex-row">
-                                    <i class="ti ti-receipt-2"></i>
-                                    <div class="d-flex flex-column text-star">
+                            <div class="d-flex flex-row justify-content-between mt-3">
+                                <div class="d-flex flex-row align-items-start">
+                                    <i class="ti ti-receipt-2 mt-1"></i>
+                                    <div class="d-flex flex-column text-start">
                                         <small class="text-black text-start ms-1">Costo: </small>
                                         <small class="fw-semibold ms-1 text-black text-start">
                                             @php
@@ -81,19 +81,14 @@
                                                 $valor = $this->precioCategoria($categoria);
                                             @endphp
                                             <div class="fw-semibold">
-                                                <small>{{ $mon->nombre }}</small><br>
+                                                <small>{{ $mon?->nombre }}</small><br>
                                                 {{ Number::currency($valor) }}
                                             </div>
+                                        </small>
                                     </div>
-
-                                    </small>
                                 </div>
                             </div>
-
-
                         </div>
-
-
                     </div>
                 @endforeach
             </div>
@@ -102,39 +97,52 @@
 
             @if (count($sedes) > 0)
                 <div id="container-sedes"
-                    class="card row py-2 px-0 shadow border-top-0 border-1 mb-5 col-12 @if (empty($sedes)) d-none @endif"
-                    wire:key="alpine-sedes-{{ $selectedMateriaPeriodo ?? 'initial' }}" {{-- Añadir wire:key para forzar reinicio de Alpine si cambia la materia --}}>
+                    class="card row py-3 px-0 shadow border-top-0 border-1 mb-4 col-12 redil-card-select @if (empty($sedes)) d-none @endif"
+                    wire:key="alpine-sedes-{{ $selectedMateriaPeriodo ?? 'initial' }}">
 
-                    <ul class="list-group mb-4">
-                        <li class="list-group-item border-0 px-6 py-3"> {{-- Cambiado border-none a border-0 --}}
+                    <ul class="list-group mb-2">
+                        <li class="list-group-item border-0 px-3 px-md-6 py-2">
                             <div class="d-flex gap-4">
                                 <div class="flex-grow-1">
                                     <div class="row">
                                         <div class="col-12">
                                             <div class="form-group">
-                                                <h4 class="fw-semibold p-0">Selecciona la sede donde deseas matricularte
-                                                </h4>
-                                                <label class="form-label" for="sede-button">Sede</label>
+                                                <h4 class="fw-semibold p-0 mb-2">Selecciona la sede donde deseas matricularte</h4>
+                                                <label class="form-label fw-medium" for="sede-button">Sede</label>
 
                                                 <div x-data="{
                                                     open: false,
                                                     search: '',
-                                                    options: @js($sedes), // Obtiene las sedes desde Livewire
-                                                    selected: @entangle('sedeSeleccionada').live, // Vincula con Livewire
+                                                    options: @js($sedes),
+                                                    selected: @entangle('sedeSeleccionada').live,
                                                     selectedLabel: 'Elige una sede',
 
+                                                    normalize(str) {
+                                                        return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+                                                    },
                                                     get filteredOptions() {
-                                                        if (this.search === '') return this.options;
+                                                        if (this.search.trim() === '') return this.options;
+                                                        const q = this.normalize(this.search);
                                                         return this.options.filter(option =>
-                                                            option.nombre.toLowerCase().includes(this.search.toLowerCase())
+                                                            this.normalize(option.nombre).includes(q)
                                                         );
                                                     },
+                                                    toggle() {
+                                                        this.open = !this.open;
+                                                        if (this.open) {
+                                                            this.$nextTick(() => {
+                                                                this.$refs.searchInput?.focus({ preventScroll: true });
+                                                                const rect = this.$el.getBoundingClientRect();
+                                                                if (rect.bottom > window.innerHeight - 260) {
+                                                                    this.$el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                                }
+                                                            });
+                                                        }
+                                                    },
                                                     selectOption(id, nombre) {
-                                                        if (this.selected !== id) { // Evita re-seleccionar lo mismo
-                                                            this.selected = id; // Actualiza Alpine (y Livewire via entangle)
+                                                        if (this.selected !== id) {
+                                                            this.selected = id;
                                                             this.selectedLabel = nombre;
-                                                            // NO necesitamos llamar a $wire.loadHorarios aquí,
-                                                            // porque updatedSedeSeleccionada en Livewire lo hará.
                                                         }
                                                         this.open = false;
                                                         this.search = '';
@@ -146,81 +154,97 @@
                                                 }" x-init="updateLabel();
                                                 $watch('selected', () => updateLabel());
                                                 $watch('options', () => updateLabel())"
-                                                    {{-- Actualiza label al inicio y si cambia selected u options --}} class="position-relative p-0">
+                                                    class="position-relative p-0"
+                                                    :class="{ 'redil-select-open': open }">
 
-                                                    {{-- El Botón que muestra la selección y abre el dropdown --}}
-                                                    <button style="height:50px" type="button" id="sede-button"
-                                                        @click="open = !open" class="form-select text-start"
-                                                        {{-- Estilo como un select --}} :aria-expanded="open"
+                                                    {{-- Botón selector --}}
+                                                    <button type="button" id="sede-button"
+                                                        @click="toggle()"
+                                                        class="form-select redil-select-trigger text-start d-flex align-items-center justify-content-between"
+                                                        :aria-expanded="open"
                                                         aria-haspopup="listbox"
-                                                        :class="{ 'border-danger': {{ $errors->has('sedeSeleccionada') ? 'true' : 'false' }} }"
-                                                        {{-- Estilo de error --}}>
-                                                        <span x-text="selectedLabel"></span>
+                                                        :class="{
+                                                            'border-danger': {{ $errors->has('sedeSeleccionada') ? 'true' : 'false' }},
+                                                            'border-primary shadow-sm': open
+                                                        }">
+                                                        <span class="text-truncate pe-2"
+                                                            :class="{ 'text-muted': !selected, 'fw-medium text-dark': selected }"
+                                                            x-text="selectedLabel"></span>
                                                     </button>
 
-                                                    {{-- El Dropdown con búsqueda --}}
-                                                    <div x-show="open" @click.away="open = false"
+                                                    {{-- Panel desplegable con encabezado fijo y lista con scroll --}}
+                                                    <div x-show="open"
+                                                        x-cloak
+                                                        @click.outside="open = false"
                                                         x-transition:enter="transition ease-out duration-100"
-                                                        x-transition:enter-start="opacity-0 scale-95"
-                                                        x-transition:enter-end="opacity-100 scale-100"
+                                                        x-transition:enter-start="opacity-0"
+                                                        x-transition:enter-end="opacity-100"
                                                         x-transition:leave="transition ease-in duration-75"
-                                                        x-transition:leave-start="opacity-100 scale-100"
-                                                        x-transition:leave-end="opacity-0 scale-95"
-                                                        class="position-absolute start-0 w-100 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-10 overflow-y-auto max-h-40"
-                                                        x-trap.inert.noscroll="open" aria-labelledby="sede-button"
+                                                        x-transition:leave-start="opacity-100"
+                                                        x-transition:leave-end="opacity-0"
+                                                        class="redil-select-dropdown"
+                                                        aria-labelledby="sede-button"
                                                         role="listbox">
 
-                                                        {{-- Input de Búsqueda --}}
-                                                        <div class="p-2">
-                                                            <input type="search" x-model="search"
-                                                                placeholder="Buscar sede..."
-                                                                class="form-control form-control-sm"
-                                                                @keydown.escape.prevent="open = false"
-                                                                x-ref="searchInput"
-                                                                @keydown.down.prevent="$focus.wrap().next()">
+                                                        {{-- Buscador fijo en la parte superior del dropdown --}}
+                                                        <div class="redil-select-search">
+                                                            <div class="input-group input-group-sm">
+                                                                <span class="input-group-text bg-white border-end-0 text-muted">
+                                                                    <i class="ti ti-search"></i>
+                                                                </span>
+                                                                <input type="search"
+                                                                    x-model="search"
+                                                                    x-ref="searchInput"
+                                                                    placeholder="Buscar sede..."
+                                                                    class="form-control border-start-0 ps-0"
+                                                                    @keydown.escape.prevent="open = false">
+                                                            </div>
+                                                            <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                                                                <small class="text-muted" style="font-size: 0.75rem;"
+                                                                    x-text="filteredOptions.length + (filteredOptions.length === 1 ? ' sede disponible' : ' sedes disponibles')"></small>
+                                                                <button type="button"
+                                                                    x-show="search.length > 0"
+                                                                    @click="search = ''; $refs.searchInput?.focus()"
+                                                                    class="btn btn-link btn-xs p-0 text-decoration-none"
+                                                                    style="font-size: 0.75rem;">
+                                                                    Limpiar
+                                                                </button>
+                                                            </div>
                                                         </div>
 
-                                                        {{-- Lista de Opciones --}}
-                                                        <ul class="list-unstyled p-0 m-0">
-                                                            <template
-                                                                x-if="filteredOptions.length === 0 && search.length > 0">
-                                                                <li class="px-3 py-2 text-muted">No se encontraron
-                                                                    sedes.
+                                                        {{-- Lista de opciones con altura máxima y scroll propio --}}
+                                                        <ul class="redil-select-list list-unstyled p-0 m-0">
+                                                            <template x-if="filteredOptions.length === 0 && search.length > 0">
+                                                                <li class="px-3 py-3 text-center text-muted small">
+                                                                    <i class="ti ti-Mood-empty me-1"></i> No se encontraron sedes con "<span x-text="search"></span>".
                                                                 </li>
                                                             </template>
 
-                                                            <template x-for="option in filteredOptions"
-                                                                :key="option.id">
+                                                            <template x-for="option in filteredOptions" :key="option.id">
                                                                 <li @click="selectOption(option.id, option.nombre)"
                                                                     @keydown.enter.prevent="selectOption(option.id, option.nombre)"
                                                                     @keydown.space.prevent="selectOption(option.id, option.nombre)"
                                                                     @keydown.escape.prevent="open = false"
-                                                                    @keydown.up.prevent="$focus.wrap().previous()"
-                                                                    @keydown.down.prevent="$focus.wrap().next()"
                                                                     role="option"
                                                                     :aria-selected="selected == option.id"
-                                                                    tabindex="0" {{-- Hacer enfocable --}}
-                                                                    class="px-3 py-2 hover-bg-primary hover-text-white cursor-pointer"
-                                                                    :class="{
-                                                                        'bg-label-primary text-white': selected ==
-                                                                            option
-                                                                            .id,
-                                                                        'focus:bg-light': !(selected == option.id)
-                                                                    }">
-                                                                    <span x-text="option.nombre"></span>
+                                                                    tabindex="0"
+                                                                    class="redil-select-option d-flex align-items-center justify-content-between"
+                                                                    :class="{ 'is-selected': selected == option.id }">
+                                                                    <span class="me-2" x-text="option.nombre"></span>
+                                                                    <i class="ti ti-check text-primary flex-shrink-0" x-show="selected == option.id"></i>
                                                                 </li>
                                                             </template>
+
                                                             <template x-if="options.length === 0">
-                                                                <li class="px-3 py-2 text-muted">No hay sedes
-                                                                    disponibles.
+                                                                <li class="px-3 py-3 text-center text-muted small">
+                                                                    No hay sedes disponibles.
                                                                 </li>
                                                             </template>
                                                         </ul>
                                                     </div>
-                                                    {{-- Mensaje de error --}}
+
                                                     @error('sedeSeleccionada')
-                                                        <div class="text-danger mt-1"><small>{{ $message }}</small>
-                                                        </div>
+                                                        <div class="text-danger mt-1"><small>{{ $message }}</small></div>
                                                     @enderror
                                                 </div>
                                             </div>
@@ -232,24 +256,23 @@
                     </ul>
                 </div>
             @endif
+
             <!-- Bloque para mostrar tipos de aula y horarios -->
             <div id="container-horarios"
-                class="row card px-6 py-9 @if (!$tiposAula) d-none @endif  mb-5 shadow border-top-0 border-1 ">
+                class="row card px-3 px-md-6 py-4 py-md-6 redil-card-select @if (!$tiposAula) d-none @endif mb-5 shadow border-top-0 border-1">
 
-
-                {{-- Selector Tipo Aula (Radios - Sin cambios significativos) --}}
-                <div class="mb-4 mt-4 row">
-                    <h4 class="fw-semibold p-0">Configura tu horario</h4>
-                    <label class="form-label p-0">Elige un tipo de aula</label>
+                {{-- Selector Tipo Aula --}}
+                <div class="mb-3 mt-1 row">
+                    <h4 class="fw-semibold p-0 mb-2">Configura tu horario</h4>
+                    <label class="form-label p-0 mb-2">Elige un tipo de aula</label>
                     @forelse ($tiposAula as $tipo)
-                        <div class=" ps-0 pe-3 mb-3 col-md-6 col-12">
-                            <label class="w-100  p-6 border border-2 rounded " style="cursor: pointer;">
-                                <span style="font-size:18px"> {{ $tipo['nombre'] }} </span>
-                                <input style="float:right" type="radio" name="tipoAulaRadio"
-                                    class="form-check-input me-2" wire:click="setTipoAula({{ $tipo['id'] }})"
-                                    wire:model.live="tipoAulaSeleccionado" {{-- Usar wire:model para estado visual --}}
+                        <div class="ps-0 pe-md-3 mb-3 col-md-6 col-12">
+                            <label class="w-100 p-4 border border-2 rounded d-flex align-items-center justify-content-between cursor-pointer {{ $tipoAulaSeleccionado == $tipo['id'] ? 'border-primary bg-light' : '' }}">
+                                <span style="font-size:17px" class="fw-medium text-black">{{ $tipo['nombre'] }}</span>
+                                <input type="radio" name="tipoAulaRadio"
+                                    class="form-check-input m-0" wire:click="setTipoAula({{ $tipo['id'] }})"
+                                    wire:model.live="tipoAulaSeleccionado"
                                     value="{{ $tipo['id'] }}">
-
                             </label>
                         </div>
                     @empty
@@ -258,9 +281,9 @@
                 </div>
 
                 <!-- Bloque para mostrar los horarios filtrados -->
-                <div class="mb-4 mt-4 row @if (empty($horarios) || !$tipoAulaSeleccionado) d-none @endif"
+                <div class="mb-2 mt-2 row @if (empty($horarios) || !$tipoAulaSeleccionado) d-none @endif"
                     wire:key="alpine-horarios-{{ $tipoAulaSeleccionado ?? 'none' }}-{{ $sedeSeleccionada ?? 'none' }}">
-                    <label class="form-label p-0" for="horario-button">Horario</label>
+                    <label class="form-label p-0 fw-medium" for="horario-button">Horario</label>
 
                     <div x-data="{
                         open: false,
@@ -268,28 +291,111 @@
                         options: @js($horarios),
                         selected: @entangle('horarioSeleccionado').live,
                         selectedLabel: 'Seleccione un horario',
+
+                        normalize(str) {
+                            return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+                        },
+                        get filteredOptions() {
+                            if (this.search.trim() === '') return this.options;
+                            const q = this.normalize(this.search);
+                            return this.options.filter(option =>
+                                this.normalize(option.label).includes(q)
+                            );
+                        },
+                        toggle() {
+                            this.open = !this.open;
+                            if (this.open) {
+                                this.$nextTick(() => {
+                                    this.$refs.searchHorarioInput?.focus({ preventScroll: true });
+                                    const rect = this.$el.getBoundingClientRect();
+                                    if (rect.bottom > window.innerHeight - 260) {
+                                        this.$el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                });
+                            }
+                        },
+                        selectOption(id, label) {
+                            this.selected = id;
+                            this.selectedLabel = label;
+                            this.open = false;
+                            this.search = '';
+                        },
                         updateLabel() {
                             let found = this.options.find(o => o.id == this.selected);
                             this.selectedLabel = found ? found.label : 'Seleccione un horario';
                         }
                     }" x-init="updateLabel(); $watch('selected', () => updateLabel()); $watch('options', () => updateLabel())"
-                        class="position-relative p-0">
+                        class="position-relative p-0"
+                        :class="{ 'redil-select-open': open }">
 
-                        <button style="height:50px" type="button" @click="open = !open" class="form-select text-start">
-                            <span x-text="selectedLabel"></span>
+                        <button type="button" id="horario-button"
+                            @click="toggle()"
+                            class="form-select redil-select-trigger text-start d-flex align-items-center justify-content-between"
+                            :aria-expanded="open"
+                            aria-haspopup="listbox"
+                            :class="{
+                                'border-danger': {{ $errors->has('horarioSeleccionado') ? 'true' : 'false' }},
+                                'border-primary shadow-sm': open
+                            }">
+                            <span class="pe-2"
+                                :class="{ 'text-muted': !selected, 'fw-medium text-dark': selected }"
+                                x-text="selectedLabel"></span>
                         </button>
 
-                        <div x-show="open" @click.away="open = false" class="position-absolute start-0 w-100 bg-white border rounded shadow z-10 overflow-y-auto max-h-40">
-                            <ul class="list-unstyled p-0 m-0">
-                                <template x-for="option in options" :key="option.id">
-                                    <li @click="selected = option.id; selectedLabel = option.label; open = false;"
-                                        class="px-3 py-2 hover-bg-primary hover-text-white cursor-pointer"
-                                        :class="{ 'bg-label-primary text-white': selected == option.id }">
-                                        <span x-text="option.label"></span>
+                        <div x-show="open"
+                            x-cloak
+                            @click.outside="open = false"
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="redil-select-dropdown"
+                            aria-labelledby="horario-button"
+                            role="listbox">
+
+                            <div class="redil-select-search" x-show="options.length > 4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white border-end-0 text-muted">
+                                        <i class="ti ti-search"></i>
+                                    </span>
+                                    <input type="search"
+                                        x-model="search"
+                                        x-ref="searchHorarioInput"
+                                        placeholder="Filtrar por día, hora, aula o maestro..."
+                                        class="form-control border-start-0 ps-0"
+                                        @keydown.escape.prevent="open = false">
+                                </div>
+                            </div>
+
+                            <ul class="redil-select-list list-unstyled p-0 m-0">
+                                <template x-if="filteredOptions.length === 0 && search.length > 0">
+                                    <li class="px-3 py-3 text-center text-muted small">
+                                        No se encontraron horarios con "<span x-text="search"></span>".
+                                    </li>
+                                </template>
+
+                                <template x-for="option in filteredOptions" :key="option.id">
+                                    <li @click="selectOption(option.id, option.label)"
+                                        @keydown.enter.prevent="selectOption(option.id, option.label)"
+                                        @keydown.space.prevent="selectOption(option.id, option.label)"
+                                        @keydown.escape.prevent="open = false"
+                                        role="option"
+                                        :aria-selected="selected == option.id"
+                                        tabindex="0"
+                                        class="redil-select-option d-flex align-items-center justify-content-between"
+                                        :class="{ 'is-selected': selected == option.id }">
+                                        <span class="me-2" x-text="option.label"></span>
+                                        <i class="ti ti-check text-primary flex-shrink-0" x-show="selected == option.id"></i>
                                     </li>
                                 </template>
                             </ul>
                         </div>
+
+                        @error('horarioSeleccionado')
+                            <div class="text-danger mt-1"><small>{{ $message }}</small></div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -354,11 +460,11 @@
             @endif
 
             <!-- Botones de acción -->
-            <div class="w-100 fixed-bottom py-5 px-6 px-sm-0 border-top shadow-lg" style="background-color: #FFF; z-index: 1000;">
-                <div class="col-12 col-sm-8 offset-sm-2 col-lg-8 offset-lg-2 d-flex justify-content-between align-items-center">
+            <div class="w-100 fixed-bottom py-3 py-md-4 px-3 px-sm-0 border-top shadow-lg" style="background-color: #FFF; z-index: 1040;">
+                <div class="col-12 col-sm-10 offset-sm-1 col-lg-8 offset-lg-2 d-flex justify-content-between align-items-center gap-2">
                     <div>
                         @if ($pasoActual > 1)
-                            <button type="button" class="btn btn-label-secondary rounded-pill px-4" wire:click="volverPaso">
+                            <button type="button" class="btn btn-label-secondary rounded-pill px-3 px-sm-4" wire:click="volverPaso">
                                 <i class="ti ti-chevron-left me-1"></i> Anterior
                             </button>
                         @endif
@@ -366,11 +472,11 @@
 
                     <div>
                         @if ($pasoActual < $totalPasos)
-                            <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold" wire:click="siguientePaso">
+                            <button type="button" class="btn btn-primary rounded-pill px-4 px-sm-5 fw-bold" wire:click="siguientePaso">
                                 Siguiente <i class="ti ti-chevron-right ms-1"></i>
                             </button>
                         @else
-                            <button type="button" class="btn btn-success rounded-pill px-5 fw-bold" wire:click="crearMatricula">
+                            <button type="button" class="btn btn-success rounded-pill px-4 px-sm-5 fw-bold" wire:click="crearMatricula">
                                 <i class="ti ti-check me-1"></i> Finalizar Matrícula
                             </button>
                         @endif
@@ -380,10 +486,119 @@
         </div>
         <!-- no eliminar este div por favor-->
         <style>
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .redil-carrito-content {
+                margin-bottom: 180px;
+                padding-bottom: 60px;
+            }
+
+            .cursor-pointer {
+                cursor: pointer;
+            }
+
             .form-check-input {
                 border: 2px solid #000;
-                float: right;
+            }
 
+            /* === Sistema de Select Buscable (Desktop & Mobile) === */
+            .redil-card-select {
+                position: relative;
+                overflow: visible !important;
+            }
+
+            .redil-card-select:has(.redil-select-open) {
+                z-index: 1035;
+            }
+
+            .redil-select-open {
+                z-index: 1050;
+            }
+
+            .redil-select-trigger {
+                min-height: 48px;
+                height: auto !important;
+                padding: 0.625rem 2.5rem 0.625rem 0.875rem;
+                white-space: normal;
+                word-break: break-word;
+                line-height: 1.35;
+                cursor: pointer;
+                background-color: #fff;
+                transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            }
+
+            .redil-select-dropdown {
+                position: absolute;
+                top: calc(100% + 6px);
+                left: 0;
+                right: 0;
+                width: 100%;
+                background-color: #ffffff;
+                border: 1px solid #d9dee3;
+                border-radius: 0.5rem;
+                box-shadow: 0 0.75rem 1.75rem rgba(34, 48, 62, 0.18);
+                z-index: 1055;
+                overflow: hidden;
+            }
+
+            .redil-select-search {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background-color: #ffffff;
+                padding: 0.625rem;
+                border-bottom: 1px solid #eceef1;
+            }
+
+            .redil-select-list {
+                max-height: 230px;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+
+            .redil-select-list::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .redil-select-list::-webkit-scrollbar-track {
+                background: #f5f5f9;
+            }
+
+            .redil-select-list::-webkit-scrollbar-thumb {
+                background-color: #c4c8d0;
+                border-radius: 10px;
+            }
+
+            .redil-select-option {
+                padding: 0.6rem 0.875rem;
+                min-height: 42px;
+                cursor: pointer;
+                font-size: 0.9375rem;
+                color: #384551;
+                border-bottom: 1px solid #f5f6f8;
+                transition: background-color 0.12s ease, color 0.12s ease;
+                word-break: break-word;
+            }
+
+            .redil-select-option:last-child {
+                border-bottom: none;
+            }
+
+            .redil-select-option:hover,
+            .redil-select-option:focus {
+                background-color: #f2f4f8;
+                color: #1d262d;
+                outline: none;
+            }
+
+            .redil-select-option.is-selected {
+                background-color: #eef3ff;
+                color: #1977E5;
+                font-weight: 600;
             }
 
             .minus {
@@ -439,7 +654,6 @@
             }
 
             .step.active .bs-stepper-icon {
-
                 box-shadow: 0 4px 6px rgba(59, 113, 254, 0.2);
             }
 
@@ -449,47 +663,29 @@
                 height: 60%;
             }
 
-            #card-materias {
-                margin-left: 0px !important;
-            }
-
-            #container-sedes {
-                margin-left: 0px !important;
-
-            }
-
-            #horario-button {}
-
+            #card-materias,
+            #container-sedes,
             #container-horarios {
                 margin-left: 0px !important;
-
             }
 
             @media (max-width: 768px) {
-                #card-materias {
-                    margin-left: 0px !important;
+                .redil-carrito-content {
+                    margin-bottom: 220px;
+                    padding-bottom: 80px;
                 }
 
-                #container-sedes {
-                    margin-left: 0px !important;
-                    margin-bottom: 100px !important;
+                .redil-select-list {
+                    max-height: 200px;
                 }
 
-                #horario-button {
-                    height: 100px !important;
-                }
-
-                #container-horarios {
-                    margin-left: 0px !important;
-                    margin-bottom: 200px !important;
+                .redil-select-option {
+                    padding: 0.7rem 0.875rem;
+                    font-size: 0.9rem;
                 }
 
                 .container-monedas {
                     margin-left: 0px !important;
-                }
-
-                .container-monedas .col-12 {
-                    margin-bottom: 20px !important;
                 }
 
                 .bs-stepper-icon {
