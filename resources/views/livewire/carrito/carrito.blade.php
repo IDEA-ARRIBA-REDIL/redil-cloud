@@ -18,7 +18,7 @@
                         <div class="px-2 px-md-6 py-2">
                             @if ($actividad->tiene_invitados)
                                 <div class="mb-3">
-                                    <label for="cantidadInvitados" class="form-label fw-semibold">Número de invitados adicionales</label>
+                                    <label for="cantidadInvitados" class="form-label fw-semibold">Número de personas que vienen contigo</label>
                                     <input type="number" id="cantidadInvitados" wire:model.live="cantidadInvitados" class="form-control @error('cantidadInvitados') is-invalid @enderror" min="0" placeholder="0" @if (isset($compraActual->id)) disabled @endif>
                                     @error('cantidadInvitados') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
@@ -420,19 +420,66 @@
                         <table class="table table-borderless">
                             <tbody>
                                 @forelse ($carrito as $item)
-                                <tr>
-                                    <td>{{ $item['nombre'] }}</td>
-                                    <td class="text-end fw-bold">
-                                        {{ $item['cantidad'] }} x
-                                        {{ $item['precio'] > 0 ? Number::currency($item['precio'], $monedaActual?->nombre_corto) : 'Gratis' }}
-                                    </td>
-                                </tr>
+                                    @if ($actividad->tiene_invitados)
+                                        @if ($actividad->tipo->es_gratuita || $item['precio'] == 0)
+                                            {{-- Caso Actividad Gratuita con Invitados: total de posibles inscripciones (titular + invitados) y "por invitación" --}}
+                                            <tr>
+                                                <td>
+                                                    <span class="text-heading fw-bold">{{ $item['nombre'] }}</span>
+                                                    <div class="text-muted small">
+                                                        Total posibles inscripciones: <strong>{{ 1 + (int)$cantidadInvitados }}</strong>
+                                                        (1 titular + {{ (int)$cantidadInvitados }} {{ (int)$cantidadInvitados == 1 ? 'persona que viene contigo' : 'personas que vienen contigo' }})
+                                                    </div>
+                                                </td>
+                                                <td class="text-end fw-bold align-middle">
+                                                    {{ 1 + (int)$cantidadInvitados }} por invitación
+                                                </td>
+                                            </tr>
+                                        @else
+                                            {{-- Caso Actividad de Pago con Invitados: separar la inscripción de pago del titular de los invitados --}}
+                                            <tr>
+                                                <td>
+                                                    <span class="text-heading fw-bold">{{ $item['nombre'] }}</span>
+                                                    <div class="text-muted small">Inscripción titular</div>
+                                                </td>
+                                                <td class="text-end fw-bold align-middle">
+                                                    {{ $item['cantidad'] }} x {{ Number::currency($item['precio'], $monedaActual?->nombre_corto) }}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span class="text-heading fw-semibold">Personas que vienen contigo</span>
+                                                    <div class="text-muted small">Acompañantes por invitación (sin costo adicional)</div>
+                                                </td>
+                                                <td class="text-end fw-bold align-middle text-success">
+                                                    {{ (int)$cantidadInvitados }} por invitación
+                                                </td>
+                                            </tr>
+                                        @endif
+                                    @else
+                                        {{-- Caso estándar sin invitados --}}
+                                        <tr>
+                                            <td>{{ $item['nombre'] }}</td>
+                                            <td class="text-end fw-bold align-middle">
+                                                {{ $item['cantidad'] }} x
+                                                {{ $item['precio'] > 0 ? Number::currency($item['precio'], $monedaActual?->nombre_corto) : 'Gratis' }}
+                                            </td>
+                                        </tr>
+                                    @endif
                                 @empty
                                 <tr><td colspan="2" class="text-muted italic">No has agregado ítems al carrito.</td></tr>
                                 @endforelse
                                 <tr class="border-top border-dark">
                                     <td class="h5">Total Estimado</td>
-                                    <td class="h5 text-end text-primary fw-bold">{{ $total > 0 ? Number::currency($total, $monedaActual?->nombre_corto) : 'Gratis' }}</td>
+                                    <td class="h5 text-end text-primary fw-bold">
+                                        @if ($total > 0)
+                                            {{ Number::currency($total, $monedaActual?->nombre_corto) }}
+                                        @elseif ($actividad->tiene_invitados && ($actividad->tipo->es_gratuita || collect($carrito)->every(fn($i) => ($i['precio'] ?? 0) == 0)))
+                                            <span class="text-success">Por invitación</span>
+                                        @else
+                                            <span class="text-success">Gratis</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
