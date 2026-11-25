@@ -174,12 +174,12 @@ class AsignarHorarioModal extends Component
             $query->where('nivel_id', $nivelId);
         }
 
-        $this->materiasPeriodo = $query->select('id', 'materia_id', 'descripcion')
+        $this->materiasPeriodo = $query->select('id', 'materia_id')
             ->get()
             ->map(function ($mp) {
                 return [
                     'id' => $mp->id,
-                    'nombre_display' => $mp->materia->nombre.($mp->descripcion ? " ({$mp->descripcion})" : ''),
+                    'nombre_display' => $mp->materia->nombre ?? 'N/A',
                 ];
             })->toArray();
     }

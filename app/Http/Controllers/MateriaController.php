@@ -408,7 +408,7 @@ class MateriaController extends Controller
             'nombre' => 'required|string|max:100',
             'orden' => 'nullable|integer|min:1',
             'creditos' => 'nullable|integer|min:0',
-            'descripción' => 'required|string',
+            'descripción' => 'nullable|string',
             'nivel_id' => 'nullable|integer',
 
             // --- INICIO DE VALIDACIONES NUEVAS Y MODIFICADAS ---
@@ -475,7 +475,7 @@ class MateriaController extends Controller
         $materia->nombre = $validatedData['nombre'];
         $materia->orden = $request->input('orden', 1) ?? 1;
         $materia->creditos = ($esPorMaterias && empty($validatedData['nivel_id'])) ? ($validatedData['creditos'] ?? null) : null;
-        $materia->descripcion = $validatedData['descripción'] ?? $validatedData['descripcion']; // Ajusta según el nombre real
+        $materia->descripcion = $this->normalizarDescripcionHtml($validatedData['descripción'] ?? $validatedData['descripcion'] ?? null);
         $materia->nivel_id = $validatedData['nivel_id'] ?? null;
 
         if (! $materia->nivel_id) {
@@ -717,5 +717,25 @@ class MateriaController extends Controller
                 'message' => 'Error interno al subir la imagen.',
             ], 500);
         }
+    }
+
+    /**
+     * Normaliza el HTML proveniente de Quill y devuelve null cuando el contenido está vacío.
+     */
+    private function normalizarDescripcionHtml(?string $descripcion): ?string
+    {
+        if (! filled($descripcion)) {
+            return null;
+        }
+
+        $tieneMultimedia = preg_match('/<(img|iframe|video)\b/i', $descripcion) === 1;
+        $textoPlano = html_entity_decode(strip_tags($descripcion), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $textoLimpio = trim((string) preg_replace('/\s+/u', ' ', $textoPlano));
+
+        if ($textoLimpio === '' && ! $tieneMultimedia) {
+            return null;
+        }
+
+        return $descripcion;
     }
 }

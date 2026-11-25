@@ -348,8 +348,10 @@ class User extends Authenticatable implements MustVerifyEmail
             ]);
         });
 
-        // 3. Limpiamos la caché de permisos de Spatie.
+        // 3. Limpiamos la caché de permisos de Spatie y del rol activo en memoria.
         // ¡Este paso es crucial! Sin él, los permisos no se actualizarán de inmediato.
+        $this->rolActivoCache = null;
+        $this->rolActivoConsultado = false;
         $this->unsetRelation('rolActivo');
         $this->unsetRelation('roles');
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
@@ -440,8 +442,12 @@ class User extends Authenticatable implements MustVerifyEmail
         )->withPivot('activo', 'dependiente');
     }
 
+    private ?Role $rolActivoCache = null;
+
+    private bool $rolActivoConsultado = false;
+
     /**
-     * Reutiliza el rol cargado para el usuario durante el grafico ministerial.
+     * Reutiliza el rol cargado para el usuario durante la petición sin afectar serialización.
      */
     public function rolActivoParaPermisos(): ?Role
     {
@@ -455,7 +461,19 @@ class User extends Authenticatable implements MustVerifyEmail
             }
         }
 
-        return $this->roles()->wherePivot('activo', true)->first();
+        if ($this->rolActivoConsultado) {
+            return $this->rolActivoCache;
+        }
+
+        $rolActivo = $this->roles()->wherePivot('activo', true)->first();
+        $rolActivo?->loadMissing('permissions');
+
+        if ($this->exists) {
+            $this->rolActivoCache = $rolActivo;
+            $this->rolActivoConsultado = true;
+        }
+
+        return $rolActivo;
     }
 
     /**
@@ -535,9 +553,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Pais::class);
     }
 
-    public function barrio(): BelongsTo
+    public function municipio(): BelongsTo
     {
-        return $this->belongsTo(Barrio::class);
+        return $this->belongsTo(Municipio::class);
     }
 
     public function localidad(): BelongsTo
@@ -927,6 +945,37 @@ class User extends Authenticatable implements MustVerifyEmail
             ->first();
     }
 
+    /**
+     * Obtiene el reporte de baja correspondiente a la bitácora en un rango de fechas,
+     * o el último reporte de baja si el usuario se encuentra eliminado (trashed).
+     */
+    public function obtenerReporteBajaPorBitacora(mixed $inicio = null, mixed $fin = null): ?ReporteBajaAlta
+    {
+        $reportes = $this->relationLoaded('reportesBajaAlta')
+            ? $this->reportesBajaAlta->sortByDesc('id')->values()
+            : $this->reportesBajaAlta()->with(['tipo', 'autor'])->orderByDesc('id')->get();
+
+        if ($inicio && $fin) {
+            $inicioCarbon = Carbon::parse($inicio);
+            $finCarbon = Carbon::parse($fin);
+
+            $ultimoEnRango = $reportes->first(function (ReporteBajaAlta $reporte) use ($inicioCarbon, $finCarbon): bool {
+                return $reporte->created_at !== null
+                    && $reporte->created_at->between($inicioCarbon, $finCarbon);
+            });
+
+            if ($ultimoEnRango && $ultimoEnRango->dado_baja) {
+                return $ultimoEnRango;
+            }
+        }
+
+        if ($this->trashed()) {
+            return $reportes->first(fn (ReporteBajaAlta $reporte): bool => (bool) $reporte->dado_baja);
+        }
+
+        return null;
+    }
+
     // obtiene el ultimo tipo de servicio que presta el usuario en los grupos
     public function ultimoTipoServicioGrupo()
     {
@@ -1284,13 +1333,19 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        // Si hay una restricción activa (ID fijo o Ministerio), verificamos contra el query restringido
-        if ($rolActivo->lista_sedes_sede_id || $rolActivo->hasPermissionTo('sedes.lista_sedes_solo_ministerio')) {
+        if ($rolActivo->lista_sedes_sede_id) {
             return $this->sedesEncargadas('query')->where('sedes.id', $sede->id)->exists();
         }
 
-        // Si no hay restricciones, depende de si tiene el permiso global
-        return $rolActivo->hasPermissionTo('sedes.lista_sedes_todas');
+        if ($rolActivo->hasPermissionTo('sedes.lista_sedes_todas')) {
+            return true;
+        }
+
+        if ($rolActivo->hasPermissionTo('sedes.lista_sedes_solo_ministerio')) {
+            return $this->sedesEncargadas('query')->where('sedes.id', $sede->id)->exists();
+        }
+
+        return false;
     }
 
     public function misPeticiones(): Collection
@@ -2335,7 +2390,11 @@ class User extends Authenticatable implements MustVerifyEmail
             }
         }
 
-        // 4. Limpiar caché de permisos de Spatie
+        // 4. Limpiar caché de permisos de Spatie y del rol activo en memoria
+        $this->rolActivoCache = null;
+        $this->rolActivoConsultado = false;
+        $this->unsetRelation('rolActivo');
+        $this->unsetRelation('roles');
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

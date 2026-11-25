@@ -63,11 +63,23 @@
                       $condicionBadge = match($campo->pivot->tipo_condicion) {
                         'vacio' => 'Vacío',
                         'no_vacio' => 'Lleno',
-                        'igual_a' => 'Valor: ' . $campo->pivot->valor_condicion,
+                        'igual_a' => 'Igual a: ' . $campo->pivot->valor_condicion,
+                        'diferente_a' => 'Diferente a: ' . $campo->pivot->valor_condicion,
                         default => 'Lleno'
                       };
                     @endphp
                     <li class="mt-1"><i class="ti ti-git-fork ti-sm text-info"></i><span class="fw-medium mx-1">Depende de:</span> <span class="badge bg-label-info">{{ $campoPadreObj ? $campoPadreObj->nombre : 'Campo #' . $campo->pivot->depende_de_campo_id }} ({{ $condicionBadge }} &bull; {{ $accionTexto }})</span></li>
+                    @endif
+                    @if($campo->nombre_bd === 'sede_id' && $sedesExcluidasFormulario->count() > 0)
+                    <li class="mt-1">
+                      <i class="ti ti-ban ti-sm text-warning"></i>
+                      <span class="fw-medium mx-1">Sedes excluidas:</span>
+                      <div class="d-inline-flex flex-wrap gap-1 mt-1">
+                        @foreach($sedesExcluidasFormulario as $sedeExcluida)
+                          <span class="badge bg-label-warning">{{ $sedeExcluida->nombre }}</span>
+                        @endforeach
+                      </div>
+                    </li>
                     @endif
                   </ul>
                   <div class="row g-4 mt-2">
@@ -170,6 +182,22 @@
           </div>
           <!-- / requerido-->
 
+          @if($this->esCampoSede)
+          <!-- Sedes excluidas para este formulario -->
+          <div class="p-3 mb-3 border rounded" wire:key="box-sedes-excluidas-{{ $campoEditando ? $campoEditando->id : ($campo ?? 'nuevo') }}">
+            <label class="form-label fw-bold" for="select-sedes-excluidas-formulario">Sedes excluidas del listado</label>
+            <div wire:ignore>
+              <select id="select-sedes-excluidas-formulario" multiple class="form-select select2" data-placeholder="Selecciona las sedes a excluir">
+                @foreach($this->todasLasSedes as $sedeOpcion)
+                  <option value="{{ $sedeOpcion->id }}" @selected(in_array($sedeOpcion->id, $sedesExcluidas))>{{ $sedeOpcion->nombre }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="form-text mt-1">Las sedes seleccionadas aquí no aparecerán como opciones en este formulario. Si no seleccionas ninguna, se mostrarán todas.</div>
+          </div>
+          <!-- / Sedes excluidas para este formulario -->
+          @endif
+
           <!-- Dependencia de otro campo -->
           <div class="mb-3 col-12">
             <div class="small fw-medium mb-1">¿Este campo depende de otro campo?</div>
@@ -202,25 +230,26 @@
                 <option value="vacio">Cuando esté vacío</option>
                 <option value="no_vacio">Cuando esté lleno</option>
                 <option value="igual_a">Cuando sea igual a un valor específico</option>
+                <option value="diferente_a">Cuando sea diferente a un valor específico</option>
               </select>
             </div>
 
-            @if($tipoCondicion === 'igual_a')
+            @if(in_array($tipoCondicion, ['igual_a', 'diferente_a']))
             <div class="mb-3 col-12">
-              <label class="form-label fw-bold" for="valorCondicion">Valor esperado para habilitar</label>
+              <label class="form-label fw-bold" for="valorCondicion">Valor específico</label>
               @php
                 $opcionesPadre = $this->opcionesValorCondicionPadre;
               @endphp
 
               @if(count($opcionesPadre) > 0)
                 <select id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" wire:key="select-val-cond-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}-{{ $dependeDeCampoId }}" class="form-select">
-                  <option value="">-- Seleccionar valor esperado --</option>
+                  <option value="">-- Seleccionar valor --</option>
                   @foreach($opcionesPadre as $valKey => $valLabel)
                     <option value="{{ $valKey }}">{{ $valLabel }}</option>
                   @endforeach
                 </select>
               @else
-                <input id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" wire:key="input-val-cond-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}" type="text" placeholder="Ingresa el valor exacto esperado" class="form-control" />
+                <input id="valorCondicion" name="valorCondicion" wire:model.defer="valorCondicion" wire:key="input-val-cond-{{ $campoEditando ? $campoEditando->id : 'nuevo' }}" type="text" placeholder="Ingresa el valor específico" class="form-control" />
               @endif
             </div>
             @endif
@@ -462,6 +491,44 @@
     offcanvasElement.addEventListener('hidden.bs.offcanvas', () => {
       backdrop.remove();
     });
+  });
+
+  function inicializarSelectSedesExcluidas(valores = null) {
+    const $select = $('#select-sedes-excluidas-formulario');
+    if (!$select.length) {
+      return;
+    }
+
+    if ($select.hasClass('select2-hidden-accessible')) {
+      try {
+        $select.select2('destroy');
+      } catch (e) {}
+    }
+
+    $select.select2({
+      dropdownParent: $('#modalNuevoCampo'),
+      placeholder: 'Selecciona las sedes a excluir',
+      allowClear: true,
+      width: '100%'
+    });
+
+    if (Array.isArray(valores)) {
+      $select.val(valores.map(String)).trigger('change.select2');
+    }
+
+    $select.off('change.sedesExcluidas').on('change.sedesExcluidas', function() {
+      $wire.set('sedesExcluidas', $(this).val() || [], false);
+    });
+  }
+
+  $wire.on('inicializarSelectSedesExcluidas', (params) => {
+    const valores = Array.isArray(params)
+      ? (params[0]?.sedesSeleccionadas ?? [])
+      : (params?.sedesSeleccionadas ?? []);
+
+    setTimeout(() => {
+      inicializarSelectSedesExcluidas(valores);
+    }, 100);
   });
 </script>
 @endscript

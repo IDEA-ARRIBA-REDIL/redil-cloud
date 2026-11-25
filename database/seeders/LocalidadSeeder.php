@@ -12,7 +12,7 @@ class LocalidadSeeder extends Seeder
      */
     public function run(): void
     {
-        $path = base_path('storage/app/archivos_desarrollador/localidades.sql');
+        $path = database_path('seeders/data/cuenta-inicial/localidades.sql');
         DB::unprepared(file_get_contents($path));
     }
 }

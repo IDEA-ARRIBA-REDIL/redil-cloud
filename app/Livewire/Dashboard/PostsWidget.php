@@ -2,18 +2,25 @@
 
 namespace App\Livewire\Dashboard;
 
-use Livewire\Component;
-use App\Models\Post;
 use App\Models\Configuracion;
+use App\Models\Post;
 use Livewire\Attributes\Renderless;
+use Livewire\Component;
 
 class PostsWidget extends Component
 {
     public $posts = [];
+
     public $configuracion;
+
     public $claseColumnas;
+
+    public $titulo = 'Publicaciones';
+
     public $perPage = 5;
+
     public $cargandoMas = false;
+
     public $hasMore = true;
 
     protected $listeners = ['loadMorePosts' => 'loadMore'];
@@ -35,7 +42,9 @@ class PostsWidget extends Component
 
     public function loadMore()
     {
-        if (!$this->hasMore) return;
+        if (! $this->hasMore) {
+            return;
+        }
 
         $this->cargandoMas = true;
         $skip = $this->posts->count();
@@ -48,23 +57,28 @@ class PostsWidget extends Component
         if ($nuevosPosts->isEmpty()) {
             $this->hasMore = false;
         } else {
-            // Unir a coleccion existente respetando la compatibilidad de Livewire
-            $this->posts = $this->posts->concat($nuevosPosts);
             if ($nuevosPosts->count() < $this->perPage) {
                 $this->hasMore = false;
             }
+
+            // Evitar duplicados por ID y unir a la colección existente
+            $idsExistentes = $this->posts->pluck('id')->all();
+            $nuevosFiltrados = $nuevosPosts->reject(fn ($post) => in_array($post->id, $idsExistentes));
+
+            $this->posts = $this->posts->concat($nuevosFiltrados);
+            $this->posts->loadMissing(['user', 'likes']);
         }
 
         $this->cargandoMas = false;
 
-        // Despachamos evento al navagedor para actualizar Swiper
+        // Despachamos evento al navegador para actualizar Swiper
         $this->dispatch('posts-loaded');
     }
 
     #[Renderless]
     public function toggleLike($postId)
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return;
         }
 
@@ -78,17 +92,18 @@ class PostsWidget extends Component
     {
         return Post::with('user', 'likes')
             ->forUser(auth()->user())
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->where('visualizar_siempre', true)
-                  ->orWhere(function($q2) {
-                      $q2->whereDate('fecha_inicio', '<=', now())
-                         ->where(function($q3) {
-                             $q3->whereNull('fecha_fin')
-                                ->orWhereDate('fecha_fin', '>=', now());
-                         });
-                  });
+                    ->orWhere(function ($q2) {
+                        $q2->whereDate('fecha_inicio', '<=', now())
+                            ->where(function ($q3) {
+                                $q3->whereNull('fecha_fin')
+                                    ->orWhereDate('fecha_fin', '>=', now());
+                            });
+                    });
             })
-            ->orderBy('created_at', 'desc');
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc');
     }
 
     public function render()

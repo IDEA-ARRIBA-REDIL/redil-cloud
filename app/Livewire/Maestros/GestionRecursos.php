@@ -40,12 +40,31 @@ class GestionRecursos extends Component
     public ?string $rutaArchivoSubida = null;
 
     // Reglas de validación
-    protected function rules()
+    protected function rules(): array
     {
         return [
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'tipo' => 'required|string',
+            'nombre' => ['required', 'string', 'max:255'],
+            'descripcion' => ['nullable', 'string', 'max:2000'],
+            'tipo' => ['required', 'in:Video,Documento,Enlace,Libro,Clase,Predica'],
+            'link_externo' => ['nullable', 'url:http,https', 'max:2048'],
+            'link_youtube' => ['nullable', 'url:http,https', 'max:2048'],
+        ];
+    }
+
+    /**
+     * Mensajes de validación personalizados.
+     *
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        return [
+            'nombre.required' => 'El nombre del recurso es obligatorio.',
+            'nombre.max' => 'El nombre del recurso no puede superar los 255 caracteres.',
+            'tipo.required' => 'Debes seleccionar un tipo de recurso.',
+            'tipo.in' => 'El tipo de recurso seleccionado no es válido.',
+            'link_externo.url' => 'El enlace externo debe ser una URL válida (http:// o https://).',
+            'link_youtube.url' => 'El enlace de YouTube debe ser una URL válida (http:// o https://).',
         ];
     }
 
@@ -76,13 +95,13 @@ class GestionRecursos extends Component
         // Asignamos el modelo completo a nuestra nueva propiedad
         $this->editingResource = $recurso;
 
-        // Llenamos las propiedades individuales como antes
+        // Llenamos las propiedades individuales con respaldo seguro ante valores nulos
         $this->recursoId = $recurso->id;
-        $this->nombre = $recurso->nombre;
-        $this->descripcion = $recurso->descripcion;
-        $this->tipo = $recurso->tipo;
-        $this->link_externo = $recurso->link_externo;
-        $this->link_youtube = $recurso->link_youtube;
+        $this->nombre = (string) ($recurso->nombre ?? '');
+        $this->descripcion = (string) ($recurso->descripcion ?? '');
+        $this->tipo = (string) ($recurso->tipo ?: 'Video');
+        $this->link_externo = (string) ($recurso->link_externo ?? '');
+        $this->link_youtube = (string) ($recurso->link_youtube ?? '');
         $this->nombreArchivoSubido = null;
         $this->rutaArchivoSubida = null;
 
@@ -93,7 +112,7 @@ class GestionRecursos extends Component
     public function cerrarModal()
     {
         // Si hay una subida temporal que no se guardó en BD, la eliminamos físicamente
-        $this->eliminarArchivoLocal();
+        $this->eliminarArchivoLocal(false);
 
         $this->showModal = false;
         $this->editingResource = null;
@@ -102,19 +121,33 @@ class GestionRecursos extends Component
     // Guarda el recurso (ya sea nuevo o editado)
     public function guardarRecurso()
     {
+        $this->nombre = trim($this->nombre);
+        $this->descripcion = trim($this->descripcion);
+        $this->link_externo = trim($this->link_externo);
+        $this->link_youtube = trim($this->link_youtube);
+
         $this->validate();
 
         $data = [
             'nombre' => $this->nombre,
-            'descripcion' => $this->descripcion,
+            'descripcion' => $this->descripcion !== '' ? $this->descripcion : null,
             'tipo' => $this->tipo,
-            'link_externo' => $this->link_externo,
-            'link_youtube' => $this->link_youtube,
+            'link_externo' => $this->link_externo !== '' ? $this->link_externo : null,
+            'link_youtube' => $this->link_youtube !== '' ? $this->link_youtube : null,
             'horario_materia_periodo_id' => $this->horario->id,
         ];
 
-        // Lógica para guardar el archivo recién subido vía Alpine/Controller
+        // Lógica para guardar el archivo recién subido vía Alpine/Controller validando la ruta permitida
         if ($this->rutaArchivoSubida) {
+            $prefijoPermitido = "archivos/escuelas/recursos-horario/horario-{$this->horario->id}/";
+            $patronSeguro = '/^'.preg_quote($prefijoPermitido, '/').'[A-Za-z0-9._-]+\.(pdf|docx|txt)$/i';
+
+            if (preg_match($patronSeguro, $this->rutaArchivoSubida) !== 1) {
+                $this->addError('archivo', 'La ruta del archivo cargado no es válida.');
+
+                return;
+            }
+
             // Eliminar archivo anterior si estamos editando y subimos uno nuevo
             if ($this->recursoId) {
                 $recursoExistente = RecursoAlumnoHorario::find($this->recursoId);
@@ -124,9 +157,9 @@ class GestionRecursos extends Component
                 }
             }
 
-            // Guardamos solo el nombre del archivo (sin el directorio)
+            // Guardamos solo el nombre del archivo en servidor y el nombre visible seguro
             $data['ruta_archivo'] = basename($this->rutaArchivoSubida);
-            $data['nombre_archivo'] = $this->nombreArchivoSubido;
+            $data['nombre_archivo'] = $this->nombreArchivoSubido ?: basename($this->rutaArchivoSubida);
         }
 
         RecursoAlumnoHorario::updateOrCreate(['id' => $this->recursoId], $data);
@@ -135,22 +168,26 @@ class GestionRecursos extends Component
         $this->nombreArchivoSubido = null;
         $this->rutaArchivoSubida = null;
 
-        $this->dispatch('notificacion', ['mensaje' => '¡Recurso guardado con éxito!']);
+        $this->dispatch('notificacion', ['texto' => '¡Recurso guardado con éxito!']);
         $this->cerrarModal();
     }
 
     // Elimina el archivo que se subió de forma temporal en la sesión actual
-    public function eliminarArchivoLocal()
+    public function eliminarArchivoLocal(bool $notificar = true)
     {
         if ($this->rutaArchivoSubida) {
             Storage::disk('public')->delete($this->rutaArchivoSubida);
             $this->nombreArchivoSubido = null;
             $this->rutaArchivoSubida = null;
-            $this->dispatch('notificacion', ['texto' => 'Archivo temporal eliminado.']);
+
+            if ($notificar) {
+                $this->dispatch('notificacion', ['texto' => 'Archivo temporal eliminado.']);
+            }
         }
     }
 
-    // === NUEVO MÉTODO PARA ELIMINAR SÓLO EL ARCHIVO ===
+    // === MÉTODO PARA ELIMINAR SÓLO EL ARCHIVO ADJUNTO ===
+    #[On('eliminar-archivo-adjunto')]
     public function eliminarArchivoAdjunto()
     {
         // 1. Verificamos que estemos editando un recurso y que tenga un archivo
@@ -210,13 +247,13 @@ class GestionRecursos extends Component
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $nombreMateria = $this->horario->materiaPeriodo->materia->nombre;
-        // Suponiendo que tienes un accesor para esto
+        $nombreMateria = $this->horario->materiaPeriodo?->materia?->nombre ?? 'Materia no disponible';
+        $infoClase = $this->horario->resumenEncabezadoClase();
 
         return view('livewire.maestros.gestion-recursos', [
             'recursos' => $recursos,
             'nombreMateria' => $nombreMateria,
-
+            'infoClase' => $infoClase,
         ]);
     }
 }

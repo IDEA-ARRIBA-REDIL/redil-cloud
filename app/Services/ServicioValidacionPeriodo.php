@@ -90,6 +90,8 @@ class ServicioValidacionPeriodo
             ];
         }
 
+        $datosParaUpsert = $this->excluirResultadosHomologados($datosParaUpsert);
+
         // --- PASO 4: PERSISTIR LOS RESULTADOS DE ESTE LOTE (igual que antes) ---
         $this->persistirResultados($datosParaUpsert);
 
@@ -115,6 +117,16 @@ class ServicioValidacionPeriodo
         $placeholders = implode(',', array_fill(0, count($idsArray), '?'));
 
         $sql = "
+            WITH matriculas_del_lote AS (
+                SELECT user_id, horario_materia_periodo_id,
+                       MAX(CASE WHEN bloqueado THEN 1 ELSE 0 END) > 0 AS bloqueado
+                FROM matriculas
+                WHERE periodo_id = ?
+                    AND deleted_at IS NULL
+                    AND estado_pago_matricula NOT IN ('anulada', 'rechazada')
+                    AND user_id IN ({$placeholders})
+                GROUP BY user_id, horario_materia_periodo_id
+            )
             SELECT
                 mat.user_id, mat.bloqueado AS matricula_bloqueada,
                 mp.id AS materia_periodo_id, mp.materia_id, m.creditos,
@@ -128,19 +140,15 @@ class ServicioValidacionPeriodo
                         AND rac.horario_materia_periodo_id = mat.horario_materia_periodo_id
                         AND raa.asistio = TRUE
                 ) AS total_asistencias
-            FROM matriculas AS mat
+            FROM matriculas_del_lote AS mat
             JOIN horarios_materia_periodo AS hmp ON mat.horario_materia_periodo_id = hmp.id
             JOIN materia_periodo AS mp ON hmp.materia_periodo_id = mp.id
             JOIN materias AS m ON mp.materia_id = m.id
             LEFT JOIN item_corte_materia_periodo AS icp ON icp.horario_materia_periodo_id = hmp.id
             LEFT JOIN alumno_respuesta_items AS ari ON ari.item_corte_materia_periodo_id = icp.id AND ari.user_id = mat.user_id
             LEFT JOIN cortes_periodo AS cp ON icp.corte_periodo_id = cp.id
-            WHERE mat.periodo_id = ?
-                AND mat.deleted_at IS NULL
-                AND mat.estado_pago_matricula NOT IN ('anulada', 'rechazada')
-                AND mat.user_id IN ({$placeholders})
             GROUP BY
-                mat.user_id, mat.bloqueado, mp.id, mp.materia_id, m.creditos,
+                mat.user_id, mat.bloqueado, mat.horario_materia_periodo_id, mp.id, mp.materia_id, m.creditos,
                 mp.habilitar_calificaciones, mp.habilitar_asistencias, mp.asistencias_minimas;
         ";
 
@@ -148,7 +156,13 @@ class ServicioValidacionPeriodo
         // Es importante unir el ID del periodo con el array de IDs de alumnos.
         $bindings = array_merge([$periodo->id], $idsArray);
 
-        return DB::select($sql, $bindings);
+        $resultados = DB::select($sql, $bindings);
+        $horariosPorAlumnoYMateria = collect($resultados)->countBy(fn (object $resultado): string => $resultado->user_id.'-'.$resultado->materia_periodo_id);
+        if ($horariosPorAlumnoYMateria->contains(fn (int $horarios): bool => $horarios > 1)) {
+            throw new \RuntimeException('Hay estudiantes inscritos en varios horarios de la misma materia. Revisa sus matrículas antes de cerrar.');
+        }
+
+        return $resultados;
     }
 
     /**
@@ -252,6 +266,7 @@ class ServicioValidacionPeriodo
             foreach ($paraActualizar as $datoActualizar) {
                 MateriaAprobadaUsuario::where('user_id', $datoActualizar['user_id'])
                     ->where('materia_periodo_id', $datoActualizar['materia_periodo_id'])
+                    ->sinHomologacion()
                     ->update([
                         'nota_final' => $datoActualizar['nota_final'],
                         'total_asistencias' => $datoActualizar['total_asistencias'],

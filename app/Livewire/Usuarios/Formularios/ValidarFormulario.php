@@ -3,7 +3,14 @@
 namespace App\Livewire\Usuarios\Formularios;
 
 use App\Livewire\Generales\BarrioLocalidadBuscador;
+use App\Livewire\Generales\MunicipioBuscador;
+use App\Livewire\Generales\PaisBuscador;
+use App\Livewire\Generales\SedeBuscador;
 use App\Models\CampoFormularioUsuario;
+use App\Models\Localidad;
+use App\Models\Municipio;
+use App\Models\Pais;
+use App\Models\Sede;
 use App\Models\TipoIdentificacion;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -154,6 +161,15 @@ class ValidarFormulario extends Component
                             $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
                             $cumple = ($normActual === $normEsperado);
                         }
+                    } elseif ($campoItem->tipo_condicion === 'diferente_a') {
+                        if (is_array($valorPadre)) {
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ! in_array($normEsperado, array_map(fn ($v) => $normalizeVal($v, $esSwitch), $valorPadre));
+                        } else {
+                            $normActual = $normalizeVal($valorPadre, $esSwitch);
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ($normActual !== $normEsperado);
+                        }
                     } else { // no_vacio
                         if (is_array($valorPadre)) {
                             $cumple = count($valorPadre) > 0;
@@ -272,8 +288,32 @@ class ValidarFormulario extends Component
         // pais_nacimiento
         if ($campos->where('nombre_bd', 'pais_id')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'pais_id')->first();
-            $validarPaisNacimiento = $campoTemporal->requerido ? ['numeric', 'required'] : ['numeric', 'nullable'];
+            $validarPaisNacimiento = $campoTemporal->requerido ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarPaisNacimiento]);
+            $mensajes["{$campoTemporal->name_id}.required"] = "El campo {$campoTemporal->nombre} es obligatorio.";
+        }
+
+        // municipio / ciudad
+        if ($campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+            $campoTemporal = $campos->where('nombre_bd', 'municipio_id')->first();
+            $esRequeridoMunicipio = (bool) $campoTemporal->requerido;
+
+            if ($esRequeridoMunicipio) {
+                if (! array_key_exists($campoTemporal->name_id, $dataSeccion)) {
+                    $esRequeridoMunicipio = false;
+                } elseif ($campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                    $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+                    $paisIdSeleccionado = $dataSeccion[$campoPais->name_id] ?? null;
+
+                    if ($paisIdSeleccionado && ! Municipio::where('pais_id', $paisIdSeleccionado)->exists()) {
+                        $esRequeridoMunicipio = false;
+                    }
+                }
+            }
+
+            $validarMunicipio = $esRequeridoMunicipio ? ['required'] : ['nullable'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarMunicipio]);
+            $mensajes["{$campoTemporal->name_id}.required"] = "El campo {$campoTemporal->nombre} es obligatorio.";
         }
 
         // vivienda_en_calidad_de
@@ -486,15 +526,85 @@ class ValidarFormulario extends Component
         // sede_id
         if ($campos->where('nombre_bd', 'sede_id')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'sede_id')->first();
-            $validarSede = $campoTemporal->requerido ? ['numeric', 'required'] : ['numeric', 'nullable'];
+            $esRequeridoSede = (bool) $campoTemporal->requerido;
+            $sedeActualUsuarioId = $this->usuario?->sede_id ? (int) $this->usuario->sede_id : null;
+
+            if ($esRequeridoSede) {
+                $campoGeoPais = $todosLosCampos->firstWhere('nombre_bd', 'pais_id');
+                $campoGeoMunicipio = $todosLosCampos->firstWhere('nombre_bd', 'municipio_id');
+                $campoGeoLocalidad = $todosLosCampos->firstWhere('nombre_bd', 'ubicacion');
+
+                if ($campoGeoPais || $campoGeoMunicipio || $campoGeoLocalidad) {
+                    $paisIdGeo = $campoGeoPais && ! empty($dataSeccion[$campoGeoPais->name_id]) ? (int) $dataSeccion[$campoGeoPais->name_id] : null;
+                    $municipioIdGeo = $campoGeoMunicipio && ! empty($dataSeccion[$campoGeoMunicipio->name_id]) ? (int) $dataSeccion[$campoGeoMunicipio->name_id] : null;
+                    $localidadIdGeo = $campoGeoLocalidad && ! empty($dataSeccion[$campoGeoLocalidad->name_id]) ? (int) $dataSeccion[$campoGeoLocalidad->name_id] : null;
+
+                    if (! $municipioIdGeo && $localidadIdGeo) {
+                        $municipioIdGeo = Localidad::find($localidadIdGeo)?->municipio_id;
+                    }
+                    if (! $paisIdGeo && $municipioIdGeo) {
+                        $paisIdGeo = Municipio::find($municipioIdGeo)?->pais_id;
+                    }
+
+                    $sedesDisponibles = $this->formulario->sedesDisponibles($sedeActualUsuarioId);
+                    $haySedesParaUbicacion = $sedesDisponibles->contains(
+                        fn (Sede $sede): bool => $sede->cumpleCoberturaGeografica($paisIdGeo, $municipioIdGeo, $localidadIdGeo)
+                    );
+
+                    if (! $haySedesParaUbicacion) {
+                        $esRequeridoSede = false;
+                    }
+                }
+            }
+
+            $validarSede = $esRequeridoSede
+                ? ['required', Rule::exists('sedes', 'id')]
+                : ['nullable', Rule::exists('sedes', 'id')];
+            $sedesExcluidasIds = $this->formulario->obtenerSedesExcluidasIds($sedeActualUsuarioId);
+
+            if (! empty($sedesExcluidasIds)) {
+                $validarSede[] = Rule::notIn($sedesExcluidasIds);
+                $mensajes["{$campoTemporal->name_id}.not_in"] = 'La sede seleccionada no está disponible para este formulario.';
+            }
+
+            $mensajes["{$campoTemporal->name_id}.required"] = "El campo {$campoTemporal->nombre} es obligatorio.";
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarSede]);
         }
 
-        // ubicacion localidad y barrio
+        // ubicacion localidad
         if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-            $validarUbicacion = $campoTemporal->requerido ? ['numeric', 'required'] : ['nullable'];
+            $esRequeridoUbicacion = (bool) $campoTemporal->requerido;
+
+            if ($esRequeridoUbicacion) {
+                if (! array_key_exists($campoTemporal->name_id, $dataSeccion)) {
+                    $esRequeridoUbicacion = false;
+                } elseif ($campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                    $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+                    $paisIdSeleccionado = $dataSeccion[$campoPais->name_id] ?? null;
+
+                    if ($paisIdSeleccionado && ! Municipio::where('pais_id', $paisIdSeleccionado)->exists()) {
+                        $esRequeridoUbicacion = false;
+                    }
+                }
+
+                if ($esRequeridoUbicacion && $campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+                    $campoMunicipio = $campos->where('nombre_bd', 'municipio_id')->first();
+                    $municipioIdSeleccionado = $dataSeccion[$campoMunicipio->name_id] ?? null;
+
+                    if ($municipioIdSeleccionado) {
+                        $municipio = Municipio::withCount('localidades')->find($municipioIdSeleccionado);
+                        $tieneLocalidades = $municipio && ((bool) $municipio->tiene_localidades || $municipio->localidades_count > 0);
+                        if (! $tieneLocalidades) {
+                            $esRequeridoUbicacion = false;
+                        }
+                    }
+                }
+            }
+
+            $validarUbicacion = $esRequeridoUbicacion ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
+            $mensajes["{$campoTemporal->name_id}.required"] = "El campo {$campoTemporal->nombre} es obligatorio.";
         }
 
         if ($campos->where('nombre_bd', 'password')->count() > 0) {
@@ -553,7 +663,22 @@ class ValidarFormulario extends Component
         $this->dispatch('mostrarMensajeError',
             mostrarError: false,
             msnError: ''
+        )->to(PaisBuscador::class);
+
+        $this->dispatch('mostrarMensajeError',
+            mostrarError: false,
+            msnError: ''
+        )->to(MunicipioBuscador::class);
+
+        $this->dispatch('mostrarMensajeError',
+            mostrarError: false,
+            msnError: ''
         )->to(BarrioLocalidadBuscador::class);
+
+        $this->dispatch('mostrarMensajeError',
+            mostrarError: false,
+            msnError: ''
+        )->to(SedeBuscador::class);
 
         $this->dispatch('mostrarMensajeError',
             mostrarError: false,
@@ -566,6 +691,36 @@ class ValidarFormulario extends Component
             $this->dispatch('validacionFormulario', resultado: false, errores: $this->errores, data: $dataSeccion);
 
             // Dispatch error a los componente livewire
+
+            if ($campos->where('nombre_bd', 'sede_id')->count() > 0) {
+                $sede = $campos->where('nombre_bd', 'sede_id')->first();
+                if ($validator->errors()->has($sede->name_id)) {
+                    $this->dispatch('mostrarMensajeError',
+                        mostrarError: true,
+                        msnError: $validator->errors()->first($sede->name_id)
+                    )->to(SedeBuscador::class);
+                }
+            }
+
+            if ($campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                $pais = $campos->where('nombre_bd', 'pais_id')->first();
+                if ($validator->errors()->has($pais->name_id)) {
+                    $this->dispatch('mostrarMensajeError',
+                        mostrarError: true,
+                        msnError: $validator->errors()->first($pais->name_id)
+                    )->to(PaisBuscador::class);
+                }
+            }
+
+            if ($campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+                $municipio = $campos->where('nombre_bd', 'municipio_id')->first();
+                if ($validator->errors()->has($municipio->name_id)) {
+                    $this->dispatch('mostrarMensajeError',
+                        mostrarError: true,
+                        msnError: $validator->errors()->first($municipio->name_id)
+                    )->to(MunicipioBuscador::class);
+                }
+            }
 
             if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
                 $ubicacion = $campos->where('nombre_bd', 'ubicacion')->first();
@@ -673,6 +828,15 @@ class ValidarFormulario extends Component
                             $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
                             $cumple = ($normActual === $normEsperado);
                         }
+                    } elseif ($campoItem->tipo_condicion === 'diferente_a') {
+                        if (is_array($valorPadre)) {
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ! in_array($normEsperado, array_map(fn ($v) => $normalizeVal($v, $esSwitch), $valorPadre));
+                        } else {
+                            $normActual = $normalizeVal($valorPadre, $esSwitch);
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ($normActual !== $normEsperado);
+                        }
                     } else { // no_vacio
                         if (is_array($valorPadre)) {
                             $cumple = count($valorPadre) > 0;
@@ -700,6 +864,10 @@ class ValidarFormulario extends Component
                     continue;
                 }
 
+                if (in_array($campo->nombre_bd, ['municipio_id', 'ubicacion'], true) && ! array_key_exists($campo->name_id, $dataSeccion)) {
+                    continue;
+                }
+
                 $valor = $dataSeccion[$campo->name_id] ?? '';
 
                 if ($campo->nombre_bd == 'password') {
@@ -710,11 +878,41 @@ class ValidarFormulario extends Component
                 <p class="fs-6 text-black fw-semibold m-0">***************</p>
               </div>
             </div>';
+                } elseif ($campo->nombre_bd == 'pais_id') {
+                    $paisId = $dataSeccion[$campo->name_id] ?? null;
+                    $nombrePais = $paisId ? (Pais::find($paisId)?->nombre ?? $paisId) : '';
+                    $htmlCamposSeccion .= '
+            <div class="col-12 col-md-6">
+              <div class="py-2 border-bottom">
+                <p class="fs-6 text-black m-0">'.$campo->nombre.'</p>
+                <p class="fs-6 text-black fw-semibold m-0">'.($nombrePais ?: '-').'</p>
+              </div>
+            </div>';
+                } elseif ($campo->nombre_bd == 'municipio_id') {
+                    $municipioId = $dataSeccion[$campo->name_id] ?? null;
+                    $nombreMunicipio = $municipioId ? (Municipio::find($municipioId)?->nombre ?? $municipioId) : '';
+                    $htmlCamposSeccion .= '
+            <div class="col-12 col-md-6">
+              <div class="py-2 border-bottom">
+                <p class="fs-6 text-black m-0">'.$campo->nombre.'</p>
+                <p class="fs-6 text-black fw-semibold m-0">'.($nombreMunicipio ?: '-').'</p>
+              </div>
+            </div>';
+                } elseif ($campo->nombre_bd == 'sede_id') {
+                    $sedeId = $dataSeccion[$campo->name_id] ?? null;
+                    $nombreSede = $sedeId ? (Sede::find($sedeId)?->nombre ?? $sedeId) : '';
+                    $htmlCamposSeccion .= '
+            <div class="col-12 col-md-6">
+              <div class="py-2 border-bottom">
+                <p class="fs-6 text-black m-0">'.$campo->nombre.'</p>
+                <p class="fs-6 text-black fw-semibold m-0">'.($nombreSede ?: '-').'</p>
+              </div>
+            </div>';
                 } elseif ($campo->nombre_bd == 'ubicacion') {
                     $ubicacionId = $dataSeccion[$campo->name_id] ?? null;
                     $nombreUbicacion = '';
                     if ($ubicacionId) {
-                        $loc = \App\Models\Localidad::find($ubicacionId);
+                        $loc = Localidad::find($ubicacionId);
                         $nombreUbicacion = $loc ? $loc->nombre : $ubicacionId;
                     }
                     $htmlCamposSeccion .= '

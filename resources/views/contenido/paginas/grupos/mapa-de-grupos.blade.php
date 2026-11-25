@@ -78,32 +78,52 @@ window.asignarAsistente = function(grupoId, idUsuario) {
     @foreach($grupos as $grupo)
       var lat = "{{$grupo->latitud}}";
       var lng = "{{$grupo->longitud}}";
-      @if($grupo->latitud != null && $grupo->longitud != null && $grupo->tipoGrupo->visible_mapa_asignacion == true)
+      @if($grupo->latitud != null && $grupo->longitud != null && $grupo->tipoGrupo && $grupo->tipoGrupo->visible_mapa_asignacion == true)
+        @php
+          $geoIcono = (string) ($grupo->tipoGrupo->geo_icono ?? '');
+          $urlPinMapa = null;
+          if ($geoIcono !== '') {
+              $rutaTenantPin = ($configuracion->ruta_almacenamiento ? trim($configuracion->ruta_almacenamiento, '/').'/' : '').'img/pines-mapa/'.$geoIcono;
+              if (\Illuminate\Support\Facades\Storage::disk('public')->exists($rutaTenantPin)) {
+                  $urlPinMapa = tenant_asset('img/pines-mapa/'.$geoIcono);
+              } elseif (\Illuminate\Support\Facades\Storage::disk('global_media')->exists('pines-mapa/'.$geoIcono)) {
+                  $urlPinMapa = \Illuminate\Support\Facades\Storage::disk('global_media')->url('pines-mapa/'.$geoIcono);
+              }
+          }
+          $colorPin = $grupo->tipoGrupo->color ?: '#ff851b';
+        @endphp
+        @if($urlPinMapa)
         var IconoGrupo = L.icon({
-          iconUrl: "{{ tenant_asset('img/pines-mapa/'.$grupo->tipoGrupo->geo_icono) }}",
+          iconUrl: "{{ $urlPinMapa }}",
           iconSize: [35, 45],
-          iconAnchor: [27, 27],
-          popupAnchor: [0, -14]
+          iconAnchor: [17, 42],
+          popupAnchor: [0, -36]
         });
-        var nombreGrupo = "{{$grupo->nombre}}";
+        @else
+        var IconoGrupo = L.divIcon({
+          className: 'custom-svg-pin',
+          html: '<svg width="32" height="42" viewBox="0 0 32 42" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C7.716 1 1 7.716 1 16c0 10.5 15 24.5 15 24.5S31 26.5 31 16C31 7.716 24.284 1 16 1z" fill="{{ $colorPin }}" stroke="#ffffff" stroke-width="2"/><circle cx="16" cy="15" r="6" fill="#ffffff"/></svg>',
+          iconSize: [32, 42],
+          iconAnchor: [16, 41],
+          popupAnchor: [0, -36]
+        });
+        @endif
+        var nombreGrupo = @json($grupo->nombre);
         var grupoId = "{{$grupo->id}}";
-      var tipoGrupo = "{{$grupo->tipoGrupo->nombre}}";
-      var direccionGrupo = "{{$grupo->direccion}}" != "" ? ` ubicado en la dirección '{{$grupo->direccion}}'` : "";
+        var tipoGrupo = @json($grupo->tipoGrupo->nombre);
+        var direccionGrupo = @json($grupo->direccion ?? '');
 
         var verPerfil = '';
         @if($rolActivo->hasPermissionTo('grupos.opcion_ver_perfil_grupo'))
         var verPerfil = '<br><a href="/grupo/{{$grupo->id}}/perfil/estadisticas-grupo" target="_blank"> <b> <i class="ti ti-users-group"></i> Ver perfil  </b> </a>';
         @endif
 
-
-
         L.marker(['{{$grupo->latitud}}', '{{$grupo->longitud}}'], {
           icon: IconoGrupo,
           title: nombreGrupo,
           alt: nombreGrupo
         })
-        .bindPopup( "<b>Nombre:</b> {{$grupo->nombre}} <br> <b>Latitud:</b> "+lat+"<br> <b>Longitud:</b> "+lng + ' <br><br><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint='+lat+'%2C'+lng+'" target="_blank"> <b> <i class="ti ti-brand-google-maps"></i> Ver en google  </b> </a> '+verPerfil )
-
+        .bindPopup( "<b>Nombre:</b> " + nombreGrupo + " <br> <b>Tipo:</b> " + tipoGrupo + (direccionGrupo ? "<br> <b>Dirección:</b> " + direccionGrupo : "") + "<br> <b>Latitud:</b> "+lat+"<br> <b>Longitud:</b> "+lng + ' <br><br><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint='+lat+'%2C'+lng+'" target="_blank"> <b> <i class="ti ti-brand-google-maps"></i> Ver en google  </b> </a> '+verPerfil )
         .addTo(map);
       @endif
     @endforeach
@@ -111,16 +131,17 @@ window.asignarAsistente = function(grupoId, idUsuario) {
 
   function crearCoberturas(){
     @foreach($grupos as $grupo)
-
+      @if($grupo->latitud != null && $grupo->longitud != null && $grupo->tipoGrupo && $grupo->tipoGrupo->visible_mapa_asignacion == true)
       lat = "{{$grupo->latitud}}";
       lng = "{{$grupo->longitud}}";
 
       L.circle([lat, lng], {
-        color: '{{$grupo->tipoGrupo->color}}',
-        fillColor: '{{$grupo->tipoGrupo->color}}',
+        color: '{{$grupo->tipoGrupo->color ?: "#ff851b"}}',
+        fillColor: '{{$grupo->tipoGrupo->color ?: "#ff851b"}}',
         fillOpacity: 0.5,
-        radius: '{{$grupo->tipoGrupo->metros_cobertura}}'
+        radius: '{{$grupo->tipoGrupo->metros_cobertura ?: 300}}'
       }).addTo(map);
+      @endif
     @endforeach
   }
 

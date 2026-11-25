@@ -10,14 +10,14 @@
                         'id' => 'alumno_id',
                         'tipoBuscador' => 'unico',
                         'queUsuariosCargar' => 'todos',
-                        'label' => '1. Busque y seleccione un estudiante',
+                        'label' => 'Estudiante (opcional)',
                         'placeholder' => 'Escriba el nombre o identificación del estudiante...',
                     ])
                     @error('alumnoSeleccionadoId') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
 
 
                     <div class="mt-3">
-                        <label for="escuela_id" class="form-label">2. Seleccione una escuela</label>
+                        <label for="escuela_id" class="form-label">Escuela</label>
                         <select id="escuela_id" wire:model.live="escuelaSeleccionadaId" class="form-select">
                             <option value="">-- Elige una escuela --</option>
                             @foreach($escuelas as $escuela)
@@ -34,7 +34,9 @@
     {{-- Botón de Búsqueda --}}
     <div class="text-end mb-4">
         <button
-            wire:click="buscar(document.getElementById('alumno_id').value)"
+            wire:click="buscar(document.getElementById('alumno_id')?.value || null)"
+            wire:loading.attr="disabled"
+            wire:target="buscar"
             class="btn btn-primary rounded-pill">
 
             <span wire:loading.remove wire:target="buscar">
@@ -48,7 +50,60 @@
     </div>
 
     {{-- Indicador de carga --}}
-    <div wire:loading wire:target="buscar">Cargando materias...</div>
+    <div wire:loading wire:target="buscar">Cargando resultados...</div>
+
+    @if($escuelaConsultadaId !== null)
+        <div class="card mb-4">
+            <div class="card-header pb-2">
+                <h5 class="card-title mb-0">Homologaciones de la escuela</h5>
+            </div>
+            <div class="card-body">
+                @forelse($homologaciones as $tipo => $registros)
+                    <div class="{{ $loop->last ? '' : 'mb-4' }}" wire:key="homologaciones-{{ $tipo }}-{{ $escuelaConsultadaId }}">
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <caption class="caption-top">{{ number_format($registros->total(), 0, ',', '.') }} homologaciones de {{ $tipo === 'Materia' ? 'materias' : 'niveles' }}</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Estudiante</th>
+                                        <th scope="col">{{ $tipo }}</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col">Nota final</th>
+                                        <th scope="col">Fecha de homologación</th>
+                                        <th scope="col">Observación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($registros as $registro)
+                                        @php
+                                            $academico = $tipo === 'Materia' ? $registro->materia : $registro->nivel;
+                                            $estado = match ((int) $registro->aprobado) {
+                                                1 => 'Aprobado',
+                                                2 => 'En proceso',
+                                                0 => 'Reprobado',
+                                                default => 'Sin estado',
+                                            };
+                                        @endphp
+                                        <tr wire:key="homologacion-{{ $tipo }}-{{ $registro->id }}">
+                                            <td>{{ $registro->user?->nombre(4) ?? 'Usuario #'.$registro->user_id }}</td>
+                                            <td>{{ $academico->nombre }}</td>
+                                            <td>{{ $estado }}</td>
+                                            <td>{{ $registro->nota_final ?? '—' }}</td>
+                                            <td>{{ $registro->fecha_homologacion ? \Carbon\Carbon::parse($registro->fecha_homologacion)->toDateString() : '—' }}</td>
+                                            <td>{{ $registro->observacion_homologacion ?: '—' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        {{ $registros->links() }}
+                    </div>
+                @empty
+                    <p class="text-muted mb-0">Esta escuela no tiene homologaciones registradas.</p>
+                @endforelse
+            </div>
+        </div>
+    @endif
 
     {{-- Paso 3: Listado de Materias / Niveles (Cards estilo Grupos sin foto) --}}
     @if(!empty($materias))

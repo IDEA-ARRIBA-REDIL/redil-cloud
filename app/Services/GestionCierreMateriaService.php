@@ -76,7 +76,9 @@ class GestionCierreMateriaService
                     throw ValidationException::withMessages(['materia' => 'Esta materia ya está abierta.']);
                 }
                 MateriaAprobadaUsuario::query()->where('periodo_id', $actual->periodo_id)
-                    ->where('materia_periodo_id', $actual->id)->delete();
+                    ->where('materia_periodo_id', $actual->id)
+                    ->sinHomologacion()
+                    ->delete();
                 $actual->update(['finalizado' => false]);
             });
             Cache::store()->forget($this->clave($materia->id));

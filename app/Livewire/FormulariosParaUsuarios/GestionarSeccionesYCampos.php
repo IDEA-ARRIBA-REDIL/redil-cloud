@@ -5,6 +5,8 @@ namespace App\Livewire\FormulariosParaUsuarios;
 use App\Models\CampoFormularioUsuario;
 use App\Models\Configuracion;
 use App\Models\SeccionFormularioUsuario;
+use App\Models\Sede;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\On;
@@ -60,6 +62,9 @@ class GestionarSeccionesYCampos extends Component
 
     public $accionDependencia = 'ocultar';
 
+    /* Sedes excluidas para el campo sede_id */
+    public array $sedesExcluidas = [];
+
     // otros
     public $configuracion;
 
@@ -90,6 +95,26 @@ class GestionarSeccionesYCampos extends Component
     public function updatedDependeDeCampoId($value)
     {
         $this->valorCondicion = null;
+    }
+
+    public function getEsCampoSedeProperty(): bool
+    {
+        if ($this->modoEdicionCampo && $this->campoEditando) {
+            return $this->campoEditando->nombre_bd === 'sede_id';
+        }
+
+        if (! $this->modoEdicionCampo && $this->campo) {
+            return CampoFormularioUsuario::where('id', $this->campo)
+                ->where('nombre_bd', 'sede_id')
+                ->exists();
+        }
+
+        return false;
+    }
+
+    public function getTodasLasSedesProperty(): Collection
+    {
+        return Sede::orderBy('nombre', 'asc')->get();
     }
 
     public function getCamposDisponiblesParaDependenciaProperty()
@@ -166,8 +191,29 @@ class GestionarSeccionesYCampos extends Component
                 return \App\Models\TipoIdentificacion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
             case 'estado_civil_id':
                 return \App\Models\EstadoCivil::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'pais_id':
+                return \App\Models\Pais::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'municipio_id':
+                return \App\Models\Municipio::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'genero':
+                return [
+                    '0' => 'Masculino',
+                    '1' => 'Femenino',
+                ];
             case 'genero_id':
                 return \App\Models\Genero::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'nivel_academico_id':
+                return \App\Models\NivelAcademico::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'estado_nivel_academico_id':
+                return \App\Models\EstadoNivelAcademico::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'entidad_relacionada_id':
+                return \App\Models\EntidadRelacionada::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'tipo_identificacion_acudiente_id':
+                return \App\Models\TipoIdentificacion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'tipo_pariente_id':
+                return \App\Models\TipoParentesco::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+            case 'tipo_peticion_id':
+                return \App\Models\TipoPeticion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
             case 'tipo_sangre_id':
                 return \App\Models\TipoSangre::orderBy('nombre')->pluck('nombre', 'id')->toArray();
             case 'profesion_id':
@@ -179,7 +225,14 @@ class GestionarSeccionesYCampos extends Component
             case 'tipo_vinculacion_id':
                 return \App\Models\TipoVinculacion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
             case 'sede_id':
-                return \App\Models\Sede::orderBy('nombre')->pluck('nombre', 'id')->toArray();
+                $excluidasIds = $this->formulario ? $this->formulario->obtenerSedesExcluidasIds() : [];
+
+                return Sede::when(! empty($excluidasIds), function ($query) use ($excluidasIds): void {
+                    $query->whereNotIn('id', $excluidasIds);
+                })
+                    ->orderBy('nombre')
+                    ->pluck('nombre', 'id')
+                    ->toArray();
             case 'ocupacion_id':
                 return \App\Models\Ocupacion::orderBy('nombre')->pluck('nombre', 'id')->toArray();
             case 'sector_economico_id':
@@ -196,7 +249,7 @@ class GestionarSeccionesYCampos extends Component
     {
         $this->seccionesActivas = [$seccionId];
         $this->modoEdicionCampo = false;
-        $this->reset(['class', 'campoRequerido', 'informacionDeApoyo', 'tieneDependencia', 'dependeDeCampoId', 'tipoCondicion', 'valorCondicion', 'accionDependencia']);
+        $this->reset(['class', 'campoRequerido', 'informacionDeApoyo', 'tieneDependencia', 'dependeDeCampoId', 'tipoCondicion', 'valorCondicion', 'accionDependencia', 'sedesExcluidas']);
         $this->tipoCondicion = 'no_vacio';
         $this->accionDependencia = 'ocultar';
         $this->seccionCampo = SeccionFormularioUsuario::find($seccionId); // Almacena la sección actual de campo
@@ -216,7 +269,7 @@ class GestionarSeccionesYCampos extends Component
         $this->modoEdicionCampo = true;
 
         // formateo el formulario
-        $this->reset(['class', 'campoRequerido', 'informacionDeApoyo', 'tieneDependencia', 'dependeDeCampoId', 'tipoCondicion', 'valorCondicion', 'accionDependencia']);
+        $this->reset(['class', 'campoRequerido', 'informacionDeApoyo', 'tieneDependencia', 'dependeDeCampoId', 'tipoCondicion', 'valorCondicion', 'accionDependencia', 'sedesExcluidas']);
         $this->campo = null;
         $this->dispatch('quitarSeleccion')->to(SelectorDeCampos::class);
         // fin formateo formulario
@@ -238,6 +291,10 @@ class GestionarSeccionesYCampos extends Component
         }
         $this->valorCondicion = $valCond;
         $this->accionDependencia = $this->campoEditando->pivot->accion_dependencia ?? 'ocultar';
+        if ($this->campoEditando && $this->campoEditando->nombre_bd === 'sede_id') {
+            $this->sedesExcluidas = $this->formulario->obtenerSedesExcluidasIds();
+            $this->dispatch('inicializarSelectSedesExcluidas', sedesSeleccionadas: $this->sedesExcluidas);
+        }
         $this->dispatch('abrirModal', nombreModal: 'modalNuevoCampo');
     }
 
@@ -245,6 +302,11 @@ class GestionarSeccionesYCampos extends Component
     public function guardarCampo()
     {
         $validatedData = Validator::make($this->all(), $this->rulesCampos)->validate();
+
+        $sedesExcluidasLimpias = array_values(array_unique(array_map(
+            'intval',
+            array_filter($this->sedesExcluidas, fn ($id): bool => is_numeric($id))
+        )));
 
         if ($this->modoEdicionCampo) {
             // Actualizar el campo existente
@@ -256,13 +318,17 @@ class GestionarSeccionesYCampos extends Component
                     'informacion_de_apoyo' => $this->informacionDeApoyo,
                     'depende_de_campo_id' => $this->tieneDependencia && $this->dependeDeCampoId ? $this->dependeDeCampoId : null,
                     'tipo_condicion' => $this->tieneDependencia && $this->dependeDeCampoId ? ($this->tipoCondicion ?? 'no_vacio') : null,
-                    'valor_condicion' => $this->tieneDependencia && $this->dependeDeCampoId && $this->tipoCondicion === 'igual_a' ? $this->valorCondicion : null,
+                    'valor_condicion' => $this->tieneDependencia && $this->dependeDeCampoId && in_array($this->tipoCondicion, ['igual_a', 'diferente_a']) ? $this->valorCondicion : null,
                     'accion_dependencia' => $this->tieneDependencia && $this->dependeDeCampoId ? ($this->accionDependencia ?? 'deshabilitar') : 'deshabilitar',
                 ]
             );
 
+            if ($this->campoEditando && $this->campoEditando->nombre_bd === 'sede_id') {
+                $this->formulario->sedesExcluidas()->sync($sedesExcluidasLimpias);
+            }
+
             $this->dispatch('cerrarModal', nombreModal: 'modalNuevoCampo');
-            $this->reset('campoEditando', 'modoEdicionCampo');
+            $this->reset('campoEditando', 'modoEdicionCampo', 'sedesExcluidas');
 
             $this->dispatch(
                 'msn',
@@ -296,10 +362,15 @@ class GestionarSeccionesYCampos extends Component
                     'informacion_de_apoyo' => $this->informacionDeApoyo,
                     'depende_de_campo_id' => $this->tieneDependencia && $this->dependeDeCampoId ? $this->dependeDeCampoId : null,
                     'tipo_condicion' => $this->tieneDependencia && $this->dependeDeCampoId ? ($this->tipoCondicion ?? 'no_vacio') : null,
-                    'valor_condicion' => $this->tieneDependencia && $this->dependeDeCampoId && $this->tipoCondicion === 'igual_a' ? $this->valorCondicion : null,
+                    'valor_condicion' => $this->tieneDependencia && $this->dependeDeCampoId && in_array($this->tipoCondicion, ['igual_a', 'diferente_a']) ? $this->valorCondicion : null,
                     'accion_dependencia' => $this->tieneDependencia && $this->dependeDeCampoId ? ($this->accionDependencia ?? 'deshabilitar') : 'deshabilitar',
                 ]);
 
+                if ($this->esCampoSede) {
+                    $this->formulario->sedesExcluidas()->sync($sedesExcluidasLimpias);
+                }
+
+                $this->reset('sedesExcluidas');
                 $this->dispatch('cerrarModal', nombreModal: 'modalNuevoCampo');
 
                 $this->dispatch(
@@ -454,9 +525,13 @@ class GestionarSeccionesYCampos extends Component
         $seccion = SeccionFormularioUsuario::find($seccionId);
         $seccion->campos()->detach($campoId);
 
+        if (CampoFormularioUsuario::where('id', $campoId)->where('nombre_bd', 'sede_id')->exists()) {
+            $this->formulario->sedesExcluidas()->detach();
+        }
+
         // Si el campo eliminado era el que se estaba editando, lo limpiamos del estado.
         if ($this->campoEditando && $this->campoEditando->id == $campoId) {
-            $this->reset('campoEditando', 'modoEdicionCampo');
+            $this->reset('campoEditando', 'modoEdicionCampo', 'sedesExcluidas');
         }
     }
 
@@ -467,9 +542,14 @@ class GestionarSeccionesYCampos extends Component
         if ($seccion) {
             $formularioId = $seccion->formulario_usuario_id;
             $ordenEliminado = $seccion->orden;
+            $contieneCampoSede = $seccion->campos()->where('nombre_bd', 'sede_id')->exists();
 
             // Desvincula todos los campos
             $seccion->campos()->detach();
+
+            if ($contieneCampoSede) {
+                $this->formulario->sedesExcluidas()->detach();
+            }
 
             // Si la sección eliminada era la que se estaba editando, la limpiamos del estado.
             if ($this->seccionEditando && $this->seccionEditando->id == $seccionId) {
@@ -495,12 +575,22 @@ class GestionarSeccionesYCampos extends Component
     public function obtenerCampoSeleccionado($id)
     {
         $this->campo = $id;
+
+        if ($this->esCampoSede) {
+            $this->sedesExcluidas = $this->formulario->obtenerSedesExcluidasIds();
+            $this->dispatch('inicializarSelectSedesExcluidas', sedesSeleccionadas: $this->sedesExcluidas);
+        } else {
+            $this->sedesExcluidas = [];
+        }
     }
 
     public function render()
     {
         $this->secciones = $this->formulario->secciones()->orderBy('orden', 'asc')->get();
+        $sedesExcluidasFormulario = $this->formulario->sedesExcluidas()->orderBy('nombre', 'asc')->get();
 
-        return view('livewire.formularios-para-usuarios.gestionar-secciones-y-campos');
+        return view('livewire.formularios-para-usuarios.gestionar-secciones-y-campos', [
+            'sedesExcluidasFormulario' => $sedesExcluidasFormulario,
+        ]);
     }
 }

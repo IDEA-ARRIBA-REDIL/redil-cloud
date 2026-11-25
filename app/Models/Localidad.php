@@ -6,27 +6,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Localidad extends Model
 {
     use HasFactory;
+
     protected $table = 'localidades';
+
     protected $guarded = [];
 
-    // relacion para conocer a que departamento pertence la ciudad
+    /**
+     * Municipio al que pertenece la localidad.
+     */
     public function municipio(): BelongsTo
     {
-      return $this->belongsTo(Municipio::class);
-    }
-
-    public function barrios(): HasMany
-    {
-      return $this->HasMany(Barrio::class);
+        return $this->belongsTo(Municipio::class);
     }
 
     public function sedes(): BelongsToMany
     {
-      return $this->belongsToMany(Sede::class, 'localidad_sede');
+        return $this->belongsToMany(Sede::class, 'localidad_sede');
     }
 }

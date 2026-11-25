@@ -4,11 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Helpers\Helpers;
 use App\Mail\DefaultMail;
-use App\Models\Barrio;
 use App\Models\CampoFormularioUsuario;
 use App\Models\CampoInformeExcel;
 use App\Models\Configuracion;
-use App\Models\Continente;
 use App\Models\CrecimientoUsuario;
 use App\Models\EmailChangeRequest;
 use App\Models\EntidadRelacionada;
@@ -21,9 +19,11 @@ use App\Models\Grupo;
 use App\Models\Iglesia;
 use App\Models\InformeGrupo;
 use App\Models\IntegranteGrupo;
+use App\Models\Localidad;
 use App\Models\MateriaAprobadaUsuario;
 use App\Models\Matricula;
 use App\Models\MatriculaNivel;
+use App\Models\Municipio;
 use App\Models\NivelAcademico;
 use App\Models\NivelAprobadoUsuario;
 use App\Models\Ocupacion;
@@ -214,7 +214,7 @@ class UserController extends Controller
 
     public function listar(Request $request, $tipo = 'todos') // : View
     {
-        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo = auth()->user()->rolActivoParaPermisos();
         $rolActivo->verificacionDelPermiso('personas.subitem_lista_asistentes');
 
         $indicadoresGenerales = [];
@@ -305,10 +305,6 @@ class UserController extends Controller
         // OBTENCIÓN DEL QUERY BUILDER BASE
         $query = null;
 
-        if ($rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')) {
-            $query = auth()->user()->discipulos('todos', ! $puedeVerNoVerificados, true); // true para returnQuery
-        }
-
         if ($rolActivo->hasPermissionTo('personas.lista_asistentes_todos')) {
             $query = User::withTrashed()
                 ->leftJoin('integrantes_grupo', 'users.id', '=', 'integrantes_grupo.user_id')
@@ -319,6 +315,8 @@ class UserController extends Controller
                 $query->whereNotNull('email_verified_at');
             }
             // Nota: discipulos() ya maneja lógica de joins complejos. Si 'todos' es realmente TODOS, este query directo está bien.
+        } elseif ($rolActivo->hasPermissionTo('personas.lista_asistentes_solo_ministerio')) {
+            $query = auth()->user()->discipulos('todos', ! $puedeVerNoVerificados, true); // true para returnQuery
         }
 
         // Si no hay permisos o query es null, inicializamos para evitar error
@@ -1219,6 +1217,11 @@ class UserController extends Controller
                 array_push($fila, $persona->pais ? $persona->pais->nombre : 'Sin información');
             }
 
+            // ciudad / municipio
+            if ($camposInforme->where('nombre_campo_bd', 'municipio_id')->count() > 0) {
+                array_push($fila, $persona->municipio ? $persona->municipio->nombre : 'Sin información');
+            }
+
             // telefono fijo
             if ($camposInforme->where('nombre_campo_bd', 'telefono_fijo')->count() > 0) {
                 array_push($fila, $persona->telefono_fijo ? $persona->telefono_fijo : 'Sin información');
@@ -1566,7 +1569,6 @@ class UserController extends Controller
 
         $camposFormulario = $rolActivo->camposPerfil;
 
-        $continentes = Continente::orderBy('nombre', 'asc')->get();
         $paises = Pais::orderBy('nombre', 'asc')->get();
         $tiposDeVinculacion = TipoVinculacion::paraSelect($usuario->tipo_vinculacion_id)->get();
         $tiposDeVivienda = TipoVivienda::orderBy('nombre', 'asc')->get();
@@ -1576,7 +1578,9 @@ class UserController extends Controller
         $profesiones = Profesion::orderBy('nombre', 'asc')->get();
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
-        $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
+        $sedes = $formularioAutoEditar
+            ? $formularioAutoEditar->sedesDisponibles($usuario->sede_id ? (int) $usuario->sede_id : null)
+            : Sede::with(['paises:id', 'municipios:id', 'localidades:id'])->orderBy('nombre', 'asc')->get();
         $tiposIdentificaciones = TipoIdentificacion::paraSelect([
             $usuario->tipo_identificacion_id,
             $usuario->tipo_identificacion_acudiente_id,
@@ -1817,7 +1821,7 @@ class UserController extends Controller
 
     public function historialEscuelas(User $usuario)
     {
-        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $rolActivo = auth()->user()->rolActivoParaPermisos();
         $rolActivo->verificacionDelPermiso('personas.subitem_lista_asistentes');
         $configuracion = Configuracion::first();
 
@@ -2097,7 +2101,6 @@ class UserController extends Controller
           ? auth()->user()->roles()->wherePivot('activo', true)->first()
           : null;
 
-        $continentes = Continente::orderBy('nombre', 'asc')->get();
         $paises = Pais::orderBy('nombre', 'asc')->get();
         $tiposDeVinculacion = TipoVinculacion::paraSelect()->get();
         $tiposDeVivienda = TipoVivienda::orderBy('nombre', 'asc')->get();
@@ -2108,7 +2111,7 @@ class UserController extends Controller
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
-        $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
+        $sedes = $formulario->sedesDisponibles();
         $tipoPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
         $tiposIdentificaciones = TipoIdentificacion::paraSelect()->get();
         $tiposDeEstadosCiviles = EstadoCivil::paraSelect()->get();
@@ -2132,7 +2135,6 @@ class UserController extends Controller
             'layout' => $layout,
             'formulario' => $formulario,
             'rolActivo' => $rolActivo,
-            'continentes' => $continentes,
             'paises' => $paises,
             'tiposDeVivienda' => $tiposDeVivienda,
             'tiposDeVinculacion' => $tiposDeVinculacion,
@@ -2299,7 +2301,31 @@ class UserController extends Controller
             $campoTemporal = $campos->where('nombre_bd', 'pais_id')->first();
             $validarPaisNacimiento = $campoTemporal->requerido ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarPaisNacimiento]);
-            $usuario->pais_id = $request[$campoTemporal->name_id];
+            $usuario->pais_id = $request[$campoTemporal->name_id] ?: null;
+        }
+
+        // municipio / ciudad
+        if ($campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+            $campoTemporal = $campos->where('nombre_bd', 'municipio_id')->first();
+            $esRequeridoMunicipio = (bool) $campoTemporal->requerido;
+
+            if ($esRequeridoMunicipio && $campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+                $paisIdSeleccionado = $request[$campoPais->name_id] ?? null;
+
+                if ($paisIdSeleccionado && ! $this->paisTieneMunicipios($paisIdSeleccionado)) {
+                    $esRequeridoMunicipio = false;
+                }
+            }
+
+            $validarMunicipio = $esRequeridoMunicipio ? ['required'] : ['nullable'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarMunicipio]);
+
+            if ($request->has($campoTemporal->name_id)) {
+                $usuario->municipio_id = $request[$campoTemporal->name_id] ?: null;
+            } elseif ($usuario->pais_id && ! $this->paisTieneMunicipios($usuario->pais_id)) {
+                $usuario->municipio_id = null;
+            }
         }
 
         // vivienda_en_calidad_de
@@ -2529,15 +2555,38 @@ class UserController extends Controller
         // sede_id
         if ($campos->where('nombre_bd', 'sede_id')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'sede_id')->first();
-            $validarSede = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $haySedesParaUbicacion = $this->haySedesDisponiblesParaRequest($formulario, $campos, $request, $usuario);
+            $validarSede = $this->construirReglasValidacionSede($campoTemporal, $formulario, $mensajes, null, $haySedesParaUbicacion);
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarSede]);
-            $usuario->sede_id = $request[$campoTemporal->name_id];
+            if ($request->filled($campoTemporal->name_id)) {
+                $usuario->sede_id = $request[$campoTemporal->name_id];
+            }
         }
 
-        // ubicacion localidad y barrio
+        // ubicacion localidad
         if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-            $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $esRequeridoUbicacion = (bool) $campoTemporal->requerido;
+
+            if ($esRequeridoUbicacion && $campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+                $paisIdSeleccionado = $request[$campoPais->name_id] ?? null;
+
+                if ($paisIdSeleccionado && ! $this->paisTieneMunicipios($paisIdSeleccionado)) {
+                    $esRequeridoUbicacion = false;
+                }
+            }
+
+            if ($esRequeridoUbicacion && $campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+                $campoMunicipio = $campos->where('nombre_bd', 'municipio_id')->first();
+                $municipioIdSeleccionado = $request[$campoMunicipio->name_id] ?? null;
+
+                if ($municipioIdSeleccionado && ! $this->municipioTieneLocalidades($municipioIdSeleccionado)) {
+                    $esRequeridoUbicacion = false;
+                }
+            }
+
+            $validarUbicacion = $esRequeridoUbicacion ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
         }
 
@@ -2587,6 +2636,12 @@ class UserController extends Controller
             $validarCampoExtra = [];
             $campoExtra->requerido ? array_push($validarCampoExtra, 'required') : '';
             $validacion = array_merge($validacion, [$campoExtra->name_id => $validarCampoExtra]);
+        }
+
+        // Términos y condiciones por URL (checkbox obligatorio)
+        if ($formulario->visible_terminos_condiciones && ! empty($formulario->url_terminos_condiciones)) {
+            $validacion['habeas'] = ['accepted'];
+            $mensajes['habeas.accepted'] = 'Debes aceptar los términos y condiciones para continuar.';
         }
 
         // Validacion de datos
@@ -2898,11 +2953,14 @@ class UserController extends Controller
                 }
             }
 
-            // ubicacion: únicamente localidad (ya no se maneja barrio_id)
+            // ubicacion: únicamente localidad
             $campoUbicacion = $campos->where('nombre_bd', 'ubicacion')->first();
             if ($campoUbicacion && $request[$campoUbicacion->name_id]) {
                 $usuario->localidad_id = $request[$campoUbicacion->name_id];
-                $usuario->barrio_id = null;
+                if (! $usuario->municipio_id) {
+                    $usuario->municipio_id = Localidad::find($usuario->localidad_id)?->municipio_id;
+                    $usuario->save();
+                }
             }
 
             // Asignacion de parentesco
@@ -3057,7 +3115,6 @@ class UserController extends Controller
           ? auth()->user()->roles()->wherePivot('activo', true)->first()
           : null;
 
-        $continentes = Continente::orderBy('nombre', 'asc')->get();
         $paises = Pais::orderBy('nombre', 'asc')->get();
         $tiposDeVinculacion = TipoVinculacion::paraSelect($usuario->tipo_vinculacion_id)->get();
         $tiposDeVivienda = TipoVivienda::orderBy('nombre', 'asc')->get();
@@ -3068,7 +3125,7 @@ class UserController extends Controller
         $ocupaciones = Ocupacion::orderBy('nombre', 'asc')->get();
         $sectoresEconomicos = SectorEconomico::orderBy('nombre', 'asc')->get();
         $entidadesRelacionadas = EntidadRelacionada::orderBy('nombre', 'asc')->get();
-        $sedes = Sede::with('localidades:id')->orderBy('nombre', 'asc')->get();
+        $sedes = $formulario->sedesDisponibles($usuario->sede_id ? (int) $usuario->sede_id : null);
         $tipoPeticiones = TipoPeticion::orderBy('orden', 'asc')->get();
         $tiposIdentificaciones = TipoIdentificacion::paraSelect([
             $usuario->tipo_identificacion_id,
@@ -3091,7 +3148,6 @@ class UserController extends Controller
             'layout' => $layout,
             'formulario' => $formulario,
             'rolActivo' => $rolActivo,
-            'continentes' => $continentes,
             'paises' => $paises,
             'tiposDeVivienda' => $tiposDeVivienda,
             'tiposDeVinculacion' => $tiposDeVinculacion,
@@ -3252,7 +3308,31 @@ class UserController extends Controller
             $campoTemporal = $campos->where('nombre_bd', 'pais_id')->first();
             $validarPaisNacimiento = $campoTemporal->requerido ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarPaisNacimiento]);
-            $usuario->pais_id = $request[$campoTemporal->name_id];
+            $usuario->pais_id = $request[$campoTemporal->name_id] ?: null;
+        }
+
+        // municipio / ciudad
+        if ($campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+            $campoTemporal = $campos->where('nombre_bd', 'municipio_id')->first();
+            $esRequeridoMunicipio = (bool) $campoTemporal->requerido;
+
+            if ($esRequeridoMunicipio && $campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+                $paisIdSeleccionado = $request[$campoPais->name_id] ?? null;
+
+                if ($paisIdSeleccionado && ! $this->paisTieneMunicipios($paisIdSeleccionado)) {
+                    $esRequeridoMunicipio = false;
+                }
+            }
+
+            $validarMunicipio = $esRequeridoMunicipio ? ['required'] : ['nullable'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarMunicipio]);
+
+            if ($request->has($campoTemporal->name_id)) {
+                $usuario->municipio_id = $request[$campoTemporal->name_id] ?: null;
+            } elseif ($usuario->pais_id && ! $this->paisTieneMunicipios($usuario->pais_id)) {
+                $usuario->municipio_id = null;
+            }
         }
 
         // vivienda_en_calidad_de
@@ -3482,15 +3562,39 @@ class UserController extends Controller
         // sede_id
         if ($campos->where('nombre_bd', 'sede_id')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'sede_id')->first();
-            $validarSede = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $sedeActualUsuarioId = $usuario->sede_id ? (int) $usuario->sede_id : null;
+            $haySedesParaUbicacion = $this->haySedesDisponiblesParaRequest($formulario, $campos, $request, $usuario, $sedeActualUsuarioId);
+            $validarSede = $this->construirReglasValidacionSede($campoTemporal, $formulario, $mensajes, $sedeActualUsuarioId, $haySedesParaUbicacion);
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarSede]);
-            $usuario->sede_id = $request[$campoTemporal->name_id];
+            if ($request->filled($campoTemporal->name_id)) {
+                $usuario->sede_id = $request[$campoTemporal->name_id];
+            }
         }
 
-        // ubicacion localidad y barrio
+        // ubicacion localidad
         if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-            $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $esRequeridoUbicacion = (bool) $campoTemporal->requerido;
+
+            if ($esRequeridoUbicacion && $campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+                $paisIdSeleccionado = $request[$campoPais->name_id] ?? null;
+
+                if ($paisIdSeleccionado && ! $this->paisTieneMunicipios($paisIdSeleccionado)) {
+                    $esRequeridoUbicacion = false;
+                }
+            }
+
+            if ($esRequeridoUbicacion && $campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+                $campoMunicipio = $campos->where('nombre_bd', 'municipio_id')->first();
+                $municipioIdSeleccionado = $request[$campoMunicipio->name_id] ?? null;
+
+                if ($municipioIdSeleccionado && ! $this->municipioTieneLocalidades($municipioIdSeleccionado)) {
+                    $esRequeridoUbicacion = false;
+                }
+            }
+
+            $validarUbicacion = $esRequeridoUbicacion ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
         }
 
@@ -3507,8 +3611,6 @@ class UserController extends Controller
         if ($usuario->save()) {
             // $usuario->foto= $request->genero == 0 ? "default-m.png" : "default-f.png";
             $usuario->fecha_actualizacion = Carbon::now()->format('Y-m-d');
-            // $usuario->barrio_id = $request->barrio_id;
-            // $usuario->barrio_auxiliar = $request->barrio_auxiliar;
 
             // / esta sección es para el guardado de los campos extra ($('#ministerio_asociado_principal option:selected').val());
             foreach ($campos->where('es_campo_extra', true) as $campoExtra) {
@@ -3632,12 +3734,16 @@ class UserController extends Controller
 
             // fin documentos adjuntos
 
-            // ubicacion: únicamente localidad (ya no se maneja barrio_id)
+            // ubicacion: únicamente localidad
             $campoUbicacion = $campos->where('nombre_bd', 'ubicacion')->first();
             if ($campoUbicacion) {
                 if ($request->has($campoUbicacion->name_id) || $request->has('tipoUbicacion')) {
                     $usuario->localidad_id = $request[$campoUbicacion->name_id] ?: null;
-                    $usuario->barrio_id = null;
+                } elseif (
+                    ($usuario->municipio_id && ! $this->municipioTieneLocalidades($usuario->municipio_id))
+                    || ($usuario->pais_id && ! $this->paisTieneMunicipios($usuario->pais_id))
+                ) {
+                    $usuario->localidad_id = null;
                 }
             }
 
@@ -3821,7 +3927,31 @@ class UserController extends Controller
             $campoTemporal = $campos->where('nombre_bd', 'pais_id')->first();
             $validarPaisNacimiento = $campoTemporal->requerido ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarPaisNacimiento]);
-            $usuario->pais_id = $request[$campoTemporal->name_id];
+            $usuario->pais_id = $request[$campoTemporal->name_id] ?: null;
+        }
+
+        // municipio / ciudad
+        if ($campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+            $campoTemporal = $campos->where('nombre_bd', 'municipio_id')->first();
+            $esRequeridoMunicipio = (bool) $campoTemporal->requerido;
+
+            if ($esRequeridoMunicipio && $campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+                $paisIdSeleccionado = $request[$campoPais->name_id] ?? null;
+
+                if ($paisIdSeleccionado && ! $this->paisTieneMunicipios($paisIdSeleccionado)) {
+                    $esRequeridoMunicipio = false;
+                }
+            }
+
+            $validarMunicipio = $esRequeridoMunicipio ? ['required'] : ['nullable'];
+            $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarMunicipio]);
+
+            if ($request->has($campoTemporal->name_id)) {
+                $usuario->municipio_id = $request[$campoTemporal->name_id] ?: null;
+            } elseif ($usuario->pais_id && ! $this->paisTieneMunicipios($usuario->pais_id)) {
+                $usuario->municipio_id = null;
+            }
         }
 
         // vivienda_en_calidad_de
@@ -4043,15 +4173,39 @@ class UserController extends Controller
         // sede_id
         if ($campos->where('nombre_bd', 'sede_id')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'sede_id')->first();
-            $validarSede = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $sedeActualUsuarioId = $usuario->sede_id ? (int) $usuario->sede_id : null;
+            $haySedesParaUbicacion = $this->haySedesDisponiblesParaRequest($formulario, $campos, $request, $usuario, $sedeActualUsuarioId);
+            $validarSede = $this->construirReglasValidacionSede($campoTemporal, $formulario, $mensajes, $sedeActualUsuarioId, $haySedesParaUbicacion);
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarSede]);
-            $usuario->sede_id = $request[$campoTemporal->name_id];
+            if ($request->filled($campoTemporal->name_id)) {
+                $usuario->sede_id = $request[$campoTemporal->name_id];
+            }
         }
 
-        // ubicacion localidad y barrio
+        // ubicacion localidad
         if ($campos->where('nombre_bd', 'ubicacion')->count() > 0) {
             $campoTemporal = $campos->where('nombre_bd', 'ubicacion')->first();
-            $validarUbicacion = $campoTemporal->requerido ? ['required'] : ['nullable'];
+            $esRequeridoUbicacion = (bool) $campoTemporal->requerido;
+
+            if ($esRequeridoUbicacion && $campos->where('nombre_bd', 'pais_id')->count() > 0) {
+                $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+                $paisIdSeleccionado = $request[$campoPais->name_id] ?? null;
+
+                if ($paisIdSeleccionado && ! $this->paisTieneMunicipios($paisIdSeleccionado)) {
+                    $esRequeridoUbicacion = false;
+                }
+            }
+
+            if ($esRequeridoUbicacion && $campos->where('nombre_bd', 'municipio_id')->count() > 0) {
+                $campoMunicipio = $campos->where('nombre_bd', 'municipio_id')->first();
+                $municipioIdSeleccionado = $request[$campoMunicipio->name_id] ?? null;
+
+                if ($municipioIdSeleccionado && ! $this->municipioTieneLocalidades($municipioIdSeleccionado)) {
+                    $esRequeridoUbicacion = false;
+                }
+            }
+
+            $validarUbicacion = $esRequeridoUbicacion ? ['required'] : ['nullable'];
             $validacion = array_merge($validacion, [$campoTemporal->name_id => $validarUbicacion]);
         }
 
@@ -4068,8 +4222,6 @@ class UserController extends Controller
         if ($usuario->save()) {
             // $usuario->foto= $request->genero == 0 ? "default-m.png" : "default-f.png";
             $usuario->fecha_actualizacion = Carbon::now()->format('Y-m-d');
-            // $usuario->barrio_id = $request->barrio_id;
-            // $usuario->barrio_auxiliar = $request->barrio_auxiliar;
 
             // / esta sección es para el guardado de los campos extra ($('#ministerio_asociado_principal option:selected').val());
             foreach ($campos->where('es_campo_extra', true) as $campoExtra) {
@@ -4193,12 +4345,16 @@ class UserController extends Controller
 
             // fin documentos adjuntos
 
-            // ubicacion: únicamente localidad (ya no se maneja barrio_id)
+            // ubicacion: únicamente localidad
             $campoUbicacion = $campos->where('nombre_bd', 'ubicacion')->first();
             if ($campoUbicacion) {
                 if ($request->has($campoUbicacion->name_id) || $request->has('tipoUbicacion')) {
                     $usuario->localidad_id = $request[$campoUbicacion->name_id] ?: null;
-                    $usuario->barrio_id = null;
+                } elseif (
+                    ($usuario->municipio_id && ! $this->municipioTieneLocalidades($usuario->municipio_id))
+                    || ($usuario->pais_id && ! $this->paisTieneMunicipios($usuario->pais_id))
+                ) {
+                    $usuario->localidad_id = null;
                 }
             }
 
@@ -4853,9 +5009,92 @@ class UserController extends Controller
     }
 
     /**
+     * Construye las reglas de validación para el campo sede_id considerando
+     * las sedes excluidas en el formulario y preservando la sede actual en edición.
+     *
+     * @param  array<string, string>  $mensajes
+     * @return array<int, mixed>
+     */
+    protected function haySedesDisponiblesParaRequest(
+        FormularioUsuario $formulario,
+        $campos,
+        Request $request,
+        User $usuario,
+        ?int $sedeActualUsuarioId = null
+    ): bool {
+        $campoPais = $campos->where('nombre_bd', 'pais_id')->first();
+        $campoMunicipio = $campos->where('nombre_bd', 'municipio_id')->first();
+        $campoUbicacion = $campos->where('nombre_bd', 'ubicacion')->first();
+
+        if (! $campoPais && ! $campoMunicipio && ! $campoUbicacion) {
+            return true;
+        }
+
+        $paisId = $usuario->pais_id ? (int) $usuario->pais_id : null;
+        $municipioId = $usuario->municipio_id ? (int) $usuario->municipio_id : null;
+        $localidadId = $campoUbicacion && $request->filled($campoUbicacion->name_id)
+            ? (int) $request[$campoUbicacion->name_id]
+            : ($usuario->localidad_id ? (int) $usuario->localidad_id : null);
+
+        if (! $municipioId && $localidadId) {
+            $municipioId = Localidad::find($localidadId)?->municipio_id;
+        }
+        if (! $paisId && $municipioId) {
+            $paisId = Municipio::find($municipioId)?->pais_id;
+        }
+
+        $sedesDisponibles = $formulario->sedesDisponibles($sedeActualUsuarioId);
+
+        return $sedesDisponibles->contains(
+            fn (Sede $sede): bool => $sede->cumpleCoberturaGeografica($paisId, $municipioId, $localidadId)
+        );
+    }
+
+    protected function construirReglasValidacionSede(
+        object $campoTemporal,
+        FormularioUsuario $formulario,
+        array &$mensajes,
+        ?int $sedeActualUsuarioId = null,
+        bool $haySedesParaUbicacion = true
+    ): array {
+        $esRequerido = $campoTemporal->requerido && $haySedesParaUbicacion;
+        $reglas = $esRequerido
+            ? ['numeric', 'required', Rule::exists('sedes', 'id')]
+            : ['numeric', 'nullable', Rule::exists('sedes', 'id')];
+
+        $sedesExcluidasIds = $formulario->obtenerSedesExcluidasIds($sedeActualUsuarioId);
+        if (! empty($sedesExcluidasIds)) {
+            $reglas[] = Rule::notIn($sedesExcluidasIds);
+            $mensajes["{$campoTemporal->name_id}.not_in"] = 'La sede seleccionada no está disponible para este formulario.';
+        }
+
+        return $reglas;
+    }
+
+    /**
      * Aplica las reglas de dependencia a los campos del formulario.
      * Si la condición se cumple (el campo se oculta o bloquea), desactiva su obligatoriedad ($campoItem->requerido = 0).
      */
+    protected function paisTieneMunicipios(int|string|null $paisId): bool
+    {
+        if (! $paisId) {
+            return false;
+        }
+
+        return Municipio::where('pais_id', $paisId)->exists();
+    }
+
+    protected function municipioTieneLocalidades(int|string|null $municipioId): bool
+    {
+        if (! $municipioId) {
+            return false;
+        }
+
+        $municipio = Municipio::withCount('localidades')->find($municipioId);
+
+        return (bool) ($municipio && ((bool) $municipio->tiene_localidades || $municipio->localidades_count > 0));
+    }
+
     protected function resolverDependenciasCampos($campos, array $datos, FormularioUsuario $formulario): void
     {
         $todosLosCampos = CampoFormularioUsuario::leftJoin('campo_seccion_formulario_usuario', 'campos_formulario_usuario.id', '=', 'campo_seccion_formulario_usuario.campo_id')
@@ -4925,6 +5164,15 @@ class UserController extends Controller
                             $normActual = $normalizeVal($valorPadre, $esSwitch);
                             $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
                             $cumple = ($normActual === $normEsperado);
+                        }
+                    } elseif ($campoItem->tipo_condicion === 'diferente_a') {
+                        if (is_array($valorPadre)) {
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ! in_array($normEsperado, array_map(fn ($v) => $normalizeVal($v, $esSwitch), $valorPadre));
+                        } else {
+                            $normActual = $normalizeVal($valorPadre, $esSwitch);
+                            $normEsperado = $normalizeVal($campoItem->valor_condicion, $esSwitch);
+                            $cumple = ($normActual !== $normEsperado);
                         }
                     } else { // no_vacio
                         if (is_array($valorPadre)) {

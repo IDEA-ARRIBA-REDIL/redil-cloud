@@ -22,32 +22,35 @@ class SedeSeeder extends Seeder
             'nombre' => 'Sede principal',
             'grupo_id' => 1,
             'tipo_sede_id' => 1,
-            'continente_id' => 2,
             'foto' => 'default.png',
             'pais_id' => 45,
             'default' => true,
+            'latitud' => '4.5976116',
+            'longitud' => '-74.0759201',
         ]);
 
         Sede::firstOrCreate([
             'id' => '2',
-            'nombre' => 'Sede Auditorio principal',
+            'nombre' => 'Conectate Internacional',
             'grupo_id' => 1,
             'tipo_sede_id' => 1,
-            'continente_id' => 2,
             'foto' => 'default.png',
             'pais_id' => 45,
             'default' => false,
+            'latitud' => '4.7109079',
+            'longitud' => '-74.0718472',
         ]);
 
         Sede::firstOrCreate([
             'id' => '33',
-            'nombre' => 'Sede Adicional',
+            'nombre' => 'Contectate Nacional',
             'grupo_id' => 1,
             'tipo_sede_id' => 1,
-            'continente_id' => 2,
             'foto' => 'default.png',
             'pais_id' => 45,
             'default' => false,
+            'latitud' => '4.7110412',
+            'longitud' => '-74.0720852',
         ]);
 
         if (! file_exists(base_path('storage/app/'.$this->filePath))) {
@@ -96,13 +99,9 @@ class SedeSeeder extends Seeder
                 'tipo_sede_id' => $sede['tipo_sede_id'],
                 'grupo_id' => $sede['grupo_id'],
                 'pais_id' => $sede['pais_id'],
-
-                'barrio_id' => $sede['barrio_id'],
-                'barrio_auxiliar' => $sede['barrio_auxiliar'],
                 'descripcion' => $sede['descripcion'],
                 'fecha_creacion' => $sede['fecha_creacion'],
                 'foto' => $sede['foto'],
-                'departamento_id' => $sede['departamento_id'],
                 'municipio_id' => $sede['municipio_id'],
                 'created_at' => $sede['created_at'],
                 'updated_at' => $sede['updated_at'],

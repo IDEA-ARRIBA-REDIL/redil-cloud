@@ -348,16 +348,6 @@ $configData = Helper::appClasses();
               </label>
             </div>
             <div class="col-md-3 col-sm-6 col-12 mb-3">
-              <div class="form-label">¿Usa listas geograficas?</div>
-              <label class="switch switch-lg">
-                <input type="checkbox" @checked($configuracion->usa_listas_geograficas) class="switch-input" id="usa_listas_geograficas" name="usaListasGeograficas" />
-                <span class="switch-toggle-slider">
-                  <span class="switch-on">Si</span>
-                  <span class="switch-off">No</span>
-                </span>
-              </label>
-            </div>
-            <div class="col-md-3 col-sm-6 col-12 mb-3">
               <div class="form-label">¿Dirección obligatoria?</div>
               <label class="switch switch-lg">
                 <input type="checkbox" @checked($configuracion->direccion_obligatoria) class="switch-input" id="direccion_obligatoria" name="direccionObligatoria" />

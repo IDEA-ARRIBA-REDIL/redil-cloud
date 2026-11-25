@@ -196,7 +196,8 @@ $configData = Helper::appClasses();
         telefono_externo: $('#telefono_externo').val() || '',
         genero_externo: $('#genero_externo').val() || '',
         pais_id: $('#pais_id').val() || '',
-        ciudad: $('#ciudad').val() || ''
+        ciudad: $('#ciudad').val() || '',
+        desea_pertenecer_iglesia: $('#desea_pertenecer_iglesia').is(':checked')
       };
       sessionStorage.setItem('progreso_peticion_publica', JSON.stringify(data));
     }
@@ -229,6 +230,9 @@ $configData = Helper::appClasses();
           }
           if (data.ciudad) {
             $('#ciudad').val(data.ciudad);
+          }
+          if (typeof data.desea_pertenecer_iglesia !== 'undefined') {
+            $('#desea_pertenecer_iglesia').prop('checked', Boolean(data.desea_pertenecer_iglesia));
           }
         } catch (e) {
           console.error("Error al restaurar progreso:", e);
@@ -563,6 +567,13 @@ $configData = Helper::appClasses();
         <label for="ciudad">Ciudad</label>
         <input type="text" id="ciudad" name="ciudad" placeholder="Ej. Medellín, Bogotá, Miami..." autocomplete="address-level2" value="{{ old('ciudad') }}" required>
         <small class="err">@error('ciudad') {{ $message }} @else La ciudad es obligatoria. @enderror</small>
+      </div>
+
+      <div id="f-desea-pertenecer" style="margin-bottom:18px;">
+        <label class="chk" for="desea_pertenecer_iglesia" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14.5px;font-weight:600;color:var(--ink);background:var(--field);border:1px solid var(--border);border-radius:10px;padding:13px 14px;margin-bottom:0;">
+          <input type="checkbox" id="desea_pertenecer_iglesia" name="desea_pertenecer_iglesia" value="1" {{ old('desea_pertenecer_iglesia') ? 'checked' : '' }} style="width:18px;height:18px;margin:0;flex-shrink:0;accent-color:var(--bline);cursor:pointer;">
+          <span>¿Te gustaría pertenecer a nuestra iglesia?</span>
+        </label>
       </div>
 
       <!-- reCAPTCHA -->

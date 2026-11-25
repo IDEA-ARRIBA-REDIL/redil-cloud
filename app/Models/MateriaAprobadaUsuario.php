@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 
 class MateriaAprobadaUsuario extends Model
 {
@@ -17,6 +19,8 @@ class MateriaAprobadaUsuario extends Model
     public const ESTADO_APROBADO = 1;
 
     public const ESTADO_EN_PROCESO = 2;
+
+    public const ENTIDAD_EQUIVALENCIA_LOCAL = 'materia_equivalente_local';
 
     /**
      * Los atributos que se pueden asignar de forma masiva.
@@ -63,6 +67,50 @@ class MateriaAprobadaUsuario extends Model
     public function esReprobado(): bool
     {
         return (int) $this->aprobado === self::ESTADO_REPROBADO;
+    }
+
+    public function scopeSinHomologacion(Builder $query): Builder
+    {
+        return $query->where(function (Builder $resultados): void {
+            $resultados->where('es_homologacion', false)->orWhereNull('es_homologacion');
+        });
+    }
+
+    /**
+     * @return Collection<int, int>
+     */
+    public static function idsAprobadosReconocidos(User $usuario): Collection
+    {
+        $aprobaciones = static::query()
+            ->where('materias_aprobada_usuario.user_id', $usuario->getKey())
+            ->where('materias_aprobada_usuario.aprobado', self::ESTADO_APROBADO);
+        $directas = (clone $aprobaciones)->pluck('materias_aprobada_usuario.materia_id');
+
+        $tablaEquivalencias = 'migracion_escuelas_correspondencias';
+        if ($directas->isEmpty() || ! $aprobaciones->getModel()->getConnection()->getSchemaBuilder()->hasTable($tablaEquivalencias)) {
+            return $directas;
+        }
+
+        $equivalentes = $aprobaciones
+            ->sinHomologacion()
+            ->join($tablaEquivalencias.' as equivalencia', 'equivalencia.id_origen', '=', 'materias_aprobada_usuario.materia_id')
+            ->where('equivalencia.entidad', self::ENTIDAD_EQUIVALENCIA_LOCAL)
+            ->where('equivalencia.tabla_destino', 'materias')
+            ->get([
+                'materias_aprobada_usuario.id as aprobacion_id',
+                'equivalencia.id_destino',
+                'equivalencia.origen',
+            ])
+            ->filter(static function (self $equivalencia): bool {
+                $regla = json_decode((string) $equivalencia->origen, true);
+                $aprobacionesAutorizadas = $regla['aprobaciones_ordinarias_ids'] ?? [];
+
+                return is_array($aprobacionesAutorizadas)
+                    && in_array((int) $equivalencia->aprobacion_id, $aprobacionesAutorizadas, true);
+            })
+            ->pluck('id_destino');
+
+        return $directas->merge($equivalentes)->unique()->values();
     }
 
     protected static function booted()
@@ -145,7 +193,7 @@ class MateriaAprobadaUsuario extends Model
      */
     public function materia(): BelongsTo
     {
-        return $this->belongsTo(Materia::class, 'materia_id');
+        return $this->belongsTo(Materia::class, 'materia_id')->withTrashed();
     }
 
     /**

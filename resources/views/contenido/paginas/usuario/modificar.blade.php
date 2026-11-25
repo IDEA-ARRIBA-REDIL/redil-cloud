@@ -332,6 +332,19 @@ $configData = Helper::appClasses();
   @csrf
   @method('PATCH')
 
+  @php
+    $camposActivosGeo = $secciones->flatMap->campos;
+    $campoGeoPais = $camposActivosGeo->firstWhere('nombre_bd', 'pais_id');
+    $campoGeoMunicipio = $camposActivosGeo->firstWhere('nombre_bd', 'municipio_id');
+    $campoGeoLocalidad = $camposActivosGeo->firstWhere('nombre_bd', 'ubicacion');
+    $tieneCampoPaisGeo = (bool) $campoGeoPais;
+    $tieneCampoMunicipioGeo = (bool) $campoGeoMunicipio;
+    $tieneCampoLocalidadGeo = (bool) $campoGeoLocalidad;
+    $paisIdInicialGeo = (string) ($campoGeoPais ? old($campoGeoPais->name_id, $usuario->pais_id ?? '') : ($usuario->pais_id ?? ''));
+    $municipioIdInicialGeo = (string) ($campoGeoMunicipio ? old($campoGeoMunicipio->name_id, $usuario->municipio_id ?? ($usuario->localidad?->municipio_id ?? '')) : ($usuario->municipio_id ?? ($usuario->localidad?->municipio_id ?? '')));
+    $localidadIdInicialGeo = (string) ($campoGeoLocalidad ? old($campoGeoLocalidad->name_id, $usuario->localidad_id ?? '') : ($usuario->localidad_id ?? ''));
+  @endphp
+
   @foreach ($secciones as $seccion)
   <div class="col-md-12">
     <div class="card mb-4">
@@ -618,25 +631,31 @@ $configData = Helper::appClasses();
 
           <!-- Nacionalidad -->
           @if ($campo->nombre_bd == 'pais_id')
-          <div class="mb-3 {{ $campo->pivot->class }}">
-            <label class="form-label" for="pais_id">
-              {{ $campo->nombre }}
-            </label>
-            <select id="pais_id" name="{{ $campo->name_id }}"
-              data-placeholder="{{ $campo->placeholder }}" class="select2 form-select"
-              data-allow-clear="true">
-              <option value="">Ninguno</option>
-              @foreach ($paises as $pais)
-              <option value="{{ $pais->id }}"
-                {{ old($campo->name_id, $usuario->pais_id) == $pais->id ? 'selected' : '' }}>
-                {{ ucwords($pais->nombre) }}
-              </option>
-              @endforeach
-            </select>
-            <div id="error{{ $campo->name_id }}"></div>
-          </div>
+          @livewire('Generales.pais-buscador', [
+            'class' => 'mb-3 ' . $campo->pivot->class,
+            'label' => $campo->nombre,
+            'nameId' => $campo->name_id,
+            'placeholder' => $campo->placeholder,
+            'usuario' => $usuario,
+            'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+          ])
           @endif
           <!-- /Nacionalidad -->
+
+          <!-- Ciudad / Municipio -->
+          @if ($campo->nombre_bd == 'municipio_id')
+          @livewire('Generales.municipio-buscador', [
+            'class' => 'mb-3 ' . $campo->pivot->class,
+            'label' => $campo->nombre,
+            'nameId' => $campo->name_id,
+            'placeholder' => $campo->placeholder,
+            'usuario' => $usuario,
+            'tieneCampoPais' => $tieneCampoPaisGeo,
+            'paisId' => $paisIdInicialGeo,
+            'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+          ])
+          @endif
+          <!-- /Ciudad / Municipio -->
 
           <!-- Telefono fijo -->
           @if ($campo->nombre_bd == 'telefono_fijo')
@@ -760,11 +779,16 @@ $configData = Helper::appClasses();
           <!-- ubicacion -->
           @if ($campo->nombre_bd == 'ubicacion')
           @livewire('Generales.barrio-localidad-buscador', [
-          'class' => $campo->pivot->class,
-          'label' => $campo->nombre,
-          'nameId' => $campo->name_id,
-          'placeholder' => $campo->placeholder,
-          'usuario' => $usuario,
+            'class' => 'mb-3 ' . $campo->pivot->class,
+            'label' => $campo->nombre,
+            'nameId' => $campo->name_id,
+            'placeholder' => $campo->placeholder,
+            'usuario' => $usuario,
+            'tieneCampoPais' => $tieneCampoPaisGeo,
+            'tieneCampoMunicipio' => $tieneCampoMunicipioGeo,
+            'paisId' => $paisIdInicialGeo,
+            'municipioId' => $municipioIdInicialGeo,
+            'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
           ])
           @endif
           <!-- / ubicacion -->
@@ -995,24 +1019,21 @@ $configData = Helper::appClasses();
 
           <!-- Sede -->
           @if ($campo->nombre_bd == 'sede_id')
-          <div class="mb-3 {{ $campo->pivot->class }}">
-            <label class="form-label" for="sede">
-              {{ $campo->nombre }}
-            </label>
-            <select id="sede" data-placeholder="{{ $campo->placeholder }}"
-              name="{{ $campo->name_id }}" class="select2 form-select"
-              data-allow-clear="true">
-              <option value="">Ninguno</option>
-              @foreach ($sedes as $sede)
-              <option value="{{ $sede->id }}"
-                data-localidades="{{ $sede->localidades->pluck('id')->toJson() }}"
-                {{ old($campo->name_id, $usuario->sede_id) == $sede->id ? 'selected' : '' }}>
-                {{ ucwords($sede->nombre) }}
-              </option>
-              @endforeach
-            </select>
-            <div id="error{{ $campo->name_id }}"></div>
-          </div>
+          @livewire('Generales.sede-buscador', [
+            'class' => 'mb-3 ' . $campo->pivot->class,
+            'label' => $campo->nombre,
+            'nameId' => $campo->name_id,
+            'placeholder' => $campo->placeholder,
+            'formularioId' => $formulario->id,
+            'usuario' => $usuario,
+            'tieneCampoPais' => $tieneCampoPaisGeo,
+            'tieneCampoMunicipio' => $tieneCampoMunicipioGeo,
+            'tieneCampoLocalidad' => $tieneCampoLocalidadGeo,
+            'paisId' => $paisIdInicialGeo,
+            'municipioId' => $municipioIdInicialGeo,
+            'localidadId' => $localidadIdInicialGeo,
+            'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+          ])
           @endif
           <!-- /Sede -->
 
@@ -1470,6 +1491,5 @@ $configData = Helper::appClasses();
 
 @include('contenido.paginas.usuario.scripts.dependencias-campos')
 @include('contenido.paginas.usuario.scripts.validacion-identificacion')
-@include('contenido.paginas.usuario.scripts.filtro-sedes-localidad')
 
 @endsection

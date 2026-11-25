@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\Helpers;
+use App\Http\Requests\GraficoMinisterioRequest;
 use App\Models\BloqueClasificacionAsistente;
 use App\Models\BloqueDashboardConsolidacion;
 use App\Models\CampoExtraGrupo;
@@ -22,6 +23,7 @@ use App\Models\TipoVivienda;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -69,10 +71,17 @@ class GrupoController extends Controller
                     ->unique('id');
 
                 $gruposParaIndicadores = clone $grupos;
-            }
-
-            if ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
+            } elseif ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
                 $grupos = auth()->user()->gruposMinisterio()->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
+                    ->leftJoin('users', 'users.id', '=', 'encargados_grupo.user_id')
+                    ->select('grupos.*', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.segundo_apellido')
+                    ->get()
+                    ->unique('id');
+
+                $gruposParaIndicadores = clone $grupos;
+            } elseif ($rolActivo->lista_grupos_sede_id != null) {
+                $grupos = Grupo::where('grupos.sede_id', $rolActivo->lista_grupos_sede_id)
+                    ->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
                     ->leftJoin('users', 'users.id', '=', 'encargados_grupo.user_id')
                     ->select('grupos.*', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.segundo_apellido')
                     ->get()
@@ -494,10 +503,15 @@ class GrupoController extends Controller
                     ->select('grupos.*', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.segundo_apellido')
                     ->get()
                     ->unique('id');
-            }
-
-            if ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
+            } elseif ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
                 $grupos = auth()->user()->gruposMinisterio()->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
+                    ->leftJoin('users', 'users.id', '=', 'encargados_grupo.user_id')
+                    ->select('grupos.*', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.segundo_apellido')
+                    ->get()
+                    ->unique('id');
+            } elseif ($rolActivo->lista_grupos_sede_id != null) {
+                $grupos = Grupo::where('grupos.sede_id', $rolActivo->lista_grupos_sede_id)
+                    ->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
                     ->leftJoin('users', 'users.id', '=', 'encargados_grupo.user_id')
                     ->select('grupos.*', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.segundo_apellido')
                     ->get()
@@ -812,8 +826,6 @@ class GrupoController extends Controller
         $grupo->nombre = $request->nombre;
         $grupo->telefono = $request->teléfono;
         $grupo->direccion = $request->dirección;
-        $grupo->barrio_id = $request->barrio_id ? $request->barrio_id : null;
-        $grupo->barrio_auxiliar = $request->barrio_auxiliar;
         $grupo->tipo_vivienda_id = $request->tipo_de_vivienda;
         $grupo->tipo_grupo_id = $request->tipo_de_grupo;
         $grupo->rhema = $request->adiccional;
@@ -1667,23 +1679,107 @@ class GrupoController extends Controller
      */
     public function solicitudIngreso(): View
     {
-        $sedes = Sede::with('tipo')->orderBy('nombre', 'asc')->get();
-        $grupos = Grupo::with(['tipoGrupo', 'sede'])
-            ->where('dado_baja', false)
-            ->whereHas('tipoGrupo', function ($query) {
-                $query->where('tipo_evangelistico', true);
-            })
+        $sedes = Sede::select('id', 'nombre', 'direccion', 'latitud', 'longitud')
             ->orderBy('nombre', 'asc')
             ->get();
-        $iglesia = Iglesia::find(1);
+        $iglesia = Iglesia::select('id', 'latitud', 'longitud')->find(1);
         $latitudInicial = ($iglesia && $iglesia->latitud) ? $iglesia->latitud : 4.60971;
         $longitudInicial = ($iglesia && $iglesia->longitud) ? $iglesia->longitud : -74.08175;
 
         return view('contenido.paginas.grupos.solicitud-ingreso', [
             'sedes' => $sedes,
-            'grupos' => $grupos,
             'latitudInicial' => $latitudInicial,
             'longitudInicial' => $longitudInicial,
+        ]);
+    }
+
+    /**
+     * Retorna los grupos evangelísticos activos de una sede (o ejemplos para el prototipo).
+     */
+    public function solicitudIngresoGrupos(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $sedeId = $request->integer('sede_id');
+        $portadaDefault = \Illuminate\Support\Facades\Storage::disk('global_media')->url('grupos/banner-default.jpg');
+
+        $gruposReales = Grupo::with(['tipoGrupo', 'encargados.tipoUsuario'])
+            ->where('sede_id', $sedeId)
+            ->where('dado_baja', false)
+            ->whereHas('tipoGrupo', function ($query) {
+                $query->where('tipo_evangelistico', true);
+            })
+            ->orderBy('nombre', 'asc')
+            ->get()
+            ->map(function (Grupo $grupo) {
+                $encargados = $grupo->encargadosDirectos()->map(fn ($e) => [
+                    'nombre' => $e->nombre,
+                    'icono' => $e->icono ?? 'ti ti-user',
+                    'tipoUsuario' => $e->tipo_usuario ?? '',
+                ])->values();
+
+                $diaTexto = $grupo->dia ? Helpers::obtenerDiaDeLaSemana($grupo->dia, 'corto') : 'Día no indicado';
+                $horaTexto = $grupo->hora ? Carbon::parse($grupo->hora)->format('g:i a') : '';
+
+                return [
+                    'id' => $grupo->id,
+                    'esEjemplo' => false,
+                    'nombre' => $grupo->nombre,
+                    'tipo' => $grupo->tipoGrupo ? $grupo->tipoGrupo->nombre : 'Grupo',
+                    'portada' => $grupo->portada_vinculada,
+                    'diaHora' => $horaTexto ? "{$diaTexto}, {$horaTexto}" : $diaTexto,
+                    'direccion' => $grupo->direccion ?: 'Dirección no registrada',
+                    'encargados' => $encargados,
+                ];
+            });
+
+        if ($gruposReales->isNotEmpty()) {
+            return response()->json([
+                'grupos' => $gruposReales->values(),
+            ]);
+        }
+
+        $gruposEjemplo = [
+            [
+                'id' => null,
+                'esEjemplo' => true,
+                'nombre' => 'Grupo Evangelístico Luz y Vida',
+                'tipo' => 'Grupo Evangelístico',
+                'portada' => $portadaDefault,
+                'diaHora' => 'Miércoles, 7:00 pm',
+                'direccion' => 'Calle 24 # 68-45, Apto 302',
+                'encargados' => [
+                    ['nombre' => 'Carlos Andrés Gómez', 'icono' => 'ti ti-user', 'tipoUsuario' => 'Líder'],
+                    ['nombre' => 'Laura Sofía Martínez', 'icono' => 'ti ti-user', 'tipoUsuario' => 'Líder'],
+                ],
+            ],
+            [
+                'id' => null,
+                'esEjemplo' => true,
+                'nombre' => 'Célula Esperanza Viva',
+                'tipo' => 'Grupo Evangelístico',
+                'portada' => $portadaDefault,
+                'diaHora' => 'Viernes, 7:30 pm',
+                'direccion' => 'Carrera 70 # 48-12, Barrio Normandía',
+                'encargados' => [
+                    ['nombre' => 'Juan Pablo Rojas', 'icono' => 'ti ti-user', 'tipoUsuario' => 'Líder'],
+                ],
+            ],
+            [
+                'id' => null,
+                'esEjemplo' => true,
+                'nombre' => 'Casa de Paz Renuevo',
+                'tipo' => 'Grupo Evangelístico',
+                'portada' => $portadaDefault,
+                'diaHora' => 'Sábado, 5:00 pm',
+                'direccion' => 'Av. Boyacá # 53-20, Salón Comunal',
+                'encargados' => [
+                    ['nombre' => 'María Fernanda Díaz', 'icono' => 'ti ti-user', 'tipoUsuario' => 'Líder'],
+                    ['nombre' => 'Andrés Felipe Torres', 'icono' => 'ti ti-user', 'tipoUsuario' => 'Líder'],
+                ],
+            ],
+        ];
+
+        return response()->json([
+            'grupos' => $gruposEjemplo,
         ]);
     }
 
@@ -1907,6 +2003,30 @@ class GrupoController extends Controller
             'indicadores' => $indicadores,
             'tipo' => $tipo,
             'buscar' => $buscar,
+        ]);
+    }
+
+    /**
+     * Muestra la vista prototipo de la solicitud de ingreso actualmente en curso del usuario.
+     */
+    public function miSolicitud(): View
+    {
+        $solicitudActual = (object) [
+            'id' => 101,
+            'estado' => 'Pendiente de revisión',
+            'fechaSolicitud' => '17 de noviembre de 2026 - 09:15 am',
+            'grupoNombre' => 'Grupo Evangelístico Luz y Vida',
+            'grupoTipo' => 'Grupo Evangelístico',
+            'sedeNombre' => 'Sede Auditorio Principal',
+            'diaHora' => 'Miércoles, 7:00 pm',
+            'direccion' => 'Calle 24 # 68-45, Apto 302',
+            'encargados' => ['Carlos Andrés Gómez', 'Laura Sofía Martínez'],
+            'portada' => \Illuminate\Support\Facades\Storage::disk('global_media')->url('grupos/banner-default.jpg'),
+            'mensajeAdicional' => '¡Hola! Llevo dos domingos asistiendo a la iglesia y me encantaría integrarme a un grupo cerca de mi casa para crecer en mi fe.',
+        ];
+
+        return view('contenido.paginas.grupos.mi-solicitud', [
+            'solicitudActual' => $solicitudActual,
         ]);
     }
 
@@ -3415,8 +3535,6 @@ class GrupoController extends Controller
         $grupo->nombre = $request->nombre;
         $grupo->telefono = $request->teléfono;
         $grupo->direccion = $request->dirección;
-        $grupo->barrio_id = $request->barrio_id ? $request->barrio_id : null;
-        $grupo->barrio_auxiliar = $request->barrio_auxiliar;
         $grupo->tipo_vivienda_id = $request->tipo_de_vivienda;
         $grupo->tipo_grupo_id = $request->tipo_de_grupo;
         $grupo->rhema = $request->adiccional;
@@ -3500,7 +3618,7 @@ class GrupoController extends Controller
             ->pluck('users.id')
             ->toArray();
 
-        $queUsuariosCargarEncargados = $rolActivo->hasPermissionTo('personas.ajax_obtiene_asistentes_solo_ministerio')
+        $queUsuariosCargarEncargados = (! $rolActivo->hasPermissionTo('personas.lista_asistentes_todos') && $rolActivo->hasPermissionTo('personas.ajax_obtiene_asistentes_solo_ministerio'))
           ? 'discipulos'
           : 'todos';
 
@@ -3533,7 +3651,7 @@ class GrupoController extends Controller
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso(['grupos.pestana_anadir_integrantes_grupo', 'grupos.opcion_anadir_integrantes_grupo']);
 
-        $queUsuariosCargar = $rolActivo->hasPermissionTo('personas.ajax_obtiene_asistentes_solo_ministerio')
+        $queUsuariosCargar = (! $rolActivo->hasPermissionTo('personas.lista_asistentes_todos') && $rolActivo->hasPermissionTo('personas.ajax_obtiene_asistentes_solo_ministerio'))
           ? 'discipulos'
           : 'todos';
 
@@ -3627,7 +3745,7 @@ class GrupoController extends Controller
         $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
         $rolActivo->verificacionDelPermiso('grupos.subitem_excluir_asistentes_grupos');
 
-        $queUsuariosCargar = $rolActivo->hasPermissionTo('personas.ajax_obtiene_asistentes_solo_ministerio')
+        $queUsuariosCargar = (! $rolActivo->hasPermissionTo('personas.lista_asistentes_todos') && $rolActivo->hasPermissionTo('personas.ajax_obtiene_asistentes_solo_ministerio'))
           ? 'discipulos'
           : 'todos';
 
@@ -3692,8 +3810,8 @@ class GrupoController extends Controller
         $parametrosBusqueda['textoBusqueda'] = '';
         $parametrosBusqueda = (object) $parametrosBusqueda;
 
-        if ($rolActivo->hasPermissionTo('grupos.lista_grupos_todos') || $rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio') || $rolActivo->lista_grupos_sede_id != null) {
-            if ($rolActivo->hasPermissionTo('grupos.lista_grupos_todos') || isset(auth()->user()->iglesiaEncargada()->first()->id)) {
+        if ($rolActivo->hasPermissionTo('grupos.lista_grupos_todos') || $rolActivo->hasPermissionTo('grupos.mapa_grupos_todos') || $rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio') || $rolActivo->hasPermissionTo('grupos.mapa_grupos_solo_ministerio') || $rolActivo->lista_grupos_sede_id != null) {
+            if ($rolActivo->hasPermissionTo('grupos.lista_grupos_todos') || $rolActivo->hasPermissionTo('grupos.mapa_grupos_todos') || isset(auth()->user()->iglesiaEncargada()->first()->id)) {
                 $grupos = Grupo::whereNotNull('latitud')
                     ->whereNotNull('longitud')
                     ->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
@@ -3701,11 +3819,18 @@ class GrupoController extends Controller
                     ->select('grupos.*', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.segundo_apellido')
                     ->get()
                     ->unique('id');
-            }
-
-            if ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
+            } elseif ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio') || $rolActivo->hasPermissionTo('grupos.mapa_grupos_solo_ministerio')) {
                 $grupos = auth()->user()->gruposMinisterio()->whereNotNull('grupos.latitud')
                     ->whereNotNull('grupos.longitud')->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
+                    ->leftJoin('users', 'users.id', '=', 'encargados_grupo.user_id')
+                    ->select('grupos.*', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.segundo_apellido')
+                    ->get()
+                    ->unique('id');
+            } elseif ($rolActivo->lista_grupos_sede_id != null) {
+                $grupos = Grupo::where('grupos.sede_id', $rolActivo->lista_grupos_sede_id)
+                    ->whereNotNull('latitud')
+                    ->whereNotNull('longitud')
+                    ->leftJoin('encargados_grupo', 'grupos.id', '=', 'encargados_grupo.grupo_id')
                     ->leftJoin('users', 'users.id', '=', 'encargados_grupo.user_id')
                     ->select('grupos.*', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.segundo_apellido')
                     ->get()
@@ -3742,20 +3867,18 @@ class GrupoController extends Controller
         ]);
     }
 
-    public function graficoDelMinisterio($id_nodo = 'U-logueado', $maximos_niveles = null)
+    public function graficoDelMinisterio(GraficoMinisterioRequest $request, string $id_nodo = 'U-logueado', ?int $maximos_niveles = null): View|JsonResponse
     {
 
         $usuarioLogueado = auth()->user();
         $rolActivo = $usuarioLogueado->roles()->with('permissions')->wherePivot('activo', true)->first();
+        abort_if($rolActivo === null, 403);
         $rolActivo->verificacionDelPermiso('grupos.subitem_grafico_ministerio');
         $usuarioLogueado->setRelation('rolActivo', $rolActivo);
         $permisosEvaluados = [];
         $tienePermiso = static function (string $permiso) use ($rolActivo, &$permisosEvaluados): bool {
             return $permisosEvaluados[$permiso] ??= $rolActivo->hasPermissionTo($permiso);
         };
-        $gruposExcluidos = GrupoExcluido::where('user_id', $usuarioLogueado->id)->pluck('grupo_id')->all();
-        $formulariosPorEdad = [];
-        $idsGruposSedes = array_fill_keys(Sede::whereNotNull('grupo_id')->pluck('grupo_id')->all(), true);
 
         $configuracion = Configuracion::find(1);
         if ($maximos_niveles === null) {
@@ -3807,20 +3930,29 @@ class GrupoController extends Controller
         } elseif ($tipo_nodo == 'A') {
             $tipoDeNodo = $tipoDeNodo.'-encargado';
             array_push($array_ids_usuarios, $id);
-            $usuario = User::find($id);
+            $usuario = User::findOrFail($id);
             $tipoUsuarioNombre = $usuario->tipoUsuario ? $usuario->tipoUsuario->nombre : 'Sin tipo';
             $mensaje = 'Ministerio del '.$tipoUsuarioNombre." <a href='/usuario/".$usuario->id."/perfil' target='_blank' >".$usuario->nombre(3).'</a>';
             // // luego aca es si dieron click dentro de un nodo del grafico a un grupo
         } elseif ($tipo_nodo == 'G') {
             $tipoDeNodo = $tipoDeNodo.'-grupo';
-            $grupo = Grupo::find($id);
+            $grupo = Grupo::findOrFail($id);
             $array_ids_usuarios = $grupo->encargados()->select('users.id')->pluck('users.id')->toArray();
             $mensaje = "Ministerio a partir del grupo <a href='/grupo/".$grupo->id."/perfil' target='_blank' >".$grupo->codigo.' '.$grupo->nombre.'</a>';
         }
 
+        if ($request->boolean('solo_totales')) {
+            return response()->json($this->contarCoberturaGrafico($array_ids_usuarios));
+        }
+
+        $gruposExcluidos = GrupoExcluido::where('user_id', $usuarioLogueado->id)->pluck('grupo_id')->all();
+        $formulariosPorEdad = [];
+        $idsGruposSedes = array_fill_keys(Sede::whereNotNull('grupo_id')->pluck('grupo_id')->all(), true);
+        $fechaLimiteReporte = Carbon::today()->subDays(8)->toDateString();
+
         if ($maximos_niveles != 20) {
             $mensaje = $mensaje."<br>
-      Actualmente se están visualizando solamente algunos niveles. Si deseas ver el árbol con el ministerio completo, ingresa <a style='color:#3c8dbc' href='/grupo/grafico-del-ministerio/U-logueado/20' >aquí</a>";
+      Actualmente se están visualizando solamente algunos niveles. Si deseas ver el árbol con el ministerio completo, ingresa <a style='color:#3c8dbc' href='".route('grupo.graficoDelMinisterio', [$id_nodo, 20])."' >aquí</a>";
         }
 
         if ($tipo_nodo == 'A') {
@@ -3831,63 +3963,22 @@ class GrupoController extends Controller
             $mensaje = $mensaje.'<br> El índice actual del grupo <b>'.$grupo->nombre.'</b> que permite establecer su ubicación en el gráfico es: </a> <b>'.$grupo->indice_grafico_ministerial."</b>. Si deseas modificarlo, da click <a class='mostrar-div-indice-grupo' > aquí </a>";
         }
 
-        // --- Cálculo de la Cobertura Completa para KPIs ---
-        $kpi_array_ids_usuarios = $array_ids_usuarios;
-        $kpi_array_ids_usuarios_dibujados = [];
-        $kpi_array_ids_grupos_dibujados = [];
-        $kpi_contador_niveles = 0;
-        $kpi_maximos_niveles = 20;
-
-        while (count($kpi_array_ids_usuarios) > 0 && $kpi_contador_niveles < $kpi_maximos_niveles) {
-            $kpi_contador_niveles++;
-
-            $kpi_usuarios_ids = DB::table('users')
-                ->whereIn('id', $kpi_array_ids_usuarios)
-                ->pluck('id')
-                ->toArray();
-
-            $kpi_array_ids_usuarios = [];
-            $kpi_ids_grupos_temporal = [];
-
-            $kpi_usuarios_ids = array_values(array_diff($kpi_usuarios_ids, $kpi_array_ids_usuarios_dibujados));
-            $kpi_array_ids_usuarios_dibujados = array_merge($kpi_array_ids_usuarios_dibujados, $kpi_usuarios_ids);
-
-            if ($kpi_usuarios_ids !== []) {
-                $kpi_ids_grupos_temporal = DB::table('encargados_grupo')
-                    ->join('grupos', 'encargados_grupo.grupo_id', '=', 'grupos.id')
-                    ->whereIn('encargados_grupo.user_id', $kpi_usuarios_ids)
-                    ->where('grupos.dado_baja', 0)
-                    ->distinct()
-                    ->pluck('grupos.id')
-                    ->all();
-            }
-
-            $kpi_ids_grupos_temporal = array_values(array_diff($kpi_ids_grupos_temporal, $kpi_array_ids_grupos_dibujados));
-            $kpi_array_ids_grupos_dibujados = array_merge($kpi_array_ids_grupos_dibujados, $kpi_ids_grupos_temporal);
-
-            if ($kpi_ids_grupos_temporal !== []) {
-                $kpi_array_ids_usuarios = DB::table('integrantes_grupo')
-                    ->whereIn('grupo_id', $kpi_ids_grupos_temporal)
-                    ->distinct()
-                    ->pluck('user_id')
-                    ->all();
-            }
-        }
-
-        $totalPersonas = count($kpi_array_ids_usuarios_dibujados);
-        $totalGrupos = count($kpi_array_ids_grupos_dibujados);
-
         $contador_maximos_niveles = 0;
 
         while (count($array_ids_usuarios) > 0 && $contador_maximos_niveles < $maximos_niveles) {
             $contador_maximos_niveles = $contador_maximos_niveles + 1;
+            $array_ids_usuarios_no_dibujados = array_merge(
+                $array_ids_usuarios_no_dibujados,
+                array_intersect($array_ids_usuarios, $array_ids_usuarios_dibujados)
+            );
             // / aqui lo que hacemos es que tenemos los usuario de cada recorrido por nivel
             $usuarios = User::with([
                 'tipoUsuario',
                 'gruposEncargados' => fn ($query) => $query->where('grupos.dado_baja', 0)
                     ->whereNotIn('grupos.id', $gruposExcluidos)
                     ->orderBy('grupos.indice_grafico_ministerial'),
-            ])->orderBy('users.indice_grafico_ministerial', 'asc')->whereIn('users.id', $array_ids_usuarios)->get();
+            ])->orderBy('users.indice_grafico_ministerial', 'asc')->whereIn('users.id', array_unique($array_ids_usuarios))
+                ->whereNotIn('users.id', $array_ids_usuarios_dibujados)->get();
             // / aqui se resetea la variable para que siempre se llene solo con los usuarios de cada nivel mas abajo se rellena con esos usuarios
             $array_ids_usuarios = [];
 
@@ -3898,6 +3989,7 @@ class GrupoController extends Controller
                     // Comprobar si tiene foto configurada
                     $tieneFoto = $usuario->foto && $usuario->foto !== '' && $usuario->foto !== 'default-m.png' && $usuario->foto !== 'default-f.png';
 
+                    $edadCalculada = $usuario->edad();
                     $opciones_menu = [];
 
                     // 1. Ver Perfil
@@ -3932,7 +4024,7 @@ class GrupoController extends Controller
 
                     // 4. Modificar (Formularios)
                     if ($usuario->esta_aprobado) {
-                        $formularios = $formulariosPorEdad[$usuario->edad()] ??= $usuarioLogueado->formularios(2, $usuario->edad());
+                        $formularios = $formulariosPorEdad[$edadCalculada] ??= $usuarioLogueado->formularios(2, $edadCalculada);
                         foreach ($formularios as $form) {
                             if (auth()->user()->can('modificarUsuarioPolitica', $form)) {
                                 $opciones_menu[] = [
@@ -3945,7 +4037,7 @@ class GrupoController extends Controller
                         }
                     } else {
                         if ($tienePermiso('personas.privilegio_modificar_asistentes_desaprobados')) {
-                            $formularios = $formulariosPorEdad[$usuario->edad()] ??= $usuarioLogueado->formularios(2, $usuario->edad());
+                            $formularios = $formulariosPorEdad[$edadCalculada] ??= $usuarioLogueado->formularios(2, $edadCalculada);
                             foreach ($formularios as $form) {
                                 $opciones_menu[] = [
                                     'label' => $form->label,
@@ -4055,7 +4147,6 @@ class GrupoController extends Controller
                     $item->tipo_nombre = $usuario->tipoUsuario ? $usuario->tipoUsuario->nombre : 'Sin tipo';
                     $item->tipo_icono = $usuario->tipoUsuario ? $usuario->tipoUsuario->icono : 'ti-user';
                     $item->banner_url = $usuario->banner_url;
-                    $edadCalculada = $usuario->edad();
                     $item->edad = $edadCalculada > 1 ? $edadCalculada.' años' : $edadCalculada.' año';
                     $item->opciones_menu = $opciones_menu;
                     $nodos[] = $item;
@@ -4084,6 +4175,7 @@ class GrupoController extends Controller
                 }
             }
             // // aqui obtengo los grupos que dirije pero los voy a recorrer para graficar los nodos de los grupos
+            $idsGruposTemporal = array_values(array_diff(array_unique($idsGruposTemporal), $array_ids_grupos_dibujados));
             $grupos = Grupo::with([
                 'tipoGrupo',
                 'asistentes' => fn ($query) => $query->select('users.id', 'users.indice_grafico_ministerial')
@@ -4244,7 +4336,7 @@ class GrupoController extends Controller
                     $tiene_ultimo_reporte = $ultimoReporte !== null;
                     $fecha_ultimo_reporte = $tiene_ultimo_reporte ? $ultimoReporte->fecha : '';
                     $al_dia = $tiene_ultimo_reporte && $ultimoReporte->finalizado
-                        && Carbon::parse($ultimoReporte->fecha)->addDays(8)->format('Y-m-d') > Carbon::now()->format('Y-m-d');
+                        && substr($ultimoReporte->fecha, 0, 10) > $fechaLimiteReporte;
 
                     // aqui adentro creo el nodo del grupo
                     $item = new stdClass;
@@ -4272,13 +4364,19 @@ class GrupoController extends Controller
                     foreach ($personasGrupo as $personaGrupoId) {
                         $aristaId = "Ar-ga-{$grupo->id}_{$personaGrupoId}";
                         if (! in_array($aristaId, $array_aristas_usuario_grupo_dibujadas)) {
-                            $item = new stdClass;
-                            $item->from = 'G-'.$grupo->id;
-                            $item->to = 'A-'.$personaGrupoId;
-                            $item->color = $grupo->tipoGrupo ? $grupo->tipoGrupo->color : '#cccccc';
-                            $item->width = 3;
-                            $aristas[] = $item;
-                            $array_aristas_usuario_grupo_dibujadas[] = $aristaId;
+                            if (! in_array($personaGrupoId, $array_ids_usuarios)) {
+                                // /esta es la arista que conecta el grupo con las personas que asisten a ese grupo
+                                $item = new stdClass;
+                                $item->from = 'G-'.$grupo->id;
+                                $item->to = 'A-'.$personaGrupoId;
+                                $item->color = $grupo->tipoGrupo->color ? $grupo->tipoGrupo->color : '#cccccc';
+                                $item->width = 3;
+                                $aristas[] = $item;
+
+                                array_push($array_aristas_usuario_grupo_dibujadas, $aristaId);
+                            } else {
+                                array_push($array_ids_usuarios_no_dibujados, $personaGrupoId);
+                            }
                         }
                     }
                     // //aqui es donde guardo los usuarios que necesito para el siguiente recorrido del proximo nivel y asi se repite el ciclo
@@ -4293,7 +4391,8 @@ class GrupoController extends Controller
 
         // return $nodos;
 
-        $usuarios_no_dibujados = User::whereIn('id', $array_ids_usuarios_no_dibujados)->get();
+        $usuarios_no_dibujados = User::with(['tipoUsuario', 'gruposDondeAsiste.tipoGrupo'])
+            ->whereIn('id', $array_ids_usuarios_no_dibujados)->get();
 
         return view('contenido.paginas.grupos.grafico-del-ministerio', [
             'nodos' => $nodos,
@@ -4308,9 +4407,61 @@ class GrupoController extends Controller
             'configuracion' => $configuracion,
             'rolActivo' => $rolActivo,
             'leyenda' => array_values($leyenda),
-            'totalPersonas' => $totalPersonas,
-            'totalGrupos' => $totalGrupos,
+            'idNodo' => $id_nodo,
+            'urlTotales' => route('grupo.graficoDelMinisterio', [
+                'idNodo' => $id_nodo,
+                'maximosNiveles' => $maximos_niveles,
+                'solo_totales' => 1,
+            ]),
         ]);
+    }
+
+    /**
+     * Conserva la cobertura completa, incluidos los usuarios eliminados y los grupos
+     * excluidos del dibujo, sin cargar modelos ni opciones de menú por persona.
+     *
+     * @param  array<int, int|string>  $idsUsuariosRaiz
+     * @return array{totalPersonas: int, totalGrupos: int}
+     */
+    private function contarCoberturaGrafico(array $idsUsuariosRaiz): array
+    {
+        $usuariosVisitados = [];
+        $gruposVisitados = [];
+        $idsUsuarios = $idsUsuariosRaiz;
+
+        for ($nivel = 0; $nivel < 20 && $idsUsuarios !== []; $nivel++) {
+            $idsUsuarios = User::withTrashed()
+                ->whereIn('id', array_values(array_diff($idsUsuarios, array_keys($usuariosVisitados))))
+                ->pluck('id')->all();
+
+            if ($idsUsuarios === []) {
+                break;
+            }
+
+            foreach ($idsUsuarios as $idUsuario) {
+                $usuariosVisitados[$idUsuario] = true;
+            }
+
+            $idsGrupos = Grupo::query()->where('dado_baja', 0)
+                ->whereHas('encargadosConEliminados', fn ($query) => $query->whereIn('users.id', $idsUsuarios))
+                ->whereNotIn('id', array_keys($gruposVisitados))
+                ->pluck('id')->all();
+
+            if ($idsGrupos === []) {
+                break;
+            }
+
+            foreach ($idsGrupos as $idGrupo) {
+                $gruposVisitados[$idGrupo] = true;
+            }
+
+            $idsUsuarios = User::withTrashed()
+                ->whereHas('gruposDondeAsiste', fn ($query) => $query->whereIn('grupos.id', $idsGrupos))
+                ->whereNotIn('id', array_keys($usuariosVisitados))
+                ->pluck('id')->all();
+        }
+
+        return ['totalPersonas' => count($usuariosVisitados), 'totalGrupos' => count($gruposVisitados)];
     }
 
     public function cambiarIndice(Request $request, $tipo, $id)

@@ -47,6 +47,18 @@ class SedePolicy
     }
 
     /**
+     * Determina si el usuario puede configurar la cobertura geográfica de la sede.
+     */
+    public function coberturaGeografica(User $user, Sede $sede): bool
+    {
+        $rolActivo = $user->roles()->wherePivot('activo', true)->first();
+
+        return $rolActivo &&
+               $rolActivo->hasPermissionTo('sedes.opcion_cobertura_geografica_sede') &&
+               $user->tieneJurisdiccionSobreSede($sede);
+    }
+
+    /**
      * Determina si el usuario puede ver el dashboard de consolidación de la sede.
      */
     public function dashboardConsolidacion(User $user, Sede $sede): bool

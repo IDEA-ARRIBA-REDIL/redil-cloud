@@ -480,6 +480,12 @@ class Helpers
         $item->nombre = 'Formulario de origen';
         $camposPeticiones[] = $item;
 
+        $item = new \stdClass;
+        $item->id = 14;
+        $item->value = 'desea_pertenecer_iglesia';
+        $item->nombre = '¿Desea pertenecer a la iglesia?';
+        $camposPeticiones[] = $item;
+
         return $camposPeticiones;
     }
 

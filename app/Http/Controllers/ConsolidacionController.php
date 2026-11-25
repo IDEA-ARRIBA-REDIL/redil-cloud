@@ -2416,6 +2416,8 @@ class ConsolidacionController extends Controller
             'sede' => $datos['sede'] ?? null,
             'rangoFechas' => $datos['rangoFechas'],
             'paso' => $datos['paso'] ?? null,
+            'inicio' => $datos['inicio'],
+            'fin' => $datos['fin'],
         ]);
     }
 
@@ -2454,7 +2456,12 @@ class ConsolidacionController extends Controller
         };
 
         $query = User::withTrashed()
-            ->with(['sede', 'tipoUsuario', 'tipoVinculacion'])
+            ->with([
+                'sede',
+                'tipoUsuario',
+                'tipoVinculacion',
+                'reportesBajaAlta' => fn ($q) => $q->with(['tipo', 'autor'])->orderByDesc('id'),
+            ])
             ->tap($filtroEdadConsolidacionCallback);
         $paso = null;
 
@@ -2545,6 +2552,8 @@ class ConsolidacionController extends Controller
             'sede' => $sede,
             'rangoFechas' => $rangoFechas,
             'paso' => $paso,
+            'inicio' => $inicio,
+            'fin' => $fin,
         ];
     }
 
@@ -2601,6 +2610,8 @@ class ConsolidacionController extends Controller
             'bloqueDetalle' => $datos['bloqueDetalle'],
             'sedeDetalle' => $datos['sedeDetalle'],
             'rangoFechas' => $datos['rangoFechas'],
+            'inicio' => $datos['inicio'],
+            'fin' => $datos['fin'],
         ]);
     }
 
@@ -2720,7 +2731,12 @@ class ConsolidacionController extends Controller
         };
 
         $query = User::withTrashed()
-            ->with(['sede', 'tipoUsuario', 'tipoVinculacion'])
+            ->with([
+                'sede',
+                'tipoUsuario',
+                'tipoVinculacion',
+                'reportesBajaAlta' => fn ($q) => $q->with(['tipo', 'autor'])->orderByDesc('id'),
+            ])
             ->tap($filtroEdadConsolidacionCallback)
             ->tap($filtroSedesCallback);
 
@@ -3132,6 +3148,8 @@ class ConsolidacionController extends Controller
             'bloqueDetalle' => $bloqueDetalle,
             'sedeDetalle' => $sedeDetalle,
             'rangoFechas' => $rangoFechas,
+            'inicio' => $inicio,
+            'fin' => $fin,
         ];
     }
 

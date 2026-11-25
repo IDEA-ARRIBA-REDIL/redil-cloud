@@ -4,181 +4,187 @@ namespace App\Exports;
 
 use App\Helpers\Helpers;
 use App\Models\Peticion;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
-
-use Carbon\Carbon;
 
 class PeticionesExport implements FromView
 {
     public $tipo;
+
     public $camposPeticiones;
+
     public $arrayCamposInfoPersonal;
+
     public $arrayPasosCrecimiento;
+
     public $arrayDatosCongregacionales;
+
     public $arrayCamposExtra;
+
     public $parametrosBusqueda;
 
     public function __construct(string $tipo, $parametrosBusqueda, $camposPeticiones, $arrayCamposInfoPersonal, $arrayPasosCrecimiento, $arrayDatosCongregacionales, $arrayCamposExtra)
     {
-      if($tipo == 'sin-responder' || $tipo == 'pendientes'){
-        $this->tipo = 'sin-responder';
-      }elseif($tipo == 'finalizadas' || $tipo == 'cerradas'){
-        $this->tipo = 'finalizadas';
-      }elseif($tipo == 'con-seguimiento' || $tipo == 'en-proceso'){
-        $this->tipo = 'con-seguimiento';
-      }else{
-        $this->tipo = $tipo;
-      }
+        if ($tipo == 'sin-responder' || $tipo == 'pendientes') {
+            $this->tipo = 'sin-responder';
+        } elseif ($tipo == 'finalizadas' || $tipo == 'cerradas') {
+            $this->tipo = 'finalizadas';
+        } elseif ($tipo == 'con-seguimiento' || $tipo == 'en-proceso') {
+            $this->tipo = 'con-seguimiento';
+        } else {
+            $this->tipo = $tipo;
+        }
 
-      $this->camposPeticiones = $camposPeticiones;
-      $this->arrayCamposInfoPersonal = $arrayCamposInfoPersonal;
-      $this->arrayPasosCrecimiento = $arrayPasosCrecimiento;
-      $this->arrayDatosCongregacionales = $arrayDatosCongregacionales;
-      $this->arrayCamposExtra = $arrayCamposExtra;
-      $this->parametrosBusqueda = $parametrosBusqueda;
+        $this->camposPeticiones = $camposPeticiones;
+        $this->arrayCamposInfoPersonal = $arrayCamposInfoPersonal;
+        $this->arrayPasosCrecimiento = $arrayPasosCrecimiento;
+        $this->arrayDatosCongregacionales = $arrayDatosCongregacionales;
+        $this->arrayCamposExtra = $arrayCamposExtra;
+        $this->parametrosBusqueda = $parametrosBusqueda;
     }
-
 
     public function view(): View
     {
-      $peticiones = collect();
-      $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
-      $campos = $this->camposPeticiones->pluck('value')->toArray();
-      array_push($campos,"id","user_id");
+        $peticiones = collect();
+        $rolActivo = auth()->user()->roles()->wherePivot('activo', true)->first();
+        $campos = $this->camposPeticiones->pluck('value')->toArray();
+        array_push($campos, 'id', 'user_id');
 
-      if ( $rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas') || $rolActivo->hasPermissionTo('peticiones.lista_peticiones_solo_ministerio') )
-      {
-        if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_solo_ministerio')) {
-          $peticiones = auth()->user()->misPeticiones();
+        if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas') || $rolActivo->hasPermissionTo('peticiones.lista_peticiones_solo_ministerio')) {
+            if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_solo_ministerio')) {
+                $peticiones = auth()->user()->misPeticiones();
+            }
+
+            if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas')) {
+                $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
+                    ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.genero')
+                    ->get();
+            }
+
         }
 
-        if ($rolActivo->hasPermissionTo('peticiones.lista_peticiones_todas')) {
-          $peticiones = Peticion::leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-          ->select('peticiones.*','users.foto','users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre','users.segundo_nombre', 'users.primer_apellido', 'users.genero')
-          ->get();
+        if ($this->tipo == 'sin-responder') {
+            $peticiones = $peticiones->where('estado', 1);
+        } elseif ($this->tipo == 'finalizadas') {
+            $peticiones = $peticiones->where('estado', 2);
+        } elseif ($this->tipo == 'con-seguimiento') {
+            $peticiones = $peticiones->where('estado', 3);
         }
 
-      }
+        // Filtro por fechas
+        $filtroFechaIni = $this->parametrosBusqueda && $this->parametrosBusqueda->filtroFechaIni ? $this->parametrosBusqueda->filtroFechaIni : Carbon::now()->firstOfYear()->format('Y-m-d');
+        $filtroFechaFin = $this->parametrosBusqueda && $this->parametrosBusqueda->filtroFechaFin ? $this->parametrosBusqueda->filtroFechaFin : Carbon::now()->format('Y-m-d');
+        $peticiones = $peticiones->whereBetween('fecha', [$filtroFechaIni, $filtroFechaFin]);
 
-      if($this->tipo == 'sin-responder'){
-        $peticiones = $peticiones->where('estado', 1);
-      }elseif($this->tipo == 'finalizadas'){
-        $peticiones = $peticiones->where('estado', 2);
-      }elseif($this->tipo == 'con-seguimiento'){
-        $peticiones = $peticiones->where('estado', 3);
-      }
-
-      // Filtro por fechas
-      $filtroFechaIni = $this->parametrosBusqueda && $this->parametrosBusqueda->filtroFechaIni ? $this->parametrosBusqueda->filtroFechaIni : Carbon::now()->firstOfYear()->format('Y-m-d');
-      $filtroFechaFin = $this->parametrosBusqueda && $this->parametrosBusqueda->filtroFechaFin ? $this->parametrosBusqueda->filtroFechaFin : Carbon::now()->format('Y-m-d');
-      $peticiones = $peticiones->whereBetween('fecha', [$filtroFechaIni, $filtroFechaFin]);
-
-
-      // Filtro por persona
-      if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->persona_id))
-      {
-        $peticiones = $peticiones->whereIn('user_id', $this->parametrosBusqueda->persona_id);
-      }
-
-      // filtro por tipo peticiones
-      if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->filtroTipoPeticiones))
-      {
-        $peticiones = $peticiones->whereIn('tipo_peticion_id', $this->parametrosBusqueda->filtroTipoPeticiones);
-      }
-
-      // filtro por formularios de usuario
-      if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->filtroFormularios))
-      {
-        $peticiones = $peticiones->whereIn('formulario_usuario_id', $this->parametrosBusqueda->filtroFormularios);
-      }
-
-      // Busqueda por palabra clave
-      if ($this->parametrosBusqueda &&  isset($this->parametrosBusqueda->buscar)) {
-        $buscar = htmlspecialchars($this->parametrosBusqueda->buscar);
-        $buscar = Helpers::sanearStringConEspacios($buscar);
-        $buscar = str_replace(["'"], '', $buscar);
-        $buscar_array = explode(' ', $buscar);
-
-        foreach ($buscar_array as $palabra) {
-          $peticiones = $peticiones->filter(function ($peticion) use ($palabra) {
-            $respuesta  = false !== stristr(Helpers::sanearStringConEspacios($peticion->primer_nombre), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->segundo_nombre), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->primer_apellido), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->segundo_apellido), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->identificacion), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->direccion), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->telefono_movil), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->email), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->nombre_externo), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->email_externo), $palabra) ||
-            false !== stristr(Helpers::sanearStringConEspacios($peticion->telefono_externo), $palabra);
-
-            return $respuesta;
-          });
-        }
-      }
-
-      $peticiones = $peticiones->toQuery()
-        ->leftJoin('users', 'peticiones.user_id', '=', 'users.id')
-        ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
-        ->with(['pais', 'tipoPeticion', 'autorCreacion', 'asignado', 'formularioUsuario'])
-        ->get();
-
-      $peticiones->map(function ($peticion) {
-
-        if ($peticion->estado) {
-          $peticion->estado = Helpers::estadoPeticion($peticion->estado);
+        // Filtro por persona
+        if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->persona_id)) {
+            $peticiones = $peticiones->whereIn('user_id', $this->parametrosBusqueda->persona_id);
         }
 
-        if($peticion->autor_creacion_id)
-        {
-          // usuarioCreacion
-          $usuarioCreacion = $peticion->autorCreacion;
-          $peticion->usuarioCreacion = ($usuarioCreacion && $peticion->user_id != $usuarioCreacion->id)
-          ? $usuarioCreacion->nombre(3)
-          : 'Autogestión';
-        }else{
-          $peticion->usuarioCreacion = 'Autogestión';
+        // filtro por tipo peticiones
+        if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->filtroTipoPeticiones)) {
+            $peticiones = $peticiones->whereIn('tipo_peticion_id', $this->parametrosBusqueda->filtroTipoPeticiones);
         }
 
-        if ($peticion->user_id) {
-          $peticion->nombre_solicitante = $peticion->primer_nombre . ' ' . $peticion->segundo_nombre . ' ' . $peticion->primer_apellido;
-          $peticion->email_solicitante = $peticion->email;
-
-          $telefonosArray = [];
-          $peticion->telefono_fijo ? array_push($telefonosArray, $peticion->telefono_fijo) : '';
-          $peticion->telefono_movil ? array_push($telefonosArray, $peticion->telefono_movil) : '';
-          $peticion->telefono_otro ? array_push($telefonosArray, $peticion->telefono_otro) : '';
-          $peticion->telefono_solicitante = $telefonosArray ? implode(", ", $telefonosArray) : 'Sin datos';
-
-          $peticion->genero_solicitante = $peticion->genero == 1 ? 'Mujer' : 'Hombre';
-        } else {
-          $peticion->nombre_solicitante = $peticion->nombre_externo;
-          $peticion->email_solicitante = $peticion->email_externo;
-          $peticion->telefono_solicitante = $peticion->telefono_externo;
-          $peticion->genero_solicitante = $peticion->genero_externo == 1 ? 'Mujer' : 'Hombre';
+        // filtro por formularios de usuario
+        if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->filtroFormularios)) {
+            $peticiones = $peticiones->whereIn('formulario_usuario_id', $this->parametrosBusqueda->filtroFormularios);
         }
 
-        if($peticion->pais_id)
-        {
-          $peticion->paisNombre = $peticion->pais ? $peticion->pais->nombre : 'No indicado';
-        }else{
-          $peticion->paisNombre = 'No indicado';
+        // filtro por desea pertenecer a la iglesia (solo externos)
+        if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->filtroDeseaPertenecer) && $this->parametrosBusqueda->filtroDeseaPertenecer !== '') {
+            if ($this->parametrosBusqueda->filtroDeseaPertenecer === 'si') {
+                $peticiones = $peticiones->filter(fn ($p) => empty($p->user_id) && (bool) $p->desea_pertenecer_iglesia === true);
+            } elseif ($this->parametrosBusqueda->filtroDeseaPertenecer === 'no') {
+                $peticiones = $peticiones->filter(fn ($p) => empty($p->user_id) && ! $p->desea_pertenecer_iglesia);
+            }
         }
 
-        $usuarioAsignado = $peticion->asignado;
-        $peticion->asignado_a = $usuarioAsignado ? $usuarioAsignado->nombre(3) : 'Sin asignar';
-      });
+        // Busqueda por palabra clave
+        if ($this->parametrosBusqueda && isset($this->parametrosBusqueda->buscar)) {
+            $buscar = htmlspecialchars($this->parametrosBusqueda->buscar);
+            $buscar = Helpers::sanearStringConEspacios($buscar);
+            $buscar = str_replace(["'"], '', $buscar);
+            $buscar_array = explode(' ', $buscar);
 
-      return view('contenido.paginas.peticiones.exportar.exportarPeticiones', [
-        'peticiones' => $peticiones,
-        'tipo' => $this->tipo,
-        'camposPeticiones' => $this->camposPeticiones,
-        'arrayCamposInfoPersonal' => $this->arrayCamposInfoPersonal,
-        'arrayPasosCrecimiento' => $this->arrayPasosCrecimiento,
-        'arrayDatosCongregacionales' => $this->arrayDatosCongregacionales,
-        'arrayCamposExtra' => $this->arrayCamposExtra
-      ]);
+            foreach ($buscar_array as $palabra) {
+                $peticiones = $peticiones->filter(function ($peticion) use ($palabra) {
+                    $respuesta = stristr(Helpers::sanearStringConEspacios($peticion->primer_nombre), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->segundo_nombre), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->primer_apellido), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->segundo_apellido), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->identificacion), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->direccion), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->telefono_movil), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->email), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->nombre_externo), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->email_externo), $palabra) !== false ||
+                    stristr(Helpers::sanearStringConEspacios($peticion->telefono_externo), $palabra) !== false;
+
+                    return $respuesta;
+                });
+            }
+        }
+
+        $peticiones = $peticiones->toQuery()
+            ->leftJoin('users', 'peticiones.user_id', '=', 'users.id')
+            ->select('peticiones.*', 'users.foto', 'users.telefono_fijo', 'users.telefono_movil', 'users.telefono_otro', 'users.email', 'users.primer_nombre', 'users.segundo_nombre', 'users.primer_apellido', 'users.sede_id', \DB::raw('COALESCE(users.genero, peticiones.genero_externo) as genero'))
+            ->with(['pais', 'tipoPeticion', 'autorCreacion', 'asignado', 'formularioUsuario'])
+            ->get();
+
+        $peticiones->map(function ($peticion) {
+
+            if ($peticion->estado) {
+                $peticion->estado = Helpers::estadoPeticion($peticion->estado);
+            }
+
+            if ($peticion->autor_creacion_id) {
+                // usuarioCreacion
+                $usuarioCreacion = $peticion->autorCreacion;
+                $peticion->usuarioCreacion = ($usuarioCreacion && $peticion->user_id != $usuarioCreacion->id)
+                ? $usuarioCreacion->nombre(3)
+                : 'Autogestión';
+            } else {
+                $peticion->usuarioCreacion = 'Autogestión';
+            }
+
+            if ($peticion->user_id) {
+                $peticion->nombre_solicitante = $peticion->primer_nombre.' '.$peticion->segundo_nombre.' '.$peticion->primer_apellido;
+                $peticion->email_solicitante = $peticion->email;
+
+                $telefonosArray = [];
+                $peticion->telefono_fijo ? array_push($telefonosArray, $peticion->telefono_fijo) : '';
+                $peticion->telefono_movil ? array_push($telefonosArray, $peticion->telefono_movil) : '';
+                $peticion->telefono_otro ? array_push($telefonosArray, $peticion->telefono_otro) : '';
+                $peticion->telefono_solicitante = $telefonosArray ? implode(', ', $telefonosArray) : 'Sin datos';
+
+                $peticion->genero_solicitante = $peticion->genero == 1 ? 'Mujer' : 'Hombre';
+            } else {
+                $peticion->nombre_solicitante = $peticion->nombre_externo;
+                $peticion->email_solicitante = $peticion->email_externo;
+                $peticion->telefono_solicitante = $peticion->telefono_externo;
+                $peticion->genero_solicitante = $peticion->genero_externo == 1 ? 'Mujer' : 'Hombre';
+            }
+
+            if ($peticion->pais_id) {
+                $peticion->paisNombre = $peticion->pais ? $peticion->pais->nombre : 'No indicado';
+            } else {
+                $peticion->paisNombre = 'No indicado';
+            }
+
+            $usuarioAsignado = $peticion->asignado;
+            $peticion->asignado_a = $usuarioAsignado ? $usuarioAsignado->nombre(3) : 'Sin asignar';
+        });
+
+        return view('contenido.paginas.peticiones.exportar.exportarPeticiones', [
+            'peticiones' => $peticiones,
+            'tipo' => $this->tipo,
+            'camposPeticiones' => $this->camposPeticiones,
+            'arrayCamposInfoPersonal' => $this->arrayCamposInfoPersonal,
+            'arrayPasosCrecimiento' => $this->arrayPasosCrecimiento,
+            'arrayDatosCongregacionales' => $this->arrayDatosCongregacionales,
+            'arrayCamposExtra' => $this->arrayCamposExtra,
+        ]);
     }
 }

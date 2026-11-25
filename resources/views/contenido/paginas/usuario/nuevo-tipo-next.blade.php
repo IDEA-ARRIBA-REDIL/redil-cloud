@@ -24,6 +24,31 @@ $configData = Helper::appClasses();
     z-index: 1060 !important;
   }
 
+  #contenedorTerminosUrl {
+    scroll-margin-bottom: 130px;
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .terminos-url-alerta {
+    background-color: rgba(234, 84, 85, 0.08);
+    border: 1px solid rgba(234, 84, 85, 0.45);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem !important;
+    animation: pulsoAtencionTerminos 0.45s ease-in-out;
+  }
+
+  @keyframes pulsoAtencionTerminos {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-5px);
+    }
+    75% {
+      transform: translateX(5px);
+    }
+  }
+
   @media (max-width: 767.98px) {
     .formulario-tipo-next-container {
       padding-bottom: 160px !important;
@@ -278,7 +303,16 @@ $configData = Helper::appClasses();
 </script>
 
 <script type="module">
-  $('#formulario').submit(function() {
+  $('#formulario').submit(function(e) {
+    const checkAceptoUrl = document.getElementById('checkAceptoTerminosUrl');
+    if (checkAceptoUrl && !checkAceptoUrl.checked) {
+      e.preventDefault();
+      if (typeof window.mostrarErrorTerminosUrl === 'function') {
+        window.mostrarErrorTerminosUrl();
+      }
+      return false;
+    }
+
     $('.btnGuardar').attr('disabled', 'disabled');
     Swal.fire({
       title: "Espera un momento",
@@ -453,17 +487,65 @@ $configData = Helper::appClasses();
   });
 </script>
 
-  @if($formulario->visible_terminos_condiciones)
+  @if($formulario->visible_terminos_condiciones && !empty($formulario->url_terminos_condiciones))
+  <script>
+    $(document).ready(function () {
+      const contenedorTerminos = document.getElementById('contenedorTerminosUrl');
+      const checkAceptoUrl = document.getElementById('checkAceptoTerminosUrl');
+      const errorTerminosUrl = document.getElementById('errorTerminosUrl');
+      const btnContinuarTerminosUrl = document.getElementById('btnContinuarTerminosUrl');
+
+      window.mostrarErrorTerminosUrl = function () {
+        if (!contenedorTerminos || !checkAceptoUrl) {
+          return;
+        }
+
+        checkAceptoUrl.classList.add('is-invalid');
+        if (errorTerminosUrl) {
+          errorTerminosUrl.classList.remove('d-none');
+        }
+
+        contenedorTerminos.classList.remove('terminos-url-alerta');
+        void contenedorTerminos.offsetWidth;
+        contenedorTerminos.classList.add('terminos-url-alerta');
+
+        contenedorTerminos.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        checkAceptoUrl.focus({ preventScroll: true });
+      };
+
+      if (checkAceptoUrl) {
+        checkAceptoUrl.addEventListener('change', () => {
+          if (checkAceptoUrl.checked) {
+            checkAceptoUrl.classList.remove('is-invalid');
+            if (contenedorTerminos) {
+              contenedorTerminos.classList.remove('terminos-url-alerta');
+            }
+            if (errorTerminosUrl) {
+              errorTerminosUrl.classList.add('d-none');
+            }
+          }
+        });
+      }
+
+      if (btnContinuarTerminosUrl) {
+        btnContinuarTerminosUrl.addEventListener('click', () => {
+          if (!checkAceptoUrl || !checkAceptoUrl.checked) {
+            window.mostrarErrorTerminosUrl();
+            return;
+          }
+          $('#formulario').submit();
+        });
+      }
+    });
+  </script>
+  @elseif($formulario->visible_terminos_condiciones)
   <script>
     const modal = document.getElementById('modalTerminosCondiciones');
-    const modalBody = modal.querySelector('.modal-body');
-    const btnAceptar = modal.querySelector('#btnAceptoTerminos');
-    const checkAceptoUrl = modal.querySelector('#checkAceptoTerminosUrl');
+    if (modal) {
+      const modalBody = modal.querySelector('.modal-body');
+      const btnAceptar = modal.querySelector('#btnAceptoTerminos');
 
-    function verificarScroll() {
-      if (checkAceptoUrl) {
-        btnAceptar.disabled = !checkAceptoUrl.checked;
-      } else {
+      function verificarScroll() {
         if (modalBody.scrollHeight > modalBody.clientHeight) {
           // Hay scroll, así que el botón debe estar deshabilitado al inicio
           btnAceptar.disabled = true;
@@ -479,34 +561,22 @@ $configData = Helper::appClasses();
           btnAceptar.disabled = false;
         }
       }
-    }
 
-    if (checkAceptoUrl) {
-      checkAceptoUrl.addEventListener('change', () => {
-        btnAceptar.disabled = !checkAceptoUrl.checked;
+      // Verificar el scroll al abrir el modal
+      modal.addEventListener('shown.bs.modal', () => {
+        modalBody.scrollTop = 0; // Reinicia el scroll
+        verificarScroll();
+      });
+
+      // Listener para el clic en "Aceptar"
+      btnAceptar.addEventListener('click', () => {
+        if (btnAceptar.disabled) {
+          alert("Debes llegar al final de los términos y condiciones para continuar.");
+          return;
+        }
+        $('#formulario').submit();
       });
     }
-
-    // Verificar el scroll o checkbox al abrir el modal
-    modal.addEventListener('shown.bs.modal', () => {
-      modalBody.scrollTop = 0; // Reinicia el scroll
-      verificarScroll();
-    });
-
-    // Listener para el clic en "Aceptar"
-    btnAceptar.addEventListener('click', () => {
-      if (btnAceptar.disabled) {
-        if (checkAceptoUrl) {
-          alert("Debes marcar la casilla de confirmación para continuar.");
-        } else {
-          alert("Debes llegar al final de los términos y condiciones para continuar.");
-        }
-        return;
-      }
-      $('#formulario').submit();
-      // Aquí puedes agregar la lógica para enviar el formulario o realizar otras acciones
-    });
-
   </script>
   @endif
 @endsection
@@ -541,6 +611,19 @@ $configData = Helper::appClasses();
         @if($grupoId)
           <input id="grupoId" name="grupoId" value="{{ $grupoId }}" class="form-control d-none">
         @endif
+
+        @php
+          $camposActivosGeo = $secciones->flatMap->campos;
+          $campoGeoPais = $camposActivosGeo->firstWhere('nombre_bd', 'pais_id');
+          $campoGeoMunicipio = $camposActivosGeo->firstWhere('nombre_bd', 'municipio_id');
+          $campoGeoLocalidad = $camposActivosGeo->firstWhere('nombre_bd', 'ubicacion');
+          $tieneCampoPaisGeo = (bool) $campoGeoPais;
+          $tieneCampoMunicipioGeo = (bool) $campoGeoMunicipio;
+          $tieneCampoLocalidadGeo = (bool) $campoGeoLocalidad;
+          $paisIdInicialGeo = (string) ($campoGeoPais ? (old($campoGeoPais->name_id) ?? '') : '');
+          $municipioIdInicialGeo = (string) ($campoGeoMunicipio ? (old($campoGeoMunicipio->name_id) ?? '') : '');
+          $localidadIdInicialGeo = (string) ($campoGeoLocalidad ? (old($campoGeoLocalidad->name_id) ?? '') : '');
+        @endphp
 
         @foreach ($secciones as $seccion)
         <!-- Secciones -->
@@ -784,23 +867,29 @@ $configData = Helper::appClasses();
 
                 <!-- Nacionalidad -->
                 @if($campo->nombre_bd == 'pais_id')
-                <div class="mb-3 {{$campo->pivot->class}}">
-                  <label class="form-label" for="pais_id">
-                  {{ $campo->nombre }}
-                  </label>
-                  <select id="pais_id" name="{{ $campo->name_id }}" data-placeholder="{{$campo->placeholder}}" class="select2 form-select" data-allow-clear="true">
-                    <option value="">Ninguno</option>
-                    @foreach ($paises as $pais)
-                    <option value="{{$pais->id}}" {{ old($campo->name_id)==$pais->id ? 'selected' : '' }}>{{ucwords ($pais->nombre)}}</option>
-                    @endforeach
-                  </select>
-                  @if($campo->pivot->informacion_de_apoyo)
-                  <div class="ti-12px mt-2"> <i class="text-info ti ti-info-circle me-1"></i>{{ $campo->pivot->informacion_de_apoyo }}</div>
-                  @endif
-                  <div id="error{{$campo->name_id}}"></div>
-                </div>
+                  @livewire('Generales.pais-buscador', [
+                    'class' => 'mb-3 ' . $campo->pivot->class,
+                    'label' => $campo->nombre,
+                    'nameId' => $campo->name_id,
+                    'placeholder' => $campo->placeholder,
+                    'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+                  ])
                 @endif
                 <!-- /Nacionalidad -->
+
+                <!-- Ciudad / Municipio -->
+                @if($campo->nombre_bd == 'municipio_id')
+                  @livewire('Generales.municipio-buscador', [
+                    'class' => 'mb-3 ' . $campo->pivot->class,
+                    'label' => $campo->nombre,
+                    'nameId' => $campo->name_id,
+                    'placeholder' => $campo->placeholder,
+                    'tieneCampoPais' => $tieneCampoPaisGeo,
+                    'paisId' => $paisIdInicialGeo,
+                    'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+                  ])
+                @endif
+                <!-- /Ciudad / Municipio -->
 
                 <!-- Telefono fijo -->
                 @if($campo->nombre_bd == 'telefono_fijo')
@@ -913,10 +1002,15 @@ $configData = Helper::appClasses();
                 <!-- ubicacion -->
                 @if($campo->nombre_bd == 'ubicacion')
                   @livewire('Generales.barrio-localidad-buscador', [
-                    'class' => $campo->pivot->class,
+                    'class' => 'mb-3 ' . $campo->pivot->class,
                     'label' => $campo->nombre,
                     'nameId' => $campo->name_id,
-                    'placeholder' => $campo->placeholder
+                    'placeholder' => $campo->placeholder,
+                    'tieneCampoPais' => $tieneCampoPaisGeo,
+                    'tieneCampoMunicipio' => $tieneCampoMunicipioGeo,
+                    'paisId' => $paisIdInicialGeo,
+                    'municipioId' => $municipioIdInicialGeo,
+                    'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
                   ])
                 @endif
                 <!-- / ubicacion -->
@@ -1130,21 +1224,20 @@ $configData = Helper::appClasses();
 
                 <!-- Sede -->
                 @if($campo->nombre_bd == 'sede_id')
-                <div class="mb-3 {{ $campo->pivot->class }}">
-                  <label class="form-label" for="sede">
-                    {{ $campo->nombre }}
-                  </label>
-                  <select id="sede" data-placeholder="{{ $campo->placeholder }}" name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
-                    <option value="">Ninguno</option>
-                    @foreach ($sedes as $sede)
-                    <option value="{{$sede->id}}" data-localidades="{{ $sede->localidades->pluck('id')->toJson() }}" {{ old($campo->name_id)==$sede->id ? 'selected' : '' }}>{{ucwords ($sede->nombre)}}</option>
-                    @endforeach
-                  </select>
-                  @if($campo->pivot->informacion_de_apoyo)
-                  <div class="ti-12px mt-2"> <i class="text-info ti ti-info-circle me-1"></i>{{ $campo->pivot->informacion_de_apoyo }}</div>
-                  @endif
-                  <div id="error{{$campo->name_id}}"></div>
-                </div>
+                  @livewire('Generales.sede-buscador', [
+                    'class' => 'mb-3 ' . $campo->pivot->class,
+                    'label' => $campo->nombre,
+                    'nameId' => $campo->name_id,
+                    'placeholder' => $campo->placeholder,
+                    'formularioId' => $formulario->id,
+                    'tieneCampoPais' => $tieneCampoPaisGeo,
+                    'tieneCampoMunicipio' => $tieneCampoMunicipioGeo,
+                    'tieneCampoLocalidad' => $tieneCampoLocalidadGeo,
+                    'paisId' => $paisIdInicialGeo,
+                    'municipioId' => $municipioIdInicialGeo,
+                    'localidadId' => $localidadIdInicialGeo,
+                    'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+                  ])
                 @endif
                 <!-- /Sede -->
 
@@ -1483,6 +1576,10 @@ $configData = Helper::appClasses();
         @endforeach
 
         <!-- Resumen -->
+        @php
+          $tieneTerminosUrl = $formulario->visible_terminos_condiciones && !empty($formulario->url_terminos_condiciones);
+          $tieneTerminosModal = $formulario->visible_terminos_condiciones && empty($formulario->url_terminos_condiciones);
+        @endphp
         <div class="step row {{$cantidadTotalSecciones+1 == 1 ? '' : 'd-none'}}" id="step-{{$cantidadTotalSecciones+1 }}" >
 
           <div class="row mt-10 m-0 p-0">
@@ -1493,6 +1590,23 @@ $configData = Helper::appClasses();
               <div id="htmlRespuesta" class="card-body p-2">
               </div>
             </div>
+
+            @if($tieneTerminosUrl)
+              <div id="contenedorTerminosUrl" class="col-12 px-1 mt-4 mb-5 pb-3">
+                <div class="form-check">
+                  <input class="form-check-input @error('habeas') is-invalid @enderror" type="checkbox" name="habeas" id="checkAceptoTerminosUrl" value="1" @checked(old('habeas'))>
+                  <label class="form-check-label text-body" for="checkAceptoTerminosUrl" style="cursor: pointer;">
+                    @if(!empty($formulario->mensaje_terminos_condiciones_resumen))
+                      {!! nl2br($formulario->mensaje_terminos_condiciones_resumen) !!}
+                    @endif
+                    <a href="{{ $formulario->url_terminos_condiciones }}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="text-primary text-decoration-underline fw-medium">{{ $formulario->label_terminos_condiciones ?: 'política de tratamiento de datos.' }}</a>
+                  </label>
+                </div>
+                <div id="errorTerminosUrl" class="text-danger ti-12px mt-2 @unless($errors->has('habeas')) d-none @endunless">
+                  <i class="ti ti-circle-x me-1"></i> {{ $errors->first('habeas', 'Debes aceptar los términos y condiciones para continuar.') }}
+                </div>
+              </div>
+            @endif
           </div>
 
           <div class="w-100 fixed-bottom py-5 px-6 px-sm-0 border-top" style="background-color: #f8f7fa">
@@ -1501,8 +1615,12 @@ $configData = Helper::appClasses();
                 <span class="align-middle">Volver</span>
               </button>
 
-              @if($formulario->visible_terminos_condiciones)
+              @if($tieneTerminosModal)
               <button type="button" class="btn btn-primary rounded-pill px-7 py-2" data-bs-toggle="modal" data-bs-target="#modalTerminosCondiciones">
+                <span class="align-middle me-sm-1 me-0 ">Continuar</span>
+              </button>
+              @elseif($tieneTerminosUrl)
+              <button type="button" id="btnContinuarTerminosUrl" class="btn btnGuardar btn-primary rounded-pill px-7 py-2">
                 <span class="align-middle me-sm-1 me-0 ">Continuar</span>
               </button>
               @else
@@ -1514,7 +1632,7 @@ $configData = Helper::appClasses();
           </div>
 
 
-          @if($formulario->visible_terminos_condiciones)
+          @if($tieneTerminosModal)
             <!-- modal terminos y condiciones -->
             <div class="modal fade" id="modalTerminosCondiciones" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
               <div class="modal-dialog modal-lg modal-simple modal-dialog-scrollable" role="document">
@@ -1535,31 +1653,10 @@ $configData = Helper::appClasses();
                     </div>
                     @endif
 
-                    @if($formulario->url_terminos_condiciones)
-                      <!-- Modalidad Enlace / Documento externo -->
-                      <div class="card bg-light border p-4 my-3 text-center">
-                        <i class="ti ti-file-text ti-xl text-primary mb-2"></i>
-                        <h6 class="mb-1 fw-bold">Documento oficial de términos y condiciones</h6>
-                        <p class="text-black small mb-3">Haz clic en el botón para abrir y revisar la política completa en una nueva pestaña antes de aceptar.</p>
-                        <div>
-                          <a href="{{ $formulario->url_terminos_condiciones }}" target="_blank" id="btnAbrirDocTerminos" class="btn btn-primary rounded-pill px-4">
-                            <i class="ti ti-external-link me-1"></i> Abrir documento oficial
-                          </a>
-                        </div>
-                      </div>
-
-                      <div class="form-check mt-3 mb-2 text-start">
-                        <input class="form-check-input" type="checkbox" id="checkAceptoTerminosUrl">
-                        <label class="form-check-label text-dark" for="checkAceptoTerminosUrl">
-                          He abierto, leído y acepto los términos y condiciones de la política.
-                        </label>
-                      </div>
-                    @else
-                      <!-- Modalidad Editor Quill -->
-                      <div class="contenido-terminos-quill">
-                        {!! $formulario->mensaje_terminos_condiciones_detallado !!}
-                      </div>
-                    @endif
+                    <!-- Modalidad Editor Quill -->
+                    <div class="contenido-terminos-quill">
+                      {!! $formulario->mensaje_terminos_condiciones_detallado !!}
+                    </div>
                   </div>
                   <div class="p-3 border-top">
                     <div class="col-12 col-sm-8 offset-sm-2 col-lg-6 offset-lg-3 d-grid gap-2 d-sm-flex justify-content-sm-between">
@@ -1645,6 +1742,5 @@ $configData = Helper::appClasses();
 
 @include('contenido.paginas.usuario.scripts.dependencias-campos')
 @include('contenido.paginas.usuario.scripts.validacion-identificacion')
-@include('contenido.paginas.usuario.scripts.filtro-sedes-localidad')
 
 @endsection

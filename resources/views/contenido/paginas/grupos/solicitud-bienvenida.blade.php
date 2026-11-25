@@ -199,9 +199,9 @@ $configData = Helper::appClasses();
       <i class="ti ti-users-group"></i>
     </div>
 
-    <h2 class="question-title">¿Tienes una cuenta?</h2>
+    <h2 class="question-title">¿Tienes una cuenta en nuestra plataforma?</h2>
     <p class="question-desc">
-      Selecciona una opción para continuar con el proceso de solicitud de ingreso a nuestros grupos.
+      Al tener una cuenta te ayudaremos a llegar a tu grupo de forma más efectiva.
     </p>
 
     <div class="action-stack">

@@ -13,7 +13,7 @@ class PaisSeeder extends Seeder
      */
     public function run(): void
     {
-        $path = base_path('storage/app/archivos_desarrollador/paises.sql');
+        $path = database_path('seeders/data/cuenta-inicial/paises.sql');
         DB::unprepared(file_get_contents($path));
 
         $codigoPaises = '[

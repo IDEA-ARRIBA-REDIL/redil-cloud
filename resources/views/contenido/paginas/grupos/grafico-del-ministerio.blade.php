@@ -176,11 +176,46 @@
         const nodosData = @json($nodos);
         const aristasData = @json($aristas);
 
+        async function cargarTotalesMinisterio() {
+            const resumen = document.getElementById('totales-ministerio');
+            const personas = document.getElementById('total-personas-ministerio');
+            const grupos = document.getElementById('total-grupos-ministerio');
+            const reintentar = document.getElementById('reintentar-totales-ministerio');
+
+            if (resumen.getAttribute('aria-busy') === 'true') return;
+            resumen.setAttribute('aria-busy', 'true');
+            reintentar.classList.add('d-none');
+            personas.textContent = grupos.textContent = 'Calculando…';
+
+            try {
+                const response = await fetch(resumen.dataset.url, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                });
+                if (!response.ok) throw new Error('No se pudieron consultar los totales.');
+                const totales = await response.json();
+                if (!Number.isInteger(totales.totalPersonas) || !Number.isInteger(totales.totalGrupos)
+                    || totales.totalPersonas < 0 || totales.totalGrupos < 0) {
+                    throw new Error('La respuesta de los totales no es válida.');
+                }
+                personas.textContent = totales.totalPersonas.toLocaleString('es-CO');
+                grupos.textContent = totales.totalGrupos.toLocaleString('es-CO');
+            } catch (error) {
+                personas.textContent = grupos.textContent = 'No disponible';
+                reintentar.classList.remove('d-none');
+            } finally {
+                resumen.setAttribute('aria-busy', 'false');
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             const svg = document.getElementById("svg-canvas");
             const viewport = document.getElementById("viewport");
             const linesGroup = document.getElementById("lines-group");
             const nodesGroup = document.getElementById("nodes-group");
+
+            const nodosPorId = new Map(nodosData.map(node => [node.id, node]));
+            document.getElementById('reintentar-totales-ministerio').addEventListener('click', cargarTotalesMinisterio);
 
             // Configuración del canvas interactivo
             let zoomFactor = 0.8;
@@ -207,85 +242,76 @@
             function distribuirNodos(nodos, aristas) {
                 if (nodos.length === 0) return;
 
-                // Mapear adyacencia padres -> hijos
-                const hijosDe = {};
+                const nodosPorId = new Map(nodos.map(node => [node.id, node]));
+                const hijosDe = new Map();
                 aristas.forEach(edge => {
-                    if (!hijosDe[edge.from]) {
-                        hijosDe[edge.from] = [];
-                    }
-                    hijosDe[edge.from].push(edge.to);
+                    if (!nodosPorId.has(edge.from) || !nodosPorId.has(edge.to)) return;
+                    if (!hijosDe.has(edge.from)) hijosDe.set(edge.from, new Set());
+                    hijosDe.get(edge.from).add(edge.to);
                 });
-
+                const hijosPorId = new Map(nodos.map(node => [node.id,
+                    Array.from(hijosDe.get(node.id) || [], id => nodosPorId.get(id)),
+                ]));
                 const posicionados = new Set();
+                const enProceso = new Set();
+                const ocupacionPorFila = new Map();
                 let nextX = 80;
                 const spacingX = 140; // Espacio horizontal de seguridad
                 const spacingY = 175; // Espacio vertical por nivel
                 const startY = 80;
 
-                // Función para resolver colisiones en el mismo nivel Y
-                function evitarColision(node, level) {
-                    const minDistance = 140; // Espaciado horizontal de seguridad
-                    let conflicto = true;
-                    let intentos = 0;
-                    while (conflicto && intentos < 100) {
-                        conflicto = false;
-                        for (let otherId of posicionados) {
-                            if (otherId === node.id) continue;
-                            const other = nodos.find(n => n.id === otherId);
-                            if (other) {
-                                // Mismo nivel vertical Y
-                                if (Math.abs(other.y - node.y) < 10) {
-                                    // Conflicto de distancia X
-                                    if (Math.abs(other.x - node.x) < minDistance) {
-                                        node.x = other.x + minDistance;
-                                        conflicto = true;
-                                        intentos++;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                function reservarPosicion(node) {
+                    const minDistance = 140;
+                    if (!ocupacionPorFila.has(node.y)) ocupacionPorFila.set(node.y, new Map());
+                    const fila = ocupacionPorFila.get(node.y);
+                    let conflicto;
+                    do {
+                        const columna = Math.floor(node.x / minDistance);
+                        conflicto = [columna - 1, columna, columna + 1]
+                            .map(indice => fila.get(indice))
+                            .find(x => x !== undefined && Math.abs(x - node.x) < minDistance);
+                        if (conflicto !== undefined) node.x = conflicto + minDistance;
+                    } while (conflicto !== undefined);
+                    fila.set(Math.floor(node.x / minDistance), node.x);
+                    posicionados.add(node.id);
                 }
 
                 // Función recursiva Bottom-Up
                 function posicionar(nodeId, level) {
-                    if (posicionados.has(nodeId)) return;
-                    const node = nodos.find(n => n.id === nodeId);
+                    if (posicionados.has(nodeId) || enProceso.has(nodeId)) return;
+                    const node = nodosPorId.get(nodeId);
                     if (!node) return;
 
-                    const hijosIds = hijosDe[nodeId] || [];
-                    const hijos = nodos.filter(n => hijosIds.includes(n.id));
+                    enProceso.add(nodeId);
+                    const hijos = hijosPorId.get(nodeId).filter(hijo => !enProceso.has(hijo.id));
 
                     if (hijos.length === 0) {
                         // Nodo hoja
                         node.x = nextX;
                         node.y = startY + level * spacingY;
-                        evitarColision(node, level);
+                        reservarPosicion(node);
                         nextX = Math.max(nextX, node.x + spacingX);
-                        posicionados.add(nodeId);
+                        enProceso.delete(nodeId);
                     } else {
                         // Determinar si todos los hijos de este nodo son hojas
-                        const todosHijosHojas = hijos.every(h => {
-                            const subHijos = hijosDe[h.id] || [];
-                            return nodos.filter(n => subHijos.includes(n.id)).length === 0;
-                        });
+                        const todosHijosHojas = hijos.every(h => hijosPorId.get(h.id).length === 0);
+                        const hijosPendientes = hijos.filter(h => !posicionados.has(h.id));
 
                         // Si todos los hijos son hojas (ej: asistentes de un grupo) y son más de 5,
                         // los agrupamos en columnas de 2 para reducir a la mitad el ancho horizontal.
-                        if (todosHijosHojas && hijos.length > 5) {
+                        if (todosHijosHojas && hijosPendientes.length > 5) {
                             let colX = nextX;
-                            for (let k = 0; k < hijos.length; k += 2) {
-                                const hijo1 = hijos[k];
+                            for (let k = 0; k < hijosPendientes.length; k += 2) {
+                                const hijo1 = hijosPendientes[k];
                                 hijo1.x = colX;
                                 hijo1.y = startY + (level + 1) * spacingY;
-                                posicionados.add(hijo1.id);
+                                reservarPosicion(hijo1);
 
-                                if (k + 1 < hijos.length) {
-                                    const hijo2 = hijos[k + 1];
+                                if (k + 1 < hijosPendientes.length) {
+                                    const hijo2 = hijosPendientes[k + 1];
                                     hijo2.x = colX;
                                     hijo2.y = startY + (level + 1) * spacingY + 60; // 60px más abajo en columna
-                                    posicionados.add(hijo2.id);
+                                    reservarPosicion(hijo2);
                                 }
                                 colX += spacingX;
                             }
@@ -295,8 +321,8 @@
                             const ultimoHijoX = hijos[hijos.length - 1].x;
                             node.x = (primerHijoX + ultimoHijoX) / 2;
                             node.y = startY + level * spacingY;
-                            evitarColision(node, level);
-                            posicionados.add(nodeId);
+                            reservarPosicion(node);
+                            enProceso.delete(nodeId);
 
                             nextX = colX; // Actualizar nextX global al final de este grupo
                         } else {
@@ -315,15 +341,15 @@
                                 nextX += spacingX;
                             }
                             node.y = startY + level * spacingY;
-                            evitarColision(node, level);
-                            posicionados.add(nodeId);
+                            reservarPosicion(node);
+                            enProceso.delete(nodeId);
                         }
                     }
                 }
 
                 // Encontrar niveles mínimos (raíces) para arrancar la recursión
                 const nivelesKeys = nodos.map(n => n.level);
-                const nivelMin = Math.min(...nivelesKeys);
+                const nivelMin = nivelesKeys.reduce((minimo, nivel) => Math.min(minimo, nivel), Infinity);
                 const nodosRaiz = nodos.filter(n => n.level === nivelMin);
 
                 nodosRaiz.forEach(raiz => {
@@ -336,15 +362,15 @@
                         node.x = nextX;
                         node.y = startY + node.level * spacingY;
                         nextX += spacingX;
-                        posicionados.add(node.id);
+                        reservarPosicion(node);
                     }
                 });
 
                 // Centrar horizontalmente todo el gráfico en el lienzo SVG
                 if (nodos.length > 0) {
                     const xs = nodos.map(n => n.x);
-                    const minX = Math.min(...xs);
-                    const maxX = Math.max(...xs);
+                    const minX = xs.reduce((minimo, x) => Math.min(minimo, x), Infinity);
+                    const maxX = xs.reduce((maximo, x) => Math.max(maximo, x), -Infinity);
                     const centroGrafico = (minX + maxX) / 2;
                     const centroLienzo = width / 2;
                     const offsetX = centroLienzo - centroGrafico;
@@ -363,8 +389,8 @@
 
                 // Renderizar Aristas (Líneas)
                 aristasData.forEach(edge => {
-                    const padre = nodosData.find(n => n.id === edge.from);
-                    const hijo = nodosData.find(n => n.id === edge.to);
+                    const padre = nodosPorId.get(edge.from);
+                    const hijo = nodosPorId.get(edge.to);
 
                     if (padre && hijo) {
                         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -597,8 +623,8 @@
                             // Redibujar las aristas conectadas
                             aristasData.forEach(edge => {
                                 if (edge.from === draggedNodeId || edge.to === draggedNodeId) {
-                                    const pNode = nodosData.find(n => n.id === edge.from);
-                                    const hNode = nodosData.find(n => n.id === edge.to);
+                                    const pNode = nodosPorId.get(edge.from);
+                                    const hNode = nodosPorId.get(edge.to);
                                     const path = document.getElementById(`line-${edge.from}-${edge.to}`);
                                     if (path && pNode && hNode) {
                                         updatePathD(path, pNode.x, pNode.y, hNode.x, hNode.y);
@@ -685,7 +711,7 @@
 
             // 5. Apertura de la Ficha Lateral (Offcanvas)
             function abrirDetalleNodo(id) {
-                const node = nodosData.find(n => n.id === id);
+                const node = nodosPorId.get(id);
                 if (!node) return;
 
                 const offcanvasTitle = document.getElementById("offcanvasDetalleNodoLabel");
@@ -888,7 +914,9 @@
                     updateTransform();
                 } catch (err) {
                     console.error("Error en renderizado de gráfico:", err);
+                    document.getElementById('error-grafico-ministerio').classList.remove('d-none');
                 }
+                cargarTotalesMinisterio();
             }, 80);
         });
 
@@ -944,7 +972,7 @@
         </a>
 
         @if ($maximos_niveles != 20)
-            <a href="{{ route('grupo.graficoDelMinisterio', ['U-logueado', 20]) }}"
+            <a href="{{ route('grupo.graficoDelMinisterio', [$idNodo, 20]) }}"
                 class="cargando btn btn-sm btn-primary waves-effect d-flex align-items-center shadow-sm">
                 <i class="ti ti-sitemap me-1.5 ti-xs"></i> Ver completo
             </a>
@@ -978,8 +1006,15 @@
 
     @include('layouts.status-msn')
 
+    <div id="error-grafico-ministerio" class="alert alert-warning d-none" role="alert">
+        No se pudo dibujar el gráfico. Recarga la página para intentarlo nuevamente.
+    </div>
+    <button id="reintentar-totales-ministerio" type="button" class="btn btn-sm btn-outline-secondary mb-3 d-none">
+        Reintentar carga de totales
+    </button>
+
     <!-- Tarjetas de KPI -->
-    <div class="row mb-4">
+    <div class="row mb-4" id="totales-ministerio" data-url="{{ $urlTotales }}" aria-live="polite" aria-busy="false">
         <!-- Card Total Personas -->
         <div class="col-md-6 col-lg-3 col-12 mb-3 mb-md-0">
             <div class="card border rounded-3 shadow-sm bg-white">
@@ -991,7 +1026,7 @@
                     </div>
                     <div class="card-title mb-0">
                         <p class="text-black mb-0" style="font-size: .8125rem">Total Personas</p>
-                        <h5 class="mb-0 me-2 fw-bold" style="font-size: 1.25rem;">{{ $totalPersonas }}</h5>
+                        <h5 id="total-personas-ministerio" class="mb-0 me-2 fw-bold" style="font-size: 1.25rem;">Calculando…</h5>
                     </div>
                 </div>
             </div>
@@ -1008,7 +1043,7 @@
                     </div>
                     <div class="card-title mb-0">
                         <p class="text-black mb-0" style="font-size: .8125rem">Total Grupos</p>
-                        <h5 class="mb-0 me-2 fw-bold" style="font-size: 1.25rem;">{{ $totalGrupos }}</h5>
+                        <h5 id="total-grupos-ministerio" class="mb-0 me-2 fw-bold" style="font-size: 1.25rem;">Calculando…</h5>
                     </div>
                 </div>
             </div>

@@ -3,12 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
-use App\Models\Continente;
-use App\Models\Departamento;
 use App\Models\Iglesia;
 use App\Models\Municipio;
 use App\Models\Pais;
-use App\Models\Region;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,20 +13,14 @@ class IglesiaController extends Controller
 {
     public function perfil(Iglesia $iglesia)
     {
-        $continentes = Continente::orderBy('nombre', 'asc')->get();
         $paises = Pais::orderBy('nombre', 'asc')->get();
-        $regiones = Region::orderBy('nombre', 'asc')->get();
-        $departamentos = Departamento::orderBy('nombre', 'asc')->get();
         $ciudades = Municipio::orderBy('nombre', 'asc')->get();
         $iglesia = Iglesia::first();
         $configuracion = Configuracion::first();
 
         return view('contenido.paginas.iglesia.perfil', [
-            'continentes' => $continentes,
             'iglesia' => $iglesia,
             'paises' => $paises,
-            'regiones' => $regiones,
-            'departamentos' => $departamentos,
             'ciudades' => $ciudades,
             'configuracion' => $configuracion,
         ]);
@@ -57,9 +48,6 @@ class IglesiaController extends Controller
         $iglesia->telefono1 = $request->telefonoFijo;
         $iglesia->telefono2 = $request->otroTelefono;
         $iglesia->pais_id = $request->pais;
-        $iglesia->continente_id = $request->continente;
-        $iglesia->region_id = $request->region;
-        $iglesia->departamento_id = $request->departamento;
         $iglesia->municipio_id = $request->ciudad;
         $iglesia->direccion = $request->direccion;
         $iglesia->instagram = $request->instagram;
@@ -80,22 +68,22 @@ class IglesiaController extends Controller
                 $extension = strtolower($type[1]);
             }
 
-            $fileName = 'logo_' . time() . '.' . $extension;
+            $fileName = 'logo_'.time().'.'.$extension;
 
-            Storage::put($pathIglesia . '/' . $fileName, $decodificado);
+            Storage::put($pathIglesia.'/'.$fileName, $decodificado);
 
-            if ($iglesia->logo && Storage::exists($pathIglesia . '/' . $iglesia->logo)) {
-                Storage::delete($pathIglesia . '/' . $iglesia->logo);
+            if ($iglesia->logo && Storage::exists($pathIglesia.'/'.$iglesia->logo)) {
+                Storage::delete($pathIglesia.'/'.$iglesia->logo);
             }
 
             $iglesia->logo = $fileName;
         } elseif ($request->hasFile('logoFile')) {
             $file = $request->file('logoFile');
-            $fileName = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
+            $fileName = 'logo_'.time().'.'.$file->getClientOriginalExtension();
             $file->storeAs($pathIglesia, $fileName);
 
-            if ($iglesia->logo && Storage::exists($pathIglesia . '/' . $iglesia->logo)) {
-                Storage::delete($pathIglesia . '/' . $iglesia->logo);
+            if ($iglesia->logo && Storage::exists($pathIglesia.'/'.$iglesia->logo)) {
+                Storage::delete($pathIglesia.'/'.$iglesia->logo);
             }
 
             $iglesia->logo = $fileName;
@@ -112,28 +100,29 @@ class IglesiaController extends Controller
                 $extension = strtolower($type[1]);
             }
 
-            $fileName = 'logo_negro_' . time() . '.' . $extension;
+            $fileName = 'logo_negro_'.time().'.'.$extension;
 
-            Storage::put($pathIglesia . '/' . $fileName, $decodificado);
+            Storage::put($pathIglesia.'/'.$fileName, $decodificado);
 
-            if ($iglesia->logo_negro && Storage::exists($pathIglesia . '/' . $iglesia->logo_negro)) {
-                Storage::delete($pathIglesia . '/' . $iglesia->logo_negro);
+            if ($iglesia->logo_negro && Storage::exists($pathIglesia.'/'.$iglesia->logo_negro)) {
+                Storage::delete($pathIglesia.'/'.$iglesia->logo_negro);
             }
 
             $iglesia->logo_negro = $fileName;
         } elseif ($request->hasFile('logoNegroFile')) {
             $file = $request->file('logoNegroFile');
-            $fileName = 'logo_negro_' . time() . '.' . $file->getClientOriginalExtension();
+            $fileName = 'logo_negro_'.time().'.'.$file->getClientOriginalExtension();
             $file->storeAs($pathIglesia, $fileName);
 
-            if ($iglesia->logo_negro && Storage::exists($pathIglesia . '/' . $iglesia->logo_negro)) {
-                Storage::delete($pathIglesia . '/' . $iglesia->logo_negro);
+            if ($iglesia->logo_negro && Storage::exists($pathIglesia.'/'.$iglesia->logo_negro)) {
+                Storage::delete($pathIglesia.'/'.$iglesia->logo_negro);
             }
 
             $iglesia->logo_negro = $fileName;
         }
 
         $iglesia->save();
+
         return back()->with('success', 'Iglesia actualizada correctamente');
     }
 }

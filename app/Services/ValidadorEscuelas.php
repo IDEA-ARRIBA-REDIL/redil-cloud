@@ -32,9 +32,7 @@ class ValidadorEscuelas
     public function filtrarCategoriasDisponibles(Actividad $actividad, User $usuario): array
     {
         // 1. OBTENER ESTADO ACTUAL DEL ESTUDIANTE
-        $materiasAprobadasIds = MateriaAprobadaUsuario::where('user_id', $usuario->id)
-            ->where('aprobado', MateriaAprobadaUsuario::ESTADO_APROBADO)
-            ->pluck('materia_id')->toArray();
+        $materiasAprobadasIds = MateriaAprobadaUsuario::idsAprobadosReconocidos($usuario)->all();
 
         // Se obtienen las materias que el usuario está cursando AHORA en períodos activos (excluyendo matrículas anuladas/rechazadas).
         $materiasEnCurso = Materia::whereHas('materiasPeriodo.horariosMateriaPeriodo.matriculasDeAlumnos', function ($query) use ($usuario) {
@@ -93,7 +91,7 @@ class ValidadorEscuelas
 
             // CAMBIO 2026-09-03: Carrito, Perfil y Taquilla delegan la decisión académica
             // a esta misma evaluación para evitar resultados distintos para el mismo alumno.
-            $validacionAcademica = $this->validarPrerrequisitosAcademicos($usuario, $categoria);
+            $validacionAcademica = $this->validarPrerrequisitosAcademicos($usuario, $categoria, $materiasAprobadasIds);
 
             if ($validacionAcademica['success']) {
                 $categoriasDisponibles->push($categoria);
@@ -187,7 +185,7 @@ class ValidadorEscuelas
     /**
      * Valida el progreso EN TIEMPO REAL de un estudiante en una materia prerrequisito.
      */
-    public function validarPrerrequisitosAcademicos(User $usuario, ActividadCategoria $categoria): array
+    public function validarPrerrequisitosAcademicos(User $usuario, ActividadCategoria $categoria, ?array $materiasAprobadasIds = null): array
     {
         $materiaPeriodoObjetivo = $categoria->materiaPeriodo()
             ->with('materia.prerrequisitosMaterias')
@@ -200,13 +198,8 @@ class ValidadorEscuelas
         $materiaObjetivo = $materiaPeriodoObjetivo->materia;
 
         foreach ($materiaObjetivo->prerrequisitosMaterias as $prerrequisito) {
-            $estaAprobada = MateriaAprobadaUsuario::query()
-                ->where('user_id', $usuario->id)
-                ->where('materia_id', $prerrequisito->id)
-                ->where('aprobado', MateriaAprobadaUsuario::ESTADO_APROBADO)
-                ->exists();
-
-            if ($estaAprobada) {
+            $materiasAprobadasIds ??= MateriaAprobadaUsuario::idsAprobadosReconocidos($usuario)->all();
+            if (in_array($prerrequisito->id, $materiasAprobadasIds)) {
                 continue;
             }
 

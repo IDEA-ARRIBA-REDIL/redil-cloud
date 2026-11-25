@@ -234,6 +234,10 @@ class ModalBajaAlta extends Component
         $reporte->user_id = $usuario->id;
         $reporte->fecha = Carbon::now()->format('Y-m-d');
 
+        if (\Illuminate\Support\Facades\Schema::hasColumn('reporte_bajas_altas', 'autor_id')) {
+            $reporte->autor_id = auth()->id();
+        }
+
         if ($tipo === 'baja') {
             $reporte->dado_baja = true;
             $usuario->delete();

@@ -429,7 +429,7 @@
 
                     Swal.fire({
                         title: '¿Reactivar Materia?',
-                        html: `La materia <strong>${materiaNombre}</strong> volverá al estado "En Curso". Se eliminarán los registros de notas finales para permitir un nuevo cálculo. ¿Deseas continuar?`,
+                        html: `La materia <strong>${materiaNombre}</strong> volverá al estado "En Curso". Se eliminarán los resultados ordinarios para permitir un nuevo cálculo. Las homologaciones se conservarán. ¿Deseas continuar?`,
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonText: 'Sí, Reactivar',

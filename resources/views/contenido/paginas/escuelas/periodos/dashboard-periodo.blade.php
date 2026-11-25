@@ -107,7 +107,7 @@
                 Swal.fire({
                     title: (reabrir ? '¿Reabrir ' : '¿Cerrar ') + formulario.dataset.materia + '?',
                     text: reabrir
-                        ? 'Se eliminarán los resultados finales para permitir un nuevo cálculo. Las notas y asistencias originales se conservan. Los pasos de crecimiento, tareas y promociones ya otorgados no se revierten automáticamente.'
+                        ? 'Se eliminarán los resultados ordinarios para permitir un nuevo cálculo. Se conservan las homologaciones, las notas y las asistencias originales. Los pasos de crecimiento, tareas y promociones ya otorgados no se revierten automáticamente.'
                         : 'Se calcularán las aprobaciones con las notas y asistencias registradas. Las notas pendientes aportan cero. El proceso continuará en segundo plano.',
                     icon: 'warning', showCancelButton: true,
                     confirmButtonText: reabrir ? 'Sí, reabrir materia' : 'Sí, cerrar y calcular',

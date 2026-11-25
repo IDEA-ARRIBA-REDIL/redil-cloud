@@ -219,6 +219,7 @@
         "privilegio_anadir_asistente_reporte_reunion_cualquier_fecha",
         "opcion_ver_perfil_sede",
         "opcion_modificar_sede",
+        "opcion_cobertura_geografica_sede",
         "opcion_dar_de_baja_sede",
         "opcion_eliminar_sede",
         "crear_banners_videos_sede",

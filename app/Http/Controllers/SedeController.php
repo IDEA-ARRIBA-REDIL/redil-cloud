@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\Exports\DashboardCosechaExport;
 use App\Exports\DetalleConsolidacionKpiDashboardExport;
 use App\Helpers\Helpers;
-use App\Models\Barrio;
 use App\Models\BitacoraEstadoCivil;
 use App\Models\Configuracion;
-use App\Models\Localidad;
 use App\Models\Matricula;
 use App\Models\Sede;
 use App\Models\SedeDestinatario;
@@ -50,11 +48,12 @@ class SedeController extends Controller
 
         $buscar = '';
 
-        // Jerarquía: Las restricciones (ID o Ministerio) tienen prioridad sobre el permiso global
-        if ($rolActivo->lista_sedes_sede_id || $rolActivo->hasPermissionTo('sedes.lista_sedes_solo_ministerio')) {
+        if ($rolActivo->lista_sedes_sede_id) {
             $query = auth()->user()->sedesEncargadas('query');
         } elseif ($rolActivo->hasPermissionTo('sedes.lista_sedes_todas')) {
             $query = Sede::query();
+        } elseif ($rolActivo->hasPermissionTo('sedes.lista_sedes_solo_ministerio')) {
+            $query = auth()->user()->sedesEncargadas('query');
         } else {
             $query = Sede::whereRaw('1=2');
         }
@@ -107,7 +106,6 @@ class SedeController extends Controller
         $rolActivo->verificacionDelPermiso('sedes.subitem_nueva_sede');
         $configuracion = Configuracion::find(1);
         $tiposSedes = TipoSede::orderBy('id', 'asc')->get();
-        $localidades = Localidad::with('municipio')->orderBy('nombre', 'asc')->get();
 
         return view(
             'contenido.paginas.sedes.nueva',
@@ -115,7 +113,6 @@ class SedeController extends Controller
                 'rolActivo' => $rolActivo,
                 'tiposSedes' => $tiposSedes,
                 'configuracion' => $configuracion,
-                'localidades' => $localidades,
             ]
         );
     }
@@ -148,50 +145,12 @@ class SedeController extends Controller
         $sede->capacidad = $request->capacidad;
 
         $sede->direccion = $request->dirección;
-        $sede->barrio_id = $request->barrio_id;
         $sede->latitud = $request->latitud;
         $sede->longitud = $request->longitud;
         $sede->foto = 'default.png';
         $sede->default = $request->default ? true : false;
 
-        if ($request->barrio_id) {
-            $barrio = Barrio::find($request->barrio_id);
-            $localidad = $barrio->localidad;
-
-            if ($localidad) {
-                $municipio = $localidad->municipio;
-
-                if ($municipio) {
-                    $sede->municipio_id = $municipio->id;
-                    $departamento = $municipio->departamento;
-
-                    if ($departamento) {
-                        $sede->departamento_id = $departamento->id;
-                        $region = $departamento->region;
-
-                        if ($region) {
-                            $sede->region_id = $region->id;
-                            $pais = $region->pais;
-                            if ($pais) {
-                                $sede->pais_id = $pais->id;
-                                $continente = $pais->continente;
-                                if ($continente) {
-                                    $sede->continente_id = $continente->id;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        $sede->barrio_auxiliar = $request->barrio_auxiliar;
-
         if ($sede->save()) {
-            if ($request->has('localidades')) {
-                $sede->localidades()->sync($request->localidades ?? []);
-            }
-
             if ($request->foto) {
                 $imagenPartes = explode(';base64,', $request->foto);
                 $imagenBase64 = base64_decode($imagenPartes[1]);
@@ -213,8 +172,6 @@ class SedeController extends Controller
         $this->authorize('modificar', $sede);
         $configuracion = Configuracion::find(1);
         $tiposSedes = TipoSede::orderBy('id', 'asc')->get();
-        $localidades = Localidad::with('municipio')->orderBy('nombre', 'asc')->get();
-        $localidadesSeleccionadas = $sede->localidades->pluck('id')->toArray();
 
         return view(
             'contenido.paginas.sedes.modificar',
@@ -222,10 +179,17 @@ class SedeController extends Controller
                 'sede' => $sede,
                 'tiposSedes' => $tiposSedes,
                 'configuracion' => $configuracion,
-                'localidades' => $localidades,
-                'localidadesSeleccionadas' => $localidadesSeleccionadas,
             ]
         );
+    }
+
+    public function coberturaGeografica(Sede $sede)
+    {
+        $this->authorize('coberturaGeografica', $sede);
+
+        return view('contenido.paginas.sedes.cobertura-geografica', [
+            'sede' => $sede,
+        ]);
     }
 
     public function editar(Request $request, Sede $sede)
@@ -251,44 +215,10 @@ class SedeController extends Controller
         $sede->capacidad = $request->capacidad;
 
         $sede->direccion = $request->dirección;
-        $sede->barrio_id = $request->barrio_id;
         $sede->latitud = $request->latitud;
         $sede->longitud = $request->longitud;
         // $sede->foto = "default.png";
         $sede->default = $request->default ? true : false;
-
-        if ($request->barrio_id) {
-            $barrio = Barrio::find($request->barrio_id);
-            $localidad = $barrio->localidad;
-
-            if ($localidad) {
-                $municipio = $localidad->municipio;
-
-                if ($municipio) {
-                    $sede->municipio_id = $municipio->id;
-                    $departamento = $municipio->departamento;
-
-                    if ($departamento) {
-                        $sede->departamento_id = $departamento->id;
-                        $region = $departamento->region;
-
-                        if ($region) {
-                            $sede->region_id = $region->id;
-                            $pais = $region->pais;
-                            if ($pais) {
-                                $sede->pais_id = $pais->id;
-                                $continente = $pais->continente;
-                                if ($continente) {
-                                    $sede->continente_id = $continente->id;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        $sede->barrio_auxiliar = $request->barrio_auxiliar;
 
         if ($request->foto) {
             // Eliminar foto anterior si existe
@@ -307,7 +237,6 @@ class SedeController extends Controller
         }
 
         $sede->save();
-        $sede->localidades()->sync($request->localidades ?? []);
 
         return back()->with('success', 'La sede <b>'.$sede->nombre.'</b> fue actualizada con éxito.');
     }
@@ -451,6 +380,8 @@ class SedeController extends Controller
         }
 
         $sede->resetearSede($sedeDestino->id);
+        $sede->paises()->detach();
+        $sede->municipios()->detach();
         $sede->localidades()->detach();
         $sede->delete();
 

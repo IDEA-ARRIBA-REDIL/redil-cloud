@@ -253,25 +253,21 @@ $configData = Helper::appClasses();
 
             <!-- Direccion -->
             @if($configuracion->habilitar_direccion_grupo == true)
-              @if($configuracion->usa_listas_geograficas==TRUE)
-                @livewire('Generales.direccion-con-lista-geografica', ['modulo' => 'grupos', 'classDireccion' => 'mb-3 col-12 col-md-6'])
-              @else
-                <div class="mb-3 col-12 col-md-6">
-                  <label class="form-label" for="direccion">
-                    @if($configuracion->direccion_grupo_obligatorio) <span class="badge badge-dot bg-info me-1"></span>@endif
-                    @if($configuracion->label_direccion_grupo!="")
-                    {{$configuracion->label_direccion_grupo}}
-                    @else
-                    Dirección
-                    @endif
-                  </label>
-                  <div class="input-group input-group-merge">
-                    <span class="input-group-text"><i class="ti ti-map"></i></span>
-                    <input onkeypress="return sinComillas(event)" id="direccion" name="dirección" value="{{ old('dirección') }}" type="text" class="form-control" spellcheck="false" data-ms-editor="true" placeholder="Digita la dirección, la ciudad y el país, donde vives.">
-                  </div>
-                  @if($errors->has('dirección')) <div class="text-danger form-label">{{ $errors->first('dirección') }}</div> @endif
+              <div class="mb-3 col-12 col-md-6">
+                <label class="form-label" for="direccion">
+                  @if($configuracion->direccion_grupo_obligatorio) <span class="badge badge-dot bg-info me-1"></span>@endif
+                  @if($configuracion->label_direccion_grupo!="")
+                  {{$configuracion->label_direccion_grupo}}
+                  @else
+                  Dirección
+                  @endif
+                </label>
+                <div class="input-group input-group-merge">
+                  <span class="input-group-text"><i class="ti ti-map"></i></span>
+                  <input onkeypress="return sinComillas(event)" id="direccion" name="dirección" value="{{ old('dirección') }}" type="text" class="form-control" spellcheck="false" data-ms-editor="true" placeholder="Digita la dirección, la ciudad y el país, donde vives.">
                 </div>
-              @endif
+                @if($errors->has('dirección')) <div class="text-danger form-label">{{ $errors->first('dirección') }}</div> @endif
+              </div>
             @endif
             <!-- Direccion -->
 

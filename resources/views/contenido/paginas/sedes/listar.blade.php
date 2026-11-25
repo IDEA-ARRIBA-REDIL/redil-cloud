@@ -197,6 +197,9 @@ $configData = Helper::appClasses();
                   @if($rolActivo->hasPermissionTo('sedes.opcion_modificar_sede'))
                     <li><a class="dropdown-item" href="{{ route('sede.modificar', $sede)}}">Modificar</a></li>
                   @endif
+                  @if($rolActivo->hasPermissionTo('sedes.opcion_cobertura_geografica_sede'))
+                    <li><a class="dropdown-item" href="{{ route('sede.coberturaGeografica', $sede)}}">Cobertura geográfica</a></li>
+                  @endif
                   <hr class="dropdown-divider">
                   @if($rolActivo->hasPermissionTo('sedes.opcion_eliminar_sede'))
                     <li><a class="dropdown-item confirmacionEliminar text-danger" data-nombre="{{ $sede->nombre }}" data-id="{{ $sede->id }}" href="javascript:;">Eliminar</a></li>

@@ -883,7 +883,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Grupos
     Route::get('/grupos/solicitud-ingreso', [GrupoController::class, 'solicitudIngreso'])->name('grupo.solicitudIngreso');
+    Route::get('/grupos/solicitud-ingreso/grupos', [GrupoController::class, 'solicitudIngresoGrupos'])->name('grupo.solicitudIngreso.grupos');
     Route::get('/grupos/solicitud-exitosa', [GrupoController::class, 'solicitudExitosa'])->name('grupo.solicitudExitosa');
+    Route::get('/grupos/mi-solicitud', [GrupoController::class, 'miSolicitud'])->name('grupo.miSolicitud');
     Route::get('/grupos/solicitudes-ingreso/{tipo?}', [GrupoController::class, 'solicitudesIngreso'])->name('grupo.solicitudesIngreso');
     Route::get('/grupos/{tipo?}', [GrupoController::class, 'listar'])->name('grupo.lista');
 
@@ -952,6 +954,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/sedes', [SedeController::class, 'listar'])->name('sede.lista');
     Route::get('/sede/nueva', [SedeController::class, 'nueva'])->name('sede.nueva');
     Route::get('/sede/{sede}/modificar', [SedeController::class, 'modificar'])->name('sede.modificar');
+    Route::get('/sede/{sede}/cobertura-geografica', [SedeController::class, 'coberturaGeografica'])->name('sede.coberturaGeografica');
     Route::get('/sede/{sede}/perfil', [SedeController::class, 'perfil'])->name('sede.perfil');
     Route::get('/sede/{sede}/dashboard-consolidacion', [SedeController::class, 'dashboardConsolidacion'])->name('sede.dashboardConsolidacion');
     Route::get('/sede/{sede}/dashboard-consolidacion/exportar', [SedeController::class, 'downloadExportSede'])->name('sede.dashboardConsolidacion.exportar');

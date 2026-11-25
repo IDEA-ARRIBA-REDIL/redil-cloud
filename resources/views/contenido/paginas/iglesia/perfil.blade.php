@@ -301,20 +301,7 @@ $configData = Helper::appClasses();
       <h5 class="fw-semibold">Ubicación</h5>
     </div>
     <div class="row">
-      <!-- Primera fila -->
-      <div class="col-4 mb-3">
-        <label class="form-label">Continente</label>
-        <select id="continente" name="continente" class="grupoSelect select2 selectorGenero form-select"
-          data-allow-clear="true">
-          <option value="0">Ninguno</option>
-          @foreach ($continentes as $continente)
-          <option @if ($continente->id == $iglesia->continente_id) selected @endif value="{{$continente->id}}">
-            {{$continente->nombre}}
-          </option>
-          @endforeach
-        </select>
-      </div>
-      <div class="col-4 mb-3">
+      <div class="col-12 col-md-6 mb-3">
         <label class="form-label">País</label>
         <select id="pais" name="pais" class="grupoSelect select2 selectorGenero form-select" data-allow-clear="true">
           <option value="0">Ninguno</option>
@@ -324,31 +311,8 @@ $configData = Helper::appClasses();
           @endforeach
         </select>
       </div>
-      <div class="col-4 mb-3">
-        <label class="form-label">Región</label>
-        <select id="region" name="region" class="grupoSelect select2 selectorGenero form-select"
-          data-allow-clear="true">
-          <option value="0">Ninguno</option>
-          @foreach ($regiones as $region)
-          <option @if ($region->id == $iglesia->region_id) selected @endif
-            value={{ $region->id }}>{{ $region->nombre }}</option>
-          @endforeach
-        </select>
-      </div>
 
-      <!-- Segunda fila -->
-      <div class="col-4 mb-3">
-        <label class="form-label">Departamento</label>
-        <select id="departamento" name="departamento" class="grupoSelect select2 selectorGenero form-select"
-          data-allow-clear="true">
-          <option value="0">Ninguno</option>
-          @foreach ($departamentos as $departamento)
-          <option @if ($departamento->id == $iglesia->departamento_id) selected @endif value={{ $departamento->id }}>{{ $departamento->nombre }}</option>
-          @endforeach
-        </select>
-      </div>
-
-      <div class="col-4 mb-3">
+      <div class="col-12 col-md-6 mb-3">
         <label class="form-label">Ciudad</label>
         <select id="ciudad" name="ciudad" class="grupoSelect select2 selectorGenero form-select"
           data-allow-clear="true">
@@ -358,7 +322,6 @@ $configData = Helper::appClasses();
           @endforeach
         </select>
       </div>
-
     </div>
     <div class="mb-2 col-12 col-md-6">
       <label class="form-label">Dirección</label>

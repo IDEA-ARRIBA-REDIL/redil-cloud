@@ -213,7 +213,8 @@ class ConsultaTransaccionesFinanzasTest extends TestCase
         DB::table('role_has_permissions')->insert(['permission_id' => 1, 'role_id' => 1]);
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
-        Livewire::actingAs($usuario)->test(ConsultaTransacciones::class)
+        Livewire::actingAs($usuario->fresh())->test(ConsultaTransacciones::class)
+            ->assertStatus(200)
             ->set('fechaInicio', '2026-11-03')
             ->set('fechaFin', '2026-11-03')
             ->call('buscar')

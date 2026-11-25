@@ -17,8 +17,7 @@ class PersonalizacionLogin extends Component
 
     public mixed $imagenIzquierda = null;
 
-    /** @var array<int, mixed> */
-    public array $nuevasImagenes = [];
+    public mixed $nuevaImagen = null;
 
     public int $intervalo = 6000;
 
@@ -37,15 +36,14 @@ class PersonalizacionLogin extends Component
         $this->authorizeAccess();
         $this->validate([
             'imagenIzquierda' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:max_width=6000,max_height=6000'],
-            'nuevasImagenes' => ['array', 'max:20'],
-            'nuevasImagenes.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:max_width=6000,max_height=6000'],
+            'nuevaImagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:max_width=6000,max_height=6000'],
             'intervalo' => ['required', 'integer', 'min:3000', 'max:15000'],
             'slideUrls.*' => ['nullable', 'url:http,https', 'max:2048'],
         ]);
 
         $personalizacion = $this->personalizacion();
-        if ($personalizacion->imagenes()->count() + count($this->nuevasImagenes) > 20) {
-            $this->addError('nuevasImagenes', 'El carrusel admite máximo 20 imágenes.');
+        if ($personalizacion->imagenes()->count() + ($this->nuevaImagen ? 1 : 0) > 20) {
+            $this->addError('nuevaImagen', 'El carrusel admite máximo 20 imágenes.');
 
             return;
         }
@@ -73,8 +71,8 @@ class PersonalizacionLogin extends Component
 
                 $nextOrder = ((int) $personalizacion->imagenes()->max('sort_order')) + 1;
 
-                foreach ($this->nuevasImagenes as $image) {
-                    $path = $this->storeFile($image, 'img/login-branding/slides');
+                if ($this->nuevaImagen) {
+                    $path = $this->storeFile($this->nuevaImagen, 'img/login-branding/slides');
                     $newPaths[] = $path;
                     $personalizacion->imagenes()->create([
                         'image_path' => $path,
@@ -94,7 +92,7 @@ class PersonalizacionLogin extends Component
             Storage::disk('public')->delete($oldLeft);
         }
 
-        $this->reset('imagenIzquierda', 'nuevasImagenes');
+        $this->reset('imagenIzquierda', 'nuevaImagen');
         $this->loadSlideUrls();
         session()->flash('success', 'La pantalla de acceso se actualizó correctamente.');
     }

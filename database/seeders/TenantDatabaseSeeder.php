@@ -68,12 +68,8 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(ReporteGrupoSeeder::class);
         $this->call(PeticionSeeder::class);
         $this->call(TipoPeticionSeeder::class);
-        $this->call(ContinenteSeeder::class);
-        $this->call(DepartamentoSeeder::class);
-        $this->call(RegionSeeder::class);
         $this->call(MunicipioSeeder::class);
         $this->call(LocalidadSeeder::class);
-        $this->call(BarrioSeeder::class);
         $this->call(TipoFormatoDireccionSeeder::class);
         $this->call(EstadoPasoCrecimientoUsuarioSeeder::class);
         $this->call(TipoAsignacionSeeder::class);

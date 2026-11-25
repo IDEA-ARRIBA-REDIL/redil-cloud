@@ -1,0 +1,389 @@
+{
+  "escuela": {
+    "nombre": "Escuela Manantial de Vida Eterna",
+    "descripcion": "Academia integral de formación bíblica, discipulado, liderazgo, cosmovisión y servicio ministerial.",
+    "tipo_matricula": "materias_independientes",
+    "habilitada_consolidacion": true,
+    "horasDisponiblidadLinkAsistencia": 2,
+    "dia_inicio_semana": 0,
+    "caracter_obligatorio": false
+  },
+  "cortes": [
+    {
+      "ref": 1,
+      "nombre": "Corte 1",
+      "porcentaje": 35,
+      "orden": 1
+    },
+    {
+      "ref": 2,
+      "nombre": "Corte 2",
+      "porcentaje": 35,
+      "orden": 2
+    },
+    {
+      "ref": 3,
+      "nombre": "Corte 3",
+      "porcentaje": 30,
+      "orden": 3
+    }
+  ],
+  "materias": [
+    {
+      "ref": 35,
+      "nombre": "1. Mentor espiritual",
+      "descripcion": "<p>Fundamentos bíblicos del discipulado relacional y el acompañamiento espiritual para formar creyentes maduros en la fe.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 1,
+      "paso": "Mentor espiritual"
+    },
+    {
+      "ref": 36,
+      "nombre": "2. Carácter y servicio",
+      "descripcion": "<p>Desarrollo del fruto del Espíritu Santo, integridad cristiana y vocación de servicio activo en la iglesia y la sociedad.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 2,
+      "paso": "Carácter y servicio"
+    },
+    {
+      "ref": 40,
+      "nombre": "3. Familia",
+      "descripcion": "<p>Principios eternos para el matrimonio, la crianza de los hijos, la restauración relacional y el sacerdocio en el hogar.</p>",
+      "asistencias_minimas": 4,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 3,
+      "paso": "Familia"
+    },
+    {
+      "ref": 41,
+      "nombre": "4. Espíritu Santo",
+      "descripcion": "<p>Conocimiento profundo de la persona, obra, dones y llenura continua del Espíritu Santo en la vida del creyente.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 4,
+      "paso": "Espíritu santo"
+    },
+    {
+      "ref": 43,
+      "nombre": "1. Corazones emergentes",
+      "descripcion": "<p>Descubrimiento del llamado ministerial, pasión por las almas y preparación inicial para liderar grupos de crecimiento.</p>",
+      "asistencias_minimas": 4,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 2,
+      "orden": 5,
+      "paso": "Corazones emergentes"
+    },
+    {
+      "ref": 44,
+      "nombre": "2. Corazones Activos 1",
+      "descripcion": "<p>Herramientas prácticas de pastoreo celular, cuidado espiritual, evangelismo relacional y consolidación efectiva.</p>",
+      "asistencias_minimas": 4,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 2,
+      "orden": 6,
+      "paso": "Corazones activos 1"
+    },
+    {
+      "ref": 45,
+      "nombre": "3. Corazones Activos 2",
+      "descripcion": "<p>Multiplicación saludable de grupos, formación de nuevos líderes y supervisión ministerial con excelencia.</p>",
+      "asistencias_minimas": 4,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 2,
+      "orden": 7,
+      "paso": "Corazones activos 2"
+    },
+    {
+      "ref": 46,
+      "nombre": "1. Cosmovisión bíblica - “Reino inconmovible”",
+      "descripcion": "<p>Fundamentos de la cosmovisión cristiana frente a las corrientes contemporáneas bajo el gobierno del Reino de Dios.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 8,
+      "paso": "Especialización cosmovisión bíblica - \"Reino inconmovible\""
+    },
+    {
+      "ref": 37,
+      "nombre": "2. Cosmovisión bíblica - “Entre lo sagrado y secular”",
+      "descripcion": "<p>Integración de la fe en la vocación profesional, el arte, la empresa, la educación y la vida pública.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 9,
+      "paso": "Especialización cosmovisión bíblica - \"Entre lo sagrado y secular\""
+    },
+    {
+      "ref": 38,
+      "nombre": "3. Cosmovisión bíblica - “Plan singular”",
+      "descripcion": "<p>El plan redentor a lo largo de las Escrituras: creación, caída, redención y restauración de todas las cosas en Cristo.</p>",
+      "asistencias_minimas": 4,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 10,
+      "paso": "Especialización cosmovisión bíblica - \"Plan singular\""
+    },
+    {
+      "ref": 39,
+      "nombre": "4. Cosmovisión bíblica - “Cosmovisión del reino”",
+      "descripcion": "<p>Aplicación transformadora de los principios del Reino en la cultura, la ética y el liderazgo comunitario.</p>",
+      "asistencias_minimas": 4,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 11,
+      "paso": "Especialización cosmovisión bíblica - \"Cosmovisión del reino\""
+    },
+    {
+      "ref": 49,
+      "nombre": "1. Escuela de maestros - “Fundamentos en educación”",
+      "descripcion": "<p>Pedagogía bíblica, hermenéutica práctica y diseño de sesiones de enseñanza transformadoras.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 12,
+      "paso": "Escuela de maestros - \"Fundamentos en educación\""
+    },
+    {
+      "ref": 47,
+      "nombre": "2. Escuela de maestros - “Comunicación y oratoria”",
+      "descripcion": "<p>Expresión oral, estructuración de mensajes, manejo escénico y comunicación efectiva centrada en la Palabra.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 13,
+      "paso": "Escuela de maestros - \"Comunicación y oratoria\""
+    },
+    {
+      "ref": 52,
+      "nombre": "3. Escuela de maestros - “Neurodidáctica”",
+      "descripcion": "<p>Estrategias de aprendizaje activo, memoria significativa, dinámicas grupales y recursos didácticos contemporáneos.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 14,
+      "paso": "Escuela de maestros 3 \"Neurodidáctica\""
+    },
+    {
+      "ref": 53,
+      "nombre": "Práctica ministerial - Escuela de maestros",
+      "descripcion": "<p>Práctica supervisada de enseñanza en aula, retroalimentación pedagógica y acompañamiento a estudiantes.</p>",
+      "asistencias_minimas": null,
+      "asistencias_minima_alerta": null,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": false,
+      "habilitar_alerta_inasistencias": false,
+      "habilitar_traslado": false,
+      "creditos": 4,
+      "orden": 15,
+      "paso": "Práctica ministerial - Escuela de maestros"
+    },
+    {
+      "ref": 51,
+      "nombre": "Escuela de Intercesión",
+      "descripcion": "<p>Fundamentos bíblicos de la oración intercesora, clamor congregacional, discernimiento espiritual y altar continuo.</p>",
+      "asistencias_minimas": 5,
+      "asistencias_minima_alerta": 2,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": true,
+      "creditos": 3,
+      "orden": 16,
+      "paso": "Escuela intercesión"
+    },
+    {
+      "ref": 54,
+      "nombre": "Práctica ministerial - Escuela de Intercesión",
+      "descripcion": "<p>Servicio práctico en equipos de intercesión, acompañamiento en oración por peticiones y turnos de clamor.</p>",
+      "asistencias_minimas": null,
+      "asistencias_minima_alerta": null,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": false,
+      "habilitar_alerta_inasistencias": false,
+      "habilitar_traslado": false,
+      "creditos": 4,
+      "orden": 17,
+      "paso": null
+    },
+    {
+      "ref": 42,
+      "nombre": "Influenciadores - Líderes de Influencia",
+      "descripcion": "<p>Programa avanzado de liderazgo ministerial, visión estratégica, mentoreo de supervisores y expansión del Reino.</p>",
+      "asistencias_minimas": 8,
+      "asistencias_minima_alerta": 3,
+      "caracter_obligatorio": true,
+      "habilitar_calificaciones": true,
+      "habilitar_asistencias": true,
+      "habilitar_alerta_inasistencias": true,
+      "habilitar_traslado": false,
+      "creditos": 4,
+      "orden": 18,
+      "paso": "Graduado formación integra"
+    }
+  ],
+  "prerrequisitos": [
+    {
+      "materia": 36,
+      "prerrequisito": 35
+    },
+    {
+      "materia": 40,
+      "prerrequisito": 36
+    },
+    {
+      "materia": 41,
+      "prerrequisito": 40
+    },
+    {
+      "materia": 44,
+      "prerrequisito": 43
+    },
+    {
+      "materia": 45,
+      "prerrequisito": 44
+    },
+    {
+      "materia": 46,
+      "prerrequisito": 41
+    },
+    {
+      "materia": 37,
+      "prerrequisito": 46
+    },
+    {
+      "materia": 38,
+      "prerrequisito": 37
+    },
+    {
+      "materia": 39,
+      "prerrequisito": 38
+    },
+    {
+      "materia": 49,
+      "prerrequisito": 41
+    },
+    {
+      "materia": 47,
+      "prerrequisito": 49
+    },
+    {
+      "materia": 52,
+      "prerrequisito": 47
+    },
+    {
+      "materia": 53,
+      "prerrequisito": 52
+    },
+    {
+      "materia": 51,
+      "prerrequisito": 41
+    },
+    {
+      "materia": 54,
+      "prerrequisito": 51
+    },
+    {
+      "materia": 42,
+      "prerrequisito": 41
+    }
+  ],
+  "plantillas_por_corte": [
+    {
+      "nombre": "Reporte de Lectura",
+      "tipo_item_nombre": "Taller",
+      "porcentaje_sugerido": 30,
+      "orden": 1
+    },
+    {
+      "nombre": "Compromiso Práctico",
+      "tipo_item_nombre": "Exposición",
+      "porcentaje_sugerido": 40,
+      "orden": 2
+    },
+    {
+      "nombre": "Asistencia y Participación",
+      "tipo_item_nombre": "Participación",
+      "porcentaje_sugerido": 30,
+      "orden": 3
+    }
+  ]
+}

@@ -35,7 +35,9 @@ class ServicioValidacionMateriaPeriodo
         }
 
         $resultados = $this->obtenerResultadosAcademicos($materiaPeriodo, $idsAlumnosDelLote);
-        $datosParaGuardar = $this->prepararDatosParaGuardar($materiaPeriodo->periodo, $resultados);
+        $datosParaGuardar = $this->excluirResultadosHomologados(
+            $this->prepararDatosParaGuardar($materiaPeriodo->periodo, $resultados)
+        );
         $this->persistirResultados($datosParaGuardar, $materiaPeriodo->id);
         $this->aplicarEfectosCulminacion($datosParaGuardar);
 
@@ -230,6 +232,7 @@ class ServicioValidacionMateriaPeriodo
             foreach ($paraActualizar as $datoActualizar) {
                 MateriaAprobadaUsuario::where('user_id', $datoActualizar['user_id'])
                     ->where('materia_periodo_id', $datoActualizar['materia_periodo_id'])
+                    ->sinHomologacion()
                     ->update([
                         'nota_final' => $datoActualizar['nota_final'],
                         'total_asistencias' => $datoActualizar['total_asistencias'],

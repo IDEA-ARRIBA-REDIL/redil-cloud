@@ -1048,7 +1048,7 @@
 
                     <div class="modal-body px-5 py-5">
                         <div class="row">
-                            <div class="col-12 mb-3">
+                            <div class="col-12 mb-5">
                                 <small class="text-black">
                                     Notamos que aún no perteneces a ninguno de nuestros grupos. Creemos que caminar en
                                     comunidad es fundamental para tu crecimiento. ¿Te gustaría enviar una solicitud para
@@ -1057,17 +1057,18 @@
                             </div>
 
                             <div class="d-flex">
-                                <a href="{{ route('grupo.solicitudIngreso') }}" type="button"
-                                    class="btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light me-1">
-                                    Enviar solicitud
-                                </a>
+                                <input type="checkbox" name="no_volver_mostrar" id="no_volver_mostrar"> <label for="no_volver_mostrar" class="text-black ms-2 fw-semibold">No volver a mostrar este mensaje</label>
                             </div>
                         </div>
                     </div>
 
                     <div class="modal-footer border-top p-5">
                         <button type="button" data-bs-dismiss="modal"
-                            class="btn btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cerrar</button>
+                            class="btn me-0 btn-sm py-2 px-4 rounded-pill btn-outline-secondary waves-effect">Cerrar</button>
+                          <a href="{{ route('grupo.solicitudIngreso') }}" type="button"
+                                    class="btn btn-sm py-2 px-4 rounded-pill btn-primary waves-effect waves-light me-1">
+                                    Enviar solicitud
+                                </a>
                     </div>
                 </div>
             </div>

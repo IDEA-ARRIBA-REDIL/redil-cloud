@@ -67,12 +67,19 @@
             theme: 'snow'
         });
 
-        // Cargar contenido existente en el editor
-        editor.root.innerHTML = `{!! $materia->descripcion !!}`;
-        $('#descripcion').val(editor.root.innerHTML);
+        // Cargar contenido existente en el editor de forma segura y limpiar vacío de Quill
+        const sincronizarDescripcionQuill = () => {
+            const textoPlano = editor.getText().replace(/\u00A0/g, ' ').trim();
+            const tieneMultimedia = editor.root.querySelector('img, iframe, video') !== null;
 
-        editor.on('text-change', (delta, oldDelta, source) => {
-            $('#descripcion').val(editor.root.innerHTML);
+            $('#descripcion').val(textoPlano === '' && !tieneMultimedia ? '' : editor.root.innerHTML);
+        };
+
+        editor.root.innerHTML = @json(old('descripción', $materia->descripcion ?? ''));
+        sincronizarDescripcionQuill();
+
+        editor.on('text-change', () => {
+            sincronizarDescripcionQuill();
         });
     </script>
 
@@ -687,7 +694,7 @@
                     <label for="descripcion" class="form-label">Descripción (opcional)</label>
 
                     <div id="editor"></div>
-                    <input id="descripcion" name="descripción" class='d-none' value="{!! old('descripción', $materia->descripcion) !!}">
+                    <input id="descripcion" name="descripción" class='d-none' value="{{ old('descripción', $materia->descripcion) }}">
                 </div>
                 @error('descripción')
                     <span class="text-danger small">{{ $message }}</span>

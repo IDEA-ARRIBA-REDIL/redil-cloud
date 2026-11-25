@@ -86,7 +86,7 @@ class CuentaInicialTenantSeeder extends Seeder
     private function geografia(): void
     {
         $connection = (new User)->getConnection();
-        foreach (['continentes', 'paises', 'regiones', 'departamentos', 'municipios', 'localidades', 'barrios', 'tipoPeticiones'] as $name) {
+        foreach (['paises', 'municipios', 'localidades', 'tipoPeticiones'] as $name) {
             $path = database_path('seeders/data/cuenta-inicial/'.$name.'.sql');
             if (! is_file($path)) {
                 throw new \RuntimeException('Falta el catálogo de la plantilla: '.$name);
@@ -366,6 +366,7 @@ class CuentaInicialTenantSeeder extends Seeder
             $user = User::create([
                 'primer_nombre' => $name, 'primer_apellido' => 'Por configurar', 'email' => $email,
                 'identificacion' => (string) (9000000000 + $index),
+                'fecha_nacimiento' => '1990-06-28',
                 'password' => Hash::make($index === 0 ? config('cuenta_inicial.soporte_password') : Str::random(64)),
                 'activo' => true, 'esta_aprobado' => true, 'email_verified_at' => $index === 0 ? now() : null, 'genero' => 0,
                 'foto' => 'default-m.png', 'sede_id' => Sede::where('default', true)->value('id'),

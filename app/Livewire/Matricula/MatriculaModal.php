@@ -122,13 +122,15 @@ class MatriculaModal extends Component
         // --- VALIDACIÓN DE ÚLTIMA HORA (SEGURIDAD) ---
         // Obtenemos el reporte del servicio para asegurar que cumple todo.
         $reporte = $matriculaService->getReporteDisponibilidadMaterias($this->usuario, Materia::find($this->materiaId)->escuela)
-            ->where('materia.id', $this->materiaId)
+            ->where('item.id', $this->materiaId)
             ->first();
 
-        if ($reporte && $reporte->estado === 'BLOQUEADA') {
+        if (! $reporte || $reporte->estado !== 'DISPONIBLE') {
             $this->dispatch('msn', [
                 'msnTitulo' => 'Error de Requisitos',
-                'msnTexto' => 'El estudiante no cumple con los requisitos: '.implode(', ', $reporte->motivos),
+                'msnTexto' => $reporte?->estado === 'APROBADA'
+                    ? 'El estudiante ya aprobó esta materia.'
+                    : 'El estudiante no cumple con los requisitos: '.implode(', ', $reporte?->motivos ?? ['Materia no disponible.']),
                 'msnIcono' => 'error',
             ]);
 

@@ -39,22 +39,6 @@ $configData = Helper::appClasses();
       allowClear: true,
       placeholder: 'Ninguno'
     });
-
-    $('#localidades').select2({
-      width: '100%',
-      placeholder: 'Seleccione las localidades que cubre esta sede'
-    });
-
-    $('#btnSeleccionarTodasLocalidades').on('click', function(e) {
-      e.preventDefault();
-      $('#localidades option').prop('selected', true);
-      $('#localidades').trigger('change');
-    });
-
-    $('#btnBorrarTodasLocalidades').on('click', function(e) {
-      e.preventDefault();
-      $('#localidades').val(null).trigger('change');
-    });
   });
 
   function sinComillas(e) {
@@ -242,27 +226,16 @@ $configData = Helper::appClasses();
           <!-- fecha creacion -->
 
           <!-- Direccion -->
-          @if($configuracion->habilitar_direccion_grupo == true)
-            @if($configuracion->usa_listas_geograficas==TRUE)
-              @livewire('Generales.direccion-con-lista-geografica', ['modulo' => 'sedes'])
-            @else
-              <div class="mb-3 col-12 col-md-6">
-                <label class="form-label" for="direccion">
-                  @if($configuracion->direccion_grupo_obligatorio) <span class="badge badge-dot bg-info me-1"></span>@endif
-                  @if($configuracion->label_direccion_grupo!="")
-                  {{$configuracion->label_direccion_grupo}}
-                  @else
-                  Dirección
-                  @endif
-                </label>
-                <div class="input-group input-group-merge">
-                  <span class="input-group-text"><i class="ti ti-map"></i></span>
-                  <input onkeypress="return sinComillas(event)" id="direccion" name="dirección" value="{{ old('dirección') }}" type="text" class="form-control" spellcheck="false" data-ms-editor="true" placeholder="Digita la dirección, la ciudad y el país, donde vives.">
-                </div>
-                @if($errors->has('dirección')) <div class="text-danger form-label">{{ $errors->first('dirección') }}</div> @endif
-              </div>
-            @endif
-          @endif
+          <div class="mb-3 col-12 col-md-6">
+            <label class="form-label" for="direccion">
+              Dirección
+            </label>
+            <div class="input-group input-group-merge">
+              <span class="input-group-text"><i class="ti ti-map"></i></span>
+              <input onkeypress="return sinComillas(event)" id="direccion" name="dirección" value="{{ old('dirección') }}" type="text" class="form-control" spellcheck="false" data-ms-editor="true" placeholder="Digita la dirección, la ciudad y el país.">
+            </div>
+            @if($errors->has('dirección')) <div class="text-danger form-label">{{ $errors->first('dirección') }}</div> @endif
+          </div>
           <!-- Direccion -->
 
           <!-- Latitud -->
@@ -303,36 +276,6 @@ $configData = Helper::appClasses();
             'conDadosDeBaja' => 'no',
             'estiloSeleccion' => 'pequeno'
           ])
-
-          <!-- Localidades con cobertura -->
-          <div class="mb-3 col-12">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label mb-0" for="localidades">
-                <i class="ti ti-map-pin me-1 text-primary"></i>Localidades con cobertura
-              </label>
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btnSeleccionarTodasLocalidades">
-                  <i class="ti ti-checks me-1"></i>Seleccionar todas
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" id="btnBorrarTodasLocalidades">
-                  <i class="ti ti-x me-1"></i>Borrar todas
-                </button>
-              </div>
-            </div>
-            <select id="localidades" name="localidades[]" class="select2 form-select" multiple data-placeholder="Seleccione las localidades que cubre esta sede">
-              @foreach ($localidades as $localidad)
-                @php
-                  $nombreMunicipio = $localidad->municipio ? $localidad->municipio->nombre : '';
-                  $textoLocalidad = ucwords($localidad->nombre) . ($nombreMunicipio ? ' (' . ucwords($nombreMunicipio) . ')' : '');
-                @endphp
-                <option value="{{ $localidad->id }}" {{ (is_array(old('localidades')) && in_array($localidad->id, old('localidades'))) ? 'selected' : '' }}>
-                  {{ $textoLocalidad }}
-                </option>
-              @endforeach
-            </select>
-            <div class="form-text">Si se asignan localidades, esta sede solo se sugerirá a los usuarios que pertenezcan a dichas localidades. Si no se asigna ninguna, estará disponible como opción general.</div>
-          </div>
-          <!-- /Localidades con cobertura -->
 
           <!-- default -->
           <div class="col-12 col-md-6 mb-2">

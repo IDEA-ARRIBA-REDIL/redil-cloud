@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -94,5 +95,54 @@ class FormularioUsuario extends Model
             'formulario_id',
             'campo_extra_id'
         )->withPivot('visible', 'required');
+    }
+
+    public function sedesExcluidas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Sede::class,
+            'formulario_usuario_sede_excluida',
+            'formulario_usuario_id',
+            'sede_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Obtiene los IDs de las sedes excluidas para este formulario,
+     * preservando opcionalmente una sede actual ya asignada al usuario.
+     *
+     * @return array<int, int>
+     */
+    public function obtenerSedesExcluidasIds(?int $sedeActualId = null): array
+    {
+        $excluidasIds = $this->sedesExcluidas()
+            ->pluck('sedes.id')
+            ->map(fn ($id): int => (int) $id)
+            ->toArray();
+
+        if ($sedeActualId !== null) {
+            $excluidasIds = array_filter(
+                $excluidasIds,
+                fn (int $id): bool => $id !== $sedeActualId
+            );
+        }
+
+        return array_values($excluidasIds);
+    }
+
+    /**
+     * Retorna las sedes disponibles para mostrar en el selector del formulario,
+     * omitiendo las configuradas como excluidas (salvo la sede actual del usuario si se indica).
+     */
+    public function sedesDisponibles(?int $sedeActualId = null): Collection
+    {
+        $excluidasIds = $this->obtenerSedesExcluidasIds($sedeActualId);
+
+        return Sede::with(['paises:id', 'municipios:id', 'localidades:id'])
+            ->when(! empty($excluidasIds), function ($query) use ($excluidasIds): void {
+                $query->whereNotIn('id', $excluidasIds);
+            })
+            ->orderBy('nombre', 'asc')
+            ->get();
     }
 }

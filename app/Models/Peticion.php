@@ -19,6 +19,7 @@ class Peticion extends Model
         return [
             'descripcion' => \App\Casts\SafeEncrypted::class,
             'respuesta' => \App\Casts\SafeEncrypted::class,
+            'desea_pertenecer_iglesia' => 'boolean',
         ];
     }
 

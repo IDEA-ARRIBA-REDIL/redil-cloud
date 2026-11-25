@@ -128,6 +128,16 @@
             font-size: .6875rem;
         }
 
+        .student-status .badge.bg-success,
+        .student-status .badge.bg-danger,
+        .student-status .badge.bg-secondary {
+            color: #fff !important;
+        }
+
+        .student-status .badge.bg-warning {
+            color: #2f2b3d !important;
+        }
+
         .student-toggle {
             display: none;
         }
@@ -599,8 +609,12 @@
                                                 </div>
                                                 <div class="student-metric student-status">
                                                     <span class="student-metric-label">Estado</span>
-                                                    <span
-                                                        class="badge text-white {{ $alumno['ha_aprobado'] ? ($alumno['estado_materia'] === 'Aprobado' ? 'bg-success' : 'bg-warning') : 'bg-danger' }}">
+                                                    @php
+                                                        $badgeEstadoClass = $alumno['ha_aprobado']
+                                                            ? ($alumno['estado_materia'] === 'Aprobado' ? 'bg-success text-white' : 'bg-warning text-dark')
+                                                            : 'bg-danger text-white';
+                                                    @endphp
+                                                    <span class="badge {{ $badgeEstadoClass }}">
                                                         {{ $alumno['estado_materia'] }}
                                                     </span>
                                                 </div>

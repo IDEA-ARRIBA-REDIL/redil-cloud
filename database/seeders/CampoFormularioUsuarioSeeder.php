@@ -169,6 +169,14 @@ class CampoFormularioUsuarioSeeder extends Seeder
         $campo->secciones()->attach(12, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 8]);
         $campo->secciones()->attach(13, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 8]);
 
+        CampoFormularioUsuario::firstOrCreate([
+            'nombre' => 'Ciudad',
+            'nombre_bd' => 'municipio_id',
+            'placeholder' => 'Busca aquí la ciudad',
+            'name_id' => 'ciudad',
+            'visible_resumen' => true,
+        ]);
+
         $campo = CampoFormularioUsuario::firstOrCreate([
             'nombre' => 'Teléfono fijo',
             'nombre_bd' => 'telefono_fijo',
@@ -237,9 +245,9 @@ class CampoFormularioUsuarioSeeder extends Seeder
         $campo->secciones()->attach(9, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 4]);
 
         $campo = CampoFormularioUsuario::firstOrCreate([
-            'nombre' => 'Barrio o localidad',
+            'nombre' => 'Localidad',
             'nombre_bd' => 'ubicacion',
-            'placeholder' => 'Busca aquí el barrio o la localidad',
+            'placeholder' => 'Busca aquí la localidad',
             'name_id' => 'ubicación',
         ]);
         $campo->secciones()->attach(2, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 7]);
@@ -498,7 +506,7 @@ class CampoFormularioUsuarioSeeder extends Seeder
             'visible_resumen' => true,
         ]);
 
-        $campo->secciones()->attach(10, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 1, 'informacion_de_apoyo' => 'Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial (@, *, -, ., ?, &, $, #).']);
+        $campo->secciones()->attach(10, ['requerido' => true, 'class' => 'col-12 col-sm-6 col-md-6', 'orden' => 1, 'informacion_de_apoyo' => 'Mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número.']);
 
         $campo = CampoFormularioUsuario::firstOrCreate([
             'nombre' => 'Confirmar contraseña',

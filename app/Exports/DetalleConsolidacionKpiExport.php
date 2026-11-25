@@ -65,6 +65,8 @@ class DetalleConsolidacionKpiExport implements FromCollection, ShouldAutoSize, W
                 'Sede',
                 'Fecha Creación',
                 '¿Dado de baja?',
+                'Motivo de baja',
+                'Dado de baja por',
             ],
         ];
     }
@@ -73,13 +75,27 @@ class DetalleConsolidacionKpiExport implements FromCollection, ShouldAutoSize, W
     {
         $telefonos = collect([$usuario->telefono_fijo, $usuario->telefono_movil, $usuario->telefono_otro])->filter();
 
+        $reporteBaja = $usuario->obtenerReporteBajaPorBitacora(
+            $this->datos['inicio'] ?? null,
+            $this->datos['fin'] ?? null
+        );
+        $estaDadoDeBaja = $reporteBaja !== null || $usuario->trashed();
+        $motivoBaja = $estaDadoDeBaja
+            ? ($reporteBaja?->tipo?->nombre ?? $reporteBaja?->motivo ?? 'No especificado')
+            : 'N/A';
+        $autorBaja = $estaDadoDeBaja
+            ? ($reporteBaja?->autor ? $reporteBaja->autor->nombre(3) : 'No registrado')
+            : 'N/A';
+
         return [
             $usuario->nombre(3),
             $telefonos->isNotEmpty() ? $telefonos->implode(', ') : 'N/A',
             $usuario->email ?? 'N/A',
             $usuario->sede->nombre ?? 'N/A',
-            $usuario->created_at->format('Y-m-d'),
-            $usuario->trashed() ? 'Sí' : 'No',
+            $usuario->created_at ? $usuario->created_at->format('Y-m-d') : 'N/A',
+            $estaDadoDeBaja ? 'Sí' : 'No',
+            $motivoBaja,
+            $autorBaja,
         ];
     }
 

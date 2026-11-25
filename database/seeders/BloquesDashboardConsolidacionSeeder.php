@@ -24,12 +24,12 @@ class BloquesDashboardConsolidacionSeeder extends Seeder
 
         $bloque2 = BloqueDashboardConsolidacion::firstOrCreate(['nombre' => 'Sedes Bogotá']);
         if ($bloque2->wasRecentlyCreated) {
-            $bloque2->sedes()->attach([29, 28, 30, 17, 14, 22, 210, 24, 31, 45, 44]);
+            // $bloque2->sedes()->attach([29, 28, 30, 17, 14, 22, 210, 24, 31, 45, 44]);
         }
 
         $bloque3 = BloqueDashboardConsolidacion::firstOrCreate(['nombre' => 'Sedes Nacionales']);
         if ($bloque3->wasRecentlyCreated) {
-            $bloque3->sedes()->attach([309, 276, 408]);
+            // $bloque3->sedes()->attach([309, 276, 408]);
         }
 
     }

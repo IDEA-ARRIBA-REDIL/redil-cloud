@@ -129,13 +129,24 @@
             @php
                 $fechaLimite = $corte->fecha_fin?->copy()->endOfDay();
                 $ahora = now();
-                $diasRestantes = $fechaLimite ? (int) $ahora->copy()->startOfDay()->diffInDays($fechaLimite->copy()->startOfDay(), false) : null;
-                $colorAlerta = $diasRestantes === null ? 'info' : ($diasRestantes <= 0 ? 'danger' : ($diasRestantes <= 6 ? 'warning' : 'success'));
+                $diasRestantes = $fechaLimite
+                    ? (int) $ahora
+                        ->copy()
+                        ->startOfDay()
+                        ->diffInDays($fechaLimite->copy()->startOfDay(), false)
+                    : null;
+                $colorAlerta =
+                    $diasRestantes === null
+                        ? 'info'
+                        : ($diasRestantes <= 0
+                            ? 'danger'
+                            : ($diasRestantes <= 6
+                                ? 'warning'
+                                : 'success'));
             @endphp
-            <div class="col-12 col-xl-6">
+            <div class="col-12 col-sm-6 col-xl-3 col-md-6 ">
                 <div class="alert alert-{{ $colorAlerta }} mb-2"
-                    @if ($fechaLimite)
-                        x-data="{
+                    @if ($fechaLimite) x-data="{
                             limite: {{ $fechaLimite->getTimestampMs() + 1 }},
                             ahora: {{ $ahora->getTimestampMs() }},
                             inicioServidor: {{ $ahora->getTimestampMs() }},
@@ -171,18 +182,18 @@
                                 return dias + 'd ' + [horas, minutos, segundos].map(valor => String(valor).padStart(2, '0')).join(':');
                             }
                         }"
-                        x-bind:class="{ 'alert-{{ $colorAlerta }}': color === '{{ $colorAlerta }}', ['alert-' + color]: true }"
-                    @endif
-                >
+                        x-bind:class="{ 'alert-{{ $colorAlerta }}': color === '{{ $colorAlerta }}', ['alert-' + color]: true }" @endif>
                     <div class="fw-semibold mb-1">
                         <i class="mdi mdi-clock-outline me-1" aria-hidden="true"></i>
                         {{ $corte->corteEscuela?->nombre ?? 'Corte' }}
                     </div>
                     @if ($fechaLimite)
                         <div class="fw-semibold" x-text="mensaje" aria-live="polite">
-                            {{ $diasRestantes < 0 ? 'Plazo del corte vencido' : ($diasRestantes === 0 ? 'Hoy vence el corte' : 'Quedan '.$diasRestantes.' días para el cierre') }}
+                            {{ $diasRestantes < 0 ? 'Plazo del corte vencido' : ($diasRestantes === 0 ? 'Hoy vence el corte' : 'Quedan ' . $diasRestantes . ' días para el cierre') }}
                         </div>
-                        <div>Fecha límite: <strong>{{ $fechaLimite->format('d/m/Y') }}</strong> a las 11:59 p. m. ({{ config('app.timezone') }}).</div>
+                        <div>Fecha límite: <strong>{{ $fechaLimite->format('d/m/Y') }}</strong> a las 11:59 p. m.
+                            ({{ config('app.timezone') }})
+                            .</div>
                         <div class="mt-1" x-show="segundos > 0">Tiempo restante: <strong x-text="tiempo"></strong></div>
                     @else
                         <div>Este corte no tiene una fecha límite configurada.</div>

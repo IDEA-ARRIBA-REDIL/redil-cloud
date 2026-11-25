@@ -123,6 +123,10 @@
   <!-- Listado de personas en cards -->
   <div class="row g-4 mt-1">
     @forelse($usuarios as $usuario)
+      @php
+        $reporteBaja = $usuario->obtenerReporteBajaPorBitacora($inicio ?? null, $fin ?? null);
+        $estaDadoDeBaja = $reporteBaja !== null || $usuario->trashed();
+      @endphp
       <div class="col-12 col-md-6">
         <div class="card h-100 rounded-3 shadow-sm border">
           <!-- Card Header -->
@@ -132,7 +136,7 @@
                 <h6 class="fw-semibold text-black mb-0 text-truncate">
                   {{ $usuario->nombre(3) }}
                 </h6>
-                @if($usuario->trashed())
+                @if($estaDadoDeBaja)
                   <small class="text-danger fw-bold mt-1"><i class="ti ti-user-x fs-6 me-1"></i>Dado de baja</small>
                 @endif
               </div>
@@ -214,6 +218,34 @@
                   {{ $usuario->created_at ? $usuario->created_at->format('d-m-Y') : 'No indicada' }}
                 </span>
               </div>
+
+              @if($estaDadoDeBaja)
+                <div class="col-12 my-1">
+                  <hr class="my-1 border-1 opacity-25">
+                </div>
+
+                <!-- Motivo dado de baja -->
+                <div class="col-6 d-flex flex-column">
+                  <small class="text-black"><i class="ti ti-alert-circle me-1 text-danger"></i>Motivo dado de baja</small>
+                  @php
+                    $motivoBajaTexto = $reporteBaja?->tipo?->nombre ?? $reporteBaja?->motivo ?? 'No especificado';
+                  @endphp
+                  <span class="fw-semibold text-black text-truncate" title="{{ $motivoBajaTexto }}">
+                    {{ $motivoBajaTexto }}
+                  </span>
+                </div>
+
+                <!-- Quién le dio de baja -->
+                <div class="col-6 d-flex flex-column">
+                  <small class="text-black"><i class="ti ti-user-x me-1 text-danger"></i>Dado de baja por</small>
+                  @php
+                    $autorBajaTexto = $reporteBaja?->autor ? $reporteBaja->autor->nombre(3) : 'No registrado';
+                  @endphp
+                  <span class="fw-semibold text-black text-truncate" title="{{ $autorBajaTexto }}">
+                    {{ $autorBajaTexto }}
+                  </span>
+                </div>
+              @endif
             </div>
           </div>
         </div>

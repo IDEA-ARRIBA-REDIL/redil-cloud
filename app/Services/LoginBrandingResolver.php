@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\LoginBrandingDefault;
 use App\Models\LoginPersonalizacion;
+use App\Models\ThemeSetting;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class LoginBrandingResolver
@@ -26,6 +28,7 @@ class LoginBrandingResolver
         ])->values()->all() ?? [];
         $interval = $defaults?->carousel_interval_ms ?? 6000;
         $custom = false;
+        $tenantHasLeftImage = false;
 
         if ($this->entitlementService->canCustomize()) {
             $personalizacion = LoginPersonalizacion::query()
@@ -33,9 +36,11 @@ class LoginBrandingResolver
                 ->first();
 
             if ($personalizacion) {
-                $leftImageUrl = $personalizacion->left_image_path
-                    ? tenant_asset($personalizacion->left_image_path)
-                    : $leftImageUrl;
+                if ($personalizacion->left_image_path) {
+                    $leftImageUrl = tenant_asset($personalizacion->left_image_path);
+                    $tenantHasLeftImage = true;
+                }
+
                 $customSlides = $personalizacion->imagenes->map(fn ($imagen): array => [
                     'url' => tenant_asset($imagen->image_path),
                     'alt' => $imagen->alt_text ?: 'Imagen de la iglesia',
@@ -47,8 +52,12 @@ class LoginBrandingResolver
                     $interval = $personalizacion->carousel_interval_ms;
                 }
 
-                $custom = (bool) $personalizacion->left_image_path || $customSlides !== [];
+                $custom = $tenantHasLeftImage || $customSlides !== [];
             }
+        }
+
+        if (! $tenantHasLeftImage && $this->hasActiveLoginBackgroundColor()) {
+            $leftImageUrl = null;
         }
 
         if ($slides === []) {
@@ -65,5 +74,22 @@ class LoginBrandingResolver
             'interval' => max(3000, min(15000, $interval)),
             'custom' => $custom,
         ];
+    }
+
+    /**
+     * Determina si el tenant tiene configurado un color activo para el fondo izquierdo del login.
+     */
+    protected function hasActiveLoginBackgroundColor(): bool
+    {
+        if (! Schema::hasTable('theme_settings')) {
+            return false;
+        }
+
+        $setting = ThemeSetting::query()
+            ->where('class', 'bg-login-left')
+            ->where('is_active', true)
+            ->first();
+
+        return $setting !== null && filled($setting->value);
     }
 }

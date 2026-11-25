@@ -22,18 +22,62 @@
 
         #mapaSedes {
             width: 100%;
-            height: 380px;
+            height: 430px;
             border-radius: 0.75rem;
             z-index: 1;
         }
 
-        .sede-popup-btn {
-            cursor: pointer;
+        /* Popup personalizado estilo tarjeta */
+        .sede-leaflet-popup .leaflet-popup-content-wrapper {
+            padding: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        }
+
+        .sede-leaflet-popup .leaflet-popup-content {
+            margin: 0;
+            min-width: 220px;
+        }
+
+        .sede-leaflet-popup .leaflet-popup-close-button {
+            color: #ffffff !important;
+            top: 6px;
+            right: 8px;
+        }
+
+        .sede-popup-header {
+            background-color: #3f28c6;
+            color: #ffffff;
+            padding: 10px 28px 10px 14px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 0.03em;
+        }
+
+        .sede-popup-body {
+            padding: 12px 14px;
+            background-color: #ffffff;
+            color: #3b3b45;
+            font-size: 0.875rem;
+        }
+
+        .selected-sede-card {
+            background-color: #f8f7ff;
+            border: 1.5px solid var(--bs-primary, #7367f0);
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
         }
 
         @media (max-width: 767.98px) {
             .formulario-tipo-next-container {
                 padding-bottom: 160px !important;
+            }
+
+            #mapaSedes {
+                height: 340px;
             }
 
             select.select2.form-select {
@@ -50,8 +94,8 @@
 
 @section('vendor-script')
     @vite(['resources/assets/vendor/libs/select2/select2.js'])
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 @endsection
 
 @section('content')
@@ -74,10 +118,10 @@
         </div>
     </nav>
 
-    <div class="pt-5 px-7 px-sm-0 formulario-tipo-next-container" style="padding-bottom: 110px;">
-        <div class="col-12 col-sm-8 offset-sm-2 col-lg-8 offset-lg-2">
+    <div class="pt-5 px-4 px-sm-0 formulario-tipo-next-container" style="padding-bottom: 110px;">
+        <div class="col-12 col-sm-10 offset-sm-1 col-lg-8 offset-lg-2">
 
-            {{-- PASO 1: Selección de Sede --}}
+            {{-- PASO 1: Selección de Sede (Switch Mapa / Selector) --}}
             <div class="step row" id="step-1">
                 <div class="p-2 col-12">
                     <div class="d-flex align-items-start p-2 mt-1">
@@ -102,18 +146,18 @@
                                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                                     <div>
                                         <h5 class="fw-semibold text-black mb-1">¿En qué sede deseas buscar tu grupo?</h5>
-                                        <p class="text-muted small mb-0">Puedes elegir la sede desde la lista tradicional o ubicándola en el mapa.</p>
+                                        <p class="text-muted small mb-0">Puedes elegir la sede ubicándola en el mapa o desde el selector tradicional.</p>
                                     </div>
 
-                                    {{-- Switch entre Lista y Mapa --}}
-                                    <div class="d-flex align-items-center bg-lighter rounded-pill px-3 py-2 border">
+                                    {{-- Switch entre Lista y Mapa (Mapa activo por defecto) --}}
+                                    <div class="d-flex align-items-center bg-lighter rounded-pill px-3 py-2 border align-self-start align-self-md-auto">
                                         <span class="small fw-semibold me-2 text-muted" id="labelModoLista">
                                             <i class="ti ti-list me-1"></i>Lista
                                         </span>
                                         <div class="form-check form-switch mb-0">
                                             <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="switchModoSede" checked>
                                         </div>
-                                        <span class="small fw-semibold ms-1" id="labelModoMapa">
+                                        <span class="small fw-semibold ms-1 text-primary" id="labelModoMapa">
                                             <i class="ti ti-map-2 me-1"></i>Mapa
                                         </span>
                                     </div>
@@ -122,14 +166,18 @@
                                 {{-- Opción A: Select tradicional --}}
                                 <div id="contenedorSelectSede" class="d-none">
                                     <div class="row">
-                                        <div class="col-12 col-md-8 mb-2">
+                                        <div class="col-12 col-md-12 mb-2">
                                             <label for="selectSede" class="form-label fw-semibold">Sede</label>
                                             <select id="selectSede" class="select2 form-select" data-placeholder="Selecciona una sede">
                                                 <option value="">Selecciona una sede</option>
                                                 @foreach ($sedes as $sede)
-                                                    <option value="{{ $sede->id }}" data-nombre="{{ $sede->nombre }}"
-                                                        data-direccion="{{ $sede->direccion }}">
-                                                        {{ $sede->nombre }} {{ $sede->direccion ? '— ' . $sede->direccion : '' }}
+                                                    @php
+                                                        $tieneGeo = !empty($sede->latitud) && !empty($sede->longitud);
+                                                    @endphp
+                                                    <option value="{{ $sede->id }}"
+                                                        data-nombre="{{ $sede->nombre }}"
+                                                        data-direccion="{{ $sede->direccion ?: ($tieneGeo ? 'Ubicación disponible en el mapa' : 'Sin geolocalización') }}">
+                                                        {{ $sede->nombre }}{{ $sede->direccion ? ' — ' . $sede->direccion : ($tieneGeo ? '' : ' — Sin geolocalización') }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -139,20 +187,41 @@
 
                                 {{-- Opción B: Mapa interactivo --}}
                                 <div id="contenedorMapaSede">
-                                    <div id="mapaSedes" class="border mb-3"></div>
-                                    <div id="infoSedeMapa" class="alert alert-primary d-none align-items-center justify-content-between mb-0" role="alert">
-                                        <div>
-                                            <i class="ti ti-map-pin me-1"></i>
-                                            Sede seleccionada en el mapa: <strong id="nombreSedeMapa"></strong>
-                                        </div>
-                                    </div>
+                                    <div id="mapaSedes" class="border mb-2"></div>
                                     @if ($sedes->whereNotNull('latitud')->whereNotNull('longitud')->isEmpty())
-                                        <div class="alert alert-warning mb-0" role="alert">
+                                        <div class="alert alert-warning mt-3 mb-0" role="alert">
                                             <i class="ti ti-alert-triangle me-1"></i>
-                                            Ninguna sede tiene coordenadas registradas actualmente. Usa el selector de lista para continuar.
+                                            Ninguna sede tiene coordenadas registradas actualmente. Cambia al modo Lista para elegir una sede.
                                         </div>
                                     @endif
                                 </div>
+
+                                {{-- Tarjeta mejorada de Sede Seleccionada con opción para deseleccionar --}}
+                                <div id="cardSedeSeleccionada" class="selected-sede-card p-3 mt-4 d-none">
+                                    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                                        <div class="d-flex align-items-center gap-3 min-w-0">
+                                            <div class="avatar avatar-md flex-shrink-0">
+                                                <span class="avatar-initial rounded-circle bg-label-primary">
+                                                    <i class="ti ti-map-pin fs-4"></i>
+                                                </span>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <span class="badge bg-label-primary rounded-pill mb-1">
+                                                    <i class="ti ti-check ti-xs me-1"></i>Sede seleccionada
+                                                </span>
+                                                <h6 id="nombreSedeSeleccionada" class="fw-bold text-black mb-0 text-truncate"></h6>
+                                                <small id="direccionSedeSeleccionada" class="text-muted d-block text-truncate"></small>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" id="btnDeseleccionarSede"
+                                            class="btn btn-sm btn-label-danger rounded-pill flex-shrink-0 align-self-start align-self-sm-center">
+                                            <i class="ti ti-x me-1"></i>
+                                            Quitar selección
+                                        </button>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -208,172 +277,25 @@
                         </div>
                     </div>
 
-                    <div class="row g-4 m-0 p-0" id="gridGrupos">
-                        @foreach ($grupos as $grupo)
-                            <div class="col-12 col-xl-4 col-md-6 grupo-card-item"
-                                data-sede-id="{{ $grupo->sede_id }}"
-                                data-nombre="{{ mb_strtolower($grupo->nombre) }}"
-                                data-direccion="{{ mb_strtolower($grupo->direccion ?? '') }}">
-                                <div class="card h-100 shadow-sm">
-                                    <img class="card-img-top object-fit-cover" style="height: 140px;"
-                                        src="{{ $grupo->portada_vinculada }}" alt="Portada {{ $grupo->nombre }}" />
-
-                                    <div class="card-header pb-2">
-                                        <h6 class="mb-0 fw-semibold text-primary lh-sm">
-                                            {{ $grupo->tipoGrupo ? $grupo->tipoGrupo->nombre : 'Grupo' }}
-                                        </h6>
-                                        <h5 class="mb-0 fw-bold text-black mt-1">{{ $grupo->nombre }}</h5>
-                                    </div>
-
-                                    <div class="card-body pt-2">
-                                        <div class="d-flex flex-row mb-3">
-                                            <i class="ti ti-brand-days-counter text-black mt-1"></i>
-                                            <div class="d-flex flex-column ms-2">
-                                                <small class="text-muted">Día y hora de reunión:</small>
-                                                <small class="fw-semibold text-black">
-                                                    {{ $grupo->dia ? Helper::obtenerDiaDeLaSemana($grupo->dia, 'corto') : 'Día no indicado' }}{{ $grupo->hora ? ', ' . \Carbon\Carbon::parse($grupo->hora)->format('g:i a') : '' }}
-                                                </small>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex flex-row mb-3">
-                                            <i class="ti ti-map-pin text-black mt-1"></i>
-                                            <div class="d-flex flex-column ms-2">
-                                                <small class="text-muted">Dirección:</small>
-                                                <small class="fw-semibold text-black">
-                                                    {{ $grupo->direccion ?: 'Dirección no registrada' }}
-                                                </small>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex flex-column">
-                                            <small class="text-muted mb-1">Encargados:</small>
-                                            @php
-                                                $encargadosDirectos = $grupo->encargadosDirectos();
-                                            @endphp
-                                            @if ($encargadosDirectos->isNotEmpty())
-                                                @foreach ($encargadosDirectos as $encargado)
-                                                    <div class="d-flex flex-row align-items-center mb-1">
-                                                        <i class="{{ $encargado->icono ?? 'ti ti-user' }} text-black me-1"
-                                                            data-bs-toggle="tooltip" data-bs-placement="top"
-                                                            title="{{ $encargado->tipo_usuario }}"></i>
-                                                        <small class="fw-semibold text-black">{{ $encargado->nombre }}</small>
-                                                    </div>
-                                                @endforeach
-                                            @else
-                                                <small class="fw-semibold text-muted">Sin encargados asignados</small>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <div class="card-footer border-top-0 pt-0 pb-4">
-                                        <button type="button"
-                                            class="btnAbrirModalSolicitud btn btn-sm rounded-pill w-100 btn-primary waves-effect waves-light py-2"
-                                            data-grupo-id="{{ $grupo->id }}"
-                                            data-grupo-nombre="{{ $grupo->nombre }}">
-                                            <i class="ti ti-send me-1"></i>
-                                            Enviar solicitud
-                                        </button>
-                                    </div>
+                    <div id="cargandoGrupos" class="col-12 d-none">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center py-5">
+                                <div class="spinner-border text-primary mb-2" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
                                 </div>
+                                <p class="text-muted small mb-0">Cargando grupos disponibles...</p>
                             </div>
-                        @endforeach
-
-                        {{-- Grupos evangelísticos de ejemplo para el prototipo cuando la sede no tiene grupos reales --}}
-                        @php
-                            $gruposEjemplo = [
-                                [
-                                    'nombre' => 'Grupo Evangelístico Luz y Vida',
-                                    'tipo' => 'Grupo Evangelístico',
-                                    'diaHora' => 'Miércoles, 7:00 pm',
-                                    'direccion' => 'Calle 24 # 68-45, Apto 302',
-                                    'encargados' => ['Carlos Andrés Gómez', 'Laura Sofía Martínez'],
-                                ],
-                                [
-                                    'nombre' => 'Célula Esperanza Viva',
-                                    'tipo' => 'Grupo Evangelístico',
-                                    'diaHora' => 'Viernes, 7:30 pm',
-                                    'direccion' => 'Carrera 70 # 48-12, Barrio Normandía',
-                                    'encargados' => ['Juan Pablo Rojas'],
-                                ],
-                                [
-                                    'nombre' => 'Casa de Paz Renuevo',
-                                    'tipo' => 'Grupo Evangelístico',
-                                    'diaHora' => 'Sábado, 5:00 pm',
-                                    'direccion' => 'Av. Boyacá # 53-20, Salón Comunal',
-                                    'encargados' => ['María Fernanda Díaz', 'Andrés Felipe Torres'],
-                                ],
-                            ];
-                            $portadaDefaultGrupo = \Illuminate\Support\Facades\Storage::disk('global_media')->url('grupos/banner-default.jpg');
-                        @endphp
-                        @foreach ($gruposEjemplo as $ejemplo)
-                            <div class="col-12 col-xl-4 col-md-6 grupo-card-item grupo-ejemplo-item d-none"
-                                data-ejemplo="1"
-                                data-nombre="{{ mb_strtolower($ejemplo['nombre']) }}"
-                                data-direccion="{{ mb_strtolower($ejemplo['direccion']) }}">
-                                <div class="card h-100 shadow-sm">
-                                    <img class="card-img-top object-fit-cover" style="height: 140px;"
-                                        src="{{ $portadaDefaultGrupo }}" alt="Portada {{ $ejemplo['nombre'] }}" />
-
-                                    <div class="card-header pb-2">
-                                        <div class="d-flex justify-content-between align-items-start gap-2">
-                                            <h6 class="mb-0 fw-semibold text-primary lh-sm">{{ $ejemplo['tipo'] }}</h6>
-                                            <span class="badge bg-label-warning rounded-pill">Ejemplo</span>
-                                        </div>
-                                        <h5 class="mb-0 fw-bold text-black mt-1">{{ $ejemplo['nombre'] }}</h5>
-                                    </div>
-
-                                    <div class="card-body pt-2">
-                                        <div class="d-flex flex-row mb-3">
-                                            <i class="ti ti-brand-days-counter text-black mt-1"></i>
-                                            <div class="d-flex flex-column ms-2">
-                                                <small class="text-muted">Día y hora de reunión:</small>
-                                                <small class="fw-semibold text-black">{{ $ejemplo['diaHora'] }}</small>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex flex-row mb-3">
-                                            <i class="ti ti-map-pin text-black mt-1"></i>
-                                            <div class="d-flex flex-column ms-2">
-                                                <small class="text-muted">Dirección:</small>
-                                                <small class="fw-semibold text-black">{{ $ejemplo['direccion'] }}</small>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex flex-column">
-                                            <small class="text-muted mb-1">Encargados:</small>
-                                            @foreach ($ejemplo['encargados'] as $nombreEncargado)
-                                                <div class="d-flex flex-row align-items-center mb-1">
-                                                    <i class="ti ti-user text-black me-1"></i>
-                                                    <small class="fw-semibold text-black">{{ $nombreEncargado }}</small>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-
-                                    <div class="card-footer border-top-0 pt-0 pb-4">
-                                        <button type="button"
-                                            class="btnAbrirModalSolicitud btn btn-sm rounded-pill w-100 btn-primary waves-effect waves-light py-2"
-                                            data-grupo-id=""
-                                            data-grupo-nombre="{{ $ejemplo['nombre'] }}"
-                                            data-grupo-tipo="{{ $ejemplo['tipo'] }}"
-                                            data-grupo-dia-hora="{{ $ejemplo['diaHora'] }}"
-                                            data-grupo-direccion="{{ $ejemplo['direccion'] }}">
-                                            <i class="ti ti-send me-1"></i>
-                                            Enviar solicitud
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
+                        </div>
                     </div>
+
+                    <div class="row g-4 m-0 p-0" id="gridGrupos"></div>
 
                     <div id="estadoVacioGrupos" class="col-12 d-none">
                         <div class="card shadow-sm">
                             <div class="card-body text-center py-5">
                                 <i class="ti ti-users-group text-muted mb-2" style="font-size: 2.5rem;"></i>
                                 <h6 class="fw-semibold text-black mb-1">No encontramos grupos disponibles</h6>
-                                <p class="text-muted small mb-0">No hay grupos activos que coincidan con la sede o búsqueda seleccionada.</p>
+                                <p class="text-muted small mb-0">No hay grupos activos que coincidan con la búsqueda.</p>
                             </div>
                         </div>
                     </div>
@@ -384,6 +306,7 @@
                         <button type="button" class="btn btn-label-secondary rounded-pill btn-outline-secondary px-7 py-2 prev-step">
                             <span class="align-middle">Volver</span>
                         </button>
+                        <span class="text-muted small my-auto d-none d-sm-block">Selecciona un grupo para enviar tu solicitud</span>
                     </div>
                 </div>
             </div>
@@ -451,11 +374,15 @@
     <script type="module">
         $(document).ready(function() {
             const sedesConCoordenadas = @json($sedesConCoordenadas);
+            const urlObtenerGrupos = "{{ route('grupo.solicitudIngreso.grupos') }}";
 
             let sedeSeleccionadaId = null;
             let sedeSeleccionadaNombre = '';
+            let sedeSeleccionadaDireccion = '';
+            let gruposCargados = [];
             let grupoSeleccionadoId = null;
-            let mapaSedes = null;
+            let grupoSeleccionadoDatos = {};
+            let actualizandoSelectSilencioso = false;
 
             const $selectSede = $('#selectSede');
 
@@ -480,28 +407,80 @@
             gestionarSelectSede();
             $(window).on('resize', gestionarSelectSede);
 
-            function actualizarSedeSeleccionada(id, nombre) {
-                sedeSeleccionadaId = id ? String(id) : null;
-                sedeSeleccionadaNombre = nombre || '';
+            let mapaSedes = null;
+            const markersPorSede = {};
+            const boundsMapa = [];
 
-                $('#btnContinuarPaso2').prop('disabled', !sedeSeleccionadaId);
+            function escapeHtml(texto) {
+                const div = document.createElement('div');
+                div.textContent = texto ?? '';
+                return div.innerHTML;
+            }
 
+            function actualizarUISeleccionSede() {
                 if (sedeSeleccionadaId) {
-                    $('#nombreSedeMapa').text(sedeSeleccionadaNombre);
-                    $('#infoSedeMapa').removeClass('d-none').addClass('d-flex');
+                    $('#btnContinuarPaso2').prop('disabled', false);
+                    $('#nombreSedeSeleccionada').text(sedeSeleccionadaNombre);
+                    $('#direccionSedeSeleccionada').text(sedeSeleccionadaDireccion || 'Sin dirección registrada');
+                    $('#cardSedeSeleccionada').removeClass('d-none');
                     $('#nombreSedeBadge').text(sedeSeleccionadaNombre);
                     $('#badgeSedeSeleccionada').removeClass('d-none');
                 } else {
-                    $('#infoSedeMapa').addClass('d-none').removeClass('d-flex');
+                    $('#btnContinuarPaso2').prop('disabled', true);
+                    $('#cardSedeSeleccionada').addClass('d-none');
                     $('#badgeSedeSeleccionada').addClass('d-none');
                 }
             }
 
-            $selectSede.on('change', function() {
-                const id = $(this).val();
-                const nombre = $(this).find('option:selected').data('nombre') || '';
-                actualizarSedeSeleccionada(id, nombre);
-            });
+            function seleccionarSede(id, nombre, direccion, opciones = { desdeMapa: false, desdeSelect: false }) {
+                if (!id) {
+                    deseleccionarSede();
+                    return;
+                }
+
+                sedeSeleccionadaId = String(id);
+                sedeSeleccionadaNombre = nombre || '';
+                sedeSeleccionadaDireccion = direccion || '';
+
+                if (!opciones.desdeSelect) {
+                    actualizandoSelectSilencioso = true;
+                    $selectSede.val(sedeSeleccionadaId).trigger('change.select2');
+                    actualizandoSelectSilencioso = false;
+                }
+
+                actualizarUISeleccionSede();
+
+                const registroMarker = markersPorSede[sedeSeleccionadaId];
+                if (mapaSedes && registroMarker) {
+                    if (!opciones.desdeMapa) {
+                        mapaSedes.flyTo([registroMarker.latitud, registroMarker.longitud], 15, {
+                            duration: 0.6
+                        });
+                    }
+                    registroMarker.marker.openPopup();
+                } else if (mapaSedes) {
+                    mapaSedes.closePopup();
+                }
+            }
+
+            function deseleccionarSede() {
+                sedeSeleccionadaId = null;
+                sedeSeleccionadaNombre = '';
+                sedeSeleccionadaDireccion = '';
+
+                actualizandoSelectSilencioso = true;
+                $selectSede.val('').trigger('change.select2');
+                actualizandoSelectSilencioso = false;
+
+                actualizarUISeleccionSede();
+
+                if (mapaSedes) {
+                    mapaSedes.closePopup();
+                    if (boundsMapa.length > 0) {
+                        mapaSedes.fitBounds(boundsMapa, { padding: [40, 40], maxZoom: 13 });
+                    }
+                }
+            }
 
             function inicializarMapaSedes() {
                 if (mapaSedes !== null) {
@@ -509,44 +488,80 @@
                     return;
                 }
 
-                mapaSedes = L.map('mapaSedes').setView([{{ $latitudInicial }}, {{ $longitudInicial }}], 12);
+                mapaSedes = L.map('mapaSedes', {
+                    zoomSnap: 0.25,
+                    zoomDelta: 0.5,
+                    wheelPxPerZoomLevel: 180,
+                    wheelDebounceTime: 80
+                }).setView([{{ $latitudInicial }}, {{ $longitudInicial }}], 12);
 
                 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(mapaSedes);
 
-                const bounds = [];
-
                 sedesConCoordenadas.forEach((sede) => {
                     const marker = L.marker([sede.latitud, sede.longitud]).addTo(mapaSedes);
-                    bounds.push([sede.latitud, sede.longitud]);
+                    boundsMapa.push([sede.latitud, sede.longitud]);
 
-                    const popupBtn = document.createElement('div');
-                    popupBtn.style.minWidth = '180px';
-                    popupBtn.innerHTML = `
-                        <strong class="d-block mb-1"></strong>
-                        <small class="text-muted d-block mb-2"></small>
-                        <button type="button" class="btn btn-xs btn-primary rounded-pill w-100 sede-popup-btn">
-                            Seleccionar esta sede
-                        </button>
+                    const popupEl = document.createElement('div');
+                    popupEl.innerHTML = `
+                        <div class="sede-popup-header"></div>
+                        <div class="sede-popup-body">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="ti ti-map-pin text-danger mt-1 flex-shrink-0"></i>
+                                <span class="sede-popup-dir"></span>
+                            </div>
+                        </div>
                     `;
-                    popupBtn.querySelector('strong').textContent = sede.nombre;
-                    popupBtn.querySelector('small').textContent = sede.direccion ?? 'Sin dirección registrada';
-                    popupBtn.querySelector('button').addEventListener('click', function() {
-                        $selectSede.val(sede.id).trigger('change');
-                        actualizarSedeSeleccionada(sede.id, sede.nombre);
-                        marker.closePopup();
+                    popupEl.querySelector('.sede-popup-header').textContent = sede.nombre;
+                    popupEl.querySelector('.sede-popup-dir').textContent = sede.direccion || 'Sin dirección registrada';
+
+                    marker.bindPopup(popupEl, {
+                        className: 'sede-leaflet-popup',
+                        maxWidth: 280
                     });
 
-                    marker.bindPopup(popupBtn);
+                    marker.on('click', function() {
+                        seleccionarSede(sede.id, sede.nombre, sede.direccion, { desdeMapa: true });
+                    });
+
+                    markersPorSede[String(sede.id)] = {
+                        marker: marker,
+                        latitud: sede.latitud,
+                        longitud: sede.longitud
+                    };
                 });
 
-                if (bounds.length > 0) {
-                    mapaSedes.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+                if (boundsMapa.length > 0) {
+                    mapaSedes.fitBounds(boundsMapa, { padding: [40, 40], maxZoom: 13 });
                 }
 
                 setTimeout(() => mapaSedes.invalidateSize(), 150);
             }
+
+            // Inicializar mapa por defecto al cargar
+            inicializarMapaSedes();
+
+            // Cambio en selector tradicional
+            $selectSede.on('change', function() {
+                if (actualizandoSelectSilencioso) return;
+
+                const id = $(this).val();
+                if (!id) {
+                    deseleccionarSede();
+                    return;
+                }
+
+                const $selected = $(this).find('option:selected');
+                const nombre = $selected.data('nombre') || '';
+                const direccion = $selected.data('direccion') || '';
+                seleccionarSede(id, nombre, direccion, { desdeSelect: true });
+            });
+
+            // Botón Quitar selección
+            $('#btnDeseleccionarSede').on('click', function() {
+                deseleccionarSede();
+            });
 
             // Switch entre Lista y Mapa
             $('#switchModoSede').on('change', function() {
@@ -555,79 +570,148 @@
                 if (usarMapa) {
                     $('#contenedorSelectSede').addClass('d-none');
                     $('#contenedorMapaSede').removeClass('d-none');
-                    $('#labelModoLista').addClass('text-muted');
-                    $('#labelModoMapa').removeClass('text-muted');
+                    $('#labelModoLista').addClass('text-muted').removeClass('text-primary');
+                    $('#labelModoMapa').removeClass('text-muted').addClass('text-primary');
                     inicializarMapaSedes();
+                    if (sedeSeleccionadaId && markersPorSede[sedeSeleccionadaId]) {
+                        const reg = markersPorSede[sedeSeleccionadaId];
+                        setTimeout(() => {
+                            mapaSedes.flyTo([reg.latitud, reg.longitud], 15, { duration: 0.5 });
+                            reg.marker.openPopup();
+                        }, 200);
+                    }
                 } else {
                     $('#contenedorMapaSede').addClass('d-none');
                     $('#contenedorSelectSede').removeClass('d-none');
-                    $('#labelModoMapa').addClass('text-muted');
-                    $('#labelModoLista').removeClass('text-muted');
+                    $('#labelModoMapa').addClass('text-muted').removeClass('text-primary');
+                    $('#labelModoLista').removeClass('text-muted').addClass('text-primary');
                 }
             });
 
-            // Inicializar el mapa por defecto al cargar la vista
-            inicializarMapaSedes();
+            function renderizarGrupos(lista) {
+                const $grid = $('#gridGrupos');
+                $grid.empty();
 
-            let grupoSeleccionadoDatos = {};
-
-            function filtrarGrupos() {
-                const texto = ($('#buscarGrupo').val() || '').trim().toLowerCase();
-                let realesEnSede = 0;
-                let visibles = 0;
-
-                // 1. Evaluar primero grupos evangelísticos reales en la sede seleccionada
-                $('.grupo-card-item:not(.grupo-ejemplo-item)').each(function() {
-                    const cardSedeId = String($(this).data('sede-id'));
-                    const nombre = String($(this).data('nombre') || '');
-                    const direccion = String($(this).data('direccion') || '');
-
-                    const coincideSede = cardSedeId === sedeSeleccionadaId;
-                    if (coincideSede) {
-                        realesEnSede++;
-                    }
-                    const coincideTexto = !texto || nombre.includes(texto) || direccion.includes(texto);
-
-                    if (coincideSede && coincideTexto) {
-                        $(this).removeClass('d-none');
-                        visibles++;
-                    } else {
-                        $(this).addClass('d-none');
-                    }
-                });
-
-                // 2. Si la sede no tiene grupos evangelísticos reales, mostrar los de ejemplo
-                if (realesEnSede === 0) {
-                    $('.grupo-ejemplo-item').each(function() {
-                        const nombre = String($(this).data('nombre') || '');
-                        const direccion = String($(this).data('direccion') || '');
-                        const coincideTexto = !texto || nombre.includes(texto) || direccion.includes(texto);
-
-                        if (coincideTexto) {
-                            $(this).removeClass('d-none');
-                            visibles++;
-                        } else {
-                            $(this).addClass('d-none');
-                        }
-                    });
-                } else {
-                    $('.grupo-ejemplo-item').addClass('d-none');
+                if (!lista.length) {
+                    $('#contadorGrupos').text('0 grupos disponibles');
+                    $('#estadoVacioGrupos').removeClass('d-none');
+                    return;
                 }
 
-                $('#contadorGrupos').text(visibles === 1 ? '1 grupo disponible' : `${visibles} grupos disponibles`);
-                $('#estadoVacioGrupos').toggleClass('d-none', visibles > 0);
+                $('#estadoVacioGrupos').addClass('d-none');
+                $('#contadorGrupos').text(lista.length === 1 ? '1 grupo disponible' : `${lista.length} grupos disponibles`);
+
+                lista.forEach((grupo) => {
+                    const encargadosHtml = (grupo.encargados && grupo.encargados.length > 0)
+                        ? grupo.encargados.map((enc) => `
+                            <div class="d-flex flex-row align-items-center mb-1">
+                                <i class="${escapeHtml(enc.icono || 'ti ti-user')} text-black me-1"></i>
+                                <small class="fw-semibold text-black">${escapeHtml(enc.nombre)}</small>
+                            </div>
+                        `).join('')
+                        : '<small class="fw-semibold text-muted">Sin encargados asignados</small>';
+
+                    const badgeEjemplo = grupo.esEjemplo
+                        ? '<span class="badge bg-label-warning rounded-pill">Ejemplo</span>'
+                        : '';
+
+                    const cardHtml = `
+                        <div class="col-12 col-xl-4 col-md-6">
+                            <div class="card h-100 shadow-sm">
+                                <img class="card-img-top object-fit-cover" style="height: 140px;"
+                                    src="${escapeHtml(grupo.portada)}" alt="Portada ${escapeHtml(grupo.nombre)}" />
+
+                                <div class="card-header pb-2">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <h6 class="mb-0 fw-semibold text-primary lh-sm">${escapeHtml(grupo.tipo)}</h6>
+                                        ${badgeEjemplo}
+                                    </div>
+                                    <h5 class="mb-0 fw-bold text-black mt-1">${escapeHtml(grupo.nombre)}</h5>
+                                </div>
+
+                                <div class="card-body pt-2">
+                                    <div class="d-flex flex-row mb-3">
+                                        <i class="ti ti-brand-days-counter text-black mt-1"></i>
+                                        <div class="d-flex flex-column ms-2">
+                                            <small class="text-muted">Día y hora de reunión:</small>
+                                            <small class="fw-semibold text-black">${escapeHtml(grupo.diaHora)}</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex flex-row mb-3">
+                                        <i class="ti ti-map-pin text-black mt-1"></i>
+                                        <div class="d-flex flex-column ms-2">
+                                            <small class="text-muted">Dirección:</small>
+                                            <small class="fw-semibold text-black">${escapeHtml(grupo.direccion)}</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex flex-column">
+                                        <small class="text-muted mb-1">Encargados:</small>
+                                        ${encargadosHtml}
+                                    </div>
+                                </div>
+
+                                <div class="card-footer border-top-0 pt-0 pb-4">
+                                    <button type="button"
+                                        class="btnAbrirModalSolicitud btn btn-sm rounded-pill w-100 btn-primary waves-effect waves-light py-2"
+                                        data-grupo-id="${grupo.id ?? ''}"
+                                        data-grupo-nombre="${escapeHtml(grupo.nombre)}"
+                                        data-grupo-tipo="${escapeHtml(grupo.tipo)}"
+                                        data-grupo-dia-hora="${escapeHtml(grupo.diaHora)}"
+                                        data-grupo-direccion="${escapeHtml(grupo.direccion)}">
+                                        <i class="ti ti-send me-1"></i>
+                                        Enviar solicitud
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    $grid.append(cardHtml);
+                });
             }
 
-            // Avanzar al Paso 2
+            function filtrarGruposLocal() {
+                const texto = ($('#buscarGrupo').val() || '').trim().toLowerCase();
+                if (!texto) {
+                    renderizarGrupos(gruposCargados);
+                    return;
+                }
+
+                const filtrados = gruposCargados.filter((g) => {
+                    return (g.nombre || '').toLowerCase().includes(texto)
+                        || (g.direccion || '').toLowerCase().includes(texto);
+                });
+                renderizarGrupos(filtrados);
+            }
+
+            // Avanzar al Paso 2 y cargar grupos de la sede seleccionada
             $('.next-step').on('click', function() {
                 if (!sedeSeleccionadaId) return;
 
                 $('#step-1').addClass('d-none');
                 $('#step-2').removeClass('d-none');
                 $('.prev-step').removeClass('d-none');
-
-                filtrarGrupos();
+                $('#buscarGrupo').val('');
+                $('#gridGrupos').empty();
+                $('#estadoVacioGrupos').addClass('d-none');
+                $('#cargandoGrupos').removeClass('d-none');
+                $('#contadorGrupos').text('');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                fetch(`${urlObtenerGrupos}?sede_id=${encodeURIComponent(sedeSeleccionadaId)}`)
+                    .then((res) => res.json())
+                    .then((data) => {
+                        gruposCargados = data.grupos || [];
+                        $('#cargandoGrupos').addClass('d-none');
+                        renderizarGrupos(gruposCargados);
+                    })
+                    .catch(() => {
+                        gruposCargados = [];
+                        $('#cargandoGrupos').addClass('d-none');
+                        renderizarGrupos([]);
+                    });
             });
 
             // Regresar al Paso 1
@@ -642,7 +726,7 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
-            $('#buscarGrupo').on('input', filtrarGrupos);
+            $('#buscarGrupo').on('input', filtrarGruposLocal);
 
             // Abrir modal de solicitud
             const modalElement = document.getElementById('modalEnviarSolicitudGrupo');

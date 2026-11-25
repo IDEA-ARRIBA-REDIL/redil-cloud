@@ -316,12 +316,19 @@ $configData = Helper::appClasses();
 
   $(document).ready(function() {
     $('#filtroOrigen').on('change', function() {
-      if ($(this).val() === 'externos') {
+      const valor = $(this).val();
+      if (valor === 'externos') {
         $('#contenedorFiltrosRegistrados').slideUp();
         $('#filtroSedes').val(null).trigger('change');
         $('#persona_id').val('');
+        $('#contenedorFiltrosExternos').slideDown();
+      } else if (valor === 'registrados') {
+        $('#contenedorFiltrosRegistrados').slideDown();
+        $('#contenedorFiltrosExternos').slideUp();
+        $('#filtroDeseaPertenecer').val('');
       } else {
         $('#contenedorFiltrosRegistrados').slideDown();
+        $('#contenedorFiltrosExternos').slideDown();
       }
     });
 
@@ -527,6 +534,9 @@ $configData = Helper::appClasses();
     <!-- Parametros de filtros activos -->
     @if(!empty($filtroOrigen))
       <input type="hidden" name="filtroOrigen" value="{{ $filtroOrigen }}">
+    @endif
+    @if(!empty($filtroDeseaPertenecer))
+      <input type="hidden" name="filtroDeseaPertenecer" value="{{ $filtroDeseaPertenecer }}">
     @endif
     @if(!empty($filtroAsignacion))
       <input type="hidden" name="filtroAsignacion" value="{{ $filtroAsignacion }}">
@@ -742,10 +752,11 @@ $configData = Helper::appClasses();
               @php
                 $tieneUbicacion = !empty($peticion->ciudad) || !empty($peticion->pais);
                 $tieneSede = !empty($peticion->user_id) && !empty($peticion->nombreSede);
+                $esExterna = empty($peticion->user_id);
               @endphp
 
               @if($tieneUbicacion)
-                <div class="{{ $tieneSede ? 'col-6' : 'col-12' }} d-flex flex-column mt-2">
+                <div class="{{ ($tieneSede || $esExterna) ? 'col-6' : 'col-12' }} d-flex flex-column mt-2">
                   <small class="text-black">Ubicación</small>
                   <small class="fw-semibold text-black text-truncate" title="@if($peticion->ciudad){{ $peticion->ciudad }}@endif{{ $peticion->ciudad && $peticion->pais ? ', ' : '' }}{{ $peticion->pais ? $peticion->pais->nombre : '' }}">
                     <i class="ti ti-map-pin me-1 text-muted"></i>
@@ -759,6 +770,15 @@ $configData = Helper::appClasses();
                   <small class="text-black">Sede</small>
                   <small class="fw-semibold text-black text-truncate" title="{{ $peticion->nombreSede }}">
                     <i class="ti ti-building me-1 text-muted"></i>{{ $peticion->nombreSede }}
+                  </small>
+                </div>
+              @endif
+
+              @if($esExterna)
+                <div class="{{ $tieneUbicacion ? 'col-6' : 'col-12' }} d-flex flex-column mt-2">
+                  <small class="text-black">¿Desea pertenecer?</small>
+                  <small class="fw-semibold text-black">
+                    <i class="ti ti-building-church me-1 text-muted"></i>{{ $peticion->desea_pertenecer_iglesia ? 'Sí' : 'No' }}
                   </small>
                 </div>
               @endif
@@ -919,6 +939,18 @@ $configData = Helper::appClasses();
                   'obligatorio' => false,
                   'usuarioSeleccionadoId' => $persona ? $persona->id : ''
                 ])
+              </div>
+
+              <!-- Filtros exclusivos de peticiones externas -->
+              <div id="contenedorFiltrosExternos" class="col-12" style="display: {{ $filtroOrigen === 'registrados' ? 'none' : 'block' }};">
+                <div class="col-12 mb-3">
+                  <label class="form-label" for="filtroDeseaPertenecer">¿Desea pertenecer a la iglesia?</label>
+                  <select id="filtroDeseaPertenecer" name="filtroDeseaPertenecer" class="form-select">
+                    <option value="" {{ empty($filtroDeseaPertenecer) ? 'selected' : '' }}>Todas</option>
+                    <option value="si" {{ ($filtroDeseaPertenecer ?? '') === 'si' ? 'selected' : '' }}>Sí</option>
+                    <option value="no" {{ ($filtroDeseaPertenecer ?? '') === 'no' ? 'selected' : '' }}>No</option>
+                  </select>
+                </div>
               </div>
 
               <!-- Por estado de asignación -->

@@ -2,24 +2,28 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use App\Models\Post;
 use App\Models\Configuracion;
+use App\Models\Post;
 use Livewire\Attributes\Renderless;
+use Livewire\Component;
 
 class NavbarPostsStatus extends Component
 {
     public $posts = [];
+
     public $configuracion;
+
     public $perPage = 5;
+
     public $hasMore = true;
+
     public $cargandoMas = false;
 
     protected $listeners = ['loadMoreNavbarPosts' => 'loadMore'];
 
     public function mount()
     {
-        $this->configuracion = Configuracion::first() ?? new Configuracion();
+        $this->configuracion = Configuracion::first() ?? new Configuracion;
         $this->loadInitialPosts();
     }
 
@@ -32,11 +36,13 @@ class NavbarPostsStatus extends Component
 
     public function loadMore()
     {
-        if (!$this->hasMore) return;
+        if (! $this->hasMore) {
+            return;
+        }
 
         $this->cargandoMas = true;
         $skip = $this->posts->count();
-        
+
         $nuevosPosts = $this->queryPosts()
             ->skip($skip)
             ->take($this->perPage)
@@ -45,15 +51,20 @@ class NavbarPostsStatus extends Component
         if ($nuevosPosts->isEmpty()) {
             $this->hasMore = false;
         } else {
-            // Unir a la colección existente
-            $this->posts = $this->posts->concat($nuevosPosts);
             if ($nuevosPosts->count() < $this->perPage) {
                 $this->hasMore = false;
             }
+
+            // Evitar duplicados por ID y unir a la colección existente
+            $idsExistentes = $this->posts->pluck('id')->all();
+            $nuevosFiltrados = $nuevosPosts->reject(fn ($post) => in_array($post->id, $idsExistentes));
+
+            $this->posts = $this->posts->concat($nuevosFiltrados);
+            $this->posts->loadMissing(['user', 'likes']);
         }
-        
+
         $this->cargandoMas = false;
-        
+
         // Despachar evento para actualizar Swiper
         $this->dispatch('navbar-posts-loaded');
     }
@@ -61,7 +72,7 @@ class NavbarPostsStatus extends Component
     #[Renderless]
     public function toggleLike($postId)
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return;
         }
 
@@ -76,17 +87,18 @@ class NavbarPostsStatus extends Component
         // Misma lógica que el Dashboard/PostsWidget
         return Post::with('user', 'likes')
             ->forUser(auth()->user())
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->where('visualizar_siempre', true)
-                  ->orWhere(function($q2) {
-                      $q2->whereDate('fecha_inicio', '<=', now())
-                         ->where(function($q3) {
-                             $q3->whereNull('fecha_fin')
-                                ->orWhereDate('fecha_fin', '>=', now());
-                         });
-                  });
+                    ->orWhere(function ($q2) {
+                        $q2->whereDate('fecha_inicio', '<=', now())
+                            ->where(function ($q3) {
+                                $q3->whereNull('fecha_fin')
+                                    ->orWhereDate('fecha_fin', '>=', now());
+                            });
+                    });
             })
-            ->orderBy('created_at', 'desc');
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc');
     }
 
     public function render()

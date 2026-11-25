@@ -28,7 +28,7 @@ class HorarioMateriaPeriodo extends Model
         'materia_periodo_id',
         'horario_base_id',
         'habilitado',             // Si este horario específico está activo o no
-        'fecha_inicio_habilitado',// Fecha desde la cual está habilitado
+        'fecha_inicio_habilitado', // Fecha desde la cual está habilitado
         'fecha_fin_habilitado',   // Fecha hasta la cual está habilitado
         'cupos_disponibles',      // Podrías añadir un campo para gestionar cupos si es necesario
         // Otros campos específicos que puedas necesitar para esta instancia de horario
@@ -76,15 +76,15 @@ class HorarioMateriaPeriodo extends Model
      * Los maestros asignados para impartir clase en este horario específico.
      * Un horario puede tener varios maestros (ej. titular, auxiliar).
      */
-   public function maestros(): BelongsToMany
-{
-    return $this->belongsToMany(
-        Maestro::class,
-        'horario_materia_periodo_maestro', // Nombre de la tabla pivote
-        'horario_materia_periodo_id',      // Clave foránea de ESTE modelo (HorarioMateriaPeriodo) en la tabla pivote
-        'maestro_id'                       // Clave foránea del OTRO modelo (Maestro) en la tabla pivote
-    )->withTimestamps();
-}
+    public function maestros(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Maestro::class,
+            'horario_materia_periodo_maestro', // Nombre de la tabla pivote
+            'horario_materia_periodo_id',      // Clave foránea de ESTE modelo (HorarioMateriaPeriodo) en la tabla pivote
+            'maestro_id'                       // Clave foránea del OTRO modelo (Maestro) en la tabla pivote
+        )->withTimestamps();
+    }
 
     public function instanciasMatriculaAlumnos(): HasMany
     {
@@ -105,7 +105,6 @@ class HorarioMateriaPeriodo extends Model
         // Asumiendo que la FK en 'item_corte_materia_periodo' que vincula al horario es 'horario_materia_periodo_id'
         return $this->hasMany(ItemCorteMateriaPeriodo::class, 'horario_materia_periodo_id');
     }
-
 
     // --------------------------------------------------------------------------------
     // ACCESORES Y MÉTODOS AUXILIARES (Opcional, pero útil)
@@ -128,6 +127,7 @@ class HorarioMateriaPeriodo extends Model
             // }
             return $this->horarioBase->capacidad; // Accede a la capacidad normal del horario base
         }
+
         return null;
     }
 
@@ -141,6 +141,7 @@ class HorarioMateriaPeriodo extends Model
         if ($this->horarioBase && $this->horarioBase->aula && $this->horarioBase->aula->sede) {
             return $this->horarioBase->aula->sede;
         }
+
         return null;
     }
 
@@ -158,17 +159,18 @@ class HorarioMateriaPeriodo extends Model
             if ($horario->horarioBase && $horario->horarioBase->aula && $horario->horarioBase->aula->sede) {
                 return $horario->horarioBase->aula->sede;
             }
+
             return null;
         })
-        ->filter()
-        ->unique('id')
-        ->values();
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 
     public function matriculasDeAlumnos(): HasMany
-{
-    return $this->hasMany(Matricula::class, 'horario_materia_periodo_id');
-}
+    {
+        return $this->hasMany(Matricula::class, 'horario_materia_periodo_id');
+    }
 
     /**
      * Los usuarios (alumnos) que están matriculados en este horario específico.
@@ -176,12 +178,12 @@ class HorarioMateriaPeriodo extends Model
     public function alumnosMatriculados(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'matriculas', 'horario_materia_periodo_id', 'user_id')
-                    ->withTimestamps()
-                    ->withPivot(['id', 'periodo_id', 'pago_id', 'fecha_matricula', 'estado_matricula', 'valor_matricula', 'referencia_pago', 'valor_pagado', 'fecha_pago', 'metodo_pago'])
-                    ->as('detalles_matricula');
+            ->withTimestamps()
+            ->withPivot(['id', 'periodo_id', 'pago_id', 'fecha_matricula', 'estado_matricula', 'valor_matricula', 'referencia_pago', 'valor_pagado', 'fecha_pago', 'metodo_pago'])
+            ->as('detalles_matricula');
     }
 
- public function reportesAsistencia(): HasMany
+    public function reportesAsistencia(): HasMany
     {
         //               NOMBRE DEL MODELO CAMBIADO AQUÍ 👇
         return $this->hasMany(ReporteAsistenciaClase::class, 'horario_materia_periodo_id');
@@ -193,4 +195,86 @@ class HorarioMateriaPeriodo extends Model
         return $this->reportesAsistencia()->where('alumno_user_id', $alumnoUserId)->get();
     }
 
+    /**
+     * Obtiene el nombre de los maestros realmente asignados a este horario (nunca el usuario logueado).
+     */
+    public function nombreMaestroAsignado(): string
+    {
+        if (! $this->relationLoaded('maestros')) {
+            $this->load('maestros.user');
+        } else {
+            $this->maestros->loadMissing('user');
+        }
+
+        $nombres = $this->maestros
+            ->map(function (Maestro $maestro): string {
+                $usuario = $maestro->user;
+                if (! $usuario) {
+                    return '';
+                }
+
+                $nombreFormateado = trim((string) preg_replace('/\s+/u', ' ', (string) $usuario->nombre(3)));
+                if ($nombreFormateado !== '') {
+                    return $nombreFormateado;
+                }
+
+                return trim((string) ($usuario->name ?? ''));
+            })
+            ->filter(fn (string $nombre): bool => $nombre !== '')
+            ->unique()
+            ->values();
+
+        if ($nombres->isEmpty()) {
+            return 'Sin asignar';
+        }
+
+        return $nombres->implode(', ');
+    }
+
+    /**
+     * Devuelve el día y franja horaria formateados para encabezados de clase.
+     */
+    public function descripcionHorario(): string
+    {
+        if (! $this->relationLoaded('horarioBase')) {
+            $this->load(['horarioBase' => fn ($query) => $query->withTrashed()]);
+        }
+
+        $horarioBase = $this->horarioBase;
+        if (! $horarioBase) {
+            return 'Horario no definido';
+        }
+
+        $dia = trim((string) $horarioBase->dia_semana);
+        $inicio = $horarioBase->hora_inicio_formato;
+        $fin = $horarioBase->hora_fin_formato;
+
+        if ($inicio && $fin) {
+            return "{$dia} {$inicio} - {$fin}";
+        }
+
+        if ($inicio) {
+            return "{$dia} {$inicio}";
+        }
+
+        return $dia !== '' ? $dia : 'Horario no definido';
+    }
+
+    /**
+     * Construye el texto estándar de encabezado de clase: Periodo, Maestro asignado y Horario.
+     */
+    public function resumenEncabezadoClase(): string
+    {
+        if (! $this->relationLoaded('materiaPeriodo')) {
+            $this->load('materiaPeriodo.periodo');
+        } elseif ($this->materiaPeriodo && ! $this->materiaPeriodo->relationLoaded('periodo')) {
+            $this->materiaPeriodo->load('periodo');
+        }
+
+        $nombrePeriodo = $this->materiaPeriodo?->periodo?->nombre ?? 'Periodo no disponible';
+        $nombreMaestro = $this->nombreMaestroAsignado();
+        $horarioTexto = $this->descripcionHorario();
+
+        return "Periodo: {$nombrePeriodo} | Maestro: {$nombreMaestro} | Horario: {$horarioTexto}";
+    }
 }

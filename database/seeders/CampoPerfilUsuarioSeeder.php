@@ -96,6 +96,14 @@ class CampoPerfilUsuarioSeeder extends Seeder
         ]);
         $campo->roles()->attach(1, ['requerido' => true]);
 
+        $campoCiudad = CampoPerfilUsuario::firstOrCreate([
+            'nombre' => 'Ciudad',
+            'nombre_bd' => 'municipio_id',
+            'placeholder' => 'Busca aquí la ciudad',
+            'seccion' => 1,
+        ]);
+        $campoCiudad->roles()->attach(1, ['requerido' => false]);
+
         $campo = CampoPerfilUsuario::firstOrCreate([
             'nombre' => '¿Qué vivienda tienes?',
             'nombre_bd' => 'tipo_vivienda_id',

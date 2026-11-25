@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Str;
 
 // Ya no necesitas BelongsToMany para los cortes aquí
 
@@ -44,7 +46,7 @@ class MateriaPeriodo extends Model
     // --- Relaciones existentes ---
     public function materia(): BelongsTo
     {
-        return $this->belongsTo(Materia::class);
+        return $this->belongsTo(Materia::class)->withTrashed();
     }
 
     public function periodo(): BelongsTo
@@ -132,5 +134,25 @@ class MateriaPeriodo extends Model
             ->where('alumno_user_id', $alumnoUserId)
             ->where('asistio', false)
             ->count();
+    }
+
+    /**
+     * Obtiene la descripción en texto plano, sin etiquetas HTML y truncada al límite indicado.
+     */
+    public function descripcionResumen(int $limite = 20): ?string
+    {
+        if (! filled($this->descripcion)) {
+            return null;
+        }
+
+        $textoConEspacios = (string) preg_replace('/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/i', ' ', $this->descripcion);
+        $textoPlano = html_entity_decode(strip_tags($textoConEspacios), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $textoLimpio = trim((string) preg_replace('/\s+/u', ' ', $textoPlano));
+
+        if ($textoLimpio === '') {
+            return null;
+        }
+
+        return Str::limit($textoLimpio, $limite);
     }
 }

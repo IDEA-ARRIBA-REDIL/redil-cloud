@@ -1,0 +1,513 @@
+[
+  {
+    "version_uri": "rv1960",
+    "libro_nombre": "Juan",
+    "cita_referencia": "Juan 3:16",
+    "texto_versiculo": "[{\"versiculos\":[{\"texto\":\"Porque de tal manera am\\u00f3 Dios al mundo, que ha dado a su Hijo unig\\u00e9nito, para que todo aquel que en \\u00e9l cree, no se pierda, mas tenga vida eterna.\",\"numero\":\"16\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "rv1960",
+    "libro_nombre": "Filipenses",
+    "cita_referencia": "Filipenses 4:13",
+    "texto_versiculo": "[{\"versiculos\":[{\"texto\":\"Todo lo puedo en Cristo que me fortalece.\",\"numero\":\"13\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "rv1960",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "Salmos 23:1",
+    "texto_versiculo": "[{\"versiculos\":[{\"texto\":\"Jehov\\u00e1 es mi pastor; nada me faltar\\u00e1.\",\"numero\":\"1\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Nueva Traducción Viviente",
+    "libro_nombre": "Números",
+    "cita_referencia": "NM 1: 1 (NTV)",
+    "texto_versiculo": "[{\"libro\":\"N\\u00fameros\",\"capitulo\":1,\"version\":\"Nueva Traducci\\u00f3n Viviente\",\"cita\":\"NM 1: 1 (NTV)\",\"cita_larga\":\"N\\u00fameros 1: 1 (NTV)\",\"versiculos\":[{\"numero\":1,\"texto\":\"Un a\\u00f1o despu\\u00e9s de la salida de Israel de Egipto, el Se\\u00f1or le habl\\u00f3 a Mois\\u00e9s en el tabern\\u00e1culo en el desierto de Sina\\u00ed. El primer d\\u00eda del segundo mes de ese a\\u00f1o le dijo:\"}]}]",
+    "url_video_reflexion": "https://www.youtube.com/watch?v=4thStWhovuw"
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Timoteo",
+    "cita_referencia": "1TI 6: 11 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Timoteo\",\"capitulo\":6,\"version\":\"Reina-Valera 1909\",\"cita\":\"1TI 6: 11 (RVR1909)\",\"cita_larga\":\"1 Timoteo 6: 11 (RVR1909)\",\"versiculos\":[{\"numero\":11,\"texto\":\"Mas t\\u00fa, oh hombre de Dios, huye de estas cosas, y sigue la justicia, la piedad, la fe, la caridad, la paciencia, la mansedumbre.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Timoteo",
+    "cita_referencia": "1TI 4: 12 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Timoteo\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"1TI 4: 12 (RVR1909)\",\"cita_larga\":\"1 Timoteo 4: 12 (RVR1909)\",\"versiculos\":[{\"numero\":12,\"texto\":\"Ninguno tenga en poco tu juventud; pero s\\u00e9 ejemplo de los fieles en palabra, en conversaci\\u00f3n, en caridad, en esp\\u00edritu, en fe, en limpieza.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Romanos",
+    "cita_referencia": "RO 12: 2 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Romanos\",\"capitulo\":12,\"version\":\"Reina-Valera 1909\",\"cita\":\"RO 12: 2 (RVR1909)\",\"cita_larga\":\"Romanos 12: 2 (RVR1909)\",\"versiculos\":[{\"numero\":2,\"texto\":\"Y no os conform\\u00e9is \\u00e1 este siglo; mas reformaos por la renovaci\\u00f3n de vuestro entendimiento, para que experiment\\u00e9is cu\\u00e1l sea la buena voluntad de Dios, agradable y perfecta.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 112: 2 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":112,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 112: 2 (RVR1909)\",\"cita_larga\":\"Salmos 112: 2 (RVR1909)\",\"versiculos\":[{\"numero\":2,\"texto\":\"Su simiente ser\\u00e1 poderosa en la tierra: la generaci\\u00f3n de los rectos ser\\u00e1 bendita.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Juan",
+    "cita_referencia": "JN 15: 5 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Juan\",\"capitulo\":15,\"version\":\"Reina-Valera 1909\",\"cita\":\"JN 15: 5 (RVR1909)\",\"cita_larga\":\"Juan 15: 5 (RVR1909)\",\"versiculos\":[{\"numero\":5,\"texto\":\"Yo soy la vid, vosotros los p\\u00e1mpanos: el que est\\u00e1 en m\\u00ed, y yo en \\u00e9l, \\u00e9ste lleva mucho fruto; porque sin m\\u00ed nada pod\\u00e9is hacer.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1960",
+    "libro_nombre": "Gálatas",
+    "cita_referencia": "GA 6: 9 (RVR1960)",
+    "texto_versiculo": "[{\"libro\":\"G\\u00e1latas\",\"capitulo\":\"6\",\"version\":\"Reina-Valera 1960\",\"cita\":\"GA 6: 9 (RVR1960)\",\"cita_larga\":\"G\\u00e1latas 6: 9 (RVR1960)\",\"versiculos\":[{\"numero\":9,\"texto\":\"No nos cansemos, pues, de hacer bien; porque a su tiempo segaremos, si no desmayamos.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 34: 18 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":34,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 34: 18 (RVR1909)\",\"cita_larga\":\"Salmos 34: 18 (RVR1909)\",\"versiculos\":[{\"numero\":18,\"texto\":\"Cercano est\\u00e1 Jehov\\u00e1 \\u00e1 los quebrantados de coraz\\u00f3n; y salvar\\u00e1 \\u00e1 los contritos de esp\\u00edritu.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "2 Corintios",
+    "cita_referencia": "2CO 9: 6 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"2 Corintios\",\"capitulo\":9,\"version\":\"Reina-Valera 1909\",\"cita\":\"2CO 9: 6 (RVR1909)\",\"cita_larga\":\"2 Corintios 9: 6 (RVR1909)\",\"versiculos\":[{\"numero\":6,\"texto\":\"Esto empero [digo]: El que siembra escasamente, tambi\\u00e9n segar\\u00e1 escasamente; y el que siembra en bendiciones, en bendiciones tambi\\u00e9n segar\\u00e1.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Mateo",
+    "cita_referencia": "MT 17: 20 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Mateo\",\"capitulo\":17,\"version\":\"Reina-Valera 1909\",\"cita\":\"MT 17: 20 (RVR1909)\",\"cita_larga\":\"Mateo 17: 20 (RVR1909)\",\"versiculos\":[{\"numero\":20,\"texto\":\"Y Jes\\u00fas les dijo: Por vuestra incredulidad; porque de cierto os digo, que si tuviereis fe como un grano de mostaza, dir\\u00e9is \\u00e1 este monte: P\\u00e1sate de aqu\\u00ed all\\u00e1: y se pasar\\u00e1: y nada os ser\\u00e1 imposible.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Rut",
+    "cita_referencia": "RT 3: 11 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Rut\",\"capitulo\":3,\"version\":\"Reina-Valera 1909\",\"cita\":\"RT 3: 11 (RVR1909)\",\"cita_larga\":\"Rut 3: 11 (RVR1909)\",\"versiculos\":[{\"numero\":11,\"texto\":\"Ahora pues, no temas, hija m\\u00eda: yo har\\u00e9 contigo lo que t\\u00fa dijeres, pues que toda la puerta de mi pueblo sabe que eres mujer virtuosa.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Cantares",
+    "cita_referencia": "CNT 4: 7 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Cantares\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"CNT 4: 7 (RVR1909)\",\"cita_larga\":\"Cantares 4: 7 (RVR1909)\",\"versiculos\":[{\"numero\":7,\"texto\":\"Toda t\\u00fa eres hermosa, amiga m\\u00eda, y en ti no hay mancha.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Proverbios",
+    "cita_referencia": "PR 31: 25 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Proverbios\",\"capitulo\":31,\"version\":\"Reina-Valera 1909\",\"cita\":\"PR 31: 25 (RVR1909)\",\"cita_larga\":\"Proverbios 31: 25 (RVR1909)\",\"versiculos\":[{\"numero\":25,\"texto\":\"Fortaleza y honor son su vestidura; y en el d\\u00eda postrero reir\\u00e1.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Proverbios",
+    "cita_referencia": "PR 31: 28 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Proverbios\",\"capitulo\":31,\"version\":\"Reina-Valera 1909\",\"cita\":\"PR 31: 28 (RVR1909)\",\"cita_larga\":\"Proverbios 31: 28 (RVR1909)\",\"versiculos\":[{\"numero\":28,\"texto\":\"Levant\\u00e1ronse sus hijos, y llam\\u00e1ronla bienaventurada; y su marido tambi\\u00e9n la alab\\u00f3.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Marcos",
+    "cita_referencia": "MR 5: 34 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Marcos\",\"capitulo\":5,\"version\":\"Reina-Valera 1909\",\"cita\":\"MR 5: 34 (RVR1909)\",\"cita_larga\":\"Marcos 5: 34 (RVR1909)\",\"versiculos\":[{\"numero\":34,\"texto\":\"Y \\u00e9l le dijo: Hija, tu fe te ha hecho salva: ve en paz, y queda sana de tu azote.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Juan",
+    "cita_referencia": "JN 8: 10 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Juan\",\"capitulo\":8,\"version\":\"Reina-Valera 1909\",\"cita\":\"JN 8: 10 (RVR1909)\",\"cita_larga\":\"Juan 8: 10 (RVR1909)\",\"versiculos\":[{\"numero\":10,\"texto\":\"Y enderez\\u00e1ndose Jes\\u00fas, y no viendo \\u00e1 nadie m\\u00e1s que \\u00e1 la mujer, d\\u00edjole: \\u00bfMujer, d\\u00f3nde est\\u00e1n los que te acusaban? \\u00bfNinguno te ha condenado?\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Josué",
+    "cita_referencia": "JOS 1: 9 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Josu\\u00e9\",\"capitulo\":1,\"version\":\"Reina-Valera 1909\",\"cita\":\"JOS 1: 9 (RVR1909)\",\"cita_larga\":\"Josu\\u00e9 1: 9 (RVR1909)\",\"versiculos\":[{\"numero\":9,\"texto\":\"Mira que te mando que te esfuerces y seas valiente: no temas ni desmayes, porque Jehov\\u00e1 tu Dios ser\\u00e1 contigo en donde quiera que fueres.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Filipenses",
+    "cita_referencia": "FIL 4: 13 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Filipenses\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"FIL 4: 13 (RVR1909)\",\"cita_larga\":\"Filipenses 4: 13 (RVR1909)\",\"versiculos\":[{\"numero\":13,\"texto\":\"Todo lo puedo en Cristo que me fortalece.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Samuel",
+    "cita_referencia": "1S 16: 7 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Samuel\",\"capitulo\":16,\"version\":\"Reina-Valera 1909\",\"cita\":\"1S 16: 7 (RVR1909)\",\"cita_larga\":\"1 Samuel 16: 7 (RVR1909)\",\"versiculos\":[{\"numero\":7,\"texto\":\"Y Jehov\\u00e1 respondi\\u00f3 \\u00e1 Samuel: No mires \\u00e1 su parecer, ni \\u00e1 lo grande de su estatura, porque yo lo desecho; porque [Jehov\\u00e1 mira] no lo que el hombre mira; pues que el hombre mira [lo que est\\u00e1] delante de sus ojos, mas Jehov\\u00e1 mira el coraz\\u00f3n.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Mateo",
+    "cita_referencia": "MT 11: 28 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Mateo\",\"capitulo\":11,\"version\":\"Reina-Valera 1909\",\"cita\":\"MT 11: 28 (RVR1909)\",\"cita_larga\":\"Mateo 11: 28 (RVR1909)\",\"versiculos\":[{\"numero\":28,\"texto\":\"Venid \\u00e1 m\\u00ed todos los que est\\u00e1is trabajados y cargados, que yo os har\\u00e9 descansar.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 126: 5 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":126,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 126: 5 (RVR1909)\",\"cita_larga\":\"Salmos 126: 5 (RVR1909)\",\"versiculos\":[{\"numero\":5,\"texto\":\"Los que sembraron con l\\u00e1grimas, con regocijo segar\\u00e1n.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Isaías",
+    "cita_referencia": "IS 61: 11 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Isa\\u00edas\",\"capitulo\":61,\"version\":\"Reina-Valera 1909\",\"cita\":\"IS 61: 11 (RVR1909)\",\"cita_larga\":\"Isa\\u00edas 61: 11 (RVR1909)\",\"versiculos\":[{\"numero\":11,\"texto\":\"Porque como la tierra produce su renuevo, y como el huerto hace brotar su simiente, as\\u00ed el Se\\u00f1or Jehov\\u00e1 har\\u00e1 brotar justicia y alabanza delante de todas las gentes.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 112: 6 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":112,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 112: 6 (RVR1909)\",\"cita_larga\":\"Salmos 112: 6 (RVR1909)\",\"versiculos\":[{\"numero\":6,\"texto\":\"Por lo cual no resbalar\\u00e1 para siempre: en memoria eterna ser\\u00e1 el justo.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Isaías",
+    "cita_referencia": "IS 41: 10 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Isa\\u00edas\",\"capitulo\":41,\"version\":\"Reina-Valera 1909\",\"cita\":\"IS 41: 10 (RVR1909)\",\"cita_larga\":\"Isa\\u00edas 41: 10 (RVR1909)\",\"versiculos\":[{\"numero\":10,\"texto\":\"No temas, que yo soy contigo; no desmayes, que yo soy tu Dios que te esfuerzo: siempre te ayudar\\u00e9, siempre te sustentar\\u00e9 con la diestra de mi justicia.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Santiago",
+    "cita_referencia": "STG 1: 22 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Santiago\",\"capitulo\":1,\"version\":\"Reina-Valera 1909\",\"cita\":\"STG 1: 22 (RVR1909)\",\"cita_larga\":\"Santiago 1: 22 (RVR1909)\",\"versiculos\":[{\"numero\":22,\"texto\":\"Mas sed hacedores de la palabra, y no tan solamente oidores, enga\\u00f1\\u00e1ndoos \\u00e1 vosotros mismos.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 23: 1 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":23,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 23: 1 (RVR1909)\",\"cita_larga\":\"Salmos 23: 1 (RVR1909)\",\"versiculos\":[{\"numero\":1,\"texto\":\"Salmo de David. JEHOV\\u00c1 es mi pastor; nada me faltar\\u00e1.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1960",
+    "libro_nombre": "Proverbios",
+    "cita_referencia": "PR 16: 9 (RVR1960)",
+    "texto_versiculo": "[{\"libro\":\"Proverbios\",\"capitulo\":\"16\",\"version\":\"Reina-Valera 1960\",\"cita\":\"PR 16: 9 (RVR1960)\",\"cita_larga\":\"Proverbios 16: 9 (RVR1960)\",\"versiculos\":[{\"numero\":9,\"texto\":\"El coraz\\u00f3n del hombre piensa su camino; Mas Jehov\\u00e1 endereza sus pasos.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Juan",
+    "cita_referencia": "JN 14: 6 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Juan\",\"capitulo\":14,\"version\":\"Reina-Valera 1909\",\"cita\":\"JN 14: 6 (RVR1909)\",\"cita_larga\":\"Juan 14: 6 (RVR1909)\",\"versiculos\":[{\"numero\":6,\"texto\":\"Jes\\u00fas le dice: Yo soy el camino, y la verdad, y la vida: nadie viene al Padre, sino por m\\u00ed.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Proverbios",
+    "cita_referencia": "PR 15: 30 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Proverbios\",\"capitulo\":15,\"version\":\"Reina-Valera 1909\",\"cita\":\"PR 15: 30 (RVR1909)\",\"cita_larga\":\"Proverbios 15: 30 (RVR1909)\",\"versiculos\":[{\"numero\":30,\"texto\":\"La luz de los ojos alegra el coraz\\u00f3n; y la buena fama engorda los huesos.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Gálatas",
+    "cita_referencia": "GA 6: 2 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"G\\u00e1latas\",\"capitulo\":6,\"version\":\"Reina-Valera 1909\",\"cita\":\"GA 6: 2 (RVR1909)\",\"cita_larga\":\"G\\u00e1latas 6: 2 (RVR1909)\",\"versiculos\":[{\"numero\":2,\"texto\":\"Sobrellevad los unos las cargas de los otros; y cumplid as\\u00ed la ley de Cristo.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Mateo",
+    "cita_referencia": "MT 5: 14 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Mateo\",\"capitulo\":5,\"version\":\"Reina-Valera 1909\",\"cita\":\"MT 5: 14 (RVR1909)\",\"cita_larga\":\"Mateo 5: 14 (RVR1909)\",\"versiculos\":[{\"numero\":14,\"texto\":\"Vosotros sois la luz del mundo: una ciudad asentada sobre un monte no se puede esconder.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Eclesiastés",
+    "cita_referencia": "EC 4: 9 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Eclesiast\\u00e9s\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"EC 4: 9 (RVR1909)\",\"cita_larga\":\"Eclesiast\\u00e9s 4: 9 (RVR1909)\",\"versiculos\":[{\"numero\":9,\"texto\":\"Mejores son dos que uno; porque tienen mejor paga de su trabajo.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Lucas",
+    "cita_referencia": "LC 15: 4-5 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Lucas\",\"capitulo\":15,\"version\":\"Reina-Valera 1909\",\"cita\":\"LC 15: 4-5 (RVR1909)\",\"cita_larga\":\"Lucas 15: 4-5 (RVR1909)\",\"versiculos\":[{\"numero\":4,\"texto\":\"\\u00bfQu\\u00e9 hombre de vosotros, teniendo cien ovejas, si perdiere una de ellas, no deja las noventa y nueve en el desierto, y va \\u00e1 la que se perdi\\u00f3, hasta que la halle?\"},{\"numero\":5,\"texto\":\"Y hallada, la pone sobre sus hombros gozoso;\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Proverbios",
+    "cita_referencia": "PR 18: 24 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Proverbios\",\"capitulo\":18,\"version\":\"Reina-Valera 1909\",\"cita\":\"PR 18: 24 (RVR1909)\",\"cita_larga\":\"Proverbios 18: 24 (RVR1909)\",\"versiculos\":[{\"numero\":24,\"texto\":\"El hombre [que tiene] amigos, ha de mostrarse amigo: y amigo hay m\\u00e1s conjunto que el hermano.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Efesios",
+    "cita_referencia": "EF 4: 32 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Efesios\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"EF 4: 32 (RVR1909)\",\"cita_larga\":\"Efesios 4: 32 (RVR1909)\",\"versiculos\":[{\"numero\":32,\"texto\":\"Antes sed los unos con los otros benignos, misericordiosos, perdon\\u00e1ndoos los unos \\u00e1 los otros, como tambi\\u00e9n Dios os perdon\\u00f3 en Cristo.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Proverbios",
+    "cita_referencia": "PR 17: 9 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Proverbios\",\"capitulo\":17,\"version\":\"Reina-Valera 1909\",\"cita\":\"PR 17: 9 (RVR1909)\",\"cita_larga\":\"Proverbios 17: 9 (RVR1909)\",\"versiculos\":[{\"numero\":9,\"texto\":\"El que cubre la prevaricaci\\u00f3n, busca amistad: mas el que reitera la palabra, aparta al amigo.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Proverbios",
+    "cita_referencia": "PR 22: 6 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Proverbios\",\"capitulo\":22,\"version\":\"Reina-Valera 1909\",\"cita\":\"PR 22: 6 (RVR1909)\",\"cita_larga\":\"Proverbios 22: 6 (RVR1909)\",\"versiculos\":[{\"numero\":6,\"texto\":\"Instruye al ni\\u00f1o en su carrera: aun cuando fuere viejo no se apartar\\u00e1 de ella.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Romanos",
+    "cita_referencia": "RO 11: 36 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Romanos\",\"capitulo\":11,\"version\":\"Reina-Valera 1909\",\"cita\":\"RO 11: 36 (RVR1909)\",\"cita_larga\":\"Romanos 11: 36 (RVR1909)\",\"versiculos\":[{\"numero\":36,\"texto\":\"Porque de \\u00e9l, y por \\u00e9l, y en \\u00e9l, son todas las cosas. A \\u00e9l sea gloria por siglos. Am\\u00e9n.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 133: 1 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":133,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 133: 1 (RVR1909)\",\"cita_larga\":\"Salmos 133: 1 (RVR1909)\",\"versiculos\":[{\"numero\":1,\"texto\":\"C\\u00e1ntico gradual: de David. \\u00a1MIRAD cu\\u00e1n bueno y cu\\u00e1n delicioso es habitar los hermanos igualmente en uno!\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Juan",
+    "cita_referencia": "1JN 4: 7 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Juan\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"1JN 4: 7 (RVR1909)\",\"cita_larga\":\"1 Juan 4: 7 (RVR1909)\",\"versiculos\":[{\"numero\":7,\"texto\":\"Car\\u00edsimos, am\\u00e9monos unos \\u00e1 otros; porque el amor es de Dios. Cualquiera que ama, es nacido de Dios, y conoce \\u00e1 Dios.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Tesalonicenses",
+    "cita_referencia": "1TS 5: 11 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Tesalonicenses\",\"capitulo\":5,\"version\":\"Reina-Valera 1909\",\"cita\":\"1TS 5: 11 (RVR1909)\",\"cita_larga\":\"1 Tesalonicenses 5: 11 (RVR1909)\",\"versiculos\":[{\"numero\":11,\"texto\":\"Por lo cual, consolaos los unos \\u00e1 los otros, y edificaos los unos \\u00e1 los otros, as\\u00ed como lo hac\\u00e9is.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Romanos",
+    "cita_referencia": "RO 12: 16 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Romanos\",\"capitulo\":12,\"version\":\"Reina-Valera 1909\",\"cita\":\"RO 12: 16 (RVR1909)\",\"cita_larga\":\"Romanos 12: 16 (RVR1909)\",\"versiculos\":[{\"numero\":16,\"texto\":\"Un\\u00e1nimes entre vosotros: no altivos, mas acomod\\u00e1ndoos \\u00e1 los humildes. No se\\u00e1is sabios en vuestra opini\\u00f3n.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Mateo",
+    "cita_referencia": "MT 5: 44 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Mateo\",\"capitulo\":5,\"version\":\"Reina-Valera 1909\",\"cita\":\"MT 5: 44 (RVR1909)\",\"cita_larga\":\"Mateo 5: 44 (RVR1909)\",\"versiculos\":[{\"numero\":44,\"texto\":\"Mas yo os digo: Amad \\u00e1 vuestros enemigos, bendecid \\u00e1 los que os maldicen, haced bien \\u00e1 los que os aborrecen, y orad por los que os ultrajan y os persiguen;\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Juan",
+    "cita_referencia": "JN 4: 14 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Juan\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"JN 4: 14 (RVR1909)\",\"cita_larga\":\"Juan 4: 14 (RVR1909)\",\"versiculos\":[{\"numero\":14,\"texto\":\"Mas el que bebiere del agua que yo le dar\\u00e9, para siempre no tendr\\u00e1 sed: mas el agua que yo le dar\\u00e9, ser\\u00e1 en \\u00e9l una fuente de agua que salte para vida eterna.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Colosenses",
+    "cita_referencia": "COL 3: 12 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Colosenses\",\"capitulo\":3,\"version\":\"Reina-Valera 1909\",\"cita\":\"COL 3: 12 (RVR1909)\",\"cita_larga\":\"Colosenses 3: 12 (RVR1909)\",\"versiculos\":[{\"numero\":12,\"texto\":\"Vest\\u00edos pues, como escogidos de Dios, santos y amados, de entra\\u00f1as de misericordia, de benignidad, de humildad, de mansedumbre, de tolerancia;\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Juan",
+    "cita_referencia": "1JN 4: 7 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Juan\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"1JN 4: 7 (RVR1909)\",\"cita_larga\":\"1 Juan 4: 7 (RVR1909)\",\"versiculos\":[{\"numero\":7,\"texto\":\"Car\\u00edsimos, am\\u00e9monos unos \\u00e1 otros; porque el amor es de Dios. Cualquiera que ama, es nacido de Dios, y conoce \\u00e1 Dios.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Corintios",
+    "cita_referencia": "1CO 16: 14 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Corintios\",\"capitulo\":16,\"version\":\"Reina-Valera 1909\",\"cita\":\"1CO 16: 14 (RVR1909)\",\"cita_larga\":\"1 Corintios 16: 14 (RVR1909)\",\"versiculos\":[{\"numero\":14,\"texto\":\"Todas vuestras cosas sean hechas con caridad.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 126: 5 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":126,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 126: 5 (RVR1909)\",\"cita_larga\":\"Salmos 126: 5 (RVR1909)\",\"versiculos\":[{\"numero\":5,\"texto\":\"Los que sembraron con l\\u00e1grimas, con regocijo segar\\u00e1n.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Juan",
+    "cita_referencia": "JN 11: 25-26 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Juan\",\"capitulo\":11,\"version\":\"Reina-Valera 1909\",\"cita\":\"JN 11: 25-26 (RVR1909)\",\"cita_larga\":\"Juan 11: 25-26 (RVR1909)\",\"versiculos\":[{\"numero\":25,\"texto\":\"D\\u00edcele Jes\\u00fas: Yo soy la resurrecci\\u00f3n y la vida: el que cree en m\\u00ed, aunque est\\u00e9 muerto, vivir\\u00e1.\"},{\"numero\":26,\"texto\":\"Y todo aquel que vive y cree en m\\u00ed, no morir\\u00e1 eternamente. \\u00bfCrees esto?\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Amós",
+    "cita_referencia": "AM 9: 13 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Am\\u00f3s\",\"capitulo\":9,\"version\":\"Reina-Valera 1909\",\"cita\":\"AM 9: 13 (RVR1909)\",\"cita_larga\":\"Am\\u00f3s 9: 13 (RVR1909)\",\"versiculos\":[{\"numero\":13,\"texto\":\"He aqu\\u00ed vienen d\\u00edas, dice Jehov\\u00e1, en que el que ara alcanzar\\u00e1 al segador, y el pisador de las uvas al que lleva la simiente; y los montes destilar\\u00e1n mosto, y todos los collados se derretir\\u00e1n.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Juan",
+    "cita_referencia": "1JN 5: 14 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Juan\",\"capitulo\":5,\"version\":\"Reina-Valera 1909\",\"cita\":\"1JN 5: 14 (RVR1909)\",\"cita_larga\":\"1 Juan 5: 14 (RVR1909)\",\"versiculos\":[{\"numero\":14,\"texto\":\"Y esta es la confianza que tenemos en \\u00e9l, que si demand\\u00e1remos alguna cosa conforme \\u00e1 su voluntad, \\u00e9l nos oye.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 7: 17 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":7,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 7: 17 (RVR1909)\",\"cita_larga\":\"Salmos 7: 17 (RVR1909)\",\"versiculos\":[{\"numero\":17,\"texto\":\"Alabar\\u00e9 yo \\u00e1 Jehov\\u00e1 conforme \\u00e1 su justicia, y cantar\\u00e9 al nombre de Jehov\\u00e1 el Alt\\u00edsimo.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 7: 17 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":7,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 7: 17 (RVR1909)\",\"cita_larga\":\"Salmos 7: 17 (RVR1909)\",\"versiculos\":[{\"numero\":17,\"texto\":\"Alabar\\u00e9 yo \\u00e1 Jehov\\u00e1 conforme \\u00e1 su justicia, y cantar\\u00e9 al nombre de Jehov\\u00e1 el Alt\\u00edsimo.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Mateo",
+    "cita_referencia": "MT 1: 23 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Mateo\",\"capitulo\":1,\"version\":\"Reina-Valera 1909\",\"cita\":\"MT 1: 23 (RVR1909)\",\"cita_larga\":\"Mateo 1: 23 (RVR1909)\",\"versiculos\":[{\"numero\":23,\"texto\":\"He aqu\\u00ed la virgen concebir\\u00e1 y parir\\u00e1 un hijo, y llamar\\u00e1s su nombre Emmanuel, que declarado, es: Con nosotros Dios.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 32: 8 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":32,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 32: 8 (RVR1909)\",\"cita_larga\":\"Salmos 32: 8 (RVR1909)\",\"versiculos\":[{\"numero\":8,\"texto\":\"Te har\\u00e9 entender, y te ense\\u00f1ar\\u00e9 el camino en que debes andar: sobre ti fijar\\u00e9 mis ojos.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Proverbios",
+    "cita_referencia": "PR 4: 13 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Proverbios\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"PR 4: 13 (RVR1909)\",\"cita_larga\":\"Proverbios 4: 13 (RVR1909)\",\"versiculos\":[{\"numero\":13,\"texto\":\"Ten el consejo, no lo dejes; gu\\u00e1rdalo, porque eso es tu vida.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Filipenses",
+    "cita_referencia": "FIL 4: 16 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Filipenses\",\"capitulo\":4,\"version\":\"Reina-Valera 1909\",\"cita\":\"FIL 4: 16 (RVR1909)\",\"cita_larga\":\"Filipenses 4: 16 (RVR1909)\",\"versiculos\":[{\"numero\":16,\"texto\":\"Porque aun \\u00e1 Tesal\\u00f3nica me enviasteis lo necesario una y dos veces.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 119: 105 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":119,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 119: 105 (RVR1909)\",\"cita_larga\":\"Salmos 119: 105 (RVR1909)\",\"versiculos\":[{\"numero\":105,\"texto\":\"NUN. L\\u00e1mpara es \\u00e1 mis pies tu palabra, y lumbrera \\u00e1 mi camino.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Romanos",
+    "cita_referencia": "RO 8: 1 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Romanos\",\"capitulo\":8,\"version\":\"Reina-Valera 1909\",\"cita\":\"RO 8: 1 (RVR1909)\",\"cita_larga\":\"Romanos 8: 1 (RVR1909)\",\"versiculos\":[{\"numero\":1,\"texto\":\"AHORA pues, ninguna condenaci\\u00f3n hay para los que est\\u00e1n en Cristo Jes\\u00fas, los que no andan conforme \\u00e1 la carne, mas conforme al esp\\u00edritu.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Apocalipsis",
+    "cita_referencia": "AP 3: 20 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Apocalipsis\",\"capitulo\":3,\"version\":\"Reina-Valera 1909\",\"cita\":\"AP 3: 20 (RVR1909)\",\"cita_larga\":\"Apocalipsis 3: 20 (RVR1909)\",\"versiculos\":[{\"numero\":20,\"texto\":\"He aqu\\u00ed, yo estoy \\u00e1 la puerta y llamo: si alguno oyere mi voz y abriere la puerta, entrar\\u00e9 \\u00e1 \\u00e9l, y cenar\\u00e9 con \\u00e9l, y \\u00e9l conmigo.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 27: 14 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":27,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 27: 14 (RVR1909)\",\"cita_larga\":\"Salmos 27: 14 (RVR1909)\",\"versiculos\":[{\"numero\":14,\"texto\":\"Aguarda \\u00e1 Jehov\\u00e1; esfu\\u00e9rzate, y ali\\u00e9ntese tu coraz\\u00f3n: s\\u00ed, espera \\u00e1 Jehov\\u00e1.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Efesios",
+    "cita_referencia": "EF 6: 18 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Efesios\",\"capitulo\":6,\"version\":\"Reina-Valera 1909\",\"cita\":\"EF 6: 18 (RVR1909)\",\"cita_larga\":\"Efesios 6: 18 (RVR1909)\",\"versiculos\":[{\"numero\":18,\"texto\":\"Orando en todo tiempo con toda deprecaci\\u00f3n y s\\u00faplica en el Esp\\u00edritu, y velando en ello con toda instancia y suplicaci\\u00f3n por todos los santos,\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Salmos",
+    "cita_referencia": "SAL 32: 5 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Salmos\",\"capitulo\":32,\"version\":\"Reina-Valera 1909\",\"cita\":\"SAL 32: 5 (RVR1909)\",\"cita_larga\":\"Salmos 32: 5 (RVR1909)\",\"versiculos\":[{\"numero\":5,\"texto\":\"Mi pecado te declar\\u00e9, y no encubr\\u00ed mi iniquidad. Confesar\\u00e9, dije, contra m\\u00ed mis rebeliones \\u00e1 Jehov\\u00e1; y t\\u00fa perdonaste la maldad de mi pecado. (Selah.)\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "1 Samuel",
+    "cita_referencia": "1S 17: 45 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"1 Samuel\",\"capitulo\":17,\"version\":\"Reina-Valera 1909\",\"cita\":\"1S 17: 45 (RVR1909)\",\"cita_larga\":\"1 Samuel 17: 45 (RVR1909)\",\"versiculos\":[{\"numero\":45,\"texto\":\"Entonces dijo David al Filisteo: T\\u00fa vienes \\u00e1 m\\u00ed con espada y lanza y escudo; mas yo vengo \\u00e1 ti en el nombre de Jehov\\u00e1 de los ej\\u00e9rcitos, el Dios de los escuadrones de Israel, que t\\u00fa has provocado.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Isaías",
+    "cita_referencia": "IS 43: 19 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Isa\\u00edas\",\"capitulo\":43,\"version\":\"Reina-Valera 1909\",\"cita\":\"IS 43: 19 (RVR1909)\",\"cita_larga\":\"Isa\\u00edas 43: 19 (RVR1909)\",\"versiculos\":[{\"numero\":19,\"texto\":\"He aqu\\u00ed que yo hago cosa nueva: presto saldr\\u00e1 \\u00e1 luz: \\u00bfno la sabr\\u00e9is? Otra vez pondr\\u00e9 camino en el desierto, y r\\u00edos en la soledad.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "2 Corintios",
+    "cita_referencia": "2CO 5: 17 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"2 Corintios\",\"capitulo\":5,\"version\":\"Reina-Valera 1909\",\"cita\":\"2CO 5: 17 (RVR1909)\",\"cita_larga\":\"2 Corintios 5: 17 (RVR1909)\",\"versiculos\":[{\"numero\":17,\"texto\":\"De modo que si alguno est\\u00e1 en Cristo, nueva criatura [es]: las cosas viejas pasaron; he aqu\\u00ed todas son hechas nuevas.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Juan",
+    "cita_referencia": "JN 13: 34 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Juan\",\"capitulo\":13,\"version\":\"Reina-Valera 1909\",\"cita\":\"JN 13: 34 (RVR1909)\",\"cita_larga\":\"Juan 13: 34 (RVR1909)\",\"versiculos\":[{\"numero\":34,\"texto\":\"Un mandamiento nuevo os doy: Que os am\\u00e9is unos \\u00e1 otros: como os he amado, que tambi\\u00e9n [os] am\\u00e9is los unos \\u00e1 los otros.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Romanos",
+    "cita_referencia": "RO 11: 36 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Romanos\",\"capitulo\":11,\"version\":\"Reina-Valera 1909\",\"cita\":\"RO 11: 36 (RVR1909)\",\"cita_larga\":\"Romanos 11: 36 (RVR1909)\",\"versiculos\":[{\"numero\":36,\"texto\":\"Porque de \\u00e9l, y por \\u00e9l, y en \\u00e9l, son todas las cosas. A \\u00e9l sea gloria por siglos. Am\\u00e9n.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Apocalipsis",
+    "cita_referencia": "AP 21: 4 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Apocalipsis\",\"capitulo\":21,\"version\":\"Reina-Valera 1909\",\"cita\":\"AP 21: 4 (RVR1909)\",\"cita_larga\":\"Apocalipsis 21: 4 (RVR1909)\",\"versiculos\":[{\"numero\":4,\"texto\":\"Y limpiar\\u00e1 Dios toda l\\u00e1grima de los ojos de ellos; y la muerte no ser\\u00e1 m\\u00e1s; y no habr\\u00e1 m\\u00e1s llanto, ni clamor, ni dolor: porque las primeras cosas son pasadas.\"}]}]",
+    "url_video_reflexion": null
+  },
+  {
+    "version_uri": "Reina-Valera 1909",
+    "libro_nombre": "Isaías",
+    "cita_referencia": "IS 43: 25 (RVR1909)",
+    "texto_versiculo": "[{\"libro\":\"Isa\\u00edas\",\"capitulo\":43,\"version\":\"Reina-Valera 1909\",\"cita\":\"IS 43: 25 (RVR1909)\",\"cita_larga\":\"Isa\\u00edas 43: 25 (RVR1909)\",\"versiculos\":[{\"numero\":25,\"texto\":\"Yo, yo soy el que borro tus rebeliones por amor de m\\u00ed; y no me acordar\\u00e9 de tus pecados.\"}]}]",
+    "url_video_reflexion": null
+  }
+]

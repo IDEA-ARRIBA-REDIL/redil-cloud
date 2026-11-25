@@ -4,8 +4,6 @@ namespace App\Livewire\Carrito;
 
 use App\Models\Actividad;
 use App\Models\Compra;
-use App\Models\Matricula;
-use App\Models\Pago;
 use App\Models\Sede;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -33,12 +31,12 @@ class Destinatario extends Component
     {
         $this->actividad = $actividad;
         // Cargar TODAS las sedes de la iglesia desde la tabla principal 'sedes' (App\Models\Sede)
-        $this->sedes = Sede::with('barrio')->orderBy('nombre', 'asc')->get()->map(function ($sede) {
+        $this->sedes = Sede::orderBy('nombre', 'asc')->get()->map(function ($sede) {
             return [
                 'id' => $sede->id,
                 'nombre' => $sede->nombre,
                 'direccion' => $sede->direccion ?? '',
-                'barrio' => $sede->barrio->nombre ?? $sede->barrio_auxiliar ?? '',
+                'barrio' => $sede->direccion ?? '',
                 'latitud' => $sede->latitud,
                 'longitud' => $sede->longitud,
             ];
@@ -113,31 +111,7 @@ class Destinatario extends Component
         $compra->save();
 
         if ($this->actividad->tipo && $this->actividad->tipo->tipo_escuelas) {
-            $matricula = null;
-
-            // Opción 1: Buscar mediante la relación Pago -> Matricula de la compra
-            $pago = $compra->pagos()->latest('id')->first();
-            if ($pago) {
-                $matricula = $pago->matricula ?? Matricula::where('referencia_pago', $pago->id)->first();
-            }
-
-            // Opción 2: Buscar si hay pagos asociados a la compra en la tabla matriculas
-            if (! $matricula) {
-                $pagoIds = $compra->pagos()->pluck('id');
-                if ($pagoIds->isNotEmpty()) {
-                    $matricula = Matricula::whereIn('referencia_pago', $pagoIds)->latest('id')->first();
-                }
-            }
-
-            // Opción 3 (Fallback): Buscar por usuario y periodo de la actividad
-            if (! $matricula) {
-                $matricula = Matricula::where('user_id', auth()->id())
-                    ->when($this->actividad->periodo_id, function ($q) {
-                        $q->where('periodo_id', $this->actividad->periodo_id);
-                    })
-                    ->latest('id')
-                    ->first();
-            }
+            $matricula = $compra->matriculas()->where('user_id', auth()->id())->latest('id')->first();
 
             if ($matricula) {
                 $matricula->update(['material_sede_id' => $this->sedeSeleccionadaId]);

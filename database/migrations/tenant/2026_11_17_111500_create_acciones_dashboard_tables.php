@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -56,6 +57,40 @@ return new class extends Migration
 
                 $table->unique(['accion_dashboard_id', 'role_id'], 'accion_dash_role_unique');
             });
+        }
+
+        if (Schema::hasTable('acciones_dashboard') && DB::table('acciones_dashboard')->count() === 0) {
+            $ahora = now();
+            DB::table('acciones_dashboard')->insert([
+                [
+                    'nombre' => 'Academia',
+                    'url' => '/escuelas/dashboard',
+                    'abrir_nueva_pestana' => false,
+                    'tipo_visual' => 'imagen',
+                    'icono_clase' => 'ti ti-school',
+                    'icono_color' => '#1d4ed8',
+                    'imagen' => 'Funcionalidad-escuelas.png',
+                    'visible_todos' => true,
+                    'orden' => 1,
+                    'activo' => true,
+                    'created_at' => $ahora,
+                    'updated_at' => $ahora,
+                ],
+                [
+                    'nombre' => 'Grupos',
+                    'url' => '/grupos',
+                    'abrir_nueva_pestana' => false,
+                    'tipo_visual' => 'imagen',
+                    'icono_clase' => 'ti ti-users-group',
+                    'icono_color' => '#4d9a1d',
+                    'imagen' => 'Funcionalidad-grupos.png',
+                    'visible_todos' => true,
+                    'orden' => 2,
+                    'activo' => true,
+                    'created_at' => $ahora,
+                    'updated_at' => $ahora,
+                ],
+            ]);
         }
     }
 

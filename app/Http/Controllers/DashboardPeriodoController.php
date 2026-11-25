@@ -44,7 +44,7 @@ class DashboardPeriodoController extends Controller
         abort_unless((int) $materiaPeriodo->periodo_id === (int) $periodo->id, 404);
         $gestion->reabrir($materiaPeriodo);
 
-        return redirect()->route('periodo.dashboard', $periodo)->with('success', 'Materia reabierta. Se conservaron las notas y asistencias originales; los resultados finales se calcularán al cerrarla nuevamente.');
+        return redirect()->route('periodo.dashboard', $periodo)->with('success', 'Materia reabierta. Se conservaron las homologaciones, las notas y las asistencias originales. Los resultados ordinarios se calcularán al cerrarla nuevamente.');
     }
 
     public function informe(InformeMateriaPorSedeRequest $solicitud, Periodo $periodo, MateriaPeriodo $materiaPeriodo, GestionCierreMateriaService $gestion): BinaryFileResponse

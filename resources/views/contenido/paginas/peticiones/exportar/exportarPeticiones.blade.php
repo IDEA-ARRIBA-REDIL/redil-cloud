@@ -67,6 +67,10 @@ border: 1px solid blue;
         @if($camposPeticiones->where('value', 'formulario_usuario_id')->count() > 0)
         <td>{{ $peticion->formularioUsuario ? ($peticion->formularioUsuario->titulo ?? $peticion->formularioUsuario->nombre) : 'N/A' }}</td>
         @endif
+
+        @if($camposPeticiones->where('value', 'desea_pertenecer_iglesia')->count() > 0)
+        <td>{{ empty($peticion->user_id) ? ($peticion->desea_pertenecer_iglesia ? 'Sí' : 'No') : 'N/A' }}</td>
+        @endif
       </tr>
     @endforeach
     </tbody>

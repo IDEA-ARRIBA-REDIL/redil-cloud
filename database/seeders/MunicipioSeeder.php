@@ -12,7 +12,7 @@ class MunicipioSeeder extends Seeder
      */
     public function run(): void
     {
-        $path = base_path('storage/app/archivos_desarrollador/municipios.sql');
+        $path = database_path('seeders/data/cuenta-inicial/municipios.sql');
         DB::unprepared(file_get_contents($path));
     }
 }

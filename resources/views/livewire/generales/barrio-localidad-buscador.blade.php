@@ -5,28 +5,42 @@
       {{ $label }}
     </label>
     @endif
+    @php
+      $placeholderActual = $placeholder ? $placeholder : 'Buscar';
+      if ($this->estaDeshabilitado) {
+        $placeholderActual = $tieneCampoMunicipio ? 'Primero selecciona una ciudad' : 'Primero selecciona un país';
+      }
+    @endphp
     <div class="{{ $verInputBusqueda ? '' : 'd-none'}}">
       <div class="input-group input-group-merge">
-        <span class="input-group-text" id="basic-addon-search31">
+        <span class="input-group-text" id="basic-addon-search31" @if($this->estaDeshabilitado) style="background-color: #eceef1; border-color: #d9dee3; color: #a1acb8;" @endif>
           <i class="ti ti-search" wire:loading.remove wire:target="busqueda"></i>
           <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true" wire:loading wire:target="busqueda"></span>
         </span>
         <input
           x-ref="inputBusqueda"
           wire:model.live.debounce.250ms="busqueda"
-          @focus="abierto = true"
-          @input="abierto = true"
-          type="text"
+          @focus="if (!{{ $this->estaDeshabilitado ? 'true' : 'false' }}) abierto = true"
+          @click="if (!{{ $this->estaDeshabilitado ? 'true' : 'false' }}) abierto = true"
+          @input="if (!{{ $this->estaDeshabilitado ? 'true' : 'false' }}) abierto = true"
+          type="search"
+          role="combobox"
+          aria-autocomplete="list"
           class="form-control"
-          placeholder="{{ $placeholder ? $placeholder : 'Buscar' }}"
-          aria-label="Buscar"
+          @if($this->estaDeshabilitado) style="background-color: #eceef1; border-color: #d9dee3; padding-left: 0.75rem;" @endif
+          placeholder="{{ $placeholderActual }}"
           aria-describedby="basic-addon-search31"
+          @disabled($this->estaDeshabilitado)
           spellcheck="false"
           data-ms-editor="true"
-          autocomplete="off">
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-form-type="other"
+          autocomplete="one-time-code">
       </div>
     </div>
 
+    @if(! $this->estaDeshabilitado)
     <div class="divListaBusquedaUbicacion position-relative {{ $verInputBusqueda ? '' : 'd-none' }}" x-show="abierto" x-transition.opacity.duration.150ms style="display: none;">
       <div id="listaItemsBusquedaUbicacion" class="panel-busqueda p-2 position-absolute" style="height: auto; max-height: 240px; overflow-y: auto;">
         <div wire:loading wire:target="busqueda" class="text-center py-3">
@@ -61,6 +75,7 @@
         </div>
       </div>
     </div>
+    @endif
 
     @if($ubicacionSeleccionada)
         <div class="col-12">
@@ -79,6 +94,10 @@
             </div>
           </div>
       </div>
+    @endif
+
+    @if($informacionDeApoyo)
+      <div class="ti-12px mt-2"><i class="text-info ti ti-info-circle me-1"></i>{{ $informacionDeApoyo }}</div>
     @endif
 
     @if($errors->has($nameId) || $mostrarError == true)

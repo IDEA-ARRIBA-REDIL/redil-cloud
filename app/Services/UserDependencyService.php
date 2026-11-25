@@ -434,6 +434,7 @@ class UserDependencyService
             ['tabla' => 'bitacora_tipos_grupo', 'columna' => 'autor_id'],
             ['tabla' => 'bitacora_integrantes_grupo', 'columna' => 'autor_id'],
             ['tabla' => 'bitacora_tareas_consolidacion', 'columna' => 'autor_id'],
+            ['tabla' => 'reporte_bajas_altas', 'columna' => 'autor_id'],
         ];
 
         foreach ($camposAnulables as $meta) {

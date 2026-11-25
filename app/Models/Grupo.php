@@ -341,9 +341,7 @@ class Grupo extends Model
 
         if ($rolActivo->hasPermissionTo('grupos.lista_grupos_todos')) {
             $grupos = Grupo::where('grupos.fecha_apertura', '>', $nuevaFecha)->where('grupos.dado_baja', false);
-        }
-
-        if ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
+        } elseif ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
             $grupos = auth()->user()->gruposMinisterio()->where('grupos.fecha_apertura', '>', $nuevaFecha)->where('grupos.dado_baja', false);
         }
 
@@ -356,9 +354,7 @@ class Grupo extends Model
 
         if ($rolActivo->hasPermissionTo('grupos.lista_grupos_todos') || isset(auth()->user()->iglesiaEncargada()->first()->id)) {
             $grupos = Grupo::where('grupos.dado_baja', false);
-        }
-
-        if ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
+        } elseif ($rolActivo->hasPermissionTo('grupos.lista_grupos_solo_ministerio')) {
             $grupos = auth()->user()->gruposMinisterio()->where('grupos.dado_baja', false);
         }
 

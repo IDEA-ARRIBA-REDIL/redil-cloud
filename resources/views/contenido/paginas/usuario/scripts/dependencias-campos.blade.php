@@ -125,6 +125,17 @@
         return normalizeValue(valorActual) === normalizeValue(valorEsperado);
       }
 
+      if (condicion === 'diferente_a') {
+        if (Array.isArray(valorActual)) {
+          let normEsperado = normalizeValue(valorEsperado);
+          return !valorActual.map(normalizeValue).includes(normEsperado);
+        }
+        if (valorActual === null || valorActual === undefined) {
+          return normalizeValue('') !== normalizeValue(valorEsperado);
+        }
+        return normalizeValue(valorActual) !== normalizeValue(valorEsperado);
+      }
+
       return true;
     }
 

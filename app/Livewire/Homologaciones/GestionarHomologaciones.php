@@ -15,19 +15,33 @@ use App\Models\TareaConsolidacionUsuario;
 use App\Models\TipoUsuario;
 use App\Models\User;
 use App\Services\HitoTriggerService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class GestionarHomologaciones extends Component
 {
+    use WithPagination;
+
+    protected $paginationTheme = 'bootstrap';
+
     // --- PROPIEDADES PÚBLICAS (ESTADO DEL COMPONENTE) ---
 
     // Propiedades para guardar las selecciones del administrador en la interfaz.
+    #[Locked]
     public $alumnoSeleccionadoId;
 
     public $escuelaSeleccionadaId;
+
+    #[Locked]
+    public ?int $escuelaConsultadaId = null;
 
     // Colecciones para poblar los menús desplegables.
     public $escuelas = [];
@@ -111,8 +125,9 @@ class GestionarHomologaciones extends Component
         $this->estadoHomologacion = 2;
     }
 
-    public function updatedEscuelaSeleccionadaId($value)
+    public function updatedEscuelaSeleccionadaId($value): void
     {
+        $this->escuelaConsultadaId = null;
         $this->materias = [];
         if ($value) {
             $escuela = Escuela::find($value);
@@ -125,24 +140,35 @@ class GestionarHomologaciones extends Component
     /**
      * Se ejecuta al hacer clic en el botón "Buscar".
      */
-    public function buscar($alumnoId)
+    public function buscar($alumnoId = null): void
     {
-        $this->alumnoSeleccionadoId = $alumnoId;
+        $datos = Validator::make(
+            [
+                'alumnoSeleccionadoId' => $alumnoId === '' ? null : $alumnoId,
+                'escuelaSeleccionadaId' => $this->escuelaSeleccionadaId,
+            ],
+            [
+                'alumnoSeleccionadoId' => 'nullable|integer|exists:users,id',
+                'escuelaSeleccionadaId' => 'required|integer|exists:escuelas,id',
+            ],
+            $this->messages
+        )->validate();
 
-        $this->validate([
-            'alumnoSeleccionadoId' => 'required',
-            'escuelaSeleccionadaId' => 'required',
-        ], [
-            'alumnoSeleccionadoId.required' => 'Debes seleccionar un estudiante para poder buscar.',
-            'escuelaSeleccionadaId.required' => 'Debes seleccionar una escuela para poder buscar.',
-        ]);
+        $this->resetValidation(['alumnoSeleccionadoId', 'escuelaSeleccionadaId']);
+        $this->alumnoSeleccionadoId = $datos['alumnoSeleccionadoId'];
+        $this->escuelaConsultadaId = null;
 
-        if ($this->escuelaSeleccionadaId) {
-            $escuela = Escuela::find($this->escuelaSeleccionadaId);
-            if ($escuela) {
-                $this->modo = $escuela->esPorNiveles() ? 'niveles' : 'materias';
-            }
+        if ($this->alumnoSeleccionadoId === null) {
+            $this->materias = [];
+            $this->resetPage('paginaMateriasHomologadas');
+            $this->resetPage('paginaNivelesHomologados');
+            $this->escuelaConsultadaId = (int) $datos['escuelaSeleccionadaId'];
+
+            return;
         }
+
+        $escuela = Escuela::findOrFail($datos['escuelaSeleccionadaId']);
+        $this->modo = $escuela->esPorNiveles() ? 'niveles' : 'materias';
 
         if ($this->modo === 'materias') {
             $this->buscarMaterias();
@@ -204,6 +230,8 @@ class GestionarHomologaciones extends Component
      */
     public function abrirModalHomologacion(int $id)
     {
+        $this->validateOnly('alumnoSeleccionadoId');
+
         if ($this->modo === 'materias') {
             $this->materiaParaHomologar = Materia::with([
                 'tipoUsuarioObjetivo',
@@ -274,6 +302,8 @@ class GestionarHomologaciones extends Component
      */
     public function confirmarGuardado()
     {
+        $this->validateOnly('alumnoSeleccionadoId');
+
         if ($this->notaHomologacion !== null && $this->notaHomologacion !== '') {
             $this->notaHomologacion = str_replace(',', '.', (string) $this->notaHomologacion);
         }
@@ -362,6 +392,8 @@ class GestionarHomologaciones extends Component
 
     public function guardarHomologacionMateria()
     {
+        $this->validateOnly('alumnoSeleccionadoId');
+
         if ($this->notaHomologacion !== null && $this->notaHomologacion !== '') {
             $this->notaHomologacion = str_replace(',', '.', (string) $this->notaHomologacion);
         }
@@ -463,6 +495,8 @@ class GestionarHomologaciones extends Component
 
     public function guardarHomologacionNivel()
     {
+        $this->validateOnly('alumnoSeleccionadoId');
+
         if ($this->notaHomologacion !== null && $this->notaHomologacion !== '') {
             $this->notaHomologacion = str_replace(',', '.', (string) $this->notaHomologacion);
         }
@@ -679,6 +713,8 @@ class GestionarHomologaciones extends Component
      */
     public function eliminarHomologacionDirecta(int $id)
     {
+        $this->validateOnly('alumnoSeleccionadoId');
+
         if ($this->modo === 'materias') {
             MateriaAprobadaUsuario::where('user_id', $this->alumnoSeleccionadoId)
                 ->where('materia_id', $id)
@@ -698,6 +734,8 @@ class GestionarHomologaciones extends Component
      */
     public function ejecutarEliminacionYReversion()
     {
+        $this->validateOnly('alumnoSeleccionadoId');
+
         DB::beginTransaction();
         try {
             $alumnoId = (int) $this->alumnoSeleccionadoId;
@@ -855,7 +893,7 @@ class GestionarHomologaciones extends Component
     /**
      * Renderiza la vista del componente.
      */
-    public function render()
+    public function render(): View
     {
         if ($this->alumnoSeleccionadoId && $this->escuelaSeleccionadaId) {
             if ($this->modo === 'materias') {
@@ -865,6 +903,29 @@ class GestionarHomologaciones extends Component
             }
         }
 
-        return view('livewire.homologaciones.gestionar-homologaciones');
+        $homologaciones = [];
+        if ($this->escuelaConsultadaId !== null) {
+            abort_unless(Auth::user()?->rolActivoParaPermisos()?->hasAnyPermission([
+                'escuelas.homologaciones', 'escuelas.subitem_homologaciones',
+            ]), 403);
+
+            $homologaciones = [
+                'Materia' => $this->homologacionesPorEscuela(MateriaAprobadaUsuario::query(), 'materia', 'paginaMateriasHomologadas'),
+                'Nivel' => $this->homologacionesPorEscuela(NivelAprobadoUsuario::query(), 'nivel', 'paginaNivelesHomologados'),
+            ];
+        }
+
+        return view('livewire.homologaciones.gestionar-homologaciones', [
+            'homologaciones' => array_filter($homologaciones, fn (LengthAwarePaginator $resultados): bool => $resultados->total() > 0),
+        ]);
+    }
+
+    private function homologacionesPorEscuela(Builder $consulta, string $relacion, string $pagina): LengthAwarePaginator
+    {
+        return $consulta->where('es_homologacion', true)
+            ->whereHas($relacion, fn (Builder $academico) => $academico->where('escuela_id', $this->escuelaConsultadaId))
+            ->with([$relacion, 'user' => fn ($usuario) => $usuario->withTrashed()])
+            ->latest('id')
+            ->paginate(25, pageName: $pagina);
     }
 }

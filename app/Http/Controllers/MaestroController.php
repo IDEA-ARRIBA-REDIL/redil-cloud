@@ -20,9 +20,11 @@ use App\Models\ReporteAsistenciaClase; // <--- IMPORTANTE
 use App\Models\Role; // <--- IMPORTANTE
 use App\Models\Sede; // <--- IMPORTANTE
 use App\Models\User; // <--- IMPORTANTE
+use App\Services\ValidadorArchivoRecursoService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; // Para transacciones si fuera necesario
 use Illuminate\Support\Facades\Log; // Para obtener el usuario autenticado
@@ -469,7 +471,8 @@ class MaestroController extends Controller
         $horarioAsignado->load([
             'materiaPeriodo.materia:id,nombre',
             'materiaPeriodo.periodo:id,nombre,fecha_inicio,fecha_fin,estado',
-            'horarioBase.aula.sede',
+            'horarioBase' => fn ($query) => $query->withTrashed()->with('aula.sede'),
+            'maestros.user',
         ]);
         $horarioId = $horarioAsignado->id;
         $periodoId = $horarioAsignado->materiaPeriodo?->periodo_id;
@@ -764,9 +767,7 @@ class MaestroController extends Controller
         ];
 
         $nombreMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no disponible';
-        $nombrePeriodo = $horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo no disponible';
-        $nombreDocente = $maestro->user?->nombre(3) ?? 'Docente no asignado';
-        $infoClase = "Periodo: {$nombrePeriodo} | Docente: {$nombreDocente}";
+        $infoClase = $horarioAsignado->resumenEncabezadoClase();
 
         return view('contenido.paginas.escuelas.maestros.dashboard-clase', [
             'maestro' => $maestro,
@@ -875,6 +876,8 @@ class MaestroController extends Controller
         $horarioAsignado->load([
             'materiaPeriodo.materia',
             'materiaPeriodo.periodo',
+            'horarioBase' => fn ($query) => $query->withTrashed(),
+            'maestros.user',
         ]);
 
         $estadoAcademicoAlumno = EstadoAcademico::where('user_id', $alumno->id)
@@ -892,13 +895,31 @@ class MaestroController extends Controller
         $totalAsistenciasCumplidas = $reportesAsistencia->where('asistio', true)->count();
         $totalClasesReportadas = $reportesAsistencia->count();
 
-        // 2. Ítems de evaluación del horario y respuestas/notas del alumno
+        // 2. Ítems de evaluación del horario y respuestas/notas del alumno agrupados por corte
+        $notaMinimaAprobatoria = (float) ($configuracion->nota_aprobatoria ?? 3.0);
+        $periodoId = $horarioAsignado->materiaPeriodo?->periodo_id;
+
+        $cortesDelPeriodo = $periodoId
+            ? CortePeriodo::where('periodo_id', $periodoId)
+                ->with('corteEscuela:id,nombre,orden')
+                ->select('cortes_periodo.*')
+                ->leftJoin('cortes_escuela', 'cortes_periodo.corte_escuela_id', '=', 'cortes_escuela.id')
+                ->orderBy('cortes_escuela.orden', 'asc')
+                ->orderBy('cortes_periodo.id', 'asc')
+                ->get()
+            : collect();
+
         $itemsEvaluacion = ItemCorteMateriaPeriodo::where('horario_materia_periodo_id', $horarioAsignado->id)
-            ->with(['cortePeriodo', 'respuestas' => function ($query) use ($alumno) {
-                $query->where('user_id', $alumno->id);
-            }])
+            ->with([
+                'cortePeriodo.corteEscuela',
+                'respuestas' => function ($query) use ($alumno) {
+                    $query->where('user_id', $alumno->id);
+                },
+            ])
             ->orderBy('orden', 'asc')
             ->get();
+
+        $cortesEvaluacion = $this->agruparItemsEvaluacionPorCorte($itemsEvaluacion, $cortesDelPeriodo);
 
         // 3. Historial de Escuelas real del alumno (solo escuelas con materias activas)
         $escuelas = Escuela::whereHas('materias')
@@ -941,6 +962,8 @@ class MaestroController extends Controller
             'totalAsistenciasCumplidas' => $totalAsistenciasCumplidas,
             'totalClasesReportadas' => $totalClasesReportadas,
             'itemsEvaluacion' => $itemsEvaluacion,
+            'cortesEvaluacion' => $cortesEvaluacion,
+            'notaMinimaAprobatoria' => $notaMinimaAprobatoria,
             'escuelas' => $escuelas,
         ]);
     }
@@ -967,11 +990,12 @@ class MaestroController extends Controller
         $horarioAsignado->load([
             'materiaPeriodo.materia:id,nombre',
             'materiaPeriodo.periodo:id,nombre',
+            'horarioBase' => fn ($query) => $query->withTrashed(),
+            'maestros.user',
         ]);
 
         $nombreMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no definida';
-        $nombrePeriodo = $horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo no definido';
-        $infoClase = "Periodo: {$nombrePeriodo}";
+        $infoClase = $horarioAsignado->resumenEncabezadoClase();
 
         return view('contenido.paginas.escuelas.maestros.gestion-items', [
             'maestro' => $maestro,
@@ -996,19 +1020,16 @@ class MaestroController extends Controller
             'materiaPeriodo.materia:id,nombre',
             'materiaPeriodo.periodo:id,nombre',
             'materiaPeriodo.periodo.cortesPeriodo.corteEscuela:id,nombre,orden',
-            // 'maestros.user:id,name' // Para mostrar el nombre del maestro de la clase
+            'horarioBase' => fn ($query) => $query->withTrashed(),
+            'maestros.user',
         ]);
 
         $nombreMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no definida';
-        $nombrePeriodo = $horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo no definido';
-        // Asumimos que $maestro (el que está logueado o gestionando) es el relevante aquí.
-        $nombreDocente = $maestro->user?->name ?? 'Docente no asignado';
-        $infoClase = "Periodo: {$nombrePeriodo} | Docente: {$nombreDocente}";
+        $infoClase = $horarioAsignado->resumenEncabezadoClase();
 
         return view('contenido.paginas.escuelas.maestros.calificacion-multiple', [
             'maestro' => $maestro,
             'configuracion' => $configuracion,
-            'horarioAsignado' => $horarioAsignado, // Pasar el modelo completo al componente Livewire
             'horarioAsignado' => $horarioAsignado, // Pasar el modelo completo al componente Livewire
             'nombreMateria' => $nombreMateria, // Para el título de la página Blade
             'infoClase' => $infoClase,         // Para el subtítulo de la página Blade
@@ -1024,12 +1045,12 @@ class MaestroController extends Controller
         $horarioAsignado->load([
             'materiaPeriodo.materia:id,nombre',
             'materiaPeriodo.periodo:id,nombre',
+            'horarioBase' => fn ($query) => $query->withTrashed(),
+            'maestros.user',
         ]);
 
         $nombreMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no definida';
-        $nombrePeriodo = $horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo no definido';
-        $nombreDocente = $maestro->user?->name ?? 'Docente no asignado';
-        $infoClase = "Periodo: {$nombrePeriodo} | Docente: {$nombreDocente}";
+        $infoClase = $horarioAsignado->resumenEncabezadoClase();
 
         return view('contenido.paginas.escuelas.maestros.calificacion-grilla', [
             'maestro' => $maestro,
@@ -1050,12 +1071,12 @@ class MaestroController extends Controller
         $horarioAsignado->load([
             'materiaPeriodo.materia:id,nombre',
             'materiaPeriodo.periodo:id,nombre',
+            'horarioBase' => fn ($query) => $query->withTrashed(),
+            'maestros.user',
         ]);
 
         $nombreMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no definida';
-        $nombrePeriodo = $horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo no definido';
-        $nombreDocente = $maestro->user?->name ?? 'Docente no asignado';
-        $infoClase = "Periodo: {$nombrePeriodo} | Docente: {$nombreDocente}";
+        $infoClase = $horarioAsignado->resumenEncabezadoClase();
 
         return view('contenido.paginas.escuelas.maestros.editar-reporte-asistencia', [
             'maestro' => $maestro,
@@ -1075,14 +1096,13 @@ class MaestroController extends Controller
         $horarioAsignado->load([
             'materiaPeriodo.materia.nivel',
             'materiaPeriodo.periodo',
-            'horarioBase',
+            'horarioBase' => fn ($query) => $query->withTrashed(),
+            'maestros.user',
             'reportesAsistencia',
         ]);
 
         $nombreDeLaMateria = $horarioAsignado->materiaPeriodo?->materia?->nombre ?? 'Materia no disponible';
-        $nombreDelDocente = $maestro->user?->nombre(3) ?? ($maestro->user?->name ?? 'Docente no asignado');
-        $informacionDeLaClase = 'Periodo: '.($horarioAsignado->materiaPeriodo?->periodo?->nombre ?? 'Periodo N/A').
-            ' | Docente: '.$nombreDelDocente;
+        $informacionDeLaClase = $horarioAsignado->resumenEncabezadoClase();
 
         $datosMateria = $horarioAsignado->materiaPeriodo?->materia;
         $periodo = $horarioAsignado->materiaPeriodo?->periodo;
@@ -1580,10 +1600,14 @@ class MaestroController extends Controller
     public function recursosAlumnos(HorarioMateriaPeriodo $horarioAsignado, $maestro)
     {
         $maestro = $this->resolverMaestroClase($maestro, $horarioAsignado);
+        $horarioAsignado->load([
+            'materiaPeriodo.materia:id,nombre',
+            'materiaPeriodo.periodo:id,nombre',
+            'horarioBase' => fn ($query) => $query->withTrashed(),
+            'maestros.user',
+        ]);
 
         return view('contenido.paginas.escuelas.maestros.recursos-alumno', [
-
-            'horarioAsignado' => $horarioAsignado,
             'horarioAsignado' => $horarioAsignado,
             'maestro' => $maestro,
             'rolActivo' => Auth::user() ? Auth::user()->roles()->wherePivot('activo', true)->first() : null,
@@ -1627,19 +1651,27 @@ class MaestroController extends Controller
     }
 
     /**
-     * Sube un archivo de recurso mediante fetch/Alpine.js
+     * Sube un archivo de recurso mediante fetch/Alpine.js con validación estricta de seguridad.
      */
     public function uploadArchivoRecurso(\Illuminate\Http\Request $request)
     {
         $request->validate([
-            'archivo' => 'required|file|mimes:pdf,docx,xlsx,pptx,jpg,jpeg,png|max:10240',
-            'horario_id' => 'required|integer',
+            'archivo' => ['required', 'file', 'max:2048'],
+            'horario_id' => ['required', 'integer', 'exists:horarios_materia_periodo,id'],
+        ], [
+            'archivo.required' => 'Debes seleccionar un archivo.',
+            'archivo.file' => 'El elemento seleccionado no es un archivo válido.',
+            'archivo.max' => 'El archivo no puede superar los 2 MB.',
+            'horario_id.required' => 'No se identificó el horario de la clase.',
+            'horario_id.exists' => 'El horario seleccionado no existe.',
         ]);
 
-        $horarioId = $request->input('horario_id');
+        $horarioId = (int) $request->input('horario_id');
         $archivo = $request->file('archivo');
-        $extension = $archivo->getClientOriginalExtension();
-        $nombreArchivo = "recurso-{$horarioId}-".uniqid().".{$extension}";
+
+        $validacion = (new ValidadorArchivoRecursoService)->validar($archivo);
+        $extensionSegura = $validacion['extension'];
+        $nombreArchivoServidor = "recurso-{$horarioId}-".Str::uuid().".{$extensionSegura}";
 
         $directorio = "archivos/escuelas/recursos-horario/horario-{$horarioId}";
 
@@ -1658,17 +1690,17 @@ class MaestroController extends Controller
                 @chmod($currentPath, 0755);
             }
 
-            // Almacenamos el archivo en el disco 'public'
-            $archivo->storeAs($directorio, $nombreArchivo, 'public');
+            // Almacenamos el archivo en el disco 'public' con extensión validada por servidor
+            $archivo->storeAs($directorio, $nombreArchivoServidor, 'public');
 
-            // Aseguramos que el archivo recién creado tenga permisos 0755
-            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivo}");
-            @chmod($filePath, 0755);
+            // Permisos 0644 (sin bit de ejecución sobre archivos subidos por usuarios)
+            $filePath = storage_path("app/public/{$directorio}/{$nombreArchivoServidor}");
+            @chmod($filePath, 0644);
 
             return response()->json([
                 'success' => true,
-                'nombre' => $nombreArchivo,
-                'ruta_relativa' => "{$directorio}/{$nombreArchivo}",
+                'nombre' => $validacion['nombre_original_seguro'],
+                'ruta_relativa' => "{$directorio}/{$nombreArchivoServidor}",
             ]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Error uploading resource file: '.$e->getMessage());
@@ -1678,5 +1710,81 @@ class MaestroController extends Controller
                 'message' => 'Error al guardar el archivo.',
             ], 500);
         }
+    }
+
+    /**
+     * Agrupa los ítems de evaluación por corte ordenándolos y asignándoles su número secuencial (1, 2, 3...).
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function agruparItemsEvaluacionPorCorte(Collection $itemsEvaluacion, Collection $cortesDelPeriodo): Collection
+    {
+        $mapaCortes = [];
+        foreach ($cortesDelPeriodo->values() as $indice => $cortePeriodo) {
+            $ordenEscuela = $cortePeriodo->corteEscuela?->orden;
+            $numeroCorte = is_numeric($ordenEscuela) && (int) $ordenEscuela > 0
+                ? (int) $ordenEscuela
+                : $indice + 1;
+
+            $mapaCortes[$cortePeriodo->id] = [
+                'numero' => $numeroCorte,
+                'orden' => $indice,
+                'porcentaje' => $cortePeriodo->porcentaje !== null ? (float) $cortePeriodo->porcentaje : null,
+            ];
+        }
+
+        $siguienteNumeroFallback = count($mapaCortes) + 1;
+
+        return $itemsEvaluacion
+            ->groupBy(fn ($item): string => $item->corte_periodo_id !== null ? (string) $item->corte_periodo_id : 'sin_corte')
+            ->map(function (Collection $itemsDelCorte, string $claveCorte) use ($mapaCortes, &$siguienteNumeroFallback): array {
+                if ($claveCorte === 'sin_corte') {
+                    $numero = null;
+                    $orden = PHP_INT_MAX;
+                    $porcentajeCorte = null;
+                } elseif (isset($mapaCortes[(int) $claveCorte])) {
+                    $meta = $mapaCortes[(int) $claveCorte];
+                    $numero = $meta['numero'];
+                    $orden = $meta['orden'];
+                    $porcentajeCorte = $meta['porcentaje'];
+                } else {
+                    $primerCorte = $itemsDelCorte->first()?->cortePeriodo;
+                    $ordenEscuela = $primerCorte?->corteEscuela?->orden;
+                    $numero = is_numeric($ordenEscuela) && (int) $ordenEscuela > 0
+                        ? (int) $ordenEscuela
+                        : $siguienteNumeroFallback++;
+                    $orden = 10000 + $numero;
+                    $porcentajeCorte = $primerCorte?->porcentaje !== null ? (float) $primerCorte->porcentaje : null;
+                }
+
+                $itemsCalificados = 0;
+                $notaAcumulada = 0.0;
+                $pesoItemsTotal = 0.0;
+
+                foreach ($itemsDelCorte as $item) {
+                    $porcentajeItem = is_numeric($item->porcentaje) ? (float) $item->porcentaje : 0.0;
+                    $pesoItemsTotal += $porcentajeItem;
+
+                    $respuesta = $item->respuestas->first();
+                    if ($respuesta && $respuesta->nota_obtenida !== null) {
+                        $itemsCalificados++;
+                        $notaAcumulada += (float) $respuesta->nota_obtenida * ($porcentajeItem / 100);
+                    }
+                }
+
+                return [
+                    'numero' => $numero,
+                    'etiqueta' => $numero !== null ? 'Corte '.$numero : 'Sin corte asignado',
+                    'orden' => $orden,
+                    'porcentaje' => $porcentajeCorte,
+                    'items' => $itemsDelCorte->values(),
+                    'total_items' => $itemsDelCorte->count(),
+                    'items_calificados' => $itemsCalificados,
+                    'peso_items_total' => round($pesoItemsTotal, 2),
+                    'nota_corte' => $itemsCalificados > 0 ? round($notaAcumulada, 2) : null,
+                ];
+            })
+            ->sortBy('orden')
+            ->values();
     }
 }

@@ -751,9 +751,15 @@ $configData = Helper::appClasses();
                 @endif
               </div> 
 
+              @php
+                $nombreLocalidad = $persona->localidad?->nombre;
+                $nombreCiudad = $persona->localidad?->municipio?->nombre;
+                $ubicacionPartes = collect([$nombreCiudad, $nombreLocalidad])->filter()->unique();
+                $textoUbicacion = $ubicacionPartes->isNotEmpty() ? $ubicacionPartes->implode(', ') : 'No especificada';
+              @endphp
               <div class="col-6 d-flex flex-column mt-1">
-                <small class="text-black">Ultima actualización</small>
-                <small class="fw-semibold text-black">{{ $persona->ultimaActividadTarea()->pivot->updated_at ?? 'Sin actividad' }}</small>
+                <small class="text-black">Ubicación</small>
+                <small class="fw-semibold text-black">{{ $textoUbicacion }}</small>
               </div>
 
               <div class="col-6 d-flex flex-column mt-1">

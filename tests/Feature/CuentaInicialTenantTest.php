@@ -77,6 +77,7 @@ class CuentaInicialTenantTest extends TestCase
     public function test_creates_exactly_four_users_and_only_the_required_structure(): void
     {
         $this->assertSame(4, User::count());
+        $this->assertSame(4, User::whereDate('fecha_nacimiento', '1990-06-28')->count());
         $this->assertSame(1, Sede::count());
         $this->assertSame(1, Grupo::count());
         $this->assertSame(1, \App\Models\Iglesia::count());
@@ -119,9 +120,9 @@ class CuentaInicialTenantTest extends TestCase
     public function test_catalogues_forms_and_relationships_are_complete(): void
     {
         $connection = (new User)->getConnection();
-        foreach (['paises', 'municipios', 'barrios', 'calificaciones', 'campos_extra', 'campos_extra_grupo',
+        foreach (['paises', 'municipios', 'calificaciones', 'campos_extra', 'campos_extra_grupo',
             'campos_extras_formularios', 'campos_formulario_usuario', 'campos_informe_excel', 'campos_perfil_usuario',
-            'carreras', 'continentes', 'departamentos', 'formularios_usuario', 'formulario_usuario_rol', 'informes', 'informe_rol',
+            'carreras', 'formularios_usuario', 'formulario_usuario_rol', 'informes', 'informe_rol',
             'localidades', 'monedas', 'ocupaciones', 'pasos_crecimiento', 'rangos_edad', 'zonas', 'secciones_informes', 'items_subsecciones_informes'] as $table) {
             $this->assertGreaterThan(0, $connection->table($table)->count(), $table);
         }
@@ -133,10 +134,8 @@ class CuentaInicialTenantTest extends TestCase
             ['campo_seccion_formulario_usuario', 'campo_id', 'campos_formulario_usuario'],
             ['calificaciones', 'sistema_calificacion_id', 'sistema_calificaciones'],
             ['pasos_crecimiento', 'seccion_paso_crecimiento_id', 'secciones_pasos_crecimiento'],
-            ['paises', 'continente_id', 'continentes'], ['regiones', 'pais_id', 'paises'],
-            ['departamentos', 'region_id', 'regiones'], ['municipios', 'departamento_id', 'departamentos'],
-            ['localidades', 'municipio_id', 'municipios'], ['barrios', 'municipio_id', 'municipios'],
-            ['barrios', 'localidad_id', 'localidades']] as [$table, $column, $parent]) {
+            ['municipios', 'pais_id', 'paises'],
+            ['localidades', 'municipio_id', 'municipios']] as [$table, $column, $parent]) {
             $this->assertSame(0, $connection->table($table.' as child')->whereNotNull('child.'.$column)
                 ->whereRaw('NOT EXISTS (SELECT 1 FROM '.$connection->getQueryGrammar()->wrapTable($parent).' AS parent WHERE parent.id::text = child.'.$connection->getQueryGrammar()->wrap($column).'::text)')->count(), $table.'.'.$column);
         }

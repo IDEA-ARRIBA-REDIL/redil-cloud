@@ -124,6 +124,16 @@ class CampoInformeExcelSeeder extends Seeder
                 'orden' => 66,
             ]);
 
+        CampoInformeExcel::firstOrCreate(
+            ['nombre_campo_bd' => 'municipio_id', 'selector_id' => 1, 'tabla' => 'users.'],
+            [
+                'id' => $x ? $x->id + 5 : 5,
+                'nombre_campo_informe' => 'Ciudad',
+                'raw_sql' => true,
+                'eloquent_sql' => false,
+                'orden' => 10,
+            ]);
+
         // Fix postgres sequence after manual inserts
         DB::unprepared("SELECT setval('campos_informe_excel_id_seq', (SELECT MAX(id) FROM campos_informe_excel));");
     }

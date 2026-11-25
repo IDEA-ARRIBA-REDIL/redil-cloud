@@ -263,13 +263,10 @@ class Actividad extends Model
         $materiaObjetivo = $materiaPeriodo->materia;
 
         // 1. Validar prerrequisitos de MATERIAS APROBADAS
+        $materiasAprobadas = null;
         foreach ($materiaObjetivo->prerrequisitosMaterias as $prerrequisito) {
-            $aprobada = MateriaAprobadaUsuario::where('user_id', $usuario->id)
-                ->where('materia_id', $prerrequisito->id)
-                // CAMBIO 2026-09-03: Un registro histórico reprobado no habilita el prerrequisito.
-                ->where('aprobado', MateriaAprobadaUsuario::ESTADO_APROBADO)
-                ->exists();
-            if (! $aprobada) {
+            $materiasAprobadas ??= MateriaAprobadaUsuario::idsAprobadosReconocidos($usuario);
+            if (! $materiasAprobadas->contains($prerrequisito->id)) {
                 return ['success' => false, 'message' => "Para inscribir '{$materiaObjetivo->nombre}', necesitas haber aprobado '{$prerrequisito->nombre}'."];
             }
         }
@@ -502,9 +499,7 @@ class Actividad extends Model
             ->get();
 
         // 2. Obtenemos el "historial académico" del usuario UNA SOLA VEZ.
-        $materiasAprobadasIds = $usuario->resultadosMaterias()
-            ->where('aprobado', true)
-            ->pluck('materia_id'); //
+        $materiasAprobadasIds = MateriaAprobadaUsuario::idsAprobadosReconocidos($usuario);
 
         // 3. Iteramos sobre cada categoría (materia) y la validamos
         $resultadoFinal = $categorias->map(function ($categoria) use ($usuario, $materiasAprobadasIds) {

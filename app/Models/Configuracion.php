@@ -30,7 +30,6 @@ class Configuracion extends Model
             'visible_seccion_campos_extra' => 'boolean',
             'visible_seccion_campos_extra_grupo' => 'boolean',
             'logo_personalizado' => 'boolean',
-            'usa_listas_geograficas' => 'boolean',
             'direccion_obligatoria' => 'boolean',
             'dia_corte_reportes_grupos' => 'integer',
             'dia_recordatorio_para_reporte_grupos' => 'integer',

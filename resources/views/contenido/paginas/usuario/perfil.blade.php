@@ -679,6 +679,13 @@
                   <p class="fs-6 text-black fw-semibold m-0">{{ $usuario->pais ? $usuario->pais->nombre : 'Sin dato' }}</p>
                 </div>
               </div>
+              @elseif($campo->nombre_bd=='municipio_id')
+              <div class="{{ $campo->pivot->class }}">
+                <div class="p-2 border-bottom">
+                  <p class="fs-6 text-black m-0">{{$campo->nombre}}</p>
+                  <p class="fs-6 text-black fw-semibold m-0">{{ $usuario->municipio ? $usuario->municipio->nombre : 'Sin dato' }}</p>
+                </div>
+              </div>
               @elseif($campo->nombre_bd=='tipo_vivienda_id')
               <div class="{{ $campo->pivot->class }}">
                 <div class="p-2 border-bottom">
@@ -746,7 +753,7 @@
               <div class="{{ $campo->pivot->class }}">
                 <div class="p-2 border-bottom">
                   <p class="fs-6 text-black m-0">{{$campo->nombre}}</p>
-                  <p class="fs-6 text-black fw-semibold m-0">{{ $usuario->direccion ? $usuario->direccion : 'Sin dato'}} {{ $usuario->localidad_id ? $usuario->localidad->nombre : '' }} {{ $usuario->barrio_id ? $usuario->barrio->nombre : '' }}</p>
+                  <p class="fs-6 text-black fw-semibold m-0">{{ $usuario->direccion ? $usuario->direccion : 'Sin dato'}} {{ $usuario->localidad_id ? $usuario->localidad->nombre : '' }}</p>
                 </div>
               </div>
               @elseif($campo->nombre_bd=='archivo_a')
@@ -934,7 +941,20 @@
 
 
   @if( $usuario->id == auth()->user()->id )
-    @foreach ($formularioAutoEditar->secciones()->orderBy('orden','asc')->get() as $seccion)
+    @php
+      $seccionesAutoEditarGeo = $formularioAutoEditar->secciones()->orderBy('orden','asc')->get();
+      $camposActivosGeo = $seccionesAutoEditarGeo->flatMap->campos;
+      $campoGeoPais = $camposActivosGeo->firstWhere('nombre_bd', 'pais_id');
+      $campoGeoMunicipio = $camposActivosGeo->firstWhere('nombre_bd', 'municipio_id');
+      $campoGeoLocalidad = $camposActivosGeo->firstWhere('nombre_bd', 'ubicacion');
+      $tieneCampoPaisGeo = (bool) $campoGeoPais;
+      $tieneCampoMunicipioGeo = (bool) $campoGeoMunicipio;
+      $tieneCampoLocalidadGeo = (bool) $campoGeoLocalidad;
+      $paisIdInicialGeo = (string) ($campoGeoPais ? old($campoGeoPais->name_id, $usuario->pais_id ?? '') : ($usuario->pais_id ?? ''));
+      $municipioIdInicialGeo = (string) ($campoGeoMunicipio ? old($campoGeoMunicipio->name_id, $usuario->municipio_id ?? ($usuario->localidad?->municipio_id ?? '')) : ($usuario->municipio_id ?? ($usuario->localidad?->municipio_id ?? '')));
+      $localidadIdInicialGeo = (string) ($campoGeoLocalidad ? old($campoGeoLocalidad->name_id, $usuario->localidad_id ?? '') : ($usuario->localidad_id ?? ''));
+    @endphp
+    @foreach ($seccionesAutoEditarGeo as $seccion)
       <form id="formularioSeccion{{ $seccion->id }}"  role="form" class="forms-sample formulariosSecciones" method="POST" action="{{ route($formularioAutoEditar->tipo->action, [ 'formulario' => $formularioAutoEditar, 'seccion' => $seccion,'usuario' => $usuario]) }}"  enctype="multipart/form-data">
         <div class="offcanvas offcanvas-end event-sidebar" tabindex="-1" id="modalSeccion{{ $seccion->id }}" aria-labelledby="modalSeccion{{ $seccion->id }}Label">
           <div class="offcanvas-header my-1 px-8">
@@ -1138,20 +1158,31 @@
 
                     <!-- Nacionalidad -->
                     @if($campo->nombre_bd == 'pais_id')
-                    <div class="mb-3 col-12">
-                      <label class="form-label" for="pais_id">
-                      {{ $campo->nombre }}
-                      </label>
-                      <select id="pais_id" name="{{ $campo->name_id }}" data-placeholder="{{$campo->placeholder}}" class="select2 form-select" data-allow-clear="true">
-                        <option value="">Ninguno</option>
-                        @foreach ($paises as $pais)
-                        <option value="{{$pais->id}}" {{ old($campo->name_id, $usuario->pais_id)==$pais->id ? 'selected' : '' }}>{{ucwords ($pais->nombre)}}</option>
-                        @endforeach
-                      </select>
-                    <div id="error{{$campo->name_id}}"></div>
-                    </div>
+                      @livewire('Generales.pais-buscador', [
+                        'class' => 'mb-3 col-12',
+                        'label' => $campo->nombre,
+                        'nameId' => $campo->name_id,
+                        'placeholder' => $campo->placeholder,
+                        'usuario' => $usuario,
+                        'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+                      ])
                     @endif
                     <!-- /Nacionalidad -->
+
+                    <!-- Ciudad / Municipio -->
+                    @if($campo->nombre_bd == 'municipio_id')
+                      @livewire('Generales.municipio-buscador', [
+                        'class' => 'mb-3 col-12',
+                        'label' => $campo->nombre,
+                        'nameId' => $campo->name_id,
+                        'placeholder' => $campo->placeholder,
+                        'usuario' => $usuario,
+                        'tieneCampoPais' => $tieneCampoPaisGeo,
+                        'paisId' => $paisIdInicialGeo,
+                        'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+                      ])
+                    @endif
+                    <!-- /Ciudad / Municipio -->
 
                     <!-- Telefono fijo -->
                     @if($campo->nombre_bd == 'telefono_fijo')
@@ -1249,11 +1280,16 @@
                     <!-- ubicacion -->
                     @if ($campo->nombre_bd == 'ubicacion')
                       @livewire('Generales.barrio-localidad-buscador', [
-                        'class' => $campo->pivot->class,
+                        'class' => 'mb-3 col-12',
                         'label' => $campo->nombre,
                         'nameId' => $campo->name_id,
                         'placeholder' => $campo->placeholder,
                         'usuario' => $usuario,
+                        'tieneCampoPais' => $tieneCampoPaisGeo,
+                        'tieneCampoMunicipio' => $tieneCampoMunicipioGeo,
+                        'paisId' => $paisIdInicialGeo,
+                        'municipioId' => $municipioIdInicialGeo,
+                        'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
                       ])
                     @endif
                     <!-- / ubicacion -->
@@ -1437,18 +1473,21 @@
 
                     <!-- Sede -->
                     @if($campo->nombre_bd == 'sede_id')
-                    <div class="mb-3 col-12">
-                      <label class="form-label" for="sede">
-                        {{ $campo->nombre }}
-                      </label>
-                      <select id="sede" data-placeholder="{{ $campo->placeholder }}" name="{{ $campo->name_id }}" class="select2 form-select" data-allow-clear="true">
-                        <option value="">Ninguno</option>
-                        @foreach ($sedes as $sede)
-                        <option value="{{$sede->id}}" data-localidades="{{ $sede->localidades->pluck('id')->toJson() }}" {{ old($campo->name_id, $usuario->sede_id)==$sede->id ? 'selected' : '' }}>{{ucwords ($sede->nombre)}}</option>
-                        @endforeach
-                      </select>
-                    <div id="error{{$campo->name_id}}"></div>
-                    </div>
+                      @livewire('Generales.sede-buscador', [
+                        'class' => 'mb-3 col-12',
+                        'label' => $campo->nombre,
+                        'nameId' => $campo->name_id,
+                        'placeholder' => $campo->placeholder,
+                        'formularioId' => $formularioAutoEditar?->id,
+                        'usuario' => $usuario,
+                        'tieneCampoPais' => $tieneCampoPaisGeo,
+                        'tieneCampoMunicipio' => $tieneCampoMunicipioGeo,
+                        'tieneCampoLocalidad' => $tieneCampoLocalidadGeo,
+                        'paisId' => $paisIdInicialGeo,
+                        'municipioId' => $municipioIdInicialGeo,
+                        'localidadId' => $localidadIdInicialGeo,
+                        'informacionDeApoyo' => $campo->pivot->informacion_de_apoyo ?? ''
+                      ])
                     @endif
                     <!-- /Sede -->
 
@@ -1785,5 +1824,4 @@
 
   @include('contenido.paginas.usuario.scripts.dependencias-campos')
   @include('contenido.paginas.usuario.scripts.validacion-identificacion')
-  @include('contenido.paginas.usuario.scripts.filtro-sedes-localidad')
 @endsection

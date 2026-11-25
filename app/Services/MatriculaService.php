@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Escuela;
 use App\Models\Materia;
+use App\Models\MateriaAprobadaUsuario;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -99,11 +100,7 @@ class MatriculaService
     public function getReporteDisponibilidadMaterias(User $estudiante, Escuela $escuela): Collection
     {
         // --- ETAPA 1: OBTENER EL HISTORIAL COMPLETO DEL ESTUDIANTE ---
-        $materiasAprobadasIds = DB::table('materias_aprobada_usuario')
-            ->where('user_id', $estudiante->id)
-            ->where('aprobado', true)
-            ->pluck('materia_id')
-            ->toArray();
+        $materiasAprobadasIds = MateriaAprobadaUsuario::idsAprobadosReconocidos($estudiante)->all();
 
         $progresoPasos = $estudiante->pasosCrecimiento->pluck('pivot.estado_id', 'id');
 

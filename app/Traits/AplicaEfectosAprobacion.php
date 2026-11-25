@@ -6,15 +6,32 @@ use App\Models\CrecimientoUsuario;
 use App\Models\Materia;
 use App\Models\MateriaAprobadaUsuario;
 use App\Models\NivelAprobadoUsuario;
-use App\Models\Role;
 use App\Models\TareaConsolidacionUsuario;
-use App\Models\TipoUsuario;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 trait AplicaEfectosAprobacion
 {
+    private function excluirResultadosHomologados(array $resultados): array
+    {
+        if ($resultados === []) {
+            return [];
+        }
+
+        $homologaciones = MateriaAprobadaUsuario::query()
+            ->where('es_homologacion', true)
+            ->whereIn('user_id', array_unique(array_column($resultados, 'user_id')))
+            ->whereIn('materia_periodo_id', array_unique(array_column($resultados, 'materia_periodo_id')))
+            ->get(['user_id', 'materia_periodo_id'])
+            ->mapWithKeys(fn (MateriaAprobadaUsuario $resultado): array => [
+                $resultado->user_id.'-'.$resultado->materia_periodo_id => true,
+            ])->all();
+
+        return array_values(array_filter($resultados, static fn (array $resultado): bool => ! isset(
+            $homologaciones[$resultado['user_id'].'-'.$resultado['materia_periodo_id']]
+        )));
+    }
+
     /**
      * Aplica los cambios en Tareas de Consolidación y Pasos de Crecimiento
      * para los alumnos que han aprobado sus materias en este lote.

@@ -18,6 +18,14 @@ class Sede extends Model
 
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'aparece_en_todos_los_casos' => 'boolean',
+            'default' => 'boolean',
+        ];
+    }
+
     /**
      * Get the sede's photo URL.
      */
@@ -52,14 +60,99 @@ class Sede extends Model
         return $this->belongsTo(TipoSede::class, 'tipo_sede_id');
     }
 
-    public function barrio(): BelongsTo
+    public function paises(): BelongsToMany
     {
-        return $this->belongsTo(Barrio::class, 'barrio_id');
+        return $this->belongsToMany(Pais::class, 'pais_sede');
+    }
+
+    public function municipios(): BelongsToMany
+    {
+        return $this->belongsToMany(Municipio::class, 'municipio_sede');
     }
 
     public function localidades(): BelongsToMany
     {
         return $this->belongsToMany(Localidad::class, 'localidad_sede');
+    }
+
+    /**
+     * Retorna la configuración geográfica estructurada de la sede para evaluación en formularios.
+     *
+     * @return array<string, mixed>
+     */
+    public function reglasCoberturaGeografica(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'aparece_en_todos_los_casos' => (bool) ($this->aparece_en_todos_los_casos ?? true),
+            'modo_paises' => $this->modo_paises ?: 'incluir',
+            'modo_municipios' => $this->modo_municipios ?: 'ninguno',
+            'modo_localidades' => $this->modo_localidades ?: 'ninguno',
+            'paises_ids' => $this->paises->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+            'municipios_ids' => $this->municipios->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+            'localidades_ids' => $this->localidades->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+        ];
+    }
+
+    /**
+     * Evalúa si la sede cumple exactamente las condiciones geográficas para la ubicación dada.
+     */
+    public function cumpleCoberturaGeografica(?int $paisId, ?int $municipioId, ?int $localidadId): bool
+    {
+        if ((bool) ($this->aparece_en_todos_los_casos ?? true)) {
+            return true;
+        }
+
+        if ($paisId === null) {
+            return false;
+        }
+
+        $modoPaises = $this->modo_paises ?: 'incluir';
+        $paisesIds = $this->paises->pluck('id')->map(fn ($id): int => (int) $id)->all();
+
+        if ($modoPaises === 'excluir') {
+            return ! in_array($paisId, $paisesIds, true);
+        }
+
+        if (! in_array($paisId, $paisesIds, true)) {
+            return false;
+        }
+
+        $modoMunicipios = $this->modo_municipios ?: 'ninguno';
+        if ($modoMunicipios === 'ninguno') {
+            return $municipioId === null && $localidadId === null;
+        }
+
+        if ($municipioId === null) {
+            return false;
+        }
+
+        $municipiosIds = $this->municipios->pluck('id')->map(fn ($id): int => (int) $id)->all();
+
+        if ($modoMunicipios === 'excluir') {
+            return ! in_array($municipioId, $municipiosIds, true);
+        }
+
+        if (! in_array($municipioId, $municipiosIds, true)) {
+            return false;
+        }
+
+        $modoLocalidades = $this->modo_localidades ?: 'ninguno';
+        if ($modoLocalidades === 'ninguno') {
+            return $localidadId === null;
+        }
+
+        if ($localidadId === null) {
+            return false;
+        }
+
+        $localidadesIds = $this->localidades->pluck('id')->map(fn ($id): int => (int) $id)->all();
+
+        if ($modoLocalidades === 'excluir') {
+            return ! in_array($localidadId, $localidadesIds, true);
+        }
+
+        return in_array($localidadId, $localidadesIds, true);
     }
 
     // obtiene los usuarios de una sede
@@ -213,6 +306,7 @@ class Sede extends Model
 
         // Limpio las relaciones de localidades con la sede
         $this->localidades()->detach();
+        $this->formulariosExcluidos()->detach();
 
         return true;
     }
@@ -242,5 +336,15 @@ class Sede extends Model
     public function intercesores(): BelongsToMany
     {
         return $this->belongsToMany(Intercesor::class, 'intercesor_sede', 'sede_id', 'intercesor_id');
+    }
+
+    public function formulariosExcluidos(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            FormularioUsuario::class,
+            'formulario_usuario_sede_excluida',
+            'sede_id',
+            'formulario_usuario_id'
+        )->withTimestamps();
     }
 }

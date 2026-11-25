@@ -1,23 +1,48 @@
 <div>
     <style>
+        .attendance-reports-shell {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.85rem;
+            box-shadow: 0 0.15rem 0.6rem rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+        }
+
+        .attendance-header-icon {
+            width: 2.15rem;
+            height: 2.15rem;
+            border-radius: 0.6rem;
+            background-color: rgba(var(--bs-primary-rgb), 0.1);
+            color: var(--bs-primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
         .attendance-reports-list {
-            --attendance-report-columns: minmax(7.5rem, 1.1fr) minmax(7rem, 1.25fr) minmax(4.5rem, .7fr) minmax(4.25rem, .65fr) minmax(4.25rem, .65fr) minmax(7rem, 1.2fr) minmax(8rem, 1.25fr);
+            --attendance-report-columns: minmax(8rem, 1.15fr) minmax(7.5rem, 1.2fr) minmax(4.5rem, .7fr) minmax(4.5rem, .7fr) minmax(4.5rem, .7fr) minmax(8.5rem, 1.2fr) minmax(9.5rem, 1.3fr);
         }
 
         .attendance-reports-header,
         .attendance-report-row {
             display: grid;
             grid-template-columns: var(--attendance-report-columns);
-            gap: .5rem;
+            gap: .65rem;
             align-items: center;
         }
 
         .attendance-reports-header {
-            padding: 0 .75rem .75rem;
-            border-bottom: 1px solid var(--bs-border-color);
+            padding: 0.65rem 0.85rem;
+            margin-bottom: 0.65rem;
+            border-radius: 0.55rem;
+            background-color: var(--bs-gray-100);
+            border: 1px solid var(--bs-border-color);
             color: var(--bs-secondary-color);
-            font-size: .7rem;
-            font-weight: 600;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
 
         .attendance-reports-header > :not(:first-child):not(:nth-child(2)) {
@@ -25,13 +50,20 @@
         }
 
         .attendance-report-card {
-            border: 0;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.7rem;
             box-shadow: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .attendance-report-card:hover {
+            border-color: rgba(var(--bs-primary-rgb), 0.35);
+            box-shadow: 0 0.2rem 0.6rem rgba(15, 23, 42, 0.04);
         }
 
         .attendance-report-row {
-            min-height: 5.5rem;
-            padding: .75rem;
+            min-height: 5.25rem;
+            padding: .85rem;
         }
 
         .attendance-report-cell:not(.attendance-date):not(.attendance-status) {
@@ -42,11 +74,57 @@
             display: none;
         }
 
-        .attendance-status .badge {
+        .attendance-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            padding: 0.3rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 1.2;
             max-width: 100%;
-            padding: .35rem .5rem;
-            font-size: .6875rem;
             white-space: normal;
+            text-align: center;
+        }
+
+        .attendance-pill-success {
+            background-color: rgba(40, 199, 111, 0.14);
+            color: #167943 !important;
+        }
+
+        .attendance-pill-warning {
+            background-color: rgba(255, 159, 67, 0.18);
+            color: #9a5700 !important;
+        }
+
+        .attendance-pill-neutral {
+            background-color: rgba(108, 117, 125, 0.12);
+            color: #495057 !important;
+        }
+
+        .attendance-metric-value {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.45rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            background-color: var(--bs-gray-100);
+            color: #2f2b3d;
+        }
+
+        .attendance-metric-value.is-present {
+            background-color: rgba(40, 199, 111, 0.12);
+            color: #167943;
+        }
+
+        .attendance-metric-value.is-absent {
+            background-color: rgba(255, 76, 81, 0.12);
+            color: #c82333;
         }
 
         .attendance-link-actions,
@@ -137,11 +215,19 @@
     </style>
 
     {{-- Sección de Listado de Reportes --}}
-    <div class="card mb-4">
-        <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-            <h5 class="mb-0">Reportes de Asistencia para:
-                {{ $horarioAsignado->materiaPeriodo->materia->nombre ?? 'Clase' }}</h5>
-            <button type="button" class="btn btn-sm btn-outline-success" wire:click="exportarTodosLosReportes"
+    <div class="card attendance-reports-shell mb-4">
+        <div class="card-header bg-transparent border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="attendance-header-icon">
+                    <i class="ti ti-clipboard-list"></i>
+                </span>
+                <div>
+                    <h5 class="mb-0 fw-bold text-dark fs-6">Reportes de Asistencia para:
+                        {{ $horarioAsignado->materiaPeriodo->materia->nombre ?? 'Clase' }}</h5>
+                    <small class="text-muted">Historial de clases reportadas, enlaces públicos y exportación</small>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3" wire:click="exportarTodosLosReportes"
                 wire:loading.attr="disabled" wire:target="exportarTodosLosReportes">
                 <span wire:loading.remove wire:target="exportarTodosLosReportes">
                     <i class="ti ti-file-spreadsheet me-1"></i> Excel general
@@ -151,7 +237,7 @@
                 </span>
             </button>
         </div>
-        <div class="card-body">
+        <div class="card-body p-3 p-md-4">
             @if ($reportesPaginados->isNotEmpty())
                 <div class="attendance-reports-list">
                 <div class="attendance-reports-header" aria-hidden="true">
@@ -165,41 +251,50 @@
                 </div>
 
                 @foreach ($reportesPaginados as $reporte)
+                    @php
+                        $ausentesCount = max(0, $reporte->detalles_asistencia_count - $reporte->presentes_count);
+                        $estadoPillClass = match ($reporte->estado_reporte) {
+                            'pendiente_detalle' => 'attendance-pill-warning',
+                            'completado' => 'attendance-pill-success',
+                            default => 'attendance-pill-neutral',
+                        };
+                        $estadoIcono = match ($reporte->estado_reporte) {
+                            'pendiente_detalle' => 'ti-clock-exclamation',
+                            'completado' => 'ti-circle-check',
+                            default => 'ti-info-circle',
+                        };
+                    @endphp
                     <article wire:key="reporte-asistencia-{{ $reporte->id }}"
-                        class="attendance-report-card card mb-2 {{ $loop->even ? 'bg-body-secondary' : '' }}">
+                        class="attendance-report-card card mb-2 {{ $loop->even ? 'bg-lighter' : '' }}">
                         <div class="attendance-report-row">
                             <div class="attendance-report-cell attendance-date">
                                 <span class="attendance-cell-label">Fecha clase</span>
-                                <span class="fw-medium">{{ \Carbon\Carbon::parse($reporte->fecha_clase_reportada)->format('d/m/Y') }}</span>
-                                <small class="text-muted">{{ \Carbon\Carbon::parse($reporte->fecha_clase_reportada)->diffForHumans() }}</small>
+                                <span class="fw-semibold text-dark d-inline-flex align-items-center gap-1">
+                                    <i class="ti ti-calendar-event text-primary"></i>
+                                    {{ \Carbon\Carbon::parse($reporte->fecha_clase_reportada)->format('d/m/Y') }}
+                                </span>
+                                <small class="text-muted d-block">{{ \Carbon\Carbon::parse($reporte->fecha_clase_reportada)->diffForHumans() }}</small>
                             </div>
 
                             <div class="attendance-report-cell attendance-status">
                                 <span class="attendance-cell-label">Estado</span>
-                                    @php
-                                        $estadoClass = '';
-                                        if ($reporte->estado_reporte === 'pendiente_detalle') {
-                                            $estadoClass = 'bg-label-warning';
-                                        } elseif ($reporte->estado_reporte === 'completado') {
-                                            $estadoClass = 'bg-label-success';
-                                        } else {
-                                            $estadoClass = 'bg-label-secondary';
-                                        }
-                                    @endphp
-                                <span class="badge {{ $estadoClass }}">{{ ucfirst(str_replace('_', ' ', $reporte->estado_reporte)) }}</span>
+                                <span class="attendance-pill {{ $estadoPillClass }}">
+                                    <i class="ti {{ $estadoIcono }}"></i>
+                                    {{ ucfirst(str_replace('_', ' ', $reporte->estado_reporte)) }}
+                                </span>
                             </div>
 
                             <div class="attendance-report-cell">
                                 <span class="attendance-cell-label">Reportados</span>
-                                {{ $reporte->detalles_asistencia_count }}
+                                <span class="attendance-metric-value">{{ $reporte->detalles_asistencia_count }}</span>
                             </div>
                             <div class="attendance-report-cell">
                                 <span class="attendance-cell-label">Presentes</span>
-                                {{ $reporte->presentes_count }}
+                                <span class="attendance-metric-value is-present">{{ $reporte->presentes_count }}</span>
                             </div>
                             <div class="attendance-report-cell">
                                 <span class="attendance-cell-label">Ausentes</span>
-                                {{ $reporte->detalles_asistencia_count - $reporte->presentes_count }}
+                                <span class="attendance-metric-value {{ $ausentesCount > 0 ? 'is-absent' : '' }}">{{ $ausentesCount }}</span>
                             </div>
 
                             <div class="attendance-report-cell attendance-public-link">
@@ -207,12 +302,12 @@
                                 <div class="attendance-link-actions">
                                     <a target="_blank"
                                         href="{{ route('maestros.reportarAutoAsistencia', ['horarioAsignado' => $horarioAsignado->id, 'reporte' => $reporte->id]) }}"
-                                        class="btn btn-sm btn-outline-info">
-                                        <i class="mdi mdi-link-variant me-1"></i> Ver link
+                                        class="btn btn-sm btn-outline-info rounded-pill">
+                                        <i class="ti ti-external-link me-1"></i> Ver link
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary copiar-link-btn"
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill copiar-link-btn"
                                         data-url="{{ route('maestros.reportarAutoAsistencia', ['horarioAsignado' => $horarioAsignado->id, 'reporte' => $reporte->id]) }}">
-                                        <i class="mdi mdi-content-copy me-1"></i> Copiar link
+                                        <i class="ti ti-copy me-1"></i> Copiar link
                                     </button>
                                 </div>
                             </div>
@@ -224,7 +319,7 @@
                                     <a href="{{ route('maestros.editarReporte', ['maestro' => $maestro, 'horarioAsignado' => $horarioAsignado, 'reporte' => $reporte]) }}"
                                         class="btn btn-sm btn-primary waves-effect waves-light rounded-pill @if (!$puedeEditar) disabled @endif"
                                         aria-disabled="{{ $puedeEditar ? 'false' : 'true' }}">
-                                        <i class="mdi mdi-pencil-outline me-1"></i>
+                                        <i class="ti ti-pencil me-1"></i>
                                         @if ($reporte->estado_reporte === 'pendiente_detalle' && $reporte->detalles_asistencia_count === 0)
                                             Registrar
                                         @else
@@ -247,8 +342,19 @@
                     </article>
                 @endforeach
                 </div>
+            @else
+                <div class="text-center text-muted py-5 bg-lighter rounded-3">
+                    <i class="ti ti-clipboard-off fs-2 d-block mb-2"></i>
+                    <h6 class="mb-1 fw-semibold text-dark">Sin reportes de asistencia</h6>
+                    <p class="mb-0 small">Aún no se han creado reportes de asistencia para esta clase.</p>
+                </div>
             @endif
         </div>
+        @if ($reportesPaginados->hasPages())
+            <div class="card-footer bg-transparent border-top d-flex justify-content-center py-3">
+                {{ $reportesPaginados->links() }}
+            </div>
+        @endif
     </div>
 
     {{-- Modal para Editar/Registrar Detalles de Asistencia --}}
@@ -273,8 +379,8 @@
 
                 // Nueva lógica para los botones "Copiar Link"
                 document.body.addEventListener('click', function(event) {
-                    if (event.target.matches('.copiar-link-btn')) {
-                        const button = event.target;
+                    const button = event.target.closest('.copiar-link-btn');
+                    if (button) {
                         const urlToCopy = button.dataset.url;
 
                         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -282,7 +388,7 @@
                                 .then(() => {
                                     // Éxito al copiar
                                     const originalText = button.innerHTML;
-                                    button.innerHTML = '<i class="mdi mdi-check me-1"></i> ¡Copiado!';
+                                    button.innerHTML = '<i class="ti ti-check me-1"></i> ¡Copiado!';
                                     button.classList.add('btn-success'); // Opcional: cambiar color
                                     button.classList.remove('btn-outline-secondary');
 

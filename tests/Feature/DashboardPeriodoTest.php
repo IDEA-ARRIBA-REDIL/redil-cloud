@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\DashboardPeriodoController;
 use App\Livewire\Escuelas\AdminDashboard;
+use App\Livewire\Escuelas\MateriaPeriodo as MateriaPeriodoLivewire;
 use App\Models\AlumnoRespuestaItem;
 use App\Models\Calificaciones;
 use App\Models\CortePeriodo;
@@ -28,6 +29,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class DashboardPeriodoTest extends TestCase
@@ -64,12 +66,15 @@ class DashboardPeriodoTest extends TestCase
         DB::purge('periodo_testing');
         DB::setDefaultConnection('periodo_testing');
 
-        foreach (['escuelas', 'niveles_escuelas', 'materias'] as $tabla) {
-            Schema::create($tabla, function (Blueprint $tabla): void {
+        foreach (['escuelas', 'niveles_escuelas', 'materias'] as $nombreTabla) {
+            Schema::create($nombreTabla, function (Blueprint $tabla) use ($nombreTabla): void {
                 $tabla->id();
                 $tabla->timestamps();
                 $tabla->string('nombre');
                 $tabla->softDeletes();
+                if ($nombreTabla === 'materias') {
+                    $tabla->integer('creditos')->nullable();
+                }
             });
         }
         Schema::create('users', function (Blueprint $tabla): void {
@@ -177,6 +182,7 @@ class DashboardPeriodoTest extends TestCase
             $tabla->unsignedBigInteger('materia_id')->nullable();
             $tabla->integer('total_asistencias')->nullable();
             $tabla->integer('creditos_aprobados')->nullable();
+            $tabla->boolean('es_homologacion')->nullable();
         });
 
         Schema::create('sedes', function (Blueprint $tabla): void {
@@ -505,7 +511,13 @@ class DashboardPeriodoTest extends TestCase
         \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\MateriaFinalizadaMail::class);
     }
 
-    public function test_reabrir_conserva_notas_y_asistencias_y_no_modifica_otras_materias(): void
+    public static function rutasReapertura(): array
+    {
+        return ['servicio de cierre' => [false], 'acción Livewire' => [true]];
+    }
+
+    #[DataProvider('rutasReapertura')]
+    public function test_reabrir_conserva_homologaciones_notas_y_asistencias(bool $rutaLivewire): void
     {
         $horario = $this->crearMateria();
         $this->crearMateria();
@@ -514,13 +526,29 @@ class DashboardPeriodoTest extends TestCase
         $this->calificar($alumno, $horario, 5);
         $this->asistir($alumno, $horario, true);
         MateriaPeriodo::query()->update(['finalizado' => true]);
-        foreach ([1, 2] as $materiaId) {
-            MateriaAprobadaUsuario::query()->insert(['periodo_id' => 1, 'materia_periodo_id' => $materiaId, 'user_id' => $alumno, 'aprobado' => 1]);
+        $resultados = MateriaAprobadaUsuario::query();
+        $datos = ['periodo_id' => 1, 'materia_periodo_id' => 1, 'user_id' => $alumno, 'aprobado' => 1];
+        $ordinario = $resultados->insertGetId($datos + ['es_homologacion' => false]);
+        $legado = $resultados->insertGetId($datos + ['es_homologacion' => null]);
+        $homologado = $resultados->insertGetId($datos + ['es_homologacion' => true, 'nota_final' => 4.75, 'updated_at' => '2026-01-10 09:00:00']);
+        $otraMateria = $resultados->insertGetId(array_replace($datos, ['materia_periodo_id' => 2, 'es_homologacion' => false]));
+        $antes = MateriaAprobadaUsuario::query()->findOrFail($homologado)->getRawOriginal();
+
+        if ($rutaLivewire) {
+            $componente = new MateriaPeriodoLivewire;
+            $componente->periodo = $this->periodo;
+            $componente->reactivarMateria(1);
+            $this->assertNull(session('mensaje_error'));
+        } else {
+            app(\App\Services\GestionCierreMateriaService::class)->reabrir(MateriaPeriodo::query()->findOrFail(1));
         }
-        app(\App\Services\GestionCierreMateriaService::class)->reabrir(MateriaPeriodo::query()->findOrFail(1));
+
         $this->assertFalse(MateriaPeriodo::query()->findOrFail(1)->finalizado);
         $this->assertTrue(MateriaPeriodo::query()->findOrFail(2)->finalizado);
-        $this->assertSame([2], MateriaAprobadaUsuario::query()->pluck('materia_periodo_id')->all());
+        $this->assertNull(MateriaAprobadaUsuario::query()->find($ordinario));
+        $this->assertNull(MateriaAprobadaUsuario::query()->find($legado));
+        $this->assertSame($antes, MateriaAprobadaUsuario::query()->findOrFail($homologado)->getRawOriginal());
+        $this->assertNotNull(MateriaAprobadaUsuario::query()->find($otraMateria));
         $this->assertSame(1, AlumnoRespuestaItem::query()->count());
         $this->assertSame(1, ReporteAsistenciaAlumnos::query()->count());
     }
@@ -571,6 +599,147 @@ class DashboardPeriodoTest extends TestCase
         $this->assertSame(1, MateriaAprobadaUsuario::query()->count());
         $this->assertSame('NOTA_INSUFICIENTE, ASISTENCIA_INSUFICIENTE', MateriaAprobadaUsuario::query()->first()->motivo_reprobacion);
         $this->assertSame(0, $servicio->procesarLoteDeAlumnosPorMateria($materia, 2, 200));
+    }
+
+    public function test_recalculo_periodo_no_multiplica_notas_de_matriculas_repetidas(): void
+    {
+        $horario = $this->crearMateria();
+        $alumno = $this->crearAlumno(1);
+        $this->matricular($alumno, $horario);
+        $this->matricular($alumno, $horario);
+        $this->calificar($alumno, $horario, 1.75);
+        $this->asistir($alumno, $horario, true);
+
+        $this->assertSame(1, app(\App\Services\ServicioValidacionPeriodo::class)->procesarLoteDeAlumnos($this->periodo, 1, 200));
+        $resultado = MateriaAprobadaUsuario::query()->sole();
+        $this->assertSame('1.75', $resultado->nota_final);
+        $this->assertSame(1, $resultado->total_asistencias);
+    }
+
+    public function test_materia_archivada_se_conserva_en_su_instancia_e_historial(): void
+    {
+        $this->crearMateria();
+        $instancia = MateriaPeriodo::query()->firstOrFail();
+        $materia = $instancia->materia;
+        $resultado = MateriaAprobadaUsuario::query()->insertGetId([
+            'periodo_id' => $instancia->periodo_id,
+            'materia_periodo_id' => $instancia->id,
+            'materia_id' => $materia->id,
+            'user_id' => $this->crearAlumno(1),
+            'aprobado' => 1,
+            'nota_final' => 4.25,
+        ]);
+
+        $materia->delete();
+
+        $this->assertNull(Materia::query()->find($materia->id));
+        $this->assertSame($materia->nombre, $instancia->fresh()->materia->nombre);
+        $historial = MateriaAprobadaUsuario::query()->with('materia')->findOrFail($resultado);
+        $this->assertSame($materia->nombre, $historial->materia->nombre);
+        $this->assertSame('4.25', $historial->nota_final);
+    }
+
+    public function test_equivalencia_local_reconoce_solo_el_resultado_ordinario_autorizado(): void
+    {
+        foreach (range(1, 2) as $indice) {
+            $this->crearMateria();
+        }
+
+        $anterior = Materia::query()->findOrFail(1);
+        $anterior->delete();
+        $ordinario = User::query()->findOrFail($this->crearAlumno(1));
+        $otroOrdinario = User::query()->findOrFail($this->crearAlumno(1));
+        $reprobado = User::query()->findOrFail($this->crearAlumno(1));
+        $homologado = User::query()->findOrFail($this->crearAlumno(1));
+        $base = ['materia_id' => 1, 'materia_periodo_id' => 1, 'periodo_id' => 1, 'aprobado' => 1, 'nota_final' => 4.25];
+        $id = MateriaAprobadaUsuario::query()->insertGetId($base + ['user_id' => $ordinario->id, 'es_homologacion' => null]);
+        MateriaAprobadaUsuario::query()->insert($base + ['user_id' => $otroOrdinario->id, 'es_homologacion' => false]);
+        $idReprobado = MateriaAprobadaUsuario::query()->insertGetId(array_replace($base, ['user_id' => $reprobado->id, 'aprobado' => 0]));
+        $idHomologado = MateriaAprobadaUsuario::query()->insertGetId($base + ['user_id' => $homologado->id, 'es_homologacion' => true]);
+
+        $this->assertSame([1], MateriaAprobadaUsuario::idsAprobadosReconocidos($ordinario)->all());
+
+        Schema::create('migracion_escuelas_correspondencias', function (Blueprint $tabla): void {
+            $tabla->string('entidad');
+            $tabla->integer('id_origen');
+            $tabla->string('tabla_destino');
+            $tabla->integer('id_destino');
+            $tabla->json('origen');
+        });
+        DB::table('migracion_escuelas_correspondencias')->insert([
+            ['entidad' => 'materia', 'id_origen' => 1, 'tabla_destino' => 'materias', 'id_destino' => 3, 'origen' => '{}'],
+            ['entidad' => MateriaAprobadaUsuario::ENTIDAD_EQUIVALENCIA_LOCAL, 'id_origen' => 1, 'tabla_destino' => 'materias', 'id_destino' => 2,
+                'origen' => json_encode(['aprobaciones_ordinarias_ids' => [$id, $idReprobado, $idHomologado]], JSON_THROW_ON_ERROR)],
+        ]);
+
+        $this->assertSame([1, 2], MateriaAprobadaUsuario::idsAprobadosReconocidos($ordinario)->all());
+        $this->assertSame([1], MateriaAprobadaUsuario::idsAprobadosReconocidos($otroOrdinario)->all());
+        $this->assertSame([], MateriaAprobadaUsuario::idsAprobadosReconocidos($reprobado)->all());
+        $this->assertSame([1], MateriaAprobadaUsuario::idsAprobadosReconocidos($homologado)->all());
+        $this->assertSame(4, MateriaAprobadaUsuario::query()->count());
+        $original = MateriaAprobadaUsuario::query()->with('materia')->findOrFail($id);
+        $this->assertSame(1, $original->materia->id);
+        $this->assertSame('4.25', $original->nota_final);
+    }
+
+    public function test_recalculo_periodo_rechaza_varios_horarios_de_la_misma_materia(): void
+    {
+        $horario = $this->crearMateria();
+        $otroHorario = HorarioMateriaPeriodo::query()->insertGetId([
+            'materia_periodo_id' => HorarioMateriaPeriodo::query()->findOrFail($horario)->materia_periodo_id,
+        ]);
+        $alumno = $this->crearAlumno(1);
+        $this->matricular($alumno, $horario);
+        $this->matricular($alumno, $otroHorario);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('varios horarios de la misma materia');
+        app(\App\Services\ServicioValidacionPeriodo::class)->procesarLoteDeAlumnos($this->periodo, 1, 200);
+    }
+
+    public static function rutasRecalculo(): array
+    {
+        return [
+            'materia con nota reprobada' => [false, 1.25],
+            'período con nota reprobada' => [true, 1.25],
+            'materia con nota aprobada' => [false, 5.0],
+            'período con nota aprobada' => [true, 5.0],
+        ];
+    }
+
+    #[DataProvider('rutasRecalculo')]
+    public function test_recalculo_conserva_homologacion_de_un_alumno_matriculado(bool $periodoCompleto, float $notaCalculada): void
+    {
+        $horario = $this->crearMateria();
+        $alumnoHomologado = $this->crearAlumno(1);
+        $alumnoOrdinario = $this->crearAlumno(2);
+        $materia = MateriaPeriodo::query()->firstOrFail();
+
+        foreach ([$alumnoHomologado, $alumnoOrdinario] as $alumno) {
+            $this->matricular($alumno, $horario);
+        }
+        $this->calificar($alumnoHomologado, $horario, $notaCalculada);
+        $this->asistir($alumnoHomologado, $horario, true);
+        $this->calificar($alumnoOrdinario, $horario, 1.5);
+        $base = ['periodo_id' => $this->periodo->id, 'materia_periodo_id' => $materia->id, 'materia_id' => $materia->materia_id, 'aprobado' => 1];
+        $homologacion = MateriaAprobadaUsuario::query()->insertGetId($base + [
+            'user_id' => $alumnoHomologado, 'es_homologacion' => true, 'nota_final' => 4.75, 'updated_at' => '2026-01-10 09:00:00',
+        ]);
+        $ordinario = MateriaAprobadaUsuario::query()->insertGetId($base + [
+            'user_id' => $alumnoOrdinario, 'es_homologacion' => null, 'nota_final' => 4.5,
+        ]);
+        $antes = MateriaAprobadaUsuario::query()->findOrFail($homologacion)->getRawOriginal();
+
+        $procesados = $periodoCompleto
+            ? app(\App\Services\ServicioValidacionPeriodo::class)->procesarLoteDeAlumnos($this->periodo, 1, 200)
+            : app(\App\Services\ServicioValidacionMateriaPeriodo::class)->procesarLoteDeAlumnosPorMateria($materia, 1, 200);
+
+        $this->assertSame(2, $procesados);
+        $this->assertSame(2, MateriaAprobadaUsuario::query()->count());
+        $this->assertSame($antes, MateriaAprobadaUsuario::query()->findOrFail($homologacion)->getRawOriginal());
+        $resultadoOrdinario = MateriaAprobadaUsuario::query()->findOrFail($ordinario);
+        $this->assertSame('1.50', $resultadoOrdinario->nota_final);
+        $this->assertSame(MateriaAprobadaUsuario::ESTADO_REPROBADO, $resultadoOrdinario->aprobado);
     }
 
     public function test_modal_y_acordeones_muestran_sedes_reales_y_excel_solo_al_cerrar_periodo(): void

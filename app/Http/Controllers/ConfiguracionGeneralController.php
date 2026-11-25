@@ -40,7 +40,6 @@ class ConfiguracionGeneralController extends Controller
             'label_seccion_campos_extra' => $validated['labelSeccionCamposExtra'] ?? null,
             'visible_seccion_campos_extra' => $on('visibleSeccionCamposExtra'),
             'visible_seccion_campos_extra_grupo' => $on('visibleSeccionCamposExtraGrupo'),
-            'usa_listas_geograficas' => $on('usaListasGeograficas'),
             'direccion_obligatoria' => $on('direccionObligatoria'),
 
             // --- Grupos ---

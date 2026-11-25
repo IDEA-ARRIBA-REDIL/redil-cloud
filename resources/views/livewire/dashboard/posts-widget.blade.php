@@ -14,11 +14,9 @@
         @endphp
         <h5 class="text-black fw-bold mb-3 d-flex align-items-center justify-content-between">
             Vive Manantial
-            @if ($cargandoMas)
-                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
-                </div>
-            @endif
+            <div wire:loading wire:target="loadMore" class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
         </h5>
 
         <div class="swiper-container swiper swiper-posts position-relative" id="swiper-posts-widget" wire:ignore.self
@@ -32,7 +30,8 @@
                     </div>
                 @endfor
             </div>
-            <div class="swiper-wrapper">
+            <div class="swiper-wrapper" id="swiper-wrapper-horizontal-dashboard"
+                wire:key="swiper-wrapper-horizontal-dashboard">
                 @foreach ($posts as $index => $post)
                     <div class="swiper-slide list-post-item" wire:key="post-{{ $post->id }}" wire:ignore.self>
                         <!-- Post Card Full-Bleed -->
@@ -164,8 +163,9 @@
 
         <!-- Modal Inmersivo (Vertical Swiper) -->
         @teleport('body')
-            <div class="modal fade immersive-modal" id="modalPostsInmersivo" tabindex="-1" aria-hidden="true"
-                wire:ignore data-bs-backdrop="false">
+            <div class="modal fade immersive-modal" id="modalPostsInmersivo"
+                wire:key="modal-posts-inmersivo" tabindex="-1" aria-hidden="true"
+                wire:ignore.self data-bs-backdrop="false">
                 <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down modal-lg h-100 my-0 py-3">
                     <div class="modal-content bg-transparent border-0 shadow-none h-100">
                         <div
@@ -176,7 +176,7 @@
 
                                 <!-- Indicador Desliza -->
                                 @if ($posts->count() > 1)
-                                    <div id="indicador-desliza"
+                                    <div id="indicador-desliza" wire:key="indicador-desliza" wire:ignore
                                         class="position-absolute top-50 start-50 text-white text-center transition-all duration-500"
                                         style="z-index: 100; opacity: 0.7; pointer-events: none; animation: bounce-vertical 2s infinite; transition: opacity 0.5s ease-out; text-shadow: 0 2px 10px rgba(0,0,0,0.8); transform: translate(-50%, -50%);">
                                         <i class="ti ti-chevrons-up d-block mb-1" style="font-size: 3rem;"></i>
@@ -187,11 +187,12 @@
 
                                 <!-- Swiper Vertical -->
                                 <div class="swiper-container swiper swiper-posts-vertical w-100 h-100"
-                                    id="swiper-posts-vertical">
-                                    <div class="swiper-wrapper h-100">
+                                    id="swiper-posts-vertical" wire:key="swiper-posts-vertical" wire:ignore.self>
+                                    <div class="swiper-wrapper h-100" id="swiper-wrapper-vertical-dashboard"
+                                        wire:key="swiper-wrapper-vertical-dashboard" wire:ignore.self>
                                         @foreach ($posts as $index => $post)
                                             <div class="swiper-slide list-post-item-vertical h-100 w-100 position-relative"
-                                                wire:key="modal-post-{{ $post->id }}">
+                                                wire:key="modal-post-{{ $post->id }}" wire:ignore>
 
                                                 <!-- Top Header: User Info y Botón Cerrar -->
                                                 <div class="position-absolute top-0 start-0 w-100 p-3 pt-4 d-flex align-items-center justify-content-between"
@@ -611,6 +612,45 @@
             <script>
                 let postsSwiper;
                 let postsVerticalSwiper;
+                let cargandoMasPosts = false;
+
+                // 1. Control de petición única y precarga anticipada (2 posts antes del final)
+                function solicitarMasPosts() {
+                    if (cargandoMasPosts) return;
+                    if (!$wire.get('hasMore')) return;
+
+                    cargandoMasPosts = true;
+                    $wire.call('loadMore').finally(() => {
+                        cargandoMasPosts = false;
+                    });
+                }
+
+                function verificarPrecargaHorizontal(swiperInstance) {
+                    if (!swiperInstance || !swiperInstance.slides) return;
+                    const totalSlides = swiperInstance.slides.length;
+                    const spv = Math.ceil(Number(swiperInstance.params.slidesPerView) || 1);
+                    if (totalSlides > 0 && (swiperInstance.activeIndex + spv) >= Math.max(0, totalSlides - 2)) {
+                        solicitarMasPosts();
+                    }
+                }
+
+                function verificarPrecargaVertical(swiperInstance) {
+                    if (!swiperInstance || !swiperInstance.slides) return;
+                    const totalSlides = swiperInstance.slides.length;
+                    // Precargar de 5 en 5 cuando falten 2 o menos posts para llegar al final
+                    if (totalSlides > 0 && swiperInstance.activeIndex >= Math.max(0, totalSlides - 3)) {
+                        solicitarMasPosts();
+                    }
+                }
+
+                function actualizarVerticalSwiper() {
+                    if (postsVerticalSwiper && typeof postsVerticalSwiper.update === 'function') {
+                        postsVerticalSwiper.update();
+                        if (typeof postsVerticalSwiper.updateSlides === 'function') postsVerticalSwiper.updateSlides();
+                        if (typeof postsVerticalSwiper.updateProgress === 'function') postsVerticalSwiper.updateProgress();
+                        if (typeof postsVerticalSwiper.updateSlidesClasses === 'function') postsVerticalSwiper.updateSlidesClasses();
+                    }
+                }
 
                 function initPostsSwiper() {
                     const container = document.querySelector('#swiper-posts-widget');
@@ -640,10 +680,11 @@
                             }
                         },
                         on: {
+                            slideChange: function() {
+                                verificarPrecargaHorizontal(this);
+                            },
                             reachEnd: function() {
-                                if ($wire.get('hasMore') && !$wire.get('cargandoMas')) {
-                                    $wire.call('loadMore');
-                                }
+                                solicitarMasPosts();
                             }
                         }
                     });
@@ -675,11 +716,10 @@
                         on: {
                             slideChange: function() {
                                 sincronizarVideosVerticales();
+                                verificarPrecargaVertical(this);
                             },
                             reachEnd: function() {
-                                if ($wire.get('hasMore') && !$wire.get('cargandoMas')) {
-                                    $wire.call('loadMore');
-                                }
+                                solicitarMasPosts();
                             }
                         }
                     });
@@ -777,14 +817,17 @@
                     const modalEl = document.getElementById('modalPostsInmersivo');
                     if (!modalEl) return;
 
-                    // Inicializar vertical swiper de inmediato si no se ha hecho
+                    // Inicializar vertical swiper de inmediato si no se ha hecho, o actualizar sus slides
                     if (!postsVerticalSwiper) {
                         initVerticalSwiper();
+                    } else {
+                        actualizarVerticalSwiper();
                     }
 
                     // Mover la diapositiva sin animación
                     if (postsVerticalSwiper) {
                         postsVerticalSwiper.slideTo(index, 0);
+                        verificarPrecargaVertical(postsVerticalSwiper);
                     }
 
                     // Iniciar carga del video directamente dentro del gesto del clic
@@ -804,10 +847,11 @@
                         resetearMostrarIndicadorDesliza(); // Iniciar temporizador
                         if (postsVerticalSwiper) {
                             setTimeout(() => {
-                                postsVerticalSwiper.update();
+                                actualizarVerticalSwiper();
                                 // Forzar que dispare el redibujado de las slides
                                 postsVerticalSwiper.slideTo(postsVerticalSwiper.activeIndex, 0);
                                 sincronizarVideosVerticales();
+                                verificarPrecargaVertical(postsVerticalSwiper);
                             }, 50);
                         } else {
                             sincronizarVideosVerticales();
@@ -827,22 +871,14 @@
                 // Inicialización inicial
                 setTimeout(initPostsSwiper, 100);
 
-                // Re-inicializar garantizando reconstrucción completa (Livewire 3)
-                if (window.Livewire) {
-                    Livewire.hook('commit', ({
-                        component,
-                        succeed
-                    }) => {
-                        if (component.name === 'dashboard.posts-widget') {
-                            succeed(() => {
-                                setTimeout(() => {
-                                    initPostsSwiper();
-                                    evaluarBotones();
-                                }, 50);
-                            });
-                        }
-                    });
-                }
+                // Escuchar evento de nuevos posts cargados para actualizar ambos Swipers sin destruir el modal vertical
+                $wire.on('posts-loaded', () => {
+                    setTimeout(() => {
+                        initPostsSwiper();
+                        actualizarVerticalSwiper();
+                        evaluarBotones();
+                    }, 50);
+                });
 
                 // Set up share/download buttons
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);

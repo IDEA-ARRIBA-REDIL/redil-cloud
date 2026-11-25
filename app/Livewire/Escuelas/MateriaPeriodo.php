@@ -130,16 +130,14 @@ class MateriaPeriodo extends Component
         try {
             $materiaPeriodo = ModeloMateriaPeriodo::findOrFail($materiaPeriodoId);
 
-            // 1. Cambiamos el estado de la materia a "no finalizado"
             $materiaPeriodo->finalizado = false;
             $materiaPeriodo->save();
 
-            // 2. (Opcional pero MUY RECOMENDADO) Eliminamos los resultados finales
-            //    que se habían calculado previamente para esta materia.
-            //    Esto asegura que cuando se vuelva a finalizar, se genere un cálculo limpio.
-            MateriaAprobadaUsuario::where('materia_periodo_id', $materiaPeriodoId)->delete();
+            MateriaAprobadaUsuario::where('materia_periodo_id', $materiaPeriodoId)
+                ->sinHomologacion()
+                ->delete();
 
-            session()->flash('mensaje_exito', "La materia '{$materiaPeriodo->materia->nombre}' ha sido reactivada. Los resultados finales anteriores han sido eliminados para permitir un nuevo cálculo.");
+            session()->flash('mensaje_exito', "La materia '{$materiaPeriodo->materia->nombre}' ha sido reactivada. Se limpiaron los resultados ordinarios y se conservaron las homologaciones.");
 
             // Refrescamos la lista de materias para que la vista se actualice
             $this->cargarMateriasDelPeriodo();
